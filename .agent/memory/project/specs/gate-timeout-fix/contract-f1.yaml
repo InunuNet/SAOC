@@ -17,4 +17,4 @@ assertions:
       command: grep -q "default=300" execution/contract.py
     - id: A2
       description: Verify that the help message for --timeout-seconds is updated
-      command: grep -q "default: 300" execution/contract.py
+      command: 'grep -q "default: 300" execution/contract.py'
