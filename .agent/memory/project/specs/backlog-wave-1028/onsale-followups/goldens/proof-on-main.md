@@ -46,3 +46,10 @@ A refused /tickets/[slug] renders a hero with no notice; needs sourced copy, non
 - A6 (now check-show-offers-forwarding.sh, function-scoped; buildShowOffers is not exported so a behavioural replay needs a product change, noted as accepted limit): wrapper passing `activeShowId: null` to buildHubCards -> FAIL; page call site with `null` -> FAIL.
 - A5 (now check-a7-rewired.sh, scoped to the A7 block): origin/main's old A7 -> FAIL "does not call the helper"; helper plus a `| grep` pipe -> FAIL "still carries the negated pipeline".
 - A2 active-show price lines: mutant with no filter and `.reverse()` (impostor wins under the active show) -> 7 failures incl. `JSON-LD VIP offer for show-19-2027 is 999, not the active show's 300`, `a show-fictional-test price 999 reaches hub cards or JSON-LD offers`, `hub VIP card ... carries the impostor price`.
+
+## Round 4 (Codex round 3), A5 is exact equality
+check-a7-rewired.sh now requires A7's command to equal `python3 <helper> .` exactly, exactly one A7 id,
+exactly one `command:` in the block, the helper file present, and the next line to be timeout_seconds
+(no YAML continuation). Each of these mutants of the old contract FAILs: `|| true`, `; true`, `&& true`,
+`| cat`, extra arg, trailing space, trailing `# x` comment, leading `!`, a `|| true` continuation line,
+a duplicated A7 block, a second `command:` line. The unmutated branch contract PASSes.
