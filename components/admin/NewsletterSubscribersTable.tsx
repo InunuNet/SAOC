@@ -136,19 +136,18 @@ export function NewsletterSubscribersTable({ rows, list, status, counts, canMana
   const [done, setDone] = useState<ReadonlySet<string>>(new Set());
   const returnToRef = useRef<string | null>(null);
 
-  // After the dialog closes, focus goes back to the row's action, or to the row's inline status
-  // when the refreshed row no longer offers one.
+  // After the dialog closes, focus goes back to the row's action. After a full removal the action is
+  // about to disappear on refresh, so the row's inline status takes focus first.
   useEffect(() => {
     if (target !== null || returnToRef.current === null) return;
     const id = returnToRef.current;
     returnToRef.current = null;
     const visible = (el: Element) => (el as HTMLElement).offsetParent !== null;
-    const candidates = [
-      ...document.querySelectorAll(`[data-newsletter-action="${CSS.escape(id)}"]`),
-      ...document.querySelectorAll(`[data-newsletter-status="${CSS.escape(id)}"]`),
-    ].filter(visible);
+    const action = document.querySelectorAll(`[data-newsletter-action="${CSS.escape(id)}"]`);
+    const status = document.querySelectorAll(`[data-newsletter-status="${CSS.escape(id)}"]`);
+    const candidates = [...(done.has(id) ? [...status, ...action] : [...action, ...status])].filter(visible);
     (candidates[0] as HTMLElement | undefined)?.focus();
-  }, [target, rows]);
+  }, [target, rows, done]);
 
   function navigate(next: { list?: string; status?: string }) {
     const params = new URLSearchParams(window.location.search);
