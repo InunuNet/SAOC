@@ -73,3 +73,18 @@ file cannot export it directly (Next rejects non-route exports from page.tsx), h
 A7 codex_qa required; A8 browser_deployed_check and A9 gws_inbox_check declared non-required (same reasons as gate-hygiene A11/A12);
 A10 is the RUN AFTER DEPLOY plain check (check-deployed-nos-jsonld.mjs). Verified against a local mock host:
 good offers -> rc 0; VIP 999 -> rc 1 (`VIP offer price is 999, want 300`, `wrong-show price 999`); unreachable -> rc 77; no credentials -> rc 77.
+
+## Round 6 (Codex on ccd48c1a)
+- Real product bug: `cutoffBySlug` in lib/data/national-show-offers.ts was built from the UNFILTERED types, so a same-slug
+  foreign early-bird overwrote the active offer's validThrough. A2 now carries an early-bird impostor (other show, cutoff
+  2027-06-30; active early-bird cutoff 2027-03-01). On feat head ccd48c1a (module copied verbatim) A2 is RED:
+  `early-bird validThrough for show-19-2027 is 2027-06-30, want the active show's 2027-03-01` and `carries the show-fictional-test cutoff`.
+  With the fix applied (reference copy, not committed) A2 PASSes.
+- A6 is a comment-stripping node check (check-page-call-site.mjs). Mutants that FAIL: live `null` call plus the real call in a `//`
+  comment, in a `/* */` block, in a multi-line block comment, and the plain `null` call. Accepted limit: a call-shaped string literal
+  is not stripped.
+- A10 compares the deployed offer set to the expected active-show set (fixture-derived subset mode, or EXPECT_OFFERS exact mode). Mock-host
+  results: good rc 0; unknown extra offer rc 1; wrong price on a known slug rc 1; exact mode with a missing offer rc 1; exact good rc 0.
+  Accepted limit: default subset mode cannot flag a MISSING expected offer (hub sibling collapse, conference/workshop products not in the fixture).
+- A7 rescoped to the product diff (as gate-hygiene A10). Check-strength gaps on unchanged code are accepted limits, not reviewed:
+  ticket-hub-source.ts / ticket-offers.ts / sanity/queries.ts filter strength beyond what A2-A4 replay.

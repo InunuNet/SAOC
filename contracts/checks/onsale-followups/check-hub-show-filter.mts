@@ -41,10 +41,19 @@ if (!recorded.some((d) => d.slug === FICTIONAL) || !recorded.some((d) => d.slug 
 // A wrong-show impostor reuses a real admission slug at a distinct price: the hub keys cards by
 // slug, so an unfiltered impostor would overwrite the active show's VIP card.
 const IMPOSTOR_PRICE = 999;
+const OTHER_OWN = ['vip', 'early-bird']; // the only types the other show owns in this replay
 const vip = recorded.find((d) => d.slug === 'vip');
 if (!vip) failures.push('fixture holds no vip type; check is vacuous');
 const impostor = { ...vip, _id: 'ticketType-vip-other-show', price: IMPOSTOR_PRICE, show: { _ref: OTHER } };
-const cmsTypes = [...recorded, impostor].map((d) => ({ ...d, demo: false }));
+// Cutoff leak: the active early-bird SKUs carry a cutoff; a same-slug early-bird of the other show carries
+// another one, appended last so a slug-keyed map built from unfiltered types would take it.
+const ACTIVE_CUTOFF = '2027-03-01';
+const IMPOSTOR_CUTOFF = '2027-06-30';
+const withCutoff = recorded.map((d) => (d.slug === 'early-bird' ? { ...d, earlyBirdCutoff: ACTIVE_CUTOFF } : d));
+const earlyBird = recorded.find((d) => d.slug === 'early-bird');
+if (!earlyBird) failures.push('fixture holds no early-bird type; check is vacuous');
+const cutoffImpostor = { ...earlyBird, _id: 'ticketType-early-bird-other-show', price: 119, earlyBirdCutoff: IMPOSTOR_CUTOFF, show: { _ref: OTHER } };
+const cmsTypes = [...withCutoff, impostor, cutoffImpostor].map((d) => ({ ...d, demo: false }));
 
 function slugs(activeShowId: string | null): { cards: string[]; offers: string[]; vipPrice: number | null; vipOfferPrice: number | null; prices: number[] } {
   const built = hub.buildHubCards({
@@ -73,7 +82,7 @@ if (forActive.vipPrice === IMPOSTOR_PRICE) failures.push(`hub VIP card for ${ACT
 const forOther = slugs(OTHER);
 // Under the other show only its own vip impostor may appear; the active show's other types must not.
 for (const [where, list] of [['hub cards', forOther.cards], ['JSON-LD offers', forOther.offers]] as const) {
-  const foreign = list.filter((s) => s !== 'vip');
+  const foreign = list.filter((s) => !OTHER_OWN.includes(s));
   if (foreign.length) failures.push(`${where} for ${OTHER} list another show's types: ${foreign.join(',')}`);
 }
 if (forOther.vipOfferPrice !== IMPOSTOR_PRICE) failures.push(`JSON-LD VIP offer for ${OTHER} is ${forOther.vipOfferPrice}, not its own ${IMPOSTOR_PRICE}`);
@@ -96,8 +105,14 @@ if (soActive.some((o) => o.price === IMPOSTOR_PRICE)) failures.push(`buildShowOf
 if (!soActive.some((o) => slugOf(o) === 'early-bird')) failures.push(`buildShowOffers for ${ACTIVE} lost early-bird`);
 if (soActive.find((o) => slugOf(o) === 'vip')?.price !== vip?.price) failures.push(`buildShowOffers VIP offer for ${ACTIVE} is not the active show's ${vip?.price}`);
 const soOther = showOffers(OTHER);
-if (soOther.some((o) => slugOf(o) !== 'vip')) failures.push(`buildShowOffers for ${OTHER} offers another show's types: ${soOther.map(slugOf).join(',')}`);
+if (soOther.some((o) => !OTHER_OWN.includes(slugOf(o)))) failures.push(`buildShowOffers for ${OTHER} offers another show's types: ${soOther.map(slugOf).join(',')}`);
 if (soOther.find((o) => slugOf(o) === 'vip')?.price !== IMPOSTOR_PRICE) failures.push(`buildShowOffers VIP offer for ${OTHER} is not its own ${IMPOSTOR_PRICE}`);
+const earlyOffer = (offers: ShowOffer[]) => offers.find((o) => slugOf(o) === 'early-bird') as (ShowOffer & { validThrough?: string | null }) | undefined;
+const activeCut = earlyOffer(soActive)?.validThrough ?? null;
+if (!activeCut?.startsWith(ACTIVE_CUTOFF)) failures.push(`buildShowOffers early-bird validThrough for ${ACTIVE} is ${activeCut}, want the active show's ${ACTIVE_CUTOFF}`);
+if (activeCut?.startsWith(IMPOSTOR_CUTOFF)) failures.push(`buildShowOffers early-bird validThrough for ${ACTIVE} carries the ${OTHER} cutoff ${IMPOSTOR_CUTOFF}`);
+const otherCut = (soOther.find((o) => slugOf(o) === 'early-bird') as { validThrough?: string | null } | undefined)?.validThrough ?? null;
+if (soOther.some((o) => slugOf(o) === 'early-bird') && !otherCut?.startsWith(IMPOSTOR_CUTOFF)) failures.push(`buildShowOffers early-bird validThrough for ${OTHER} is ${otherCut}, want its own ${IMPOSTOR_CUTOFF}`);
 if (showOffers(null).length > 0) failures.push('buildShowOffers with no active show offers CMS types');
 
 if (failures.length) {
