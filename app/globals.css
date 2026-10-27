@@ -637,10 +637,12 @@ h3.font-serif {
   display: flex;
   flex-direction: column-reverse;
   align-items: flex-start;
+  min-width: 0;
   text-align: left;
 }
 .hero-facts dd {
   margin: 0;
+  overflow-wrap: anywhere;
   font-family: var(--serif);
   font-weight: 300;
   font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
@@ -652,6 +654,7 @@ h3.font-serif {
 .hero-facts dt {
   max-width: 26ch;
   margin: 6px 0 0;
+  overflow-wrap: anywhere;
   font-family: var(--sans);
   font-size: 15px;
   line-height: 1.35;
