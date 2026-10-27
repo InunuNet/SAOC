@@ -59,6 +59,7 @@ export function HeroPicture({ src, sizes, className, style, priority = false }: 
         srcSet={webpSet}
         sizes={sizes}
         alt=""
+        data-nimg="fill"
         aria-hidden="true"
         decoding="async"
         loading={priority ? 'eager' : 'lazy'}

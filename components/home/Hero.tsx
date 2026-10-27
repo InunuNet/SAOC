@@ -83,6 +83,9 @@ export function Hero({ show }: HeroProps) {
     setActiveIdx(next);
     leaveTimer.current = setTimeout(() => setLeavingIdx(null), FADE_MS);
   };
+  // The first slide never fades in: an animated LCP element counts from the end of its animation, so
+  // the crossfade only exists once the carousel has moved off slide 0.
+  const fades = activeIdx !== 0 || leavingIdx !== null;
   const advance = () => goTo((activeIdx + 1) % slides.length);
 
   return (
@@ -114,7 +117,8 @@ export function Hero({ show }: HeroProps) {
               aria-hidden={isActive ? undefined : true}
               data-hero-slide={slide.key}
               className={[
-                'absolute inset-0 transition-opacity duration-[1400ms] ease-(--ease)',
+                'absolute inset-0',
+                fades ? 'transition-opacity duration-[1400ms] ease-(--ease)' : '',
                 isActive ? 'opacity-100' : 'opacity-0',
               ].join(' ')}
             >
