@@ -50,16 +50,17 @@ never merged — as soon as Sanity returns at least one document the static list
 
 ## ShowCountdown client island
 
-`components/show/ShowCountdown.tsx` is a `'use client'` component that counts down to the 19th
-National Show opening. The target date is hardcoded in the module:
+`components/show/ShowCountdown.tsx` is a `'use client'` component that counts down to the National
+Show opening. It holds no date of its own: the target comes from the Sanity
+`nationalShow.countdownDate` field, passed in as the `countdownDate` prop. `resolveTargetMs`
+returns `null` when the value is missing or unparseable and otherwise the parsed time in
+milliseconds; there is deliberately no fallback date.
 
-```ts
-const TARGET_MS = new Date('2027-09-16T09:00:00+02:00').getTime();
-```
-
-The component initialises its state to zero and starts a one-second `setInterval` inside
-`useEffect`, so the server render always outputs `00 00 00 00` (no hydration mismatch). It is
-wrapped in a `<Suspense fallback={null}>` boundary inside the Show Hero section, meaning the hero
+The component reads its ticking value through `useSyncExternalStore`, whose server snapshot is
+always `00 00 00 00`, so the first client paint matches the server render (no hydration
+mismatch); a one-second interval then updates it. When no usable date is supplied it renders
+"Show dates to be confirmed" instead of a countdown. It is wrapped in a `<Suspense
+fallback={null}>` boundary inside the Show Hero section, meaning the hero
 renders immediately and the countdown fills in on the client without blocking the page.
 
 The `ShowCountdown` export is re-exported from `components/show/index.ts`.
