@@ -24,7 +24,9 @@ emits a density srcset of 1x and 2x only, so a 3x screen took the 2x candidate.
   ```
 
 - This supersedes R1.1's 1200 pin. The old `nos-full-colour-horizontal-1200.png` stays in
-  `public/images/nos/`, unreferenced; a follow-up can delete it.
+  `public/images/nos/`. No component uses it any more, but the checked-in logo validation still
+  declares it as `NOS_LOGO_FILES.header` (`contracts/checks/nos-own-brand-chrome/_lib.mjs`), so a
+  follow-up must update that reference before deleting the file.
 
 ## Verification
 
