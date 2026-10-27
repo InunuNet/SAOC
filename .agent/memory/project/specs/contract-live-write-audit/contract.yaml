@@ -1,0 +1,43 @@
+schema: athanor.contract/v1
+slug: contract-live-write-audit
+goal: No contract runs a check that writes to production in the default gate; every real writer is a manual_only entry with an inline reason.
+created_at: '2026-10-28'
+autonomy: high
+features:
+  - id: F1
+    name: classify every writing contract and move real production writers to manual_only
+    status: pending
+goldens:
+  - contracts/checks/live-write-guard/writers-registry.json
+  - contracts/checks/live-write-guard/fixtures/registry.json
+  - contracts/checks/live-write-guard/fixtures/neg/contracts/c.yaml
+  - contracts/checks/live-write-guard/fixtures/pos/contracts/c.yaml
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: meta-assertion over every contract - no real-production writer or unclassified writer runs in assertions.checks, every manual_only entry has id, command and a reason of at least 40 characters, no phases list dangles (red on main with 93 violation rows)
+      command: python3 contracts/checks/live-write-guard/verify_no_ungated_writers.py --root .
+      timeout_seconds: 120
+    - id: A2
+      description: negative control - a fixture contract with a registered live writer in assertions.checks makes the scanner exit non-zero
+      command: '! python3 contracts/checks/live-write-guard/verify_no_ungated_writers.py --root contracts/checks/live-write-guard/fixtures/neg --registry contracts/checks/live-write-guard/fixtures/registry.json'
+    - id: A3
+      description: negative control - the same writer under an empty registry is reported as unclassified, not silently passed
+      command: '! python3 contracts/checks/live-write-guard/verify_no_ungated_writers.py --root contracts/checks/live-write-guard/fixtures/neg --registry contracts/checks/live-write-guard/fixtures/empty-registry.json'
+    - id: A4
+      description: negative control - a manual_only entry with a reason shorter than 40 characters is rejected
+      command: '! python3 contracts/checks/live-write-guard/verify_no_ungated_writers.py --root contracts/checks/live-write-guard/fixtures/negreason --registry contracts/checks/live-write-guard/fixtures/registry.json'
+    - id: A5
+      description: positive control - the same writer moved to manual_only with a reason passes the scanner
+      command: python3 contracts/checks/live-write-guard/verify_no_ungated_writers.py --root contracts/checks/live-write-guard/fixtures/pos --registry contracts/checks/live-write-guard/fixtures/registry.json
+    - id: A6
+      description: ticketing-flow-redesign F1 A9 no longer requires the script PR 124 deletes, and the script is gone (red until PR 124 is merged and A9 is rewritten)
+      command: 'test ! -f scripts/fix-vip-and-weekend-pass-pricing.ts && ! grep -q "test -f scripts/fix-vip-and-weekend-pass-pricing.ts" .agent/memory/project/specs/ticketing-flow-redesign/contract-f1.yaml'
+    - id: A7
+      description: every contract carrying a manual_only block still passes validate --strict, keeps a gated assertion, and shares no id between the gate and manual_only (needs at least one such contract)
+      command: python3 contracts/checks/live-write-guard/verify_manual_only_contracts_validate.py
+      timeout_seconds: 300
+    - id: A8
+      description: CI runs the scanner on PRs and pushes, job live-write-guard in ci.yml, no credentials needed (red until the dev adds it)
+      command: grep -q "contracts/checks/live-write-guard/verify_no_ungated_writers.py" .github/workflows/ci.yml
