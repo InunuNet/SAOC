@@ -20,21 +20,43 @@
 // for the numeric-fabrication failure mode named in the brief, not a
 // general truthfulness check.
 //
-// Usage: node check-refunds-no-fabrication.mjs <url>
+// <script> and <style> payloads are stripped before the text is scanned: framework class
+// strings ("-translate-y-[300%]") and URL escapes ("%20") are not page copy.
+//
+// Usage:
+//   node check-refunds-no-fabrication.mjs <url>
+//   node check-refunds-no-fabrication.mjs --fixture <path-to-html-file>
 
-const url = process.argv[2];
-if (!url) {
-  console.error('usage: check-refunds-no-fabrication.mjs <url>');
-  process.exit(2);
-}
+const args = process.argv.slice(2);
+let html;
+let source;
 
-const res = await fetch(url);
-if (res.status !== 200) {
-  console.error(`FAIL: ${url} did not return HTTP 200 (got ${res.status})`);
-  process.exit(1);
+if (args[0] === '--fixture') {
+  const fs = await import('node:fs/promises');
+  source = args[1];
+  if (!source) {
+    console.error('usage: check-refunds-no-fabrication.mjs --fixture <path>');
+    process.exit(2);
+  }
+  html = await fs.readFile(source, 'utf8');
+} else {
+  source = args[0];
+  if (!source) {
+    console.error('usage: check-refunds-no-fabrication.mjs <url>');
+    process.exit(2);
+  }
+  const res = await fetch(source);
+  if (res.status !== 200) {
+    console.error(`FAIL: ${source} did not return HTTP 200 (got ${res.status})`);
+    process.exit(1);
+  }
+  html = await res.text();
 }
-const html = await res.text();
-const text = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+const text = html
+  .replace(/<script\b[\s\S]*?<\/script\s*>/gi, ' ')
+  .replace(/<style\b[\s\S]*?<\/style\s*>/gi, ' ')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/\s+/g, ' ');
 
 let failed = false;
 
@@ -60,6 +82,6 @@ for (const re of SECTION_MARKERS) {
 }
 
 if (!failed) {
-  console.log(`OK: ${url} is structurally complete and free of fabricated figures`);
+  console.log(`OK: ${source} is structurally complete and free of fabricated figures`);
 }
 process.exit(failed ? 1 : 0);
