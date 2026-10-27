@@ -1,0 +1,58 @@
+schema: athanor.contract/v1
+slug: sponsor-enquiry-both-hosts
+goal: Both the SAOC and National Orchid Show sponsors pages take a sponsorship enquiry through the same on-site form and API, the stored enquiry and the admin notice say which site it came from, and no visitor has to open their own email client.
+created_at: '2026-10-28'
+autonomy: high
+
+features:
+  - id: F2
+    name: NOS /national-show/sponsors hosts the shared enquiry form; source is allowlisted saoc|nos or null; admin notice subject names the site; SAOC form verified
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/goldens/spec.md
+  - .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/goldens/proof-on-main.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Handler and doc builder with injected deps. RED on main - a site outside saoc|nos is stored as source null (item 2). PINs, green on main by design - validation 400s, honeypot, null-coalesced doc shape, body cannot set the site, write failure 500, notification failure still 201 and logged without message text, 429 rate limit (item 3).
+      command: pnpm exec tsx .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/checks/check-handler.mts
+    - id: A2
+      description: Admin notice sender with a fake mailer. RED on main - the saoc and nos subjects are identical ("SAOC") so Lee-Ann cannot tell the sites apart (item 2). PINs - recipients are exactly ADMIN_EMAIL_ALLOWLIST, never the submitter; body siteLabel per site; empty allowlist sends nothing.
+      command: pnpm exec tsx .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/checks/check-admin-notice.mts
+    - id: A3
+      description: RED on main - NOS sponsors page imports and renders exactly one SponsorEnquirySection site="nos", no Button links to mailto, hero/card/empty-state Buttons link to #enquire (item 1). Also pins the shared section renders every field with no mailto. A remaining secondary mailto line is a NOS Design call and is not asserted.
+      command: pnpm exec tsx .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/checks/check-nos-page.mts
+    - id: A4
+      description: Scope guard, green on main by design. Form component, API route, visitor confirmation sender and email are unchanged, the route keeps exactly two sends (no new visitor email), no new enquiry-named product file (not a fork), no new exported copy string in lib/sponsor-enquiry-copy.ts (items 1, 4, 5).
+      command: node .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/checks/check-scope.mjs
+    - id: A5
+      description: Typecheck stays green with the shared form on the NOS page.
+      command: pnpm exec tsc --noEmit
+    - id: A6
+      description: Codex adversarial QA scoped to the actual diff.
+      type: codex_qa
+      target: >-
+        Review ONLY git diff origin/main...HEAD on feat/sponsor-enquiry-both-hosts. Judge, against
+        .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/goldens/spec.md: (1) does the NOS page reuse the existing
+        SponsorEnquirySection and /api/sponsors/enquire with no fork, with primary CTAs on #enquire; (2) is source stored as saoc, nos or
+        null, derived only from the Host and never from the request body; (3) does the admin notice subject name the site while recipients
+        stay the ADMIN_EMAIL_ALLOWLIST; (4) is any new visitor email or new unsourced copy string introduced; (5) would checks A1-A3 fail if
+        each of those changes were reverted. Pre-existing behaviour in unchanged files is out of scope.
+      required: true
+    - id: A7
+      description: browser_deployed_check on the deployed NOS /national-show/sponsors, declared for the triad linter, non-required (it cannot pass behind the beta Basic Auth wall, see gate-hygiene A11). A8 is the real post-deploy proof.
+      type: browser_deployed_check
+      target: .agent/memory/scratch/sponsor-enquiry-both-hosts-browser-manifest.json
+      required: false
+    - id: A8
+      description: gws inbox check on the admin notice, declared for the triad linter, non-required. The email path is touched (subject of the admin notice), so this is applicable; A9 asserts the same thing with its own gws reads.
+      type: gws_inbox_check
+      target: .agent/memory/scratch/sponsor-enquiry-both-hosts-gws-manifest.json
+      required: false
+    - id: A9
+      description: RUN AFTER DEPLOY from the project root (needs .env.local), non-required. Submits one test-marked enquiry per host (beta.saoc.co.za and nos.saoc.co.za), asserts the sponsorEnquiries doc (source, null optionals, status) and the site-identifying admin notice via read-only gws, then deletes exactly those two docs (collection sponsorEnquiries, contactName "E2E-TEST sponsor-enquiry-both-hosts <nonce> <saoc|nos>"). Exit 77 when credentials or gws are missing; the gate then needs --allow-skips.
+      command: node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/checks/check-deployed-e2e.mjs
+      required: false
