@@ -88,3 +88,11 @@ good offers -> rc 0; VIP 999 -> rc 1 (`VIP offer price is 999, want 300`, `wrong
   Accepted limit: default subset mode cannot flag a MISSING expected offer (hub sibling collapse, conference/workshop products not in the fixture).
 - A7 rescoped to the product diff (as gate-hygiene A10). Check-strength gaps on unchanged code are accepted limits, not reviewed:
   ticket-hub-source.ts / ticket-offers.ts / sanity/queries.ts filter strength beyond what A2-A4 replay.
+
+## Round 7 (A6 establishes WHICH buildShowOffers)
+check-page-call-site.mjs additionally requires (comments stripped) a by-name import of buildShowOffers from
+'@/lib/data/national-show-offers', no local `function|const|let|var buildShowOffers`, and no import of the name from any other
+module. Real page on feat 165dd047: PASS. Main (local function, no import): FAIL. Mutants, each FAIL: local function restored
+alongside the import; local const alongside the import; local function with the import's name removed; import removed;
+import re-pointed to another module; second import of the name from elsewhere; import commented out with the local function restored.
+Accepted limits: a call-shaped string literal is not stripped; a barrel re-export of the shared module is not recognised as the shared source.
