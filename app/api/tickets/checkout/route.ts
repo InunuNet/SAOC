@@ -424,7 +424,8 @@ async function fetchSoldOutMessage(): Promise<string> {
 }
 
 // Cap on the request body, checked against Content-Length before the body is buffered.
-const MAX_BODY_BYTES = 32768;
+// This cap is the effective ceiling for attendeeName, which parseLineItems() does not bound.
+const MAX_BODY_BYTES = 131072;
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!isBodyWithinLimit(request.headers.get('content-length'), MAX_BODY_BYTES)) {
