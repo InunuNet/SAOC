@@ -1138,6 +1138,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   }
   .nos-theme .nos-pr-head :is(h2, h3) {
     font-size: 1.875rem;
+    font-weight: 400;
   }
   .nos-theme .nos-pr-title {
     font-size: 15px;
@@ -4364,6 +4365,12 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   font-size: clamp(1.75rem, 1.2rem + 1.6vw, 2.5rem);
   line-height: 1.15;
   margin: 0 0 clamp(20px, 3vw, 32px);
+}
+/* LT-1: the clamp reaches 32px at an 800px viewport (1.2rem + 1.6vw), where it takes the light weight. */
+@media (min-width: 800px) {
+  .nos-theme .nos-hm-h2 {
+    font-weight: 300;
+  }
 }
 .nos-theme .nos-hm-lead {
   font-family: var(--serif);

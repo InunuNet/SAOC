@@ -60,13 +60,15 @@ test.describe('property 1 HTTP gate (real webServer-managed dev server)', () => 
     expect(output.toLowerCase()).not.toContain('soft-404');
   });
 
-  test('negative fixture: a soft-404 (200 + noindex) ticket-rail href fails the gate', async ({
+  // TK-404: an unknown ticket slug used to answer 200 + noindex (a soft-404); it now answers a real
+  // 404, so this fixture fails the gate as a hard 404.
+  test('negative fixture: an unknown ticket slug is a hard 404 and fails the gate', async ({
     baseURL,
   }) => {
     expect(baseURL, 'playwright.config.ts must provide baseURL').toBeTruthy();
     const { code, output } = runChecker(baseURL!, ['--nav-file', TICKETS_SOFT_404_FIXTURE]);
     expect(code).toBe(1);
     expect(output).toContain('/tickets/does-not-exist-fixture-only-soft404');
-    expect(output.toLowerCase()).toContain('soft-404');
+    expect(output.toLowerCase()).not.toContain('soft-404');
   });
 });
