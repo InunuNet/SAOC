@@ -51,7 +51,7 @@ check('legacy request defaults to source topic', JSON.stringify(created.topics) 
 check('legacy document derives source topic', JSON.stringify(subscriberTopics(undefined, 'nos-footer')) === '["nos"]');
 check('topics canonicalised', JSON.stringify(parseNewsletterTopics(['nos', 'saoc', 'nos'], 'saoc-footer')) === '["saoc","nos"]');
 check('empty and unknown topics rejected', parseNewsletterTopics([], 'saoc-footer') === null && parseNewsletterTopics(['unknown'], 'saoc-footer') === null);
-check('resubscribe merges topics', JSON.stringify(resub.topics) === '["saoc","nos"]');
+check('resubscribe takes only the requested topics (consent)', JSON.stringify(resub.topics) === '["nos"]');
 for (const doc of [created, resub]) {
   check('no undefined own props', doc && Object.values(doc).every((v) => v !== undefined));
 }

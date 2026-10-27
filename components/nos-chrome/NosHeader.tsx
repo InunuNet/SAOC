@@ -6,7 +6,7 @@
 // full-colour lockup (links the NOS home), a top row of three click-only disclosure panels
 // (Visit, Programme, Exhibit & trade), Show sponsors, Past shows (withheld in public until there is
 // content, r64) and Contact (SAOC organises the show, so Contact is the SAOC contact), the Tickets
-// call to action, and below 1384px a menu panel that ends with the SAOC credit. Labels, descriptors
+// call to action, and below 1384px a menu panel that ends with the SAOC credit. Labels
 // and order come from nos-nav.ts, which the SAOC site's old show mega carried verbatim; hrefs are
 // shown as their public clean paths (nosPath). There is no SAOC utility bar here (R1.5).
 // Renders the header and the menu panel as siblings so the panel can inert the rest of the page
@@ -230,7 +230,6 @@ export function NosHeader({ nav, saocHomeHref, contactHref }: NosHeaderProps) {
     <li key={link.id}>
       <Link href={nosPath(link.href)} aria-current={current(link.href)}>
         <span className="nh-leaf">{link.label}</span>
-        {link.descriptor && <span className="nh-desc">{link.descriptor}</span>}
       </Link>
     </li>
   );

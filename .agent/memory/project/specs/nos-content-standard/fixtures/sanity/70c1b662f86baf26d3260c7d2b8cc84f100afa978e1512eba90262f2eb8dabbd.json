@@ -1,0 +1,1 @@
+{"query":"\n  *[_type == \"show\" && status == \"past\"] | order(year desc){\n    _id,\n    title,\n    \"slug\": slug.current,\n    year,\n    status,\n    location,\n    entries,\n    exhibitors,\n    awards\n  }\n","params":{},"result":[],"capturedAt":"2026-10-25T23:51:18.452Z"}

@@ -4,7 +4,7 @@
 // supplied no prose for it yet. Instead of a muted "to be confirmed" block the page holds with
 // real content, built only from parts that already exist:
 //
-//   - the show facts (Dates / Host / Venue / Cycle),
+//   - the show facts (Dates / Host / Venue),
 //   - the page's own absence sentence where it has one,
 //   - the existing "Be the first to know" band.
 //

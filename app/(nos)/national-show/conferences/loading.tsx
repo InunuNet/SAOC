@@ -8,7 +8,9 @@ export default function Loading() {
     <NosHero
       route={NOS_ROUTE_HEROES.conferences.route}
       title={NOS_ROUTE_HEROES.conferences.title}
-      lede={NOS_ROUTE_HEROES.conferences.lede}
+      crumbLabel={NOS_ROUTE_HEROES.conferences.title}
+      titleAs="p"
+      actions={<div className="nos-hero-facts-skeleton nos-hero-facts-skeleton--cr" aria-hidden="true" />}
       priority
     />
   );

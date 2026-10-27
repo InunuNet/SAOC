@@ -1,0 +1,1 @@
+{"query":"\n  *[_type == \"sponsor\" && active == true] | order(tier asc, name asc){\n    _id,\n    name,\n    tier,\n    logo,\n    website,\n    description\n  }\n","params":{},"result":[],"capturedAt":"2026-10-25T23:51:20.499Z"}

@@ -173,6 +173,11 @@ const PERMANENT_REDIRECT = 308; // 308, not 301: the method and body survive the
 const RETIRED_SA_EXHIBITORS_PATHS = new Set<string>(['/sa-exhibitors', '/national-show/sa-exhibitors']);
 const MERGED_VENDORS_PATH = '/vendors';
 
+// The Constitution page is now the Memorandum of Incorporation (mission saoc-content-standard, F2).
+// The old path 308s on both hosts, straight to the SAOC origin's new path in one hop.
+const RETIRED_CONSTITUTION_PATH = '/constitution';
+const MOI_PATH = '/memorandum-of-incorporation';
+
 // Host-neutral: served identically on every host, never redirected or rewritten. /admin and
 // /api/admin share one sign-in; /api carries the payment webhooks; /og and /studio are tooling.
 const NEUTRAL_PREFIXES = ['/admin', '/api', '/studio', '/og', '/_next'];
@@ -189,7 +194,7 @@ const NEUTRAL_EXACT = new Set<string>([
 const NOS_OG_PATH = `${NOS_INTERNAL_PREFIX}/og`;
 
 // SAOC-hosted trees: asked for on the NOS host they redirect to the SAOC origin.
-const SAOC_ONLY_EXACT = new Set<string>(['/members', '/constitution', '/judging']);
+const SAOC_ONLY_EXACT = new Set<string>(['/members', MOI_PATH, '/judging']);
 const SAOC_ONLY_PREFIXES = ['/societies', '/events'];
 // Host-neutral content rendered by both sites' chrome (app/(shared)).
 const SHARED_EXACT = new Set<string>(['/privacy', '/terms', '/refunds']);
@@ -247,6 +252,7 @@ function routeNosHost(request: NextRequest): Response {
   const { pathname, search } = request.nextUrl;
 
   if (RETIRED_SA_EXHIBITORS_PATHS.has(pathname)) return redirectTo(nosUrl(MERGED_VENDORS_PATH));
+  if (pathname === RETIRED_CONSTITUTION_PATH) return redirectTo(saocUrl(`${MOI_PATH}${search}`));
   if (SAOC_ONLY_EXACT.has(pathname) || isUnderAny(pathname, SAOC_ONLY_PREFIXES)) {
     return redirectTo(saocUrl(`${pathname}${search}`));
   }
@@ -266,6 +272,7 @@ function routeNosHost(request: NextRequest): Response {
 function routeSaocHost(request: NextRequest): Response {
   const { pathname, search } = request.nextUrl;
   if (RETIRED_SA_EXHIBITORS_PATHS.has(pathname)) return redirectTo(nosUrl(MERGED_VENDORS_PATH));
+  if (pathname === RETIRED_CONSTITUTION_PATH) return redirectTo(saocUrl(`${MOI_PATH}${search}`));
   if (isUnderAny(pathname, SHOW_PREFIXES)) return redirectTo(nosUrl(`${pathname}${search}`));
   return NextResponse.next();
 }

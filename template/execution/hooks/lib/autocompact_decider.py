@@ -236,7 +236,7 @@ def ghostty_inject(surface_id):
 
 def _git_clean():
     try:
-        return _run(["git", "status", "--porcelain"]).strip() == ""
+        return _run(["git", "--no-optional-locks", "status", "--porcelain"]).strip() == ""
     except (OSError, subprocess.SubprocessError):
         return False
 
