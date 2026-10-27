@@ -230,7 +230,7 @@ export default function VendorApprovalConfirmation({
             soon as possible if anything needs correcting before show day.
           </ShellText>
           <ShellDetailRow label="Booth number:">{formatBoothNumber(boothNumber)}</ShellDetailRow>
-          <ShellDetailRow label="Booth type:">{formatOptionalField(getBoothTypeLabel(boothType) ?? boothType)}</ShellDetailRow>
+          <ShellDetailRow label="Booth type:">{formatOptionalField(getBoothTypeLabel(boothType))}</ShellDetailRow>
           {(() => {
             const staffAttendance = resolveStaffAttendanceDisplay({
               staffPerDay,
