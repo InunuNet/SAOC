@@ -1,0 +1,52 @@
+schema: athanor.contract/v1
+slug: gate-hygiene
+goal: Repair the stale SAOC sitemap golden, make isUpcoming() free of Date statics, and add an HTTP-level test that checkout refuses a day-selection position with no chosenDay.
+created_at: '2026-10-28'
+autonomy: high
+
+features:
+  - id: F1
+    name: Sitemap checks green on main and proven to fail on a broken sitemap (test data only)
+    status: pending
+  - id: F2
+    name: isUpcoming() uses no Date statics, results unchanged (product change in lib/sast-date.ts only)
+    status: pending
+  - id: F3
+    name: Mocked-request test that POST /api/tickets/checkout rejects requiresDaySelection with no chosenDay (test only)
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/backlog-wave-1028/gate-hygiene/goldens/sitemap-golden-fix.patch
+  - .agent/memory/project/specs/backlog-wave-1028/gate-hygiene/goldens/sast-isupcoming-table.json
+  - .agent/memory/project/specs/backlog-wave-1028/gate-hygiene/goldens/proof-on-main.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: F1 golden lists /memorandum-of-incorporation and no longer /constitution (fails on main, stale golden)
+      command: grep -q '"/memorandum-of-incorporation"' contracts/golden/saoc-seo-polish/sitemap-expected.json
+    - id: A2
+      description: F1 saoc-seo-polish sitemap check passes (fails on main)
+      command: pnpm exec tsx contracts/checks/saoc-seo-polish/check-sitemap-routes.mts
+    - id: A3
+      description: F1 audit-fixes NOS sitemap check still passes (already green on main; regression guard)
+      command: pnpm exec tsx contracts/checks/audit-fixes-2026-10-25/check-sitemap-routes.mts
+    - id: A4
+      description: F1 both sitemap checks pass unmutated and fail on four deliberately broken sitemaps (fails on main at the baseline)
+      command: pnpm exec tsx .agent/memory/project/specs/backlog-wave-1028/gate-hygiene/checks/check-sitemap-mutations.mts
+    - id: A5
+      description: F2 isUpcoming has no Date.parse/UTC/now and 21 table rows match under real and statics-less Date (fails on main)
+      command: pnpm exec tsx .agent/memory/project/specs/backlog-wave-1028/gate-hygiene/checks/check-isupcoming-no-date-statics.mts
+    - id: A6
+      description: F3 checkout route returns the F5 400 for a day-selection type with no chosenDay, 4xx for null, no Firestore write, no outbound payment call (regression guard; passes on main, A7 proves it can fail)
+      command: pnpm exec tsx .agent/memory/project/specs/backlog-wave-1028/gate-hygiene/checks/check-checkout-day-null.mts
+    - id: A7
+      description: F3 mutation proof, A6 fails when the route day guard is disabled
+      command: pnpm exec tsx .agent/memory/project/specs/backlog-wave-1028/gate-hygiene/checks/check-checkout-day-mutation.mts
+    - id: A8
+      description: Scope guard, the only product file changed under app, lib, components or sanity is lib/sast-date.ts (vacuous on main, guards the dev diff)
+      command: "! git diff --name-only origin/main -- app lib components sanity | grep -qv '^lib/sast-date.ts$'"
+    - id: A9
+      description: Checks left no mutation behind, route and sitemap sources equal origin/main
+      command: git diff --quiet origin/main -- app/api/tickets/checkout/route.ts lib/saoc-sitemap-routes.ts lib/nos-sitemap-routes.ts
