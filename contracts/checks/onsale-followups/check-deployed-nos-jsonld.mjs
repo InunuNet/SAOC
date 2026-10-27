@@ -32,11 +32,30 @@ const nodes = [...html.matchAll(/<script[^>]*type="application\/ld\+json"[^>]*>(
 const offers = nodes.filter((n) => n && n['@type'] === 'Event').flatMap((n) => (Array.isArray(n.offers) ? n.offers : n.offers ? [n.offers] : []));
 if (offers.length === 0) { console.error('FAIL: no Event JSON-LD offers on /national-show'); process.exit(1); }
 const slugOf = (o) => String(o.url ?? '').split('/').pop();
+// Expected offer set. EXPECT_OFFERS="slug:price,slug:price" selects EXACT mode (offer set must equal it). Without it the
+// set is derived from the recorded admission fixture's active-show types (PR #128) and checked as a SUBSET: any offer
+// outside it, or with a different price, fails; an expected type that is absent does not (the hub collapses siblings
+// and the live catalogue may carry conference or workshop products the fixture does not).
+import { readFileSync } from 'node:fs';
+const FIXTURE = '.agent/memory/project/specs/nos-content-standard/fixtures/sanity/ef011a654c90e72b36f84ac6fa8936a9bbeff6f7f58305ae53256a00766b58cb.json';
+const ACTIVE_SHOW = process.env.ACTIVE_SHOW_ID ?? 'show-19-2027';
+const exact = Boolean(process.env.EXPECT_OFFERS);
+const expected = new Map(
+  exact
+    ? process.env.EXPECT_OFFERS.split(',').map((kv) => kv.trim().split(':')).map(([slug, price]) => [slug, Number(price)])
+    : JSON.parse(readFileSync(FIXTURE, 'utf8')).result.filter((t) => t.show?._ref === ACTIVE_SHOW && !t.demo).map((t) => [t.slug, t.price])
+);
+expected.set('vip', EXPECT_VIP);
 const failures = [];
-const vip = offers.find((o) => slugOf(o) === 'vip');
-if (!vip) failures.push('no VIP offer');
-else if (Number(vip.price) !== EXPECT_VIP) failures.push(`VIP offer price is ${vip.price}, want ${EXPECT_VIP}`);
-if (offers.some((o) => Number(o.price) === WRONG_PRICE)) failures.push(`an offer carries the wrong-show price ${WRONG_PRICE}`);
-if (offers.some((o) => slugOf(o) === WRONG_SLUG)) failures.push(`an offer links the wrong-show type ${WRONG_SLUG}`);
+const got = new Map(offers.map((o) => [slugOf(o), Number(o.price)]));
+if (!got.has('vip')) failures.push('no VIP offer');
+for (const [slug, price] of got) {
+  if (price === WRONG_PRICE) failures.push(`offer ${slug} carries the wrong-show price ${WRONG_PRICE}`);
+  if (slug === WRONG_SLUG) failures.push(`an offer links the wrong-show type ${WRONG_SLUG}`);
+  if (!expected.has(slug)) failures.push(`unexpected offer ${slug} (${price}) is not in the expected active-show set`);
+  else if (expected.get(slug) !== price) failures.push(`offer ${slug} price is ${price}, want ${expected.get(slug)}`);
+}
+if (exact) for (const slug of expected.keys()) if (!got.has(slug)) failures.push(`expected offer ${slug} is missing (exact mode)`);
+if (got.size !== offers.length) failures.push('duplicate offer slugs in the JSON-LD');
 if (failures.length) { for (const f of failures) console.error(`FAIL: ${f}`); process.exit(1); }
-console.log(`PASS: ${ORIGIN}/national-show JSON-LD, ${offers.length} offer(s), VIP ${vip.price}, no wrong-show offer`);
+console.log(`PASS: ${ORIGIN}/national-show JSON-LD, ${offers.length} offer(s) all inside the expected active-show set (${exact ? 'exact' : 'subset'} mode), VIP ${got.get('vip')}`);
