@@ -7,6 +7,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 
 const SAOC_CHECK = 'contracts/checks/saoc-seo-polish/check-sitemap-routes.mts';
 const NOS_CHECK = 'contracts/checks/audit-fixes-2026-10-25/check-sitemap-routes.mts';
+const BUILT_CHECK = '.agent/memory/project/specs/backlog-wave-1028/gate-hygiene/checks/check-built-sitemap.mts';
 const mutations = [
   { id: 'M1 drop /about from SAOC_STATIC_ROUTES', file: 'lib/saoc-sitemap-routes.ts', from: "  { path: '/about', changeFrequency: 'monthly', priority: 0.8 },\n", to: '', check: SAOC_CHECK },
   { id: 'M2 list /media-kit (gated, must stay out) in SAOC sitemap', file: 'lib/saoc-sitemap-routes.ts', from: "  { path: '/about',", to: "  { path: '/media-kit', changeFrequency: 'yearly', priority: 0.1 },\n  { path: '/about',", check: SAOC_CHECK },
@@ -14,6 +15,9 @@ const mutations = [
   { id: 'M4 drop /contact from NOS_EXTRA_STATIC_ROUTES', file: 'lib/nos-sitemap-routes.ts', from: "  { path: '/contact', changeFrequency: 'yearly', priority: 0.5 },\n", to: '', check: NOS_CHECK },
   { id: 'M5 add /does-not-exist to SAOC_STATIC_ROUTES', file: 'lib/saoc-sitemap-routes.ts', from: "  { path: '/about',", to: "  { path: '/does-not-exist', changeFrequency: 'yearly', priority: 0.1 },\n  { path: '/about',", check: SAOC_CHECK },
   { id: 'M6 add /does-not-exist to NOS_EXTRA_STATIC_ROUTES', file: 'lib/nos-sitemap-routes.ts', from: "  { path: '/contact',", to: "  { path: '/does-not-exist', changeFrequency: 'yearly', priority: 0.1 },\n  { path: '/contact',", check: NOS_CHECK },
+  { id: 'M7 drop ...extraStaticRoutes from the NOS sitemap wiring (built-output check)', file: 'app/sitemap.ts', from: '    ...extraStaticRoutes,\n', to: '', check: BUILT_CHECK },
+  { id: 'M8 drop ...staticRoutes from the SAOC sitemap wiring (built-output check)', file: 'app/sitemap.ts', from: 'return [...staticRoutes, ...societyRoutes, ...eventRoutes];', to: 'return [...societyRoutes, ...eventRoutes];', check: BUILT_CHECK },
+  { id: 'M9 drop the manifest-derived show routes from the NOS sitemap wiring (built-output check)', file: 'app/sitemap.ts', from: '    ...buildNationalShowChildRoutes(baseUrl, showPastShows),\n', to: '', check: BUILT_CHECK },
 ];
 
 const failures: string[] = [];
@@ -24,7 +28,7 @@ for (const sig of ['SIGINT', 'SIGTERM'] as const) process.on(sig, () => { restor
 
 const run = (check: string) => spawnSync('pnpm', ['exec', 'tsx', check], { encoding: 'utf8' });
 
-for (const check of [SAOC_CHECK, NOS_CHECK]) {
+for (const check of [SAOC_CHECK, NOS_CHECK, BUILT_CHECK]) {
   const base = run(check);
   if (base.status !== 0) failures.push(`baseline ${check} does not pass unmutated: ${(base.stderr || base.stdout).slice(0, 300)}`);
 }

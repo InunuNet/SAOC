@@ -3,11 +3,11 @@
 // Basic Auth wall (backlog 2026-10-07, execution/browser_deployed_check.sh:188). Credentials are read from
 // BETA_BASIC_AUTH_USER / BETA_BASIC_AUTH_PASSWORD inside this script and never printed.
 // Run as: node --env-file-if-exists=.env.local <this file>   (from the project root, after the change is deployed to beta)
-// Exit 0 PASS, 1 FAIL (a real finding), 2 inconclusive (credentials missing or beta unreachable).
+// Exit 0 PASS, 1 FAIL (a real finding), 77 inconclusive (credentials missing or beta unreachable): contract.py reads 77 as a skip.
 const ORIGIN = 'https://beta.saoc.co.za';
 const user = process.env.BETA_BASIC_AUTH_USER;
 const pass = process.env.BETA_BASIC_AUTH_PASSWORD;
-if (!user || !pass) { console.error('INCONCLUSIVE: BETA_BASIC_AUTH_USER / BETA_BASIC_AUTH_PASSWORD not set (run from the project root with .env.local)'); process.exit(2); }
+if (!user || !pass) { console.error('INCONCLUSIVE: BETA_BASIC_AUTH_USER / BETA_BASIC_AUTH_PASSWORD not set (run from the project root with .env.local)'); process.exit(77); }
 
 let res;
 let html;
@@ -16,7 +16,7 @@ try {
   html = await res.text();
 } catch (error) {
   console.error(`INCONCLUSIVE: could not reach ${ORIGIN}/events (${error.name})`);
-  process.exit(2);
+  process.exit(77);
 }
 if (res.status !== 200) { console.error(`FAIL: ${ORIGIN}/events returned ${res.status}, want 200`); process.exit(1); }
 
