@@ -12,7 +12,7 @@ import {
   type CartAttendee,
 } from '@/lib/cart';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
-import { emptyAttendee, validateAttendees } from '@/components/tickets/cartValidation';
+import { emptyAttendee, keepFlagged, validateAttendees } from '@/components/tickets/cartValidation';
 import type { AttendeeFieldErrors } from '@/components/tickets/CartAttendeeFields';
 import type { TicketTypeCardData } from '@/components/tickets/TicketTypeCard';
 
@@ -67,7 +67,26 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
     field: keyof CartAttendee,
     value: string
   ) {
-    setAttendees((prev) => prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)));
+    const next = attendees.map((row, i) => (i === index ? { ...row, [field]: value } : row));
+    setAttendees(next);
+    // After a failed submit, re-validate as the buyer corrects: a fixed field drops its error,
+    // and a field that was not already flagged never gains one while typing.
+    if (Object.keys(attendeeErrors).length > 0) {
+      setAttendeeErrors(keepFlagged(attendeeErrors, validateCurrent(next)));
+    }
+  }
+
+  function validateCurrent(rows: CartAttendee[]): AttendeeFieldErrors {
+    return validateAttendees([ticketType], { [ticketType.slug]: quantity }, {
+      [ticketType.slug]: rows,
+    });
+  }
+
+  // Runs on every submit attempt, ahead of the day check, so one summary covers both.
+  function validate(): boolean {
+    const rowErrors = validateCurrent(attendees);
+    setAttendeeErrors(rowErrors);
+    return Object.keys(rowErrors).length === 0;
   }
 
   async function submit() {
@@ -76,11 +95,6 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
     setErrorStatus(null);
 
     const quantities = { [ticketType.slug]: quantity };
-    const rowErrors = validateAttendees([ticketType], quantities, {
-      [ticketType.slug]: attendees,
-    });
-    setAttendeeErrors(rowErrors);
-    if (Object.keys(rowErrors).length > 0) return;
 
     const chosenDays =
       ticketType.requiresDaySelection && day
@@ -152,6 +166,7 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
     setQuantity,
     setDay,
     updateAttendeeField,
+    validate,
     submit,
   };
 }
