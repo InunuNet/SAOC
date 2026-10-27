@@ -15,3 +15,9 @@ Item 2 (isUpcoming)
 Item 3 (checkout route)
 - This is a regression guard for behaviour main already has, so check-checkout-day-null.mts PASSES on main by design. Its failure proof is the mutation: with the guard `if (!lineItem.chosenDay) {` disabled it FAILs (`chosenDay absent: got 500 ... want 400 "A day selection is required..."`). check-checkout-day-mutation.mts automates that.
 - Finding: `chosenDay: null` never reaches the guard; parseLineItems refuses it first (generic 400). Both are 4xx with no write; the check asserts 4xx for null and the exact F5 message for the absent case.
+
+## Codex A10 round 1 rulings (2026-10-28)
+- DISMISSED: lib/sast-date.ts:42 numeric `date` (4102444800000) changes Date.parse(number) vs new Date(number). isUpcoming's `date` is typed `string`; a number is outside the contract, so the table stays string-only.
+- FIXED: the NOS sitemap check now asserts NOS_EXTRA_STATIC_ROUTES equals ["/contact"] exactly; mutants M5 (SAOC) and M6 (NOS) add /does-not-exist and both checks fail on them. (The SAOC check already compared the exact set.)
+- FIXED: checkout fixture now has two day-required types (weekend-pass, workshop-pass) plus day-optional vip; mutants M2 (flag derived from the weekend-pass slug) and M3 (all types day-required) both fail the check, along with M1 (guard disabled).
+- FIXED: the check now asserts zero Firestore write attempts.
