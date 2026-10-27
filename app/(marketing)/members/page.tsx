@@ -5,6 +5,7 @@ import { RouteHero } from '@/components/ui/RouteHero';
 import { buildPageMetadata } from '@/lib/seo';
 import { CTASection } from '@/components/ui/CTASection';
 import { DocumentLayout } from '@/components/ui/DocumentLayout';
+import { DraftNotice } from '@/components/ui/DraftNotice';
 import { SuggestionForm } from '@/components/members/SuggestionForm';
 
 const LEDE =
@@ -41,13 +42,10 @@ export default function MembersPage() {
       >
         <section className="doc-section">
           <div className="doc-prose">
-            <div data-placeholder="true" className="border border-rule bg-bone px-6 py-5">
-              <p>
-                <strong className="font-medium text-ink">Not yet available.</strong> Member login
-                and the Members Portal itself have not been built for this site yet. This page will
-                be updated once they are.
-              </p>
-            </div>
+            <DraftNotice leadIn="Not yet available.">
+              Member login and the Members Portal itself have not been built for this site yet.
+              This page will be updated once they are.
+            </DraftNotice>
             <p>
               The Members Portal will be a restricted area for paid-up SAOC members, separate from
               the public-facing pages. It will provide member authentication and account
