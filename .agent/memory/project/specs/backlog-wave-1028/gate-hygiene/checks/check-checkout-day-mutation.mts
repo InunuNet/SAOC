@@ -9,7 +9,7 @@ const CHECK = '.agent/memory/project/specs/backlog-wave-1028/gate-hygiene/checks
 const original = readFileSync(ROUTE, 'utf8');
 const mutants = [
   { id: 'M1 day guard disabled', from: 'if (!lineItem.chosenDay) {', to: 'if (false && !lineItem.chosenDay) {' },
-  { id: 'M2 requiresDaySelection derived from one slug, not the CMS flag', from: 'requiresDaySelectionByType[slug] = ticketTypeDoc.requiresDaySelection === true;', to: "requiresDaySelectionByType[slug] = slug === 'weekend-pass';" },
+  { id: 'M2 requiresDaySelection derived from a fixed slug list, not the CMS flag', from: 'requiresDaySelectionByType[slug] = ticketTypeDoc.requiresDaySelection === true;', to: "requiresDaySelectionByType[slug] = slug === 'weekend-pass' || slug === 'workshop-pass';" },
   { id: 'M3 every type treated as day-required', from: 'requiresDaySelectionByType[slug] = ticketTypeDoc.requiresDaySelection === true;', to: 'requiresDaySelectionByType[slug] = true;' },
   { id: 'M4 day guard checks only the first line item', from: 'for (const lineItem of lineItems) {\n    if (requiresDaySelectionByType[lineItem.ticketType]) {', to: 'for (const lineItem of lineItems.slice(0, 1)) {\n    if (requiresDaySelectionByType[lineItem.ticketType]) {' },
 ];

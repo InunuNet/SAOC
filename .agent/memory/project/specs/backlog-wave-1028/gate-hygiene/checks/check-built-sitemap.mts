@@ -16,19 +16,24 @@ process.env.NEXT_PUBLIC_SANITY_PROJECT_ID = 'mockproj';
 process.env.SANITY_FIXTURE_MODE = 'off';
 
 let host = 'saoc.test';
+// One society and one event, keyed by the exact query text the sitemap sends; every other query is empty.
+const rows: Record<string, unknown> = {};
 const emptyDoc = { get: async () => ({ exists: false, data: () => undefined }) };
 const emptyCollection = { doc: () => emptyDoc, where: () => emptyCollection, get: async () => ({ docs: [], empty: true }) };
 const load = (Module as unknown as { _load: (req: string, parent: unknown, isMain: boolean) => unknown })._load;
 (Module as unknown as { _load: unknown })._load = function (req: string, parent: unknown, isMain: boolean) {
   const real = () => load(req, parent, isMain) as object;
   if (req === 'next/headers') return { ...real(), headers: async () => new Headers({ host }), draftMode: async () => ({ isEnabled: false }) };
-  if (req === 'next-sanity') return { ...real(), createClient: () => ({ config: () => ({ useCdn: true }), fetch: async () => [] }) };
+  if (req === 'next-sanity') return { ...real(), createClient: () => ({ config: () => ({ useCdn: true }), fetch: async (query: string) => rows[query] ?? [] }) };
   if (req === 'firebase-admin/app') return { ...real(), getApps: () => [{}] };
   if (req === 'firebase-admin/firestore') return { ...real(), getFirestore: () => ({ collection: () => emptyCollection }) };
   return load(req, parent, isMain);
 };
 
 const here = (rel: string) => pathToFileURL(path.resolve(rel)).href;
+const queries = (await import(here('sanity/queries.ts'))) as { societySlugsQuery: string; eventSlugsQuery: string };
+rows[queries.societySlugsQuery] = [{ slug: 'test-society', updatedAt: '2026-10-01T00:00:00Z' }];
+rows[queries.eventSlugsQuery] = [{ slug: 'test-event', updatedAt: '2026-10-02T00:00:00Z' }];
 const sitemap = ((await import(here('app/sitemap.ts'))) as { default: () => Promise<{ url: string }[]> }).default;
 const { nosPath } = (await import(here('lib/nos-paths.ts'))) as { nosPath: (p: string) => string };
 const { PAST_SHOWS_HREF } = (await import(here('lib/data/past-shows.ts'))) as { PAST_SHOWS_HREF: string };
@@ -45,6 +50,7 @@ const pathsOf = (entries: { url: string }[], origin: string) => {
 // SAOC host: the static paths are exactly the golden; dynamic /societies/<slug> and /events/<slug> come from Sanity (empty here).
 host = 'saoc.test';
 const saoc = pathsOf(await sitemap(), SAOC_ORIGIN);
+for (const dynamic of ['/societies/test-society', '/events/test-event']) if (!saoc.includes(dynamic)) failures.push(`SAOC built sitemap is missing the Sanity-driven ${dynamic}`);
 const saocStatic = saoc.filter((p) => !p.startsWith('/societies/') && !p.startsWith('/events/'));
 if (JSON.stringify([...saocStatic].sort()) !== JSON.stringify([...golden.include].sort())) failures.push(`SAOC built sitemap statics ${JSON.stringify(saocStatic.sort())} != golden ${JSON.stringify(golden.include)}`);
 for (const bad of Object.keys(golden.exclude)) if (saoc.includes(bad)) failures.push(`SAOC built sitemap lists excluded ${bad}`);
@@ -58,6 +64,9 @@ const missing = wanted.filter((p) => !nos.includes(p));
 if (missing.length) failures.push(`NOS built sitemap is missing manifest routes: ${missing.join(',')}`);
 if (!nos.includes('/contact')) failures.push('NOS built sitemap is missing /contact');
 for (const shared of ['/privacy', '/terms', '/refunds']) if (nos.includes(shared)) failures.push(`NOS built sitemap lists ${shared}`);
+// With no listed ticket cards the NOS sitemap carries no /tickets/ entry (the cards, not raw ticketType docs, drive them).
+const tickets = nos.filter((p) => p.startsWith('/tickets/'));
+if (tickets.length) failures.push(`NOS built sitemap lists /tickets/ paths with no ticket cards: ${tickets.join(',')}`);
 if (new Set(nos).size !== nos.length) failures.push('NOS built sitemap has duplicate paths');
 const unexpected = nos.filter((p) => !wanted.includes(p) && p !== '/contact' && !p.startsWith('/tickets/') && !p.startsWith(nosPath('/national-show/archive/')) && p !== nosPath(PAST_SHOWS_HREF));
 if (unexpected.length) failures.push(`NOS built sitemap has unexpected paths: ${unexpected.join(',')}`);

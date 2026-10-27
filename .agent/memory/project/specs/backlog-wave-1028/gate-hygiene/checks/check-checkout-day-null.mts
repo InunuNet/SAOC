@@ -18,7 +18,9 @@ const DAY_TYPE = { _id: 't1', name: 'Weekend Pass', slug: 'weekend-pass', demo: 
 const FLAT_TYPE = { ...DAY_TYPE, slug: 'vip', requiresDaySelection: false };
 // Two day-required types with different slugs (a guard keyed on one slug must not pass) and one day-optional type.
 const DAY_TYPE_2 = { ...DAY_TYPE, _id: 't3', name: 'Workshop Pass', slug: 'workshop-pass' };
-const TYPES: Record<string, unknown> = { 'weekend-pass': DAY_TYPE, 'workshop-pass': DAY_TYPE_2, vip: FLAT_TYPE };
+// The real day-visitor slug has its own pooled-capacity branch in the route; it must hit the same day guard.
+const DAY_TYPE_3 = { ...DAY_TYPE, _id: 't4', name: 'Day Visitor', slug: 'day-visitor' };
+const TYPES: Record<string, unknown> = { 'weekend-pass': DAY_TYPE, 'workshop-pass': DAY_TYPE_2, 'day-visitor': DAY_TYPE_3, vip: FLAT_TYPE };
 
 const fakeSanity = {
   createClient: () => ({
@@ -65,6 +67,7 @@ const WANT = 'A day selection is required for this ticket type.';
 for (const [label, item] of [
   ['weekend-pass chosenDay absent', { ticketType: 'weekend-pass', ...person }],
   ['workshop-pass chosenDay absent', { ticketType: 'workshop-pass', ...person }],
+  ['day-visitor chosenDay absent', { ticketType: 'day-visitor', ...person }],
 ] as const) {
   const r = await post(item);
   if (r.status !== 400 || r.body.error !== WANT) failures.push(`${label}: got ${r.status} ${JSON.stringify(r.body)}, want 400 "${WANT}"`);
@@ -79,7 +82,7 @@ for (const [label, items] of MULTI) {
   if (r.status !== 400 || r.body.error !== WANT) failures.push(`multi-item ${label}: got ${r.status} ${JSON.stringify(r.body)}, want 400 "${WANT}"`);
 }
 // chosenDay: null is refused earlier by parseLineItems (400) — still a 4xx with nothing written.
-for (const slug of ['weekend-pass', 'workshop-pass']) {
+for (const slug of ['weekend-pass', 'workshop-pass', 'day-visitor']) {
   const nul = await post({ ticketType: slug, chosenDay: null, ...person });
   if (nul.status < 400 || nul.status >= 500) failures.push(`${slug} chosenDay null: got ${nul.status}, want a 4xx`);
 }

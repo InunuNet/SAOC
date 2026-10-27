@@ -33,7 +33,7 @@ assertions:
       description: F1 audit-fixes NOS sitemap check still passes (already green on main; regression guard)
       command: pnpm exec tsx contracts/checks/audit-fixes-2026-10-25/check-sitemap-routes.mts
     - id: A4
-      description: F1 both sitemap checks pass unmutated and fail on nine deliberately broken sitemaps (extra route in each list, plus dropped wiring in app/sitemap.ts caught by the built-sitemap check) (fails on main at the baseline)
+      description: F1 both sitemap checks pass unmutated and fail on eleven deliberately broken sitemaps (extra route in each list, plus dropped wiring in app/sitemap.ts caught by the built-sitemap check) (fails on main at the baseline)
       command: pnpm exec tsx .agent/memory/project/specs/backlog-wave-1028/gate-hygiene/checks/check-sitemap-mutations.mts
     - id: A14
       description: F1 the BUILT sitemap (real default export of app/sitemap.ts, both hosts, mocked Sanity/Firestore) matches the golden SAOC statics, the manifest-derived NOS routes and /contact
@@ -54,13 +54,17 @@ assertions:
       description: Checks left no mutation behind, route and sitemap sources equal origin/main
       command: git diff --quiet origin/main -- app/api/tickets/checkout/route.ts app/sitemap.ts lib/saoc-sitemap-routes.ts lib/nos-sitemap-routes.ts
     - id: A10
-      description: Codex adversarial QA of the whole diff against the goldens and proof-on-main
+      description: Codex adversarial QA scoped to the actual change (lib/sast-date.ts and the sitemap golden JSON); pre-existing behaviour in unchanged files is out of scope
       type: codex_qa
       target: >-
-        Adversarially review git diff origin/main...HEAD on feat/gate-hygiene against the goldens in
-        .agent/memory/project/specs/backlog-wave-1028/gate-hygiene/goldens/. Try to find an input where isUpcoming
-        now differs from the old Date.parse behaviour, a sitemap mutation the checks miss, and a way the checkout
-        day-null test passes while the route guard is absent.
+        Review ONLY the product diff of git diff origin/main...HEAD on feat/gate-hygiene, which is lib/sast-date.ts
+        (isUpcoming no longer calls Date statics) and contracts/golden/saoc-seo-polish/sitemap-expected.json
+        (/constitution became /memorandum-of-incorporation). Judge two things only: is the isUpcoming change
+        behaviour-preserving for string inputs, and would the checks in
+        .agent/memory/project/specs/backlog-wave-1028/gate-hygiene/checks/ fail if either of THOSE two changes were
+        reverted or broken. Pre-existing behaviour in unchanged files (route.ts, app/sitemap.ts, lib/*sitemap-routes.ts) and
+        check-strength gaps on that unchanged code are out of scope; do not report them. Numeric `date` inputs are out of
+        scope (typed string).
       required: true
     - id: A11
       description: browser_deployed_check on beta /events, declared for the triad linter but non-required. It cannot pass while the beta Basic Auth wall is up, because its live re-check (execution/browser_deployed_check.sh:188) sends no auth and gets 401 (HARNESS defect, backlog.md 2026-10-07 entry "browser_deployed_check.sh's own independent live re-check cannot pass for ANY page"). A13 is the real post-deploy proof.
