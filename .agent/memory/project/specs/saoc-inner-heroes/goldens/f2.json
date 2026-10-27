@@ -1,0 +1,66 @@
+{
+  "_doc": "Golden for contract-f2 (mission saoc-inner-heroes, F2: HM-5, HM-7, HM-8, /members note, HM-6 and /events/[slug] candidate sheets). Source: NOS Design 2026-10-26 '#116 (9b8a1e63) beta pass' (comms.md). Extends goldens/crop-map.json (f1); the f2 gates read both through checks/f2-lib.mjs.",
+  "thresholdOverrides": {
+    "bloomCleanZoneEnd": 0.34,
+    "typeBandFromWidth": 1024,
+    "typeBandSlackPx": 192,
+    "focalZoneEnd": 0.39,
+    "focalAlphaMax": 0.1,
+    "ledeContrastMin": 4.5,
+    "eyebrowContrastMin": 4.5,
+    "h1ContrastMin": 4.5
+  },
+  "hm5": {
+    "ruling": "HM-5: keep the same end, ease the ramp: 0 @34%, .06 @38%, .16 @42%, .32 @45%, .52 @48%, .70 @50.5%, .80 @52%. Sage rgb(34 40 31) only. Below 768 the scrim stays display:none.",
+    "stops": [[0, 34], [0.06, 38], [0.16, 42], [0.32, 45], [0.52, 48], [0.7, 50.5], [0.8, 52]],
+    "alphaTolerance": 0.005,
+    "positionTolerancePct": 0.05,
+    "sage": [34, 40, 31],
+    "viewports": [{ "name": "1440", "width": 1440, "height": 900 }, { "name": "2056", "width": 2056, "height": 1200 }],
+    "focalAlpha": {
+      "routes": ["/sponsors", "/about"],
+      "zone": "left 0-39% of the hero: where the ruled stops stay at or under .1 (.085 at 39%). NOS Design named the focal centre 'lip/column' without coordinates; 39% is this contract's reading and is an open question (spec-f2.md).",
+      "viewports": [{ "name": "1440@2", "width": 1440, "height": 900, "dsf": 2 }, { "name": "2056@2", "width": 2056, "height": 1200, "dsf": 2 }]
+    }
+  },
+  "typographicNow": ["/events/submit", "/__saoc-404-probe"],
+  "hm8": {
+    "ruling": "The typographic band sizes to its content at >= 1024: padding-block clamp(64px, 6vw, 96px), no min-height. Gate: band height <= content + 192 at 1440 and 2056. < 768 unchanged. LG-RF stays green.",
+    "paddingBlock": "clamp(64px, 6vw, 96px)",
+    "routes": ["/members", "/privacy", "/terms", "/refunds", "/memorandum-of-incorporation", "/media-kit", "/events/submit", "/__saoc-404-probe"]
+  },
+  "eventFacts": {
+    "route": "/events/[slug]",
+    "ruling": "HM-7: the facts values are centred in their cells under a left-aligned h1. Left-align them to the h1's edge (one axis). The hero keeps its current photograph for now.",
+    "viewports": [{ "name": "2056", "width": 2056, "height": 1200 }, { "name": "1440", "width": 1440, "height": 900 }, { "name": "390", "width": 390, "height": 844 }]
+  },
+  "membersNote": {
+    "route": "/members",
+    "ruling": "P3: the 'Not yet available' note gets the legal draft-notice treatment: plain p, bold lead-in, 1px rule below, border 0, transparent. Text verbatim.",
+    "source": "app/(shared)/refunds/page.tsx:82-88 (the legal draft notice: <p> with a <strong> lead-in); comms.md 10-25 LG-RF item 3: 'sans 15px, muted ink, the bold lead-in kept, and a 1px rule below it. No border, no fill, no box.'",
+    "leadIn": "Not yet available.",
+    "text": "Not yet available. Member login and the Members Portal itself have not been built for this site yet. This page will be updated once they are.",
+    "viewports": [{ "name": "1440", "width": 1440, "height": 900 }, { "name": "390", "width": 390, "height": 844 }]
+  },
+  "sheets": {
+    "dir": ".tmp/sandbox/heroes2-sheets",
+    "manifest": ".tmp/sandbox/heroes2-sheets/manifest.json",
+    "note": "HM-6 and the /events/[slug] cut are NOT implemented in f2. The deliverable is candidate sheets for NOS Design's pick. Each candidate has an in-situ sheet (scrim, h1, chip) at 1440@2 and a 1:1 crop of the left 44% at 1440@2 showing petal veining.",
+    "sourceDims": { "orchid-violet.jpg": [7327, 4885], "orchid-dark.jpg": [5184, 3456], "orchid-purple.jpg": [5308, 4160] },
+    "inSituWidthPx": 2880,
+    "cropWidthPx": 1267,
+    "cropWidthTolerancePx": 3,
+    "candidates": [
+      { "id": "societies-slug-a", "route": "/societies/[slug]", "kind": "photo", "source": "orchid-violet.jpg", "flip": true, "minRectWidth": 4082, "mustNotUse": ["about", "contact"], "ruling": "HM-6 (a): the violet top-right bloom, flipped so it sits in the left 44%; window >= 4082 wide; not /about's centre bloom or /contact's hanging bloom." },
+      { "id": "societies-slug-b", "route": "/societies/[slug]", "kind": "typographic", "ruling": "HM-6 (b): a typographic PageHero like /members." },
+      { "id": "events-slug-c1", "route": "/events/[slug]", "kind": "photo", "sources": ["orchid-dark.jpg", "orchid-purple.jpg", "orchid-violet.jpg"], "mustDifferFrom": ["home-dark", "sponsors-dark-flip"], "ruling": "HM-7: one cut distinct from home's dark and /sponsors' dark-flip. Pink and yellow stay retired." }
+    ],
+    "existingRects": {
+      "about": ["orchid-violet.jpg", 2300, 1100, 7327, 4000],
+      "contact": ["orchid-violet.jpg", 0, 1900, 4112, 3720],
+      "home-dark": ["orchid-dark.jpg", 0, 487, 5184, 2968],
+      "sponsors-dark-flip": ["orchid-dark.jpg", 0, 790, 5184, 2560]
+    },
+    "maxIoUWithExisting": 0.5
+  }
+}
