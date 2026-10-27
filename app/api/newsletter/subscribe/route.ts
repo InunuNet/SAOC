@@ -2,33 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore } from 'firebase-admin/firestore';
 
 import { NEWSLETTER_COPY } from '@/components/chrome/newsletter-copy';
-import { clientIpFromForwardedFor } from '@/lib/client-ip';
 import { initAdmin } from '@/lib/firebase-admin';
 import { generateUnsubscribeToken } from '@/lib/newsletter';
 import {
   handleNewsletterSubscribe,
   NEWSLETTER_MIN_SUCCESS_RESPONSE_MS,
-  NEWSLETTER_RATE_LIMIT_WINDOW_MS,
 } from '@/lib/newsletter-handler';
 import { padToFloor, toNewsletterResponse } from '@/lib/newsletter-http';
-import {
-  createAttemptStore,
-  scopeAttemptsToRequest,
-} from '@/lib/newsletter-rate-store';
+import { scopeAttemptsToRequest } from '@/lib/newsletter-rate-store';
+import { sharedNewsletterAttempts, sharedNewsletterRateLimitKey } from '@/lib/newsletter-rate-shared';
 import { subscriberRef, toSubscriberDoc } from '@/lib/newsletter-store';
 
 const HTTP_SERVER_ERROR = 500;
 const HTTP_OK = 200;
 
-const attempts = createAttemptStore(NEWSLETTER_RATE_LIMIT_WINDOW_MS);
-
 function logError(message: string, context: Record<string, string>): void {
   console.error(`[newsletter/subscribe] ${message}`, context);
-}
-
-function rateLimitKeyFor(request: NextRequest): string {
-  const ip = clientIpFromForwardedFor(request.headers.get('x-forwarded-for'));
-  return `newsletter-subscribe:${ip ?? 'unknown'}`;
 }
 
 export async function POST(request: NextRequest) {
@@ -38,10 +27,10 @@ export async function POST(request: NextRequest) {
   } catch {
     body = null;
   }
-  const rateLimitKey = rateLimitKeyFor(request);
+  const rateLimitKey = sharedNewsletterRateLimitKey(request);
 
   const startedAt = Date.now();
-  const requestAttempts = scopeAttemptsToRequest(attempts);
+  const requestAttempts = scopeAttemptsToRequest(sharedNewsletterAttempts());
   try {
     initAdmin();
     // The read-decide-write runs inside one transaction so two concurrent submits of the same

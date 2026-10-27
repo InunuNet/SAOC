@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 
 import { NEWSLETTER_COPY } from '@/components/chrome/newsletter-copy';
 import { UnsubscribeByEmailForm } from '@/components/newsletter/UnsubscribeByEmailForm';
+import { NosHero } from '@/components/nos/NosHero';
 import { PageHero } from '@/components/ui/PageHero';
 import { requestSite } from '@/lib/request-site';
 
@@ -22,7 +23,17 @@ export default async function UnsubscribePage() {
 
   return (
     <>
-      <PageHero image={HERO_IMAGE} eyebrow={HERO_EYEBROW} heading={NEWSLETTER_COPY.unsubPageHeading} />
+      {site === 'nos' ? (
+        // The NOS legal hero: /newsletter/unsubscribe is the route that owns crop S2a.
+        <NosHero
+          route="/newsletter/unsubscribe"
+          title={NEWSLETTER_COPY.unsubPageHeading}
+          eyebrow={HERO_EYEBROW}
+          priority
+        />
+      ) : (
+        <PageHero image={HERO_IMAGE} eyebrow={HERO_EYEBROW} heading={NEWSLETTER_COPY.unsubPageHeading} />
+      )}
       <div className="mx-auto max-w-[560px] px-4 pb-16 pt-16 sm:px-8 sm:pb-24">
         <UnsubscribeByEmailForm site={site} />
         <p className="mt-10 font-sans text-[14px] leading-[1.55] text-muted">

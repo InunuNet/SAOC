@@ -10,6 +10,8 @@ import { findSubscriberById, newsletterTx, removeSubscriberTopics } from '@/lib/
 import { resolveShowWindowLookup } from '@/lib/show-window-lookup';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 
+const HTTP_UNAUTHORIZED = 401;
+const HTTP_FORBIDDEN = 403;
 const HTTP_SERVER_ERROR = 500;
 // Newsletter subscribers are buyer data; the same capability gates the CSV-style exports.
 const NEWSLETTER_MANAGE_CAPABILITY = 'export-buyer-data';
@@ -19,6 +21,17 @@ function logError(message: string, context: Record<string, string>): void {
 }
 
 export async function POST(request: NextRequest) {
+  // Authenticate before the body is read: an unauthenticated caller never gets it parsed.
+  initAdmin();
+  const gate = await getAdminSession();
+  if (!gate.ok) {
+    const unauthenticated = gate.reason === 'no-session' || gate.reason === 'invalid-session';
+    return NextResponse.json(
+      { error: unauthenticated ? 'Unauthorized' : 'Forbidden' },
+      { status: unauthenticated ? HTTP_UNAUTHORIZED : HTTP_FORBIDDEN },
+    );
+  }
+
   let body: unknown;
   try {
     body = await request.json();

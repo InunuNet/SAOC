@@ -77,7 +77,9 @@ export default async function NewsletterAdminPage({ searchParams }: { searchPara
         subtitle={counts}
         actions={
           <>
-            <p className="font-sans text-[13px] text-muted">{NEWSLETTER_COPY.adminExportHint}</p>
+            {status !== 'subscribed' ? (
+              <p className="font-sans text-[13px] text-muted">{NEWSLETTER_COPY.adminExportHint}</p>
+            ) : null}
             <a href={`/api/admin/newsletter/export-csv?list=${list}`} className={BUTTON_SECONDARY}>
               {NEWSLETTER_COPY.adminDownloadCsv}
             </a>
