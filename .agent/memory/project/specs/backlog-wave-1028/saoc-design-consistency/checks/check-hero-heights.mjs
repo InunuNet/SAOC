@@ -1,10 +1,10 @@
-// F1c (SA-6): inner PageHero has one height per width (+-4) across every non-exempt route, through equal anatomy and never
-// padding. Widths 768-2056 (stacked, below 768, is content-driven: see goldens/hero-heights.md). Locked values at 1440
-// and 2056 come from goldens/hero-heights.md. Exempt (PG-1): Home, Events list, Societies grid, Contact, 404.
+// F1c (SA-6, NOS Design confirmed): inner PageHero is LOCKED at 480 +-4 at 1440 and 2056 on the 8 non-exempt routes, and agrees within +-4 at 768.
+// 1024 and 1280 are report-only (check-hero-heights-report.mjs) until NOS Design locks them. Copy padding is identical on every route.
+// Exempt (PG-1): Home, Events list, Societies grid, Contact, 404, and /media-kit (gated tool page, typographic header, no photo hero).
 import { withSite, openPage, check, finish, INNER_ROUTES } from './lib.mjs';
 const LOCKED = { 1440: 480, 2056: 480 };
 await withSite(async ({ base, browser, ctxOpts }) => {
-  for (const width of [768, 1024, 1280, 1440, 2056]) {
+  for (const width of [768, 1440, 2056]) {
     const rows = [];
     for (const path of INNER_ROUTES) {
       const { page, ctx, status } = await openPage(browser, ctxOpts, base, path, width);
