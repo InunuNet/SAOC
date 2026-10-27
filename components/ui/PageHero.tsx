@@ -24,6 +24,8 @@ interface PageHeroProps {
   lede?: string;
   /** The page's leading facts (2 to 4), rendered under the lede and above `actions`. */
   facts?: readonly HeroFact[];
+  /** How the facts sit: centred (the default) or left-aligned from the h1 edge (the event hero). */
+  factsAlign?: 'center' | 'start';
   /** Rendered under the lede, e.g. a call to action. */
   actions?: ReactNode;
   /** Marks the routes the PG-1 content-driven spacing exempts (the show band that follows stays flush). */
@@ -59,6 +61,7 @@ export function PageHero({
   heading,
   lede,
   facts,
+  factsAlign = 'center',
   actions,
   exempt = false,
 }: PageHeroProps) {
@@ -134,7 +137,12 @@ export function PageHero({
           </p>
         ) : null}
         {heroFacts ? (
-          <dl data-hero-facts data-fact-count={heroFacts.length} className="hero-facts">
+          <dl
+            data-hero-facts
+            data-fact-count={heroFacts.length}
+            data-facts-align={factsAlign}
+            className="hero-facts"
+          >
             {heroFacts.map((fact) => (
               <div key={fact.term} data-hero-fact>
                 <dt>{fact.term}</dt>
