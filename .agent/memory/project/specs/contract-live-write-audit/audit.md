@@ -15,15 +15,20 @@ Worktree base: origin/main 48d74378. Scanner: `contracts/checks/live-write-guard
 
 ## 2. Summary
 
-Scanned 395 contract files, 5691 assertions.
+Counts below come from one fresh scanner run on the worktree at commit 95019b9c (the commit that carries the 84-entry edit). Units are stated on every number.
 
-| verdict | assertions | meaning |
+- Contract files scanned: 393. Assertions in the default gate (`assertions.checks` or `phases`): 5615. `manual_only` entries outside the gate: 84, in 28 contract files.
+- Script executions found in gate commands: 1898; of those, 53 are executions of a registered safe script (scanner line: "53 classified safe"). Assertions that execute at least one registered script: 53 (all registered scripts remaining in the gate are safe classes; no real-prod class remains).
+- Assertions with no write signal: 5562 of 5615 gated assertions.
+- Before the edit (origin/main 48d74378) the same scanner found 93 violation rows covering 87 real-prod writer assertions in 30 files; Codex round 1 restored three, leaving 84 entries in 28 files (section 8).
+
+| verdict (unit: assertions) | count | meaning |
 |---|---|---|
-| real-prod writer in the default gate | 84 | proposed action: manual_only |
-| classified safe (sandbox, fake, dry-run mode, read-only probe, static false positive) | 48 | already safe; evidence regex machine-checked |
-| no write signal | 5559 | read-only; evidence = signal scan found no mutation, fetch-POST or Firestore write verbs in the script (see section 5 for the named candidates) |
+| real-prod writer, now manual_only (outside the gate) | 84 | moved; the scanner fails if one returns to the gate |
+| registered safe script runs in the gate (sandbox, fake, dry-run mode, read-only probe, static false positive) | 53 | evidence pattern re-checked by the scanner |
+| no write signal | 5562 | signal scan found no mutation, fetch-POST or Firestore write verb in the executed script (named candidates in section 5) |
 
-Script-level classes in the registry: FAKE 2, MODAL 4, READONLY_PROBE 8, REAL_AUTH 19, REAL_DEPLOYED 2, REAL_FIRESTORE 39, REAL_SANITY 18, SANDBOX_SCRUBBED 6, STATIC_FP 7.
+Registry classes (unit: scripts, 106 registered): FAKE 2, MODAL 4, READONLY_PROBE 8, REAL_AUTH 19, REAL_DEPLOYED 2, REAL_FIRESTORE 38, REAL_SANITY 17, SANDBOX_SCRUBBED 6, STATIC_FP 10.
 
 ## 3. Real-production writers in the default gate (action: manual_only)
 
