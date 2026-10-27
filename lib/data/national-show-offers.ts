@@ -10,6 +10,7 @@ import { DAY_VISITOR_SELLABLE_DAYS } from '@/lib/provisional-figures';
 import { toShowIsoDate } from '@/lib/show-identity';
 import { nosUrl } from '@/lib/site-hosts';
 import { buildTicketOffers } from '@/lib/ticket-offers';
+import { ticketTypeMatchesActiveShow } from '@/lib/ticket-on-sale';
 
 const TICKET_PRODUCT_BASE_URL = nosUrl('/tickets');
 const OFFER_CURRENCY = 'ZAR';
@@ -51,7 +52,11 @@ export function buildShowOffers(
     showDays: DAY_VISITOR_SELLABLE_DAYS,
     activeShowId,
   });
-  const cutoffBySlug = new Map(ticketTypes.map((t) => [t.slug, t.earlyBirdCutoff]));
+  const cutoffBySlug = new Map(
+    ticketTypes
+      .filter((t) => ticketTypeMatchesActiveShow(t, activeShowId))
+      .map((t) => [t.slug, t.earlyBirdCutoff])
+  );
   return buildTicketOffers(cards).map((offer) => ({
     name: offer.name,
     price: offer.price,
