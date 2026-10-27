@@ -6,6 +6,7 @@ import { Button } from '@/components/nos/Button';
 import { heroFactsFromShow, NosHero } from '@/components/nos/NosHero';
 import { NosSection } from '@/components/nos/NosSection';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
+import { SponsorEnquirySection } from '@/components/sponsors/SponsorEnquirySection';
 import { DocumentLayout } from '@/components/ui/DocumentLayout';
 import { loadShowFacts } from '@/lib/data/show-facts';
 import { nosPath } from '@/lib/nos-paths';
@@ -168,7 +169,7 @@ export default async function ShowSponsorsPage() {
         actions={
           <Button
             as="a"
-            href={SPONSORSHIP_MAILTO}
+            href="#enquire"
             variant="on-dark"
             className="nos-sp-hero-cta"
             data-sponsors-hero-cta=""
@@ -191,7 +192,7 @@ export default async function ShowSponsorsPage() {
                 {SPONSORSHIP_EMAIL}
               </a>
             </div>
-            <Button as="a" href={SPONSORSHIP_MAILTO} className="nos-sp-card-cta">
+            <Button as="a" href="#enquire" className="nos-sp-card-cta">
               {CTA_LABEL}
               <Arrow />
             </Button>
@@ -244,6 +245,8 @@ export default async function ShowSponsorsPage() {
               </div>
             </div>
           </section>
+
+          <SponsorEnquirySection site="nos" inDocument />
         </div>
       </DocumentLayout>
 
@@ -276,7 +279,7 @@ export default async function ShowSponsorsPage() {
           <div className="nos-sp-empty" data-nos-empty-state="sponsors">
             <Image src="/images/Eulophia-speciosa-emblem.png" alt="" width={88} height={88} />
             <p>{NO_SPONSORS_YET}</p>
-            <Button as="a" href={SPONSORSHIP_MAILTO}>
+            <Button as="a" href="#enquire">
               {CTA_LABEL}
               <Arrow />
             </Button>
