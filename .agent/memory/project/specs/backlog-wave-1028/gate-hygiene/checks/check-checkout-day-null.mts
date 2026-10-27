@@ -50,11 +50,11 @@ const { NextRequest } = await import('next/server');
 
 const KEY = '3f6c2a9e-1b7d-4c58-9e0a-5d2f8b4c7a11';
 const person = { attendeeName: 'Test Attendee', attendeeEmail: 'attendee@example.com' };
-const post = async (lineItem: Record<string, unknown>) => {
+const post = async (...lineItems: Record<string, unknown>[]) => {
   const req = new NextRequest('http://localhost/api/tickets/checkout', {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'Idempotency-Key': KEY },
-    body: JSON.stringify({ showId: 'nationalShow', buyerName: 'B', buyerEmail: 'b@example.com', lineItems: [lineItem] }),
+    body: JSON.stringify({ showId: 'nationalShow', buyerName: 'B', buyerEmail: 'b@example.com', lineItems }),
   });
   const res = await POST(req);
   return { status: res.status, body: (await res.json()) as { error?: string } };
@@ -68,6 +68,15 @@ for (const [label, item] of [
 ] as const) {
   const r = await post(item);
   if (r.status !== 400 || r.body.error !== WANT) failures.push(`${label}: got ${r.status} ${JSON.stringify(r.body)}, want 400 "${WANT}"`);
+}
+// Multi-item carts: the guard runs per line item, so a day-required item that is NOT first must be refused too.
+const MULTI: [string, Record<string, unknown>[]][] = [
+  ['vip then workshop-pass (no day)', [{ ticketType: 'vip', ...person }, { ticketType: 'workshop-pass', ...person }]],
+  ['vip, vip, then weekend-pass (no day) as the third item', [{ ticketType: 'vip', ...person }, { ticketType: 'vip', ...person }, { ticketType: 'weekend-pass', ...person }]],
+];
+for (const [label, items] of MULTI) {
+  const r = await post(...items);
+  if (r.status !== 400 || r.body.error !== WANT) failures.push(`multi-item ${label}: got ${r.status} ${JSON.stringify(r.body)}, want 400 "${WANT}"`);
 }
 // chosenDay: null is refused earlier by parseLineItems (400) — still a 4xx with nothing written.
 for (const slug of ['weekend-pass', 'workshop-pass']) {

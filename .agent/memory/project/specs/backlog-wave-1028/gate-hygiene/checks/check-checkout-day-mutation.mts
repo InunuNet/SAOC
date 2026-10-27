@@ -11,6 +11,7 @@ const mutants = [
   { id: 'M1 day guard disabled', from: 'if (!lineItem.chosenDay) {', to: 'if (false && !lineItem.chosenDay) {' },
   { id: 'M2 requiresDaySelection derived from one slug, not the CMS flag', from: 'requiresDaySelectionByType[slug] = ticketTypeDoc.requiresDaySelection === true;', to: "requiresDaySelectionByType[slug] = slug === 'weekend-pass';" },
   { id: 'M3 every type treated as day-required', from: 'requiresDaySelectionByType[slug] = ticketTypeDoc.requiresDaySelection === true;', to: 'requiresDaySelectionByType[slug] = true;' },
+  { id: 'M4 day guard checks only the first line item', from: 'for (const lineItem of lineItems) {\n    if (requiresDaySelectionByType[lineItem.ticketType]) {', to: 'for (const lineItem of lineItems.slice(0, 1)) {\n    if (requiresDaySelectionByType[lineItem.ticketType]) {' },
 ];
 for (const m of mutants) if (!original.includes(m.from)) { console.error(`FAIL\n${m.id}: anchor not found in ${ROUTE}`); process.exit(1); }
 const restore = () => writeFileSync(ROUTE, original);
