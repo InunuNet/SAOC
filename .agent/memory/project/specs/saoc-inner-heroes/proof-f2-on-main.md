@@ -45,3 +45,9 @@ Count: FAIL-ON-MAIN 7 (A3, A9, A14, A15, A16, A17, A19); GUARD 14 (A1, A2, A4, A
 - A11: `gate-scrim-alpha.mjs` (f1, frozen, untouched) read f1's route list and waited 20 s for a photograph on routes that are typographic from f2 on. A11 now runs `f2-gate-scrim-alpha.mjs`: same assertion and f1 thresholds (44% zone), route set from the f2-merged `heroRoutes` (`typographicNow`). No new assertion.
 - A14: the typographic ground probe hid glyphs but not chrome; at 390 a 6x6 sample landed on the 404 eyebrow chip's white/25 border (measured 43,49,40). The probe now also hides descendants' border, outline, box-shadow and background-colour (not background-image, not the hero's own background). Negative control: with a gradient injected on the hero the gate fails on every typographic route (224 ground failures, e.g. measured 244,244,244 and 127,127,127), and on the main build it already failed on the photographs.
 - Re-run on c9161be7 (rebuilt with f2-build.sh, exit 0): A11 `scrim alpha f2 route set (saoc) pass` (67 s); A14 `geometry (saoc) pass` (140 s).
+
+## NOS Design 2026-10-27 second block (facts row, c1, DraftNotice marker), proved on the dev build c9161be7
+- A16 (per cell dt.left = dd.left, first cell = h1.left at 390/1440/2056, side-by-side row at >= 1024): the dev's stacked column satisfies the per-cell checks and FAILS the row checks at 2056 and 1440 (cell tops 440,526,611; lefts 1061,1061,1061 and 741,741,741). On 9b8a1e63 main it failed the per-cell and first-cell checks (centred values).
+- A17 marker: FAIL on c9161be7, `/members` not inside `data-placeholder="true"` (390 and 1440). /refunds is gated as unmarked, as it rendered before.
+- A3: FAIL on c9161be7: DraftNotice has no marker prop, members page does not pass one, scripts/heroes-sheets.mjs still exists.
+- A19: RETIRED (c1 rejected); f2-check-sheets.mjs deleted; the assertion now only checks spec-f2's retirement note.

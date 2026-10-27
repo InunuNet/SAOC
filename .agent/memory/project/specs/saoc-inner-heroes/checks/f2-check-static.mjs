@@ -23,6 +23,9 @@ check('saoc-hero-photos.ts: /societies/[slug] is typographic (HM-6 (b), NOS Desi
 // Draft notice (NOS Design 2026-10-27): one shared component, imported by /members and /refunds; the old inline markup is gone.
 const DN = F2.draftNotice;
 check(`${DN.component} exists`, existsSync(DN.component));
+check(`${DN.component} carries the ${DN.componentMustMention} marker (a prop; no-invention)`, read(DN.component).includes(DN.componentMustMention));
+check('members/page.tsx passes the placeholder marker to DraftNotice', /<DraftNotice[^>]*placeholder/.test(read('app/(marketing)/members/page.tsx')));
+for (const f of F2.staleScripts) check(`${f} is deleted (the event-detail sheet deliverable is retired, NOS Design 2026-10-27)`, !existsSync(f));
 for (const f of DN.importedBy) check(`${f} imports the shared DraftNotice`, /from\s+'@\/components\/ui\/DraftNotice'/.test(read(f)));
 const members = read('app/(marketing)/members/page.tsx');
 check('members/page.tsx: the filled bordered note box is gone (no "border border-rule bg-bone")', !/border border-rule bg-bone/.test(members));

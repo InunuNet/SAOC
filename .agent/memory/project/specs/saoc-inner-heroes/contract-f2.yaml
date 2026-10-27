@@ -1,6 +1,6 @@
 schema: athanor.contract/v1
 slug: saoc-inner-heroes
-goal: NOS Design's #116 follow-ups on the SAOC inner heroes - eased copy scrim (HM-5), /404 and /events/submit typographic with /events/[slug] facts left-aligned (HM-7), content-sized typographic band (HM-8), the draft notice, /societies/[slug] typographic (HM-6 (b)), one shared 15px draft notice on /members and /refunds, and a candidate sheet for the /events/[slug] cut. NOS Design 2026-10-27 rulings folded in.
+goal: NOS Design's #116 follow-ups on the SAOC inner heroes - eased copy scrim (HM-5), /404 and /events/submit typographic with /events/[slug] facts left-aligned (HM-7), content-sized typographic band (HM-8), the draft notice, /societies/[slug] typographic (HM-6 (b)), one shared 15px draft notice on /members and /refunds. NOS Design 2026-10-27 rulings folded in (the event detail page keeps its current crop, no sheets).
 created_at: '2026-10-27'
 autonomy: high
 
@@ -18,7 +18,7 @@ features:
     name: one shared DraftNotice (15px, 1px rule below, text verbatim) on /members and /refunds
     status: pending
   - id: F5
-    name: /events/[slug] candidate cut sheet delivered for NOS Design's pick (not implemented)
+    name: RETIRED - the event detail page keeps its current crop, c1 rejected (NOS Design 2026-10-27); no sheet deliverable, scripts/heroes-sheets.mjs deleted
     status: pending
 
 goldens:
@@ -37,7 +37,7 @@ assertions:
       description: static rules from source (old ramp gone, band padding, photo map incl. /societies/[slug] typographic, shared DraftNotice imported by /members and /refunds, facts not centred)
       command: node .agent/memory/project/specs/saoc-inner-heroes/checks/f2-check-static.mjs
     - id: A4
-      description: diff scope on the committed diff - allowlist (incl. components/ui/DraftNotice.tsx and app/(shared)/refunds/page.tsx) and stay-off lanes (home, NOS, the other shared legal pages, other pages, image pipeline)
+      description: diff scope on the committed diff - allowlist (incl. components/ui/DraftNotice.tsx and app/(shared)/refunds/page.tsx; scripts/heroes-sheets.mjs only for its deletion) and stay-off lanes (home, NOS, the other shared legal pages, other pages, image pipeline)
       command: node .agent/memory/project/specs/saoc-inner-heroes/checks/f2-check-diff-scope.mjs
     - id: A5
       description: typescript compiles
@@ -73,17 +73,17 @@ assertions:
       description: served width >= box x DPR on every photographic hero; typographic routes (404, /events/submit and /societies/[slug] included) carry no photograph
       command: node .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-served-width.mjs
     - id: A16
-      description: HM-7 /events/[slug] dt.left = dd.left = h1.left +-1 at 2056 and 1440; facts row and values at the h1 edge also at 390
+      description: HM-7 /events/[slug] facts, per cell dt.left = dd.left +-1, first cell left = h1.left +-1 at 390, 1440 and 2056, side-by-side row kept (one row at 1440 and 2056)
       command: node .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-facts-align.mjs
     - id: A17
-      description: draft notice on /members and /refunds is a plain p at font-size 15px with a bold lead-in, 1px rule below, border 0 on three sides, transparent, no wrapper box, text verbatim
+      description: draft notice on /members and /refunds is a plain p at font-size 15px with a bold lead-in, 1px rule below, border 0 on three sides, transparent, no wrapper box, text verbatim, data-placeholder marker kept on /members and absent on /refunds as before
       command: node .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-members-note.mjs
     - id: A18
       description: LG-RF on /privacy /terms /refunds on both hosts stays green after the typographic band change (f1 gate reused)
       command: node .agent/memory/project/specs/saoc-inner-heroes/checks/gate-lgrf.mjs
     - id: A19
-      description: /events/[slug] candidate sheet and manifest exist and obey the ruled constraints (distinct from home's dark and /sponsors' dark-flip, pink and yellow retired)
-      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/f2-check-sheets.mjs
+      description: RETIRED (NOS Design 2026-10-27, c1 rejected, no sheets) - spec-f2 records the retirement
+      command: grep -q "A19 is RETIRED" .agent/memory/project/specs/saoc-inner-heroes/spec-f2.md
     - id: A20
       description: CI e2e green
       command: bash scripts/ci-e2e.sh pnpm test:e2e

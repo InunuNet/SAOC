@@ -1,6 +1,6 @@
 // P3 (NOS Design 2026-10-26) + NOS Design 2026-10-27: the draft notice on /members ("Not yet available") and /refunds ("Draft pending legal
 // review") is one treatment through one shared component: a plain <p> at 15px, the bold lead-in kept, a 1px rule below, border 0 on the other
-// sides, a transparent background, the text verbatim, and no filled bordered box around it (the old [data-placeholder] wrapper).
+// sides, a transparent background, the text verbatim, and no filled bordered box around it (the old [data-placeholder] wrapper). The data-placeholder marker is kept where the page had it (/members yes, /refunds no).
 import { F2, freeze, launchChromium, newContext, withServer } from './f2-lib.mjs';
 
 const M = F2.draftNotice;
@@ -23,12 +23,13 @@ await withServer(11, 'draft notice (saoc)', async (server, c) => {
         const side = (el) => { const s = getComputedStyle(el); return { top: s.borderTopWidth, right: s.borderRightWidth, left: s.borderLeftWidth, bottom: s.borderBottomWidth, bottomStyle: s.borderBottomStyle, bg: s.backgroundColor }; };
         const box = (el) => { const s = getComputedStyle(el); return ['Top', 'Right', 'Bottom', 'Left'].some((k) => parseFloat(s[`border${k}Width`]) > 0) || (s.backgroundColor !== 'rgba(0, 0, 0, 0)' && s.backgroundColor !== 'transparent'); };
         const wrappers = []; for (let el = p.parentElement; el && el.tagName !== 'MAIN'; el = el.parentElement) if (box(el)) wrappers.push(el.tagName + (el.dataset.placeholder ? '[data-placeholder]' : ''));
-        return { tag: p.tagName, fontSize: getComputedStyle(p).fontSize, text: p.textContent.replace(/\s+/g, ' ').trim(), firstChild: p.firstElementChild?.tagName, strongWeight: getComputedStyle(strong).fontWeight, p: side(p), wrappers };
+        return { marked: Boolean(p.closest('main [data-placeholder="true"]')), tag: p.tagName, fontSize: getComputedStyle(p).fontSize, text: p.textContent.replace(/\s+/g, ' ').trim(), firstChild: p.firstElementChild?.tagName, strongWeight: getComputedStyle(strong).fontWeight, p: side(p), wrappers };
       }, N.leadIn);
       c.check(`${tag} the note is found as a <p> led by <strong>${N.leadIn}</strong>`, Boolean(m));
       if (!m) continue;
       c.check(`${tag} plain <p> (${m.tag}) with the <strong> lead-in first (${m.firstChild})`, m.tag === 'P' && m.firstChild === 'STRONG');
       c.check(`${tag} font-size ${m.fontSize} is ${M.fontSizePx}px`, m.fontSize === `${M.fontSizePx}px`);
+      c.check(`${tag} placeholder marker: ${N.placeholder ? 'inside data-placeholder=true' : 'not marked'} (as the page rendered it before f2; no-invention)`, m.marked === N.placeholder, `marked=${m.marked}`);
       c.check(`${tag} lead-in is bold (weight ${m.strongWeight} >= 500)`, Number(m.strongWeight) >= 500);
       c.check(`${tag} text verbatim`, m.text === N.text, m.text);
       c.check(`${tag} border 0 top/left/right (${m.p.top}/${m.p.right}/${m.p.left})`, m.p.top === '0px' && m.p.right === '0px' && m.p.left === '0px');

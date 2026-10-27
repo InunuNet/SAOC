@@ -1,5 +1,5 @@
 {
-  "_doc": "Golden for contract-f2 (mission saoc-inner-heroes, F2: HM-5, HM-7, HM-8, /members note, the /events/[slug] candidate sheet; NOS Design 2026-10-27 rulings folded in). Source: NOS Design 2026-10-26 '#116 (9b8a1e63) beta pass' (comms.md). Extends goldens/crop-map.json (f1); the f2 gates read both through checks/f2-lib.mjs.",
+  "_doc": "Golden for contract-f2 (mission saoc-inner-heroes, F2: HM-5, HM-7, HM-8, /members note, NOS Design 2026-10-27 rulings folded in). Source: NOS Design 2026-10-26 '#116 (9b8a1e63) beta pass' (comms.md). Extends goldens/crop-map.json (f1); the f2 gates read both through checks/f2-lib.mjs.",
   "thresholdOverrides": {
     "bloomCleanZoneEnd": 0.34,
     "typeBandFromWidth": 1024,
@@ -105,7 +105,7 @@
   },
   "eventFacts": {
     "route": "/events/[slug]",
-    "ruling": "HM-7 (NOS Design 2026-10-27): left-align BOTH dt and dd to the h1 edge. Gate dt.left = dd.left = h1.left +-1 at 1440 and 2056. The hero keeps its current photograph for now.",
+    "ruling": "HM-7 (NOS Design 2026-10-27, corrected twice; the stacked column was a misreading): per fact cell, dt.left = dd.left +-1; the first cell's left = h1.left +-1 at 390, 1440 and 2056; the side-by-side row is restored: at >= 1024 (1440, 2056) every cell sits on one row (same top +-1) with strictly increasing lefts. The hero keeps its current photograph (c1 rejected, NOS Design 2026-10-27).",
     "viewports": [
       {
         "name": "2056",
@@ -123,88 +123,7 @@
         "height": 844
       }
     ],
-    "gatedViewports": [
-      {
-        "name": "2056",
-        "width": 2056,
-        "height": 1200
-      },
-      {
-        "name": "1440",
-        "width": 1440,
-        "height": 900
-      }
-    ]
-  },
-  "sheets": {
-    "dir": ".tmp/sandbox/heroes2-sheets",
-    "manifest": ".tmp/sandbox/heroes2-sheets/manifest.json",
-    "note": "The /events/[slug] cut is NOT implemented in f2: the deliverable is one candidate sheet for NOS Design's pick (in-situ sheet at 1440@2 with scrim, h1, chip, and a 1:1 crop of the left 44%). HM-6 is no longer a sheet deliverable: NOS Design 2026-10-27 ruled /societies/[slug] typographic (b), implemented in f2.",
-    "sourceDims": {
-      "orchid-violet.jpg": [
-        7327,
-        4885
-      ],
-      "orchid-dark.jpg": [
-        5184,
-        3456
-      ],
-      "orchid-purple.jpg": [
-        5308,
-        4160
-      ]
-    },
-    "inSituWidthPx": 2880,
-    "cropWidthPx": 1267,
-    "cropWidthTolerancePx": 3,
-    "candidates": [
-      {
-        "id": "events-slug-c1",
-        "route": "/events/[slug]",
-        "kind": "photo",
-        "sources": [
-          "orchid-dark.jpg",
-          "orchid-purple.jpg",
-          "orchid-violet.jpg"
-        ],
-        "mustDifferFrom": [
-          "home-dark",
-          "sponsors-dark-flip"
-        ],
-        "ruling": "HM-7: one cut distinct from home's dark and /sponsors' dark-flip. Pink and yellow stay retired."
-      }
-    ],
-    "existingRects": {
-      "about": [
-        "orchid-violet.jpg",
-        2300,
-        1100,
-        7327,
-        4000
-      ],
-      "contact": [
-        "orchid-violet.jpg",
-        0,
-        1900,
-        4112,
-        3720
-      ],
-      "home-dark": [
-        "orchid-dark.jpg",
-        0,
-        487,
-        5184,
-        2968
-      ],
-      "sponsors-dark-flip": [
-        "orchid-dark.jpg",
-        0,
-        790,
-        5184,
-        2560
-      ]
-    },
-    "maxIoUWithExisting": 0.5
+    "rowFromWidth": 1024
   },
   "draftNotice": {
     "ruling": "P3 + NOS Design 2026-10-27 (open question 2): the draft notice is 15px with a 1px rule below, on /refunds as well as /members, through ONE shared component (components/ui/DraftNotice.tsx). Plain p, bold lead-in, border 0 on three sides, 1px solid rule below, transparent, no wrapper box, text verbatim.",
@@ -219,12 +138,14 @@
       {
         "route": "/members",
         "leadIn": "Not yet available.",
-        "text": "Not yet available. Member login and the Members Portal itself have not been built for this site yet. This page will be updated once they are."
+        "text": "Not yet available. Member login and the Members Portal itself have not been built for this site yet. This page will be updated once they are.",
+        "placeholder": true
       },
       {
         "route": "/refunds",
         "leadIn": "Draft pending legal review.",
-        "text": "Draft pending legal review. This page has been drafted with AI assistance and has not yet been reviewed by a qualified legal professional. It does not constitute legal advice and should not be relied upon as SAOC’s final policy until formal review is complete."
+        "text": "Draft pending legal review. This page has been drafted with AI assistance and has not yet been reviewed by a qualified legal professional. It does not constitute legal advice and should not be relied upon as SAOC’s final policy until formal review is complete.",
+        "placeholder": false
       }
     ],
     "viewports": [
@@ -238,6 +159,11 @@
         "width": 390,
         "height": 844
       }
-    ]
-  }
+    ],
+    "placeholderRule": "docs/rules/no-invention.md: unsourced placeholder copy stays marked. The /members unavailable-portal notice carried data-placeholder=\"true\" before f2 (members page, line 44 on 9b8a1e63); the /refunds notice carried none. The shared DraftNotice must render the marker where the page did (a prop), and nowhere else.",
+    "componentMustMention": "data-placeholder"
+  },
+  "staleScripts": [
+    "scripts/heroes-sheets.mjs"
+  ]
 }
