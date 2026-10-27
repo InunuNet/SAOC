@@ -663,6 +663,12 @@ h3.font-serif {
     gap: 24px 40px;
   }
 }
+/* From 1024px the facts share one row: the cells shrink and their text wraps instead of the row wrapping. */
+@media (min-width: 1024px) {
+  .hero-facts {
+    flex-wrap: nowrap;
+  }
+}
 
 /* Body grid: prose 7fr, one aside 5fr, from 1024px; one column below. Hero to content is 64px (48 below). */
 .doc-layout {
