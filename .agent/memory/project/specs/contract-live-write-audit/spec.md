@@ -1,6 +1,6 @@
 # Spec: take live-write assertions out of the default gate
 
-Slug `contract-live-write-audit`. Evidence and the full per-script table are in `audit.md`. The rule being implemented (SAOC lead): "Classify every contract that writes. Real writes move to fixture replay, or get `manual_only` with the reason inline. Nothing that writes to production runs in a gate by default."
+Slug `contract-live-write-audit`. Final count after Codex round 1: 84 manual_only entries in 28 files (three static checks restored, see the Codex round 1 note below). Evidence and the full per-script table are in `audit.md`. The rule being implemented (SAOC lead): "Classify every contract that writes. Real writes move to fixture replay, or get `manual_only` with the reason inline. Nothing that writes to production runs in a gate by default."
 
 ## Decision
 
@@ -17,7 +17,7 @@ Slug `contract-live-write-audit`. Evidence and the full per-script table are in 
 3. Fixture replay is chosen only where the repo already has the fake and the check already runs against it. None of the 87 live assertions qualifies today: they exist to prove the live path (Studio -> Content Lake -> ISR, Firestore transactions, Firebase Auth). So every real writer gets `manual_only`. A converted-to-fake variant is follow-up, and the scanner already accepts it: a command prefixed with `SAOC_FIXTURE_REPLAY=1` whose script contains `SAOC_FIXTURE_REPLAY` is exempt.
 4. Detection is a registry plus a scanner, not a hand list. `contracts/checks/live-write-guard/writers-registry.json` classifies every script that carries write signals; `contracts/checks/live-write-guard/verify_no_ungated_writers.py` fails when a registered real writer, or an unregistered script with write signals, is executed by `assertions.checks`. Safe classes carry an evidence regex that the scanner re-checks, so a "read-only" verdict cannot silently go stale. MODAL scripts (run with `--verify`, `--dry-run`, or `env -u SANITY_API_TOKEN`) stay safe only while that argument is in the command.
 
-## Per-contract edits for @dev (30 files, 87 assertions)
+## Per-contract edits for @dev (28 files, 84 assertions)
 
 For each file: delete the listed ids from `assertions.checks` (or, for a `phases:` dict, from that phase list), and add the `manual_only:` entries. Keep comments. Where the file also has an explicit `phases:` list (marked below) remove the ids there as well; the scanner fails on a dangling phase reference.
 
@@ -87,7 +87,7 @@ No `env:` or secrets on the job. The scanner exits 1 on violations. Local gate s
 
 - The d6 entries in contracts/contract-d6-door-checkin.yaml carry a `command:` key in place of that contract's `verify: {kind, cmd}` block, so they match the manual_only entry shape above rather than the file's own assertion shape. Neither contract.py nor the scanner reads `manual_only`, so this is harmless.
 - Moved items keep their inline comments. Comments are not parsed.
-- 12 of the 30 files are tracked spec contracts under the specs tree (contract-named yaml files); they had to change because gate_sweep.py globs those.
+- Of the 28 files, the spec-tree ones are tracked spec contracts under the specs tree (contract-named yaml files); they had to change because gate_sweep.py globs those.
 - The scanner itself is registered STATIC_FP with a re-checked evidence pattern (its detection regexes contain the write tokens). There is no path exclusion.
 
 ## Separate fixes folded in
@@ -103,6 +103,10 @@ No edits to `execution/`, no change to the scripts themselves, no fixture-replay
 ## Acceptance
 
 - `python3 execution/contract.py validate .agent/memory/project/specs/contract-live-write-audit/contract.yaml --strict` passes.
-- The scanner is red on main (93 violations rows, 87 assertions, 30 files) and green after the edits, with `manual_only` entries counted by the scanner.
+- The scanner is red on main (93 violation rows on main; 84 assertions in 28 files after the Codex round-1 restore of three static checks) and green after the edits, with `manual_only` entries counted by the scanner.
 - `python3 execution/contract.py validate <edited contract> --strict` still passes for every edited file (verified in simulation: no regressions across the 30 files).
 - Reviewer sanity check that is not mechanical: each moved assertion's `reason` names a concrete target.
+
+## Codex round 1 (11ccabd0)
+
+Three assertions that the first pass moved came back to the gate: cms-loop-f3 `fix-live-sentinel-residue-cms-loop-f3/contract-m1.yaml` A14, and `contracts/contract-payfast-m1-lock-cleanup-fix.yaml` A7-PREFLIGHT-BEFORE-LOCK and A8-CLEAR-AFTER-RESIDUE-CHECK. They are static or fake-client checks: the scanner's name-based signals (`withCleanup`, `sentinelEmail`, `commitAndCaptureRev`) matched text, not a live call. They are registered STATIC_FP with evidence the scanner re-checks. Net: 87 to 84 entries, 30 to 28 files. The meta-assertion pins no count, so nothing else changes.

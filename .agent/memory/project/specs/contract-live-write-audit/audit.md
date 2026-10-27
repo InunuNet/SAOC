@@ -19,8 +19,8 @@ Scanned 395 contract files, 5691 assertions.
 
 | verdict | assertions | meaning |
 |---|---|---|
-| real-prod writer in the default gate | 87 | proposed action: manual_only |
-| classified safe (sandbox, fake, dry-run mode, read-only probe, static false positive) | 45 | already safe; evidence regex machine-checked |
+| real-prod writer in the default gate | 84 | proposed action: manual_only |
+| classified safe (sandbox, fake, dry-run mode, read-only probe, static false positive) | 48 | already safe; evidence regex machine-checked |
 | no write signal | 5559 | read-only; evidence = signal scan found no mutation, fetch-POST or Firestore write verbs in the script (see section 5 for the named candidates) |
 
 Script-level classes in the registry: FAKE 2, MODAL 4, READONLY_PROBE 8, REAL_AUTH 19, REAL_DEPLOYED 2, REAL_FIRESTORE 39, REAL_SANITY 18, SANDBOX_SCRUBBED 6, STATIC_FP 7.
@@ -198,3 +198,10 @@ Method for "no write signal": the scanner's signal set (mutation APIs, helper mu
 3. The ticketing-hardening family writes sentinel orders to real Firestore through a local dev server with live `.env.local`. Whether that server also calls Resend for a sentinel order is not provable from the checks; the registry treats the whole family as REAL_FIRESTORE either way.
 4. READONLY_PROBE scripts (8) write only if the system under test is broken (negative probes: bogus ITN, demo-product checkout, empty verify-code). The scanner treats them as safe; a regression in the route would turn the probe into a write.
 5. manual_only drops live coverage from the gate. For the CMS round trips this is by design (they are the live loop proof). For the ticketing and admin families, fixture replay would need an injected Firestore/Auth fake, which the repo already uses elsewhere (`FakeFirestore` in `reconcile-response-accuracy`); that is follow-up work, not part of this change.
+
+## 8. Codex round 1: three assertions restored to the gate (11ccabd0)
+
+The first edit moved 87 assertions; Codex review found three that are not live writers, so the final count is 84 across 28 files. Restored, and registered STATIC_FP in the writers registry with a re-checked evidence pattern:
+- `fix-live-sentinel-residue-cms-loop-f3/contract-m1.yaml` A14: a static or fake-client check (per the dev's Codex fix); the scanner's name-based signal fired on text, not a live dataset call.
+- `contracts/contract-payfast-m1-lock-cleanup-fix.yaml` A7-PREFLIGHT-BEFORE-LOCK and A8-CLEAR-AFTER-RESIDUE-CHECK: static or fake-client checks (per the dev's Codex fix); the `withCleanup`/`sentinelEmail` names match the signal list but nothing reaches Firestore.
+The signal scan is deliberately over-inclusive; a registered STATIC_FP is how a false positive is cleared, and it must carry evidence. Sections 2 and 3 rows for these three ids describe the first-pass classification and are superseded by this note.
