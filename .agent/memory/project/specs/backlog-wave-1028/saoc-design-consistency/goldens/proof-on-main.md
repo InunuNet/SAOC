@@ -64,3 +64,9 @@ check-focus-ring.mjs no longer composites ancestor background-colors. For every 
 
 ## Amendment 2026-10-28 (Codex round 3 on check-focus-ring.mjs)
 The pixel band is now 2-6px outside the element box (the 2px ring at offset 3px paints 3-5px out, so the exact footprint is inside the sampled band; worst case over the band). The viewport guard fails any target whose ring box (element +-5px) is clipped on ANY side, horizontally included. Beta: hero CTA passes; Menu now also reads 1.03:1 (ivory/dark pixels vs the unset outline), Join/footer links as before (2.52:1).
+
+## Amendment 2026-10-28 (F1c: NOS Design ruling SA-6 /about; assertions appended, A-numbers kept)
+- A8 is now the lock and prints its case. On main: `/about@1280: hero is 545px, want 480 +-4` FAIL; the script prints `CASE B (fallback)` (about@1024 = 496) because only /about is out.
+- A9 `FAIL hero-facts-row`: `/about@1024: dd tops differ by 82.6px`, `column gap is 40px, want 24px`, `dt max-width is 238px, want 18ch (165px)`, `dd white-space is normal, want nowrap` (same at 1280, tops differ 85.4px).
+- A10 `FAIL hero-dd-weight`: `/about@390: dd 24.0px has weight 300, want 400`; 26.9px at 768 and 29.4px at 1024 likewise (9 problems).
+- A11 PASS on main (guard): `.hero-facts` is styled only in app/globals.css on the SAOC host; the NOS overrides sit under app/(nos)/.

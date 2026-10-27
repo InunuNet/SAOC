@@ -24,3 +24,10 @@ Below 768 (stacked: 2/1 photo band + copy on sage) height is content-driven and 
 - Mobile (<768): no equal-height gate (content-driven). Gated instead (A7, check-hero-mobile-anatomy.mjs): the photo band uses one aspect-ratio on every route, currently `aspect-[2/1]` in components/ui/PageHero.tsx (media wrapper), and the copy block uses one padding on every route, currently `py-10` (40px) below 768 and `md:py-16` from 768 (both with `px-[var(--container-pad)]`).
 - /media-kit joins the exception list with Home, Events list, Societies grid, Contact and 404: it is a gated tool page with a typographic header and no photo hero. It is not asserted to have a PageHero.
 Honesty note: on main the hero-height lock and the mobile-anatomy gate already pass (480 at 1440/2056; 2/1 and 40px everywhere); only the 1024/1280 report shows the /about defect (496, 545). They are locks and guards, not red-on-main checks. F1c's red-on-main assertion is the h2 role check (A1).
+
+## NOS Design ruling "SA-6: /about hero at 1024 and 1280" (2026-10-28)
+Ruling: /about is 480 +-4 at 1024 and 1280 through one facts row, no copy change, no facts moved out of the hero. Cause (553fe5e9): the copy column is 48% (about 570px at 1280, 450px at 1024); the three facts need about 600px (dt 26ch, gap 40, dd 32px), so the row wraps to 545 and 496.
+Levers, global in `.hero-facts` at 768-1439, in this order, never per route: (1) column gap 40 to 24; (2) dt max-width 26ch to 18ch, balanced, <=3 lines; (3) dd floor 24px at 1024 with the weight band (300 at >=32px, 400 at 24-31.99; today dd is 300 at every size, fixed on every SAOC hero regardless); (4) dd nowrap.
+Not allowed: widening the 48% copy column or shrinking the scrim (clear to 44%, full by 52%, alpha 0.8).
+Gate: A9 (one row, no overflow, levers, column and scrim unchanged), A10 (weight band), A11 (global only), A8 (the lock; prints CASE A or CASE B).
+Current main CSS (app/globals.css .hero-facts): gap `20px 40px` (24px 40px from 640), dt max-width 26ch, dd clamp(1.5rem, 1.2rem + 1vw, 2rem) at weight 300, no nowrap.
