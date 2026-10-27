@@ -1,0 +1,41 @@
+schema: athanor.contract/v1
+slug: onsale-followups
+goal: The ticket on-sale contract's A7 fails closed, and a regression guard proves hub cards and JSON-LD offers only ever carry the active show's ticket types.
+created_at: '2026-10-28'
+autonomy: high
+
+features:
+  - id: F1
+    name: harden ticket-onsale-predicate A7 and lock the hub/JSON-LD wrong-show filter with fixture-replay checks
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/backlog-wave-1028/onsale-followups/goldens/proof-on-main.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: the prerendered /national-show page does not reach firebase-admin, and the check fails closed when the sweep is missing or silent
+      command: python3 contracts/checks/onsale-followups/check-national-show-not-prerendered-admin.py .
+      timeout_seconds: 60
+    - id: A2
+      description: hub cards and JSON-LD offers exclude other-show ticket types (demo cleared, recorded catalogue plus a same-slug impostor), under active, other and no show
+      command: pnpm exec tsx contracts/checks/onsale-followups/check-hub-show-filter.mts
+      timeout_seconds: 120
+    - id: A3
+      description: the hub ticket-type query selects the show reference
+      command: grep -q "^    show,$" sanity/queries.ts
+      timeout_seconds: 10
+    - id: A4
+      description: the tickets hub loader passes the resolved active show to buildHubCards
+      command: grep -q "^      activeShowId,$" lib/data/admission-availability.ts
+      timeout_seconds: 10
+    - id: A6
+      description: the prerendered /national-show page passes the resolved active show to buildHubCards
+      command: grep -q "^    activeShowId,$" "app/(nos)/national-show/page.tsx"
+      timeout_seconds: 10
+    - id: A5
+      description: ticket-onsale-predicate A7 now calls the fail-closed helper, not the negated pipeline
+      command: grep -q "check-national-show-not-prerendered-admin.py" .agent/memory/project/specs/ticket-onsale-predicate/contract-f1.yaml
+      timeout_seconds: 10
