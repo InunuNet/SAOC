@@ -68,3 +68,8 @@ file cannot export it directly (Next rejects non-route exports from page.tsx), h
   Unfiltered-types mutant (every type's `show` rewritten to the active id, i.e. offers built from
   unfiltered ticketTypes): FAIL `buildShowOffers for show-fictional-test offers another show's types: vip,weekend-pass-early-bird,early-bird`.
 - A6 is now only the page call-site grep (`buildShowOffers(hubTicketTypes, new Date(), resolveActiveShow(shows ?? []))`).
+
+## Triad (A7-A10)
+A7 codex_qa required; A8 browser_deployed_check and A9 gws_inbox_check declared non-required (same reasons as gate-hygiene A11/A12);
+A10 is the RUN AFTER DEPLOY plain check (check-deployed-nos-jsonld.mjs). Verified against a local mock host:
+good offers -> rc 0; VIP 999 -> rc 1 (`VIP offer price is 999, want 300`, `wrong-show price 999`); unreachable -> rc 77; no credentials -> rc 77.
