@@ -39,5 +39,5 @@ const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
 export function isUpcoming(event: { date: string; endDate?: string | null }, now: Date): boolean {
   const last = event.endDate ?? event.date;
   if (DATE_ONLY.test(last)) return last >= sastDate(now);
-  return Date.parse(last) >= Date.parse(sastStartOfDay(now));
+  return new Date(last).getTime() >= new Date(sastStartOfDay(now)).getTime();
 }
