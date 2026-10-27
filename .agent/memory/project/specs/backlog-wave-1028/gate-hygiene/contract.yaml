@@ -33,7 +33,7 @@ assertions:
       description: F1 audit-fixes NOS sitemap check still passes (already green on main; regression guard)
       command: pnpm exec tsx contracts/checks/audit-fixes-2026-10-25/check-sitemap-routes.mts
     - id: A4
-      description: F1 both sitemap checks pass unmutated and fail on four deliberately broken sitemaps (fails on main at the baseline)
+      description: F1 both sitemap checks pass unmutated and fail on six deliberately broken sitemaps (incl. an added /does-not-exist in each route list) (fails on main at the baseline)
       command: pnpm exec tsx .agent/memory/project/specs/backlog-wave-1028/gate-hygiene/checks/check-sitemap-mutations.mts
     - id: A5
       description: F2 isUpcoming has no Date.parse/UTC/now and 21 table rows match under real and statics-less Date (fails on main)
@@ -42,7 +42,7 @@ assertions:
       description: F3 checkout route returns the F5 400 for a day-selection type with no chosenDay, 4xx for null, no Firestore write, no outbound payment call (regression guard; passes on main, A7 proves it can fail)
       command: pnpm exec tsx .agent/memory/project/specs/backlog-wave-1028/gate-hygiene/checks/check-checkout-day-null.mts
     - id: A7
-      description: F3 mutation proof, A6 fails when the route day guard is disabled
+      description: F3 mutation proof, A6 fails on three route mutants (guard disabled, flag derived from one slug, every type day-required)
       command: pnpm exec tsx .agent/memory/project/specs/backlog-wave-1028/gate-hygiene/checks/check-checkout-day-mutation.mts
     - id: A8
       description: Scope guard, the only product file changed under app, lib, components or sanity is lib/sast-date.ts (vacuous on main, guards the dev diff)

@@ -16,7 +16,9 @@ const outbound: string[] = [];
 const sanityQueries: string[] = [];
 const DAY_TYPE = { _id: 't1', name: 'Weekend Pass', slug: 'weekend-pass', demo: false, active: true, price: 100, regularPrice: 100, capacity: 500, show: { _ref: 'show1' }, releasedQuantity: null, earlyBirdCutoff: null, requiresDaySelection: true, requiresAttendeeNames: false, capacityPool: null, headcountPerUnit: null, excludedDays: [] };
 const FLAT_TYPE = { ...DAY_TYPE, slug: 'vip', requiresDaySelection: false };
-const TYPES: Record<string, unknown> = { 'weekend-pass': DAY_TYPE, vip: FLAT_TYPE };
+// Two day-required types with different slugs (a guard keyed on one slug must not pass) and one day-optional type.
+const DAY_TYPE_2 = { ...DAY_TYPE, _id: 't3', name: 'Workshop Pass', slug: 'workshop-pass' };
+const TYPES: Record<string, unknown> = { 'weekend-pass': DAY_TYPE, 'workshop-pass': DAY_TYPE_2, vip: FLAT_TYPE };
 
 const fakeSanity = {
   createClient: () => ({
@@ -60,21 +62,24 @@ const post = async (lineItem: Record<string, unknown>) => {
 
 const failures: string[] = [];
 const WANT = 'A day selection is required for this ticket type.';
-for (const [label, item] of [['chosenDay absent', { ticketType: 'weekend-pass', ...person }]] as const) {
+for (const [label, item] of [
+  ['weekend-pass chosenDay absent', { ticketType: 'weekend-pass', ...person }],
+  ['workshop-pass chosenDay absent', { ticketType: 'workshop-pass', ...person }],
+] as const) {
   const r = await post(item);
   if (r.status !== 400 || r.body.error !== WANT) failures.push(`${label}: got ${r.status} ${JSON.stringify(r.body)}, want 400 "${WANT}"`);
 }
 // chosenDay: null is refused earlier by parseLineItems (400) — still a 4xx with nothing written.
-const nul = await post({ ticketType: 'weekend-pass', chosenDay: null, ...person });
-if (nul.status < 400 || nul.status >= 500) failures.push(`chosenDay null: got ${nul.status}, want a 4xx`);
+for (const slug of ['weekend-pass', 'workshop-pass']) {
+  const nul = await post({ ticketType: slug, chosenDay: null, ...person });
+  if (nul.status < 400 || nul.status >= 500) failures.push(`${slug} chosenDay null: got ${nul.status}, want a 4xx`);
+}
 // Reachability control: the day-selection branch is what refused it, not an unrelated gate. A non-day type with no day passes the day
 // check (it fails later, inside the mocked-out reservation, which must not be a 400 day error).
 const ctl = await post({ ticketType: 'vip', ...person });
 if (ctl.body.error === WANT) failures.push('control: a non-day type was refused for a missing day');
 if (!sanityQueries.some((q) => /_type == "ticketType"/.test(q))) failures.push('route never looked up the ticket type (mock not reached)');
 if (outbound.length) failures.push(`outbound fetch calls (payment/network): ${outbound.join(',')}`);
-const refusedWrites = writes.length;
-console.log(JSON.stringify({ writes, outbound, ctlStatus: ctl.status, nulStatus: nul.status }));
-void refusedWrites;
+if (writes.length) failures.push(`Firestore write attempts: ${writes.join(',')} (want none)`);
 if (failures.length) { console.error('FAIL\n' + failures.join('\n')); process.exit(1); }
 console.log('PASS: day-selection type with no/null chosenDay is refused 4xx, no order written, no payment call');

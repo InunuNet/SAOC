@@ -12,6 +12,8 @@ const mutations = [
   { id: 'M2 list /media-kit (gated, must stay out) in SAOC sitemap', file: 'lib/saoc-sitemap-routes.ts', from: "  { path: '/about',", to: "  { path: '/media-kit', changeFrequency: 'yearly', priority: 0.1 },\n  { path: '/about',", check: SAOC_CHECK },
   { id: 'M3 list /privacy (canonical is the SAOC host) in NOS_EXTRA_STATIC_ROUTES', file: 'lib/nos-sitemap-routes.ts', from: "  { path: '/contact',", to: "  { path: '/privacy', changeFrequency: 'yearly', priority: 0.3 },\n  { path: '/contact',", check: NOS_CHECK },
   { id: 'M4 drop /contact from NOS_EXTRA_STATIC_ROUTES', file: 'lib/nos-sitemap-routes.ts', from: "  { path: '/contact', changeFrequency: 'yearly', priority: 0.5 },\n", to: '', check: NOS_CHECK },
+  { id: 'M5 add /does-not-exist to SAOC_STATIC_ROUTES', file: 'lib/saoc-sitemap-routes.ts', from: "  { path: '/about',", to: "  { path: '/does-not-exist', changeFrequency: 'yearly', priority: 0.1 },\n  { path: '/about',", check: SAOC_CHECK },
+  { id: 'M6 add /does-not-exist to NOS_EXTRA_STATIC_ROUTES', file: 'lib/nos-sitemap-routes.ts', from: "  { path: '/contact',", to: "  { path: '/does-not-exist', changeFrequency: 'yearly', priority: 0.1 },\n  { path: '/contact',", check: NOS_CHECK },
 ];
 
 const failures: string[] = [];
