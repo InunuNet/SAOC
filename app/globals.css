@@ -623,12 +623,13 @@ h3.font-serif {
    properties only, so another site's theme supplies its own values.
    ============================================================ */
 
-/* Hero facts: dd above dt, stacked and left-aligned to the h1 edge, no divider, no box, no caps. DOM order stays dt then dd. */
+/* Hero facts: dd above dt, a left-aligned row starting at the h1 edge, no divider, no box, no caps. DOM order stays dt then dd. */
 .hero-facts {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  justify-content: flex-start;
   align-items: flex-start;
-  gap: 20px;
+  gap: 20px 40px;
   margin: 32px 0 0;
   padding: 0;
 }
@@ -659,7 +660,7 @@ h3.font-serif {
 }
 @media (min-width: 640px) {
   .hero-facts {
-    gap: 24px;
+    gap: 24px 40px;
   }
 }
 

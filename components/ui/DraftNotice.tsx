@@ -12,11 +12,16 @@ interface DraftNoticeProps {
   leadIn: string;
   /** The rest of the notice, verbatim. */
   children: ReactNode;
+  /** Marks the notice as a placeholder (data-placeholder="true"), as /members always has. */
+  placeholder?: boolean;
 }
 
-export function DraftNotice({ leadIn, children }: DraftNoticeProps) {
+export function DraftNotice({ leadIn, children, placeholder = false }: DraftNoticeProps) {
   return (
-    <p className="border-0 border-b border-solid border-rule bg-transparent pb-4 text-[15px] text-muted">
+    <p
+      data-placeholder={placeholder ? 'true' : undefined}
+      className="border-0 border-b border-solid border-rule bg-transparent pb-4 text-[15px] text-muted"
+    >
       <strong className="font-medium">{leadIn}</strong> {children}
     </p>
   );

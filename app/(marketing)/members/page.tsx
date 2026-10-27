@@ -42,7 +42,7 @@ export default function MembersPage() {
       >
         <section className="doc-section">
           <div className="doc-prose">
-            <DraftNotice leadIn="Not yet available.">
+            <DraftNotice leadIn="Not yet available." placeholder>
               Member login and the Members Portal itself have not been built for this site yet.
               This page will be updated once they are.
             </DraftNotice>
