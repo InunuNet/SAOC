@@ -169,9 +169,10 @@
    "target": "Sanity 26yfbug4/production via the deployed Studio (Playwright publish) then restore"
   },
   "contracts/checks/cms-loop-f3-national-show/check-fallback-cleanup-revision-guard.mjs": {
-   "class": "REAL_SANITY",
-   "note": "patch + restore of the live nationalShow document",
-   "target": "Sanity 26yfbug4/production nationalShow doc via client.patch().set().commit()"
+   "class": "STATIC_FP",
+   "match": "function makeFakeSanityClient",
+   "note": "static source read plus restoreGuarded against a fake in-memory Sanity-shaped client (makeFakeSanityClient); imports only fs, url, path and _mutation-guard.mjs, no @sanity/client",
+   "target": "source text and an in-memory fake only"
   },
   "contracts/checks/cms-loop-f3-national-show/check-headline-round-trip.mjs": {
    "class": "REAL_SANITY",
@@ -502,9 +503,10 @@
    "target": "Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged"
   },
   "contracts/checks/ticketing-hardening/check-withcleanup-ordering.mjs": {
-   "class": "REAL_FIRESTORE",
-   "note": "uses withCleanup/sentinelEmail helpers; confirm per script",
-   "target": "Firestore saoc-webapp via the ticketing-hardening shared helpers (sentinel-tagged)"
+   "class": "STATIC_FP",
+   "match": "readFileSync\\(SHARED_PATH",
+   "note": "text-parses _shared.mjs withCleanup() for call order; imports only fs, path and url, never executes _shared.mjs",
+   "target": "source text only"
   },
   "contracts/checks/vendor-f5-register-route/check-http-rate-limit-per-ip.sh": {
    "class": "SANDBOX_SCRUBBED",

@@ -157,6 +157,19 @@ assertions:
         regression coverage for F3's sweep.
       command: 'node --import tsx/esm scripts/scan-dataset-residue.ts'
 
+    - id: A14
+      description: >
+        Behavioral, negative-verified: A1's cleanup FALLBACK path (baselineRev unset —
+        Step 3 never confirmed the sentinel publish landed) is revision-guarded on
+        baseline._rev, not an unconditioned patch. Against a fixture simulating a
+        legitimate concurrent write landing between baseline capture and the fallback
+        running, the fixed logic throws (raising the residue/conflict alert path) instead
+        of clobbering; the same fixture replayed against the pre-fix unconditioned-patch
+        logic is proven to silently clobber the concurrent write, so this check
+        discriminates old (broken) from new (fixed) behavior rather than passing
+        unconditionally.
+      command: 'node contracts/checks/cms-loop-f3-national-show/check-fallback-cleanup-revision-guard.mjs'
+
     - id: A15
       description: >
         Behavioral, negative-verified: A1's DRAFT-residue cleanup (the block that deletes
@@ -171,18 +184,3 @@ assertions:
         silently skip it (the bug — ordinary FAIL, no alert), so this check discriminates
         old (broken) from new (fixed) behavior.
       command: 'node contracts/checks/cms-loop-f3-national-show/check-draft-partial-match-cleanup.mjs'
-
-manual_only:
-  - id: A14
-    reason: "check-fallback-cleanup-revision-guard.mjs writes to the production Sanity dataset (project 26yfbug4): Sanity 26yfbug4/production nationalShow doc via client.patch().set().commit(); sentinel residue once sat on the live site for 3 days; run by hand only, with the operator present"
-    description: >
-      Behavioral, negative-verified: A1's cleanup FALLBACK path (baselineRev unset —
-      Step 3 never confirmed the sentinel publish landed) is revision-guarded on
-      baseline._rev, not an unconditioned patch. Against a fixture simulating a
-      legitimate concurrent write landing between baseline capture and the fallback
-      running, the fixed logic throws (raising the residue/conflict alert path) instead
-      of clobbering; the same fixture replayed against the pre-fix unconditioned-patch
-      logic is proven to silently clobber the concurrent write, so this check
-      discriminates old (broken) from new (fixed) behavior rather than passing
-      unconditionally.
-    command: 'node contracts/checks/cms-loop-f3-national-show/check-fallback-cleanup-revision-guard.mjs'
