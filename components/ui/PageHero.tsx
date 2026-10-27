@@ -7,10 +7,9 @@
 // With no `image` the hero is typographic: the same copy on solid sage, no media and no scrim.
 // =============================================================
 
-import Image from 'next/image';
 import type { ReactNode } from 'react';
+import { HeroPicture } from '@/components/ui/HeroPicture';
 import { normaliseHeroFacts, type HeroFact } from '@/lib/hero-facts';
-import heroSourceWidths from '@/lib/hero-source-widths.json';
 import { heroSourceAspect } from '@/lib/data/saoc-hero-photos';
 
 interface PageHeroProps {
@@ -72,16 +71,12 @@ export function PageHero({
             data-page-hero-media
             className="relative aspect-[2/1] w-full md:absolute md:inset-0 md:aspect-auto"
           >
-            <Image
+            <HeroPicture
               src={image}
-              alt=""
-              fill
               priority
               sizes={sizes}
-              quality={image in heroSourceWidths ? 88 : undefined}
               className="object-cover"
               style={{ objectPosition: imagePosition }}
-              aria-hidden="true"
             />
           </div>
           <div

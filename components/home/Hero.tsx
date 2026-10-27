@@ -1,11 +1,11 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { ArrowRight, Pause, Play } from 'lucide-react';
 import type { SanityImageSource } from '@sanity/image-url';
 
+import { HeroPicture } from '@/components/ui/HeroPicture';
 import { HOME_HERO_SLIDES } from '@/lib/data/home-hero-slides';
 import { heroSourceAspect } from '@/lib/data/saoc-hero-photos';
 import { formatShowDateRange, showLabelWithEdition, showYearOf } from '@/lib/show-identity';
@@ -16,8 +16,6 @@ const CAROUSEL_INTERVAL_MS = 7000;
 const FADE_MS = 1400;
 const HEADING_ID = 'home-hero-heading';
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
-// The hero is a full-bleed photograph: its source is served from the quality-88 variant set, up to 3840 wide.
-const HERO_IMAGE_QUALITY = 88;
 
 function subscribeReducedMotion(onChange: () => void): () => void {
   const query = window.matchMedia(REDUCED_MOTION_QUERY);
@@ -120,10 +118,8 @@ export function Hero({ show }: HeroProps) {
                 isActive ? 'opacity-100' : 'opacity-0',
               ].join(' ')}
             >
-              <Image
+              <HeroPicture
                 src={slide.src}
-                alt=""
-                fill
                 className={['home-hero-img', drifting ? 'home-hero-drift' : ''].join(' ')}
                 style={
                   {
@@ -133,7 +129,6 @@ export function Hero({ show }: HeroProps) {
                 }
                 priority={i === 0}
                 sizes={`(max-width: 1023px) max(100vw, calc(50vw * ${aspect})), max(100vw, ${Math.ceil(HERO_BOX_HEIGHT * aspect)}px)`}
-                quality={HERO_IMAGE_QUALITY}
               />
             </div>
           );

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Pre-generates the WebP srcset candidates lib/image-loader.ts points at. Runs before
+// Pre-generates the WebP (and, for hero sources, AVIF) srcset candidates lib/image-loader.ts points at. Runs before
 // `next build` (see the build script); output lands in public/images/_opt (gitignored).
 // Fails the build on any error: a missing variant would 404 a hero image.
 import { mkdir, readFile, readdir, stat } from 'node:fs/promises';
@@ -17,6 +17,9 @@ const HERO_WEBP_QUALITY = 88;
 // untouched (a hero is never served narrower than box x device pixel ratio), only bytes drop.
 const HERO_LARGE_WEBP_QUALITY = 78;
 const HERO_SOURCES = new Set(['orchid-violet.jpg', 'orchid-pink.jpg', 'orchid-dark.jpg', 'orchid-purple.jpg', 'orchid-yellow.jpg', 'nos-hero-S3a.jpg', 'nos-hero-S3b.jpg', 'nos-hero-S2a.jpg', 'nos-hero-S2c.jpg', 'nos-hero-S1b.jpg', 'nos-hero-H4a.jpg', 'nos-hero-H4b.jpg', 'nos-hero-D1.jpg', 'nos-hero-PK1.jpg', 'nos-hero-PK3.jpg', 'nos-hero-Y1.jpg'].map((name) => path.join(SOURCE_ROOT, name)));
+// Hero sources also get an AVIF set (same widths, same -q88 name, .avif extension), served first by
+// components/ui/HeroPicture.tsx with the WebP set as fallback. AVIF q55 is far smaller than WebP q88.
+const HERO_AVIF_QUALITY = 55;
 // Every image keeps this cap (lib/image-loader.ts). Only the full-bleed hero photographs in
 // lib/hero-source-widths.json go above it, at q88, up to their own native width and never beyond.
 const STANDARD_MAX_WIDTH = 2048;
@@ -41,10 +44,11 @@ function widthsFor(source) {
 /** Variants for one width: q75 up to the cap, plus the -q88 name for a hero source (encoded at q78 above the cap). */
 function encodingsFor(isHero, isLarge) {
   const encodings = [];
-  if (!isLarge) encodings.push(['', { quality: WEBP_QUALITY }]);
+  if (!isLarge) encodings.push(['', 'webp', { quality: WEBP_QUALITY }]);
   if (isHero) {
     const quality = isLarge ? HERO_LARGE_WEBP_QUALITY : HERO_WEBP_QUALITY;
-    encodings.push([`-q${HERO_WEBP_QUALITY}`, { quality, smartSubsample: true }]);
+    encodings.push([`-q${HERO_WEBP_QUALITY}`, 'webp', { quality, smartSubsample: true }]);
+    encodings.push([`-q${HERO_WEBP_QUALITY}`, 'avif', { quality: HERO_AVIF_QUALITY }]);
   }
   return encodings;
 }
@@ -73,8 +77,8 @@ let skipped = 0;
 /** Writes (or skips as fresh) every variant of one image; `pipeline(width)` returns the sharp pipeline sized to that width. */
 async function emitVariants(source, relative, isHero, mtimeMs, pipeline) {
   await mkdir(path.dirname(path.join(OUTPUT_ROOT, relative)), { recursive: true });
-  for (const [width, isLarge] of widthsFor(source)) for (const [suffix, webp] of encodingsFor(isHero, isLarge)) {
-    const output = path.join(OUTPUT_ROOT, `${relative}-${width}${suffix}.webp`);
+  for (const [width, isLarge] of widthsFor(source)) for (const [suffix, format, options] of encodingsFor(isHero, isLarge)) {
+    const output = path.join(OUTPUT_ROOT, `${relative}-${width}${suffix}.${format}`);
     const key = output.toLowerCase();
     if (claimed.has(key)) {
       throw new Error(`image variant collision: ${source} and ${claimed.get(key)} -> ${output}`);
@@ -84,7 +88,7 @@ async function emitVariants(source, relative, isHero, mtimeMs, pipeline) {
       skipped += 1;
       continue;
     }
-    await (await pipeline(width)).webp(webp).toFile(output);
+    await (await pipeline(width))[format](options).toFile(output);
     generated += 1;
   }
 }
