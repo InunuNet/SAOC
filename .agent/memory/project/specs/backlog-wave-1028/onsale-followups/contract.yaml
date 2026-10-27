@@ -25,15 +25,15 @@ assertions:
       timeout_seconds: 120
     - id: A3
       description: the hub ticket-type query selects the show reference
-      command: grep -q "^    show,$" sanity/queries.ts
+      command: 'sed -n ''/^export const activeTicketTypesByCategoryQuery/,/^`);/p'' sanity/queries.ts | grep -q "^    show,$"'
       timeout_seconds: 10
     - id: A4
       description: the tickets hub loader passes the resolved active show to buildHubCards
-      command: grep -q "^      activeShowId,$" lib/data/admission-availability.ts
+      command: 'sed -n ''/buildHubCards({/,/});/p'' lib/data/admission-availability.ts | grep -q "^      activeShowId,$"'
       timeout_seconds: 10
     - id: A6
       description: the prerendered /national-show page passes the resolved active show to buildHubCards
-      command: grep -q "^    activeShowId,$" "app/(nos)/national-show/page.tsx"
+      command: grep -qF "buildShowOffers(hubTicketTypes, new Date(), resolveActiveShow(shows ?? []))" "app/(nos)/national-show/page.tsx"
       timeout_seconds: 10
     - id: A5
       description: ticket-onsale-predicate A7 now calls the fail-closed helper, not the negated pipeline

@@ -34,14 +34,17 @@ if (!vip) failures.push('fixture holds no vip type; check is vacuous');
 const impostor = { ...vip, _id: 'ticketType-vip-other-show', price: IMPOSTOR_PRICE, show: { _ref: OTHER } };
 const cmsTypes = [...recorded, impostor].map((d) => ({ ...d, demo: false }));
 
-function slugs(activeShowId: string | null): { cards: string[]; offers: string[]; vipPrice: number | null } {
+function slugs(activeShowId: string | null): { cards: string[]; offers: string[]; vipPrice: number | null; vipOfferPrice: number | null; prices: number[] } {
   const built = hub.buildHubCards({
     cmsTypes, activeShowId, salesOpen: true, soldByType: {}, soldByDay: null, stockKnown: true, now, showDays: SHOW_DAYS,
   });
   const cards = Object.values(built.cards as Record<string, { slug: string }>).map((c) => c.slug).filter((s) => s !== 'workshops');
-  const offers = (off.buildTicketOffers(built.cards) as { slug: string }[]).map((o) => o.slug);
+  const offerRows = off.buildTicketOffers(built.cards) as { slug: string; price: number }[];
+  const offers = offerRows.map((o) => o.slug);
   const vipCard = (Object.values(built.cards) as { slug: string; price: number | null }[]).find((c) => c.slug === 'vip');
-  return { cards, offers, vipPrice: vipCard?.price ?? null };
+  const cardPrices = (Object.values(built.cards) as { price: number | null }[]).flatMap((c) => (c.price === null ? [] : [c.price]));
+  const vipOffer = offerRows.find((o) => o.slug === 'vip');
+  return { cards, offers, vipPrice: vipCard?.price ?? null, vipOfferPrice: vipOffer?.price ?? null, prices: [...cardPrices, ...offerRows.map((o) => o.price)] };
 }
 
 const forActive = slugs(ACTIVE);
@@ -51,6 +54,8 @@ for (const [where, list] of [['hub cards', forActive.cards], ['JSON-LD offers', 
 if (!forActive.cards.includes('early-bird')) failures.push(`hub cards for ${ACTIVE} lost early-bird`);
 if (!forActive.offers.includes('early-bird')) failures.push(`JSON-LD offers for ${ACTIVE} lost early-bird`);
 
+if (forActive.vipOfferPrice !== vip?.price) failures.push(`JSON-LD VIP offer for ${ACTIVE} is ${forActive.vipOfferPrice}, not the active show's ${vip?.price}`);
+if (forActive.prices.includes(IMPOSTOR_PRICE)) failures.push(`a ${OTHER} price ${IMPOSTOR_PRICE} reaches hub cards or JSON-LD offers for ${ACTIVE}`);
 if (forActive.vipPrice === IMPOSTOR_PRICE) failures.push(`hub VIP card for ${ACTIVE} carries the ${OTHER} impostor price ${IMPOSTOR_PRICE}`);
 
 const forOther = slugs(OTHER);
@@ -59,6 +64,7 @@ for (const [where, list] of [['hub cards', forOther.cards], ['JSON-LD offers', f
   const foreign = list.filter((s) => s !== 'vip');
   if (foreign.length) failures.push(`${where} for ${OTHER} list another show's types: ${foreign.join(',')}`);
 }
+if (forOther.vipOfferPrice !== IMPOSTOR_PRICE) failures.push(`JSON-LD VIP offer for ${OTHER} is ${forOther.vipOfferPrice}, not its own ${IMPOSTOR_PRICE}`);
 if (forOther.vipPrice !== IMPOSTOR_PRICE) failures.push(`hub VIP card for ${OTHER} is ${forOther.vipPrice}, not its own ${IMPOSTOR_PRICE}`);
 
 const forNone = slugs(null);

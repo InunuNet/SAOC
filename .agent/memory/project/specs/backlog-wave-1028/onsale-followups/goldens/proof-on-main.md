@@ -27,3 +27,16 @@ real leak and is what A2 injects.
 
 ## Gap (c), out of scope
 A refused /tickets/[slug] renders a hero with no notice; needs sourced copy, none exists.
+
+## Round 2 (Codex FAIL fixes), all A1-A6 PASS on main, each fix re-proved by mutation
+- A1 helper: sweep that prints the header then raises -> `FAIL sweep ended abnormally (rc=1, expected 0)`.
+  Violation line with trailing annotation -> `FAIL prerendered hub page reaches firebase-admin`
+  (match is substring, as broad as the original grep).
+- A3 now scoped to the activeTicketTypesByCategoryQuery block; renaming `show,` on line 174 -> A3 FAIL
+  (the detail query's `show,` no longer satisfies it).
+- A4 scoped to the buildHubCards({...}) call in the loader; deleting the arg -> A4 FAIL.
+- A6 asserts the page's call site `buildShowOffers(hubTicketTypes, new Date(), resolveActiveShow(shows ?? []))`;
+  replacing the third arg with `null` -> A6 FAIL.
+- A2 also asserts prices: the VIP JSON-LD offer must equal the active show's price, the impostor's 999
+  must not appear in any card or offer price under the active show, and under the other show the VIP
+  offer must be 999. Mutant letting the same-slug vip through: `JSON-LD VIP offer for show-fictional-test is 300, not its own 999`.

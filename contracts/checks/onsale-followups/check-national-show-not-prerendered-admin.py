@@ -26,14 +26,20 @@ def main() -> int:
         print(f"FAIL sweep script missing: {sweep}")
         return 1
     proc = subprocess.run([sys.executable, str(sweep), str(root)], capture_output=True, text=True)
-    # The sweep exits 1 for ANY violation anywhere; only its report matters here.
     lines = proc.stdout.splitlines()
     heads = [i for i, ln in enumerate(lines) if ln.endswith(HEADER)]
     if not heads:
         print(f"FAIL sweep produced no VIOLATIONS header (rc={proc.returncode}): {proc.stderr[-200:]}")
         return 1
-    violations = [ln.strip() for ln in lines[heads[0] + 1:] if ln.startswith("  ")]
-    hub = [v for v in violations if v.endswith("national-show/page.tsx") and "/" in v and v.count("national-show/") == 1]
+    violations = [ln.strip() for ln in lines[heads[0] + 1:] if ln.startswith("  ") and ln.strip() != "(none)"]
+    # The sweep exits 1 exactly when it lists violations (any page), 0 when clean; anything else,
+    # or any stderr, is a crash after the header and must not read as a pass.
+    expected_rc = 1 if violations else 0
+    if proc.returncode != expected_rc or proc.stderr.strip():
+        print(f"FAIL sweep ended abnormally (rc={proc.returncode}, expected {expected_rc}): {proc.stderr[-200:]}")
+        return 1
+    # As broad as the original A7 grep: any violation line mentioning the hub page, annotated or not.
+    hub = [v for v in violations if "national-show/page.tsx" in v]
     if hub:
         print(f"FAIL prerendered hub page reaches firebase-admin: {hub}")
         return 1
