@@ -1,0 +1,21 @@
+{
+  "milestone": "M1 (FC legal pages + FE ticket PDF and email), one PR",
+  "allow": [
+    "app/(shared)/privacy/page.tsx",
+    "app/(shared)/terms/page.tsx",
+    "app/(marketing)/constitution/page.tsx",
+    "content/legal/**",
+    "components/legal/**",
+    "components/ui/PageHero.tsx",
+    "lib/show-contact.ts",
+    "lib/ticket-pdf-data.ts",
+    "lib/ticket-pdf-schedule.ts",
+    "lib/ticket-pdf.ts",
+    "lib/data/ticket-presentation.ts",
+    "lib/order-visit-info.ts",
+    "emails/OrderConfirmation.tsx",
+    "README.md",
+    "docs/leeann-content-build*.md",
+    ".agent/memory/project/specs/leeann-content-build/checks-updated.md"
+  ]
+}

@@ -1,0 +1,56 @@
+# Milestone M1 (one PR with F2): FC, the legal and company pages, reproduced verbatim from Lee-Ann's text.
+# Read goldens/README.md and goldens/decisions.md first. Gate: python3 execution/contract.py gate
+schema: athanor.contract/v1
+slug: leeann-content-build
+goal: Privacy, Terms and the company-documents page publish Lee-Ann's 24 Oct 2026 text word for word, with nothing added and her struck-through placeholders gone.
+created_at: '2026-10-25'
+autonomy: high
+
+features:
+  - id: F1
+    name: FC legal pages - Privacy, Terms and Constitution verbatim from her documents
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/leeann-content-build/goldens/README.md
+  - .agent/memory/project/specs/leeann-content-build/goldens/decisions.md
+  - .agent/memory/project/specs/leeann-content-build/goldens/source/privacy-policy.txt
+  - .agent/memory/project/specs/leeann-content-build/goldens/source/terms-and-conditions.txt
+  - .agent/memory/project/specs/leeann-content-build/goldens/source/company-constitution.txt
+  - .agent/memory/project/specs/leeann-content-build/goldens/typo-corrections.json
+  - .agent/memory/project/specs/leeann-content-build/goldens/scope/m1.json
+  - .agent/memory/project/specs/leeann-content-build/goldens/codex-qa-prompt-m1.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: her three source files extract to the expected blocks (79, 103, 3), and her struck-through constitution placeholder never leaks into the golden
+      command: pnpm exec tsx contracts/checks/leeann-content/fc.mts golden
+    - id: A2
+      description: rendered /privacy and /terms (SAOC and NOS hosts) and /constitution (SAOC host) contain every block of her text in order, character for character apart from whitespace, with no copy that is not hers (no draft notice, no old headings), one h1 that is her title (Constitution keeps its own), her links as anchors exactly as written, and OWZO unchanged
+      command: pnpm exec tsx contracts/checks/leeann-content/fc.mts render
+      timeout_seconds: 900
+    - id: A3
+      description: the retired AI-drafted notices and dated footers are gone from the three pages and their content and renderer directories
+      command: '! grep -rqE "Draft pending legal review|Last updated: (June|August) 2026|PayFast|Not yet published" "app/(shared)/privacy" "app/(shared)/terms" "app/(marketing)/constitution" content/legal components/legal'
+    - id: A4
+      description: scope guard - only M1 allow-list files changed, no golden or leeann-content check edited, every pre-existing check edit named in checks-updated.md
+      command: pnpm exec tsx contracts/checks/leeann-content/scope.mts m1
+    - id: A5
+      description: typecheck is clean
+      command: pnpm exec tsc --noEmit
+      timeout_seconds: 600
+    - id: A6
+      description: lint reports no errors
+      command: pnpm lint
+      timeout_seconds: 600
+    - id: A7
+      description: production build passes (site origins set as App Hosting sets them)
+      command: NEXT_PUBLIC_SAOC_SITE_URL=http://localhost:3002 NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost:3002 pnpm build
+      timeout_seconds: 900
+    - id: A8
+      description: Deployed beta renders the three pages (browser tool against beta.saoc.co.za and nos.saoc.co.za, no prompts to Brad)
+      type: browser_deployed_check
+      target: .agent/memory/scratch/leeann-content-f1-browser-manifest.json
+      required: false

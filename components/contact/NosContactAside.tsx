@@ -1,7 +1,7 @@
 // =============================================================
 // NOS — components/contact/NosContactAside.tsx
 // Server Component. The contact page's aside (NOS Design CT4): "Looking for something else?" and
-// four routing links to the pages that answer the usual questions. Labels and hrefs are read from
+// three routing links to the pages that answer the usual questions. Labels and hrefs are read from
 // the show nav by leaf id, never retyped. Rows reuse the hub index's list rules and arrow glyph
 // (nos-structure.css `.nos-index-group`); the gold ring is one scoped rule on `.nos-contact-aside`.
 // =============================================================
@@ -12,22 +12,10 @@ import { NOS_NAV } from '@/components/nos-chrome/nos-nav';
 import type { NavLeaf } from '@/components/chrome/nav-config';
 import { nosPath } from '@/lib/nos-paths';
 
-const HEADING = 'Looking for something else?';
-const SPONSOR_ENQUIRY_HASH = '#enquire';
+const HEADING = 'Looking for something else';
 
-interface AsideRow {
-  id: string;
-  /** Appended after the nav href, e.g. the sponsors page's enquiry section. */
-  hash?: string;
-}
-
-// Order is the ruling's: FAQ, Plan your visit, Exhibitor entry guide, Show sponsors.
-const ROWS: readonly AsideRow[] = [
-  { id: 'faq' },
-  { id: 'plan-your-visit' },
-  { id: 'exhibitors' },
-  { id: 'show-sponsors', hash: SPONSOR_ENQUIRY_HASH },
-];
+// Order is the ruling's (CT-G1): FAQ, Plan your visit, What to expect.
+const ROWS: readonly { id: string }[] = [{ id: 'faq' }, { id: 'plan-your-visit' }, { id: 'what-to-expect' }];
 
 /** Every leaf in the nav tree, depth first (a leaf is any {id, label, href} node). */
 function collectLeaves(node: unknown, into: Map<string, NavLeaf>): void {
@@ -56,36 +44,24 @@ const LEAVES = (() => {
 
 export function NosContactAside() {
   return (
-    <div className="nos-index-group nos-contact-aside">
-      <h2 className="nos-index-eyebrow border-b border-rule pb-4">{HEADING}</h2>
+    <nav aria-label={HEADING} className="nos-index-group nos-contact-aside">
+      <h2 className="nos-ct-label">{HEADING}</h2>
       <ul>
-        {ROWS.map(({ id, hash }) => {
+        {ROWS.map(({ id }) => {
           const leaf = LEAVES.get(id);
           if (!leaf) return null;
           return (
             <li key={id}>
-              <Link href={`${nosPath(leaf.href)}${hash ?? ''}`}>
+              <Link href={nosPath(leaf.href)}>
                 {leaf.label}
                 <span aria-hidden="true" className="nos-index-arrow">
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="20"
-                    height="20"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.75"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M5 12h14M13 6l6 6-6 6" />
-                  </svg>
+                  &rarr;
                 </span>
               </Link>
             </li>
           );
         })}
       </ul>
-    </div>
+    </nav>
   );
 }

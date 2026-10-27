@@ -1,0 +1,17 @@
+2386c74132697463c1933727634a8f075110b675633194650c3ed010e970da9a  .agent/memory/project/specs/events-redesign/checks/_color.mjs
+80cb5924a6d74c5d4de86dc4f3f5f8564e679e753bc89ba065ab0a2338521528  .agent/memory/project/specs/events-redesign/checks/_lib.mjs
+8606b960d6eca931a638d21247d5c8ac3d2eedaf6551e82b40629385fd9607a1  .agent/memory/project/specs/events-redesign/checks/_probe.mjs
+250f2f0932933a16250e0c75cc82f13bf6bde8a6c5f32fbafc14a453863213bc  .agent/memory/project/specs/events-redesign/checks/_server.mjs
+5052107ff839e60d3cb6a404545bd09f84ae77b44fa23a44dc79eb468d43573c  .agent/memory/project/specs/events-redesign/checks/footprint.mjs
+62484563f7036f95c41e330ed52c3821903033dd1d37de961930fa6bfc220f54  .agent/memory/project/specs/events-redesign/checks/live-query.mjs
+0d60263bab4f0876e12ad3f13ba5b399de43d46e7acc45611b52448f94ce67dc  .agent/memory/project/specs/events-redesign/checks/logic.mjs
+76f9a14950bac304fa68cc7a9326e93923e601ef750085bc683becbbd9142f47  .agent/memory/project/specs/events-redesign/checks/rendered.mjs
+2195a9e8f8c4baf4d4afd6a69bf8f1840647e3da43dc20d0fddedbeaed03dc6d  .agent/memory/project/specs/events-redesign/checks/static.mjs
+2fbafc46ca44cf56b0ca0e0c09658787f4cbf0074811d02abba3b517dd2e6be2  .agent/memory/project/specs/events-redesign/goldens/ev-spec.md
+e37a63a654d4169a5a394e89218b52909b9b7871f63d6f745cc9d601757e8f8c  .agent/memory/project/specs/events-redesign/goldens/event-row.golden.md
+d71871b05b75034562f1319d1f54d4e76acfe25acd243691fcb88354e4380974  .agent/memory/project/specs/events-redesign/goldens/footprint.json
+5a92c1349f025616640f01b163943cab0efedb7d2a2b73634893b7e81b83172e  .agent/memory/project/specs/events-redesign/goldens/copy.json
+95074cc08c178edb3a3fe9a60c6bc28897aae9945e3efa8fc1e8d22e4a104637  .agent/memory/project/specs/events-redesign/goldens/rendered.json
+798b2f459ceab5e249bd214423dbc56e114fea6acbc2675ab9a02e903aeb3264  .agent/memory/project/specs/events-redesign/goldens/codex-qa-prompt.md
+7e89e07464c478498e5bc66c5229e36de5e4ed6b3f3bd7383aa40fc7dd22cee4  .agent/memory/project/specs/events-redesign/goldens/post-deploy-checks.md
+aad59dfe726f08cad7605ab923a7c001830711909cbedaa53b1910ecedeb8551  .agent/memory/project/specs/events-redesign/nos-design-ruling-ev.md

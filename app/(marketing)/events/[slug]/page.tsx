@@ -1,13 +1,21 @@
+import type { ReactNode } from 'react';
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
 import type { Metadata } from 'next';
 
+import { Breadcrumb } from '@/components/chrome/Breadcrumb';
+import { ShowBand } from '@/components/home';
 import { JsonLd, eventJsonLd } from '@/components/seo/JsonLd';
+import { DocumentLayout } from '@/components/ui/DocumentLayout';
+import { VenueCard } from '@/components/show';
+import { RouteHero } from '@/components/ui/RouteHero';
 import { buildEventMetadata } from '@/lib/event-metadata';
+import { isNationalShowEvent } from '@/lib/events-list';
+import type { HeroFact } from '@/lib/hero-facts';
+import { formatShowDateRange } from '@/lib/show-identity';
 import { saocUrl } from '@/lib/site-hosts';
 import { sanityFetch } from '@/sanity/lib/fetch';
-import { eventBySlugQuery, eventSlugsQuery } from '@/sanity/queries';
-import type { SanityEvent } from '@/types';
+import { eventBySlugQuery, eventSlugsQuery, nationalShowQuery } from '@/sanity/queries';
+import type { SanityEvent, ShowIdentity, ShowVenue } from '@/types';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
@@ -41,13 +49,41 @@ export async function generateMetadata({
   return buildEventMetadata(event, slug);
 }
 
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleString('en-ZA', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC',
-  });
+// Hero facts come straight from the event record. The National Show reads the host region from the
+// nationalShow singleton (the field ShowBand's "Host Region" reads); any other event names its host
+// society. An absent field drops out of the row (lib/hero-facts.ts); nothing stands in for it.
+function eventFacts(event: SanityEvent, show: ShowIdentity | null): HeroFact[] {
+  return [
+    { term: 'Dates', value: formatShowDateRange(event.date, event.endDate) ?? '' },
+    { term: 'Venue', value: event.venue ?? '' },
+    show
+      ? { term: 'Host region', value: show.hostRegion ?? '' }
+      : { term: 'Hosted by', value: event.hostSociety?.name ?? '' },
+  ];
+}
+
+/** A venue block only earns its place when the record says more than the name (the hero already has it). */
+function hasVenueDetail(venue: ShowVenue | null | undefined): venue is ShowVenue {
+  return Boolean(venue?.name && (venue.addressLines?.length || venue.city || venue.mapsUrl));
+}
+
+/**
+ * The page's one contextual block. A National Show reads the show's venue through the same
+ * VenueCard /contact uses (name, address, "Open in a map"); any other event has only its own venue
+ * and location strings, so it shows a block only when the location adds to the name.
+ */
+function venueBlock(event: SanityEvent, show: ShowIdentity | null): ReactNode | null {
+  if (show) return hasVenueDetail(show.venue) ? <VenueCard venue={show.venue} /> : null;
+  if (!event.venue || !event.location) return null;
+  return (
+    <section>
+      <h3 className="doc-aside-heading">The venue</h3>
+      <address className="not-italic font-sans text-[16px] leading-[1.55] text-ink/80">
+        <span className="block font-serif font-medium text-[18px] text-ink">{event.venue}</span>
+        <span className="block">{event.location}</span>
+      </address>
+    </section>
+  );
 }
 
 export default async function EventDetailPage({
@@ -66,8 +102,26 @@ export default async function EventDetailPage({
     notFound();
   }
 
+  const show = isNationalShowEvent(event)
+    ? await sanityFetch<ShowIdentity>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] })
+    : null;
+  const venue = venueBlock(event, show);
+
+  // Never an empty column. With a description it fills the prose column and the venue block is the
+  // aside. Without one, the National Show's band follows the hero directly (it carries the venue),
+  // and any other event's venue block takes the content column.
+  const layout = event.description ? (
+    <DocumentLayout aside={venue ?? undefined}>
+      <div className="doc-prose">
+        <p>{event.description}</p>
+      </div>
+    </DocumentLayout>
+  ) : venue && !show ? (
+    <DocumentLayout>{venue}</DocumentLayout>
+  ) : null;
+
   return (
-    <div className="mx-auto max-w-[860px] px-8 py-16">
+    <>
       <JsonLd
         data={eventJsonLd({
           name: event.title,
@@ -81,80 +135,21 @@ export default async function EventDetailPage({
         })}
       />
 
-      {/* Back link */}
-      <Link
-        href="/events"
-        className="inline-flex min-h-6 items-center font-mono text-[11px] uppercase tracking-[0.18em] text-muted hover:text-ink"
+      <Breadcrumb items={[{ label: 'Events', href: '/events' }, { label: event.title }]} />
+      <RouteHero
+        route="/events/[slug]"
+        eyebrow={event.kind ?? undefined}
+        heading={event.title}
+        facts={eventFacts(event, show)}
       >
-        ← All events
-      </Link>
+        {/* National Show events carry the show band (SV-1): straight after the hero when there is no
+            document layout, otherwise after the layout */}
+        {show && !layout ? <ShowBand show={show} split="event" /> : null}
+      </RouteHero>
 
-      {/* Kind badge */}
-      {event.kind ? (
-        <p
-          className="mt-6 inline-block rounded px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em]"
-          style={{ backgroundColor: 'var(--bone)', color: 'var(--muted)' }}
-        >
-          {event.kind}
-        </p>
-      ) : null}
+      {layout}
 
-      {/* Title */}
-      <h1 className="mt-3 font-serif tracking-[-0.015em] font-light text-[36px] leading-tight text-ink">
-        {event.title}
-      </h1>
-
-      {/* Dates */}
-      <p className="mt-3 font-sans text-[15px] text-ink/70">
-        {formatDate(event.date)}
-        {event.endDate && event.endDate !== event.date
-          ? ` – ${formatDate(event.endDate)}`
-          : null}
-      </p>
-
-      {/* Metadata */}
-      <dl className="mt-6 space-y-2 border-y border-rule py-6 font-sans text-[14px]">
-        {event.hostSociety ? (
-          <div className="flex gap-3">
-            <dt className="w-28 shrink-0 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-              Hosted by
-            </dt>
-            <dd className="text-ink/80">
-              <Link
-                href={`/societies/${event.hostSociety.slug}`}
-                className="hover:text-ink hover:underline"
-              >
-                {event.hostSociety.name}
-              </Link>
-            </dd>
-          </div>
-        ) : null}
-
-        {event.venue ? (
-          <div className="flex gap-3">
-            <dt className="w-28 shrink-0 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-              Venue
-            </dt>
-            <dd className="text-ink/80">{event.venue}</dd>
-          </div>
-        ) : null}
-
-        {event.location ? (
-          <div className="flex gap-3">
-            <dt className="w-28 shrink-0 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-              Location
-            </dt>
-            <dd className="text-ink/80">{event.location}</dd>
-          </div>
-        ) : null}
-      </dl>
-
-      {/* Description */}
-      {event.description ? (
-        <p className="mt-8 font-sans text-[16px] leading-relaxed text-ink/80">
-          {event.description}
-        </p>
-      ) : null}
-    </div>
+      {show && layout ? <ShowBand show={show} split="event" /> : null}
+    </>
   );
 }

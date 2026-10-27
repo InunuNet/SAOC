@@ -11,6 +11,8 @@ export interface TicketSectionProps {
   columns: 2 | 3;
   // Rendered above the grid: the pool banner on the passes section, the admin test strip.
   lead?: ReactNode;
+  // The page's H1 already names this section: render no visible H2 and label the section instead.
+  hideHeading?: boolean;
   children: ReactNode;
 }
 
@@ -20,14 +22,20 @@ export function TicketSection({
   lede = null,
   columns,
   lead,
+  hideHeading = false,
   children,
 }: TicketSectionProps) {
   const headingId = `${id}-title`;
   return (
-    <section className="nk-section" id={id} aria-labelledby={headingId}>
+    <section
+      className="nk-section"
+      id={id}
+      aria-label={hideHeading ? title : undefined}
+      aria-labelledby={hideHeading ? undefined : headingId}
+    >
       <div data-nos-wrap="">
         <div className="nk-head">
-          <h2 id={headingId}>{title}</h2>
+          {hideHeading ? null : <h2 id={headingId}>{title}</h2>}
           {lede ? <p data-section-lede="">{lede}</p> : null}
         </div>
         {lead}

@@ -18,7 +18,7 @@
 //
 //   section[data-nos-hero="hub" | "inner"][data-nos-hero-variant="photo" | "type"]
 //     [data-nos-hero-media] > img            photo kind only
-//     h1                                     exactly one
+//     h1                                     exactly one (a loading.tsx fallback passes titleAs="p")
 //     [data-nos-hero-lede]                   the lede / standfirst
 //
 // Directly after an inner hero comes the R27 group sub-nav (NosSubNav), except on the hub
@@ -26,8 +26,11 @@
 // =============================================================
 
 import Image from 'next/image';
+import Link from 'next/link';
 import type { CSSProperties, ReactNode } from 'react';
 
+import type { ShowFact } from '@/lib/data/show-facts';
+import { type HeroFact, normaliseHeroFacts } from '@/lib/hero-facts';
 import heroSourceWidths from '@/lib/hero-source-widths.json';
 
 import { heroCropFor, heroPhotoFor } from './hero-photos';
@@ -39,11 +42,79 @@ import { subNavGroupFor } from './nos-subnav-groups';
 // up to its native width (lib/image-loader.ts), so it is never stretched on a high-density screen.
 const FULL_BLEED_QUALITY = 88;
 
-// The inner photo is a 46% panel from 1024px, a 42% panel from 768px and a full-width band below it (nos-theme.css).
-const INNER_PHOTO_SIZES = '(min-width: 1024px) 46vw, (min-width: 768px) 42vw, 100vw';
+// DS-1 (c): the photo box is 62% wide from 1024px (38% to the right edge), 42% from 768px, a full-width band below it.
+// From 768 to 1023 the box is narrower than the 1.9:1 crop is wide at hero height, so object-fit: cover
+// paints the crop at height x aspect (about 1126px at the tallest hero measured there, 563px).
+const INNER_PHOTO_SIZES = '(min-width: 1024px) 62vw, (min-width: 768px) max(62vw, 1200px), 100vw';
+
+// HB-3: the hub photo's painted width per band, from the box it fills with object-fit: cover on the
+// 3:2 source. At 767px and below the media is a fixed-height band (height x aspect wide); from
+// 1024px it fills the hero, up to its height ceiling; between, the 2/1 band is width-driven.
+const HUB_PHONE_BAND_HEIGHT_PX = 300;
+const HUB_DESKTOP_MAX_HEIGHT_PX = 820;
+const HUB_SOURCE_ASPECT = 1.5;
+const HUB_PHOTO_SIZES = `(max-width: 767px) max(100vw, ${Math.round(HUB_PHONE_BAND_HEIGHT_PX * HUB_SOURCE_ASPECT)}px), (min-width: 1024px) max(100vw, ${Math.round(HUB_DESKTOP_MAX_HEIGHT_PX * HUB_SOURCE_ASPECT)}px), 100vw`;
+
+// LT-1: an inner h1 longer than this gets `.is-long`, a smaller clamp that holds it to one line in the 62% column.
+const LONG_TITLE_CHARS = 20;
+
+const FALLBACK_TITLE_STYLE: CSSProperties = {
+  fontFamily: 'var(--serif)',
+  fontOpticalSizing: 'none',
+  textWrap: 'balance',
+};
 
 /** Routes whose hero carries no group sub-nav: the hub (it has the destinations list) and tickets. */
 const NO_SUBNAV_ROUTES: ReadonlySet<string> = new Set(['/national-show', '/national-show/tickets']);
+
+// buildShowFacts() fills an absent field with these strings. A hero fact is a real value or it is
+// omitted: HeroFact has no "to be confirmed" shape (shared API, lib/hero-facts.ts).
+const SHOW_FACT_FILLER: ReadonlySet<string> = new Set([
+  'Dates to be confirmed',
+  'Venue to be confirmed',
+  'Host region to be confirmed',
+]);
+
+/**
+ * The hero facts a page takes from the published show facts: only the named labels, in the order
+ * named, with any filler value omitted. `normaliseHeroFacts` then drops the row below two facts.
+ */
+export function heroFactsFromShow(
+  showFacts: readonly ShowFact[],
+  labels: readonly string[],
+): HeroFact[] {
+  const facts: HeroFact[] = [];
+  for (const label of labels) {
+    const fact = showFacts.find((candidate) => candidate.label === label);
+    if (fact && !SHOW_FACT_FILLER.has(fact.value)) {
+      facts.push({ term: fact.label, value: fact.value });
+    }
+  }
+  return facts;
+}
+
+const YEAR = /\b(\d{4})\b/;
+const LEADING_WEEKDAY = /^[A-Za-z]+\s+/;
+
+/**
+ * The facts of one bookable event (SY-G1, WO-G1): its date without the weekday plus the show's year, its
+ * hours as the ticket product states them, and the venue from the published show facts. A fact with no
+ * value is left out, never filled; `normaliseHeroFacts` then drops the row below two facts.
+ */
+export function heroFactsForEvent(
+  showFacts: readonly ShowFact[],
+  product: { when: string; meta: string | null },
+): HeroFact[] {
+  const year = showFacts.find((fact) => fact.label === 'Dates')?.value.match(YEAR)?.[1];
+  const day = product.when.replace(LEADING_WEEKDAY, '');
+  const date = year && day ? `${day} ${year}` : null;
+  const venue = heroFactsFromShow(showFacts, ['Venue']);
+  return [
+    ...(date ? [{ term: 'Date', value: date }] : []),
+    ...(product.meta ? [{ term: 'Time', value: product.meta }] : []),
+    ...venue,
+  ];
+}
 
 export interface NosHeroProps {
   /** The pathname this hero heads, e.g. `/national-show/symposium` or `/national-show/archive/2024`. */
@@ -54,6 +125,12 @@ export interface NosHeroProps {
    * renders the hub hero (6-stop ramp, 22% photo inset) — reserve for the one flagship hero.
    */
   titleSize?: 'default' | 'display';
+  /**
+   * The element carrying the title. `p` is for a Suspense `loading.tsx` fallback: streaming leaves the
+   * fallback in the document beside the resolved page, so an h1 there would double the page's own h1.
+   * Every `.nos-hero-title` rule applies to either element.
+   */
+  titleAs?: 'h1' | 'p';
   lede?: ReactNode;
   /** `theme` sets the inner lede as a show's theme line (italic serif, R70) rather than a standfirst. */
   ledeKind?: 'theme';
@@ -63,10 +140,16 @@ export interface NosHeroProps {
    * the CTAs. Inner: a single optional link row below the standfirst.
    */
   actions?: ReactNode;
+  /** The facts row under the lede (2-4 real values; fewer than two renders no row). */
+  facts?: readonly HeroFact[];
+  /** A link target per fact term (e.g. a `tel:` href): that fact's value renders as a link. */
+  factLinks?: Readonly<Record<string, string>>;
   /** A short label above the h1 (e.g. "Legal"); rendered only where the page already has the string. */
   eyebrow?: ReactNode;
   /** An optional breadcrumb trail, rendered before the h1 (the checkout step's hub trail, r18). */
   crumbs?: ReactNode;
+  /** The current page's name: draws the standard "National Show — {name}" trail when `crumbs` is not given. */
+  crumbLabel?: string;
   /** Loads the image eagerly at high priority — reserve for the above-the-fold hero. */
   priority?: boolean;
   className?: string;
@@ -76,11 +159,15 @@ export async function NosHero({
   route,
   title,
   titleSize = 'default',
+  titleAs = 'h1',
   lede,
   ledeKind,
   actions,
   eyebrow,
+  facts,
+  factLinks,
   crumbs,
+  crumbLabel,
   priority = false,
   className = '',
 }: NosHeroProps) {
@@ -88,6 +175,11 @@ export async function NosHero({
   const kind = isHub ? 'hub' : 'inner';
   const photo = isHub ? heroPhotoFor(route) : heroCropFor(route);
   const variant = photo ? 'photo' : 'type';
+  const heroFacts = normaliseHeroFacts(facts);
+  const titleClass =
+    !isHub && typeof title === 'string' && title.length > LONG_TITLE_CHARS
+      ? 'nos-hero-title is-long'
+      : 'nos-hero-title';
   const group = NO_SUBNAV_ROUTES.has(route) ? null : subNavGroupFor(route, await getVisibleNav());
 
   return (
@@ -117,7 +209,7 @@ export async function NosHero({
               fill
               priority={priority}
               fetchPriority={priority ? 'high' : undefined}
-              sizes={isHub ? '100vw' : INNER_PHOTO_SIZES}
+              sizes={isHub ? HUB_PHOTO_SIZES : INNER_PHOTO_SIZES}
               quality={photo.src in heroSourceWidths ? FULL_BLEED_QUALITY : undefined}
               className="nos-hero-img"
             />
@@ -130,8 +222,27 @@ export async function NosHero({
               {eyebrow}
             </p>
           ) : null}
-          {crumbs}
-          <h1 className="nos-hero-title">{title}</h1>
+          {crumbs ??
+            (crumbLabel ? (
+              <nav className="nk-crumbs" aria-label="Breadcrumb">
+                <Link href="/">National Show</Link>
+                <span className="nk-crumb">
+                  <span className="nk-sep" aria-hidden="true">
+                    <span className="sr-only">–</span>
+                  </span>
+                  <span aria-current="page">{crumbLabel}</span>
+                </span>
+              </nav>
+            ) : null)}
+          {titleAs === 'p' ? (
+            // Restates the heading rule in nos-theme.css (`.nos-theme :is(h1...)`), which a p misses,
+            // so the fallback is identical to the h1 it stands in for on the first frame.
+            <p className={titleClass} style={FALLBACK_TITLE_STYLE}>
+              {title}
+            </p>
+          ) : (
+            <h1 className={titleClass}>{title}</h1>
+          )}
           {isHub ? (
             <div className="nos-hero-body">
               {lede ? (
@@ -152,6 +263,22 @@ export async function NosHero({
                 >
                   {lede}
                 </p>
+              ) : null}
+              {heroFacts ? (
+                <dl data-hero-facts="" data-fact-count={heroFacts.length} className="hero-facts">
+                  {heroFacts.map((fact) => (
+                    <div key={fact.term} data-hero-fact="">
+                      <dt>{fact.term}</dt>
+                      <dd>
+                        {factLinks?.[fact.term] ? (
+                          <a href={factLinks[fact.term]}>{fact.value}</a>
+                        ) : (
+                          fact.value
+                        )}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
               ) : null}
               {actions ? <div className="nos-hero-actions">{actions}</div> : null}
             </>

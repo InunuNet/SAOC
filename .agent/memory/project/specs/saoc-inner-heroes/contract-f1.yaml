@@ -1,0 +1,89 @@
+schema: athanor.contract/v1
+slug: saoc-inner-heroes
+goal: SAOC inner RouteHero routes and the home stack pass Brad's hero rules on a production build - copy-zone scrim, served width covering box x DPR, the NOS Design crop map applied as derived cuts, legal typographic with LG-RF holding on both hosts.
+created_at: '2026-10-26'
+autonomy: high
+
+features:
+  - id: F1
+    name: HM-2 scrim localised to the copy zone, bare photo over the left 44%, no full-width wash
+    status: pending
+  - id: F2
+    name: HM-3 served naturalWidth >= max(boxW, boxH x fileW/fileH) x DPR; pink and yellow retired; native-cap exception removed; home overscan fixed
+    status: pending
+  - id: F3
+    name: HM-4 derived flip and rect cuts per the 10-26 table; members and legal typographic; home <=1023 stacks (2/1 band first); LG-RF holds on both hosts
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/saoc-inner-heroes/goldens/crop-map.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: frozen check scripts unmodified since the architect froze them (crop-map.json excluded)
+      command: shasum -a 256 -c .agent/memory/project/specs/saoc-inner-heroes/goldens/checks.sha256
+    - id: A2
+      description: audit widths 2560, 2880 and 4160 are in the loader ladder
+      command: grep -q 4160 lib/image-widths.json
+    - id: A3
+      description: static rules from source (RouteHero, saoc-hero-photos, PageHero markers)
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/check-static.mjs
+    - id: A4
+      description: diff scope - allowlist and stay-off lanes
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/check-diff-scope.mjs
+    - id: A5
+      description: typescript compiles
+      command: pnpm type-check
+    - id: A6
+      description: lint is clean
+      command: pnpm exec eslint app components lib e2e
+    - id: A7
+      description: production build passes
+      command: bash .agent/memory/project/specs/saoc-inner-heroes/checks/build.sh
+    - id: A8
+      description: derived hero sources match the golden - rects inside source, no clip or stake, flips are files not CSS
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/check-derived.mjs
+    - id: A9
+      description: HM-3 served width >= max(boxW, boxH x fileW/fileH) x DPR and box no wider than the viewport at 2056, 1440, 1280, 1024, 1023, 768, 767 at @2 and 390 at @2 and @3
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/gate-served-width.mjs
+    - id: A10
+      description: geometry - bare photo over left 44%, copy from 52%, 2/1 band below 768, typographic on solid sage, no overflow, rendered object-position equals golden (gap routes note only)
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/gate-geometry.mjs
+    - id: A11
+      description: per-glyph contrast 4.5 on the lightest pixel for lede, eyebrow, h1 and CTAs
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/gate-contrast.mjs inner
+    - id: A12
+      description: /sponsors lede contrast gate
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/gate-contrast.mjs sponsors
+    - id: A13
+      description: HS-1 home carousel per-glyph contrast on both slides
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/gate-contrast.mjs home
+    - id: A14
+      description: HS-2 and home layout - alt empty, slides dark then purple, stacked at 390, 767 and 1023, breakpoint reported for 1024-1279
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/gate-home.mjs
+    - id: A15
+      description: hero shots per route at 1280, 2056 and 390 exist (by-eye evidence, view at 2056@2)
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/check-shots.mjs
+    - id: A16
+      description: every crop pick in the golden is final (gap routes carry position gap)
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/check-crops-final.mjs
+    - id: A17
+      description: HM-2 scrim alpha <= 0.1 over the bloom region at 1440@2, 2056@2, 390@3
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/gate-scrim-alpha.mjs
+    - id: A18
+      description: LG-RF on /privacy /terms /refunds on both hosts - no eyebrow, index entries equal h2 count, h2 gap 56, at 1440 and 390
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/gate-lgrf.mjs
+    - id: A19
+      description: ShowBand 42/58 split on the National Show event page only
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/gate-showband-split.mjs
+    - id: A20
+      description: CI e2e green
+      command: bash scripts/ci-e2e.sh pnpm test:e2e
+    - id: A21
+      description: spec records the NOS Design rulings and conflicts
+      command: grep -q "NOS Design rulings" .agent/memory/project/specs/saoc-inner-heroes/spec.md
+    - id: A22
+      description: NosHero untouched
+      command: git diff --quiet origin/main -- components/nos/NosHero.tsx

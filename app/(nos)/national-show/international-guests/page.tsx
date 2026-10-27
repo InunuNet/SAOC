@@ -1,38 +1,27 @@
 import type { Metadata } from 'next';
 
-import { ShowContentState } from '@/components/show/nos/ShowContentState';
-import { NurseryCard, type NurseryCardData } from '@/components/show/nos/NurseryCard';
-import { RealEmptyListing } from '@/components/show/nos/RealEmptyListing';
-import { ShowEntityGrid } from '@/components/show/nos/ShowEntityGrid';
-import { sanityFetch } from '@/sanity/lib/fetch';
-import { internationalNurseriesQuery } from '@/sanity/queries';
-import { loadShowFacts } from '@/lib/data/show-facts';
-import { loadShowPageOrFallback } from '@/lib/data/show-pages';
-import { buildPageMetadata } from '@/lib/seo';
-import { nosOgImage } from '@/app/(nos)/national-show/og-image';
+import { heroFactsFromShow, NosHero } from '@/components/nos/NosHero';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
+import { PresenterList } from '@/components/nos/PresenterSection';
+import { DocumentLayout } from '@/components/ui/DocumentLayout';
+import { loadShowFacts } from '@/lib/data/show-facts';
+import { buildPageMetadata } from '@/lib/seo';
+import { loadInternationalGuests } from '@/lib/view-models/load-presenters';
+import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 
-// F14 (national-show-ia-alignment, M4) — created route. Placeholder prose plus a REAL
-// empty listing over vendorNursery, filtered to guests outside South Africa. Zero
-// invented guests — see route-manifest.golden.md §5.
-//
-// F24 (M4) — replaces the hard 404 guard with loadShowPageOrFallback()/
-// <ShowContentState>, so an absent document renders a disclosed shell instead of a 404.
-// The nursery grid/RealEmptyListing is independent of the ShowPage, so it is passed as
-// `listingContent` and rendered in the published branch only. See
-// goldens/m4/never-404-fallback.golden.md.
+// IG-G1 (NOS Design, comms.md 2026-10-25; spec 4.5): one editorial profile per guest, in record order,
+// never a card grid. A guest is any profile with a country set and not South Africa, whatever its type,
+// so presenters and international nurseries alike; no country, no listing. With no guests the page is
+// the hero and the sub-nav: the build's own absence statement and field-label skeleton were builder
+// copy (R7) and a placeholder box, and are gone. FS-1: no name-index aside (IG-G1 has none), so each
+// profile runs the full content width (nos-ig-page in nos-structure.css).
 export const revalidate = 60;
 
-const CARD_FIELD_LABELS = [
-  'Nursery / guest',
-  'Country',
-  'Specialisation',
-  "What they'll bring",
-] as const;
-
-const ABSENCE_STATEMENT =
-  'No international guests or exhibitors have been confirmed for 2027 yet. Confirmed ' +
-  'guests will appear here, one card per exhibitor, as they register ahead of the show.';
+const PAGE_TITLE = 'International guests';
+// Spec 4.5, Purpose.
+const LEDE =
+  'Profiles of international speakers, judges, exhibitors and researchers attending the Show.';
+const FACTS_LABELS = ['Dates', 'Venue', 'Host'] as const;
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'International Guests and Exhibitors',
@@ -42,43 +31,26 @@ export const metadata: Metadata = buildPageMetadata({
 });
 
 export default async function InternationalGuestsPage() {
-  const [result, nurseries, facts] = await Promise.all([
-    loadShowPageOrFallback('05-international-guests-and-exhibitors', {
-      label: 'International Guests',
-      purpose: 'Public directory of international guests and exhibitors attending the show.',
-    }),
-    sanityFetch<NurseryCardData[]>({
-      query: internationalNurseriesQuery,
-      tags: ['vendorNursery', 'sanity'],
-    }),
-    loadShowFacts(),
-  ]);
-
-  const list = nurseries ?? [];
+  const [guests, showFacts] = await Promise.all([loadInternationalGuests(), loadShowFacts()]);
 
   return (
     <>
-      <ShowContentState
-        result={result}
+      <NosHero
         route="/national-show/international-guests"
-        layout="listing"
-        listingEmpty={list.length === 0}
-        holding={{ facts, statement: ABSENCE_STATEMENT }}
-        listingContent={
-          list.length > 0 ? (
-            <ShowEntityGrid
-              items={list}
-              itemKey={(nursery) => nursery._id}
-              renderCard={(nursery) => <NurseryCard nursery={nursery} />}
-            />
-          ) : (
-            <RealEmptyListing
-              fieldLabels={CARD_FIELD_LABELS}
-              absenceStatement={ABSENCE_STATEMENT}
-            />
-          )
-        }
+        title={PAGE_TITLE}
+        crumbLabel={PAGE_TITLE}
+        lede={LEDE}
+        facts={heroFactsFromShow(showFacts, FACTS_LABELS)}
+        priority
       />
+
+      {guests.length > 0 ? (
+        <div className="nos-ig-page">
+          <DocumentLayout>
+            <PresenterList profiles={guests} level={2} showAppearing />
+          </DocumentLayout>
+        </div>
+      ) : null}
       <NosShowIndex current="/national-show/international-guests" />
     </>
   );

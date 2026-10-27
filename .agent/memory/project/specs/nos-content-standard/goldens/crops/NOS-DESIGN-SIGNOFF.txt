@@ -1,0 +1,9 @@
+NOS Design sign-off: crops-d contact sheet, 2026-10-25 (relayed to NOS Site via cross-session message; recorded by the NOS Site lead)
+
+Sheet: .tmp/sandbox/nos-content-standard/crops-d/contact-sheet.html
+Verdict: PASS.
+Checked by eye at 2056: S1b, S2a, S2c, S3a, S3b, H4a are all sharp on their subject. S2c is the weakest composition, but it is in focus and acceptable.
+Pool: D1, PK1 (= PK2, treated as one crop for G3), PK3, Y1, S1b, S2a, S2c, S3a, S3b, H4a.
+Route map stands as sent: Programme group S3b / S2c / D1 / PK3 / S2a; /plan-your-visit S1b; 9 cross-group reuses logged in crop-proposals.json.
+Retired: V1, V3, P1, H4b (H4b fails the (c) width need).
+Landing: the (c) crops ship in the same PR as the DS-1 .ihero box (38-100%); #76's crops stay live until then.

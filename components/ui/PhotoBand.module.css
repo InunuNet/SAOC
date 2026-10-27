@@ -1,0 +1,9 @@
+/* The band's photograph stops at its source width (critique fix 15, 2026-10-25): next/image forbids a
+   width on a `fill` image, so the cap is applied here. Past that width the figure's ground and the
+   caption scrim fill the rest, and the source is never upscaled. */
+.band > img {
+  width: min(100%, var(--band-src-w)) !important;
+  left: 50% !important;
+  right: auto !important;
+  translate: -50% 0;
+}

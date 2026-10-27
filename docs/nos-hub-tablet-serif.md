@@ -36,3 +36,10 @@ The gate is `gate-lt1-sweep.mjs` in the spec's `checks/`. It sweeps every NOS ro
 
 - If NOS Design wants the hub hero nearer 1000px at 1023px, it needs a change to the hero copy spacing, which the ruling does not cover.
 - The sweep is a gate script, not a CI step. The permanent CI guard is the hub order spec only.
+
+## Also in this change
+
+- HB-3: `NosHero` declares the hub photo `sizes` per band from named constants (`max(100vw, 450px)` up to 767px, `100vw` from 768 to 1023, `max(100vw, 1230px)` from 1024px), so the served width covers the painted box.
+- TK-404: `app/(nos)/tickets/[slug]/layout.tsx` resolves the ticket type (shared with the page through `lib/data/ticket-type-lookup.ts`) before the shell flushes, so an unknown or hidden-demo slug answers a real 404 despite `loading.tsx`.
+- TL-1 (amended): the ticket loader's lede is two `aria-hidden` 1lh boxes, each holding a 0.55lh bar (100% and 70% wide) in the lede colour at 15%, no bone, no pulse.
+- TL-2a: below 768px the current-page crumb on `.nk-crumbs` truncates to one line with a CSS ellipsis; the full name stays in the DOM.

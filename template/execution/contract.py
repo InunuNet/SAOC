@@ -28,8 +28,11 @@ import json
 import os
 import re
 import shlex
+import shutil
+import signal
 import subprocess
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -267,6 +270,7 @@ def normalize_contract(contract: dict) -> dict:
                 "description": desc,
                 "verify": verify,
                 "required": check.get("required", False),
+                **{k: check[k] for k in ("nonvacuous", "nonvacuous_reason") if k in check},
             })
             assertion_ids.append(cid)
 
@@ -612,6 +616,11 @@ def validate_cmd(args):
         ids.add(aid)
         if not a.get("description", ""):
             err(f"Assertion {aid} missing description", ln)
+        if "nonvacuous" in a and not isinstance(a["nonvacuous"], bool):
+            err(f"Assertion {aid}: nonvacuous must be true or false, got {a['nonvacuous']!r}", ln)
+        elif a.get("nonvacuous") is False and not (
+                isinstance(a.get("nonvacuous_reason"), str) and a["nonvacuous_reason"].strip()):
+            err(f"Assertion {aid}: nonvacuous: false requires a non-empty nonvacuous_reason", ln)
         if "verify" not in a:
             err(f"Assertion {aid} missing verify block", ln)
         elif a["verify"].get("kind") in binary_kinds:
@@ -1429,6 +1438,154 @@ def _run_path(path):
     return p if p.is_absolute() or not _RUN_CWD else Path(_RUN_CWD) / p
 
 
+BASE_CHECK_SLACK_SECONDS = 60  # outer margin over an assertion's own timeout at base
+SIGTERM_EXIT_BASE = 128  # shell convention: 128 + signal number
+
+
+def _repo_top(run_cwd):
+    proc = subprocess.run(["git", "-C", str(run_cwd or "."), "rev-parse", "--show-toplevel"],
+                          capture_output=True, text=True, timeout=GIT_ROOT_TIMEOUT_SECONDS)
+    if proc.returncode != 0 or not proc.stdout.strip():
+        raise RuntimeError("--prove-nonvacuous needs the contract inside a git repository")
+    return Path(proc.stdout.strip()).resolve()
+
+
+def _kill_group(proc):
+    """Kill the check's whole process group so grandchildren cannot outlive it."""
+    try:
+        os.killpg(proc.pid, signal.SIGKILL)
+    except (ProcessLookupError, PermissionError):
+        pass
+
+
+def _run_at_base(wt_contract, wt_cwd, aid, timeout):
+    """Run one assertion in the base checkout; returns (verdict word, verdict line)."""
+    proc = subprocess.Popen(
+        [sys.executable, str(Path(__file__).resolve()), "check", str(wt_contract),
+         "--assertion", aid, "--timeout-seconds", str(timeout)],
+        cwd=str(wt_cwd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        start_new_session=True)
+    try:
+        stdout, stderr = proc.communicate(timeout=timeout + BASE_CHECK_SLACK_SECONDS)
+    except subprocess.TimeoutExpired:
+        _kill_group(proc)
+        proc.communicate()
+        return "TIMEOUT", "check did not finish"
+    finally:
+        _kill_group(proc)
+    # The verdict line is "<ICON> <id> (<kind>): ..."; earlier lines may be boot noise.
+    prefix = re.compile(r"^(PASS|FAIL|SKIP|ERROR|TIMEOUT) " + re.escape(aid) + r" \(")
+    for line in stdout.splitlines():
+        found = prefix.match(line)
+        if found:
+            return found.group(1), line
+    return "ERROR", (stdout + stderr).strip()[:120] or "no verdict line"
+
+
+def _copy_spec_dir(contract_path, top, rel_contract, wt):
+    """Carry the contract's spec directory into the base checkout (goldens new at HEAD)."""
+    if contract_path.parent == top:
+        shutil.copy2(contract_path, wt / rel_contract)  # never the whole repo
+        return
+    shutil.copytree(contract_path.parent, wt / rel_contract.parent, symlinks=True,
+                    dirs_exist_ok=True, ignore=shutil.ignore_patterns(".git", ".tmp"))
+
+
+def _prove_nonvacuous(contract, args):
+    """Run the phase's assertions in a temporary checkout of --base.
+
+    Returns (vacuous ids, ids that errored or timed out at base). The checkout is
+    always removed and HEAD's tree is untouched.
+    """
+    top = _repo_top(_RUN_CWD)
+    base = subprocess.run(["git", "-C", str(top), "rev-parse", "--verify", args.base + "^{commit}"],
+                          capture_output=True, text=True, timeout=GIT_ROOT_TIMEOUT_SECONDS)
+    if base.returncode != 0:
+        raise RuntimeError(f"--base {args.base!r} is not a commit in {top}")
+    sha = base.stdout.strip()
+    short = sha[:8]
+    contract_path = Path(args.contract).resolve()
+    try:
+        rel_contract = contract_path.relative_to(top)
+        rel_cwd = Path(_RUN_CWD).resolve().relative_to(top) if _RUN_CWD else Path(".")
+    except ValueError:
+        raise RuntimeError(f"{contract_path} or the run directory is outside the repository {top}")
+    phase = next((p for p in contract.get("phases", []) if _phase_matches(p["id"], args.phase)), None)
+    by_id = {a["id"]: a for a in contract.get("assertions", [])}
+
+    made_tmp = not (top / ".tmp").is_dir()
+    sandbox = top / ".tmp" / "sandbox"
+    sandbox.mkdir(parents=True, exist_ok=True)
+    workdir = Path(tempfile.mkdtemp(prefix="nonvacuous-", dir=str(sandbox)))
+    wt = workdir / "base"
+    vacuous, inconclusive = [], []
+    added = False
+
+    def _on_sigterm(signum, _frame):
+        raise SystemExit(SIGTERM_EXIT_BASE + signum)  # unwinds through the cleanup below
+
+    old_handler = signal.signal(signal.SIGTERM, _on_sigterm)
+    try:
+        add = subprocess.run(["git", "-C", str(top), "worktree", "add", "--detach", str(wt), sha],
+                             capture_output=True, text=True, timeout=GIT_ROOT_TIMEOUT_SECONDS * 4)
+        if add.returncode != 0:
+            raise RuntimeError("git worktree add failed: " + add.stderr.strip()[:300])
+        added = True
+        _copy_spec_dir(contract_path, top, rel_contract, wt)
+        wt_contract = wt / rel_contract
+        wt_cwd = wt / rel_cwd
+        wt_cwd.mkdir(parents=True, exist_ok=True)
+        print(f"\n--- prove-nonvacuous: running phase {args.phase} assertions at {short} ---")
+        for aid in phase.get("assertions", []):
+            a = by_id[aid]
+            if a.get("nonvacuous") is False:
+                print(f"EXEMPT {aid} (nonvacuous: false): {a.get('nonvacuous_reason', '').strip()}")
+                continue
+            timeout = a.get("verify", {}).get("timeout_seconds") or args.timeout_seconds
+            word, line = _run_at_base(wt_contract, wt_cwd, aid, timeout)
+            if word == "PASS":
+                print(f"VACUOUS {aid}: passes at {short} before the fix exists")
+                vacuous.append(aid)
+            elif word in ("ERROR", "TIMEOUT"):
+                print(f"{aid}: {word.lower()} at {short}, counted as not passing ({line[:120]})")
+                inconclusive.append(aid)
+            else:
+                print(f"{aid}: {word.lower()} at {short} (examines the change)")
+    finally:
+        signal.signal(signal.SIGTERM, old_handler)
+        if added:
+            subprocess.run(["git", "-C", str(top), "worktree", "remove", "--force", str(wt)],
+                           capture_output=True, text=True, timeout=GIT_ROOT_TIMEOUT_SECONDS * 4)
+        shutil.rmtree(workdir, ignore_errors=True)
+        if made_tmp:
+            for leftover in (sandbox, top / ".tmp"):
+                try:
+                    leftover.rmdir()
+                except OSError:
+                    pass
+    return vacuous, inconclusive
+
+
+def _exit_after_proof(contract, args):
+    """Gate passed. With --prove-nonvacuous: exit 1 if any assertion is vacuous, 2 if the
+    proof was inconclusive or could not run, else 0."""
+    if getattr(args, "prove_nonvacuous", False):
+        try:
+            vacuous, inconclusive = _prove_nonvacuous(contract, args)
+        except Exception as exc:  # exit 1 means VACUOUS, so a crash must never look like it
+            print(f"ERROR: --prove-nonvacuous failed: {type(exc).__name__}: {exc}", file=sys.stderr)
+            sys.exit(2)
+        if vacuous:
+            print(f"\nFAIL prove-nonvacuous: {len(vacuous)} vacuous assertion(s): {', '.join(vacuous)}")
+            sys.exit(1)
+        if inconclusive:
+            print(f"\nINCONCLUSIVE prove-nonvacuous: errored or timed out at base: "
+                  f"{', '.join(inconclusive)}", file=sys.stderr)
+            sys.exit(2)
+        print("\nPASS prove-nonvacuous: every non-exempt assertion fails at the base")
+    sys.exit(0)
+
+
 def gate_cmd(args):
     try:
         _gate_cmd_body(args)
@@ -1445,6 +1602,14 @@ def _gate_cmd_body(args):
         print("ERROR: --report-fd and --report-json are mutually exclusive.",
               file=sys.stderr)
         sys.exit(2)
+
+    if getattr(args, "prove_nonvacuous", False):
+        if not getattr(args, "base", None):
+            print("ERROR: --prove-nonvacuous requires --base <sha>.", file=sys.stderr)
+            sys.exit(2)
+        if args.phase == "all":
+            print("ERROR: --prove-nonvacuous needs a single --phase, not 'all'.", file=sys.stderr)
+            sys.exit(2)
 
     contract = load_contract(args.contract)
     _RUN_CWD = _resolve_run_cwd(args.contract, getattr(args, "cwd", None))
@@ -1536,8 +1701,10 @@ def _gate_cmd_body(args):
             phase_n = sorted(phases, key=lambda p: _phase_sort_key(p["id"]))[-1]["id"] if phases else 1
             args.phase = str(phase_n) # Update args for _gate_single_phase
             if not _gate_single_phase(contract, args):
+                if getattr(args, "prove_nonvacuous", False):
+                    print("prove-nonvacuous skipped: the normal gate failed.")
                 sys.exit(2)
-            sys.exit(0)
+            _exit_after_proof(contract, args)
         else: # Specific phase number
             if not _gate_single_phase(contract, args):
                 # Exit code contract for the specific-phase gate path:
@@ -1553,8 +1720,10 @@ def _gate_cmd_body(args):
                 # A caller checking the exit code must never mistake a wrapper
                 # crash or a plain assertion failure for an adversarial finding,
                 # or vice versa (see F2's BLOCKED-vs-GATE-ERROR verdict split).
+                if getattr(args, "prove_nonvacuous", False):
+                    print("prove-nonvacuous skipped: the normal gate failed.")
                 sys.exit(1 if getattr(args, "gate_codex_qa_failure", False) else 2)
-            sys.exit(0)
+            _exit_after_proof(contract, args)
     finally:
         # The --report-json write is OPTIONAL and must never be able to change
         # the gate's own verdict. Unguarded, any exception raised here (an
@@ -1666,6 +1835,12 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--cwd", default=None, metavar="DIR",
                    help="Directory assertions run in (default: the contract's git root, "
                         "else the caller's cwd)")
+    g.add_argument("--prove-nonvacuous", action="store_true", default=False,
+                   help="After a passing gate, run every phase assertion in a temporary checkout "
+                        "of --base and fail (exit 1) naming each one that already passes there. "
+                        "Assertions marked nonvacuous: false (with a reason) are exempt.")
+    g.add_argument("--base", default=None, metavar="SHA",
+                   help="Commit to check assertions against for --prove-nonvacuous (required with it)")
     g.add_argument("--report-json", default=None, metavar="PATH",
                    help="Also write the structured athanor.gate-report/v1 verdict to PATH "
                         "(opt-in; stdout/stderr are unchanged). No file is written if the "

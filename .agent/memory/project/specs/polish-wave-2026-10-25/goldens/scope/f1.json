@@ -1,0 +1,14 @@
+{
+  "feature": "F1",
+  "allow": [
+    "lib/hooks/useHydrated.ts",
+    "components/vendors/VendorApplyForm.tsx",
+    "components/vendors/VendorRegistrationCodeEntryForm.tsx",
+    "components/contact/ContactForm.tsx",
+    "components/members/SuggestionForm.tsx",
+    "components/events/SubmitEventForm.tsx",
+    "components/tickets/TicketPurchaseForm.tsx",
+    "components/newsletter/NewsletterSignup.tsx",
+    "docs/polish-wave-f1-forms.md"
+  ]
+}

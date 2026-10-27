@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
 import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import { NOS_CONTACT_SUCCESS_BODY_PLACEHOLDER } from '@/lib/nos-contact-copy';
+import { useHydrated } from '@/lib/hooks/useHydrated';
 
 type Status = 'idle' | 'submitting' | 'success' | 'error';
 
@@ -39,7 +40,12 @@ interface ContactFormProps {
   markPlaceholders?: boolean;
 }
 
+const SUBMIT_SAOC = 'bg-accent text-ink hover:bg-accent-soft';
+// The show's royal token (--primary in the NOS theme), not the SAOC accent.
+const SUBMIT_NOS = 'bg-primary text-white hover:bg-primary/90';
+
 export function ContactForm({ site = 'saoc', markPlaceholders = false }: ContactFormProps) {
+  const hydrated = useHydrated();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [subject, setSubject] = useState('');
@@ -149,7 +155,7 @@ export function ContactForm({ site = 'saoc', markPlaceholders = false }: Contact
         ) : null}
       </div>
       {status === 'success' ? null : (
-    <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+    <form method="post" onSubmit={handleSubmit} className="space-y-5" noValidate>
       {/* Name */}
       <div className="space-y-1.5">
         <label htmlFor="cf-name" className={labelClass}>
@@ -252,7 +258,10 @@ export function ContactForm({ site = 'saoc', markPlaceholders = false }: Contact
           placeholder="Write your message here…"
           className={`${inputClass} resize-y`}
         />
-        <p id={HINT_ID} className="font-mono text-[11px] text-muted">
+        <p
+          id={HINT_ID}
+          className={site === 'nos' ? 'font-sans text-[14px] text-muted' : 'font-mono text-[11px] text-muted'}
+        >
           Minimum 10 characters.
         </p>
         {fieldErrors.message ? (
@@ -284,8 +293,10 @@ export function ContactForm({ site = 'saoc', markPlaceholders = false }: Contact
 
       <button
         type="submit"
-        disabled={status === 'submitting'}
-        className="inline-flex min-h-11 items-center rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ink hover:bg-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:opacity-60 disabled:cursor-not-allowed"
+        disabled={status === 'submitting' || !hydrated}
+        className={`inline-flex min-h-11 items-center rounded-sm px-5 py-2.5 font-sans text-[14px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:opacity-60 disabled:cursor-not-allowed ${
+          site === 'nos' ? SUBMIT_NOS : SUBMIT_SAOC
+        }`}
       >
         {status === 'submitting' ? 'Sending…' : 'Send message'}
       </button>

@@ -1,0 +1,1 @@
+{"query":"\n  *[_type == \"show\"]{\n    _id,\n    active,\n    startDate,\n    endDate\n  }\n","params":{},"result":[{"_id":"show-19-2027","active":true,"endDate":"2027-09-26T17:00:00+02:00","startDate":"2027-09-23T09:00:00+02:00"},{"_id":"show-fictional-test","active":false,"endDate":null,"startDate":null}],"capturedAt":"2026-10-25T23:51:23.695Z"}

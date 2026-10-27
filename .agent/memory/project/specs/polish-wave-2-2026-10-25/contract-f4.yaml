@@ -1,0 +1,50 @@
+schema: athanor.contract/v1
+slug: polish-wave-2-2026-10-25
+goal: The ticket buy screen links to the existing refund and privacy pages under Buy, using their own titles and no new copy.
+created_at: '2026-10-25'
+autonomy: high
+
+features:
+  - id: F4
+    name: PL-1..PL-3 policy links beside Buy on the ticket buy screen
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/README.md
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/f4-ticket-policy-links.md
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/nos-design-rulings-2026-10-25.md
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f2.json
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f3.json
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f4.json
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f6.json
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f7.json
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f8.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: "TicketPurchaseForm ends with 'Refunds · Privacy' (NOS footer labels, aria-hidden dot), .nk-policy is built from existing tokens, the fixture route is gated (RED on baseline, 5 findings). Triad coverage recorded here (the contract classifies exempt, as wave 1 F7): Codex QA via execution/codex_qa.sh at @qa time; browser layer is the orchestrator post-deploy check on the beta hosts; gws inbox layer N/A, this feature sends no email."
+      command: node contracts/checks/polish-wave-2-2026-10-25/f4-links-static.mjs
+    - id: A2
+      description: on the flag-gated fixture at 390@3, 768, 1280 and 1440@2 the form shows 'Refunds · Privacy' on one line after Buy, both links underlined, at least 24px tall, contrast at least 4.5:1, 12-16px below the Buy button, no overflow; the flagless fixture is a 404 (RED on baseline - the fixture does not exist)
+      command: node contracts/checks/polish-wave-2-2026-10-25/f4-links-rendered.mjs
+      timeout_seconds: 900
+    - id: A3
+      description: production build passes (public Sanity ids and local origins, see goldens/README.md Hermetic render)
+      command: NEXT_PUBLIC_SANITY_PROJECT_ID=26yfbug4 NEXT_PUBLIC_SANITY_DATASET=production NEXT_PUBLIC_SAOC_SITE_URL=http://localhost:3002 NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost:3002 pnpm build
+      timeout_seconds: 900
+    - id: A4
+      description: wave scope guard - every changed file is on a feature allow-list (goldens/scope/*.json) or under this mission's spec and check trees (stacked on wave 1? set POLISH2_BASE)
+      command: node contracts/checks/polish-wave-2-2026-10-25/scope.mjs
+    - id: A5
+      description: typecheck is clean
+      command: pnpm exec tsc --noEmit
+      timeout_seconds: 600
+    - id: A6
+      description: lint reports no errors
+      command: pnpm lint
+      timeout_seconds: 600
+    - id: A7
+      description: the feature doc exists and names the item ids
+      command: grep -q "PL-1" docs/polish-wave-2-f4-policy-links.md

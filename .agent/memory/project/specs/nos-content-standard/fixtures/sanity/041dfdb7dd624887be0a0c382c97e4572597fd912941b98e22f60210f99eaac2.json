@@ -1,0 +1,1 @@
+{"query":"\n  *[_type == \"aboutPage\"][0]{\n    title,\n    pillars,\n    timelineNodes,\n    boardIntroText\n  }\n","params":{},"result":{"boardIntroText":null,"pillars":[],"timelineNodes":[],"title":null},"capturedAt":"2026-10-25T23:51:19.300Z"}

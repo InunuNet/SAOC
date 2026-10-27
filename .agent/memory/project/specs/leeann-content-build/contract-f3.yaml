@@ -1,0 +1,89 @@
+# Milestone M2 (one PR with F4): FD, FAQ, Plan Your Visit, What to Expect, Contact and About from her documents.
+# The live Sanity writes (79 FAQ documents, 12-section schema deploy) are NOT done by this contract: the dev ships the
+# schema, the renderer and scripts/seed-show-faq.ts (dry run by default); the coordinator applies it with a dataset backup.
+schema: athanor.contract/v1
+slug: leeann-content-build
+goal: The FAQ, Plan Your Visit guide, What to Expect narrative, Contact details and About text on the NOS site are her 24 Oct 2026 words, with the retired text gone and nothing invented.
+created_at: '2026-10-25'
+autonomy: high
+
+features:
+  - id: F3
+    name: FD FAQ (12 sections, 79 questions), Plan Your Visit guide, What to Expect narrative, Contact details, About rewrite
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/leeann-content-build/goldens/README.md
+  - .agent/memory/project/specs/leeann-content-build/goldens/decisions.md
+  - .agent/memory/project/specs/leeann-content-build/goldens/questions-for-leeann.md
+  - .agent/memory/project/specs/leeann-content-build/goldens/source/faq.txt
+  - .agent/memory/project/specs/leeann-content-build/goldens/source/plan-your-visit.txt
+  - .agent/memory/project/specs/leeann-content-build/goldens/source/what-to-expect.txt
+  - .agent/memory/project/specs/leeann-content-build/goldens/source/about-2027.txt
+  - .agent/memory/project/specs/leeann-content-build/goldens/source/show-contact.txt
+  - .agent/memory/project/specs/leeann-content-build/goldens/faq/faq-docs.json
+  - .agent/memory/project/specs/leeann-content-build/goldens/faq/legacy-ids.json
+  - .agent/memory/project/specs/leeann-content-build/goldens/typo-corrections.json
+  - .agent/memory/project/specs/leeann-content-build/goldens/scope/m2.json
+  - .agent/memory/project/specs/leeann-content-build/goldens/codex-qa-prompt-m2.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: the FAQ golden equals the derivation of her faq.txt (12 sections, 79 questions numbered 1-67 and 75-86, no leading numbers in question text)
+      command: pnpm exec tsx contracts/checks/leeann-content/fd.mts faq-fixture
+    - id: A2
+      description: showFaq.category lists her 12 sections, in her order, with her titles, replacing the five legacy categories
+      command: pnpm exec tsx contracts/checks/leeann-content/fd.mts faq-schema
+    - id: A3
+      description: lib/data/faq-sections.ts exports FAQ_SECTIONS equal to her sections (id, title, intro) and both ShowFaqList and the faq page read it, with no legacy category list left
+      command: pnpm exec tsx contracts/checks/leeann-content/fd.mts faq-sections
+      timeout_seconds: 300
+    - id: A4
+      description: scripts/seed-show-faq.ts dry run (default, no token, no writes) prints 79 documents whose question, category, order, status and answer blocks equal the golden verbatim, and a delete list of exactly the 14 legacy ids
+      command: pnpm exec tsx contracts/checks/leeann-content/fd.mts faq-seed
+      timeout_seconds: 300
+    - id: A5
+      description: ShowFaqList, given the documents in alphabetical category order, prints her sections in her order, every introduction (including the question-less section 10), and every question and answer verbatim, with no copy that is not hers
+      command: pnpm exec tsx contracts/checks/leeann-content/fd.mts faq-list
+      timeout_seconds: 300
+    - id: A6
+      description: the faq page keys no wired row by a legacy id and no wired row replaces her answer
+      command: pnpm exec tsx contracts/checks/leeann-content/fd.mts faq-page
+    - id: A7
+      description: rendered /about carries her seven paragraphs verbatim in order, none of the retired wording, and a meta description without 2027 South African National Orchid Show
+      command: pnpm exec tsx contracts/checks/leeann-content/fd.mts about
+      timeout_seconds: 900
+    - id: A8
+      description: rendered /what-to-expect carries her seven-paragraph narrative verbatim in order and none of the retired wording
+      command: pnpm exec tsx contracts/checks/leeann-content/fd.mts what-to-expect
+      timeout_seconds: 900
+    - id: A9
+      description: rendered /plan-your-visit carries her whole guide inside one data-plan-guide element, verbatim and in order with no other copy in it, all her 32 links as anchors with her text and URL, safe target blank, and no Stay informed block
+      command: pnpm exec tsx contracts/checks/leeann-content/fd.mts plan-guide
+      timeout_seconds: 900
+    - id: A10
+      description: rendered /contact carries her two address lines, her phone as a tel link and the coordinator line, from SHOW_ADDRESS_LINES in lib/show-contact.ts; no committee list and no email address (Q-D6 and Q-D11 defaults)
+      command: pnpm exec tsx contracts/checks/leeann-content/fd.mts contact
+      timeout_seconds: 900
+    - id: A11
+      description: scope guard - only M2 allow-list files changed, no golden or leeann-content check edited, every pre-existing check edit named in checks-updated.md
+      command: pnpm exec tsx contracts/checks/leeann-content/scope.mts m2
+    - id: A12
+      description: typecheck is clean
+      command: pnpm exec tsc --noEmit
+      timeout_seconds: 600
+    - id: A13
+      description: lint reports no errors
+      command: pnpm lint
+      timeout_seconds: 600
+    - id: A14
+      description: production build passes
+      command: NEXT_PUBLIC_SAOC_SITE_URL=http://localhost:3002 NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost:3002 pnpm build
+      timeout_seconds: 900
+    - id: A15
+      description: Deployed beta renders the FAQ, Plan Your Visit, What to Expect, Contact and About pages once the coordinator has applied the FAQ seed (browser tool, no prompts to Brad)
+      type: browser_deployed_check
+      target: .agent/memory/scratch/leeann-content-f3-browser-manifest.json
+      required: false

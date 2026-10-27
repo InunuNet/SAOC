@@ -1,16 +1,9 @@
 import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import { isUnsourced } from '@/components/ui/provenance';
 
-const STATS = [
-  { value: '21', label: 'Affiliated Societies' },
-  { value: '1968', label: 'Founding Year' },
-  { value: '18', label: 'National Shows Hosted' },
-  { value: '56', label: 'Accredited Judges' },
-] as const;
-
-// The Council's About copy sources the founding year only; the other three figures are not in its
-// Drive, so the public build shows this one (F19, vote 1C).
-const SOURCED_STATS = STATS.filter((stat) => stat.value === '1968');
+// The Council's About copy sources the founding year only. Lee-Ann asked for the other figures to be
+// left out (24 Oct 2026), so this is the one stat.
+const STATS = [{ value: '1968', label: 'Founding Year' }] as const;
 
 export interface MissionBlockProps {
   missionText?: string | null;
@@ -21,11 +14,10 @@ export interface MissionBlockProps {
 export function MissionBlock({ missionText, withhold = false }: MissionBlockProps) {
   const hasCms = typeof missionText === 'string' && missionText.trim().length > 0;
   const cmsUnsourced = typeof missionText === 'string' && hasCms && isUnsourced(missionText);
-  const stats = withhold ? SOURCED_STATS : STATS;
 
   const statList = (
     <dl className="grid w-full grid-cols-2 gap-x-8 gap-y-8 border-t border-rule pt-10 md:grid-cols-4">
-      {stats.map((stat) => (
+      {STATS.map((stat) => (
         <div key={stat.label}>
           <dt className="font-serif tracking-[-0.015em] font-light text-[clamp(36px,4vw,56px)] text-primary leading-none">
             {stat.value}
@@ -57,21 +49,11 @@ export function MissionBlock({ missionText, withhold = false }: MissionBlockProp
           <div className="flex flex-col gap-6 self-end">
             {hasCms && !cmsUnsourced ? (
               <p className="font-sans text-[16px] leading-[1.55] text-ink">{missionText}</p>
-            ) : withhold ? null : (
-              <div data-placeholder="true" className="flex flex-col items-start gap-1">
-                {cmsUnsourced ? (
-                  <p className="font-sans text-[16px] leading-[1.55] text-ink">{missionText}</p>
-                ) : (
-                  <p className="font-sans text-[16px] leading-[1.55] text-ink">
-                    SAOC exists to promote the culture, hybridisation and appreciation of orchids
-                    across South Africa. We do this through a federated network of 21 societies, a
-                    nationally accredited judging system first standardised in 1990, and our annual
-                    publication <em>Orchids South Africa</em>.
-                  </p>
-                )}
-                <PlaceholderMarker />
-              </div>
-            )}
+            ) : !withhold && cmsUnsourced ? (
+              <p data-placeholder="true" className="font-sans text-[16px] leading-[1.55] text-ink">
+                {missionText}
+              </p>
+            ) : null}
             <p className="font-sans text-[16px] leading-[1.55] text-ink">
               Our remit is orchids <strong>in cultivation</strong> — on the show bench, in the
               greenhouse, and in the community. For indigenous species in the wild, our sibling
@@ -86,18 +68,11 @@ export function MissionBlock({ missionText, withhold = false }: MissionBlockProp
               </a>{' '}
               leads that work.
             </p>
+            {!withhold && cmsUnsourced ? <PlaceholderMarker /> : null}
           </div>
         </div>
 
-        {/* Stats: the whole row is marked on the beta preview, only the founding year is public. */}
-        {withhold ? (
-          statList
-        ) : (
-          <div data-placeholder="true" className="flex flex-col items-start gap-4">
-            {statList}
-            <PlaceholderMarker />
-          </div>
-        )}
+        {statList}
       </div>
     </section>
   );

@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { createClient } from '@sanity/client';
 
+import { clientIpFromForwardedFor } from '@/lib/client-ip';
 import { initAdmin } from '@/lib/firebase-admin';
 import {
+  buildEventSlug,
   hostSocietyExists,
   isVerifiedSubmitter,
   validateEventSubmission,
@@ -22,7 +24,9 @@ import { projectId, dataset, apiVersion } from '@/sanity/env';
 export const runtime = 'nodejs';
 
 // Parameterised: the id is a GROQ parameter, never interpolated into the query string.
-const SOCIETY_EXISTS_QUERY = 'count(*[_type == "society" && _id == $id]) > 0';
+// Draft ids (`drafts.*`) are unpublished and must not count as a known society.
+const SOCIETY_EXISTS_QUERY =
+  'count(*[_type == "society" && _id == $id && !(_id in path("drafts.**"))]) > 0';
 
 type SubmitBody = {
   title: string;
@@ -37,11 +41,11 @@ type SubmitBody = {
 
 const attempts = createAttemptStore(PUBLIC_FORM_RATE_LIMIT_WINDOW_MS);
 
-function slugify(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
+function tooManyAttempts(retryAfterSeconds: number): NextResponse {
+  return NextResponse.json(
+    { error: 'Too many attempts. Please try again later.' },
+    { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } },
+  );
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -70,12 +74,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     PUBLIC_FORM_RATE_LIMIT_MAX_ATTEMPTS,
     PUBLIC_FORM_RATE_LIMIT_WINDOW_MS,
   );
-  if (!limit.allowed) {
-    return NextResponse.json(
-      { error: 'Too many attempts. Please try again later.' },
-      { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } },
-    );
-  }
+  if (!limit.allowed) return tooManyAttempts(limit.retryAfterSeconds);
 
   // 4. Parse + validate body
   let raw: unknown;
@@ -94,6 +93,19 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
   const body = raw as SubmitBody; // validateEventSubmission() checked every field's type above
   const { title, kind, date, endDate, venue, location, description, hostSocietyId } = body;
+
+  // 4a. Rate limit per client IP: uids are free to mint, so the per-uid limit above does not
+  // bound a caller who registers new accounts. Only a verified submitter with a valid body
+  // counts, so unauthenticated or malformed requests cannot use up the allowance of real users
+  // behind a shared address.
+  const ip = clientIpFromForwardedFor(req.headers.get('x-forwarded-for'));
+  const ipLimit = consumeRateLimit(
+    { now: new Date(), ...scopeAttemptsToRequest(attempts) },
+    `event-submit-ip:${ip ?? 'unknown'}`,
+    PUBLIC_FORM_RATE_LIMIT_MAX_ATTEMPTS,
+    PUBLIC_FORM_RATE_LIMIT_WINDOW_MS,
+  );
+  if (!ipLimit.allowed) return tooManyAttempts(ipLimit.retryAfterSeconds);
 
   // 5. Build write client
   const sanityToken = process.env.SANITY_API_TOKEN;
@@ -122,9 +134,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   // 6. Compute slug + draft id
-  const datePart = date.slice(0, 10);
-  const slug = `${slugify(title)}-${datePart}`;
   const id = `drafts.societyEvent-${crypto.randomUUID()}`;
+  const slug = buildEventSlug(title, date, id);
 
   // 7. Create draft
   const doc: { _id: string; _type: string; [key: string]: unknown } = {

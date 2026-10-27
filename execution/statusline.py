@@ -34,7 +34,10 @@ Rules that do not bend:
 """
 from __future__ import annotations
 
-import fcntl
+try:
+    import fcntl
+except ImportError:  # Windows: no flock; the locked paths below degrade to no-ops
+    fcntl = None
 import json
 import os
 import re
@@ -540,9 +543,11 @@ def read_json(path: Path):
 
 def git(root: Path, *args: str) -> str:
     try:
+        # Runs on every render: never take .git/index.lock (a timeout kill leaves it stale).
         done = subprocess.run(["git", "-C", str(root), *args],
                               capture_output=True, text=True,
-                              timeout=GIT_TIMEOUT_SECONDS)
+                              timeout=GIT_TIMEOUT_SECONDS,
+                              env=dict(os.environ, GIT_OPTIONAL_LOCKS="0"))
         return done.stdout.strip() if done.returncode == 0 else ""
     except Exception:
         return ""
@@ -774,6 +779,8 @@ def record_heartbeat(payload: dict, root: Path) -> None:
     transcript = payload.get("transcript_path")
     transcript = transcript if isinstance(transcript, str) else ""
     target = root / QUOTA_RESUME_DIR / "heartbeat.json"
+    if fcntl is None:
+        return  # no flock to serialise renders; quota auto-resume is macOS-only anyway
     target.parent.mkdir(parents=True, exist_ok=True)
     with open(target.with_name("heartbeat.lock"), "a") as guard:
         try:
@@ -816,6 +823,8 @@ def record_quota_state(payload: dict, root: Path) -> None:
 
 def auto_resume_running(root: Path) -> str:
     """RUNNING while a headless quota-auto-resume holds the run.lock flock."""
+    if fcntl is None:
+        return ""
     try:
         fd = os.open(root / QUOTA_RESUME_DIR / "run.lock", os.O_RDONLY)
     except OSError:

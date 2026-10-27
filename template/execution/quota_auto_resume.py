@@ -27,7 +27,10 @@ Design: .agent/memory/project/specs/quota-auto-resume/DECISIONS.md
 from __future__ import annotations
 
 import argparse
-import fcntl
+try:
+    import fcntl
+except ImportError:  # Windows: no flock; the locked paths below degrade to no-ops
+    fcntl = None
 import hashlib
 import json
 import logging
@@ -432,6 +435,8 @@ def notify(message: str) -> None:
 
 def acquire_flock(project: Project) -> int | None:
     """flock(LOCK_EX|LOCK_NB) run.lock, or None when another process holds it."""
+    if fcntl is None:
+        return None  # no flock, no safe single-run guarantee: never run
     project.qr.mkdir(parents=True, exist_ok=True)
     path = project.qr / "run.lock"
     for _ in range(2):

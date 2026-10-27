@@ -8,9 +8,8 @@
 // PENDING-COMMITTEE-COPY (G1): the section heading. A functional label, rendered always.
 export const ENQUIRY_HEADING = 'Sponsorship enquiry';
 
-// PENDING-COMMITTEE-COPY (G2): the introduction under the heading. No wording exists, so the
-// beta preview shows this bracketed stand-in, marked, and a public build omits the line entirely.
-export const ENQUIRY_INTRO_PLACEHOLDER = '[Introduction to be supplied by the committee]';
+// PENDING-COMMITTEE-COPY (G2): the introduction under the heading. No wording exists, so nothing is
+// drawn for it: the beta preview shows the one marker line for the form, a public build shows nothing.
 
 // PENDING-COMMITTEE-COPY (G3): the POPIA consent label and its privacy link text. Functional,
 // so rendered in both modes; the beta preview adds the marker. Needs committee approval.
@@ -19,9 +18,8 @@ export const ENQUIRY_CONSENT_LABEL =
 export const ENQUIRY_PRIVACY_LINK_TEXT = 'Privacy policy';
 
 // PENDING-COMMITTEE-COPY (G6): the NOS success body. The SAOC string names the SAOC secretariat, which is not
-// the National Show's voice, so NOS has no wording yet: the beta preview shows this stand-in, marked, and a
-// public build shows the heading alone. "Thank you" stays on both.
-export const ENQUIRY_NOS_SUCCESS_BODY_PLACEHOLDER = '[Confirmation message to be supplied by the committee]';
+// the National Show's voice, so NOS has no wording yet: the beta preview shows the one marker line under the
+// heading, a public build shows the heading alone. "Thank you" stays on both.
 
 // PENDING-COMMITTEE-COPY (G4): labels with no existing equivalent on the site. Functional.
 export const ENQUIRY_LABELS = {

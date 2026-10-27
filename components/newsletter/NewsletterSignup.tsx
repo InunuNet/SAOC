@@ -5,6 +5,7 @@ import { useRef, useState } from 'react';
 import { NEWSLETTER_COPY } from '@/components/chrome/newsletter-copy';
 import { FOOTER_HEADINGS } from '@/components/chrome/footer-data';
 import type { NewsletterTopic } from '@/lib/newsletter';
+import { useHydrated } from '@/lib/hooks/useHydrated';
 
 type Status = 'idle' | 'submitting' | 'success' | 'error';
 
@@ -47,6 +48,7 @@ export function NewsletterSignup({
   statusClassName,
   errorClassName,
 }: NewsletterSignupProps) {
+  const hydrated = useHydrated();
   const [email, setEmail] = useState('');
   const [hp, setHp] = useState('');
   const [status, setStatus] = useState<Status>('idle');
@@ -111,7 +113,7 @@ export function NewsletterSignup({
   }
 
   return (
-    <form id={formId} onSubmit={handleSubmit} noValidate className={formClassName}>
+    <form id={formId} method="post" onSubmit={handleSubmit} noValidate className={formClassName}>
       <label htmlFor={inputId} className={labelClassName}>
         {emailLabel}
       </label>
@@ -146,7 +148,7 @@ export function NewsletterSignup({
                   onChange={(event) => toggleTopic(topic, event.target.checked)}
                   aria-invalid={topicsInvalid ? 'true' : undefined}
                   aria-describedby={topicsInvalid ? topicsErrorId : undefined}
-                  className="h-5 w-5 shrink-0 accent-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ivory"
+                  className="size-6 shrink-0 accent-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ivory"
                   style={site === 'nos' ? { accentColor: 'var(--nc-gold)' } : undefined}
                 />
                 {topic === 'saoc' ? NEWSLETTER_COPY.topicLabelSaoc : NEWSLETTER_COPY.topicLabelNos}
@@ -168,7 +170,7 @@ export function NewsletterSignup({
         </fieldset>
         <button
           type="submit"
-          disabled={status === 'submitting'}
+          disabled={status === 'submitting' || !hydrated}
           aria-busy={status === 'submitting'}
           className={buttonClassName}
         >

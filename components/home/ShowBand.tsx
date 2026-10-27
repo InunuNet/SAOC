@@ -25,7 +25,37 @@ const BOX_CLASSES = 'bg-ivory/8 p-[2px] rounded-[2px] mb-8';
 
 export interface ShowBandProps {
   show?: ShowIdentity | null;
+  /** Overrides only the "Show details" href (the /events page points it at the show's event page). */
+  detailsHref?: string;
+  /** False where the page already carries a photograph above the fold (/events): the band is its text panel alone. */
+  showPhoto?: boolean;
+  /**
+   * "event" is the National Show event page's 42/58 photo-to-copy split from 1025px up (NOS Design). The
+   * home page and /events keep the default 1fr/1.1fr split from 1100px.
+   */
+  split?: 'event';
 }
+
+/** The dark-orchid cut (lib/hero-derived-sources.json, orchid-dark-showband): its sharp left cluster fills the box. */
+const PHOTO_OBJECT_POSITION = '50% 50%';
+
+// Tailwind needs whole class names, so each split carries its full set. `sizes` is the photo column's
+// slot: the 2400-wide cut covers a box up to 1200 css wide at 2x; below the side-by-side breakpoint the
+// 3/2 block is width-driven, so 100vw is right.
+const SPLITS = {
+  default: {
+    grid: 'grid grid-cols-1 min-[1100px]:grid-cols-[1fr_1.1fr] min-[1100px]:min-h-[620px]',
+    photo: 'relative w-full aspect-[3/2] min-[1100px]:aspect-auto min-[1100px]:min-h-[620px]',
+    copy: 'flex flex-col justify-center px-8 py-[60px] min-[1100px]:px-20 min-[1100px]:py-[90px] on-dark',
+    sizes: '(min-width: 1100px) 1200px, 100vw',
+  },
+  event: {
+    grid: 'grid grid-cols-1 min-[1025px]:grid-cols-[42fr_58fr] min-[1025px]:min-h-[620px]',
+    photo: 'relative w-full aspect-[3/2] min-[1025px]:aspect-auto min-[1025px]:min-h-[620px]',
+    copy: 'flex flex-col justify-center px-8 py-[60px] min-[1025px]:px-20 min-[1025px]:py-[90px] on-dark',
+    sizes: '(min-width: 1025px) 1200px, 100vw',
+  },
+} as const;
 
 /** Inclusive day count across the show, derived from the dataset — never a literal. */
 function formatDuration(start?: string | null, end?: string | null): string | null {
@@ -64,13 +94,14 @@ function CountdownBox({ target, edition }: { target: Date | null; edition?: numb
       data-show-band-countdown
       role="group"
       aria-label={`Countdown to the ${showLabelWithEdition(edition)}`}
-      className={`${BOX_CLASSES} flex gap-[2px]`}
+      className={`${BOX_CLASSES} @container`}
     >
+      <div className="grid grid-cols-4 @max-[360px]:grid-cols-2 gap-[2px]">
       {cells.map((cell) => (
         <div
           key={cell.label}
           data-countdown-cell
-          className="flex-1 min-w-0 bg-ivory/4 rounded-[1px] px-1.5 sm:px-3 py-[18px] text-center"
+          className="min-w-0 bg-ivory/4 rounded-[1px] px-1.5 sm:px-3 py-[18px] text-center"
         >
           <div
             data-countdown-value
@@ -83,11 +114,13 @@ function CountdownBox({ target, edition }: { target: Date | null; edition?: numb
           </div>
         </div>
       ))}
+      </div>
     </div>
   );
 }
 
-export function ShowBand({ show }: ShowBandProps) {
+export function ShowBand({ show, detailsHref, showPhoto = true, split }: ShowBandProps) {
+  const layout = SPLITS[split ?? 'default'];
   const countdownDate = show?.countdownDate ?? null;
   const target = useMemo(() => {
     const candidate = countdownDate ? new Date(countdownDate) : null;
@@ -103,19 +136,31 @@ export function ShowBand({ show }: ShowBandProps) {
 
   return (
     <section data-home-section="show-band" className="bg-primary-800">
-      <div className="grid grid-cols-1 min-[1100px]:grid-cols-[1fr_1.1fr] min-[1100px]:min-h-[620px]">
+      <div
+        className={showPhoto ? layout.grid : 'grid grid-cols-1'}
+      >
         {/* Photo: flush to the viewport edge, no scrim (no text sits on it) */}
-        <div data-show-band-image className="relative w-full aspect-[3/2] min-[1100px]:aspect-auto min-[1100px]:min-h-[620px]">
-          <Image
-            src="/images/orchid-yellow.jpg"
-            alt="Yellow orchid on the show bench"
-            fill
-            className="object-cover"
-            sizes="(min-width: 1100px) 48vw, 100vw"
-          />
-        </div>
+        {showPhoto ? (
+          <div data-show-band-image className={layout.photo}>
+            <Image
+              src="/images/orchid-dark-showband.jpg"
+              alt="Dark orchid on the show bench"
+              fill
+              className="object-cover"
+              style={{ objectPosition: PHOTO_OBJECT_POSITION }}
+              sizes={layout.sizes}
+              quality={88}
+            />
+          </div>
+        ) : null}
 
-        <div className="flex flex-col justify-center px-8 py-[60px] min-[1100px]:px-20 min-[1100px]:py-[90px] on-dark">
+        <div
+          className={
+            showPhoto
+              ? layout.copy
+              : 'saoc-container w-full flex flex-col justify-center py-[60px] min-[1100px]:py-20 on-dark'
+          }
+        >
           <div data-show-band-content className="w-full max-w-[720px]">
             <div className="mb-6">
               <span className="eyebrow eyebrow--light">Flagship Event</span>
@@ -147,7 +192,7 @@ export function ShowBand({ show }: ShowBandProps) {
                 Book tickets
               </a>
               <a
-                href={nosUrl('/')}
+                href={detailsHref ?? nosUrl('/')}
                 data-show-band-cta="secondary"
                 className="inline-flex items-center justify-center text-[14px] font-medium tracking-[0.01em] rounded-[2px] border transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-accent-soft focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 px-[22px] py-[14px] text-ivory border-ivory/45 hover:border-ivory hover:bg-white/6 hover:-translate-y-px focus-visible:-translate-y-px active:translate-y-0"
               >
