@@ -1,0 +1,32 @@
+{
+  "_comment": "Golden values for nos-footer-colour-logos (COUNCIL-1 C2 + TYPE-11, NOS Design ruling 2026-10-28, root comms.md ~line 4940). Every number is measured from the supplied files or taken from the ruling.",
+  "nosLockup": {
+    "src": "/images/NOS-2027-logo-full-colour-reversed-vertical.png",
+    "master": "public/downloads/media-kit/nos/NOS-2027-logo-full-colour-reversed-vertical.png",
+    "width": 3272,
+    "height": 2876,
+    "box": 248,
+    "transparentPadding": { "left": 229, "right": 250, "top": 224, "bottom": 256, "note": "identical to the reversed-gold file it replaces (alpha > 8), so the .nf-lockup negative margins stay as they are" },
+    "retiredCopy": "public/images/NOS-2027-logo-reversed-gold-vertical.png"
+  },
+  "credit": {
+    "src": "/images/saoc-lockup-south-african-orchid-council-vertical-colour-on-dark.png",
+    "master": "public/downloads/media-kit/saoc/lockup/saoc-lockup-south-african-orchid-council-vertical-colour-on-dark.png",
+    "width": 1915,
+    "height": 1531,
+    "box": 206,
+    "boxTolerance": 4,
+    "boxNote": "206 is the width of the OfficialMonoLockup the file replaces (SaocLockup.tsx w-[206px]). The art is trimmed to its ink (alpha bbox 0/0/0/0), so the img box is the ink box. Height follows the aspect: 165.",
+    "alt": "South African Orchid Council Making a difference since 1968",
+    "altNote": "The current accessible name of the credit link: OfficialMonoLockup has no aria-label, so the name is its visible text, wordmark then tagline. The dev records the live name on main before editing and the gate compares.",
+    "testId": "nf-saoc-lockup"
+  },
+  "viewports": [
+    { "name": "1440", "width": 1440, "height": 900 },
+    { "name": "390", "width": 390, "height": 844 }
+  ],
+  "dprs": [1, 2, 3],
+  "nosRoutes": ["/", "/faq", "/tickets"],
+  "allowedFirstFamilies": ["fraunces", "karla"],
+  "ladder": { "dir": "/images/_opt/", "widths": [16, 32, 48, 64, 96, 128, 256, 384, 640, 750, 828, 1080, 1200, 1920, 2048], "note": "lib/image-widths.json, capped at 2048 by lib/image-loader.ts" }
+}

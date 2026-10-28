@@ -1,0 +1,80 @@
+diff --git a/components/nos-chrome/NosFooter.tsx b/components/nos-chrome/NosFooter.tsx
+index 09446d87..b81e06a4 100644
+--- a/components/nos-chrome/NosFooter.tsx
++++ b/components/nos-chrome/NosFooter.tsx
+@@ -26,7 +26,6 @@ import {
+   FOOTER_RHYTHM,
+   FOOTER_WOSA,
+ } from '@/components/chrome/footer-data';
+-import { SaocLockup } from '@/components/chrome/SaocLockup';
+ import { CONTACT_LINK } from '@/components/chrome/nav-config';
+ import { ExternalArrow } from '@/components/chrome/ExternalArrow';
+ import { MediaKitFooterLink } from '@/components/chrome/MediaKitFooterLink';
+@@ -41,13 +40,19 @@ import './nos-chrome.css';
+ 
+ const HUB_HREF = '/';
+ const LOCKUP_ALT = SHOW_TITLE_EXPANDED;
+-const LOCKUP_SRC = '/images/NOS-2027-logo-reversed-gold-vertical.png';
++const LOCKUP_SRC = '/images/NOS-2027-logo-full-colour-reversed-vertical.png';
+ const LOCKUP_WIDTH = 3272;
+ const LOCKUP_HEIGHT = 2876;
+ // The lockup's rendered box is 248px wide (nos-chrome.css). A width with no `sizes` gives a
+ // pixel-density list that stops at twice the box, which under-serves a 3x screen. The `sizes` below
+ // gives a width srcset over the whole variant ladder, so a 3x screen picks a wide enough one (LG-1).
+ const LOCKUP_BOX = 248;
++// The SAOC credit is the supplied colour-on-dark vertical lockup (art trimmed to its ink), on the same ladder.
++const CREDIT_SRC = '/images/saoc-lockup-south-african-orchid-council-vertical-colour-on-dark.png';
++const CREDIT_WIDTH = 1915;
++const CREDIT_HEIGHT = 1531;
++const CREDIT_BOX = 206;
++const CREDIT_ALT = 'South African Orchid Council Making a difference since 1968';
+ interface NosFooterProps {
+   /** True on the beta preview, where an unsupplied fact shows as a visible marker. */
+   showPlaceholders: boolean;
+@@ -62,6 +67,14 @@ export function NosFooter({ showPlaceholders }: NosFooterProps) {
+     sizes: `${LOCKUP_BOX}px`,
+   });
+ 
++  const { props: credit } = getImageProps({
++    src: CREDIT_SRC,
++    alt: CREDIT_ALT,
++    width: CREDIT_BOX,
++    height: Math.round((CREDIT_BOX * CREDIT_HEIGHT) / CREDIT_WIDTH),
++    sizes: `${CREDIT_BOX}px`,
++  });
++
+   return (
+     <footer id="nf" className={`nf ${nosChromeFontClass}`}>
+       <div className={FOOTER_LAYOUT.grid}>
+@@ -103,13 +116,11 @@ export function NosFooter({ showPlaceholders }: NosFooterProps) {
+         <div className="nf-col">
+           {/* The organising body: one link to the SAOC site, a plain anchor, same tab, no arrow. */}
+           <div className="nf-saoc-credit">
+-            <SaocLockup
+-              orientation="vertical"
+-              tone="dark"
+-              variant="official-mono"
+-              href={saocUrl('/')}
+-              testId="nf-saoc-lockup"
+-            />
++            <a className="nf-credit-lockup" href={saocUrl('/')} data-testid="nf-saoc-lockup">
++              <picture>
++                <img {...credit} alt={CREDIT_ALT} width={CREDIT_WIDTH} height={CREDIT_HEIGHT} loading="lazy" decoding="async" />
++              </picture>
++            </a>
+             <span className="nf-credit-reg">
+               {FOOTER_REG.split(/\s{2,}/).map((part, i) => (
+                 <Fragment key={part}>
+diff --git a/components/nos-chrome/nos-chrome.css b/components/nos-chrome/nos-chrome.css
+index e74b451a..d1454d78 100644
+--- a/components/nos-chrome/nos-chrome.css
++++ b/components/nos-chrome/nos-chrome.css
+@@ -133,6 +133,8 @@
+ /* The PNG carries transparent padding (measured: 229px left, 250px right, 224px top and 257px bottom of 3272x2876). At the 248px box the negative margins below trim it, so the column hugs the visible ink and the footer gaps and the top line are measured from the artwork, not the box. */
+ .nf-lockup { display: block; width: 248px; margin: -16px -19px -19px -17px; line-height: 0; border-radius: 4px; }
+ .nf-lockup img { display: block; width: 100%; max-width: none; height: auto; }
++.nf-credit-lockup { display: block; width: 206px; max-width: 100%; line-height: 0; border-radius: 4px; }
++.nf-credit-lockup img { display: block; width: 100%; max-width: none; height: auto; }
+ .nf-saoc-credit { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; width: max-content; max-width: 100%; }
+ .nf-credit-reg { display: flex; flex-wrap: wrap; column-gap: 16px; row-gap: 0; font: 400 13px/1.4 var(--nc-sans); letter-spacing: 0.08em; color: var(--nc-gold); font-variant-numeric: tabular-nums; text-align: start; }
+ .nf-reg-item { white-space: nowrap; }
