@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { CircleAlert } from 'lucide-react';
 
 import { NEWSLETTER_COPY } from '@/components/chrome/newsletter-copy';
 
@@ -45,9 +46,10 @@ export function UnsubscribeConfirm({ token }: { token: string }) {
       {status === 'error' ? (
         <p
           role="alert"
-          className="mb-4 border border-primary-800 bg-bone px-4 py-3 font-sans text-[16px] leading-[1.55] text-primary-800"
+          className="mb-4 flex items-start gap-2 rounded-sm border-2 border-[var(--status-error)] px-4 py-3 font-sans text-[16px] leading-[1.55] font-medium text-[var(--status-error)]"
         >
-          {errorMessage}
+          <CircleAlert aria-hidden="true" className="mt-1 size-4 shrink-0" />
+          <span>{errorMessage}</span>
         </p>
       ) : null}
       {status === 'done' ? null : (

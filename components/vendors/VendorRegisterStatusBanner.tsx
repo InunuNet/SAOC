@@ -1,3 +1,5 @@
+import { CircleAlert } from 'lucide-react';
+
 import { humaniseFieldError, type VendorRegisterResponseDescription } from '@/lib/vendor-register-response';
 
 // Renders validation-error/rate-limited/error descriptor kinds above the fieldsets. Returns
@@ -6,8 +8,8 @@ interface VendorRegisterStatusBannerProps {
   descriptor: VendorRegisterResponseDescription;
 }
 
-const bannerClass = 'space-y-2 rounded-sm border border-primary-800 bg-bone p-4';
-const headingClass = 'font-sans text-[15px] font-medium text-primary-800';
+const bannerClass = 'space-y-2 rounded-sm border-2 border-[var(--status-error)] p-4';
+const headingClass = 'flex items-start gap-2 font-sans text-[15px] font-medium text-[var(--status-error)]';
 const listClass = 'list-disc space-y-1 pl-5 font-sans text-[14px] text-ink/80';
 
 export function VendorRegisterStatusBanner({ descriptor }: VendorRegisterStatusBannerProps) {
@@ -17,7 +19,10 @@ export function VendorRegisterStatusBanner({ descriptor }: VendorRegisterStatusB
 
   return (
     <div role="alert" className={bannerClass}>
-      <p className={headingClass}>{descriptor.message}</p>
+      <p className={headingClass}>
+        <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+        <span>{descriptor.message}</span>
+      </p>
 
       {descriptor.kind === 'validation-error' ? (
         <ul className={listClass}>

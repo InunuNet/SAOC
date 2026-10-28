@@ -82,7 +82,7 @@ export function VendorRegistrationCodeEntryForm({
       {status === 'error' && errorMessage ? (
         <p
           role="alert"
-          className="flex items-start gap-2 rounded-sm border-2 border-[var(--status-error)] bg-bone p-4 font-sans text-[15px] font-medium text-[var(--status-error)]"
+          className="flex items-start gap-2 rounded-sm border-2 border-[var(--status-error)] p-4 font-sans text-[15px] font-medium text-[var(--status-error)]"
         >
           <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
           <span>{errorMessage}</span>

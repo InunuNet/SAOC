@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { CircleAlert } from 'lucide-react';
 
 import type { VendorSubmission, VendorSubmissionStatus, VendorStandOrderStatus } from '@/types/index';
 import type { VendorReviewAction } from '@/lib/vendor-review';
@@ -271,10 +272,11 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
   const errorBanner = error ? (
     <p
       ref={errorRef}
-      className="mb-4 border border-rule bg-ivory px-4 py-3 font-sans text-[14px] text-ink"
+      className="mb-4 flex items-start gap-2 rounded-sm border-2 border-[var(--status-error)] px-4 py-3 font-sans text-[14px] font-medium text-[var(--status-error)]"
       role="alert"
     >
-      {error}
+      <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+      <span>{error}</span>
     </p>
   ) : null;
 
