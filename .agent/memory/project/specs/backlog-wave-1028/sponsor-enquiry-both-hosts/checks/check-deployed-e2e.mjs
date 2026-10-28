@@ -8,6 +8,10 @@
 //   if a query returns anything other than exactly one such doc.
 //   Real emails: one admin notice per ADMIN_EMAIL_ALLOWLIST recipient per host, and one visitor acknowledgement per host to
 //   e2e-test@example.com (reserved domain, undeliverable by design). Sent mail cannot be unsent; the subject/body carry the marker.
+// REAL ADMINS ARE NEVER EMAILED BY ACCIDENT: the script exits 77 (skip) unless SPONSOR_E2E_ADMIN_RECIPIENTS is set to the comma-separated
+//   addresses the operator STATES will receive the admin notices (a test inbox, or the operator themself). It is the operator's
+//   affirmation that the DEPLOYED ADMIN_EMAIL_ALLOWLIST secret equals that list; the script cannot read the secret. As a tripwire it also
+//   refuses (77) when .env.local carries an ADMIN_EMAIL_ALLOWLIST that differs from the stated list. It sets nothing on the server.
 // Credentials: BETA_BASIC_AUTH_USER/PASSWORD and FIREBASE_ADMIN_* are read from the environment (.env.local) and never printed.
 // Run as: node --env-file-if-exists=.env.local <this file>   (from the project root, after the change is deployed)
 // Exit 0 PASS, 1 FAIL (a real finding), 77 inconclusive (credentials, beta unreachable, or gws unavailable): contract.py reads 77 as a skip.
@@ -31,6 +35,18 @@ const { FIREBASE_ADMIN_PROJECT_ID: projectId, FIREBASE_ADMIN_CLIENT_EMAIL: clien
 const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n');
 if (!user || !pass || !projectId || !clientEmail || !privateKey) {
   console.error('INCONCLUSIVE: BETA_BASIC_AUTH_* or FIREBASE_ADMIN_* not set (run from the project root with .env.local)');
+  process.exit(77);
+}
+
+const parseList = (raw) => (raw ?? '').split(',').map((a) => a.trim().toLowerCase()).filter(Boolean).sort().join(',');
+const stated = parseList(process.env.SPONSOR_E2E_ADMIN_RECIPIENTS);
+if (!stated) {
+  console.error('INCONCLUSIVE: SPONSOR_E2E_ADMIN_RECIPIENTS not set. Set it to the addresses that will receive the admin notices (the deployed ADMIN_EMAIL_ALLOWLIST must equal it); refusing to email unnamed admins.');
+  process.exit(77);
+}
+const local = parseList(process.env.ADMIN_EMAIL_ALLOWLIST);
+if (local && local !== stated) {
+  console.error('INCONCLUSIVE: .env.local ADMIN_EMAIL_ALLOWLIST differs from SPONSOR_E2E_ADMIN_RECIPIENTS; refusing in case real admins would be emailed.');
   process.exit(77);
 }
 
