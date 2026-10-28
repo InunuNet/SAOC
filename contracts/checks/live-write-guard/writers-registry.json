@@ -572,6 +572,12 @@
    "class": "REAL_SANITY",
    "note": "contract-dotenv-supply-chain-f1 A6 runs it for real under timeout 15",
    "target": "Sanity 26yfbug4/production, transaction().createOrReplace of every seeded doc (line 135)"
+  },
+  ".agent/memory/project/specs/backlog-wave-1028/gate-hygiene/checks/check-checkout-day-null.mts": {
+   "class": "FAKE",
+   "match": "if \\(req === 'next-sanity'\\) return \\{[^\\n]*\\.\\.\\.fakeSanity \\};\\n[^\\n]*if \\(req === 'firebase-admin/app'\\) return \\{[^\\n]*getApps: \\(\\) => \\[\\{\\}\\] \\};\\n[^\\n]*if \\(req === 'firebase-admin/firestore'\\) return \\{[^\\n]*getFirestore: \\(\\) => fakeDb \\};[\\s\\S]{0,120}?globalThis\\.fetch = \\(async \\(input: unknown\\) => \\{ outbound\\.push\\(String\\(input\\)\\); throw new Error\\('unexpected outbound fetch'\\); \\}\\)",
+   "note": "Module._load hook swaps next-sanity createClient, firebase-admin/app getApps and firebase-admin/firestore getFirestore for fakes; globalThis.fetch is a throwing spy",
+   "target": "in-process checkout route handler with Sanity, Firestore and network mocked"
   }
  }
 }
