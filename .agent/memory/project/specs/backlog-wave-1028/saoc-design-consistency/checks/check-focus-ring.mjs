@@ -1,4 +1,4 @@
-// F1a: one focus ring across hero CTA, Menu, Join (header at 1440 and the open drawer's link at 390) and a footer link. Geometry equal to the existing hero CTA ring
+// F1a: one focus ring across hero CTA, Menu, Join (header at 1440 and the open drawer's link at 390) a footer link, the header search button, the dark-footer newsletter controls (ivory ring) and the open drawer's close and search controls. Geometry equal to the existing hero CTA ring
 // (outline 2px solid, offset 3px) and the settled ring colour reaches 3:1 against the PIXELS painted just outside it (photograph, scrim and
 // panels included): a band 2-6px outside the element box (the 2px ring at a 3px offset paints 3-5px out) is screenshotted with the outline hidden and the WORST-case contrast is used.
 import { withSite, openPage, check, finish, RGBA_FN, blend, ratio } from './lib.mjs';
@@ -38,6 +38,15 @@ const TARGETS = [
   { name: 'footer legal link', path: '/about', width: 1440, sel: 'footer [data-footer-bar] a[href="/privacy"]' },
   // The media-kit footer link renders only for a signed-in admin (MediaKitFooterLink), so an anonymous run skips it rather than failing.
   { name: 'footer media-kit link', path: '/about', width: 1440, sel: 'footer a[href="/media-kit"]', optional: true },
+  // Chrome controls the probe did not reach (Codex A7 finding: the footer newsletter submit had no ring). Footer controls sit on the dark footer, so the ring must be a LIGHT (ivory) colour; checked on /about and /judging
+  // because the footer is rendered per route. The submit is disabled until hydration, so the probe waits for it to enable.
+  { name: 'header search button', path: '/about', width: 1440, sel: '[data-hd=search]' },
+  { name: 'footer newsletter submit', path: '/about', width: 1440, sel: 'footer form button[type=submit]', light: true, waitEnabled: true },
+  { name: 'footer newsletter submit (judging)', path: '/judging', width: 1440, sel: 'footer form button[type=submit]', light: true, waitEnabled: true },
+  { name: 'footer newsletter email input', path: '/about', width: 1440, sel: 'footer form input[type=email]', light: true },
+  { name: 'footer newsletter topic checkbox', path: '/about', width: 1440, sel: 'footer form input[type=checkbox]', light: true },
+  { name: 'drawer close', path: '/about', width: 390, sel: 'button[aria-label="Close menu"]', drawer: true },
+  { name: 'drawer search', path: '/about', width: 390, sel: '[data-hd=drawer-search]', drawer: true },
 ];
 // The Home hero CTA needs live Sanity events, so it is probed only on a deployed origin.
 await withSite(async ({ base, browser, ctxOpts, deployed }) => {
@@ -54,11 +63,14 @@ await withSite(async ({ base, browser, ctxOpts, deployed }) => {
       if (t.pre === 'searchInput') await input.evaluate((e) => e.setAttribute('data-sdc-probe', '')).catch(() => {});
       else { await input.fill('orchid').catch(() => {}); const a = page.locator('[role=dialog] a').first(); const ok = await a.waitFor({ timeout: 5000 }).then(() => true).catch(() => false); if (ok) await a.evaluate((e) => e.setAttribute('data-sdc-probe', '')); else console.log(`KNOWN GAP ${t.name}: no search result renders on this build (live Sanity); NOT GUARDED here`); }
     }
+    if (t.drawer) { await page.locator('[data-hd=menu]').click(); await page.waitForTimeout(500); }
+    if (t.waitEnabled) await page.waitForFunction((sel) => { const e = document.querySelector(sel); return e && !e.disabled; }, t.sel, { timeout: 15000 }).catch(() => {});
     await page.keyboard.press('Shift'); // keyboard modality, so :focus-visible applies
     const r = await page.evaluate(`(${PROBE})(${JSON.stringify(t.sel)})`);
     if (!r) { if (!t.optional) check(false, `${t.name}: selector ${t.sel} not found`); await ctx.close(); continue; }
     seen.push({ ...t, ...r });
     check(r.w === '2px' && r.s === 'solid' && r.o === '3px', `${t.name}: focus outline is ${r.w} ${r.s} offset ${r.o}, want 2px solid offset 3px`);
+    if (t.light) check(r.ring[3] > 0 && Math.min(r.ring[0], r.ring[1], r.ring[2]) >= 220, `${t.name}: focus ring colour rgb(${r.ring.slice(0, 3).map(Math.round)}) is not ivory (on the dark footer it must be light, >=220 per channel)`);
     // Pixel ground: hide the outline, screenshot a band around the box (animations frozen), take the lowest contrast in the 6-9px ring.
     await page.evaluate((sel) => document.querySelector(sel).style.setProperty('outline', 'none', 'important'), t.sel);
     const vp = page.viewportSize(); const x0 = Math.max(0, Math.floor(r.box.x - CLIP_MARGIN)), y0 = Math.max(0, Math.floor(r.box.y - CLIP_MARGIN));
