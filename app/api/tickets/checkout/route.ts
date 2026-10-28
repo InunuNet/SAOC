@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isBodyWithinLimit } from '@/lib/request-guards';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
 import { generateBookingRef } from '@/lib/booking-ref';
+import { CONTACT_FIELD_MAX_LENGTHS } from '@/lib/contact-input';
 import {
   aggregateRequestedQuantities,
   buildMultiReservationDocs,
@@ -292,6 +294,13 @@ export function parseLineItems(raw: unknown): CheckoutLineItemInput[] | null {
     ) {
       return null;
     }
+    // ticketType is left unbounded: an unknown slug is rejected after the Sanity lookup (route.ts:566).
+    if (
+      attendeeName.length > CONTACT_FIELD_MAX_LENGTHS.name ||
+      attendeeEmail.length > CONTACT_FIELD_MAX_LENGTHS.email
+    ) {
+      return null;
+    }
     if (chosenDay !== undefined && (typeof chosenDay !== 'string' || !CHOSEN_DAY_PATTERN.test(chosenDay))) {
       return null;
     }
@@ -422,7 +431,14 @@ async function fetchSoldOutMessage(): Promise<string> {
   }
 }
 
+// Cap on the request body, checked against Content-Length before the body is buffered.
+// This cap is the effective ceiling for attendeeName, which parseLineItems() does not bound.
+const MAX_BODY_BYTES = 131072;
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  if (!isBodyWithinLimit(request.headers.get('content-length'), MAX_BODY_BYTES)) {
+    return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
+  }
   // Before anything is read or written: without a well-formed key, duplicate protection
   // is opt-in, and therefore absent for exactly the callers that retry.
   const idempotencyKey = request.headers.get(IDEMPOTENCY_KEY_HEADER)?.trim() ?? '';

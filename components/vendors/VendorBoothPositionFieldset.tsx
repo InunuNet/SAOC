@@ -3,6 +3,7 @@ import {
   type VendorRegisterFieldChangeHandler,
   type VendorRegisterFormState,
 } from '@/lib/vendor-register-form-payload';
+import { BOOTH_TYPE_OPTIONS } from '@/lib/vendor-booth-type-labels';
 import { VendorFormField } from './VendorFormField';
 import { VendorRadioGroupField } from './VendorRadioGroupField';
 import { VendorBooleanRadioField } from './VendorBooleanRadioField';
@@ -19,13 +20,6 @@ interface VendorBoothPositionFieldsetProps {
   onFieldChange: VendorRegisterFieldChangeHandler;
   disabled: boolean;
 }
-
-const BOOTH_TYPE_OPTIONS = [
-  { value: 'standard-in-row', label: 'Standard / In-row' },
-  { value: 'corner', label: 'Corner' },
-  { value: 'end-of-row', label: 'End-of-row' },
-  { value: 'no-preference', label: 'No preference' },
-];
 
 const YES_NO_OPTIONS = [
   { value: 'true', label: 'Yes' },
