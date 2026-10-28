@@ -165,6 +165,8 @@ function ReferenceMark() {
         strokeWidth={MARK_STROKE}
         strokeLinecap="round"
         focusable="false"
+        aria-hidden="true"
+        data-glyph="status-mark"
         className="inline-block"
       >
         <path d="M8 8l8 8M16 8l-8 8" fill="none" />
