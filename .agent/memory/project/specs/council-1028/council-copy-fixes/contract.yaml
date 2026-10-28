@@ -29,7 +29,7 @@ assertions:
       description: "No stale pin: no tracked file outside the frozen/historical list still carries a before-string or a pinSubs fragment (route-table keepTypo, f6 baseline, f18 longform-copy, vendor structural grep, nos-content-standard spec.md). Two paths are allowlisted by name with a stated reason (council-overrides.json, sanity-exceptions.json); A6 rejects any \\u00xx obfuscation in the overrides so the allowlist is the only way past. Fails on main"
       command: "node .agent/memory/project/specs/council-1028/council-copy-fixes/checks/check-no-stale-strings.mjs"
     - id: A4
-      description: "No other string changes: every changed line against origin/main in a source or pin file is exactly a copy-map substitution, pairwise; only the listed plumbing files, docs/ and the council spec dir may change otherwise"
+      description: "No other string changes: every changed line against origin/main in a source or pin file is exactly a copy-map substitution, pairwise; the nos-content-standard gate scripts (_lib.mjs, gate-standard.mjs, gate-verbatim.mjs) must normalise back to origin/main byte-for-byte once the override plumbing is removed (a deleted assertion or removed route fails; the _lib override block is pinned to goldens/lib-override-block.txt); only docs/, the text pins and the council spec dir may otherwise change"
       command: "node .agent/memory/project/specs/council-1028/council-copy-fixes/checks/check-diff-scope.mjs"
     - id: A5
       description: "Everything holding Lee-Ann's words or a record of them is byte-identical to origin/main: every copy-map frozenHistorical path (Drive copies and mirrors, content/drive-recovered, docs/leeann-source, docs/handover, the historical goldens, the Sanity fixtures, seed-show-faq.ts) except the council spec dir and docs/vendor-form-copy-20261007.md (the gates apply the overrides at read time)"
@@ -64,6 +64,9 @@ assertions:
     - id: A18
       description: "Self-test of the A7 wrapper with stub gates: all five known lines pass, a clean run passes, a subset fails, a sixth failure fails, fewer widths or routes fail, an unparsable failure fails"
       command: "node .agent/memory/project/specs/council-1028/council-copy-fixes/checks/test-known-defect.mjs"
+    - id: A19
+      description: "Proof for the A4 plumbing check: the real files pass, a deleted assertion line, a removed route, a weakened comparison, a tampered override block, a deleted unrelated line and an edited gate-verbatim all fail"
+      command: "node .agent/memory/project/specs/council-1028/council-copy-fixes/checks/test-plumbing.mjs"
     - id: A13
       description: "Lint is clean"
       command: "pnpm exec eslint app components lib e2e"

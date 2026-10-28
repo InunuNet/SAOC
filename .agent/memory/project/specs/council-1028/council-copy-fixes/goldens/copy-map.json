@@ -163,9 +163,6 @@
   ".agent/memory/project/specs/vendor-form-copy-20261007/checks/check-f1-structural.sh"
  ],
  "looseFiles": [
-  ".agent/memory/project/specs/nos-content-standard/checks/_lib.mjs",
-  ".agent/memory/project/specs/nos-content-standard/checks/gate-standard.mjs",
-  ".agent/memory/project/specs/nos-content-standard/checks/gate-verbatim.mjs",
   ".agent/memory/project/specs/nos-content-standard/goldens/spec.md",
   ".agent/memory/project/specs/nos-content-standard/goldens/council-overrides.json",
   ".agent/memory/project/specs/vendor-form-copy-20261007/goldens/f1-vendor-form-copy-update.md",
@@ -187,5 +184,10 @@
   "scripts/seed-show-faq.ts",
   "docs/vendor-form-copy-20261007.md"
  ],
- "frozenNote": "Lee-Ann's Drive copies, their frozen mirrors (sha256-pinned in route-table.json), Sanity fixtures and the Sanity seed script keep her original wording. The site corrects it; the gates apply goldens/council-overrides.json to the frozen text at READ time, so no frozen byte changes."
+ "frozenNote": "Lee-Ann's Drive copies, their frozen mirrors (sha256-pinned in route-table.json), Sanity fixtures and the Sanity seed script keep her original wording. The site corrects it; the gates apply goldens/council-overrides.json to the frozen text at READ time, so no frozen byte changes.",
+ "plumbingFiles": [
+  ".agent/memory/project/specs/nos-content-standard/checks/_lib.mjs",
+  ".agent/memory/project/specs/nos-content-standard/checks/gate-standard.mjs",
+  ".agent/memory/project/specs/nos-content-standard/checks/gate-verbatim.mjs"
+ ]
 }
