@@ -77,3 +77,8 @@ export const INNER_ROUTES = ['/about', '/judging', '/sponsors', '/members', '/me
 export const TEN_ROUTES = ['/', '/about', '/societies', '/judging', '/events', '/sponsors', '/members', '/contact', '/privacy', '/terms'];
 export const tenRoutes = ({ deployed, live }) => TEN_ROUTES.filter((r) => (r !== '/' || deployed) && (r !== '/events' || live));
 export const EXEMPT_ROUTES = ['/societies', '/contact'];
+
+// A society detail route (the first linked from /societies), so a walk covers a page whose back link carries the mirrored arrow. Returns null when /societies links none.
+export async function societyDetail(base) {
+  try { const html = await (await fetch(base + '/societies')).text(); const m = /href="(\/societies\/[a-z0-9][a-z0-9-]*)"/.exec(html); return m ? m[1] : null; } catch { return null; }
+}

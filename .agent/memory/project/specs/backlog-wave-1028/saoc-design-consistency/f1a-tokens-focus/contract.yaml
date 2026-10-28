@@ -26,8 +26,8 @@ assertions:
       description: "Breadcrumb links are >=24x24 at 390 and 1440 on six interior routes (fails on main, Home is 37x19)"
       command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-breadcrumb-targets.mjs"
     - id: A4
-      description: "One focus ring (2px solid, offset 3px, >=3:1 on its ground) on Menu, Join and footer links, matching the hero CTA ring (fails on main, outline none)"
-      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-focus-ring.mjs"
+      description: "One focus ring (2px solid, offset 3px, >=3:1 on its ground) on the header logo, Menu, Join (header and open 390 drawer) and footer links, matching the hero CTA ring; PLUS a static enumeration of every className under app/ and components/ (NOS-host-only code excluded) carrying focus ring-*, ring-offset-* or focus outline-none: each must be the one ring or be listed in goldens/focus-classes.json with a reason, and a stale entry fails (fails on main and on 894de972)"
+      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-focus-ring.mjs && node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-focus-classes-static.mjs"
     - id: A5
       description: "Footer newsletter placeholder >=4.5:1 and field border >=3:1 (fails on main, 3.00 and 1.85)"
       command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-newsletter-contrast.mjs"
