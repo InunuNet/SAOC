@@ -107,3 +107,5 @@ Run with cwd wt-sdc-f1b (main app code plus the F1b nav; the spec worktree's nod
 ## F1e arrow ruling (A23 amended, A29/A30)
 - A23 now fails on any build that still sets the arrow as text: `/societies`, `/judging` and Home must carry svg[data-glyph=arrow]; none exist on F1d or main (not run against a build here; by construction).
 - A29 is a guard: the baseline JSON is from F1d 7ee06e9a (24 links x 2 widths); on that build the guard compares identical values. The probe (shaft, head, gap, width) was exercised against a synthetic page with the specified markup (gap 8.32px = 0.5em + 0.02em letter-spacing at 16px), not against a site build.
+
+- F1c A14 (/about tablet band): GUARD, not proven failing on main. Passes on F1c dev 271aacfc; the failing-on-main run was not made (would need a main prod build).

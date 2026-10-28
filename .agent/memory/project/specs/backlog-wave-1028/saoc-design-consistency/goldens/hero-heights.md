@@ -38,3 +38,16 @@ Current main CSS (app/globals.css .hero-facts): gap `20px 40px` (24px 40px from 
 - A8 is a hard lock: all 8 routes 480 +-4 at 1024 and 1280, /about included. NOS Design accepted 1024 by eye; the 516 fallback and CASE B are removed (no allowance, no loosened tolerance).
 - A2 locks 480 +-4 at 768, 1440 and 2056 for all 8 routes, /about included (768 was agreement-only before).
 - A10 weight band unchanged: 400 below 32px, 300 from 32px.
+
+## /about tablet band exception (NOS Design ruling (a), final)
+At 769-1023 only, /about may show two rows of facts and a hero up to 520px. Gate A14 at 769, 880, 960, 1023: /about <=2 facts rows, no mid-word break, no overflow, hero <=520; the other 7 routes 480 +-4. The 480 +-4 lock stays at 768, 1024, 1280, 1440 and 2056 (A2/A8 unchanged). Dev measurements: /about 480 (769), 488 (880), 504 (960), 516 (1023).
+
+## Facts bands (single source for the checks, Codex and the docs)
+| viewport | column gap | dt max-width |
+|---|---|---|
+| 768-1023 | 24 | 18ch |
+| 1024-1279 | 24 | 14ch |
+| 1280-1439 | 24 | 18ch |
+| >=1440 | 40 | 26ch |
+
+dd is nowrap on the centred variant only. A9 asserts the 768/1024/1280 rows of this table; the >=1440 row and the 769-1023 interior are documented here and covered by A14 only for rows, breaks, overflow and height.
