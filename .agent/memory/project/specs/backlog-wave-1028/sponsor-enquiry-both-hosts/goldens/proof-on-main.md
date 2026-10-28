@@ -97,3 +97,6 @@ FAIL (38):
 
 ## A4 check-scope.mjs: exit 0 on main (pin)
 ## A9 / A12 with no env: exit 77 (skip). A9 also exits 77 when SPONSOR_E2E_ADMIN_RECIPIENTS is unset, or when .env.local ADMIN_EMAIL_ALLOWLIST differs from it (both verified with fake creds, before any network call).
+
+## Amendment 2 (NR-7): check-nos-page.mts gains "h2 Talk to us about sponsorship has class nos-card-title"
+Red on main (`nos-sp-card-title` only) and red on the dev's 66f5d66e (same h2 unchanged); green once the class is added (verified by a one-line trial, discarded).

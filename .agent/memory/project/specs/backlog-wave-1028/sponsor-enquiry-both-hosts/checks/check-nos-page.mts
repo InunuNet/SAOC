@@ -23,6 +23,12 @@ expect(buttonTags.filter((t) => /href=\{SPONSORSHIP_MAILTO\}|href="mailto:/.test
 expect(buttonTags.filter((t) => /href="#enquire"/.test(t)).length >= 3, 'RED at least three <Button> CTAs (hero, card, empty state) link to #enquire');
 expect(/data-sponsors-hero-cta/.test(src) && /<Button[^>]*href="#enquire"[^>]*data-sponsors-hero-cta|<Button[^>]*data-sponsors-hero-cta[^>]*href="#enquire"/.test(src.replace(/\s+/g, ' ')), 'RED the hero CTA (data-sponsors-hero-cta) links to #enquire');
 
+// RED NR-7: the h2 "Talk to us about sponsorship" carries `nos-card-title` (the card h2 treatment). If the h2 is replaced or moved,
+// the class goes with it: some <h2> whose children are {CTA_LABEL} (or the literal label) has nos-card-title in its className.
+const flat = src.replace(/\s+/g, ' ');
+const ctaH2 = [...flat.matchAll(/<h2\b([^>]*)>\s*(\{CTA_LABEL\}|Talk to us about sponsorship)\s*<\/h2>/g)];
+expect(ctaH2.length >= 1 && ctaH2.every((m) => /className="[^"]*\bnos-card-title\b/.test(m[1] ?? '')), 'RED every <h2> labelled "Talk to us about sponsorship" has class nos-card-title (NR-7), and at least one exists');
+
 // PIN the shared section renders for nos with the anchor, the site marker and every field, and no mailto of its own.
 const html = renderToStaticMarkup(React.createElement(SponsorEnquirySection, { site: 'nos', inDocument: true }));
 expect(html.includes('id="enquire"') && html.includes('data-sponsor-enquiry="nos"'), 'PIN section renders id="enquire" and data-sponsor-enquiry="nos"');
