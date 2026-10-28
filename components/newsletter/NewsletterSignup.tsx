@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 
 import { NEWSLETTER_COPY } from '@/components/chrome/newsletter-copy';
 import { FOOTER_HEADINGS } from '@/components/chrome/footer-data';
@@ -29,6 +29,7 @@ interface NewsletterSignupProps {
   buttonClassName?: string;
   statusClassName?: string;
   errorClassName?: string;
+  errorIcon?: ReactNode;
 }
 
 export function NewsletterSignup({
@@ -47,6 +48,7 @@ export function NewsletterSignup({
   buttonClassName,
   statusClassName,
   errorClassName,
+  errorIcon,
 }: NewsletterSignupProps) {
   const hydrated = useHydrated();
   const [email, setEmail] = useState('');
@@ -196,7 +198,8 @@ export function NewsletterSignup({
         {status === 'success' ? NEWSLETTER_COPY.success : null}
         {showError ? (
           <p id={errorId} className={errorClassName}>
-            {errorMessage}
+            {errorIcon}
+            <span>{errorMessage}</span>
           </p>
         ) : null}
       </div>
