@@ -751,6 +751,30 @@ Full detail, checks and the open Ozow item are in [vendor-flow-fixes.md](vendor-
 
 ---
 
+## Backlog wave 2026-10-28 (F2a, F2b)
+
+- **Admin payment-link button sends no email.** `POST /api/admin/vendors/[id]/resend-payment-link`
+  still mints a fresh token and returns `paymentUrl` for the admin to copy, but sends nothing:
+  approval already emails the link, so a click no longer hands the vendor a duplicate. Legacy check
+  A57 now asserts zero emails on resend and reads the token from `paymentUrl`.
+- **`/register` prefills the business name** from the verified application document (never the
+  `?name=` query parameter); the field stays editable.
+- **Terms checkbox** sits in the Declaration & Terms fieldset, after the Terms prose and before the
+  signature block. Field key, label and validation are unchanged.
+- **Server-side `/apply` errors show labels.** `humaniseVendorApplyError` in
+  `lib/vendor-apply-form-validation.ts` replaces raw field keys in a 400 response.
+- **Full registration view, `/admin/vendors/[id]`.** A read-only page (behind the same
+  `review-vendor-applications` check as the layout, repeated in the page) showing every section of
+  one `vendorSubmissions` document, the stand-payment status, and a best-effort match to the
+  original application (same contact email and business name, exactly one match). Pre-M2 documents
+  render; upload paths show the file name only. Reached from "View full registration" in the vendor
+  drawer. It performs no Firestore writes.
+- Follow-ups: store `applicationId` on the submission so the application link is exact; signed-URL
+  viewing of uploaded files; the stand-size question (asked in `/register` and again on `/payment`)
+  needs Lee-Ann or Brad.
+
+---
+
 ## Related Documentation
 
 - `docs/vendor-registration.md` — Pre-M1 flow (F1-F9); now documenting the old, ungated system; will be superseded or merged into this doc once M1 is live
