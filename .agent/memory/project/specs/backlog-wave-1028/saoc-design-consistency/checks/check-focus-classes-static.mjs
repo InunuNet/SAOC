@@ -67,6 +67,7 @@ for (const file of files) {
   }
 }
 allow.forEach((a, i) => check(used.has(i), `goldens/focus-classes.json entry ${i + 1} (${a.file} / ${a.key}) matches no hit: stale, remove or fix it`));
+if (process.env.DC_LIST_NOS) for (const f of [...nosExempt].sort()) console.log(`NOS-ROUTED ${f}`);
 if (nosExempt.size) { const dirs = new Map(); for (const f of nosExempt) { const d = f.replace(/\/[^/]+$/, ''); dirs.set(d, (dirs.get(d) || 0) + 1); } console.log(`NOS-ROUTED, exempt from the standalone pass (${nosExempt.size} files imported only from app/(nos) or NOS-only files; proxy.ts serves their routes on the NOS host): ${[...dirs].map(([d, n]) => `${d} (${n})`).join(', ')}`); }
 console.log(`focus class strings: ${hits} (the one ring: ${one}, allowlisted: ${used.size} entries); standalone elements: ${standalone} (with a focus utility: ${covered}, className unresolvable and skipped: ${unresolved})`);
 finish('focus-classes-static');
