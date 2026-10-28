@@ -92,34 +92,30 @@ test.describe('SAOC nav hrefs are reachable from the rendered header', () => {
     await assertPresentAnchorsActionable(header, SAOC_NAV_HREFS);
   });
 
-  // SA-1 (NOS Design confirmed): from 1280 to 1383 five items are inline (Sponsors and Contact live in the drawer) beside an icon-only
-  // Menu button; the drawer carries every SAOC NAV href.
-  for (const width of [1280, 1383]) {
-    test(`menu band (${width}px): 5 inline items and every SAOC NAV href is in the drawer`, async ({ page }) => {
-      await page.setViewportSize({ width, height: 900 });
-      await page.goto('/');
+  test('menu band (1280px): the inline nav is hidden and every SAOC NAV href is in the drawer', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/');
 
-      await expect(page.locator('header [data-hd="nav"]')).toBeVisible();
-      // Visible items only: Sponsors and Contact stay in the DOM (display:none) so the same markup gives all 7 at 1384+.
-      await expect(page.locator('header [data-hd="nav"] [data-hd="item"]:visible')).toHaveCount(5);
-      await page.getByRole('button', { name: 'Menu', exact: true }).click();
-      const dialog = page.getByRole('dialog');
-      await expect(dialog).toBeVisible();
+    await expect(page.locator('header [data-hd="nav"]')).toBeHidden();
+    await page.getByRole('button', { name: 'Open menu' }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
 
-      assertNoneMissing(SAOC_NAV_HREFS, new Set(await renderedAnchorHrefs(dialog)), `menu-band drawer @${width}`);
-      await assertPresentAnchorsActionable(dialog, SAOC_NAV_HREFS);
-    });
-  }
+    assertNoneMissing(SAOC_NAV_HREFS, new Set(await renderedAnchorHrefs(dialog)), 'menu-band drawer');
+    await assertPresentAnchorsActionable(dialog, SAOC_NAV_HREFS);
+  });
 
   // MobileMenu renders as a DOM sibling of <header>, not a descendant — "reachable from the header"
-  // is proven by the fact that opening it requires the header's own "Menu" button.
+  // is proven by the fact that opening it requires the header's own "Open menu" hamburger button.
   test('mobile: every SAOC NAV href is a real anchor inside the drawer, drawer open', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
 
-    await page.getByRole('button', { name: 'Menu', exact: true }).click();
+    await page.getByRole('button', { name: 'Open menu' }).click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
 

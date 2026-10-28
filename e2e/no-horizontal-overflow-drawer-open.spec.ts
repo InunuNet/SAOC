@@ -24,7 +24,7 @@ test.describe('no horizontal overflow -- drawer open', () => {
   test('no horizontal overflow at 390px with the mobile drawer open', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: VIEWPORT_HEIGHT });
     await page.goto('/');
-    await page.getByRole('button', { name: 'Menu', exact: true }).click();
+    await page.getByRole('button', { name: 'Open menu' }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
 
     const { scrollWidth, clientWidth } = await measureOverflow(page);
@@ -40,7 +40,7 @@ test.describe('no horizontal overflow -- drawer open', () => {
   }) => {
     await page.setViewportSize({ width: 390, height: VIEWPORT_HEIGHT });
     await page.goto('/');
-    await page.getByRole('button', { name: 'Menu', exact: true }).click();
+    await page.getByRole('button', { name: 'Open menu' }).click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole('link', { name: 'National Show', exact: true })).toBeVisible();

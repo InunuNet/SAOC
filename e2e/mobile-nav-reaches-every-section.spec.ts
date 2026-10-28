@@ -75,7 +75,7 @@ const SAOC_CROSS_SITE = SAOC_LINKS.filter((l) => isAbsolute(l.href));
 }
 
 async function openSaocDrawer(page: Page) {
-  await page.getByRole('button', { name: 'Menu', exact: true }).click();
+  await page.getByRole('button', { name: 'Open menu' }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
   return dialog;
