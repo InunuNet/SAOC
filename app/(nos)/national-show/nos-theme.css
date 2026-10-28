@@ -355,12 +355,21 @@
      page components carry are superseded here, so every section heading is one size (R36: it
      reaches the 48px role at a 1080px viewport). */
   font-size: clamp(2rem, 1.2rem + 2.667vw, 3rem);
+  /* LT-1: the clamp floor is 32px, so every section h2 is a display serif and takes the light
+     weight (Brad 10-23: 300 at >=32px). Class rules below (label, card title) restate theirs. */
+  font-weight: 300;
   line-height: 1.15;
   letter-spacing: -0.015em;
   font-variation-settings: 'opsz' 48;
 }
 .nos-theme :is(h3, h4, h5, h6) {
   line-height: 1.25;
+}
+/* LT-1: the fluid 28-44px headings reach 32px at an 889px viewport (3.6vw = 32). */
+@media (min-width: 889px) {
+  .nos-theme :is(h1, h2, h3, h4, h5, h6).nos-opsz-fluid {
+    font-weight: 300;
+  }
 }
 /* A heading that is a group label (FAQ categories, accommodation bands): a real h2-h6 for
    the outline, the Karla label role in type (R25). Colour stays on the call-site class. */
@@ -378,6 +387,7 @@
    role, not the section-heading size. */
 .nos-theme :is(h2, h3).nos-card-title {
   font-size: 1.375rem;
+  font-weight: 400;
   line-height: 1.25;
   letter-spacing: 0;
   font-variation-settings: 'opsz' 24;
@@ -417,6 +427,12 @@
   line-height: 1;
   font-variation-settings: 'opsz' 72;
   font-variant-numeric: lining-nums tabular-nums;
+  /* The face has no tnum, so digit advances vary; a ch floor keeps the countdown width steady. */
+  min-width: 2ch;
+  text-align: center;
+}
+.nos-theme .nos-figure[data-nos-hero-text='countdown-days-value'] {
+  min-width: 3ch;
 }
 /* Ruling Q5: a paragraph painted royal by `text-ink` / `text-primary` (shared ticket
    notices included) is body copy, so it is ink-700. Title-like text that must stay
@@ -615,6 +631,11 @@
     flex: 1 1 100%;
   }
 }
+@media (min-width: 768px) and (max-width: 1023px) {
+  .nos-theme .nos-hero-row {
+    column-gap: 32px;
+  }
+}
 
 /* ---- Inner hero (NOS Design NH2, PR-B inputs G1-G2, 2026-10-24): the split studio panel.
    From 768px the copy sits on solid black at the left, top-anchored (never centred, so a lede the
@@ -684,8 +705,8 @@
   color: var(--rule-soft);
 }
 
-/* ---- Stacked (R4/R15/9): copy on solid black, the photograph below it at 4:3, never
-   behind text, so no scrim at all. ---- */
+/* ---- Stacked (R4/R15/9): copy on solid black, the photograph above it as a 2/1 band (H-a, the
+   inner-page G2 ratio; same order as below 768px), never behind text, so no scrim at all. ---- */
 @media (max-width: 1023px) {
   .nos-theme .nos-hero-hub {
     flex-direction: column;
@@ -694,9 +715,9 @@
   .nos-theme .nos-hero-hub .nos-hero-media {
     position: relative;
     inset: auto;
-    order: 2;
+    order: -1;
     z-index: 0;
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 2 / 1;
     -webkit-mask-image: none;
     mask-image: none;
   }
@@ -768,8 +789,8 @@
 }
 
 /* ---- R80 #1 (lead saoc-2b 2026-10-17): below 768px the photograph LEADS, fixed-height, then the
-   h1, lede and CTAs, then (hub) the countdown and facts. 768-1023px keeps the stacked rules
-   above. The photograph's object-position is the per-photo focal point NosHero passes in
+   h1, lede and CTAs, then (hub) the countdown and facts. 768-1023px is also photo first, as a
+   2/1 band (H-a), from the stacked rules above. The photograph's object-position is the per-photo focal point NosHero passes in
    `--nos-hero-pos` (measured from the pixels, hero-photos.ts); the lede is 18px/1.5 (Codi). ---- */
 @media (max-width: 767px) {
   .nos-theme .nos-hero-hub .nos-hero-media {

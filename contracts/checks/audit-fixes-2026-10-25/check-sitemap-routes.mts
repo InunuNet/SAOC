@@ -7,6 +7,8 @@ import * as routes from '../../../lib/nos-sitemap-routes.ts';
 const problems: string[] = [];
 const extra = routes.NOS_EXTRA_STATIC_ROUTES.map((r) => r.path);
 
+// Exact set: any extra path outside the golden is a drift, not just the three known shared pages.
+if (JSON.stringify([...extra].sort()) !== JSON.stringify(['/contact'])) problems.push(`NOS_EXTRA_STATIC_ROUTES paths ${JSON.stringify(extra)} != golden ["/contact"]`);
 if (!extra.includes('/contact')) problems.push('NOS_EXTRA_STATIC_ROUTES must include /contact');
 for (const shared of ['/privacy', '/terms', '/refunds']) {
   // These canonicalise to the SAOC host on NOS (app/(shared)); listing them would put a

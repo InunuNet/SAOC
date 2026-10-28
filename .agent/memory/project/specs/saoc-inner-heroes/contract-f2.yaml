@@ -1,0 +1,95 @@
+schema: athanor.contract/v1
+slug: saoc-inner-heroes
+goal: NOS Design's #116 follow-ups on the SAOC inner heroes - eased copy scrim (HM-5), /404 and /events/submit typographic with /events/[slug] facts left-aligned (HM-7), content-sized typographic band (HM-8), the draft notice, /societies/[slug] typographic (HM-6 (b)), one shared 15px draft notice on /members and /refunds. NOS Design 2026-10-27 rulings folded in (the event detail page keeps its current crop, no sheets).
+created_at: '2026-10-27'
+autonomy: high
+
+features:
+  - id: F1
+    name: HM-5 eased scrim stops, contrast and focal alpha hold
+    status: pending
+  - id: F2
+    name: HM-7 /404 and /events/submit typographic; /events/[slug] facts (dt and dd) left-aligned to the h1; HM-6 (b) /societies/[slug] typographic
+    status: pending
+  - id: F3
+    name: HM-8 typographic band sized to content at >=1024, LG-RF stays green
+    status: pending
+  - id: F4
+    name: one shared DraftNotice (15px, 1px rule below, text verbatim) on /members and /refunds
+    status: pending
+  - id: F5
+    name: RETIRED - the event detail page keeps its current crop, c1 rejected (NOS Design 2026-10-27); no sheet deliverable, scripts/heroes-sheets.mjs deleted
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/saoc-inner-heroes/goldens/f2.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: frozen f2 check scripts unmodified since the architect froze them
+      command: shasum -a 256 -c .agent/memory/project/specs/saoc-inner-heroes/goldens/checks-f2.sha256
+    - id: A2
+      description: f2 golden parses and carries the seven ruled HM-5 stops
+      command: python3 -c "import json,sys;d=json.load(open('.agent/memory/project/specs/saoc-inner-heroes/goldens/f2.json'));sys.exit(0 if len(d['hm5']['stops'])==7 and d['hm5']['stops'][-1]==[0.8,52] else 1)"
+    - id: A3
+      description: static rules from source (old ramp gone, band padding, photo map incl. /societies/[slug] typographic, shared DraftNotice imported by /members and /refunds, facts not centred)
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/f2-check-static.mjs
+    - id: A4
+      description: diff scope on the committed diff - allowlist (incl. components/ui/DraftNotice.tsx and app/(shared)/refunds/page.tsx; scripts/heroes-sheets.mjs only for its deletion) and stay-off lanes (home, NOS, the other shared legal pages, other pages, image pipeline)
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/f2-check-diff-scope.mjs
+    - id: A5
+      description: typescript compiles
+      command: pnpm type-check
+    - id: A6
+      description: lint is clean
+      command: pnpm exec eslint app components lib e2e
+    - id: A7
+      description: production build passes (f2-build.sh - no fixture at build time, see spec-f2.md harness note)
+      command: bash .agent/memory/project/specs/saoc-inner-heroes/checks/f2-build.sh
+    - id: A8
+      description: derived hero sources still match the f1 golden (f1 gate reused, no cut changes in f2)
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/check-derived.mjs
+    - id: A9
+      description: HM-5 computed scrim gradient equals the ruled stops on every photographic hero at 1440 and 2056
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-scrim-stops.mjs
+    - id: A10
+      description: HM-5 alpha <= .1 over the focal centre (left 0-39 percent) on /sponsors and /about at 1440@2 and 2056@2
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-scrim-focal.mjs
+    - id: A11
+      description: f1 scrim alpha over the left 44 percent stays <= .1 at 1440@2, 2056@2, 390@3 (f1 assertion and thresholds, f2 route set via f2-gate-scrim-alpha.mjs)
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-scrim-alpha.mjs
+    - id: A12
+      description: HM-5 worst-pixel copy contrast >= 4.5 re-measured on every inner hero (lede, eyebrow, h1, CTAs)
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-contrast.mjs inner
+    - id: A13
+      description: HM-5 /sponsors lede contrast >= 4.5 under the eased scrim
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-contrast.mjs sponsors
+    - id: A14
+      description: geometry - bare photo over the left 34 percent, copy from 52 percent, 404, /events/submit and /societies/[slug] typographic, typographic band <= content + 192 with no min-height at >=1024 (HM-8), stacked band and overflow as f1
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-geometry.mjs
+    - id: A15
+      description: served width >= box x DPR on every photographic hero; typographic routes (404, /events/submit and /societies/[slug] included) carry no photograph
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-served-width.mjs
+    - id: A16
+      description: HM-7 /events/[slug] facts, per cell dt.left = dd.left +-1, first cell left = h1.left +-1 at 390, 1440 and 2056, side-by-side row kept (one row at 1440 and 2056)
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-facts-align.mjs
+    - id: A17
+      description: draft notice on /members and /refunds is a plain p at font-size 15px with a bold lead-in, 1px rule below, border 0 on three sides, transparent, no wrapper box, text verbatim, data-placeholder marker kept on /members and absent on /refunds as before
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-members-note.mjs
+    - id: A18
+      description: LG-RF on /privacy /terms /refunds on both hosts stays green after the typographic band change (f1 gate reused)
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/gate-lgrf.mjs
+    - id: A19
+      description: RETIRED (NOS Design 2026-10-27, c1 rejected, no sheets) - spec-f2 records the retirement
+      command: grep -q "A19 is RETIRED" .agent/memory/project/specs/saoc-inner-heroes/spec-f2.md
+    - id: A20
+      description: CI e2e green
+      command: bash scripts/ci-e2e.sh pnpm test:e2e
+    - id: A21
+      description: spec-f2 records the NOS Design 2026-10-27 rulings and the harness note
+      command: grep -q "NOS Design 2026-10-27" .agent/memory/project/specs/saoc-inner-heroes/spec-f2.md
+    - id: A22
+      description: home hero and NosHero untouched
+      command: git diff --quiet $(git merge-base HEAD origin/main) HEAD -- components/home components/nos

@@ -39,6 +39,7 @@ interface TicketFormFieldProps {
   disabled: boolean;
   error?: string;
   autoComplete?: 'name' | 'email';
+  maxLength?: number;
 }
 
 export function TicketFormField({
@@ -50,6 +51,7 @@ export function TicketFormField({
   disabled,
   error,
   autoComplete,
+  maxLength,
 }: TicketFormFieldProps) {
   return (
     <div className="space-y-1.5">
@@ -61,6 +63,7 @@ export function TicketFormField({
         type={type}
         autoComplete={autoComplete}
         required
+        maxLength={maxLength}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}

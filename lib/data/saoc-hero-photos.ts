@@ -6,8 +6,8 @@
 // A name ending in -flip, or a cut such as orchid-violet-about, is a build-time derived source
 // (lib/hero-derived-sources.json, scripts/generate-image-variants.mjs): the flip is a file, never a CSS
 // transform. `objectPosition` is the ruled crop. A route with `typographic: true` has no photograph
-// (the solid sage hero). /404, /events/[slug] and /events/submit have no ruled crop: they keep their
-// photograph and take the shared hero treatment only.
+// (the solid sage hero). /events/[slug] has no ruled crop yet: it keeps its photograph and takes the
+// shared hero treatment only.
 // =============================================================
 
 import derivedSources from '@/lib/hero-derived-sources.json';
@@ -23,12 +23,12 @@ export const SAOC_HERO_PHOTOS: Readonly<Record<string, SaocHeroPhoto>> = {
   '/events': { src: '/images/orchid-purple-flip.jpg', objectPosition: '0% 60%' },
   '/sponsors': { src: '/images/orchid-dark-flip.jpg', objectPosition: '0% 100%' },
   '/contact': { src: '/images/orchid-violet-contact.jpg', objectPosition: '0% 80%' },
-  '/societies/[slug]': { src: '/images/orchid-violet-society.jpg', objectPosition: '0% 50%' },
   // No ruled crop (NOS Design 2026-10-26 is silent): the current photograph and position stand.
   '/events/[slug]': { src: '/images/orchid-dark.jpg', objectPosition: '72% 42%' },
-  '/events/submit': { src: '/images/orchid-purple.jpg', objectPosition: '80% 45%' },
-  '/404': { src: '/images/orchid-dark.jpg', objectPosition: '72% 42%' },
-  // Typographic: solid sage, no photograph.
+  // Typographic: solid sage, no photograph (HM-7 /404 and /events/submit, HM-6 (b) /societies/[slug]).
+  '/societies/[slug]': { typographic: true },
+  '/events/submit': { typographic: true },
+  '/404': { typographic: true },
   '/members': { typographic: true },
   '/memorandum-of-incorporation': { typographic: true },
   '/media-kit': { typographic: true },

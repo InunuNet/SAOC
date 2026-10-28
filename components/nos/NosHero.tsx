@@ -47,6 +47,14 @@ const FULL_BLEED_QUALITY = 88;
 // paints the crop at height x aspect (about 1126px at the tallest hero measured there, 563px).
 const INNER_PHOTO_SIZES = '(min-width: 1024px) 62vw, (min-width: 768px) max(62vw, 1200px), 100vw';
 
+// HB-3: the hub photo's painted width per band, from the box it fills with object-fit: cover on the
+// 3:2 source. At 767px and below the media is a fixed-height band (height x aspect wide); from
+// 1024px it fills the hero, up to its height ceiling; between, the 2/1 band is width-driven.
+const HUB_PHONE_BAND_HEIGHT_PX = 300;
+const HUB_DESKTOP_MAX_HEIGHT_PX = 820;
+const HUB_SOURCE_ASPECT = 1.5;
+const HUB_PHOTO_SIZES = `(max-width: 767px) max(100vw, ${Math.round(HUB_PHONE_BAND_HEIGHT_PX * HUB_SOURCE_ASPECT)}px), (min-width: 1024px) max(100vw, ${Math.round(HUB_DESKTOP_MAX_HEIGHT_PX * HUB_SOURCE_ASPECT)}px), 100vw`;
+
 // LT-1: an inner h1 longer than this gets `.is-long`, a smaller clamp that holds it to one line in the 62% column.
 const LONG_TITLE_CHARS = 20;
 
@@ -201,7 +209,7 @@ export async function NosHero({
               fill
               priority={priority}
               fetchPriority={priority ? 'high' : undefined}
-              sizes={isHub ? '100vw' : INNER_PHOTO_SIZES}
+              sizes={isHub ? HUB_PHOTO_SIZES : INNER_PHOTO_SIZES}
               quality={photo.src in heroSourceWidths ? FULL_BLEED_QUALITY : undefined}
               className="nos-hero-img"
             />
