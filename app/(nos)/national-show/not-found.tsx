@@ -29,7 +29,7 @@ export function NosPageNotFound() {
       title="This orchid has left the bench."
       lede="The page you’re looking for doesn’t exist or may have moved."
       crumbs={
-        <span className="font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--rule-soft)]">
+        <span className="nos-hero-eyebrow">
           404 — Page not found
         </span>
       }

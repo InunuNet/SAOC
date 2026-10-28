@@ -101,7 +101,7 @@ export function ShowCountdown({ label, countdownDate, edition, pendingLabel }: S
   const caption = label ? (
     <p
       data-nos-hero-text="countdown-opens-in"
-      className="mb-3 font-sans text-[12px] font-bold uppercase tracking-[0.14em] text-ivory/90"
+      className="mb-3 font-sans text-[14px] font-bold uppercase tracking-[0.12em] text-ivory/90"
     >
       {label}
     </p>
@@ -153,7 +153,7 @@ export function ShowCountdown({ label, countdownDate, edition, pendingLabel }: S
             </div>
             <div
               data-nos-hero-text={`countdown-${unit.toLowerCase()}-unit`}
-              className="mt-1 font-sans text-[12px] font-bold uppercase tracking-[0.14em] text-ivory/90"
+              className="mt-1 font-sans text-[14px] font-bold uppercase tracking-[0.12em] text-ivory/90"
             >
               {unit}
             </div>

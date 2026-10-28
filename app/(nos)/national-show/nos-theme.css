@@ -328,6 +328,48 @@
   --green-1: #a7a841;
   --green-2: #7f7d33;
   --black: #0b0a14;
+  /* S-2 numeral ink. NR-8 names the same olive for labels on light grounds (open question 1).
+     #6a6829 is 5.53:1 on #fbfaf0; its dark-ground twin is #a7a841 (--olive). */
+  --olive-ink: #6a6829;
+  /* NR-8 label ink: olive on light grounds, the lighter olive on dark. NOS Design open question 1
+     (the section 1 table says ink-500 and lilac); one line here changes both. */
+  --label-ink: var(--olive-ink);
+  --label-ink-on-dark: var(--olive);
+
+  /* ---- NOS type tokens: NOS Design ruling 2026-10-28, section 1. The one place a role's size,
+     weight and line height are set; the selectors here and in nos-structure.css use them. Weights
+     follow Brad's band (R-W): 300 at 32px and up, 400 at 20-31.99px, 500 below 20px. Karla body is
+     450, a true instance of the one variable Karla face (components/nos-chrome/fonts.ts). ---- */
+  --t-display: clamp(40px, 28.1px + 3.05vw, 84px);
+  --t-h2: clamp(32px, 29px + 0.762vw, 44px);
+  --t-name: clamp(32px, 30.5px + 0.381vw, 40px);
+  --t-h3: clamp(22px, 20.9px + 0.286vw, 26px);
+  --t-title: clamp(20px, 19.26px + 0.19vw, 22px);
+  --t-fact: clamp(20px, 19.26px + 0.19vw, 24px); /* the ruling's clamp; its table says 24px at 2056, the clamp gives 23.17 (open question 2) */
+  --t-standfirst: clamp(20px, 18.9px + 0.286vw, 24px);
+  --t-body: clamp(16px, 15.53px + 0.12vw, 18px);
+  --t-meta: clamp(14px, 13.63px + 0.095vw, 15px);
+  --t-lede-hub: clamp(20px, 18.5px + 0.38vw, 26px);
+  --t-theme: clamp(20px, 17px + 0.62vw, 28px);
+  --w-light: 300; /* Display, H2, Name, figures */
+  --w-regular: 400; /* H3, Title, Standfirst, hub lede, theme line, fact dd, Meta */
+  --w-body: 450;
+  --w-medium: 500; /* Form label; Fraunces below 20px */
+  --w-label: 600;
+  --w-caps: 700;
+  --lh-display: 1;
+  --lh-h2: 1.15;
+  --lh-name: 1.1;
+  --lh-h3: 1.25;
+  --lh-title: 1.25;
+  --lh-standfirst: 1.45;
+  --lh-body: 1.6;
+  --lh-meta: 1.5;
+  --lh-lede-hub: 1.42;
+  --lh-theme: 1.3;
+  --lh-fact: 1.2;
+  /* R-M: the prose measure. */
+  --nos-measure: 38rem;
 }
 
 /* =====================================================================
@@ -343,7 +385,6 @@
    royal default lives in `@layer base` below so a `text-ivory` class still wins. ---- */
 .nos-theme :is(h1, h2, h3, h4, h5, h6) {
   font-family: var(--serif);
-  font-weight: 400;
   font-optical-sizing: none;
   text-wrap: balance;
 }
@@ -354,42 +395,50 @@
   /* Section h2 (M:13, I:158): the mapping's clamp; the h2 size utilities that shared and
      page components carry are superseded here, so every section heading is one size (R36: it
      reaches the 48px role at a 1080px viewport). */
-  font-size: clamp(2rem, 1.2rem + 2.667vw, 3rem);
-  /* LT-1: the clamp floor is 32px, so every section h2 is a display serif and takes the light
-     weight (Brad 10-23: 300 at >=32px). Class rules below (label, card title) restate theirs. */
-  font-weight: 300;
-  line-height: 1.15;
+  font-size: var(--t-h2);
+  /* NR-1: the clamp floor is 32px, so every section h2 is a display serif at the light weight.
+     The Title and H3 roles below (nos-card-title, nos-h3-visual) restate theirs. */
+  font-weight: var(--w-light);
+  line-height: var(--lh-h2);
   letter-spacing: -0.015em;
   font-variation-settings: 'opsz' 48;
+}
+/* NR-7 Display: every h1, hub and inner, is one role. Class rules do not set a size. */
+.nos-theme h1 {
+  font-size: var(--t-display);
+  font-weight: var(--w-light);
+  line-height: var(--lh-display);
+  font-variation-settings: 'opsz' 72;
 }
 .nos-theme :is(h3, h4, h5, h6) {
   line-height: 1.25;
 }
-/* LT-1: the fluid 28-44px headings reach 32px at an 889px viewport (3.6vw = 32). */
-@media (min-width: 889px) {
-  .nos-theme :is(h1, h2, h3, h4, h5, h6).nos-opsz-fluid {
-    font-weight: 300;
-  }
-}
-/* A heading that is a group label (FAQ categories, accommodation bands): a real h2-h6 for
-   the outline, the Karla label role in type (R25). Colour stays on the call-site class. */
+/* A heading that is a group label (accommodation bands): a real h3-h6 for the outline, the Karla Label
+   tuple in type (NR-8; the tuple itself is the Label rule at the end of this file). Colour stays on
+   the call-site class. */
 .nos-theme :is(h2, h3, h4, h5, h6).nos-label {
-  font-family: var(--sans);
-  font-size: 0.75rem;
-  font-weight: 600;
   line-height: 1.5;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
   font-variation-settings: normal;
   text-wrap: wrap;
 }
-/* A card name that is an h2 (archive cards, which have no section h2 above them): the card-title
-   role, not the section-heading size. */
+/* NR-7 Title: a card, aside or list title that is an h2 (archive cards, which have no section h2
+   above them; sponsor, exhibitor and contact cards): the Title role, not the section-heading size. */
 .nos-theme :is(h2, h3).nos-card-title {
-  font-size: 1.375rem;
-  font-weight: 400;
-  line-height: 1.25;
+  font-size: var(--t-title);
+  font-weight: var(--w-regular);
+  line-height: var(--lh-title);
   letter-spacing: 0;
+  font-variation-settings: 'opsz' 24;
+}
+/* NR-7 H3 (visual): an h2 in the outline that reads as an h3, such as "Explore the show". The
+   element stays an h2; only the type is the H3 role. */
+.nos-theme :is(h2, h3).nos-h3-visual {
+  font-size: var(--t-h3);
+  font-weight: var(--w-regular);
+  line-height: var(--lh-h3);
+  letter-spacing: 0;
+  text-transform: none;
+  font-family: var(--serif);
   font-variation-settings: 'opsz' 24;
 }
 /* opsz by role for card and list titles: 24 at md (20px), 32 at lg (25px), 48 above
@@ -410,16 +459,15 @@
   }
 }
 
-/* Fraunces that is not a heading (card names, FAQ questions, figures): weight 400, opsz
-   pinned (I:143-216). Specificity is above the heading rules' so a `font-serif` heading
-   keeps its own role. Figures are the numerals role (M:15): 300, opsz 72, lining and
-   tabular, lh 1. */
+/* Fraunces that is not a heading (card names, FAQ questions, figures): opsz pinned (I:143-216), the
+   weight from the band by the node's size (a `font-medium` utility under 20px renders 500, a
+   `font-normal` at 20-31px renders 400). Figures are the numerals role (M:15): 300, opsz 72,
+   lining and tabular, lh 1. */
 .nos-theme .font-serif:not(:is(h1, h2, h3, h4, h5, h6)) {
-  font-weight: 400;
   font-variation-settings: 'opsz' 24;
 }
 .nos-theme .nos-light.font-serif {
-  font-weight: 300;
+  font-weight: 400;
 }
 .nos-theme .nos-figure.font-serif {
   font-weight: 300;
@@ -463,14 +511,15 @@
 
 /* ---- Shared SAOC components inside NOS pages (components/tickets, components/vendors,
    components/ui) are re-fonted from here, never edited (F1 A3 byte-identical).
-   `font-mono` labels became the Karla label role (R25: Karla 700, 12px, .14em, uppercase), and the
-   10-11px literals they carry are raised to the 12px floor (M:24, M:27). Unlayered,
-   so they beat the utilities. ---- */
+   `font-mono` labels became the Karla Label tuple (NR-8: Karla 600, 14px, no tracking), and the
+   10-11px literals they carry are raised to the 14px floor (R-F). Unlayered,
+   so they beat the utilities; app/globals.css raises the same literals to 0.75rem on `.font-mono`
+   with a :not() that adds specificity, so the second rule repeats that shape. ---- */
 .nos-theme .font-mono {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-size: 0.875rem;
+  font-weight: var(--w-label);
+  letter-spacing: 0;
+  text-transform: none;
 }
 .nos-theme
   :is(
@@ -479,7 +528,16 @@
     [class*='text-[10.5px]'],
     [class*='text-[11px]']
   ) {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
+}
+.nos-theme
+  .font-mono:is(
+    [class*='text-[9px]'],
+    [class*='text-[10px]'],
+    [class*='text-[10.5px]'],
+    [class*='text-[11px]']
+  ):not([data-lockup-tagline]) {
+  font-size: 0.875rem;
 }
 
 /* ---- Hero, shared (I:136-148, I:245-256; NOS Design R15/9 and R25, 2026-10-16). One ramp for
@@ -511,7 +569,9 @@
 }
 .nos-theme .nos-hero-title {
   margin: 0;
-  font-weight: 300;
+  font-size: var(--t-display);
+  font-weight: var(--w-light);
+  font-variation-settings: 'opsz' 72;
   line-height: 1;
   letter-spacing: -0.015em;
   color: var(--ivory);
@@ -573,8 +633,6 @@
 }
 .nos-theme .nos-hero-hub .nos-hero-title {
   max-width: min(11ch, var(--hero-col));
-  font-size: clamp(3.2rem, 2rem + 4vw, 5.5rem);
-  font-variation-settings: 'opsz' 96;
 }
 .nos-theme .nos-hero-body {
   display: grid;
@@ -583,9 +641,9 @@
 }
 .nos-theme .nos-hero-hub .nos-hero-lede {
   font-family: var(--serif);
-  font-weight: 300;
-  font-size: clamp(1.3rem, 1.1rem + 0.8vw, 1.625rem);
-  line-height: 1.42;
+  font-weight: var(--w-regular);
+  font-size: var(--t-lede-hub);
+  line-height: var(--lh-lede-hub);
   color: var(--bone);
   font-variation-settings: 'opsz' 28;
 }
@@ -601,14 +659,21 @@
   padding-left: 16px;
 }
 .nos-theme .nos-hero-facts dt {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: var(--rule-soft);
+  font-size: 14px;
+  font-weight: var(--w-label);
+  letter-spacing: 0;
+  color: var(--label-ink-on-dark);
 }
-.nos-theme .nos-hero-facts dd {
+.nos-theme .nos-hero-facts dd,
+.nos-theme .hero-facts dd {
   margin: 2px 0 0;
-  font-size: 1rem;
-  line-height: 1.45;
+  font-family: var(--serif);
+  font-size: var(--t-fact);
+  font-weight: var(--w-regular);
+  line-height: var(--lh-fact);
+  letter-spacing: 0;
+  font-variant-numeric: lining-nums tabular-nums;
+  font-variation-settings: 'opsz' 24;
   color: var(--ivory);
 }
 
@@ -653,11 +718,11 @@
 /* R70 symposium: the hero lede is the theme line (NosHero ledeKind="theme"), not a standfirst. */
 .nos-theme .nos-hero-inner .nos-hero-lede[data-nos-lede='theme'] {
   max-width: 30ch;
-  font-family: var(--font-nos-fraunces-lede), var(--serif);
+  font-family: var(--serif);
   font-style: italic;
-  font-weight: 300;
-  font-size: clamp(22px, 2vw, 28px);
-  line-height: 1.3;
+  font-weight: var(--w-regular);
+  font-size: var(--t-theme);
+  line-height: var(--lh-theme);
   color: var(--bone);
   font-variation-settings: 'opsz' 28;
 }
@@ -686,18 +751,10 @@
 }
 .nos-theme .nos-hero-inner .nos-hero-eyebrow {
   margin: 0;
-  font-family: var(--sans);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
   line-height: 1.5;
-  text-transform: uppercase;
-  color: var(--olive);
 }
 .nos-theme .nos-hero-inner .nos-hero-title {
   max-width: min(14ch, var(--hero-col));
-  font-size: clamp(2.6rem, 1.6rem + 4vw, 5.5rem);
-  font-variation-settings: 'opsz' 24;
 }
 .nos-theme .nos-hero-inner .nos-hero-lede {
   font-size: 1.25rem;
@@ -747,7 +804,6 @@
   .nos-theme .nos-hero-inner .nos-hero-title {
     max-width: none;
     text-wrap: balance;
-    font-size: clamp(2.25rem, 4.9vw, 3rem);
   }
 }
 @media (max-width: 767px) {
@@ -772,9 +828,6 @@
   }
 }
 @media (max-width: 700px) {
-  .nos-theme .nos-hero-hub .nos-hero-title {
-    font-size: clamp(2.8rem, 12vw, 3.4rem);
-  }
   .nos-theme .nos-hero-body {
     display: flex;
     flex-direction: column;
@@ -804,13 +857,10 @@
   .nos-theme .nos-hero-hub .nos-hero-lede,
   .nos-theme .nos-hero-inner .nos-hero-lede {
     max-width: 60ch;
+  }
+  .nos-theme .nos-hero-inner .nos-hero-lede:not([data-nos-lede='theme']) {
     font-size: 18px;
     line-height: 1.5;
-  }
-  .nos-theme .nos-hero-inner .nos-hero-lede[data-nos-lede='theme'] {
-    max-width: 60ch;
-    font-size: 22px;
-    line-height: 1.4;
   }
 }
 
@@ -819,7 +869,6 @@
 @media (min-width: 1024px) {
   .nos-theme .nos-hero-hub .nos-hero-title {
     max-width: none;
-    font-size: clamp(52px, 4.9vw, 96px);
     line-height: 1;
     letter-spacing: -0.015em;
     text-wrap: balance;
@@ -839,7 +888,6 @@
   }
   .nos-theme .nos-hero-inner .nos-hero-title {
     max-width: none;
-    font-size: clamp(48px, 4.4vw, 88px);
     text-wrap: balance;
   }
   .nos-theme .nos-hero-inner .nos-hero-lede {
@@ -868,4 +916,140 @@
     [type='hidden']
   ) {
   font-size: var(--body-md);
+}
+
+/* =====================================================================
+   NOS type roles (NOS Design ruling 2026-10-28, NR-1 weight band, NR-6 body and standfirst,
+   NR-7 one h1 and one h2, NR-8 three labels). Sizes, weights and line heights are the --t-*,
+   --w-* and --lh-* tokens in the second .nos-theme block above; a class rule elsewhere sets the
+   role's box (margin, colour, max-width) but not its size or weight. Weight band: 300 at 32px
+   and up, 400 at 20-31.99px, 500 below 20px.
+   ===================================================================== */
+
+/* Body (NR-6): Karla 450, the --t-body clamp, ink-700. In the base layer, so a utility class on a
+   paragraph (a ticket notice, a form hint) and any class rule (a card, the hero, a ticket) keep their
+   own size; only running copy with no size of its own takes the body role. */
+@layer base {
+  .nos-theme :is(p, li) {
+    font-size: var(--t-body);
+    font-weight: var(--w-body);
+    line-height: var(--lh-body);
+    color: var(--ink-700);
+  }
+}
+
+/* Standfirst (NR-6): Fraunces 400, 20-24px, lh 1.45, on the same measure. */
+.nos-theme
+  :is(
+    .doc-standfirst,
+    .nos-ab-closing,
+    .nos-pr-lead,
+    .nos-hm-lead,
+    .nos-ex-standfirst,
+    .nos-we-s3 [data-we-s3] p:first-child,
+    .nos-we-s3 [data-we-s3] p:last-child,
+    .nos-close-line,
+    .nos-hm-closing-text
+  ) {
+  font-family: var(--serif);
+  font-size: var(--t-standfirst);
+  font-weight: var(--w-regular);
+  line-height: var(--lh-standfirst);
+  font-variation-settings: normal;
+  font-optical-sizing: auto;
+  max-width: min(100%, var(--nos-measure));
+}
+
+/* Title (NR-7): card, aside and list titles. Fraunces 400, opsz 24, 20-22px. */
+.nos-theme
+  :is(
+    .nos-sp-card-title,
+    .nos-sp-reach h3,
+    .nos-sp-qa h3,
+    .nos-sp-tier h3,
+    .nos-ex-q,
+    .nos-faq-question,
+    .nos-ct-label,
+    .nos-ct-team dt,
+    .nos-index-group a,
+    .nos-ab-gateway a
+  ) {
+  font-family: var(--serif);
+  font-size: var(--t-title);
+  font-weight: var(--w-regular);
+  line-height: var(--lh-title);
+  font-variation-settings: 'opsz' 24;
+}
+
+/* The shared legal body (components/legal/LegalBody.tsx, a SAOC component) sets `font-sans text-[16px]
+   leading-[1.6] text-ink/85` on its paragraphs and lists. On NOS those are body copy: the body role. */
+.nos-theme .doc-prose :is(p, ul).font-sans {
+  font-size: var(--t-body);
+  font-weight: var(--w-body);
+  line-height: var(--lh-body);
+  color: var(--ink-700);
+}
+
+/* Label and Form label (NR-8): Karla 600 at 14px with no tracking and sentence case, for a fact term,
+   a group head, a field-group legend and the small captions over a figure. The form label is
+   .nos-form-label above (500). Tracked capitals are the third tuple and belong only to buttons,
+   status pills, the countdown units and the footer column heads. */
+.nos-theme
+  :where(
+    dt,
+    legend,
+    .nos-label,
+    .nos-we-label,
+    .nos-hm-card-label,
+    .nos-pg-hours .k,
+    .nos-index-group > h3,
+    .nk-visit-label,
+    .nk-numlab,
+    .nk-unconfirmed,
+    .nos-hero-eyebrow
+  ) {
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: var(--w-label);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--label-ink);
+}
+/* Label ink on a dark ground. */
+.nos-theme :where(.nos-on-dark, .nos-hero, .nk-facts, .nk-visit) :where(dt, .nk-visit-label),
+.nos-theme .nos-hero-eyebrow {
+  color: var(--label-ink-on-dark);
+}
+.nos-theme label.font-mono {
+  font-weight: var(--w-medium);
+  color: var(--ink);
+}
+
+/* H3 (NR-7): the visual h3 of a document page. Fraunces 400, opsz 24, 22-26px. */
+.nos-theme .doc-prose > .doc-h3 {
+  font-family: var(--serif);
+  font-size: var(--t-h3);
+  font-weight: var(--w-regular);
+  line-height: var(--lh-h3);
+  font-variation-settings: 'opsz' 24;
+}
+/* The draft-review notice the shared legal pages open with: body copy on NOS, so the
+   `text-[14px] text-muted` utilities of components the SAOC lane owns do not set it small and pale. */
+.nos-theme .doc-prose > p.text-muted {
+  font-size: var(--t-body);
+  font-weight: var(--w-body);
+  line-height: var(--lh-body);
+  color: var(--ink-700);
+}
+/* ProvisionalFigure's "(provisional)" is 0.85em of its figure; 0.875em keeps it at the 14px floor. */
+.nos-theme [class*='text-[0.85em]'] {
+  font-size: 0.875em;
+}
+/* The vendor form's intro paragraphs (components/vendors, a component the SAOC site shares) size themselves
+   with `text-[length:var(--fs-body,1rem)] leading-[1.55]`; on NOS they are body copy. */
+.nos-theme form p[class*='--fs-body'] {
+  font-size: var(--t-body);
+  font-weight: var(--w-body);
+  line-height: var(--lh-body);
+  color: var(--ink-700);
 }

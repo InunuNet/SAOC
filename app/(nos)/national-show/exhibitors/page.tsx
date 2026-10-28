@@ -126,7 +126,7 @@ export default async function ExhibitorEntryGuidePage() {
         <div data-qa-list="" className="nos-ex-qa">
           {QUESTIONS.map((item) => (
             <section key={item.question} data-qa-item="">
-              <h2 className="doc-h2 nos-ex-q">{item.question}</h2>
+              <h2 className="doc-h2 nos-ex-q nos-card-title">{item.question}</h2>
               {item.paragraphs.map((paragraph) => (
                 <p key={paragraph}>{paragraph}</p>
               ))}

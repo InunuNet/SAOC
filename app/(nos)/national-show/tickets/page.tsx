@@ -194,7 +194,7 @@ export default async function NationalShowTicketsPage() {
               data-nos-group=""
               className="nk-opt flex flex-col gap-4"
             >
-              <h3 className="font-serif text-[20px] font-medium text-ink">{option.heading}</h3>
+              <h3 className="font-serif text-[20px] font-normal text-ink">{option.heading}</h3>
               <p className="font-sans text-[17px] leading-relaxed text-muted">{option.body}</p>
               <Button
                 as={Link}

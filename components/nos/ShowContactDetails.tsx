@@ -15,7 +15,7 @@ import {
 const HEADING_ADDRESS = 'Address of the show';
 const HEADING_TELEPHONE = 'Telephone number';
 // The card's sentence-case label, shared with the gateway heading (nos-structure.css).
-const LABEL_CLASS = 'nos-ct-label';
+const LABEL_CLASS = 'nos-ct-label nos-card-title';
 // The first address line is the place's name (CT-G1: Fraunces 400, 22px); the second is the address.
 const PLACE_CLASS = 'nos-ct-place';
 const BODY_CLASS = 'mt-3 font-sans text-[16px] leading-[1.55] text-ink/80';

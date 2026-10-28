@@ -85,7 +85,7 @@ export function Button<E extends ElementType = 'button'>(props: NosButtonProps<E
     <Root
       data-nos-button=""
       className={[
-        'inline-flex min-h-[50px] items-center justify-center gap-2 rounded-[length:var(--radius-button)] px-[26px] py-[14px]',
+        'nos-btn inline-flex min-h-[50px] items-center justify-center gap-2 rounded-[length:var(--radius-button)] px-[26px] py-[14px]',
         'font-sans text-[14px] font-bold uppercase leading-none tracking-[0.12em] transition-colors',
         'duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]',
         'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',

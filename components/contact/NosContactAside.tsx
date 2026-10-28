@@ -45,7 +45,7 @@ const LEAVES = (() => {
 export function NosContactAside() {
   return (
     <nav aria-label={HEADING} className="nos-index-group nos-contact-aside">
-      <h2 className="nos-ct-label">{HEADING}</h2>
+      <h2 className="nos-ct-label nos-card-title">{HEADING}</h2>
       <ul>
         {ROWS.map(({ id }) => {
           const leaf = LEAVES.get(id);

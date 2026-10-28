@@ -85,7 +85,7 @@ export default async function ShowArchivePage() {
                       <span data-edition-year="" className="nos-ar-year">
                         {show.year}
                       </span>
-                      <h2 className="nos-ar-title">
+                      <h2 className="nos-ar-title nos-card-title">
                         {show.title ??
                           (show.edition
                             ? `Edition ${toRomanOrdinal(show.edition)}`

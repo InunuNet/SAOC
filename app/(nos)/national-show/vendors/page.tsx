@@ -99,7 +99,7 @@ export default async function VendorsPage() {
       <DocumentLayout
         aside={
           <div data-vendors-card="" className="nos-sp-card">
-            <h2 className="nos-sp-card-title">{AVAILABLE_HEADING}</h2>
+            <h2 className="nos-sp-card-title nos-card-title">{AVAILABLE_HEADING}</h2>
             <ul className="nos-sx-cats">
               {AVAILABLE_ITEMS.map((item) => (
                 <li key={item}>{item}</li>

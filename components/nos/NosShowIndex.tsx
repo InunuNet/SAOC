@@ -97,7 +97,7 @@ export async function NosShowIndex({ current, currentTone = 'accent' }: NosShowI
   return (
     <nav aria-label="Explore the show pages" className="nos-index">
       <div data-nos-wrap="">
-        <h2 className="nos-index-eyebrow">{EYEBROW}</h2>
+        <h2 className="nos-index-eyebrow nos-h3-visual">{EYEBROW}</h2>
         <div className="nos-index-grid">
           {groups.map(({ heading, hrefs }) => (
             <div key={heading} className="nos-index-group">
@@ -110,7 +110,7 @@ export async function NosShowIndex({ current, currentTone = 'accent' }: NosShowI
                       <Link
                         href={nosPath(href)}
                         aria-current={isCurrent ? 'page' : undefined}
-                        className={isCurrent && currentTone === 'accent' ? 'text-accent' : undefined}
+                        className={isCurrent && currentTone === 'accent' ? 'text-primary' : undefined}
                         data-current-ink={isCurrent && currentTone === 'ink' ? '' : undefined}
                       >
                         {LABELS.get(href)}
