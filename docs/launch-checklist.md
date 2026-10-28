@@ -196,6 +196,7 @@ Run these checks once the site is live at `saoc.co.za`:
 
 ### Performance
 - [ ] Run Lighthouse on `/` — target 90+ Performance, 100 Accessibility
+- [ ] Cache headers: run `node scripts/checks/cache-headers-probe.mjs --live --mode launched` (ISR routes `s-maxage=60`, per-request routes `no-store`). While the beta wall is up only `--mode walled` can pass.
 - [ ] Verify Google Search Console shows no crawl errors (set up GSC if not already)
 - [ ] Submit sitemap to Google: `https://search.google.com/search-console` → Sitemaps → add `https://saoc.co.za/sitemap.xml`
 

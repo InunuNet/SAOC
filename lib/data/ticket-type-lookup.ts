@@ -40,5 +40,6 @@ export function fetchTicketTypeBySlug(slug: string): Promise<SanityTicketType | 
     query: ticketTypeBySlugQuery,
     params: { slug },
     tags: ['ticketType', 'sanity'],
+    live: true,
   });
 }
