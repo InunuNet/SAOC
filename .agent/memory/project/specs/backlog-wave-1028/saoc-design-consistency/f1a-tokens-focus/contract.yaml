@@ -20,7 +20,7 @@ assertions:
       description: "Status tokens --status-error #8f2834, --status-success #2f5d3a, --status-warning #7a5a12 resolve on the SAOC base (fails on main, all empty)"
       command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-status-tokens.mjs"
     - id: A2
-      description: "Vendor error summaries use border-2 with the status token and carry an aria-hidden icon (fails on main, 1px border, no icon)"
+      description: "Every error summary (enumerated by scanning app/ and components/ for role=alert bordered with --status-error, not a file list) uses border-2 with the status token, NO background tint, and an aria-hidden icon (fails on main: 1px border, bg-bone, no icon)"
       command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-error-summary-static.mjs"
     - id: A3
       description: "Breadcrumb links are >=24x24 at 390 and 1440 on six interior routes (fails on main, Home is 37x19)"
