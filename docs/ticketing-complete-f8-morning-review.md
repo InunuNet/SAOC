@@ -396,7 +396,7 @@ Both are live across the site with no documented resolution of which is authorit
 
 A sweep of `scripts/` found six existing scripts (`fix-venue-never-changed-copy.ts`,
 `migrate-ticket-type-category.ts`, `migrate-show-sales-fields.ts`,
-`fix-vip-and-weekend-pass-pricing.ts`, `fix-show-dates-2027.ts`,
+`fix-vip-and-weekend-pass-pricing.ts` (removed), `fix-show-dates-2027.ts`,
 `fix-visitor-info-dates-confirmed.ts`) that default to mutating the live dataset unless
 `--dry-run` is explicitly passed — the opposite, unsafe polarity from the `--apply`-gated
 pattern this mission's own migration script uses. Listed as one decision for you, not an
