@@ -30,6 +30,8 @@ const NEXT_BIN = 'node_modules/next/dist/bin/next';
 export async function withSite(fn) {
   let child = null; let base = process.env.DC_BASE_URL; const prod = Boolean(process.env.DC_PROD) && !base;
   if (!base) {
+    // A bare `next build`/`next dev` leaves public/images/_opt empty and the hero returns 404: generate the variants first, as `pnpm build` and `pnpm dev` do.
+    if (existsSync('scripts/generate-image-variants.mjs') && (!existsSync('public/images/_opt') || (prod && !existsSync('.next/BUILD_ID')))) spawnSync(process.execPath, ['scripts/generate-image-variants.mjs'], { stdio: 'ignore' });
     const port = await freePort(); base = prod ? `http://saoc.localhost:${port}` : `http://localhost:${port}`;
     if (prod && !existsSync('.next/BUILD_ID')) {
       const b = spawnSync(process.execPath, [NEXT_BIN, 'build'], { stdio: 'ignore', env: { ...process.env, ...PROD_ENV }, timeout: 1_200_000 });

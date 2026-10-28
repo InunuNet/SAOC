@@ -102,7 +102,7 @@ Run from the project root; each script is `node .agent/memory/project/specs/back
 Where the site comes from, in order:
 
 1. `DC_BASE_URL` set: that origin is used. Beta credentials come from `BETA_BASIC_AUTH_USER` and `BETA_BASIC_AUTH_PASSWORD` (`node --env-file-if-exists=.env.local`), never printed.
-2. `DC_PROD=1` and no `DC_BASE_URL`: `lib.mjs` runs `next build` if `.next/BUILD_ID` is missing, then `next start` on a free port as `http://saoc.localhost:<port>`, and stops exactly that process.
+2. `DC_PROD=1` and no `DC_BASE_URL`: `lib.mjs` runs `node scripts/generate-image-variants.mjs` and `next build` if `.next/BUILD_ID` is missing, then `next start` on a free port as `http://saoc.localhost:<port>`, and stops exactly that process.
 3. Neither: `next dev`, fixture replay, beta wall off. Home and /events do not render under fixture replay, so Home-only checks skip rather than fake.
 
 The production recipe:
@@ -111,7 +111,7 @@ The production recipe:
 SANITY_FIXTURE_MODE=replay SANITY_FIXTURE_DIR=.agent/memory/project/specs/nos-content-standard/fixtures/sanity \
 BETA_PASSWORD_WALL_OFF=true BETA_BASIC_AUTH_USER= BETA_BASIC_AUTH_PASSWORD= \
 NEXT_PUBLIC_SAOC_SITE_URL=http://localhost NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost \
-  node node_modules/next/dist/bin/next build   # then the same env with: next start --port <port>
+  node scripts/generate-image-variants.mjs && node node_modules/next/dist/bin/next build   # or `pnpm build`: a bare next build leaves public/images/_opt empty and the hero returns 404; then the same env with: next start --port <port>
 DC_BASE_URL=http://saoc.localhost:<port> node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/<script>.mjs
 ```
 

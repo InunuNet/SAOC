@@ -1,0 +1,624 @@
+{
+ "source": "F1d build 7ee06e9a (feat/sdc-f1d-lcp), DC_PROD=1 saoc.localhost / nos.localhost, text arrows",
+ "targets": {
+  "saoc:/societies@1440": {
+   "status": 200,
+   "links": [
+    {
+     "titleLines": 1,
+     "label": "WCCape Orchid SocietyWestern Cape",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "KZNNatal Orchid SocietyKwaZulu-Natal",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "GPTransvaal Orchid SocietyGauteng",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "GPNorthern Transvaal Orchid SocietyTshwane",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "GPEast Rand Orchid SocietyEkurhuleni",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "GPWest Rand Orchid SocietyKrugersdorp",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "MPLowveld Orchid SocietyMbombela",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "MPHighveld Orchid SocietyWitbank",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "FSFree State Orchid SocietyBloemfontein",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "ECBorder Orchid SocietyEast London",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "ECEastern Province Orchid SocietyGqeberha",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "WCGarden Route Orchid SocietyGeorge",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "WCOverberg Orchid SocietyHermanus",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "WCWinelands Orchid SocietyStellenbosch",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "KZNMidlands Orchid SocietyPietermaritzburg",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "KZNNorth Coast Orchid SocietyBallito",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "NCKalahari Orchid SocietyKimberley",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "LPLimpopo Orchid SocietyPolokwane",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "NWNorth West Orchid SocietyPotchefstroom",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "GPVaal Triangle Orchid SocietyVanderbijlpark",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "WCSouth Cape Orchid SocietyMossel Bay",
+     "h": 129.78125,
+     "textTop": 26
+    }
+   ]
+  },
+  "saoc:/judging@1440": {
+   "status": 200,
+   "links": [
+    {
+     "titleLines": 1,
+     "label": "Contact SAOC",
+     "h": 44,
+     "textTop": 12.921875
+    }
+   ]
+  },
+  "saoc:/@1440": {
+   "status": 200,
+   "links": [
+    {
+     "titleLines": 1,
+     "label": "Full calendar",
+     "h": 44,
+     "textTop": 13.703125
+    },
+    {
+     "titleLines": 2,
+     "label": "Wild Orchids of Southern AfricaPartner organisation hosting the WOSA Conference at the National Orchid Show.",
+     "h": 104.03125,
+     "textTop": 28
+    }
+   ]
+  },
+  "saoc:/events@1440": {
+   "status": 200,
+   "links": []
+  },
+  "saoc:/events/[first]@1440": {
+   "status": 0,
+   "links": [],
+   "gap": "no a[href^=\"/events/\"] link on /events"
+  },
+  "saoc:/societies/[first]@1440": {
+   "status": 200,
+   "links": [
+    {
+     "titleLines": 1,
+     "label": "View the SAOC events calendar",
+     "h": 24.796875,
+     "textTop": 1
+    }
+   ]
+  },
+  "saoc:/sponsors@1440": {
+   "status": 200,
+   "links": []
+  },
+  "nos:/tickets@1440": {
+   "status": 200,
+   "links": []
+  },
+  "nos:/tickets/[first]@1440": {
+   "status": 0,
+   "links": [],
+   "gap": "no a[href^=\"/tickets/\"]:not([href^=\"/tickets/cancelled\"]):not([href^=\"/tickets/confirmation\"]) link on /tickets"
+  },
+  "nos:/national-show/tickets@1440": {
+   "status": 0,
+   "links": [],
+   "gap": "/national-show/tickets navigation failed: page.goto: net::ERR_EMPTY_RESPONSE at http://nos.localhost:54052/national-show/t"
+  },
+  "nos:/national-show/vendors@1440": {
+   "status": 0,
+   "links": [],
+   "gap": "/national-show/vendors navigation failed: page.goto: net::ERR_EMPTY_RESPONSE at http://nos.localhost:54052/national-show/v"
+  },
+  "saoc:search-overlay@1440": {
+   "status": 200,
+   "links": []
+  },
+  "saoc:/societies@390": {
+   "status": 200,
+   "links": [
+    {
+     "titleLines": 1,
+     "label": "WCCape Orchid SocietyWestern Cape",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "KZNNatal Orchid SocietyKwaZulu-Natal",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "GPTransvaal Orchid SocietyGauteng",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 2,
+     "label": "GPNorthern Transvaal Orchid SocietyTshwane",
+     "h": 157.28125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "GPEast Rand Orchid SocietyEkurhuleni",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "GPWest Rand Orchid SocietyKrugersdorp",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "MPLowveld Orchid SocietyMbombela",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "MPHighveld Orchid SocietyWitbank",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "FSFree State Orchid SocietyBloemfontein",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "ECBorder Orchid SocietyEast London",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "ECEastern Province Orchid SocietyGqeberha",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "WCGarden Route Orchid SocietyGeorge",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "WCOverberg Orchid SocietyHermanus",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "WCWinelands Orchid SocietyStellenbosch",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "KZNMidlands Orchid SocietyPietermaritzburg",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "KZNNorth Coast Orchid SocietyBallito",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "NCKalahari Orchid SocietyKimberley",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "LPLimpopo Orchid SocietyPolokwane",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "NWNorth West Orchid SocietyPotchefstroom",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "GPVaal Triangle Orchid SocietyVanderbijlpark",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "WCSouth Cape Orchid SocietyMossel Bay",
+     "h": 129.78125,
+     "textTop": 26
+    }
+   ]
+  },
+  "saoc:/judging@390": {
+   "status": 200,
+   "links": [
+    {
+     "titleLines": 1,
+     "label": "Contact SAOC",
+     "h": 44,
+     "textTop": 12.921875
+    }
+   ]
+  },
+  "saoc:/@390": {
+   "status": 200,
+   "links": [
+    {
+     "titleLines": 1,
+     "label": "Full calendar",
+     "h": 44,
+     "textTop": 13.703125
+    },
+    {
+     "titleLines": 4,
+     "label": "Wild Orchids of Southern AfricaPartner organisation hosting the WOSA Conference at the National Orchid Show.",
+     "h": 181.3125,
+     "textTop": 28
+    }
+   ]
+  },
+  "saoc:/events@390": {
+   "status": 200,
+   "links": []
+  },
+  "saoc:/events/[first]@390": {
+   "status": 0,
+   "links": [],
+   "gap": "no a[href^=\"/events/\"] link on /events"
+  },
+  "saoc:/societies/[first]@390": {
+   "status": 200,
+   "links": [
+    {
+     "titleLines": 1,
+     "label": "View the SAOC events calendar",
+     "h": 24.796875,
+     "textTop": 1
+    }
+   ]
+  },
+  "saoc:/sponsors@390": {
+   "status": 200,
+   "links": []
+  },
+  "nos:/tickets@390": {
+   "status": 200,
+   "links": []
+  },
+  "nos:/tickets/[first]@390": {
+   "status": 0,
+   "links": [],
+   "gap": "no a[href^=\"/tickets/\"]:not([href^=\"/tickets/cancelled\"]):not([href^=\"/tickets/confirmation\"]) link on /tickets"
+  },
+  "nos:/national-show/tickets@390": {
+   "status": 0,
+   "links": [],
+   "gap": "/national-show/tickets navigation failed: page.goto: net::ERR_EMPTY_RESPONSE at http://nos.localhost:54052/national-show/t"
+  },
+  "nos:/national-show/vendors@390": {
+   "status": 0,
+   "links": [],
+   "gap": "/national-show/vendors navigation failed: page.goto: net::ERR_EMPTY_RESPONSE at http://nos.localhost:54052/national-show/v"
+  },
+  "saoc:search-overlay@390": {
+   "status": 200,
+   "links": [],
+   "gap": "search overlay could not be opened"
+  },
+  "saoc:/societies@2056": {
+   "status": 200,
+   "links": [
+    {
+     "titleLines": 1,
+     "label": "WCCape Orchid SocietyWestern Cape",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "KZNNatal Orchid SocietyKwaZulu-Natal",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "GPTransvaal Orchid SocietyGauteng",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "GPNorthern Transvaal Orchid SocietyTshwane",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "GPEast Rand Orchid SocietyEkurhuleni",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "GPWest Rand Orchid SocietyKrugersdorp",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "MPLowveld Orchid SocietyMbombela",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "MPHighveld Orchid SocietyWitbank",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "FSFree State Orchid SocietyBloemfontein",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "ECBorder Orchid SocietyEast London",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "ECEastern Province Orchid SocietyGqeberha",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "WCGarden Route Orchid SocietyGeorge",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "WCOverberg Orchid SocietyHermanus",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "WCWinelands Orchid SocietyStellenbosch",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "KZNMidlands Orchid SocietyPietermaritzburg",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "KZNNorth Coast Orchid SocietyBallito",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "NCKalahari Orchid SocietyKimberley",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "LPLimpopo Orchid SocietyPolokwane",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "NWNorth West Orchid SocietyPotchefstroom",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "GPVaal Triangle Orchid SocietyVanderbijlpark",
+     "h": 129.78125,
+     "textTop": 26
+    },
+    {
+     "titleLines": 1,
+     "label": "WCSouth Cape Orchid SocietyMossel Bay",
+     "h": 129.78125,
+     "textTop": 26
+    }
+   ]
+  },
+  "saoc:/judging@2056": {
+   "status": 200,
+   "links": [
+    {
+     "titleLines": 1,
+     "label": "Contact SAOC",
+     "h": 44,
+     "textTop": 12.921875
+    }
+   ]
+  },
+  "saoc:/@2056": {
+   "status": 200,
+   "links": [
+    {
+     "titleLines": 1,
+     "label": "Full calendar",
+     "h": 44,
+     "textTop": 13.703125
+    },
+    {
+     "titleLines": 2,
+     "label": "Wild Orchids of Southern AfricaPartner organisation hosting the WOSA Conference at the National Orchid Show.",
+     "h": 104.03125,
+     "textTop": 28
+    }
+   ]
+  },
+  "saoc:/events@2056": {
+   "status": 200,
+   "links": []
+  },
+  "saoc:/events/[first]@2056": {
+   "status": 0,
+   "links": [],
+   "gap": "no a[href^=\"/events/\"] link on /events"
+  },
+  "saoc:/societies/[first]@2056": {
+   "status": 200,
+   "links": [
+    {
+     "titleLines": 1,
+     "label": "View the SAOC events calendar",
+     "h": 24.796875,
+     "textTop": 1
+    }
+   ]
+  },
+  "saoc:/sponsors@2056": {
+   "status": 200,
+   "links": []
+  },
+  "nos:/tickets@2056": {
+   "status": 200,
+   "links": []
+  },
+  "nos:/tickets/[first]@2056": {
+   "status": 0,
+   "links": [],
+   "gap": "no a[href^=\"/tickets/\"]:not([href^=\"/tickets/cancelled\"]):not([href^=\"/tickets/confirmation\"]) link on /tickets"
+  },
+  "nos:/national-show/tickets@2056": {
+   "status": 0,
+   "links": [],
+   "gap": "/national-show/tickets navigation failed: page.goto: net::ERR_EMPTY_RESPONSE at http://nos.localhost:54052/national-show/t"
+  },
+  "nos:/national-show/vendors@2056": {
+   "status": 0,
+   "links": [],
+   "gap": "/national-show/vendors navigation failed: page.goto: net::ERR_EMPTY_RESPONSE at http://nos.localhost:54052/national-show/v"
+  },
+  "saoc:search-overlay@2056": {
+   "status": 200,
+   "links": []
+  }
+ }
+}

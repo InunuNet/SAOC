@@ -89,3 +89,21 @@ Not verified: the DC_PROD autostart path in lib.mjs (it needs a full `next build
 
 ## F1b A12 (guard)
 Guard, not a fail-on-main: main has no 1280-1383 inline band or icon Menu at those widths, so it fails there for the wrong reason; the aria-current wiring (MobileMenu.tsx navAriaCurrent) already exists. Passes on feat/sdc-f1b-nav@79472b8f (run 2026-10-28).
+
+## F1e amendments, NOS Design rulings 2026-10-28 (A21-A26)
+Run with cwd wt-sdc-f1b (main app code plus the F1b nav; the spec worktree's node_modules symlink cannot run next dev under Turbopack).
+- A3 is now a guard on the ONE ruled change: U+0149 dropped from the required set (deprecated; Afrikaans uses 'n). A24 (scan-fixtures-u0149.mjs) is report only: 0 hits in the Sanity fixtures today.
+- A21 `FAIL favicon-crop`: no 16px or 32px PNG icon linked from /about (linked sizes 512, 180). The 180 rules (opaque, #F4F3EC, 72-80%) apply once the dev ships it.
+- A22 PASS on the new goldens; the same function FAILS the previous goldens (16 touches the cell edge; 180 transparent, ground rgb(76,105,113), flower 92%).
+- A23 `FAIL glyph-svg`: StatusMarker.tsx renders U+203B as text, no svg[data-glyph=status-mark]. The ten SAOC-host routes carry no status markers, so the DOM half is vacuous there and the source rule carries the proof. Arrows (U+2192) are text in a face the walk (A8) checks; the SVG replacement quality rules (aria-hidden, 1em, currentColor, baseline) apply to any svg[data-glyph].
+- Caps are now icons on load <=10 KB (no .ico allowance) and apple-touch <=16 KB (check-favicon.mjs, A10-era assertion). New golden renders: 16 = 621 B, 32 = 1,629 B, 180 = 2,902 B.
+- Before crops of the arrow sites (societies, judging, 1440 and 390): goldens/glyph-crops-before/. No U+203B crop exists: StatusMarker only renders on the NOS host, not reachable from the local SAOC origin. GAP, reported to the lead.
+
+## F1e corrections after NOS Design review (supersede the lines above where they differ)
+- A21: no linked 16 PNG is required (the 16 lives in favicon.ico). The 16 is read from the .ico entries; the 32 and 48 PNGs must be cropped; the 180 opaque on #F4F3EC at 72-80%. Run against main's app/favicon.ico: entries 16 and 32 touch the cell edge (FAIL, red on main). Review renders now include favicon-48.png; A22 covers 16/32/48/180.
+- A23: the status mark is NOT 1em; its size is A27's geometry. StatusMarker renders on the SAOC host (PlaceholderMarker, Home NavCards, ShowBand), so the earlier "unreachable from the SAOC-host routes" note is wrong: Home at 390 and 1440 must show a badge and each badge must lead with the status-mark SVG. The Home half needs DC_PROD=1 (not run here; the source rule still fails on main).
+- A11/A18: the LCP-FCP gap is reported, never asserted; the gate is LCP <=2.5s, median of 3 on beta.
+
+## F1e arrow ruling (A23 amended, A29/A30)
+- A23 now fails on any build that still sets the arrow as text: `/societies`, `/judging` and Home must carry svg[data-glyph=arrow]; none exist on F1d or main (not run against a build here; by construction).
+- A29 is a guard: the baseline JSON is from F1d 7ee06e9a (24 links x 2 widths); on that build the guard compares identical values. The probe (shaft, head, gap, width) was exercised against a synthetic page with the specified markup (gap 8.32px = 0.5em + 0.02em letter-spacing at 16px), not against a site build.
