@@ -5,31 +5,35 @@
 // Method: real Chromium on the deployed NOS host. Targets are discovered, not hard-coded - every same-origin link carrying a #hash found on
 // the seed pages (header, footer, body), plus every .pc-sec-top presenter heading (presenters.css:57, scroll-margin-top 90px) - and the
 // minimum set faq, plan-your-visit, legal and presenters is always named in the output, "NOT FOUND" when it could not be discovered.
-// Each target is opened as a deep link (page load with #hash) at 390, 768, 1024, 1440 and 2056 wide. The landing gap is the target's top
+// Each target is opened as a deep link (page load with #hash) at 390, 767, 768, 1024, 1440 and 2056 wide. The landing gap is the target's top
 // minus the bottom of whatever is pinned to the top of the viewport (the sticky header), or the viewport top when nothing is pinned.
 // NOS Design's gate is 16..40px; rows outside it are marked OUT, rows that cannot scroll that far are marked SHORT (end of page).
 // Writes nothing and mocks nothing: it only loads public pages. Basic Auth is read from BETA_BASIC_AUTH_USER/PASSWORD in-script, never printed.
 // Run as: node --env-file-if-exists=.env.local <this file>   (from the project root, after deploy)
+//     or: NOS_BASE_URL=http://nos.localhost:<port> node <this file>   (against a local production build; no credentials needed)
 import { chromium } from 'playwright';
 
-const ORIGIN = 'https://nos.saoc.co.za';
+// NOS_BASE_URL points the survey at a local production server (e.g. http://nos.localhost:3050, built with NEXT_PUBLIC_NOS_SITE_URL set to that origin);
+// the default is the deployed NOS host, which needs the Basic Auth variables below.
+const ORIGIN = (process.env.NOS_BASE_URL ?? 'https://nos.saoc.co.za').replace(/\/+$/, '');
+const LOCAL = Boolean(process.env.NOS_BASE_URL);
 const SEED_PATHS = ['/national-show', '/national-show/about', '/national-show/faq', '/national-show/plan-your-visit', '/national-show/sponsors', '/national-show/programme',
   '/national-show/what-to-expect', '/national-show/workshops', '/national-show/symposium', '/national-show/tickets', '/national-show/vendors', '/national-show/award-entries',
   '/national-show/international-guests', '/national-show/conferences', '/national-show/wosa-conference', '/national-show/media-kit', '/national-show/contact', '/national-show/archive'];
 const REQUIRED = [['faq', /\/faq#/], ['plan-your-visit', /\/plan-your-visit#/], ['legal', /legal|privacy|terms|refund|cancel|popia/i], ['presenters', /^presenters:/]];
-const VIEWPORTS = [{ w: 390, h: 844 }, { w: 768, h: 1024 }, { w: 1024, h: 768 }, { w: 1440, h: 900 }, { w: 2056, h: 1200 }];
+const VIEWPORTS = [{ w: 390, h: 844 }, { w: 767, h: 1024 }, { w: 768, h: 1024 }, { w: 1024, h: 768 }, { w: 1440, h: 900 }, { w: 2056, h: 1200 }];
 const GATE_MIN = 16; const GATE_MAX = 40;
 const user = process.env.BETA_BASIC_AUTH_USER;
 const pass = process.env.BETA_BASIC_AUTH_PASSWORD;
 const report = (line) => console.log(line);
 
-if (!user || !pass) { report('REPORT-ONLY: BETA_BASIC_AUTH_USER / BETA_BASIC_AUTH_PASSWORD not set; nothing surveyed (run from the project root with .env.local).'); process.exit(0); }
+if (!LOCAL && (!user || !pass)) { report('REPORT-ONLY: BETA_BASIC_AUTH_USER / BETA_BASIC_AUTH_PASSWORD not set; nothing surveyed (run from the project root with .env.local).'); process.exit(0); }
 let browser;
 try { browser = await chromium.launch(); } catch (error) { report(`REPORT-ONLY: chromium unavailable (${error.name}); nothing surveyed.`); process.exit(0); }
 
 const targets = new Map(); // key "path#hash" or "presenters:path#id" -> { url, label, selector }
 try {
-  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, httpCredentials: { username: user, password: pass } });
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, ...(LOCAL ? {} : { httpCredentials: { username: user, password: pass } }) });
   for (const path of SEED_PATHS) {
     const page = await context.newPage();
     try {
@@ -55,7 +59,7 @@ try {
 
   const rows = [];
   for (const vp of VIEWPORTS) {
-    const ctx = await browser.newContext({ viewport: { width: vp.w, height: vp.h }, httpCredentials: { username: user, password: pass } });
+    const ctx = await browser.newContext({ viewport: { width: vp.w, height: vp.h }, ...(LOCAL ? {} : { httpCredentials: { username: user, password: pass } }) });
     for (const [key, t] of targets) {
       if (!t.url) { rows.push({ key, vp: vp.w, verdict: 'NO-ID', gap: null, label: t.label }); continue; }
       const page = await ctx.newPage();
