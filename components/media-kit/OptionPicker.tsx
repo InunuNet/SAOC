@@ -76,7 +76,7 @@ export function OptionPicker({
               onClick={() => choose(option.id)}
               className="peer sr-only"
             />
-            <span className="flex min-h-[44px] items-center border border-rule bg-parchment px-3 py-2 font-sans text-[14px] leading-[1.2] text-ink peer-checked:border-primary peer-checked:bg-bone peer-checked:font-semibold peer-checked:ring-2 peer-checked:ring-primary peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-[3px] peer-focus-visible:outline-primary">
+            <span className="flex min-h-[44px] items-center border border-rule bg-parchment px-3 py-2 font-sans text-[14px] leading-[1.2] text-ink peer-checked:border-primary peer-checked:bg-bone peer-checked:font-semibold peer-checked:shadow-[inset_0_0_0_1px_var(--primary)] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-[3px] peer-focus-visible:outline-primary">
               {option.label}
             </span>
           </label>
