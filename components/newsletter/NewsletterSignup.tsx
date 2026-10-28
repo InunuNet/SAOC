@@ -148,7 +148,7 @@ export function NewsletterSignup({
                   onChange={(event) => toggleTopic(topic, event.target.checked)}
                   aria-invalid={topicsInvalid ? 'true' : undefined}
                   aria-describedby={topicsInvalid ? topicsErrorId : undefined}
-                  className="size-6 shrink-0 accent-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-ivory"
+                  className="size-6 shrink-0 accent-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ivory"
                   style={site === 'nos' ? { accentColor: 'var(--nc-gold)' } : undefined}
                 />
                 {topic === 'saoc' ? NEWSLETTER_COPY.topicLabelSaoc : NEWSLETTER_COPY.topicLabelNos}

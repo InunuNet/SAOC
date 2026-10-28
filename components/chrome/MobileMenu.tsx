@@ -151,11 +151,11 @@ export function MobileMenu({ open, onClose, onSearch, nav, triggerRef }: MobileM
                     onClick={onClose}
                     aria-current={navAriaCurrent(pathname, n.href, { crossSite: n.crossSite })}
                     className={[
-                      'group flex items-center px-3 py-3 font-sans text-[15px] rounded-sm transition-colors duration-150 hover:text-primary hover:bg-bone focus-visible:text-primary outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] aria-[current=page]:text-primary',
+                      'group flex items-center px-3 py-3 font-sans text-[15px] rounded-sm transition-colors duration-150 hover:text-primary hover:bg-bone focus-visible:text-primary focus-visible:outline-none aria-[current=page]:text-primary',
                       n.quiet ? 'text-muted' : 'text-ink',
                     ].join(' ')}
                   >
-                    <span className="group-aria-[current=page]:underline group-aria-[current=page]:decoration-1 group-aria-[current=page]:underline-offset-4">
+                    <span className="group-focus-visible:underline group-focus-visible:decoration-2! group-focus-visible:underline-offset-4 group-aria-[current=page]:underline group-aria-[current=page]:decoration-1 group-aria-[current=page]:underline-offset-4 forced-colors:group-focus-visible:decoration-[color:Highlight]">
                       {n.label}
                     </span>
                   </NavLink>
@@ -167,9 +167,9 @@ export function MobileMenu({ open, onClose, onSearch, nav, triggerRef }: MobileM
                 href={CONTACT_LINK.href}
                 onClick={onClose}
                 aria-current={navAriaCurrent(pathname, CONTACT_LINK.href)}
-                className="group flex items-center px-3 py-3 font-sans text-[15px] text-ink hover:text-primary hover:bg-bone rounded-sm transition-colors duration-150 focus-visible:text-primary outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] aria-[current=page]:text-primary"
+                className="group flex items-center px-3 py-3 font-sans text-[15px] text-ink hover:text-primary hover:bg-bone rounded-sm transition-colors duration-150 focus-visible:text-primary focus-visible:outline-none aria-[current=page]:text-primary"
               >
-                <span className="group-aria-[current=page]:underline group-aria-[current=page]:decoration-1 group-aria-[current=page]:underline-offset-4">
+                <span className="group-focus-visible:underline group-focus-visible:decoration-2! group-focus-visible:underline-offset-4 group-aria-[current=page]:underline group-aria-[current=page]:decoration-1 group-aria-[current=page]:underline-offset-4 forced-colors:group-focus-visible:decoration-[color:Highlight]">
                   {CONTACT_LINK.label}
                 </span>
               </Link>

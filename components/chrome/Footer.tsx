@@ -114,7 +114,7 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
             submitLabel={FOOTER_BULLETIN.submitLabel}
             fieldsClassName="flex flex-wrap items-end gap-0"
             labelClassName="sr-only"
-            inputClassName="min-h-11 min-w-0 flex-1 bg-ivory/10 border border-accent-soft text-ivory placeholder:text-ivory/75 font-sans text-[16px] px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-ivory"
+            inputClassName="min-h-11 min-w-0 flex-1 bg-ivory/10 border border-accent-soft text-ivory placeholder:text-ivory/75 font-sans text-[16px] px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ivory"
             buttonClassName="min-h-11 min-w-11 bg-accent text-primary-800 font-sans text-[13px] font-medium px-4 py-2 hover:bg-accent-soft transition-colors duration-150 shrink-0 disabled:opacity-60"
             statusClassName="mt-2 font-sans text-[13px] text-ivory/80 empty:hidden"
             errorClassName="mt-2 font-sans text-[13px] text-ivory"

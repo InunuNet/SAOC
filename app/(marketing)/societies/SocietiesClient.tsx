@@ -80,10 +80,10 @@ export function SocietiesClient({ societies, provinces }: SocietiesClientProps) 
                   aria-label={`${p.name}, ${count}`}
                   className={
                     disabled
-                      ? 'inline-flex min-h-11 min-w-11 cursor-not-allowed items-center justify-center gap-2 rounded-full border border-rule bg-parchment px-3.5 py-1.5 font-sans text-[14px] text-muted focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]'
+                      ? 'inline-flex min-h-11 min-w-11 cursor-not-allowed items-center justify-center gap-2 rounded-full border border-rule bg-parchment px-3.5 py-1.5 font-sans text-[14px] text-muted focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-2'
                       : active
-                        ? 'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-primary bg-primary px-3.5 py-1.5 font-sans text-[14px] text-ivory transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]'
-                        : 'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-rule bg-parchment px-3.5 py-1.5 font-sans text-[14px] text-ink transition-colors duration-150 hover:border-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]'
+                        ? 'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-primary bg-primary px-3.5 py-1.5 font-sans text-[14px] text-ivory transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-2'
+                        : 'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-rule bg-parchment px-3.5 py-1.5 font-sans text-[14px] text-ink transition-colors duration-150 hover:border-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-2'
                   }
                 >
                   {/* Full name from 481px up, abbreviation at 480px and below; the accessible name
@@ -106,7 +106,7 @@ export function SocietiesClient({ societies, provinces }: SocietiesClientProps) 
           </div>
         ) : null}
 
-        <div className="ml-auto flex min-h-11 min-w-[260px] items-center gap-2 rounded-sm border border-rule bg-parchment px-3 text-muted focus-within:outline-2 focus-within:outline-solid focus-within:outline-primary focus-within:outline-offset-[3px]">
+        <div className="ml-auto flex min-h-11 min-w-[260px] items-center gap-2 rounded-sm border border-rule bg-parchment px-3 text-muted focus-within:outline-2 focus-within:outline-solid focus-within:outline-primary focus-within:outline-offset-2">
           <Search size={16} aria-hidden />
           <input
             id="societies-search"
