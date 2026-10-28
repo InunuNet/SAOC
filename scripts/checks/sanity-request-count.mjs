@@ -5,7 +5,7 @@
 //   --ttl-check  cache expires after SANITY_REVALIDATE_SECONDS and then holds again
 //   --notfound   unmatched URL returns 404 with host-correct chrome on both hosts
 import { spawn } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import {
@@ -31,11 +31,14 @@ const REVALIDATE_SECONDS = 60;
 const TTL_MARGIN_SECONDS = 5;
 const ISR_CACHE_CONTROL = 's-maxage=60';
 const UNMATCHED_PATHS = {
-  saoc: ['/no-such-page-m3f3', '/societies/no-such-society-m3f3/deeper'],
+  saoc: ['/no-such-page-m3f3', '/societies/no-such-society-m3f3/deeper', '/newsletter/zz'],
   nos: ['/no-such-page-m3f3', '/vsp/zz', '/tickets/a/b', '/newsletter/zz'],
 };
 const SAOC_TITLE_SUFFIX = 'South African Orchid Council';
 const NOS_TITLE_PART = 'The National Orchid Show';
+// Routes that must read Sanity on their first request (per-request pages): proves the stub is
+// reached, so zero warm counts mean the data cache held, not that no read ever happened.
+const POSITIVE_CONTROL_ROUTES = ['nos /workshops', 'nos /symposium', 'nos /wosa-conference'];
 const EXIT_FAIL = 1;
 const EXIT_SETUP = 2;
 
@@ -90,8 +93,11 @@ async function runAssert() {
   const warmTotal = rows.reduce((sum, row) => sum + row.warm, 0);
   const reduction = (1 - warmTotal / baseline.warm_total_per_pass) * 100;
   console.log(`BEFORE warm total ${baseline.warm_total_per_pass}, AFTER warm total ${warmTotal}, reduction ${reduction.toFixed(1)}%`);
-  const coldTotal = rows.reduce((sum, row) => sum + row.cold, 0);
-  check(coldTotal > 0, `cold reads reach the stub (cold total ${coldTotal}), so the low warm count is caching, not absence of reads`);
+  for (const label of POSITIVE_CONTROL_ROUTES) {
+    const row = rows.find((candidate) => candidate.label === label);
+    check(Boolean(row) && row.cold > 0, `positive control ${label} cold ${row ? row.cold : 'missing'} > 0 (reads reach the stub)`);
+  }
+  check(existsSync(BUILD_LOG) && countLines(BUILD_LOG) > 0, `build-time Sanity requests recorded (${countLines(BUILD_LOG)}); run --build first`);
   check(rows.every((row) => row.status === 200), 'every measured route answers 200');
   check(warmTotal <= targets.targets.warm_total_per_pass_max, `warm total ${warmTotal} <= ${targets.targets.warm_total_per_pass_max}`);
   check(rows.every((row) => row.warm <= targets.targets.warm_per_route_max), `no route above ${targets.targets.warm_per_route_max} warm`);
@@ -115,7 +121,7 @@ async function runTtlCheck() {
     await sleep(waitSeconds * 1000);
     const expired = await countedGet(PORT, COUNT_LOG, host, '/about');
     console.log(`after expiry the first request cost ${expired.requests}`);
-    check(expired.requests <= 2, `after expiry /about refetches at most 2 (got ${expired.requests})`);
+    check(expired.requests >= 1 && expired.requests <= 2, `after expiry /about refetches 1 or 2 (got ${expired.requests})`);
     const again = await countedGet(PORT, COUNT_LOG, host, '/about');
     check(again.requests === 0, `the next /about holds again at 0 (got ${again.requests})`);
   } finally {
