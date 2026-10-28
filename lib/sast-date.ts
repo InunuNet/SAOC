@@ -4,6 +4,8 @@
 // UTC+2, no daylight saving). The UTC date lags it by two hours every night.
 // =============================================================
 
+import { fixtureNow } from './fixture-clock.ts';
+
 const SAST_TIME_ZONE = 'Africa/Johannesburg';
 const SAST_UTC_OFFSET = '+02:00';
 const SAST_DATE_FORMAT = new Intl.DateTimeFormat('en-CA', { timeZone: SAST_TIME_ZONE });
@@ -24,7 +26,7 @@ export function sastStartOfDay(now: Date): string {
  * events and the preview placeholders share this one notion of "today". `todayDate` serves the date-only branch:
  * GROQ's dateTime() is null for a date-only value, which the query compares as a string against the SAST date.
  */
-export function upcomingEventsParams(now: Date = new Date()): { todayStart: string; todayDate: string } {
+export function upcomingEventsParams(now: Date = fixtureNow() ?? new Date()): { todayStart: string; todayDate: string } {
   return { todayStart: sastStartOfDay(now), todayDate: sastDate(now) };
 }
 
