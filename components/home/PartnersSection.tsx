@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import type { SanityImageSource } from '@sanity/image-url';
 import { ArrowIcon } from '@/components/ui/ArrowIcon';
 
@@ -40,13 +41,23 @@ function toCards(partners?: SanityPartner[] | null): PartnerCard[] {
   }));
 }
 
+// The arrow shares the title's baseline but is set in 20px, so its cap midline sits lower than the
+// title's. Lift it by half the cap-height difference (Crimson Pro cap height 0.583em) so the shaft
+// sits on the title's cap midline; the title is clamp(28px, 3.2vw, 42px).
+const PARTNER_ARROW_LIFT = 'calc((clamp(28px, 3.2vw, 42px) - 20px) * -0.2915)';
+
 export function PartnersSection({ partners }: PartnersSectionProps) {
   const cards = toCards(partners);
   const rowBase =
     'grid grid-cols-[1fr_auto] min-[900px]:grid-cols-[5fr_6fr_auto] items-baseline gap-x-10 gap-y-3 border-b border-rule py-7 px-3 min-h-[44px]';
 
   return (
-    <section data-home-section="partners" className="py-20 bg-parchment">
+    <section
+      data-home-section="partners"
+      className="py-20 bg-parchment"
+      // CSSProperties has no index for custom properties; the cast is the standard React idiom.
+      style={{ '--partner-arrow-lift': PARTNER_ARROW_LIFT } as CSSProperties}
+    >
       <div className="saoc-container">
         <div className="mb-10">
           <span className="eyebrow">In collaboration with</span>
@@ -58,6 +69,7 @@ export function PartnersSection({ partners }: PartnersSectionProps) {
               <>
                 <span
                   data-partner-name
+                  data-corner-title
                   className="text-balance font-serif tracking-[-0.015em] font-normal min-[1000px]:font-light text-[clamp(28px,3.2vw,42px)] leading-[1.12] text-primary underline decoration-transparent decoration-1 underline-offset-[6px] transition-[color,text-decoration-color] duration-150 ease-(--ease) group-hover:text-primary-800 group-hover:decoration-accent group-focus-visible:text-primary-800 group-focus-visible:decoration-accent"
                 >
                   {card.name}
@@ -71,7 +83,7 @@ export function PartnersSection({ partners }: PartnersSectionProps) {
                   <span
                     data-partner-arrow
                     aria-hidden="true"
-                    className="col-start-2 row-start-1 min-[900px]:col-start-3 font-serif font-normal text-[20px] text-primary transition-[translate,color] duration-150 ease-(--ease) group-hover:translate-x-1 group-hover:text-accent group-focus-visible:translate-x-1 group-focus-visible:text-accent motion-reduce:group-hover:translate-x-0 motion-reduce:group-focus-visible:translate-x-0"
+                    className="relative top-(--partner-arrow-lift) col-start-2 row-start-1 min-[900px]:col-start-3 font-serif font-normal text-[20px] text-primary transition-[translate,color] duration-150 ease-(--ease) group-hover:translate-x-1 group-hover:text-accent group-focus-visible:translate-x-1 group-focus-visible:text-accent motion-reduce:group-hover:translate-x-0 motion-reduce:group-focus-visible:translate-x-0"
                   >
                     <ArrowIcon variant="corner" />
                   </span>
