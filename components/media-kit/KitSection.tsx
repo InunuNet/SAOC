@@ -23,7 +23,7 @@ export function ZipLink({ item }: ZipLinkProps) {
       <a
         href={item.href}
         download
-        className="inline-flex min-h-[44px] items-center font-sans text-[14px] font-semibold text-ink underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        className="inline-flex min-h-[44px] items-center font-sans text-[14px] font-semibold text-ink underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-primary"
       >
         {item.bundle_for === 'everything' ? ZIP_LABEL.everything : ZIP_LABEL.section}
       </a>

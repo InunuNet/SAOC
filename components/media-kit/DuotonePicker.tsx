@@ -60,7 +60,7 @@ export function DuotonePicker({ panels }: DuotonePickerProps) {
                 onChange={() => choose(ink.id)}
                 className="peer sr-only"
               />
-              <span className="flex min-h-[44px] items-center gap-3 border border-rule bg-parchment px-3 py-2 peer-checked:border-primary peer-checked:bg-bone peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary">
+              <span className="flex min-h-[44px] items-center gap-3 border border-rule bg-parchment px-3 py-2 peer-checked:border-primary peer-checked:bg-bone peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-[3px] peer-focus-visible:outline-primary">
                 <span
                   aria-hidden="true"
                   className="size-6 shrink-0 border border-rule"

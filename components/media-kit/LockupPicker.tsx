@@ -44,13 +44,13 @@ export interface LockupPickerProps {
 }
 
 const ZIP_LINK_CLASS =
-  'inline-flex min-h-[44px] items-center font-sans text-[14px] font-semibold text-ink underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
+  'inline-flex min-h-[44px] items-center font-sans text-[14px] font-semibold text-ink underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-primary';
 const ZIP_META_CLASS = 'font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted';
 
 const HASH_PREFIX = '#lockups-';
 
 const CHIP_CLASS =
-  'relative flex min-h-[44px] items-center border border-rule bg-parchment px-3 py-2 font-sans text-[14px] leading-[1.2] text-ink peer-checked:z-10 peer-checked:border-primary peer-checked:bg-bone peer-checked:font-semibold peer-checked:ring-2 peer-checked:ring-primary peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary';
+  'relative flex min-h-[44px] items-center border border-rule bg-parchment px-3 py-2 font-sans text-[14px] leading-[1.2] text-ink peer-checked:z-10 peer-checked:border-primary peer-checked:bg-bone peer-checked:font-semibold peer-checked:ring-2 peer-checked:ring-primary peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-[3px] peer-focus-visible:outline-primary';
 
 function subscribeToHash(onChange: () => void): () => void {
   window.addEventListener('hashchange', onChange);

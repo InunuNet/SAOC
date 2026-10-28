@@ -51,7 +51,7 @@ const EMPTY_VALUES: Values = {
 // The field boundary is --muted (a 3:1 non-text contrast, WCAG 1.4.11); same classes as ContactForm,
 // with a 44px row and a 16px size so a phone does not zoom on focus.
 const inputClass =
-  'min-h-11 w-full rounded-sm border border-muted bg-ivory px-3.5 py-2.5 font-sans text-[16px] text-ink placeholder:text-muted outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-2 transition-colors disabled:opacity-60 aria-invalid:border-error';
+  'min-h-11 w-full rounded-sm border border-muted bg-ivory px-3.5 py-2.5 font-sans text-[16px] text-ink placeholder:text-muted outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] transition-colors disabled:opacity-60 aria-invalid:border-error';
 const labelClass = 'font-mono text-[11px] tracking-[0.16em] text-muted';
 
 interface FieldProps {
@@ -321,7 +321,7 @@ export function SponsorEnquiryForm({ site }: SponsorEnquiryFormProps) {
               checked={values.consent}
               onChange={setField('consent')}
               disabled={disabled}
-              className="mt-0.5 h-6 w-6 shrink-0 rounded-sm border border-rule outline-none focus:ring-2 focus:ring-ink/40 disabled:opacity-60"
+              className="mt-0.5 h-6 w-6 shrink-0 rounded-sm border border-rule outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] disabled:opacity-60"
               aria-invalid={invalid('consent')}
               aria-describedby={describedBy('consent')}
             />
@@ -361,7 +361,7 @@ export function SponsorEnquiryForm({ site }: SponsorEnquiryFormProps) {
       <button
         type="submit"
         disabled={disabled}
-        className="inline-flex min-h-11 items-center rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ink transition-colors hover:bg-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex min-h-11 items-center rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ink transition-colors hover:bg-accent-soft focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {disabled ? ENQUIRY_REUSED.submitting : ENQUIRY_REUSED.submit}
       </button>

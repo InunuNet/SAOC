@@ -19,7 +19,7 @@ export function MediaKitJumpNav({ items }: MediaKitJumpNavProps) {
       <ShowJumpChips label={LABEL} items={items} className="py-3 max-[699px]:hidden" />
 
       <details className="min-[700px]:hidden">
-        <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-3 border-b border-rule font-sans text-[length:var(--fs-body,1rem)] font-semibold leading-[1.55] text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary [&::-webkit-details-marker]:hidden">
+        <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-3 border-b border-rule font-sans text-[length:var(--fs-body,1rem)] font-semibold leading-[1.55] text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-primary [&::-webkit-details-marker]:hidden">
           {LABEL}
           <svg
             aria-hidden="true"

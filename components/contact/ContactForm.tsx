@@ -114,7 +114,7 @@ export function ContactForm({ site = 'saoc', markPlaceholders = false }: Contact
 
   // The field boundary is --muted (a 3:1 non-text contrast, WCAG 1.4.11); the hairline --rule is too faint for an input.
   const inputClass =
-    'w-full rounded-sm border border-muted bg-ivory px-3.5 py-2.5 font-sans text-[16px] text-ink placeholder:text-muted outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-2 transition-colors disabled:opacity-60 aria-invalid:border-error';
+    'w-full rounded-sm border border-muted bg-ivory px-3.5 py-2.5 font-sans text-[16px] text-ink placeholder:text-muted outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] transition-colors disabled:opacity-60 aria-invalid:border-error';
   const labelClass = 'font-mono text-[11px] tracking-[0.16em] text-muted';
 
   const showError = status === 'error' && errorMessage !== '';
@@ -294,7 +294,7 @@ export function ContactForm({ site = 'saoc', markPlaceholders = false }: Contact
       <button
         type="submit"
         disabled={status === 'submitting' || !hydrated}
-        className={`inline-flex min-h-11 items-center rounded-sm px-5 py-2.5 font-sans text-[14px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:opacity-60 disabled:cursor-not-allowed ${
+        className={`inline-flex min-h-11 items-center rounded-sm px-5 py-2.5 font-sans text-[14px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] disabled:opacity-60 disabled:cursor-not-allowed ${
           site === 'nos' ? SUBMIT_NOS : SUBMIT_SAOC
         }`}
       >

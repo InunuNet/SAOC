@@ -133,13 +133,13 @@ export function Header() {
                       data-hd="item"
                       aria-current={navAriaCurrent(pathname, n.href, { crossSite: n.crossSite })}
                       className={[
-                        'group relative inline-flex min-h-11 items-center px-[9px] font-sans text-[14.5px] font-semibold leading-none transition-colors duration-150 hover:text-primary focus-visible:text-primary focus-visible:outline-none aria-[current=page]:text-primary',
+                        'group relative inline-flex min-h-11 items-center px-[9px] font-sans text-[14.5px] font-semibold leading-none transition-colors duration-150 hover:text-primary focus-visible:text-primary outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] aria-[current=page]:text-primary',
                         n.quiet ? 'text-muted' : 'text-ink',
                       ].join(' ')}
                     >
                       <span
                         data-hd="label"
-                        className="relative after:absolute after:-bottom-2 after:left-0 after:right-0 after:h-0 after:bg-primary after:content-[''] group-hover:after:h-0.5 group-focus-visible:after:h-0.5 group-aria-[current=page]:after:h-0.5 forced-colors:group-focus-visible:underline forced-colors:group-focus-visible:decoration-2 forced-colors:group-focus-visible:underline-offset-4 forced-colors:group-aria-[current=page]:underline"
+                        className="relative after:absolute after:-bottom-2 after:left-0 after:right-0 after:h-0 after:bg-primary after:content-[''] group-hover:after:h-0.5 group-aria-[current=page]:after:h-0.5-offset-4 forced-colors:group-aria-[current=page]:underline"
                       >
                         {n.label}
                       </span>
@@ -152,11 +152,11 @@ export function Header() {
                   href={CONTACT_LINK.href}
                   data-hd="item"
                   aria-current={navAriaCurrent(pathname, CONTACT_LINK.href)}
-                  className="group relative inline-flex min-h-11 items-center px-[9px] font-sans text-[14.5px] font-semibold leading-none text-ink transition-colors duration-150 hover:text-primary focus-visible:text-primary focus-visible:outline-none aria-[current=page]:text-primary"
+                  className="group relative inline-flex min-h-11 items-center px-[9px] font-sans text-[14.5px] font-semibold leading-none text-ink transition-colors duration-150 hover:text-primary focus-visible:text-primary outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] aria-[current=page]:text-primary"
                 >
                   <span
                     data-hd="label"
-                    className="relative after:absolute after:-bottom-2 after:left-0 after:right-0 after:h-0 after:bg-primary after:content-[''] group-hover:after:h-0.5 group-focus-visible:after:h-0.5 group-aria-[current=page]:after:h-0.5 forced-colors:group-focus-visible:underline forced-colors:group-focus-visible:decoration-2 forced-colors:group-focus-visible:underline-offset-4 forced-colors:group-aria-[current=page]:underline"
+                    className="relative after:absolute after:-bottom-2 after:left-0 after:right-0 after:h-0 after:bg-primary after:content-[''] group-hover:after:h-0.5 group-aria-[current=page]:after:h-0.5-offset-4 forced-colors:group-aria-[current=page]:underline"
                   >
                     {CONTACT_LINK.label}
                   </span>

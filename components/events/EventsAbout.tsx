@@ -11,7 +11,7 @@ import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 export const EVENTS_CALENDAR_SUBSCRIBE_LABEL: string | null = null;
 
 const OUTLINE_BUTTON =
-  'inline-flex min-h-11 items-center justify-center rounded-[2px] border border-primary px-[22px] py-[12px] font-sans text-[14px] font-medium text-primary transition-colors duration-150 hover:bg-primary hover:text-ivory focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[3px] focus-visible:outline-accent';
+  'inline-flex min-h-11 items-center justify-center rounded-[2px] border border-primary px-[22px] py-[12px] font-sans text-[14px] font-medium text-primary transition-colors duration-150 hover:bg-primary hover:text-ivory focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[3px] focus-visible:outline-primary';
 
 export interface EventsAboutProps {
   intro?: PortableTextBlock[] | null;
