@@ -151,7 +151,7 @@ export default async function ExhibitorEntryGuidePage() {
         </div>
         {AWARD_SECTIONS.map((section) => (
           <section key={section.awardType} data-award-type={section.awardType}>
-            <h2 className="doc-h2 nos-ex-q">{section.heading}</h2>
+            <h2 className="doc-h2">{section.heading}</h2>
             <p>{section.lede}</p>
             <ExhibitorStatusBadge status="pending" pendingLabel={AWARD_PENDING_LABEL} />
           </section>
