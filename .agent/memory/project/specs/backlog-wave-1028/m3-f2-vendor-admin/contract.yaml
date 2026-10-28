@@ -81,6 +81,23 @@ assertions:
     - id: A21
       description: docs record that the admin payment-link button sends no email
       command: grep -q "sends no email" docs/vendor-gated-registration-flow.md
+    - id: A22
+      phase: 5
+      description: browser_deployed_check on the deployed NOS /vendors/apply, declared for the triad linter, non-required. It cannot pass behind the beta Basic Auth wall (gate-hygiene A11), and the admin detail page sits behind Firebase Auth, so no browser manifest can show it signed-out beyond the redirect. A24 is the real post-deploy proof of what is provable unauthenticated.
+      type: browser_deployed_check
+      target: .agent/memory/scratch/backlog-wave-2026-10-28-m3-f2-browser-manifest.json
+      required: false
+    - id: A23
+      phase: 5
+      description: gws inbox check, declared non-required and MANUAL post-deploy. The email path is touched (Get payment link no longer sends one), so it applies - after an admin clicks "Get payment link" on an approved, unpaid vendor, the vendor inbox must show no second payment email from that click. The click needs a signed-in admin and a real vendor mailbox, so it cannot run pre-merge or in a gate.
+      type: gws_inbox_check
+      target: .agent/memory/scratch/backlog-wave-2026-10-28-m3-f2-gws-manifest.json
+      required: false
+    - id: A24
+      phase: 5
+      description: RUN AFTER DEPLOY from the project root (needs .env.local), non-required. Plain check with beta Basic Auth - /admin/vendors/[id] with no session redirects to /admin/login, NOS /vendors/register still shows the gate not the full form, /vendors/apply is served, NOS /vendors/payment is served and /national-show/vendors/payment redirects to it. Writes nothing. Exit 77 when credentials are missing.
+      command: node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/m3-f2-vendor-admin/checks/check-deployed-vendor.mjs
+      required: false
     - id: A20
       description: Codex adversarial review of the whole diff against the spec (cross-model; the Agent-tool @qa only if codex is not on PATH, and the verdict says so)
       type: codex_qa
