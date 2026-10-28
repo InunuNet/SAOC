@@ -76,6 +76,8 @@ export function NewsletterSignup({
     if (status === 'submitting') return;
 
     if (topics.length === 0) {
+      setStatus('idle');
+      setErrorMessage('');
       setTopicsInvalid(true);
       firstTopicRef.current?.focus();
       return;
