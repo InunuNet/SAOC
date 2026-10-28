@@ -19,7 +19,10 @@ const fraunces = localFont({
 
 const karla = localFont({
   src: [
-    { path: '../../app/fonts/karla/Karla-latin-normal.woff2', weight: '400 700', style: 'normal' },
+    { path: '../../app/fonts/karla/Karla-latin-normal.woff2', weight: '400', style: 'normal' },
+    { path: '../../app/fonts/karla/Karla-latin-normal.woff2', weight: '500', style: 'normal' },
+    { path: '../../app/fonts/karla/Karla-latin-normal.woff2', weight: '600', style: 'normal' },
+    { path: '../../app/fonts/karla/Karla-latin-normal.woff2', weight: '700', style: 'normal' },
   ],
   variable: '--font-nos-karla',
   display: 'swap',
