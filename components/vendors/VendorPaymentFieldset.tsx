@@ -4,7 +4,6 @@ import type {
 } from '@/lib/vendor-register-form-payload';
 import { VendorFormField } from './VendorFormField';
 import { VendorCheckboxGroupField } from './VendorCheckboxGroupField';
-import { VendorCheckboxField } from './VendorCheckboxField';
 
 // Lee-Ann's source form, section 5 ("Payment & terms"), fields 29-31 -- labels verbatim from
 // contracts/golden/vendor-form-ui/field-spec.golden.json (section: "payment").
@@ -77,14 +76,6 @@ export function VendorPaymentFieldset({ state, onFieldChange, disabled }: Vendor
         disabled={disabled}
         required={false}
         maxLength={200}
-      />
-      <VendorCheckboxField
-        fieldKey="termsAccepted"
-        label="I confirm I have read and agree to the Vendor Terms & Conditions of the 2027 SAOC National Show."
-        value={state.termsAccepted}
-        onChange={(v) => onFieldChange('termsAccepted', v)}
-        disabled={disabled}
-        required
       />
     </div>
   );
