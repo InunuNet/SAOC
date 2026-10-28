@@ -89,3 +89,12 @@ Not verified: the DC_PROD autostart path in lib.mjs (it needs a full `next build
 
 ## F1b A12 (guard)
 Guard, not a fail-on-main: main has no 1280-1383 inline band or icon Menu at those widths, so it fails there for the wrong reason; the aria-current wiring (MobileMenu.tsx navAriaCurrent) already exists. Passes on feat/sdc-f1b-nav@79472b8f (run 2026-10-28).
+
+## F1e amendments, NOS Design rulings 2026-10-28 (A21-A26)
+Run with cwd wt-sdc-f1b (main app code plus the F1b nav; the spec worktree's node_modules symlink cannot run next dev under Turbopack).
+- A3 is now a guard on the ONE ruled change: U+0149 dropped from the required set (deprecated; Afrikaans uses 'n). A24 (scan-fixtures-u0149.mjs) is report only: 0 hits in the Sanity fixtures today.
+- A21 `FAIL favicon-crop`: no 16px or 32px PNG icon linked from /about (linked sizes 512, 180). The 180 rules (opaque, #F4F3EC, 72-80%) apply once the dev ships it.
+- A22 PASS on the new goldens; the same function FAILS the previous goldens (16 touches the cell edge; 180 transparent, ground rgb(76,105,113), flower 92%).
+- A23 `FAIL glyph-svg`: StatusMarker.tsx renders U+203B as text, no svg[data-glyph=status-mark]. The ten SAOC-host routes carry no status markers, so the DOM half is vacuous there and the source rule carries the proof. Arrows (U+2192) are text in a face the walk (A8) checks; the SVG replacement quality rules (aria-hidden, 1em, currentColor, baseline) apply to any svg[data-glyph].
+- Caps are now icons on load <=10 KB (no .ico allowance) and apple-touch <=16 KB (check-favicon.mjs, A10-era assertion). New golden renders: 16 = 621 B, 32 = 1,629 B, 180 = 2,902 B.
+- Before crops of the arrow sites (societies, judging, 1440 and 390): goldens/glyph-crops-before/. No U+203B crop exists: StatusMarker only renders on the NOS host, not reachable from the local SAOC origin. GAP, reported to the lead.

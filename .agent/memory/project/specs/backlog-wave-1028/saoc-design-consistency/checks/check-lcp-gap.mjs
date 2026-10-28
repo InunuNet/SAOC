@@ -4,12 +4,19 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { withSite, check, finish } from './lib.mjs';
 const B = JSON.parse(readFileSync('.agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/lcp-bounds.json', 'utf8'));
+// NOS Design ruling: the LCP gate is a deployed one, MEDIAN OF 3 runs on beta (DC_BASE_URL). Local runs are one run and `--report-only` (prints, never fails).
+const REPORT = process.argv.includes('--report-only'); const med = (a) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)];
 await withSite(async ({ base, deployed, prod, live }) => {
   if (!prod && !live) { console.error('INCONCLUSIVE: LCP needs a production build (DC_PROD=1) or a deployed DC_BASE_URL'); process.exit(2); }
   for (const path of deployed ? ['/', '/about'] : ['/about']) {
-    const r = spawnSync('node', ['.agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/lib-lcp-lighthouse.mjs', base + path], { encoding: 'utf8', timeout: 280000, env: process.env });
-    if (r.status !== 0) { check(false, `${path}: lighthouse run failed: ${(r.stderr || '').slice(-160)}`); continue; }
-    const j = JSON.parse(r.stdout.trim().split('\n').pop()); console.log(`${path} LCP ${j.lcpMs} FCP ${j.fcpMs} gap ${j.lcpMs - j.fcpMs}`);
+    const runs = []; let failed = null;
+    for (let i = 0; i < (live ? 3 : 1); i++) {
+      const r = spawnSync('node', ['.agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/lib-lcp-lighthouse.mjs', base + path], { encoding: 'utf8', timeout: 280000, env: process.env });
+      if (r.status !== 0) { failed = (r.stderr || '').slice(-160); break; } runs.push(JSON.parse(r.stdout.trim().split('\n').pop()));
+    }
+    if (failed !== null) { check(false, `${path}: lighthouse run failed: ${failed}`); continue; }
+    const j = { lcpMs: med(runs.map((x) => x.lcpMs)), fcpMs: med(runs.map((x) => x.fcpMs)) }; console.log(`${path} LCP ${j.lcpMs} FCP ${j.fcpMs} gap ${j.lcpMs - j.fcpMs} (median of ${runs.length}: ${runs.map((x) => x.lcpMs).join(', ')})`);
+    if (REPORT) continue;
     check(j.lcpMs <= B.lcpMaxMs, `${path}: LCP ${j.lcpMs} ms, want <=${B.lcpMaxMs}`);
     if (path === '/about') check(j.lcpMs - j.fcpMs <= B.aboutLcpMinusFcpMaxMs, `/about: LCP-FCP ${j.lcpMs - j.fcpMs} ms, want <=${B.aboutLcpMinusFcpMaxMs} (the hero request is still queued behind CSS/fonts)`);
   }

@@ -1,8 +1,8 @@
-// F1c (SA-6, NOS Design confirmed): inner PageHero is LOCKED at 480 +-4 at 1440 and 2056 on the 8 non-exempt routes, and agrees within +-4 at 768.
+// F1c (SA-6, NOS Design confirmed): inner PageHero is LOCKED at 480 +-4 at 1440 and 2056 on the 8 non-exempt routes, and 768 (all 8 routes, /about included, no exception).
 // 1024 and 1280 are report-only (check-hero-heights-report.mjs) until NOS Design locks them. Copy padding is identical on every route.
 // Exempt (PG-1): Home, Events list, Societies grid, Contact, 404, and /media-kit (gated tool page, typographic header, no photo hero).
 import { withSite, openPage, check, finish, INNER_ROUTES } from './lib.mjs';
-const LOCKED = { 1440: 480, 2056: 480 };
+const LOCKED = { 768: 480, 1440: 480, 2056: 480 };
 await withSite(async ({ base, browser, ctxOpts }) => {
   for (const width of [768, 1440, 2056]) {
     const rows = [];
