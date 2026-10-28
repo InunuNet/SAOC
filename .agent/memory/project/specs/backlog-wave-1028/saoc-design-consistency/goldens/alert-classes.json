@@ -1,0 +1,36 @@
+{
+  "note": "F1a: every role=\"alert\" (and role={...'alert'...}, aria-live=\"assertive\") under app/ and components/, NOS chrome (components/nos-chrome/) excluded, is class (a) unless listed here. (a) = error summary or page-level error: border-2 border-[var(--status-error)], aria-hidden icon, status-error text, no background tint. (b) = field-level alert of a named allowed kind. (c) = not an error (a status notice). Each entry names a file and a substring that must appear in the alert's opening tag or the 300 characters before it; an entry matching no alert FAILS the check (stale). New alerts default to (a). An entry with requireIconAndToken true must also have an aria-hidden icon and text-[var(--status-error)] in the alert.",
+  "classes": [
+    {
+      "class": "b",
+      "file": "components/tickets/TicketFormField.tsx",
+      "key": "role=\"alert\"",
+      "reason": "TicketFieldAlert: the left-border-only field alert (border-l-2 border-error, bg-transparent, aria-hidden warning sign, error text). Golden-compliant for field errors."
+    },
+    {
+      "class": "b",
+      "file": "components/newsletter/NewsletterSignup.tsx",
+      "key": "topicsErrorId",
+      "reason": "Footer newsletter topics field error: left-border-only field alert (or its sr-only mirror for screen readers) tied to the fieldset by aria-describedby."
+    },
+    {
+      "class": "b",
+      "file": "components/admin/PaymentSettingsPanel.tsx",
+      "key": "ErrorText",
+      "reason": "Admin settings inline field-level error with an aria-hidden icon and the error text colour; not a page-level summary."
+    },
+    {
+      "class": "b",
+      "file": "components/admin/DoorResultBanner.tsx",
+      "key": "role={kind",
+      "reason": "Door scan result panel: a full-panel scan outcome for door staff (role status when valid, alert when refused), not a form error summary. Its result colours belong to the door-scanner design; restyling is out of F1a's scope."
+    },
+    {
+      "class": "b",
+      "file": "components/vendors/VendorMarketingUploadField.tsx",
+      "key": "role=\"alert\"",
+      "requireIconAndToken": true,
+      "reason": "Field-level upload error. Allowed only with an aria-hidden icon beside status-error text, never colour alone."
+    }
+  ]
+}
