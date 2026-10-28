@@ -223,10 +223,11 @@ function describeChange(change: PaymentSettingsChange): string {
   return `R0.01 amount: ${describeFlagValue(change.from.enabled)} → ${describeFlagValue(change.to.enabled)}`;
 }
 
-// An error is --color-error text with a ✕ icon, never colour alone, and is announced to assistive tech.
+// A field error is a left rule plus --status-error text with an aria-hidden icon, never colour
+// alone, and is announced to assistive tech.
 function ErrorText({ children }: { children: React.ReactNode }) {
   return (
-    <p role="alert" className="mt-3 flex items-start gap-2 font-sans text-[13px] font-medium text-error">
+    <p role="alert" className="mt-3 flex items-start gap-2 border-l-2 border-[var(--status-error)] bg-transparent px-4 font-sans text-[13px] font-medium text-[var(--status-error)]">
       <span aria-hidden="true">✕</span>
       <span>{children}</span>
     </p>
