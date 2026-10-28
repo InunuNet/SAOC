@@ -3,6 +3,7 @@ import { isBodyWithinLimit } from '@/lib/request-guards';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
 import { generateBookingRef } from '@/lib/booking-ref';
+import { CONTACT_FIELD_MAX_LENGTHS } from '@/lib/contact-input';
 import {
   aggregateRequestedQuantities,
   buildMultiReservationDocs,
@@ -290,6 +291,13 @@ export function parseLineItems(raw: unknown): CheckoutLineItemInput[] | null {
       attendeeName.trim().length === 0 ||
       typeof attendeeEmail !== 'string' ||
       !EMAIL_PATTERN.test(attendeeEmail)
+    ) {
+      return null;
+    }
+    // ticketType is left unbounded: an unknown slug is rejected after the Sanity lookup (route.ts:566).
+    if (
+      attendeeName.length > CONTACT_FIELD_MAX_LENGTHS.name ||
+      attendeeEmail.length > CONTACT_FIELD_MAX_LENGTHS.email
     ) {
       return null;
     }
