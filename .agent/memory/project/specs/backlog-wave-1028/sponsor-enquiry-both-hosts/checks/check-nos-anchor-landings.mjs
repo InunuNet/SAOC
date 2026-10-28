@@ -41,7 +41,7 @@ try {
         return { links, presenters };
       });
       for (const l of found.links) {
-        if (l.origin !== ORIGIN || l.hash.length < 2) continue;
+        if (l.origin !== ORIGIN || l.hash.length < 2 || l.hash === '#main-content') continue; // the skip link targets <main> at the top of the page, not a landing position
         const key = `${l.path}${l.hash}`;
         if (!targets.has(key)) targets.set(key, { url: `${ORIGIN}${l.path}${l.hash}`, label: `${l.path}${l.hash}${l.text ? `  ("${l.text}")` : ''}` });
       }
