@@ -66,5 +66,32 @@ await withSite(async ({ base, browser, ctxOpts }) => {
     }
     await ctx.close();
   }
+  // SEQUENTIAL cases (Codex A7 finding at b69f13c2): the topic-error branch left emailInvalid set, so the email field kept aria-invalid="true" with no aria-describedby target. A fresh page cannot see that, so each
+  // order is driven on one page: (1) invalid email, then the only topic unchecked; (2) the only topic unchecked, then an invalid email with a topic checked. Neither field may keep a stale invalid state or a dangling describedby.
+  const STATE = `() => { const f = document.querySelector('footer'); const st = (el) => { const id = el.getAttribute('aria-describedby'); const t = id && document.getElementById(id); return { invalid: el.getAttribute('aria-invalid') === 'true', describedby: id, target: Boolean(t), text: t ? t.textContent.trim().slice(0, 30) : '' }; };
+    return { email: st(f.querySelector('input[type=email]')), topic: st(f.querySelector('input[type=checkbox]')) }; }`;
+  for (const width of [1440, 390]) {
+    for (const order of ['email-then-topic', 'topic-then-email']) {
+      const { page, ctx } = await openPage(browser, ctxOpts, base, '/about', width); const w = `${order} @${width}`;
+      await page.route('**/api/newsletter/subscribe', (route) => route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error: 'Enter a valid email address.', field: 'email' }) }));
+      const input = page.locator('footer input[type=email]'); const cb = page.locator('footer input[type=checkbox]').first(); const submit = page.locator('footer form button[type=submit]');
+      await input.scrollIntoViewIfNeeded(); await page.waitForFunction(() => { const b = document.querySelector('footer form button[type=submit]'); return b && !b.disabled; }, null, { timeout: 15000 }).catch(() => {});
+      const emailError = async () => { await input.fill('not-an-email'); await submit.click(); await page.waitForTimeout(500); };
+      const topicError = async () => { if (await cb.isChecked()) await cb.uncheck(); await submit.click(); await page.waitForTimeout(500); };
+      const read = async () => page.evaluate(`(${STATE})()`);
+      if (order === 'email-then-topic') {
+        await emailError(); const a = await read(); check(a.email.invalid && a.email.target, `${w}: precondition, the invalid email did not produce an email error state (${JSON.stringify(a.email)})`);
+        await topicError(); const r = await read();
+        check(!r.email.invalid && !(r.email.describedby && !r.email.target), `${w}: after the topic error the email field keeps a stale state: aria-invalid=${r.email.invalid}, aria-describedby=${r.email.describedby} (target rendered: ${r.email.target})`);
+        check(r.topic.invalid && r.topic.target, `${w}: topic error state is not present (${JSON.stringify(r.topic)})`);
+      } else {
+        await topicError(); const a = await read(); check(a.topic.invalid && a.topic.target, `${w}: precondition, unchecking the only topic did not produce a topic error state (${JSON.stringify(a.topic)})`);
+        await cb.check(); await emailError(); const r = await read();
+        check(r.email.invalid && r.email.target, `${w}: the invalid email did not produce an email error state after a topic error (${JSON.stringify(r.email)})`);
+        check(!r.topic.invalid && !(r.topic.describedby && !r.topic.target) && !(await page.locator('footer [role=alert]').count()), `${w}: the topic error state did not clear: aria-invalid=${r.topic.invalid}, aria-describedby=${r.topic.describedby}, alerts left=${await page.locator('footer [role=alert]').count()}`);
+      }
+      await ctx.close();
+    }
+  }
 });
 finish('newsletter-error');
