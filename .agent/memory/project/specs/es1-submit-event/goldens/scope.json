@@ -1,0 +1,8 @@
+{
+  "feature": "ES-1",
+  "allow": [
+    "app/(marketing)/events/submit/page.tsx",
+    "components/events/SubmitEventLoginPrompt.tsx",
+    "docs/es1-submit-event.md"
+  ]
+}
