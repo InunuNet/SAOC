@@ -46,12 +46,12 @@ At 3x the variants cover it: NOS box 248 needs 744, the 750 variant serves; cred
 
 `e2e/nav-followup-a11y.spec.ts` and `scripts/checks/footer-render-check.mjs` select `[data-testid="nf-saoc-lockup"]` and `.nf-lockup img`; both still match. Only touch them if a run proves otherwise.
 
-Do NOT edit: `components/chrome/**` (including the now-unreferenced `official-mono` branch and `public/images/saoc-lockup-vertical-emblem.png` it loads: a SAOC-lane follow-up to retire, to be posted to SAOC), `components/newsletter/**`, `app/layout.tsx`, `components/sponsors/**`, `app/(nos)/national-show/sponsors/page.tsx`.
+Do NOT edit (except the one-word `export` above): `components/chrome/**` (including the now-unreferenced `official-mono` branch and `public/images/saoc-lockup-vertical-emblem.png` it loads: a SAOC-lane follow-up to retire, to be posted to SAOC), `components/newsletter/**`, `app/layout.tsx`, `components/sponsors/**`, `app/(nos)/national-show/sponsors/page.tsx`.
 
-## Needs a NOS Design ruling (not blocking build)
+## NOS Design rulings folded in (2026-10-28, root comms.md)
 
-1. **Credit box height.** The ruling gives the credit's "current box (+/-4)" without saying which dimension. I pinned the width, 206, matching C1's "current lockup width +/-4" and the old `w-[206px]`. The old lockup was about 183px tall (emblem 131 + wordmark, rule, tagline from the cqw metrics); the new file at 206 is 165px tall (aspect 1915:1531). If NOS Design wants equal height, the box is 229 wide. Default as built: 206 wide, 165 tall. Confirm by eye on beta.
-2. The credit alt string above is derived, not quoted from a source; confirm it is the label NOS Design means.
+1. Credit box: match the old height. 229 wide, about 183 tall (+/-4), `max-width: 100%` and `height: auto` so nothing overflows at 768-1023 or 390. `getImageProps` width 229, height `round(229*1531/1915)` = 183, `sizes: '229px'`; `.nf-credit-lockup { width: 229px; max-width: 100%; }`. At 3x it needs 687 px, the 750 variant serves. `gate-logos.mjs` asserts the 229x183 box at 1440 and 390, and no sideways scroll, no footer overflow and credit inside the viewport at 390, 800 and 1023.
+2. Alt: `import { ACCESSIBLE_LABEL } from '@/components/chrome/SaocLockup'` and use `alt: ACCESSIBLE_LABEL` (value "South African Orchid Council \u2014 Making a difference since 1968"). Never retyped. `ACCESSIBLE_LABEL` is a non-exported `const` today (`SaocLockup.tsx:54`), so the ruling needs ONE edit in the SAOC lane: add `export` to that line. A7 permits exactly that one-line change and nothing else in `components/chrome/`. `check-static.mjs alt` asserts the export, the import, the identifier use, no retyped literal, and that `values.json` equals the source string. The credit link has no aria-label; its name comes from the alt.
 
 ## Gates
 

@@ -22,6 +22,13 @@ const ALLOWED = [
   /^test-results\//,
 ];
 const FORBIDDEN_NOTE = 'SAOC lanes: components/newsletter/**, app/layout.tsx, components/sponsors/**, app/(nos)/national-show/sponsors/page.tsx, components/chrome/** (SaocLockup.tsx stays; its dead official-mono branch is a SAOC-lane follow-up)';
+// The one permitted edit in components/chrome: SaocLockup.tsx gains `export` on ACCESSIBLE_LABEL (NOS Design ruling 2026-10-28), nothing else.
+const LOCKUP = 'components/chrome/SaocLockup.tsx';
+if (files.delete(LOCKUP)) {
+  const changed = execFileSync('git', ['diff', '-U0', base, '--', LOCKUP], { encoding: 'utf8' }).split('\n').filter((l) => /^[+-][^+-]/.test(l));
+  const ok = changed.length === 2 && changed[0].startsWith('-const ACCESSIBLE_LABEL') && changed[1].startsWith('+export const ACCESSIBLE_LABEL') && changed[0].slice(1) === changed[1].slice(8);
+  if (!ok) { console.error(`diff scope FAILED: ${LOCKUP} may change only by adding "export" to ACCESSIBLE_LABEL:\n${changed.join('\n')}`); process.exit(1); }
+}
 const bad = [...files].filter((f) => !ALLOWED.some((re) => re.test(f)));
 if (bad.length) { console.error(`diff scope FAILED (${FORBIDDEN_NOTE}):\n- ${bad.join('\n- ')}`); process.exit(1); }
 console.log(`diff scope pass (${files.size} files)`);

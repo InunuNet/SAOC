@@ -12,7 +12,7 @@ expect('firstFamily strips fallback suffix', firstFamily('"__Fraunces_Fallback_9
 expect('firstFamily sees Manrope', firstFamily('Manrope, system-ui') === 'manrope');
 expect('firstFamily sees Lora behind a hash', firstFamily('__Lora_3c4d5e6f, Times New Roman') === 'lora');
 expect('requiredPx 248 box at 3x needs 744', requiredPx({ fit: 'fill', boxW: 248, boxH: 218, srcW: 3272, srcH: 2876, dpr: 3 }).required === 744);
-expect('requiredPx 206 box at 3x needs 618', requiredPx({ fit: 'fill', boxW: 206, boxH: 165, srcW: 1915, srcH: 1531, dpr: 3 }).required === 618);
+expect('requiredPx 229 box at 3x needs 687', requiredPx({ fit: 'fill', boxW: 229, boxH: 183, srcW: 1915, srcH: 1531, dpr: 3 }).required === 687);
 
 // 2. Census walk on fixture pages (the walk is WALK_TEXT_NODES from _lib.mjs, the one census-fonts.mjs runs).
 const page = (labelFont, credit) => `<html><body style="font-family: Karla, sans-serif"><h1 style="font-family: Fraunces, serif">Show</h1><footer id="nf"><label style="font-family:${labelFont}">Newsletter</label>${credit}<p style="display:none;font-family:Lora">hidden</p></footer></body></html>`;

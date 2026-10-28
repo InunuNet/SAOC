@@ -41,13 +41,13 @@ assertions:
       description: "the reversed-gold copy is removed and unreferenced"
       command: node .agent/memory/project/specs/nos-footer-colour-logos/checks/check-static.mjs retired
     - id: A7
-      description: "no SAOC-lane file in the diff (components/newsletter, app/layout.tsx, components/sponsors, sponsors page, components/chrome) and nothing outside the allowed list"
+      description: "no SAOC-lane file in the diff (components/newsletter, app/layout.tsx, components/sponsors, sponsors page, components/chrome) except the one-word export of ACCESSIBLE_LABEL and nothing outside the allowed list"
       command: node .agent/memory/project/specs/nos-footer-colour-logos/checks/check-diff-scope.mjs
     - id: A8
       description: "bite proof without a build: census walk flags Manrope and live Lora/JetBrains text, served-px rule flags a 640 candidate at 248 x 3x"
       command: node .agent/memory/project/specs/nos-footer-colour-logos/checks/selftest.mjs
     - id: A9
-      description: "served px >= box x DPR for both marks at 1440 and 390 at 1x/2x/3x, ladder variant of the pinned file, boxes 248 and 206 +/-4, credit alt and link name (needs build.sh, Sanity replay)"
+      description: "served px >= box x DPR for both marks at 1440 and 390 at 1x/2x/3x, ladder variant of the pinned file, boxes 248 and 229x183 +/-4, credit alt and link name, no footer overflow at 390, 800 and 1023 (needs build.sh, Sanity replay)"
       command: node .agent/memory/project/specs/nos-footer-colour-logos/checks/gate-logos.mjs
     - id: A10
       description: "family census: first family of every rendered text node on /, /faq and /tickets (NOS host, 390 and 1440) is Fraunces or Karla (needs build.sh, Sanity replay)"
@@ -56,8 +56,8 @@ assertions:
       description: "gate screenshots exist at both viewports for the by-eye check"
       command: test -s .tmp/sandbox/nos-footer-colour-logos-gate/nos-footer-1440x1.png && test -s .tmp/sandbox/nos-footer-colour-logos-gate/nos-footer-1440x3.png && test -s .tmp/sandbox/nos-footer-colour-logos-gate/nos-footer-390x1.png && test -s .tmp/sandbox/nos-footer-colour-logos-gate/nos-footer-390x3.png
     - id: A12
-      description: "SAOC-lane component files are unchanged against the branch point"
-      command: git diff --quiet origin/main -- components/newsletter components/chrome components/sponsors app/layout.tsx
+      description: "SAOC-lane files other than SaocLockup.tsx (whose only permitted edit is exporting ACCESSIBLE_LABEL, enforced by A7) are unchanged"
+      command: git diff --quiet origin/main -- components/newsletter components/sponsors app/layout.tsx
     - id: A13
       description: "existing footer render gate (column gaps, heading lines, row pitch, WOSA once, brand ink) still passes on both sites"
       command: SANITY_FIXTURE_MODE=replay SANITY_FIXTURE_DIR=$PWD/.agent/memory/project/specs/nos-content-standard/fixtures/sanity node scripts/checks/footer-render-check.mjs
@@ -76,6 +76,9 @@ assertions:
     - id: A18
       description: "feature doc records the TYPE-11 cause and the type-tokens sequencing"
       command: grep -q "font-sans" docs/nos-footer-colour-logos.md
+    - id: A23
+      description: "credit alt is the imported ACCESSIBLE_LABEL identifier (not retyped) and values.json matches SaocLockup's source string"
+      command: node .agent/memory/project/specs/nos-footer-colour-logos/checks/check-static.mjs alt
     - id: A22
       description: "the architect's checks and golden values are unchanged (sha256 pin; @dev never edits the gates it is judged by)"
       command: shasum -a 256 -c .agent/memory/project/specs/nos-footer-colour-logos/goldens/checks.sha256

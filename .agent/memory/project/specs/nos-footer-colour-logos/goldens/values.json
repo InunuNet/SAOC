@@ -6,7 +6,13 @@
     "width": 3272,
     "height": 2876,
     "box": 248,
-    "transparentPadding": { "left": 229, "right": 250, "top": 224, "bottom": 256, "note": "identical to the reversed-gold file it replaces (alpha > 8), so the .nf-lockup negative margins stay as they are" },
+    "transparentPadding": {
+      "left": 229,
+      "right": 250,
+      "top": 224,
+      "bottom": 256,
+      "note": "identical to the reversed-gold file it replaces (alpha > 8), so the .nf-lockup negative margins stay as they are"
+    },
     "retiredCopy": "public/images/NOS-2027-logo-reversed-gold-vertical.png"
   },
   "credit": {
@@ -14,19 +20,64 @@
     "master": "public/downloads/media-kit/saoc/lockup/saoc-lockup-south-african-orchid-council-vertical-colour-on-dark.png",
     "width": 1915,
     "height": 1531,
-    "box": 206,
+    "box": 229,
     "boxTolerance": 4,
-    "boxNote": "206 is the width of the OfficialMonoLockup the file replaces (SaocLockup.tsx w-[206px]). The art is trimmed to its ink (alpha bbox 0/0/0/0), so the img box is the ink box. Height follows the aspect: 165.",
-    "alt": "South African Orchid Council Making a difference since 1968",
-    "altNote": "The current accessible name of the credit link: OfficialMonoLockup has no aria-label, so the name is its visible text, wordmark then tagline. The dev records the live name on main before editing and the gate compares.",
-    "testId": "nf-saoc-lockup"
+    "boxNote": "NOS Design ruling 2026-10-28: match the old lockup height. 229 wide x about 183 tall (+/-4), max-width:100% and height:auto so nothing overflows at 768-1023 or 390. The box is asserted at 1440 and 390; at the overflow widths only no-overflow and an upper bound are asserted.",
+    "alt": "South African Orchid Council — Making a difference since 1968",
+    "altNote": "Equals SaocLockup's exported ACCESSIBLE_LABEL, imported by NosFooter and never retyped; check-static alt derives the expected string from SaocLockup.tsx and compares it to this value.",
+    "testId": "nf-saoc-lockup",
+    "boxHeight": 183
   },
   "viewports": [
-    { "name": "1440", "width": 1440, "height": 900 },
-    { "name": "390", "width": 390, "height": 844 }
+    {
+      "name": "1440",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "name": "390",
+      "width": 390,
+      "height": 844
+    }
   ],
-  "dprs": [1, 2, 3],
-  "nosRoutes": ["/", "/faq", "/tickets"],
-  "allowedFirstFamilies": ["fraunces", "karla"],
-  "ladder": { "dir": "/images/_opt/", "widths": [16, 32, 48, 64, 96, 128, 256, 384, 640, 750, 828, 1080, 1200, 1920, 2048], "note": "lib/image-widths.json, capped at 2048 by lib/image-loader.ts" }
+  "dprs": [
+    1,
+    2,
+    3
+  ],
+  "nosRoutes": [
+    "/",
+    "/faq",
+    "/tickets"
+  ],
+  "allowedFirstFamilies": [
+    "fraunces",
+    "karla"
+  ],
+  "ladder": {
+    "dir": "/images/_opt/",
+    "widths": [
+      16,
+      32,
+      48,
+      64,
+      96,
+      128,
+      256,
+      384,
+      640,
+      750,
+      828,
+      1080,
+      1200,
+      1920,
+      2048
+    ],
+    "note": "lib/image-widths.json, capped at 2048 by lib/image-loader.ts"
+  },
+  "overflowWidths": [
+    390,
+    800,
+    1023
+  ]
 }
