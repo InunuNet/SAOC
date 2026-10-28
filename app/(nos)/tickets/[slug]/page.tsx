@@ -105,8 +105,8 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
   const [ticketType, pageData, salesState, allShows] = await Promise.all([
     fetchTicketTypeBySlug(slug),
     sanityFetch<TicketsPageData>({ query: ticketsPageQuery, tags: ['ticketsPage', 'sanity'] }),
-    sanityFetch<SalesState>({ query: nationalShowSalesQuery, tags: ['nationalShow', 'sanity'] }),
-    sanityFetch<SanityShowActivation[]>({ query: activeShowWindowQuery, tags: ['show', 'sanity'] }),
+    sanityFetch<SalesState>({ query: nationalShowSalesQuery, tags: ['nationalShow', 'sanity'], live: true }),
+    sanityFetch<SanityShowActivation[]>({ query: activeShowWindowQuery, tags: ['show', 'sanity'], live: true }),
   ]);
 
   // Every product, admission or programme, buys through this one screen: the hub's Thursday

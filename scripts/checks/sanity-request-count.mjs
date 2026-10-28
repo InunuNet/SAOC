@@ -30,7 +30,10 @@ const BUILD_LOG = resolve(SANDBOX_DIR, 'build.log');
 const REVALIDATE_SECONDS = 60;
 const TTL_MARGIN_SECONDS = 5;
 const ISR_CACHE_CONTROL = 's-maxage=60';
-const UNMATCHED_PATH = '/no-such-page-m3f3';
+const UNMATCHED_PATHS = {
+  saoc: ['/no-such-page-m3f3', '/societies/no-such-society-m3f3/deeper'],
+  nos: ['/no-such-page-m3f3', '/vsp/zz', '/tickets/a/b', '/newsletter/zz'],
+};
 const SAOC_TITLE_SUFFIX = 'South African Orchid Council';
 const NOS_TITLE_PART = 'The National Orchid Show';
 const EXIT_FAIL = 1;
@@ -87,6 +90,8 @@ async function runAssert() {
   const warmTotal = rows.reduce((sum, row) => sum + row.warm, 0);
   const reduction = (1 - warmTotal / baseline.warm_total_per_pass) * 100;
   console.log(`BEFORE warm total ${baseline.warm_total_per_pass}, AFTER warm total ${warmTotal}, reduction ${reduction.toFixed(1)}%`);
+  const coldTotal = rows.reduce((sum, row) => sum + row.cold, 0);
+  check(coldTotal > 0, `cold reads reach the stub (cold total ${coldTotal}), so the low warm count is caching, not absence of reads`);
   check(rows.every((row) => row.status === 200), 'every measured route answers 200');
   check(warmTotal <= targets.targets.warm_total_per_pass_max, `warm total ${warmTotal} <= ${targets.targets.warm_total_per_pass_max}`);
   check(rows.every((row) => row.warm <= targets.targets.warm_per_route_max), `no route above ${targets.targets.warm_per_route_max} warm`);
@@ -123,16 +128,16 @@ const titleOf = (html) => (/<title[^>]*>([^<]*)<\/title>/i.exec(html) ?? [])[1] 
 async function runNotFound() {
   const server = await startServer({ port: PORT, countLog: COUNT_LOG, launched: true });
   try {
-    const saoc = await countedGet(PORT, COUNT_LOG, server.hostFor('saoc'), UNMATCHED_PATH, { wantBody: true });
-    const nos = await countedGet(PORT, COUNT_LOG, server.hostFor('nos'), UNMATCHED_PATH, { wantBody: true });
-    check(saoc.status === 404, `SAOC unmatched path is 404 (got ${saoc.status})`);
-    check(nos.status === 404, `NOS unmatched path is 404 (got ${nos.status})`);
-    const saocTitle = titleOf(saoc.body);
-    const nosTitle = titleOf(nos.body);
-    console.log(`SAOC title: ${saocTitle}`);
-    console.log(`NOS title: ${nosTitle}`);
-    check(saocTitle.endsWith(SAOC_TITLE_SUFFIX), `SAOC title ends "${SAOC_TITLE_SUFFIX}"`);
-    check(nosTitle.includes(NOS_TITLE_PART), `NOS title contains "${NOS_TITLE_PART}"`);
+    for (const [site, paths] of Object.entries(UNMATCHED_PATHS)) {
+      for (const path of paths) {
+        const response = await countedGet(PORT, COUNT_LOG, server.hostFor(site), path, { wantBody: true });
+        const title = titleOf(response.body);
+        console.log(`${site} ${path}: ${response.status} title="${title}"`);
+        check(response.status === 404, `${site} ${path} is 404 (got ${response.status})`);
+        const titleOk = site === 'nos' ? title.includes(NOS_TITLE_PART) : title.endsWith(SAOC_TITLE_SUFFIX);
+        check(titleOk, `${site} ${path} title is host-correct`);
+      }
+    }
   } finally {
     server.stop();
   }
