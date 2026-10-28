@@ -47,5 +47,14 @@ assertions:
       description: "Mobile (<768) anatomy: every photo band uses one aspect-ratio (2/1) and every route's copy block one padding (40px) at 390 and 600. Guard, passes on main (PageHero already uses aspect-[2/1] and py-10); there is no equal-height gate below 768"
       command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-mobile-anatomy.mjs"
     - id: A8
-      description: "REPORT-ONLY: records the 8 route heights at 1024 and 1280 (fails only on a render problem, never on a value). NOS Design locks them once all 8 routes agree within +-4; on main /about shows 496 and 545"
+      description: "LOCK (NOS Design ruling SA-6 /about): all 8 non-exempt routes 480 +-4 at 1024 and 1280 (CASE A). Fallback CASE B only if /about@1024 alone still wraps: 1280 locked for all 8, 1024 for the other 7, /about@1024 reported with a screenshot (DC_SHOT_DIR) for NOS Design to judge by eye. The script prints which case applies. Fails on main (/about=545 at 1280)."
       command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-heights-report.mjs"
+    - id: A9
+      description: "/about at 1024 and 1280: facts are one row (dd tops +-1), nothing overflows the copy column, and the global levers hold (gap 24, dt 18ch <=3 lines, dd nowrap and >=24px); copy column stays 48% and scrim 44%/52%/0.8 (fails on main: facts wrap, gap 40, dt 26ch)"
+      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-facts-row.mjs"
+    - id: A10
+      description: "Weight band on every SAOC hero dd: serif 300 at >=32px, 400 at 24-31.99px, at 390/768/1024/1280/1440/2056 (fails on main: dd is 300 at every size, 24-29px at 390-1024)"
+      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-dd-weight.mjs"
+    - id: A11
+      description: "The .hero-facts levers are global: the selector is styled only in app/globals.css on the SAOC host, never per route (guard, passes on main)"
+      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-facts-global.mjs"
