@@ -38,7 +38,7 @@ assertions:
       description: "Council overrides exist, are valid JSON of schema council.overrides/v1, carry a substitution for every copy-map entry plus both pinSubs, and _lib.mjs applies them"
       command: "node .agent/memory/project/specs/council-1028/council-copy-fixes/checks/check-overrides.mjs"
     - id: A7
-      description: "Existing pin: the NOS content standard gate (its WE-G1 and EX-G1 checks used to pin 'takes please' and 'who’s subscriptions') passes against the corrected site, except exactly five PRE-EXISTING D7 scroller-vs-97px-header lines at 768 (/plan-your-visit /faq /privacy /terms /refunds), identical on origin/main 63146ec5; any other failure fails. Uses the production build A2 made"
+      description: "Existing pin: the NOS content standard gate (its WE-G1 and EX-G1 checks used to pin 'takes please' and 'who’s subscriptions') passes against the corrected site, only when its failure set EQUALS exactly the five PRE-EXISTING D7 scroller-vs-97px-header lines at 768 (/plan-your-visit /faq /privacy /terms /refunds), identical on origin/main 63146ec5: a subset, a sixth failure, an unparsable failure or fewer widths/routes visited all fail. Uses the production build A2 made"
       command: "execution/heartbeat_wrap.sh node .agent/memory/project/specs/council-1028/council-copy-fixes/checks/gate-standard-known-defect.mjs"
       timeout_seconds: 3000
     - id: A8
@@ -61,6 +61,9 @@ assertions:
     - id: A17
       description: "Sanity-vs-Drive exception list: the 9 FAQ rows the lead already applied in Sanity (q15, q16, q26, q51, q29, q4, q7, q8, q40) are each listed once with the council sheet of 2026-10-27, each 'from' is unique in the frozen Drive FAQ mirror, and council-overrides.json carries them under sanityExceptions gated by _lib.mjs on the Sanity fixture's capturedAt (dormant against today's 2026-10-26 fixture, active after any re-record or NOS_STD_FIXTURE=live) so nos-content-standard gates never go red on these rows. The Tygerberg liaison row has no comparing check and is recorded only"
       command: "node .agent/memory/project/specs/council-1028/council-copy-fixes/checks/check-sanity-exceptions.mjs"
+    - id: A18
+      description: "Self-test of the A7 wrapper with stub gates: all five known lines pass, a clean run passes, a subset fails, a sixth failure fails, fewer widths or routes fail, an unparsable failure fails"
+      command: "node .agent/memory/project/specs/council-1028/council-copy-fixes/checks/test-known-defect.mjs"
     - id: A13
       description: "Lint is clean"
       command: "pnpm exec eslint app components lib e2e"
