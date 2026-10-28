@@ -136,6 +136,32 @@ export function resolveStatusMarker({
   };
 }
 
+// U+203B (the reference mark) is not in the shipped Manrope subset, so the mark is an inline SVG:
+// an X with a dot in each quarter, 1em, currentColor, on the text baseline (F1e).
+function ReferenceMark() {
+  return (
+    <span aria-hidden="true">
+      <svg
+        viewBox="0 0 24 24"
+        width="1em"
+        height="1em"
+        fill="currentColor"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        focusable="false"
+        className="inline-block align-[-0.125em]"
+      >
+        <path d="M7 7l10 10M17 7L7 17" fill="none" />
+        <circle cx="12" cy="3.5" r="1.5" stroke="none" />
+        <circle cx="12" cy="20.5" r="1.5" stroke="none" />
+        <circle cx="3.5" cy="12" r="1.5" stroke="none" />
+        <circle cx="20.5" cy="12" r="1.5" stroke="none" />
+      </svg>
+    </span>
+  );
+}
+
 export function StatusMarker({
   kind,
   status,
@@ -172,7 +198,7 @@ export function StatusMarker({
         TONE_CLASSES[tone],
       ].join(' ')}
     >
-      <span aria-hidden="true">※</span>
+      <ReferenceMark />
       {shortOnNarrow && marker === 'pending' && label.trim() !== FALLBACK_PENDING_LABEL ? (
         <>
           <span className={NARROW_FULL_CLASSES}>{label}</span>

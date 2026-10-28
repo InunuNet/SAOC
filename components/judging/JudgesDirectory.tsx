@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { SanityImageSource } from '@sanity/image-url';
+import { ArrowIcon } from '@/components/ui/ArrowIcon';
 
 export interface SanityJudge {
   name: string;
@@ -25,7 +26,7 @@ export function JudgesDirectory({ judges, showPublicDirectory }: JudgesDirectory
           href="/contact"
           className="mt-3 inline-flex min-h-11 items-center font-sans text-[13px] font-medium text-ink underline underline-offset-2 hover:text-primary"
         >
-          Contact SAOC →
+          Contact SAOC <ArrowIcon />
         </Link>
       </div>
     );

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { useId } from 'react';
 
 import type { SocietyEvent } from '@/types';
+import { ArrowIcon } from '@/components/ui/ArrowIcon';
 
 interface EventRowProps {
   event: SocietyEvent;
@@ -63,7 +64,7 @@ export function EventRow({ event }: EventRowProps) {
         )}
         {linked && (
           <span className="font-serif font-medium text-[18px] text-primary" aria-hidden="true">
-            →
+            <ArrowIcon />
           </span>
         )}
       </div>

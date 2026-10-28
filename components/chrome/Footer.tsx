@@ -30,7 +30,11 @@ import {
 
 export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
   return (
-    <footer className="bg-primary-800 text-ivory">
+    // content-visibility:auto: the footer sits below every fold, so the browser skips its style and
+    // layout until it nears the viewport, and the Lora wordmark face in its lockup (the one face
+    // only the footer uses) is not fetched on the critical path (F1e). 640px is the placeholder
+    // height until the first render, which the browser then remembers (`auto`).
+    <footer className="bg-primary-800 text-ivory [content-visibility:auto] [contain-intrinsic-size:auto_640px]">
       <div className={FOOTER_LAYOUT.gridSaoc}>
         {/* Col 1 — lockup + registration line. Live HTML/CSS lockup (SaocLockup,
             orientation="vertical" tone="dark"): only the emblem (E4 Lapis

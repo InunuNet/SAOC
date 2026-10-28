@@ -14,6 +14,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
 import { nosUrl } from '@/lib/site-hosts';
+import { ArrowIcon } from '@/components/ui/ArrowIcon';
 
 interface SearchOverlayProps {
   open: boolean;
@@ -163,7 +164,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
                       >
                         <span>{s.label}</span>
                         <span aria-hidden className="text-muted">
-                          →
+                          <ArrowIcon />
                         </span>
                       </SuggestionLink>
                     </li>
@@ -200,7 +201,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
                         </span>
                       </span>
                       <span aria-hidden className="text-muted">
-                        →
+                        <ArrowIcon />
                       </span>
                     </Link>
                   </li>

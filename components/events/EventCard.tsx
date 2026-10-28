@@ -3,6 +3,7 @@ import { useId } from 'react';
 
 import { eventDateBlock } from '@/lib/events-list';
 import type { SanityEvent } from '@/types';
+import { ArrowIcon } from '@/components/ui/ArrowIcon';
 
 /** An invented event on the beta preview carries `isPlaceholder`; the page notes it once above the list and never links it. */
 export type ListedEvent = SanityEvent & { isPlaceholder?: boolean };
@@ -81,7 +82,7 @@ export function EventCard({ event }: EventCardProps) {
           aria-hidden="true"
           className="hidden font-serif text-[20px] text-primary md:col-start-4 md:block"
         >
-          →
+          <ArrowIcon />
         </span>
       ) : null}
     </>

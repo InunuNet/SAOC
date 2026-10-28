@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Award } from 'lucide-react';
 
 import type { SanityImageSource } from '@sanity/image-url';
+import { ArrowIcon } from '@/components/ui/ArrowIcon';
 
 export interface SanitySociety {
   _id: string;
@@ -71,7 +72,7 @@ export function SocietyCard({ society }: SocietyCardProps) {
       <div className="mt-2 flex items-start justify-between gap-4">
         <h2 className="font-serif font-normal text-[20px] leading-snug text-ink">{society.name}</h2>
         <span aria-hidden className="shrink-0 font-serif text-[20px] leading-snug text-muted">
-          →
+          <ArrowIcon />
         </span>
       </div>
 

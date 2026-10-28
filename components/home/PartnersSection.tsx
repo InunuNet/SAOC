@@ -1,4 +1,5 @@
 import type { SanityImageSource } from '@sanity/image-url';
+import { ArrowIcon } from '@/components/ui/ArrowIcon';
 
 export interface SanityPartner {
   _id: string;
@@ -72,7 +73,7 @@ export function PartnersSection({ partners }: PartnersSectionProps) {
                     aria-hidden="true"
                     className="col-start-2 row-start-1 min-[900px]:col-start-3 font-serif font-normal text-[20px] text-primary transition-[translate,color] duration-150 ease-(--ease) group-hover:translate-x-1 group-hover:text-accent group-focus-visible:translate-x-1 group-focus-visible:text-accent motion-reduce:group-hover:translate-x-0 motion-reduce:group-focus-visible:translate-x-0"
                   >
-                    →
+                    <ArrowIcon />
                   </span>
                 ) : null}
               </>
