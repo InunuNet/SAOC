@@ -57,7 +57,7 @@ const html = await captureRenderedHtml({
 
 const expectations = [
   ['boothNumber (A12)', 'A12'],
-  ['boothType (corner)', 'corner'],
+  ['boothType (corner)', 'Corner'],
   ['staffPerDay (3)', '3'],
   ['loadInSlot', 'Thursday 06:00-10:00'],
   ['loadOutSlot', 'Sunday 16:00-19:00'],
