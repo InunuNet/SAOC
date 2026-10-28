@@ -40,7 +40,16 @@ for (const src of srcOf.values()) for (const d of src.matchAll(/(?:const|let)\s+
 const expand = (t, depth = 0) => depth > 4 ? t : t.replace(/\$\{\s*([A-Za-z_$][\w$]*)\s*\}/g, (_, n) => DEFS.has(n) ? ' ' + expand(DEFS.get(n), depth + 1) + ' ' : ' ');
 // Classes whose CSS rule carries a :focus / :focus-visible selector (app/globals.css, SAOC side): an element using one is covered by that rule.
 const CSS_FOCUS = new Set(); for (const m of readFileSync('app/globals.css', 'utf8').matchAll(/\.([A-Za-z_][\w-]*)[^{,]*?:focus(?:-visible|-within)?\b/g)) CSS_FOCUS.add(m[1]);
+// NOS-routed files are exempt from this pass (proxy.ts sends /tickets and the show routes to NOS): derived from the import graph, not a hand list. A file is NOS-only when it has importers and EVERY importer is
+// under app/(nos)/, in the EXCLUDED set, or itself NOS-only (fixed point). Shared files (any SAOC importer, or none found) stay checked. Exempt files are printed with the reason.
+const ALL = [...ROOTS.flatMap(walk)]; const importers = new Map(ALL.map((f) => [f, new Set()]));
+const resolveImp = (from, spec) => { const base = spec.startsWith('@/') ? spec.slice(2) : spec.startsWith('.') ? join(from, '..', spec) : null; if (!base) return null; for (const c of [base + '.tsx', base + '.ts', join(base, 'index.tsx'), join(base, 'index.ts')]) if (importers.has(c)) return c; return null; };
+for (const f of ALL) for (const m of blank(readFileSync(f, 'utf8')).matchAll(/from\s+['"]([^'"]+)['"]/g)) { const t = resolveImp(f, m[1]); if (t && t !== f) importers.get(t).add(f); }
+const nosFile = (f) => f.startsWith('app/(nos)/') || EXCLUDED.some((x) => f.startsWith(x)); const nosOnly = new Set();
+for (let changed = true; changed;) { changed = false; for (const [f, imps] of importers) if (!nosOnly.has(f) && !nosFile(f) && imps.size > 0 && [...imps].every((i) => nosFile(i) || nosOnly.has(i))) { nosOnly.add(f); changed = true; } }
+const nosExempt = new Set();
 for (const file of files) {
+  if (nosOnly.has(file)) { nosExempt.add(file); continue; }
   const src = srcOf.get(file);
   for (const m of src.matchAll(TAG)) {
     const tag = tagText(src, m.index); const cn = /\bclassName\s*=\s*(\{[\s\S]*\}|"[^"]*"|'[^']*')/.exec(tag); if (!cn) continue;
@@ -58,5 +67,6 @@ for (const file of files) {
   }
 }
 allow.forEach((a, i) => check(used.has(i), `goldens/focus-classes.json entry ${i + 1} (${a.file} / ${a.key}) matches no hit: stale, remove or fix it`));
+if (nosExempt.size) { const dirs = new Map(); for (const f of nosExempt) { const d = f.replace(/\/[^/]+$/, ''); dirs.set(d, (dirs.get(d) || 0) + 1); } console.log(`NOS-ROUTED, exempt from the standalone pass (${nosExempt.size} files imported only from app/(nos) or NOS-only files; proxy.ts serves their routes on the NOS host): ${[...dirs].map(([d, n]) => `${d} (${n})`).join(', ')}`); }
 console.log(`focus class strings: ${hits} (the one ring: ${one}, allowlisted: ${used.size} entries); standalone elements: ${standalone} (with a focus utility: ${covered}, className unresolvable and skipped: ${unresolved})`);
 finish('focus-classes-static');

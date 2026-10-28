@@ -60,3 +60,7 @@ assertions:
       phase: 5
       description: "RUN AFTER DEPLOY (phase 5, not part of the phase 4 gate). Focus ring on deployed Home and About. Plain shell check (not the browser_deployed_check kind, see above); reads BETA_BASIC_AUTH_USER/PASSWORD inside the scripts, never printed."
       command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-focus-ring.mjs"
+    - id: A12
+      description: "Footer newsletter error state on the dark footer (NOS Design ruling c): --status-error-on-dark #E8959D; summary is a 1px solid border plus aria-hidden icon in the token, ivory text >=4.5:1, border and icon >=3:1 on #22281f, NO fill, at 1440 and 390; the field in error has the same border, aria-invalid and aria-describedby, ivory focus ring. API stubbed, nothing written. Fails on main (no such summary)."
+      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-newsletter-error.mjs"
+      timeout_seconds: 600
