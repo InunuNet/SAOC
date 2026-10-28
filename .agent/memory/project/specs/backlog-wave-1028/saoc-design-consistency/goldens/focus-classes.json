@@ -50,6 +50,11 @@
       "file": "components/events/EventCard.tsx",
       "key": "border-b border-rule py-5 outline-none",
       "reason": "NAV-1-family underline focus (title underline plus 2px left bar)"
+    },
+    {
+      "file": "app/(marketing)/societies/SocietiesClient.tsx",
+      "key": "py-2 font-sans text-[16px] text-ink placeholder:text-muted outline-none",
+      "reason": "wrapper carries the ring via focus-within"
     }
   ]
 }
