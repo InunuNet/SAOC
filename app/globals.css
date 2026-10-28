@@ -574,7 +574,7 @@ h3.font-serif {
   transform: translateX(3px);
 }
 .petal-card:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--primary);
   outline-offset: 3px;
 }
 @media (prefers-reduced-motion: reduce) {
