@@ -20,7 +20,7 @@ Source of truth: `exhibitor-visible-list.json` (the gate reads it). Expectation:
 | `as an exhibitor, participating` | International presenter bio (Sanity) | stand | - |
 | `exhibitors took part` | Archive year statistic; unknown which kind (D7); archive withheld in public | decision | D7 |
 | `exhibitors` | Archive fact label 'Exhibitors' (D7) | decision | D7 |
-| `outstanding orchids and exhibitors` | FAQ q25 answer in Sanity; SAOC to apply S1 | pendingSaoc | S1 |
+| `outstanding orchids and exhibitors` | FAQ q25 answer in Sanity; SAOC to apply S1 (new text: "recognising outstanding orchids.") | pendingSaoc | S1 |
 | `when can exhibitors set up` | FAQ q28 question in Sanity; SAOC to apply S2 | pendingSaoc | S2 |
 | `specific exhibitor setup` | FAQ q28 answer in Sanity; SAOC to apply S2 | pendingSaoc | S2 |
 | `exhibitor stages` | ticketsPage.ticketIncludesNote in Sanity; SAOC to rule (D9) | pendingSaoc | S7 |

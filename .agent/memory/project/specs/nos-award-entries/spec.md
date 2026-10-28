@@ -23,7 +23,7 @@ Branch fix/nos-award-entries off origin/main 3c30e11. Authority: Brad's explicit
 3. `components/home/ShowBand.tsx` CTA text, `components/show/ShowSectionNav.tsx` label, `content/national-show-routes.json` label and `scripts/generate-nos-route-manifest.ts` label (R07-R10): `Award Entries`.
 4. Nothing else. No CSS file, no rename, no redirect, no Sanity or Drive write, nothing under the SAOC-lane files (A3 enforces).
 5. Doc: `docs/nos-award-entries.md` (terminology table a/b/c, the heading-versus-label rule, the Sanity list handed to SAOC, the open decisions).
-6. goldens/exhibitor-visible-list.json/.md is the NOS Design sign-off list of every remaining visible "exhibitor"; the lead adds any rendered-run surprise there after classifying it.
+6. goldens/exhibitor-visible-list.json/.md is the NOS Design sign-off list of every remaining visible "exhibitor"; any new plant-entrant use the rendered run finds is a FAIL to fix in the source, never an addition to the list (NOS Design 2026-10-28).
 7. e2e is optional; the gates above are the proof.
 
 ✅ RATIONALE
@@ -45,8 +45,8 @@ What runs by default: `.github/workflows/ci.yml` runs `pnpm lint` (eslint .), `p
 | id | question | recommendation (default) |
 |---|---|---|
 | D1 | (settled by AE-1) shared copy above, then National Show Awards then SAOC Awards | Q&A block sits above the sections; a paragraph moves under one award only where its text says which (none does today). Ambiguous copy goes to the Lee-Ann doc via SAOC. |
-| D2 | "When can exhibitors set up their displays?" is class b (Brad's Display Exhibitors "present orchid displays") | Swap to "Display Exhibitors" in the question and "Display Exhibitor setup" in the answer. Alternative: leave the question as Lee-Ann wrote it. |
-| D3 | (settled by AE-1 for the gateway label) "More for Award Entries". Still open: the sentence "recognising outstanding orchids and exhibitors." | "recognising outstanding Award Entries." (Brad's term only) or Lee-Ann's own sentence. |
+| D2 | (accepted as specced) "When can exhibitors set up their displays?" is class b (Brad's Display Exhibitors "present orchid displays") | Swap to "Display Exhibitors" in the question and "Display Exhibitor setup" in the answer. Alternative: leave the question as Lee-Ann wrote it. |
+| D3 | (settled by NOS Design) interim edit deletes only " and exhibitors": "...recognising outstanding orchids."; gateway aria-label "More on Award Entries" | Closed. Applies to page copy (R04), seed (R46) and Sanity S1. |
 | D4 | (closed pending Lee-Ann, AE-1 a/c) /vendors title and group label | Unchanged and asserted unchanged. |
 | D5 | (closed pending Lee-Ann) "Exhibit & trade" | Unchanged. |
 | D6 | Lee-Ann's /vendors paragraph "Exhibitors will present stunning displays ... compete for prestigious national awards" and the tickets card "I'm exhibiting orchids / Apply to exhibit" (links to /vendors/apply) | Keep: stand copy. Flag to Brad that "compete for national awards" overlaps with Award Entries. |

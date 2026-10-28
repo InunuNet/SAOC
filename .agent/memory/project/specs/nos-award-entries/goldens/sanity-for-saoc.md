@@ -4,7 +4,7 @@ Proposed wording uses only Brad's terms (goldens/source-council-thread.md). Sent
 
 | # | where | now | proposed |
 |---|---|---|---|
-| S1 | Sanity `showFaq-q25` answer (FAQ "Will the orchids be judged?") | "...recognising outstanding orchids and exhibitors." | "...recognising outstanding Award Entries." (D3) |
+| S1 | Sanity `showFaq-q25` answer (FAQ "Will the orchids be judged?") | "...recognising outstanding orchids and exhibitors." | "...recognising outstanding orchids." (D3) |
 | S2 | Sanity `showFaq-q28` question and answer | "When can exhibitors set up their displays?" / "The specific exhibitor setup, judging, ..." | "When can Display Exhibitors set up their displays?" / "The specific Display Exhibitor setup, judging, ..." (D2) |
 | S3 | `sanity/schemas/documents/ticketType.ts:145` Studio option title (value `exhibitor-entry` must not change) | `Exhibitor Entry` | title only, e.g. `Award Entry` (D8); not shown on any NOS page |
 | S4 | showPage `01-national-show-landing` (seed `content/show-pages/01-national-show-landing.json:36`) | "...Workshops, Exhibitors, Sponsors..." names the page that was Exhibitors | "...Workshops, Award Entries, Sponsors..." |

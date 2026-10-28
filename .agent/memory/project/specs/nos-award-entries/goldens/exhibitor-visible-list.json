@@ -1,5 +1,5 @@
 {
-  "_note": "Visible-text 'exhibitor' occurrences allowed on the NOS host after the change, for NOS Design sign-off. gate-render.mjs content crawls every indexable NOS page, finds each visible line containing 'exhibitor', and fails on any whose lowercase text contains none of these fragments (exact:true entries must equal the whole line). status stand = a stand-booker context (kept); pendingSaoc = Sanity-held plant-entrant wording SAOC will change (NOTE, not fail); decision = open NOS Design/Lee-Ann item. Built from source and the 2026-10-26 fixture; the first rendered run may surface more, which the lead adds here (and re-pins checks.sha256) after classifying them.",
+  "_note": "Visible-text 'exhibitor' occurrences allowed on the NOS host after the change, for NOS Design sign-off. gate-render.mjs content crawls every indexable NOS page, finds each visible line containing 'exhibitor', and fails on any whose lowercase text contains none of these fragments (exact:true entries must equal the whole line). status stand = a stand-booker context (kept); pendingSaoc = Sanity-held plant-entrant wording SAOC will change (NOTE, not fail); decision = open NOS Design/Lee-Ann item. Built from source and the 2026-10-26 fixture; signed off by NOS Design 2026-10-28. Any new plant-entrant use the rendered run finds is a FAIL to fix in the source, never an addition to this list.",
   "entries": [
     {
       "fragment": "display exhibitor",
@@ -100,7 +100,7 @@
     },
     {
       "fragment": "outstanding orchids and exhibitors",
-      "context": "FAQ q25 answer in Sanity; SAOC to apply S1",
+      "context": "FAQ q25 answer in Sanity; SAOC to apply S1 (new text: \"recognising outstanding orchids.\")",
       "status": "pendingSaoc",
       "ref": "S1"
     },

@@ -1,10 +1,10 @@
 546bcb99d6c3644bd8a476c913f7942e95512eb06376a22aa5856a617e06ee8c  .agent/memory/project/specs/nos-award-entries/goldens/source-council-thread.md
 af3e229902c19554616f4270cded54dc290a88ddfd8ac94a2cb7d381b2d20933  .agent/memory/project/specs/nos-award-entries/goldens/award-copy.json
-5046b7321a97fc3109d3dfd36151f6144f3dd6f5ba3220368ac4f2618178a922  .agent/memory/project/specs/nos-award-entries/goldens/exhibitor-audit.json
-099021391090dcbb72cafe65d11bad9d2aa249b3c42b44f6441f4282401fabbd  .agent/memory/project/specs/nos-award-entries/goldens/exhibitor-audit.md
-c4acad8a381f0676d2a64325bdee9834f7249ac2cd8f5d974c6ed230cfadb4e0  .agent/memory/project/specs/nos-award-entries/goldens/exhibitor-visible-list.json
-c92f4b16dfd5e6a9701423b24e6b23b0d91a9f0d90b064609d107036ad49ddbb  .agent/memory/project/specs/nos-award-entries/goldens/exhibitor-visible-list.md
-60e12b095ac3e8b718fec7e7512b5e4ec28c148b453b0f24b2840481db395f1d  .agent/memory/project/specs/nos-award-entries/goldens/sanity-for-saoc.md
+6357c9e2a42d50928be5fb43b8c39369b23b48c40a05c00dfcbd93eeb45fdfe9  .agent/memory/project/specs/nos-award-entries/goldens/exhibitor-audit.json
+b7ad22c68d08315fc5c6d4cec9bebf82b259910e13fefff3cf05aa38ac3d00e9  .agent/memory/project/specs/nos-award-entries/goldens/exhibitor-audit.md
+9f238f08b808790880a56c06ad34e5812c45dbec28f455eda486d0d89aebaacc  .agent/memory/project/specs/nos-award-entries/goldens/exhibitor-visible-list.json
+44faff448adf6c8a364371911c2812a4c726704d747853916a744bdf78384abc  .agent/memory/project/specs/nos-award-entries/goldens/exhibitor-visible-list.md
+3c317e812a716a47866c49c5d10824c6d4700cbe62815c7be3892756f9034177  .agent/memory/project/specs/nos-award-entries/goldens/sanity-for-saoc.md
 db0ff66156b959e4fb0da454ba3aaee89e059063612d1fa6c03faf9f3d0ef640  .agent/memory/project/specs/nos-award-entries/goldens/elbert-bio-diff.md
 c081ea5a20c8efad4c2196bbbb9a061322d5b41df783e22116a06977cb7c3968  .agent/memory/project/specs/nos-award-entries/goldens/codex-qa-prompt.md
 e94ed816f03565d9185d3205978d3e83e6e578220ab4f6d5ef2670e29a593cf3  .agent/memory/project/specs/nos-award-entries/checks/check-static.mjs
