@@ -41,6 +41,9 @@ const NOS_TITLE_PART = 'The National Orchid Show';
 // Routes that must read Sanity on their first request (per-request pages): proves the stub is
 // reached, so zero warm counts mean the data cache held, not that no read ever happened.
 const POSITIVE_CONTROL_ROUTES = ['nos /workshops', 'nos /symposium', 'nos /wosa-conference'];
+// SAOC-host paths under the show trees are handed to the NOS origin by proxy.ts (308).
+const SAOC_REDIRECT_PATHS = ['/vsp/zz', '/tickets/a/b'];
+const PERMANENT_REDIRECT = 308;
 const EXIT_FAIL = 1;
 const EXIT_SETUP = 2;
 
@@ -157,6 +160,15 @@ async function runNotFound() {
         const titleOk = site === 'nos' ? title.includes(NOS_TITLE_PART) : title.endsWith(SAOC_TITLE_SUFFIX);
         check(titleOk, `${site} ${path} title is host-correct`);
       }
+    }
+    for (const path of SAOC_REDIRECT_PATHS) {
+      const response = await countedGet(PORT, COUNT_LOG, server.hostFor('saoc'), path);
+      console.log(`saoc ${path}: ${response.status} location=${response.location}`);
+      check(response.status === PERMANENT_REDIRECT, `saoc ${path} is 308 (got ${response.status})`);
+      check(
+        (response.location ?? '').startsWith(`http://nos.localhost:${PORT}${path}`),
+        `saoc ${path} redirects to the NOS origin`,
+      );
     }
   } finally {
     server.stop();

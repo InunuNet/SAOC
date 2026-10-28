@@ -69,6 +69,7 @@ export function get(port, host, path, { headers = {}, wantBody = false } = {}) {
           done({
             status: response.statusCode,
             cacheControl: response.headers['cache-control'] ?? null,
+            location: response.headers.location ?? null,
             body: wantBody ? Buffer.concat(chunks).toString('utf8') : '',
           }),
         );
