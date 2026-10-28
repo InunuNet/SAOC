@@ -12,7 +12,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Search } from 'lucide-react';
+import { ArrowRight, Search } from 'lucide-react';
 import { nosUrl } from '@/lib/site-hosts';
 
 interface SearchOverlayProps {
@@ -162,9 +162,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
                         className="flex items-center justify-between px-3 py-2 rounded-sm hover:bg-bone text-ink focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
                       >
                         <span>{s.label}</span>
-                        <span aria-hidden className="text-muted">
-                          →
-                        </span>
+                        <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" className="shrink-0 text-muted" />
                       </SuggestionLink>
                     </li>
                   );
@@ -199,9 +197,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
                           {[r.item.province, r.item.region].filter(Boolean).join(' · ')}
                         </span>
                       </span>
-                      <span aria-hidden className="text-muted">
-                        →
-                      </span>
+                      <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" className="shrink-0 text-muted" />
                     </Link>
                   </li>
                 ))}
