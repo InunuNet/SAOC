@@ -24,6 +24,16 @@ function measureInPage({ selector, label }) {
   const range = labelNode ? document.createRange() : null;
   range?.selectNodeContents(labelNode);
   const ics = icon ? getComputedStyle(icon) : null;
+  // Cap midline of the label (NOS Design: canvas actualBoundingBoxAscent / 2 from the baseline). The Range box top is baseline - fontBoundingBoxAscent, so the
+  // baseline is recovered from it; the cap height is the ascent of "H" in the label's own computed font.
+  let capMidlineY = null;
+  if (range && labelNode) {
+    const lcs = getComputedStyle(labelNode.parentElement);
+    const ctx = document.createElement('canvas').getContext('2d');
+    ctx.font = `${lcs.fontWeight} ${lcs.fontSize} ${lcs.fontFamily}`;
+    const mH = ctx.measureText('H');
+    capMidlineY = range.getBoundingClientRect().top + mH.fontBoundingBoxAscent - mH.actualBoundingBoxAscent / 2;
+  }
   const m = ics?.transform && ics.transform !== 'none' ? ics.transform.match(/matrix\(([^)]+)\)/) : null;
   return {
     iconCount: icons.length,
@@ -32,6 +42,7 @@ function measureInPage({ selector, label }) {
     focusableAttr: icon?.getAttribute('focusable') ?? null,
     iconTabindex: icon?.getAttribute('tabindex') ?? null,
     matrix: m ? m[1].split(',').map(Number) : null,
+    capMidlineY,
     iconRect: icon ? rect(icon.getBoundingClientRect()) : null,
     labelRect: range ? rect(range.getBoundingClientRect()) : null,
     labelData: labelNode ? labelNode.data : null,
@@ -128,10 +139,8 @@ async function parity(server, c, browser) {
     c.check(`[${link.id}] icon-to-label gap ${gap.toFixed(2)} = ${V.forwardGapPx}px, the forward text-link gap (NOS Design: .nk-visit gap)`, near(gap, V.forwardGapPx));
     if (fwd) c.check(`[${link.id}] gap ${gap.toFixed(2)} = the live forward keepsake gap ${fwd.gap.toFixed(2)}`, near(gap, fwd.gap));
     c.check(`[${link.id}] trailing-side spacing is margin-inline-end ${V.forwardGapPx}px (computed ${m.marginInlineEnd})`, m.marginInlineEnd !== null && near(parseFloat(m.marginInlineEnd), V.forwardGapPx, 0.01));
-    const vDelta = m.iconRect.cy - m.labelRect.cy;
-    // The label's text-box centre sits a font-metric offset from the line-box centre, so the offset differs with label size (16px forward link vs 14px Caps): the back arrow must be
-    // no worse centred on its label than the forward keepsake, within the tolerance. Mirrored-vs-unmirrored vertical equality is the exact check above.
-    if (fwd) c.check(`[${link.id}] icon vertical centre vs label |${vDelta.toFixed(2)}| <= the forward keepsake's |${fwd.vDelta.toFixed(2)}| + ${TOL}`, Math.abs(vDelta) <= Math.abs(fwd.vDelta) + TOL);
+    // NOS Design: the arrow's vertical centre = the label's cap midline +-0.5px. Mirrored-vs-unmirrored vertical equality is the exact check above.
+    c.check(`[${link.id}] icon vertical centre ${m.iconRect.cy.toFixed(2)} = the label's cap midline ${m.capMidlineY.toFixed(2)} (off by ${(m.iconRect.cy - m.capMidlineY).toFixed(2)}px)`, near(m.iconRect.cy, m.capMidlineY));
   }
   await ctx.close();
 }

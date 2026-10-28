@@ -68,7 +68,7 @@ Browser: Playwright chromium from `@playwright/test`, no install. If the default
 | A4 | ruling 1 | `parts.tsx` unchanged since 8d9027c9 | green (guard) |
 | A5-A7 | (g) | `tsc --noEmit`, eslint on the NOS roots, fixture-replay production build | green |
 | A8 | (b) | rendered HTML of `/archive/2024`, `/archive/2023`, `/archive`, `/faq`, `/` on the NOS host: 200 and no U+2190, `&larr;`, `&#8592;`, `&#x2190;`, `←` | red |
-| A9 | (c) | +-0.5px: width = 1.1em = 15.4px, mirrored box = unmirrored control (width, left, vertical centre), gap = 8px = live forward `.nk-visit a` gap, `margin-inline-end` = 8px, icon-vs-label vertical offset no worse than the forward keepsake's +0.5 (the text-box offset varies with label size, so equality is asserted only mirrored-vs-unmirrored) | red |
+| A9 | (c) | +-0.5px: width = 1.1em = 15.4px, mirrored box = unmirrored control (width, left, vertical centre), gap = 8px = live forward `.nk-visit a` gap, `margin-inline-end` = 8px, icon vertical centre = the label's cap midline (canvas `actualBoundingBoxAscent` of "H" / 2 up from the baseline), NOS Design: 'On a caps label the optical target is the cap midline' | red |
 | A10 | (d) | one `svg.nk-icon` per link, `aria-hidden="true"`, `focusable="false"`, no tabindex, leads the label, label text node exact (no literal space), computed transform `matrix(-1,0,0,1,0,0)` at rest | red |
 | A11 | (e) | hover moves the icon -3px (+-0.5) under `no-preference`, 0 under `reduce`, both links | red |
 | A13 | ruling | both labels compute Karla 700, 14px, 0.12em, uppercase | red (12px) |

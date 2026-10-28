@@ -49,7 +49,7 @@ assertions:
       command: node .agent/memory/project/specs/nos-archive-back-arrow/checks/gate-html.mjs
       timeout_seconds: 300
     - id: A9
-      description: "(c) mirror parity +-0.5px in the browser: icon width (1.1em of the 14px Caps label = 15.4px, mirrored = unmirrored), icon-to-label gap (the live forward .nk-visit a gap, 8px) and icon vertical centre against the label, for both links. RED on main: no icon."
+      description: "(c) mirror parity +-0.5px in the browser: icon width (1.1em of the 14px Caps label = 15.4px, mirrored = unmirrored), icon-to-label gap (the live forward .nk-visit a gap, 8px) and icon vertical centre = the label cap midline against the label, for both links. RED on main: no icon."
       command: node .agent/memory/project/specs/nos-archive-back-arrow/checks/gate-dom.mjs parity
       timeout_seconds: 300
     - id: A10
