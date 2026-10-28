@@ -54,6 +54,9 @@ assertions:
     - id: A8
       description: built site on the NOS host - both award sections in order with Brad's headings, the bare ledes verbatim, the visible awaiting-committee-copy marker, nothing else in either section; no class-a exhibitor wording in the page body; audit rows with a route are old-gone, new-present or kept; every visible exhibitor on every indexable NOS page is in goldens/exhibitor-visible-list.json (stand contexts only; Sanity-held rows are NOTEs)
       command: execution/heartbeat_wrap.sh node .agent/memory/project/specs/nos-award-entries/checks/gate-render.mjs content
+    - id: A14
+      description: the gate-render helpers bite (a 404 at hop 2 fails, auth is re-sent on a cross-origin hop, a /award-entries link labelled otherwise fails, the #main skip link is excluded)
+      command: node .agent/memory/project/specs/nos-award-entries/checks/selftest.mjs
     - id: A9
       description: the SAOC hand-over list and the Elbert bio diff exist
       command: test -f .agent/memory/project/specs/nos-award-entries/goldens/sanity-for-saoc.md && test -f .agent/memory/project/specs/nos-award-entries/goldens/elbert-bio-diff.md

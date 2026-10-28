@@ -5,6 +5,7 @@ import { createRequire } from 'node:module';
 import net from 'node:net';
 import { existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { awardLinkViolations, followWithAuth } from './_lib.mjs';
 
 const MODE = process.argv[2];
 if (!['url', 'content'].includes(MODE)) { console.error('usage: gate-render.mjs url|content'); process.exit(2); }
@@ -76,8 +77,8 @@ try {
     const saoc = `http://saoc.localhost:${PORT}`;
     const sr = await fetch(`${saoc}/national-show/exhibitors?utm_source=x`, { headers: { authorization: AUTH }, redirect: 'manual' });
     check('SAOC host /national-show/exhibitors is a 308 straight to the NOS /award-entries (one hop, query kept)', sr.status === 308 && new URL(loc(sr), saoc).pathname === NEW && new URL(loc(sr), saoc).search === '?utm_source=x' && new URL(loc(sr), saoc).host.startsWith('nos.'), `${sr.status} ${loc(sr)}`);
-    const sf = await fetch(`${saoc}/national-show/award-entries`, { headers: { authorization: AUTH }, redirect: 'follow' });
-    check('SAOC host /national-show/award-entries lands on a 200 (show-prefix redirect still works)', sf.status === 200 && new URL(sf.url).pathname === NEW, `${sf.status} ${sf.url}`);
+    const sf = await followWithAuth(`${saoc}/national-show/award-entries`, AUTH);
+    check('SAOC host /national-show/award-entries redirects to a 200 on /award-entries (auth re-sent on every hop)', sf.status === 200 && new URL(sf.url).pathname === NEW && sf.hops >= 1, `${sf.status} ${sf.url} hops ${sf.hops}`);
     const site = await get('/sitemap.xml');
     const xml = await site.text();
     check('sitemap lists /award-entries', xml.includes('/award-entries'));
@@ -91,9 +92,9 @@ try {
     check('breadcrumb current page reads "Award Entries"', crumb === copy.pageTitle, crumb);
     for (const p of [NEW, '/']) {
       const { page: pg } = p === NEW ? { page } : await open(p);
-      const links = await pg.$$eval('a[href]', (as) => as.map((a) => ({ path: new URL(a.href).pathname, text: (a.textContent ?? '').replace(/[→\s ]+/g, ' ').trim() })));
-      const toNew = links.filter((l) => l.path === NEW && l.text);
-      check(`${p}: every link to ${NEW} reads "Award Entries" (header, footer, show index; ${toNew.length} found)`, toNew.length > 0 && toNew.every((l) => l.text === copy.pageTitle), JSON.stringify(toNew.map((l) => l.text)));
+      const links = await pg.$$eval('a[href]', (as) => as.map((a) => ({ href: a.getAttribute('href'), path: new URL(a.href).pathname, text: (a.textContent ?? '').replace(/[→\s ]+/g, ' ').trim() })));
+      const lv = awardLinkViolations(links, NEW, copy.pageTitle);
+      check(`${p}: every link to ${NEW} reads "Award Entries" (header, footer, show index; same-page fragment links excluded; ${lv.found} found)`, lv.found > 0 && lv.bad.length === 0, JSON.stringify(lv.bad.map((l) => l.text)));
       check(`${p}: no link points at /exhibitors`, !links.some((l) => /^\/(national-show\/)?exhibitors$/.test(l.path)), JSON.stringify(links.filter((l) => /exhibitors$/.test(l.path))));
       check(`${p}: "Plant Entry/Registration" is gone`, !(await pg.evaluate(() => document.documentElement.textContent)).includes('Plant Entry/Registration'));
     }

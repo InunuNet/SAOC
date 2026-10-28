@@ -9,5 +9,7 @@ db0ff66156b959e4fb0da454ba3aaee89e059063612d1fa6c03faf9f3d0ef640  .agent/memory/
 c081ea5a20c8efad4c2196bbbb9a061322d5b41df783e22116a06977cb7c3968  .agent/memory/project/specs/nos-award-entries/goldens/codex-qa-prompt.md
 e94ed816f03565d9185d3205978d3e83e6e578220ab4f6d5ef2670e29a593cf3  .agent/memory/project/specs/nos-award-entries/checks/check-static.mjs
 beed69acd40351797e3ba4fa4c9bcb85d1dcd97a676e9bfc9bf5e19b7c5fb400  .agent/memory/project/specs/nos-award-entries/checks/check-diff-scope.mjs
-afcf1c194d2b2ebb060888b024d71998a62ce6f94e623761493f77b27cb60ff3  .agent/memory/project/specs/nos-award-entries/checks/gate-render.mjs
+2f2ee57179c4436de5c58bab802c3179a8b610e993515a18ae1e284007a44083  .agent/memory/project/specs/nos-award-entries/checks/gate-render.mjs
 e57ff552e9bbff0d54d7f0d60aa70d129eef3f9639d67ffddb9fd144f85cb354  .agent/memory/project/specs/nos-award-entries/checks/build.sh
+a49fe71722e53b369ff1dca012a62af0cf7d1e41a8dfbb06c30220a186412060  .agent/memory/project/specs/nos-award-entries/checks/_lib.mjs
+52c986254a9adb2a2884621d25f52fa02386cad749aca501e01549f27fe46a32  .agent/memory/project/specs/nos-award-entries/checks/selftest.mjs
