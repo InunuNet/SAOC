@@ -1,6 +1,8 @@
 // F1e lever 2 (NOS Design ruling): U+2192 (arrow) and U+203B (status mark) never render from a system face. Where the shipped faces have the glyph it is set as text in that face
 // (the font-fallback-walk proves it); where they lack it, the site's inline SVG renders instead. Markup contract for the SVG: `svg[data-glyph="arrow"]` or `svg[data-glyph="status-mark"]`,
-// aria-hidden="true", fill or stroke resolving to the surrounding text colour (currentColor). The ARROW is 1em x 1em (+-1px) on the text baseline (bottom within 0.2em of it).
+// aria-hidden="true", fill or stroke resolving to the surrounding text colour (currentColor). The ARROW (NOS Design ruling) is NOT 1em: its box is 1.25em wide (+-0.5px) of the label font; the gap from the end of the
+// label text (advance, trailing letter-spacing excluded) to the svg box is 0.5em plus the label's letter-spacing (+-0.5px), with no literal space before it; the shaft (`[data-part="shaft"]`) centre sits at
+// baseline - T ascent / 2 (+-0.5px); the head (`[data-part="head"]`) is an open 45 degree chevron with 0.4em arms (path length 0.8em +-0.04em, bbox height = 2 x width +-10%); stroke 0.08-0.12em, round caps and joins, currentColor, fill none.
 // The STATUS MARK is NOT 1em: its extent is the label's measured T cap height plus 4% overshoot (NOS Design ruling), gated by check-status-mark-geometry.mjs (A27).
 // Status badges ([data-exhibitor-marker], [data-confirmation-badge]) render on the SAOC host too (PlaceholderMarker, Home NavCards and ShowBand "To be confirmed"): Home at 390 and 1440 must show
 // at least one, and each must lead with the status-mark SVG (a text U+203B only if a shipped face has it), never nothing and never a system glyph.
@@ -11,7 +13,17 @@ const STATUS_MARKER = 'components/show/_shared/StatusMarker.tsx';
 const PROBE = `() => {
   const svgs = [...document.querySelectorAll('svg[data-glyph]')].map((s) => { const cs = getComputedStyle(s); const r = s.getBoundingClientRect(); const fs = parseFloat(cs.fontSize);
     const p = document.createElement('span'); p.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline'; s.parentNode.insertBefore(p, s); const base = p.getBoundingClientRect().bottom; p.remove();
-    const paint = [cs.fill, cs.stroke].filter((v) => v && v !== 'none'); return { kind: s.getAttribute('data-glyph'), hidden: s.getAttribute('aria-hidden'), w: r.width, h: r.height, fs, color: cs.color, paint, dBase: r.bottom - base, shown: r.width > 0 }; });
+    const paint = [cs.fill, cs.stroke].filter((v) => v && v !== 'none');
+    let arrow = null; if (s.getAttribute('data-glyph') === 'arrow') { const par = s.parentElement; const pc = getComputedStyle(par); const pf = parseFloat(pc.fontSize); const ls = pc.letterSpacing === 'normal' ? 0 : parseFloat(pc.letterSpacing);
+      const k = document.createElement('canvas').getContext('2d'); k.font = pc.fontStyle + ' ' + pc.fontWeight + ' ' + pc.fontSize + ' ' + pc.fontFamily; const asc = k.measureText('T').actualBoundingBoxAscent;
+      let prev = s.previousSibling; while (prev && prev.nodeType === 3 && !prev.textContent.length) prev = prev.previousSibling; let endX = null; let spaced = false;
+      if (prev && prev.nodeType === 3) { spaced = /\\s$/.test(prev.textContent); const g = document.createRange(); g.setStart(prev, prev.textContent.length - 1); g.setEnd(prev, prev.textContent.length); endX = g.getBoundingClientRect().right - ls; }
+      const p0 = document.createElement('span'); p0.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline'; par.insertBefore(p0, s); const baseY = p0.getBoundingClientRect().bottom; p0.remove();
+      const shaft = s.querySelector('[data-part="shaft"]'); const head = s.querySelector('[data-part="head"]'); const sr = shaft && shaft.getBoundingClientRect(); let hd = null;
+      if (head) { const hb = head.getBBox(); const hs = getComputedStyle(head); const len = head.getTotalLength ? head.getTotalLength() : 0; const sc = head.getScreenCTM().a; hd = { w: hb.width, h: hb.height, len: len * sc, sw: parseFloat(hs.strokeWidth) * sc, cap: hs.strokeLinecap, join: hs.strokeLinejoin, fill: hs.fill, stroke: hs.stroke }; }
+      let shs = null; if (shaft) { const q = getComputedStyle(shaft); shs = { sw: parseFloat(q.strokeWidth) * shaft.getScreenCTM().a, cap: q.strokeLinecap, stroke: q.stroke }; }
+      arrow = { pf, ls, asc, gap: endX === null ? null : r.left - endX, spaced, shaftY: sr ? sr.top + sr.height / 2 : null, baseY, head: hd, shaft: shs }; }
+    return { arrow, kind: s.getAttribute('data-glyph'), hidden: s.getAttribute('aria-hidden'), w: r.width, h: r.height, fs, color: cs.color, paint, dBase: r.bottom - base, shown: r.width > 0 }; });
   const sites = [...document.querySelectorAll('[data-exhibitor-marker], [data-confirmation-badge]')].filter((e) => e.getBoundingClientRect().width > 0).map((e) => { const lead = e.firstElementChild; return { text: lead ? lead.textContent.trim() : '', hasSvg: !!(lead && lead.querySelector('svg[data-glyph="status-mark"]')) }; });
   return { svgs, sites };
 }`;
@@ -32,11 +44,17 @@ await withSite(async (site) => {
   for (const width of [390, 1440]) for (const path of tenRoutes(site)) {
     const ctx = await browser.newContext(ctxOpts({ width, height: 900 })); const page = await ctx.newPage(); await page.goto(base + path, { waitUntil: 'networkidle', timeout: 120000 }); await page.waitForTimeout(400);
     const w = `${path}@${width}`; const { svgs, sites } = await page.evaluate(`(${PROBE})()`);
+    if (['/societies', '/judging', '/'].includes(path)) check(svgs.filter((v) => v.shown && v.kind === 'arrow').length > 0, `${w}: no svg[data-glyph=arrow] on a route whose links carry arrows (still the text glyph?)`);
     for (const s of svgs.filter((v) => v.shown)) {
       check(s.hidden === 'true', `${w}: svg[data-glyph=${s.kind}] lacks aria-hidden="true"`);
-      if (s.kind === 'arrow') check(Math.abs(s.w - s.fs) <= 1 && Math.abs(s.h - s.fs) <= 1, `${w}: svg[data-glyph=${s.kind}] is ${s.w.toFixed(1)}x${s.h.toFixed(1)}px at font-size ${s.fs}px, want 1em x 1em`);
-      check(s.paint.length > 0 && s.paint.every((v) => v === s.color), `${w}: svg[data-glyph=${s.kind}] paint [${s.paint.join(' | ')}] is not currentColor (${s.color})`);
-      if (s.kind === 'arrow') check(Math.abs(s.dBase) <= 0.2 * s.fs, `${w}: svg[data-glyph=${s.kind}] bottom is ${s.dBase.toFixed(1)}px off the text baseline, want within 0.2em`);
+      if (s.kind === 'arrow') { const A = s.arrow; const t = `${w}: svg[data-glyph=arrow]`; const em = (v) => (v / A.pf).toFixed(2) + 'em';
+        check(Math.abs(s.w - 1.25 * A.pf) <= 0.5, `${t} is ${s.w.toFixed(2)}px wide, want 1.25em (${(1.25 * A.pf).toFixed(2)}px) +-0.5`);
+        check(A.gap !== null && !A.spaced && Math.abs(A.gap - (0.5 * A.pf + A.ls)) <= 0.5, `${t} gap from the label text is ${A.gap === null ? 'n/a (no text node before it)' : A.gap.toFixed(2) + 'px'}${A.spaced ? ' with a literal space before it' : ''}, want 0.5em + letter-spacing = ${(0.5 * A.pf + A.ls).toFixed(2)}px +-0.5`);
+        check(A.shaftY !== null && Math.abs(A.shaftY - (A.baseY - A.asc / 2)) <= 0.5, `${t} shaft y ${A.shaftY && A.shaftY.toFixed(2)} vs cap-height midline ${(A.baseY - A.asc / 2).toFixed(2)}, want +-0.5 (needs [data-part="shaft"])`);
+        const H = A.head; check(!!H, `${t} has no [data-part="head"]`);
+        if (H) { check(Math.abs(H.len - 0.8 * A.pf) <= 0.04 * A.pf, `${t} head path length ${em(H.len)}, want 0.8em (two 0.4em arms)`); check(H.w > 0 && Math.abs(H.h / H.w - 2) <= 0.2, `${t} head is not a 45 degree chevron (bbox ${H.w.toFixed(2)}x${H.h.toFixed(2)})`);
+          check(H.sw >= 0.08 * A.pf && H.sw <= 0.12 * A.pf, `${t} head stroke ${em(H.sw)}, want ~0.1em`); check(H.cap === 'round' && H.join === 'round', `${t} head caps/joins are ${H.cap}/${H.join}, want round/round`); check(H.fill === 'none', `${t} head fill is ${H.fill}, want none (open chevron)`); }
+        if (A.shaft) { check(A.shaft.sw >= 0.08 * A.pf && A.shaft.sw <= 0.12 * A.pf, `${t} shaft stroke ${em(A.shaft.sw)}, want ~0.1em`); check(A.shaft.cap === 'round', `${t} shaft cap is ${A.shaft.cap}, want round`); } }
     }
     if (path === '/') check(sites.length > 0, `${w}: no status badge on Home (the DOM half of the mark rule needs one)`);
     for (const t of sites) check(t.hasSvg || (faceHasMark && t.text === '※'), `${w}: status marker leads with "${t.text}"${faceHasMark ? '' : ' (no shipped face has U+203B)'}, want the status-mark SVG${faceHasMark ? ' or a text mark set in a shipped face' : ''}`);
