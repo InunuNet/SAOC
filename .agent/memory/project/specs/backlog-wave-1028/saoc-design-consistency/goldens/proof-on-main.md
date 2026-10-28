@@ -103,3 +103,7 @@ Run with cwd wt-sdc-f1b (main app code plus the F1b nav; the spec worktree's nod
 - A21: no linked 16 PNG is required (the 16 lives in favicon.ico). The 16 is read from the .ico entries; the 32 and 48 PNGs must be cropped; the 180 opaque on #F4F3EC at 72-80%. Run against main's app/favicon.ico: entries 16 and 32 touch the cell edge (FAIL, red on main). Review renders now include favicon-48.png; A22 covers 16/32/48/180.
 - A23: the status mark is NOT 1em; its size is A27's geometry. StatusMarker renders on the SAOC host (PlaceholderMarker, Home NavCards, ShowBand), so the earlier "unreachable from the SAOC-host routes" note is wrong: Home at 390 and 1440 must show a badge and each badge must lead with the status-mark SVG. The Home half needs DC_PROD=1 (not run here; the source rule still fails on main).
 - A11/A18: the LCP-FCP gap is reported, never asserted; the gate is LCP <=2.5s, median of 3 on beta.
+
+## F1e arrow ruling (A23 amended, A29/A30)
+- A23 now fails on any build that still sets the arrow as text: `/societies`, `/judging` and Home must carry svg[data-glyph=arrow]; none exist on F1d or main (not run against a build here; by construction).
+- A29 is a guard: the baseline JSON is from F1d 7ee06e9a (24 links x 2 widths); on that build the guard compares identical values. The probe (shaft, head, gap, width) was exercised against a synthetic page with the specified markup (gap 8.32px = 0.5em + 0.02em letter-spacing at 16px), not against a site build.

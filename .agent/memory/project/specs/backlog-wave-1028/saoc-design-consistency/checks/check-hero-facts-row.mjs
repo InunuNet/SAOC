@@ -5,7 +5,7 @@
 import { withSite, openPage, check, finish } from './lib.mjs';
 const PROBE = (CH) => `() => { const hero = document.querySelector('[data-page-hero]'); const dl = hero && hero.querySelector('.hero-facts'); if (!dl) return null;
   const copy = hero.querySelector('[data-page-hero-copy]'); const cb = copy.getBoundingClientRect(); const hb = hero.getBoundingClientRect(); const dds = [...dl.querySelectorAll('dd')]; const dts = [...dl.querySelectorAll('dt')];
-  const cs = getComputedStyle(dl); const probe = document.createElement('div'); probe.style.cssText = 'position:absolute;visibility:hidden;width:' + CH + 'ch;font:' + getComputedStyle(dts[0]).font; document.body.appendChild(probe); const chExp = probe.getBoundingClientRect().width; probe.remove();
+  const cs = getComputedStyle(dl); const probe = document.createElement('div'); probe.style.cssText = 'position:absolute;visibility:hidden;width:${CH}ch;font:' + getComputedStyle(dts[0]).font; document.body.appendChild(probe); const chExp = probe.getBoundingClientRect().width; probe.remove();
   const scrim = hero.querySelector('[data-hero-scrim=copy]'); const sc = scrim ? getComputedStyle(scrim).backgroundImage : '';
   const lines = (e) => { const c = getComputedStyle(e); return e.getBoundingClientRect().height / (parseFloat(c.lineHeight) || parseFloat(c.fontSize) * 1.35); };
   return { tops: dds.map((d) => d.getBoundingClientRect().top), ddRight: Math.max(...dds.map((d) => d.getBoundingClientRect().right)), dtRight: Math.max(...dts.map((d) => d.getBoundingClientRect().right)), copyRight: cb.right, copyW: cb.width, heroW: hb.width,
