@@ -70,8 +70,9 @@ Browser: Playwright chromium from `@playwright/test`, no install. If the default
 | A8 | (b) | every NOS-host HTML route, discovered from the built `.next/server/app-paths-manifest.json` (`/(nos)/` pages), the NOS `sitemap.xml`, the goldens' `/archive/2024`, `/archive/2023`, and a same-origin link crawl (cap 400 pages): 200 or non-5xx, and no U+2190, `&larr;`, `&#8592;`, `&#x2190;`, `\u2190` (37 routes on the current build) | red |
 | A9 | (c) | +-0.5px: width = 1.1em = 15.4px, mirrored box = unmirrored control (width, left, vertical centre), gap = 8px = live forward `.nk-visit a` gap, `margin-inline-end` = 8px, icon vertical centre = the label's cap midline (canvas `actualBoundingBoxAscent` of "H" / 2 up from the baseline), NOS Design: 'On a caps label the optical target is the cap midline' | red |
 | A10 | (d) | one `svg.nk-icon` per link, `aria-hidden="true"`, `focusable="false"`, no tabindex, leads the label, label text node exact (no literal space), computed transform `matrix(-1,0,0,1,0,0)` at rest | red |
-| A11 | (e) | hover moves the icon -3px (+-0.5) under `no-preference`, 0 under `reduce`, both links | red |
+| A11 | (e) | hover moves the icon -3px (+-0.5) under `no-preference`, 0 under `reduce`, both links; hovered, the computed transform is `matrix(-1,0,0,1,<-3 or 0>,0)` (the mirror survives the nudge); under `reduce` the icon's transition-property is `none` or every duration is `0s` | red |
 | A13 | ruling | both labels compute Karla 700, 14px, 0.12em, uppercase | red (12px) |
+| A17 | Codex r4 | `/archive/2023` (Earlier and Later both present) at 390px LTR, 1280px RTL and 390px RTL: no horizontal overflow, both links inside the viewport, icon/label gap 8px +-0.5 on the inline-end side. Layout integrity only: arrow direction under RTL has no ruling and is not asserted | red |
 | A12 | (f) | Tab reaches both links in the same number of stops as main, `:focus-visible` outline style/width/offset/colour equal main, height >= 44 and >= main | green (guard) |
 
 `goldens/baseline-main.json` is recorded once on main with `node .../gate-dom.mjs focus --record` (the same command re-records it; do not re-record on the fix branch).
@@ -92,3 +93,11 @@ CONTRACT_GATE_RESIDUE_FIXTURE=.agent/memory/project/specs/nos-archive-back-arrow
 ## A8 route coverage: what is skipped, and why
 
 A8 prints the checked and skipped lists on every run. Deliberately not visited: `/og` (a route handler that returns an image, no HTML); unresolved `[dynamic]` templates (`/archive/[year]`, `/tickets/[slug]`) which are visited instead through their real values from the sitemap, the fixture stub years and the link crawl; any link that leaves the NOS origin; non-HTML responses (the crawl ignores asset, `.xml`, `.ics`, `/_next` and `/api` links); and a redirect that leaves the NOS origin (recorded in the skipped list). Redirects inside the origin are followed. Token-gated vendor pages are visited and checked as rendered (their no-token state). A page the crawl cannot reach by any link and that is neither in the manifest nor the sitemap would escape; there are none today (37 routes checked, 0 skipped on the 9d26c274 build).
+
+The synthetic fixture stub now holds three past shows (2024, 2023, 2022) so `/archive/2023` has both an Earlier and a Later link.
+
+## Gate notes (Codex round 4)
+
+- A11's reduce check: `app/globals.css:324-330` forces every `transition-duration` to `0.01ms` (1e-05s) under reduce, so a duration alone cannot show that no transition is declared. The check requires the icon's `transition-property` to be `none` or the initial `all` and every duration <= 0.00002s; a `transition: transform ...` rule applied under reduce shows as property `transform` and fails.
+- A17's overflow: the site clips horizontal overflow at the root, so `scrollWidth <= clientWidth` alone does not catch a too-wide link. A17 also requires each link to sit inside the viewport.
+- Mutation proof (one built-CSS edit each, reverted, server restarted): dropping the mirror from the hover rule fails A11; moving the transition out of the `no-preference` media query fails A11 (reduce); a `min-width: 600px` on the back links fails A17.

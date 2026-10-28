@@ -2,6 +2,7 @@
 //   parity   (A6) mirror parity +-0.5px against a forward keepsake: icon width, icon-to-label gap, icon vertical centre against the label
 //   mirror   (A7) the icon is one svg.nk-icon, aria-hidden, leads the label with no literal space, at rest its computed transform is a pure scaleX(-1)
 //   hover    (A8) hover moves the icon -3px under no-preference and 0 under reduce
+//   layout   (A17) 390px and dir=rtl layout integrity: no horizontal overflow, icon/label gap stays 8px, Earlier and Later present
 //   caps     (A13) both labels compute the NR-8 Caps tuple: Karla, 700, 14px, 0.12em, uppercase
 //   focus    (A12) keyboard focus ring, tab-stop count and 44px target match the main baseline (goldens/baseline-main.json); --record writes that baseline
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
@@ -13,6 +14,7 @@ const RECORD = process.argv.includes('--record');
 const SELFTEST = process.argv.includes('--selftest');
 if (process.env.NOS_ARROW_SELFTEST !== undefined) { console.error('NOS_ARROW_SELFTEST is set in the environment; the environment variable is not a self-test switch (use --selftest). Refusing to run.'); process.exit(2); }
 const TOL = V.parityTolerancePx;
+const REDUCE_DURATION_MAX_S = 0.00002; // the global reduced-motion reset is 0.01ms = 1e-05s (app/globals.css:330)
 
 /** Runs in the page. Everything a gate needs about one back-link: icon, label text node, boxes, styles. Returns null when the link is missing. */
 function measureInPage({ selector, label }) {
@@ -52,6 +54,8 @@ function measureInPage({ selector, label }) {
     iconBeforeLabel: Boolean(icon && labelNode && (icon.compareDocumentPosition(labelNode) & Node.DOCUMENT_POSITION_FOLLOWING)),
     fontSize: ics ? parseFloat(ics.fontSize) : null, // the icon's own font-size: the 1.1em width resolves against it
     marginInlineEnd: ics?.marginInlineEnd ?? null,
+    transitionProperty: ics?.transitionProperty ?? null,
+    transitionDuration: ics?.transitionDuration ?? null,
     linkRect: rect(link.getBoundingClientRect()),
   };
 }
@@ -172,16 +176,52 @@ async function hover(server, c, browser) {
     const ctx = await newContext(browser, { reducedMotion }); const page = await ctx.newPage();
     await openLinks(page, server, c);
     for (const link of V.links) {
+      const tag = `[${link.id}/${reducedMotion}]`;
       const rest = await measure(page, link);
-      c.check(`[${link.id}/${reducedMotion}] the link carries an icon to nudge`, Boolean(rest?.hasIcon));
+      c.check(`${tag} the link carries an icon to nudge`, Boolean(rest?.hasIcon));
       if (!rest?.hasIcon) continue;
       await page.locator(link.selector).first().hover();
       await page.waitForTimeout(V.hoverSettleMs);
       const hovered = await measure(page, link);
       const delta = hovered.iconRect.left - rest.iconRect.left;
-      c.check(`[${link.id}/${reducedMotion}] hover moves the icon ${want}px (moved ${delta.toFixed(2)})`, near(delta, want));
+      c.check(`${tag} hover moves the icon ${want}px (moved ${delta.toFixed(2)})`, near(delta, want));
+      // While hovered the computed transform must still carry the mirror (a = -1, d = 1) together with the translate (e = want).
+      const t = hovered.matrix;
+      c.check(`${tag} hovered, the computed transform keeps the mirror and carries translateX(${want}px): matrix(-1,0,0,1,${want},0) (got ${t ? `matrix(${t.join(',')})` : 'none'})`, t !== null && near(t[0], -1, 0.001) && near(t[1], 0, 0.001) && near(t[2], 0, 0.001) && near(t[3], 1, 0.001) && near(t[4], want, TOL) && near(t[5], 0, 0.001));
+      if (reducedMotion === 'reduce') {
+        // No transition under reduce: app/globals.css:324-330 forces every transition-duration to 0.01ms (1e-05s) under reduce, so a duration alone cannot tell a declared
+        // transition from none. The icon must therefore also carry NO transition rule: property none, or the initial `all` (nothing declared), never `transform`.
+        const durations = String(hovered.transitionDuration).split(',').map((x) => parseFloat(x));
+        c.check(`${tag} no transition under reduce: property none/all and duration <= ${REDUCE_DURATION_MAX_S}s (property ${hovered.transitionProperty}, duration ${hovered.transitionDuration})`, (hovered.transitionProperty === 'none' || hovered.transitionProperty === 'all') && durations.every((x) => x <= REDUCE_DURATION_MAX_S));
+      }
       await page.mouse.move(0, 0);
       await page.waitForTimeout(V.hoverSettleMs);
+    }
+    await ctx.close();
+  }
+}
+
+/** Layout integrity on /archive/<year> with both an Earlier and a Later link: no horizontal overflow and the 8px icon/label gap, at 390px and under dir=rtl. Arrow direction under RTL is not asserted (no ruling). */
+async function layout(server, c, browser) {
+  const L = V.layout;
+  const passes = [['390 ltr', L.mobileViewport, false], ['1280 rtl', L.desktopViewport, true], ['390 rtl', L.mobileViewport, true]];
+  for (const [name, viewport, rtl] of passes) {
+    const ctx = await newContext(browser, { viewport }); const page = await ctx.newPage();
+    await gotoSettled(page, server, L.page, c);
+    if (rtl) await page.evaluate(() => { document.documentElement.dir = 'rtl'; });
+    await page.mouse.move(0, 0);
+    await page.waitForTimeout(200);
+    const o = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth, bsw: document.body.scrollWidth }));
+    c.check(`[${name}] no horizontal overflow: scrollWidth ${o.sw} <= clientWidth ${o.cw} (body ${o.bsw})`, o.sw <= o.cw && o.bsw <= o.cw);
+    c.check(`[${name}] the Later link is present (${L.later})`, (await page.locator(L.later).count()) > 0);
+    for (const link of L.links) {
+      const m = await measure(page, link);
+      c.check(`[${name}/${link.id}] the link exists with an icon and its label`, Boolean(m?.hasIcon && m.labelRect));
+      if (!m?.hasIcon || !m.labelRect) continue;
+      const gap = Math.max(m.labelRect.left - m.iconRect.right, m.iconRect.left - m.labelRect.right); // the inline-end side of the icon, whichever physical side that is
+      c.check(`[${name}/${link.id}] icon/label gap ${gap.toFixed(2)} = ${L.gapPx}px`, near(gap, L.gapPx));
+      const right = m.linkRect.right <= o.cw + TOL && m.linkRect.left >= -TOL;
+      c.check(`[${name}/${link.id}] the link stays inside the viewport (${m.linkRect.left.toFixed(1)}..${m.linkRect.right.toFixed(1)} of ${o.cw})`, right);
     }
     await ctx.close();
   }
@@ -253,7 +293,7 @@ async function focus(server, c, browser) {
   await ctx.close();
 }
 
-const MODES = { parity, mirror, hover, caps, focus };
+const MODES = { parity, mirror, hover, caps, layout, focus };
 if (!MODES[MODE]) { console.error(`usage: gate-dom.mjs <${Object.keys(MODES).join('|')}> [--record]`); process.exit(2); }
 await withServer(`gate-dom ${MODE}`, async (server, c) => {
   const browser = await launchChromium();
