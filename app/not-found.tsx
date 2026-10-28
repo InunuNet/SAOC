@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { SkipLink, Header, Footer } from '@/components/chrome';
+import { SaocFontPreload } from '@/components/site-chrome/SaocFontPreload';
 import { NotFoundSection, saocNotFoundMetadata } from '@/components/site-chrome/SaocNotFound';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { requestSite } from '@/lib/request-site';
@@ -38,6 +39,7 @@ export default async function NotFound() {
   }
   return (
     <>
+      <SaocFontPreload />
       <SkipLink />
       <Header />
       <main id="main-content" tabIndex={-1}>
