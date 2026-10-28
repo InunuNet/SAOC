@@ -11,7 +11,12 @@ P1. `app/not-found.tsx`: remove `requestSite()` (import `:9`, uses `:29`, `:69`)
      * SAOC host: add `app/(marketing)/[...slug]/page.tsx` that calls `notFound()` (resolves to `(marketing)/not-found.tsx`).
      * NOS host: proxy.ts already rewrites every unmatched NOS path to `/national-show/<path>`; add
        `app/(nos)/national-show/[...slug]/page.tsx` calling `notFound()` (resolves to `(nos)/national-show/not-found.tsx`).
-     * Both catch-alls: `generateStaticParams` returning `[]`, no `dynamic` export, no headers()/cookies().
+     * All catch-alls: `generateStaticParams` returning `[]`, no headers()/cookies(), and no `dynamic` export EXCEPT the two below.
+     * RATIFIED deviation (dev finding, accepted): `app/(nos)/tickets/[slug]/[...rest]/page.tsx` and `app/(shared)/newsletter/[...rest]/page.tsx`
+       carry `export const dynamic = 'force-dynamic'`. Static there 500s ("Page changed from static to dynamic at runtime") because they sit
+       under the dynamic `[slug]` layout (live ticket read) and the host-reading `(shared)` layout. A23/A24 pin exactly these two.
+       The conferences `force-dynamic` to `connection()` change in poc-experiment.patch is NOT part of this contract (unneeded: an explicit
+       fetch revalidate already caches reads on force-dynamic routes).
      * NOS host, short top-level trees that proxy.ts passes through un-rewritten (verified at proxy.ts:253-273: NOS_TOP_LEVEL_PREFIXES
        and SHARED_PREFIXES call NextResponse.next()): add `app/(nos)/vsp/[...slug]/page.tsx` and
        `app/(nos)/tickets/[slug]/[...rest]/page.tsx` (`/tickets/<a>/<b>`; `(nos)/tickets/[slug]` covers one segment), each only
@@ -61,7 +66,9 @@ Sanity publish still triggers the tag webhook for immediate refresh (if the webh
 `scripts/checks/sanity-request-count.mjs` productionises `goldens/reference-measure.mjs` + `reference-count-preload.mjs`
 (keep the preload beside it as `scripts/checks/sanity-count-preload.mjs`). Flags: `--build` (run `next build` with the preload and
 `NEXT_PUBLIC_SANITY_PROJECT_ID=fakeproj`, FIREBASE_* blanked so no Firestore read occurs, even if `.env.local` exists),
-`--assert` (measure, then compare with `goldens/request-count-targets.json` targets; also assert ISR routes answer `s-maxage=60`),
+`--assert` (positive control first: for each route in `goldens/per-route-cold-isolated.json`, start a FRESH server process, empty
+`.next/cache/fetch-cache`, request the route once and require the isolated cold count to equal the golden value exactly, then a second request
+to give 0; then the shared-cache pass below; measure, then compare with `goldens/request-count-targets.json` targets; also assert ISR routes answer `s-maxage=60`),
 `--ttl-check` (wait SANITY_REVALIDATE_SECONDS+5 s, prove the cache expires and then holds again), `--notfound` (the A13 path matrix: 404 on both hosts, SAOC title ends "South African Orchid Council", NOS title contains "The National Orchid Show").
 Empty `.next/cache/fetch-cache` first with `fs.rmSync` on that fixed path. Never use the real project id or any token.
 

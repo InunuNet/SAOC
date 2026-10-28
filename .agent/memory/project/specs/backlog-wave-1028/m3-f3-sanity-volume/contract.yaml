@@ -20,6 +20,7 @@ goldens:
   - .agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/goldens/poc-experiment.patch
   - .agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/goldens/reference-measure.mjs
   - .agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/goldens/reference-count-preload.mjs
+  - .agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/goldens/per-route-cold-isolated.json
 
 assertions:
   phase: 4
@@ -59,9 +60,9 @@ assertions:
       command: node scripts/checks/sanity-request-count.mjs --build
       timeout_seconds: 900
     - id: A11
-      description: BEFORE/AFTER count, warm total per pass at most 2, no route above 1, every ISR route 0 and answering s-maxage=60, at least 95 percent below the recorded 92 baseline
+      description: BEFORE/AFTER count with an isolated per-route cold positive control (goldens/per-route-cold-isolated.json, exact), warm total per pass at most 2, no route above 1, every ISR route 0 and answering s-maxage=60, at least 95 percent below the recorded 92 baseline
       command: node scripts/checks/sanity-request-count.mjs --assert
-      timeout_seconds: 600
+      timeout_seconds: 900
     - id: A12
       description: Freshness bound, cache expires after the revalidate window and holds again (about 70 s)
       command: node scripts/checks/sanity-request-count.mjs --ttl-check
@@ -83,6 +84,7 @@ assertions:
       command: pnpm exec eslint sanity lib/view-models lib/data/ticket-type-lookup.ts app/not-found.tsx scripts/checks
       timeout_seconds: 300
     - id: A17
+      phase: 5
       description: RUN AFTER DEPLOY, non-required. Live probe of beta and nos in walled mode (Basic Auth read inside node, never printed). Exit 77 if credentials absent, so the gate needs --allow-skips. Use --mode launched after SITE_PUBLIC_LAUNCH flips.
       command: node --env-file-if-exists=.env.local scripts/checks/cache-headers-probe.mjs --live --mode walled
       required: false
@@ -98,13 +100,16 @@ assertions:
         non-GET request, printing a credential, or touching a live Sanity project or Firestore, (6) the request-count assertion
         passing for a reason other than caching (for example counting the wrong host pattern). Out of scope: Sanity plan limits,
         cdn-fallback circuit breaker, raising the revalidate window.
+      timeout_seconds: 1300
       required: true
     - id: A19
+      phase: 5
       description: browser_deployed_check on beta, declared for the triad linter, non-required. It cannot pass while the beta Basic Auth wall is up (live re-check sends no auth, backlog.md 2026-10-07 HARNESS defect). A17 is the real post-deploy proof.
       type: browser_deployed_check
       target: .agent/memory/scratch/m3-f3-browser-manifest.json
       required: false
     - id: A20
+      phase: 5
       description: gws inbox check not applicable (no email path touched), declared non-required for the triad linter
       type: gws_inbox_check
       target: .agent/memory/scratch/m3-f3-gws-manifest.json
@@ -117,3 +122,11 @@ assertions:
       description: Catch-all pages contain no header or cookie reads
       command: >-
         ! grep -lE "next/headers|requestSite" "app/(marketing)/[...slug]/page.tsx" "app/(nos)/national-show/[...slug]/page.tsx" "app/(nos)/vsp/[...slug]/page.tsx" "app/(nos)/tickets/[slug]/[...rest]/page.tsx" "app/(shared)/newsletter/[...rest]/page.tsx"
+    - id: A23
+      description: The two ratified catch-alls (and only those) carry force-dynamic
+      command: >-
+        test "$(grep -l "export const dynamic = 'force-dynamic'" "app/(nos)/tickets/[slug]/[...rest]/page.tsx" "app/(shared)/newsletter/[...rest]/page.tsx" | wc -l)" -eq 2
+    - id: A24
+      description: The other three catch-alls stay static (no dynamic export)
+      command: >-
+        test "$(grep -l "export const dynamic" "app/(marketing)/[...slug]/page.tsx" "app/(nos)/national-show/[...slug]/page.tsx" "app/(nos)/vsp/[...slug]/page.tsx" | wc -l)" -eq 0
