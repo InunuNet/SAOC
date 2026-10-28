@@ -138,9 +138,15 @@ export function resolveStatusMarker({
 
 // U+203B (the reference mark) is not in the shipped Manrope subset, so the mark is an inline SVG:
 // an X with a dot in each quarter, 1em, currentColor, on the text baseline (F1e).
-// Cap height of the label face (Manrope) is ~0.72em; stroke is the label T's stem (~0.1em
-// = 3.33 of 24 viewBox units at that height); dots are 1.5x the stroke.
-const MARK_CAP_HEIGHT_EM = 0.72;
+// Manrope 600 "T" actualBoundingBoxAscent measures 8.64px at 12px = 0.72em (canvas
+// measureText). The mark spans cap height + 4% overshoot top and bottom (dot edge to dot
+// edge), shifted down by the overshoot so its bottom sits that far below the baseline.
+// Stroke is the label T's stem (~0.1em of the label = 3.33 of 24 viewBox units); dots are
+// 1.5x the stroke.
+const LABEL_CAP_HEIGHT_EM = 0.72;
+const MARK_OVERSHOOT = 0.04;
+const MARK_HEIGHT_EM = LABEL_CAP_HEIGHT_EM * (1 + 2 * MARK_OVERSHOOT);
+const MARK_DROP_EM = LABEL_CAP_HEIGHT_EM * MARK_OVERSHOOT;
 const MARK_STROKE = 3.33;
 const MARK_DOT_RADIUS = 2.5;
 
@@ -151,14 +157,15 @@ function ReferenceMark() {
     <span aria-hidden="true">
       <svg
         viewBox="0 0 24 24"
-        width={`${MARK_CAP_HEIGHT_EM}em`}
-        height={`${MARK_CAP_HEIGHT_EM}em`}
+        width={`${MARK_HEIGHT_EM}em`}
+        height={`${MARK_HEIGHT_EM}em`}
+        style={{ verticalAlign: `-${MARK_DROP_EM}em` }}
         fill="currentColor"
         stroke="currentColor"
         strokeWidth={MARK_STROKE}
         strokeLinecap="round"
         focusable="false"
-        className="inline-block align-baseline"
+        className="inline-block"
       >
         <path d="M8 8l8 8M16 8l-8 8" fill="none" />
         <circle cx="12" cy={near} r={MARK_DOT_RADIUS} stroke="none" />
