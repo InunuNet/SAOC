@@ -70,6 +70,7 @@ await withSite(async ({ base, browser, ctxOpts, deployed }) => {
     if (t.pre === 'mediaKitChip' || t.pre === 'mediaKitSummary') {
       // /media-kit is admin-only (lib/media-kit-gate.ts redirects a visitor to /admin/login). With no admin session the probe cannot reach the chips: a printed KNOWN GAP, guarded statically instead by the SAOC-caller assertion on
       // <ShowJumpChips> in check-focus-classes-static.mjs. A run with a verified admin session (DC_BASE_URL on an authenticated origin or a fixture session) probes the real chips and asserts the ring.
+      if (/\/admin\/login/.test(page.url()) && process.env.DC_REQUIRE_ADMIN) { check(false, `${t.name}: DC_REQUIRE_ADMIN is set but /media-kit redirected to /admin/login (DC_ADMIN_SESSION missing, expired or not a verified admin)`); await ctx.close(); continue; }
       if (/\/admin\/login/.test(page.url())) { console.log(`KNOWN GAP ${t.name}: /media-kit is admin-gated and redirected to /admin/login; NOT PROBED here (static SAOC-caller assertion in check-focus-classes-static.mjs guards the ring)`); await ctx.close(); continue; }
       const found = await page.evaluate((pre) => { const vis = (e) => e.getClientRects().length > 0; const sum = [...document.querySelectorAll('details > summary')].find((x) => /On this page/.test(x.textContent || '') && vis(x));
         if (pre === 'mediaKitSummary') { if (sum) sum.setAttribute('data-sdc-probe', ''); return Boolean(sum); }

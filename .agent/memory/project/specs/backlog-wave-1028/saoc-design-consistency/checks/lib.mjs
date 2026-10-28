@@ -61,6 +61,8 @@ export async function withSite(fn) {
 
 export async function openPage(browser, ctxOpts, base, path, width, height = 1000, dpr = 1) {
   const ctx = await browser.newContext(ctxOpts({ width, height }, dpr)); const page = await ctx.newPage();
+  // Phase-5 authenticated runs only: DC_ADMIN_SESSION is a verified admin `session` cookie value (lib/admin-auth.ts), read from the environment and never printed. Unset, nothing changes.
+  if (process.env.DC_ADMIN_SESSION && process.env.DC_BASE_URL) await ctx.addCookies([{ name: 'session', value: process.env.DC_ADMIN_SESSION, url: base, httpOnly: true, secure: base.startsWith('https:') }]);
   const resp = await page.goto(base + path, { waitUntil: 'load', timeout: 120_000 }); await page.waitForSelector('header', { timeout: 60_000 }).catch(() => {}); await page.waitForTimeout(700);
   return { page, ctx, status: resp ? resp.status() : 0 };
 }

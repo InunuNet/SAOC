@@ -65,3 +65,8 @@ assertions:
       description: "Footer newsletter error state on the dark footer (NOS Design ruling c): --status-error-on-dark #E8959D; summary is a 1px solid border plus aria-hidden icon in the token, ivory text >=4.5:1, border and icon >=3:1 on #22281f, NO fill, at 1440 and 390; the field in error has the same border, aria-invalid and aria-describedby, ivory focus ring. API stubbed, nothing written. Fails on main (no such summary)."
       command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-newsletter-error.mjs"
       timeout_seconds: 600
+    - id: A13
+      phase: 5
+      description: "RUN AFTER DEPLOY (phase 5, authenticated, not part of the phase 4 gate). /media-kit is admin-gated, so the phase 4 probe prints a KNOWN GAP and the static SAOC-caller assertion on <ShowJumpChips> (A4) is the phase 4 gate. This measures the real chips on beta with a verified admin session: the 'On this page' chip link at 390, 700 and 1440 and the 390 summary take the golden SAOC ring (2px solid, offset 3px, >=3:1). DC_ADMIN_SESSION is a verified admin session cookie value read from .env.local inside the script, never printed; DC_REQUIRE_ADMIN=1 turns a login redirect into a FAIL instead of a KNOWN GAP."
+      command: "DC_BASE_URL=https://beta.saoc.co.za DC_REQUIRE_ADMIN=1 DC_FOCUS_ONLY=media-kit node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-focus-ring.mjs"
+      timeout_seconds: 600
