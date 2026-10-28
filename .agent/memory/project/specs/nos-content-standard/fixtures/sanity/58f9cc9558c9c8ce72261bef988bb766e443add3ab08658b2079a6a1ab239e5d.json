@@ -1,0 +1,1 @@
+{"query":"*[_type == \"societyEvent\" && defined(slug.current)]{ \"slug\": slug.current, \"updatedAt\": _updatedAt }","params":{},"result":[{"slug":"19th-south-african-national-orchid-show","updatedAt":"2026-10-06T19:50:43Z"}],"capturedAt":"2026-10-27T20:15:33.405Z"}
