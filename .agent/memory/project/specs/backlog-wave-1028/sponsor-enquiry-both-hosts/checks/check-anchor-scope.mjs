@@ -18,7 +18,7 @@ const ALLOWED = [
   [/--scroll-padding-top\s*:/, 'the --scroll-padding-top override'],
   [/^\s*(\/\*|\*)[^]*scroll-(padding|margin)[^]*$/, 'a comment about scroll-padding / scroll-margin'],
   [/^\s*scroll-margin-top\s*:\s*(24|68|121)px\s*;(\s*\/\*.*\*\/)?\s*$/, 'the sponsor card scroll-margin-top (24, 68 or 121px)'],
-  [/^\s*@media \(min-width: (700|767|768)px\) \{\s*$/, 'the card breakpoint media query'],
+  [/^\s*@media \(min-width: 768px\) \{\s*$/, 'the card breakpoint media query (768 only)'],
   [/^\s*(html[^{]*|\.nos-theme \[data-sponsor-enquiry='nos'\])\s*\{\s*$/, 'the html NOS override or sponsor card selector line'],
   [/^\s*\}\s*$/, 'a closing brace'],
   [/^\s*$/, 'a blank line'],
@@ -26,7 +26,8 @@ const ALLOWED = [
 const lines = git('diff', '-U0', base, '--', NOS).split('\n').filter((l) => /^[+-]/.test(l) && !/^(\+\+\+|---)/.test(l));
 for (const line of lines) {
   const text = line.slice(1);
-  if (!ALLOWED.some(([re]) => re.test(text))) failures.push(`${NOS} changed outside the anchor fix: ${line.trim().slice(0, 120)}`);
+  const removedOldBreakpoint = line.startsWith('-') && /^\s*@media \(min-width: 700px\) \{\s*$/.test(text);
+  if (!removedOldBreakpoint && !ALLOWED.some(([re]) => re.test(text))) failures.push(`${NOS} changed outside the anchor fix: ${line.trim().slice(0, 120)}`);
 }
 const other = git('diff', base, '--name-only', '--', 'app/(nos)/national-show/*.css', 'components/nos-chrome/*.css').split('\n').filter((f) => f && f !== NOS);
 if (other.length) failures.push(`no other NOS stylesheet may change for the anchor fix: ${other.join(', ')}`);
