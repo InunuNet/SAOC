@@ -1,8 +1,8 @@
 08128efafea8a9db714cae1e364ee15800fe311ff2858cd71784cc7f19dd69b7  .agent/memory/project/specs/nos-footer-colour-logos/checks/_lib.mjs
 645df89c380cfadb9a1c5eb71e2a9260fa692d6df607059c95035d042226033d  .agent/memory/project/specs/nos-footer-colour-logos/checks/census-fonts.mjs
-dde0d30147cb94c6aadf93ccb16472d07ec241b32fcea1115d51502b58b87369  .agent/memory/project/specs/nos-footer-colour-logos/checks/check-diff-scope.mjs
+f28db261163a6c829eeb82b2a39deb86378ea8cd7b224fc815ab8e4dd02b9508  .agent/memory/project/specs/nos-footer-colour-logos/checks/check-diff-scope.mjs
 0ad1390c8d443ea1116887a5d379edc1d5d9e73bf49019abb51afd889a26d3c7  .agent/memory/project/specs/nos-footer-colour-logos/checks/check-static.mjs
 b08256717d1c2be9eb457441eaff44bba4264c616c837a15dfaaf21d60dfce55  .agent/memory/project/specs/nos-footer-colour-logos/checks/gate-logos.mjs
 5ec85502a6e1d6552d72627ba1986115934179d3f8784cc8545fe9a387cb9436  .agent/memory/project/specs/nos-footer-colour-logos/checks/selftest.mjs
 be012fe39acc27d86ef6ebe06cf5bfde6890f4c45940ca25d8e8a3895f32bcbd  .agent/memory/project/specs/nos-footer-colour-logos/checks/build.sh
-64a50faa77c760f2edf79d2244409dcf02fa67ef61fc59de52e722a67315a111  .agent/memory/project/specs/nos-footer-colour-logos/goldens/values.json
+3a180607ab9258cae4b3baa0449213cdd98c1787ed9ba0e8a30bee09f5cc2db0  .agent/memory/project/specs/nos-footer-colour-logos/goldens/values.json

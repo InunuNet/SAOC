@@ -30,7 +30,7 @@ Mechanism (do not invent another): `getImageProps({ src, width: BOX, height, siz
 **Correction:** the loader only maps srcs that start with `/images/`; anything else (including `/downloads/media-kit/...`) is returned unchanged, i.e. the browser would fetch the 5MB master with no srcset. So `LOCKUP_SRC` cannot literally be the media-kit path. Precedent (`docs/nos-critique-r17.md:42`): `public/images/` holds a byte-identical copy of the media-kit master. Therefore:
 
 1. Add `public/images/NOS-2027-logo-full-colour-reversed-vertical.png` = `cmp`-identical copy of the media-kit file. 3272x2876 RGBA.
-2. Add `public/images/saoc-lockup-south-african-orchid-council-vertical-colour-on-dark.png` = identical copy of the C1 file. 1915x1531 RGBA.
+2. Add `public/images/saoc/lockup/saoc-lockup-south-african-orchid-council-vertical-colour-on-dark.png` = identical copy of the C1 file, in the `saoc/lockup/` subfolder to match SAOC's C1 (same filename). 1915x1531 RGBA. Nested `/images/` paths are laddered: `lib/image-loader.ts` keeps the relative path in the variant name (`/images/_opt/saoc/lockup/<file>.png-<w>.webp`) and `generate-image-variants.mjs` walks `public/images` recursively (`public/images/nos/` is the existing precedent).
 3. `git rm public/images/NOS-2027-logo-reversed-gold-vertical.png` (its only consumer is NosFooter; the media-kit original stays). Update the one sentence at `docs/nos-critique-r17.md:42` only if it reads as current state (history may stay).
 
 At 3x the variants cover it: NOS box 248 needs 744, the 750 variant serves; credit box 206 needs 618, the 640 variant serves (source 1915 is never upscaled).

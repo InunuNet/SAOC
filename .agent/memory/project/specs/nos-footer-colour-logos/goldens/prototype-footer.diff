@@ -12,7 +12,7 @@ index a21d2517..4cbe72da 100644
  const LINK_CLASSES =
    'rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2';
 diff --git a/components/nos-chrome/NosFooter.tsx b/components/nos-chrome/NosFooter.tsx
-index 09446d87..818c645f 100644
+index 09446d87..3d859bc1 100644
 --- a/components/nos-chrome/NosFooter.tsx
 +++ b/components/nos-chrome/NosFooter.tsx
 @@ -26,7 +26,7 @@ import {
@@ -37,7 +37,7 @@ index 09446d87..818c645f 100644
  // gives a width srcset over the whole variant ladder, so a 3x screen picks a wide enough one (LG-1).
  const LOCKUP_BOX = 248;
 +// The SAOC credit is the supplied colour-on-dark vertical lockup (art trimmed to its ink), on the same ladder.
-+const CREDIT_SRC = '/images/saoc-lockup-south-african-orchid-council-vertical-colour-on-dark.png';
++const CREDIT_SRC = '/images/saoc/lockup/saoc-lockup-south-african-orchid-council-vertical-colour-on-dark.png';
 +const CREDIT_WIDTH = 1915;
 +const CREDIT_HEIGHT = 1531;
 +const CREDIT_BOX = 229;

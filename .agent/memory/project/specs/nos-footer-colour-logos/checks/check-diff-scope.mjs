@@ -11,7 +11,7 @@ const ALLOWED = [
   /^components\/nos-chrome\/NosFooter\.tsx$/,
   /^components\/nos-chrome\/nos-chrome\.css$/,
   /^public\/images\/NOS-2027-logo-full-colour-reversed-vertical\.png$/,
-  /^public\/images\/saoc-lockup-south-african-orchid-council-vertical-colour-on-dark\.png$/,
+  /^public\/images\/saoc\/lockup\/saoc-lockup-south-african-orchid-council-vertical-colour-on-dark\.png$/,
   /^public\/images\/NOS-2027-logo-reversed-gold-vertical\.png$/,
   /^docs\/nos-footer-colour-logos\.md$/,
   /^docs\/nos-critique-r17\.md$/,
