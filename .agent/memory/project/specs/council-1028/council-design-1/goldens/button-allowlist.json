@@ -1,0 +1,6 @@
+{
+ "schema": "council.button-allowlist/v1",
+ "note": "Elements the C3 candidate heuristic (checks/check-c3-buttons.mjs) flags as button-like but that are NOT buttons. @dev fills this ONLY after running the check, one entry per distinct control, each with a reason naming why it is a pill/chip/toggle/card rather than a button. Max 12 entries (the check fails above that). Any entry whose reason is not 'pill', 'toggle', 'tab', 'card' or 'icon-only' fails review.",
+ "maxEntries": 12,
+ "entries": []
+}

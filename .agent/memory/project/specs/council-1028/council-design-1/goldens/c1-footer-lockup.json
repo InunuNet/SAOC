@@ -1,0 +1,28 @@
+{
+ "ruling": "COUNCIL-1 C1 (final)",
+ "source": "public/downloads/media-kit/saoc/lockup/saoc-lockup-south-african-orchid-council-vertical-colour-on-dark.png",
+ "sourceSha256": "ec6318089a38d148d22339a24ee1848769195a2205c8424102ae6adc783d0d2c",
+ "naturalWidth": 1915,
+ "naturalHeight": 1531,
+ "colourType": "RGBA (transparent)",
+ "servedCopy": "public/images/saoc/lockup/saoc-lockup-south-african-orchid-council-vertical-colour-on-dark.png",
+ "servedCopyRule": "byte-identical copy of source (same sha256), under public/images/ because lib/image-loader.ts and scripts/generate-image-variants.mjs only ladder sources under /images/ (the NOS lockups follow the same convention in public/images/nos/lockup/). NOS Site's C2 SAOC credit uses this same path.",
+ "boxPx": 280,
+ "boxTolerancePx": 4,
+ "boxNote": "the footer lockup renders w-[280px] today (components/chrome/Footer.tsx); ruling: current width +-4. Same box below 768 (no narrow tier).",
+ "dprs": [
+  1,
+  2,
+  3
+ ],
+ "servedRule": "served natural width >= box x DPR at DPR 1, 2 and 3 (840 px at 3x); resize-only ladder (lib/image-loader.ts widths), never recoloured, cropped or trimmed: served aspect ratio equals 1915/1531 within 0.5%",
+ "aspectTolerance": 0.005,
+ "accessibleName": "South African Orchid Council — Making a difference since 1968",
+ "accessibleNameNote": "SaocLockup.ACCESSIBLE_LABEL today (aria-label on the link). The footer link's computed name must equal this string exactly; the img alt may carry it (then no aria-label) or be empty with the aria-label kept. Never both with different text.",
+ "linkHref": "/",
+ "retiredFromSaocFooter": [
+  "SaocLockup tone=dark vertical (lapis E4 emblem plus Lora and JetBrains Mono text)"
+ ],
+ "drawerAndHeader": "UNCHANGED. Header.tsx and MobileMenu.tsx already render the raster /images/saoc-lockup-horizontal-full-name.png, not live Lora text, so the ruling's conditional (the drawer takes the supplied horizontal file if it renders live Lora text) is false. No change there; a guard asserts both still use the raster.",
+ "byEye": "1440 and 390 screenshots of the footer for NOS Design (checks/shoot-footer.mjs writes them to .tmp/sandbox/council-1028/shots). The transparent top padding of the new PNG replaces the old -mt-[30px] emblem hack: re-measure so the artwork top sits on the column headings' top line (NOS Design F-rule); not asserted, judged by eye."
+}

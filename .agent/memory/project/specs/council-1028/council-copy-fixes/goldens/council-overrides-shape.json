@@ -1,0 +1,8 @@
+{
+  "note": "SHAPE of nos-content-standard/goldens/council-overrides.json, which @dev creates (a golden of the SHAPE, not of the data: the data is goldens/copy-map.json entries + pinSubs). The gates (_lib.mjs: driveState and every read of goldens/sources/*.md) apply these as plain split/join substitutions to the frozen Lee-Ann text AFTER the sha256 freeze check, so the frozen files stay byte-identical and the gates compare the corrected wording.",
+  "schema": "council.overrides/v1",
+  "source": "Council correction sheets updated 2026-10-27 (council-1028 council-copy-fixes)",
+  "substitutions": [
+    { "id": "C03", "from": "event that takes please every three years", "to": "event that takes place every three years" }
+  ]
+}
