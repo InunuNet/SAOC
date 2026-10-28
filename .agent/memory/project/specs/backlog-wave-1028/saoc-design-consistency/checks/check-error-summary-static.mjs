@@ -38,6 +38,23 @@ for (const file of files) {
     check(box.includes('text-[var(--status-error)]'), `${label}: (a) text is not the status-error token`);
   }
 }
+// ErrorText call sites, classified one by one (goldens/alert-classes.json errorTextSites). A panel-level error on ErrorText (a field-level left-border component) is the defect; a new or reclassified use fails until classified.
+const sites = JSON.parse(readFileSync(SPEC, 'utf8')).errorTextSites || []; const siteUsed = new Set(); let siteCount = 0;
+for (const file of files) {
+  const src = readFileSync(file, 'utf8');
+  for (const m of src.matchAll(/<(\w*ErrorText)\b/g)) {
+    siteCount++; const line = src.slice(0, m.index).split('\n').length; const label = `${file}:${line}`; const window = src.slice(m.index, m.index + 200);
+    const i = sites.findIndex((c) => c.file === file && window.includes(c.key));
+    if (i < 0) { check(false, `${label}: <${m[1]}> use is not classified in goldens/alert-classes.json errorTextSites (field or panel); classify it. A panel-level error uses the FormErrorAlert shape, not ErrorText`); continue; }
+    siteUsed.add(i); check(Boolean(sites[i].reason), `${label}: ErrorText classification has no reason`);
+    check(sites[i].class === 'field', `${label}: panel-level error ("${sites[i].key}") renders through ${m[1]}, a field-level component; use the FormErrorAlert shape (border-2 status-error, aria-hidden icon, status-error text)`);
+  }
+}
+// A panel entry is satisfied by conversion: it matches no ErrorText use any more AND its key now sits inside a FormErrorAlert (so the alert scan holds its shape). A field entry that matches nothing is stale.
+sites.forEach((c, i) => { if (siteUsed.has(i)) return; const src = readFileSync(c.file, 'utf8'); const at = src.indexOf(c.key);
+  if (c.class === 'panel') check(at >= 0 && /<FormErrorAlert\b/.test(src.slice(Math.max(0, at - 400), at)), `errorTextSites entry ${i + 1} (${c.file} / ${c.key}): panel-level site is no longer on ErrorText but is not inside a <FormErrorAlert> either`);
+  else check(false, `errorTextSites entry ${i + 1} (${c.file} / ${c.key}) matches no ErrorText use: stale, remove it`); });
+console.log(`ErrorText sites: ${siteCount}`);
 classes.forEach((c, i) => check(used.has(i), `goldens/alert-classes.json entry ${i + 1} (${c.file} / ${c.key}) matches no alert: stale, remove or fix it`));
 const total = tally.a + tally.b + tally.c; check(total >= 5, `only ${total} alerts found under ${ROOTS.join(', ')}, the enumeration is broken`);
 console.log(`alerts: ${total} (a:${tally.a} b:${tally.b} c:${tally.c})`);
