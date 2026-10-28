@@ -8,9 +8,9 @@ const ROOTS = ['app', 'components']; const EXCLUDED = ['components/nos-chrome/',
 const SPEC = process.env.DC_FOCUS_CLASSES || '.agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/focus-classes.json';
 const allow = JSON.parse(readFileSync(SPEC, 'utf8')).allow;
 const walk = (dir) => readdirSync(dir).flatMap((n) => { const p = join(dir, n); return statSync(p).isDirectory() ? (n === 'node_modules' ? [] : walk(p)) : /\.tsx?$/.test(n) && !/\.(d|test|spec)\.tsx?$/.test(n) ? [p] : []; });
-const HIT = /\b(?:focus|focus-visible|focus-within):ring-|(?:^|[\s"'`:])ring-offset-|\bfocus(?:-visible)?:outline-none|\bfocus(?:-visible)?:outline-offset-(?!\[3px\])/;
-const RING = /\bfocus(?:-visible|-within)?:ring-|(?:^|[\s"'`:])ring-offset-/; const NONE = /\bfocus(?:-visible)?:outline-none/;
-const isOne = (s) => /\bfocus-visible:outline-2\b/.test(s) && /\bfocus-visible:outline-solid\b/.test(s) && /\bfocus-visible:outline-offset-\[3px\]/.test(s) && !RING.test(s) && !NONE.test(s);
+const HIT = /\b(?:focus|focus-visible|focus-within):ring-|(?:^|[\s"'`:])ring-offset-|(?:^|[\s"'`])(?:[\w-]+:)*outline-none\b|\bfocus(?:-visible)?:outline-offset-(?!\[3px\])/;
+const RING = /\bfocus(?:-visible|-within)?:ring-|(?:^|[\s"'`:])ring-offset-/; const NONE = /(?:^|[\s"'`])(?:[\w-]+:)*outline-none\b/; const NONE_FOCUS = /(?:^|[\s"'`])(?:[\w-]*focus[\w-]*:)+outline-none\b/;
+const isOne = (s) => /\bfocus-visible:outline-2\b/.test(s) && /\bfocus-visible:outline-solid\b/.test(s) && /\bfocus-visible:outline-offset-\[3px\]/.test(s) && !RING.test(s) && !NONE_FOCUS.test(s); // a bare outline-none only clears the resting state; the focus-visible ring then paints, so it is allowed WITH the one ring, never alone
 // Comments are blanked first (same length, so line numbers hold): an apostrophe in prose would otherwise pair quotes across code. Strings: "..." and '...' stay on one line, `...` may span lines.
 const blank = (t) => t.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' ')).replace(/^(\s*)\/\/.*$/gm, (m, a) => a + ' '.repeat(m.length - a.length));
 const LIT = /"((?:[^"\\\n]|\\.)*)"|'((?:[^'\\\n]|\\.)*)'|`((?:[^`\\]|\\[\s\S])*)`/g;
@@ -23,7 +23,7 @@ for (const file of files) {
     const line = src.slice(0, m.index).split('\n').length; const label = `${file}:${line}`;
     const i = allow.findIndex((a) => a.file === file && lit.includes(a.key));
     if (i >= 0) { used.add(i); check(Boolean(allow[i].reason), `${label}: allowlist entry has no reason`); continue; }
-    const why = [RING.test(lit) && 'ring-* / ring-offset-* utility', NONE.test(lit) && 'focus outline-none', /\bfocus(?:-visible)?:outline-offset-(?!\[3px\])/.test(lit) && 'outline offset is not 3px', !isOne(lit) && 'not the one ring (needs focus-visible:outline-2 outline-solid outline-offset-[3px])'].filter(Boolean).join(', ');
+    const why = [RING.test(lit) && 'ring-* / ring-offset-* utility', NONE.test(lit) && 'outline-none (bare, focus: or focus-visible:)', /\bfocus(?:-visible)?:outline-offset-(?!\[3px\])/.test(lit) && 'outline offset is not 3px', !isOne(lit) && 'not the one ring (needs focus-visible:outline-2 outline-solid outline-offset-[3px])'].filter(Boolean).join(', ');
     check(false, `${label}: ${why}: "${lit.replace(/\s+/g, ' ').slice(0, 110)}"`);
   }
 }

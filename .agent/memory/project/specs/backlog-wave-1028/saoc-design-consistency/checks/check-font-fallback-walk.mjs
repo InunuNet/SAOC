@@ -1,11 +1,15 @@
-// F1e lever 2 (computed-font walk): on the ten routes at 390 and 1440, every visible text node is set in a face the site actually ships, and every character in it
+// F1e lever 2 (computed-font walk): on the ten routes at 390 and 1440, every visible text node AND every visible input/textarea placeholder is set in a face the site actually ships, and every character in it
 // exists in that face's served file. A character the file lacks, or a first font-family that is not a shipped @font-face (a system face), is a fallback: FAIL.
 // Characters are checked against each file's cmap (lib-woff2.mjs), not by eye.
 import { withSite, check, finish, tenRoutes, societyDetail } from './lib.mjs';
 import { woff2Cmap } from './lib-woff2.mjs';
 const FACES = `() => [...document.styleSheets].flatMap((s) => { try { return [...s.cssRules]; } catch { return []; } }).filter((r) => r.type === CSSRule.FONT_FACE_RULE).map((r) => ({ family: r.style.getPropertyValue('font-family').replace(/['"\\s]/g, ''), weight: r.style.getPropertyValue('font-weight') || '400', style: r.style.getPropertyValue('font-style') || 'normal', base: r.parentStyleSheet.href || location.href, src: (r.style.getPropertyValue('src').match(/url\\(["']?([^"')]+)["']?\\)/) || [])[1] })).filter((f) => f.src).map((f) => ({ ...f, src: new URL(f.src, f.base).href }))`;
 const TEXT = `() => { const out = []; const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); for (let n = w.nextNode(); n; n = w.nextNode()) { const t = n.textContent.replace(/[\\s\\u200b-\\u200f\\u00ad]/g, ''); if (!t) continue; const e = n.parentElement; if (!e || ['SCRIPT', 'STYLE', 'NOSCRIPT'].includes(e.tagName) || e.getBoundingClientRect().width === 0) continue; const c = getComputedStyle(e); if (c.visibility === 'hidden' || c.display === 'none') continue;
-  out.push({ fam: c.fontFamily.split(',')[0].replace(/['"\\s]/g, ''), wt: Number(c.fontWeight), st: c.fontStyle, text: t, tag: e.tagName }); } return out; }`;
+  out.push({ fam: c.fontFamily.split(',')[0].replace(/['"\\s]/g, ''), wt: Number(c.fontWeight), st: c.fontStyle, text: t, tag: e.tagName }); }
+  // Placeholder text is not a text node: walk every visible input/textarea placeholder in the face its ::placeholder resolves to.
+  for (const el of document.querySelectorAll('input[placeholder], textarea[placeholder]')) { const t = (el.getAttribute('placeholder') || '').replace(/[\\s\\u200b-\\u200f\\u00ad]/g, ''); if (!t || el.getBoundingClientRect().width === 0) continue; const s = getComputedStyle(el); if (s.visibility === 'hidden' || s.display === 'none') continue; const c = getComputedStyle(el, '::placeholder');
+    out.push({ fam: c.fontFamily.split(',')[0].replace(/['"\\s]/g, ''), wt: Number(c.fontWeight), st: c.fontStyle, text: t, tag: 'PLACEHOLDER(' + el.tagName + ')' }); }
+  return out; }`;
 const inRange = (spec, w) => { const [a, b] = String(spec).trim().split(/\s+/).map(Number); return w >= a && w <= (b ?? a); };
 await withSite(async (site) => {
   const { base, browser, ctxOpts } = site; const cmaps = new Map();

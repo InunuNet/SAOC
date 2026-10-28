@@ -20,7 +20,7 @@ export const ARROW_PROBE = `(root) => {
   return els.map((a) => { const r = a.getBoundingClientRect(); let top = null; const w = document.createTreeWalker(a, NodeFilter.SHOW_TEXT);
     for (let n = w.nextNode(); n; n = w.nextNode()) { if (n.parentElement.closest('svg')) continue; const t = n.textContent.replace(/\\u2192/g, '').trim(); if (!t) continue; const g = document.createRange(); g.selectNodeContents(n); top = g.getBoundingClientRect().top - r.top; break; }
     const hd = a.querySelector('h1,h2,h3,h4,h5,h6') || a;
-    return { titleLines: lineCount(hd), label: a.textContent.replace(/\\u2192/g, '').replace(/\\s+/g, ' ').trim(), h: r.height, textTop: top }; }); }`;
+    return { back: !!a.querySelector('svg[data-direction="back"]'), titleLines: lineCount(hd), label: a.textContent.replace(/\\u2192/g, '').replace(/\\s+/g, ' ').trim(), h: r.height, textTop: top }; }); }`;
 // One entry per target and width: { status, links } or { status, links: [], gap } when the page does not render (or the overlay cannot be opened) on this build.
 export async function collectArrowLinks({ base, browser, ctxOpts }) {
   const out = {}; const nosBase = base.replace('saoc.localhost', 'nos.localhost'); const hrefs = {};
