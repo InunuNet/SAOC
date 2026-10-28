@@ -79,7 +79,7 @@
 }
 /* Below the row breakpoint the lockup takes the whole first row, the actions sit below it, and
    the header scrolls with the page rather than holding a sixth of the screen. */
-@media (max-width: 779px) {
+@media (max-width: 767px) {
   .nh { position: relative; }
   /* Not sticky here, so nothing covers a focused element; the global 5rem scroll-padding-top would
      only make a click on Menu (near the top) scroll the page before the panel's saved position. */

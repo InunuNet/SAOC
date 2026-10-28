@@ -82,6 +82,9 @@ const nextConfig: NextConfig = {
   // the `dev:secure` script); the NOS site is reached at http://nos.localhost:<port>. Without this, Next refuses that origin's dev requests because
   // it is not localhost. Dev-only — it has no effect on a production build.
   allowedDevOrigins: ['dev.saoc.co.za', 'nos.localhost'],
+  // `next dev` writes an agent-rules block into AGENTS.md when it detects an AI agent, and
+  // AGENTS.md is the harness clone source. Dev-only — build and deploy are unaffected.
+  agentRules: false,
   images: {
     // Custom loader, not the optimiser: App Hosting's adapter disables the optimiser unless a
     // loader is set (docs/image-delivery.md). Widths are capped at 2048.
