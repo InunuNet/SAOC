@@ -1,0 +1,55 @@
+{
+  "schema": "council.overrides/v1",
+  "source": "Council correction sheets updated 2026-10-27 (council-1028 council-copy-fixes)",
+  "substitutions": [
+    {
+      "id": "C01",
+      "from": "\u0054hicket types and prices are on the website.",
+      "to": "Ticket types and prices are on the website."
+    },
+    {
+      "id": "C02",
+      "exceptRoutes": ["/faq"],
+      "from": "\u006dembers who’s\u0020subscriptions are valid",
+      "to": "members whose subscriptions are valid"
+    },
+    {
+      "id": "C02b",
+      "exceptRoutes": ["/faq"],
+      "from": "\u006dembers who’s\u0020subscriptions are valid",
+      "to": "members whose subscriptions are valid"
+    },
+    {
+      "id": "C03",
+      "from": "\u0065vent that takes\u0020please every three years",
+      "to": "event that takes place every three years"
+    },
+    {
+      "id": "C04",
+      "exceptRoutes": ["/faq"],
+      "from": "\u0061ttendees or the public please ensure",
+      "to": "attendees or the public, please ensure"
+    },
+    {
+      "id": "C05",
+      "from": "\u0054here are two stairways: one may be suitable for visitors using crutches",
+      "to": "There are two stairways, one of which may be suitable for visitors using crutches"
+    },
+    {
+      "id": "C06",
+      "from": "\u006deet orchid societies from across the country",
+      "to": "meet members of the orchid societies from across the country"
+    },
+    {
+      "id": "pin-takes-please",
+      "from": "\u0074akes please",
+      "to": "takes place"
+    },
+    {
+      "id": "pin-whos-subscriptions",
+      "exceptRoutes": ["/faq"],
+      "from": "\u0077ho’s subscriptions",
+      "to": "whose subscriptions"
+    }
+  ]
+}
