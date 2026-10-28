@@ -54,7 +54,11 @@ async function notify(id: string, doc: SponsorEnquiryDoc): Promise<void> {
       onError('admin-notice'),
     ),
     deliverConfirmationEmailAfterCommit(
-      () => sendSponsorEnquiryConfirmationEmail({ contactName: doc.contactName, email: doc.email }),
+      () => sendSponsorEnquiryConfirmationEmail({
+          contactName: doc.contactName,
+          email: doc.email,
+          site: doc.source,
+        }),
       onError('acknowledgement'),
     ),
   ]);

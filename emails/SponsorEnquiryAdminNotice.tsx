@@ -32,7 +32,7 @@ export default function SponsorEnquiryAdminNotice({
   message,
 }: SponsorEnquiryAdminNoticeProps) {
   return (
-    <EmailShell family="C" preview="New sponsorship enquiry — SAOC">
+    <EmailShell family="C" preview={`New sponsorship enquiry — ${siteLabel}`}>
       <ShellHeading>{ENQUIRY_ADMIN_HEADING}</ShellHeading>
       <ShellDetailRow label="Enquiry ID:">{enquiryId}</ShellDetailRow>
       <ShellDetailRow label="Site:">{siteLabel}</ShellDetailRow>

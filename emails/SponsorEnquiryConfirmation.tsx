@@ -7,6 +7,7 @@ import {
 
 interface SponsorEnquiryConfirmationProps {
   name: string;
+  preview: string;
 }
 
 /**
@@ -14,9 +15,9 @@ interface SponsorEnquiryConfirmationProps {
  * shape as emails/VendorApplicationConfirmation.tsx. The wording is a copy gap (G5) awaiting
  * committee text; see lib/sponsor-enquiry-copy.ts.
  */
-export default function SponsorEnquiryConfirmation({ name }: SponsorEnquiryConfirmationProps) {
+export default function SponsorEnquiryConfirmation({ name, preview }: SponsorEnquiryConfirmationProps) {
   return (
-    <EmailShell family="B" preview="We received your sponsorship enquiry — SAOC">
+    <EmailShell family="B" preview={preview}>
       <ShellHeading>{ENQUIRY_ACK_HEADING}</ShellHeading>
       <ShellText>Dear {name},</ShellText>
       <ShellText>{ENQUIRY_ACK_BODY}</ShellText>

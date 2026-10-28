@@ -1,0 +1,72 @@
+schema: athanor.contract/v1
+slug: sponsor-enquiry-both-hosts
+goal: Both the SAOC and National Orchid Show sponsors pages take a sponsorship enquiry through the same on-site form and API, the stored enquiry and the admin notice say which site it came from, and no visitor has to open their own email client.
+created_at: '2026-10-28'
+autonomy: high
+
+features:
+  - id: F2
+    name: NOS /national-show/sponsors hosts the shared enquiry form; source is allowlisted saoc|nos or null; admin notice subject names the site; SAOC form verified
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/goldens/spec.md
+  - .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/goldens/proof-on-main.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Handler and doc builder with injected deps. RED on main - a site outside saoc|nos is stored as source null (item 2). PINs, green on main by design - validation 400s, honeypot, null-coalesced doc shape, body cannot set the site, write failure 500, notification failure still 201 and logged without message text, 429 rate limit (item 3).
+      command: pnpm exec tsx .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/checks/check-handler.mts
+    - id: A2
+      description: Admin notice sender with a fake mailer. RED on main - the saoc and nos subjects are identical ("SAOC") so Lee-Ann cannot tell the sites apart (item 2). PINs - recipients are exactly ADMIN_EMAIL_ALLOWLIST, never the submitter; body siteLabel per site; empty allowlist sends nothing.
+      command: pnpm exec tsx .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/checks/check-admin-notice.mts
+    - id: A3
+      description: RED on main - NOS sponsors page imports and renders exactly one SponsorEnquirySection site="nos", no Button links to mailto, hero/card/empty-state Buttons link to #enquire (item 1). Also pins the shared section renders every field with no mailto. Also (NR-7) the h2 "Talk to us about sponsorship" carries class nos-card-title. A remaining secondary mailto line is a NOS Design call and is not asserted.
+      command: pnpm exec tsx .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/checks/check-nos-page.mts
+    - id: A4
+      description: Scope guard, green on main by design (amended 2026-10-28 for the NOS Design rulings and D2). The shared form may change ONLY inside its success-state block and its SAOC success (heading plus body, role=status, focusable heading) is pinned; NOS success stays heading-only. The route may change ONLY on the acknowledgement call and keeps exactly two sends. The acknowledgement path stays one send to the submitted address (no new visitor email). No forked enquiry file, no new exported copy string. Reads the committed HEAD against the merge-base with origin/main.
+      command: node .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/checks/check-scope.mjs
+    - id: A5
+      description: Typecheck stays green with the shared form on the NOS page.
+      command: pnpm exec tsc --noEmit
+    - id: A6
+      description: Codex adversarial QA scoped to the actual diff.
+      type: codex_qa
+      target: >-
+        Review ONLY git diff origin/main...HEAD on feat/sponsor-enquiry-both-hosts. Judge, against
+        .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/goldens/spec.md: (1) does the NOS page reuse the existing
+        SponsorEnquirySection and /api/sponsors/enquire with no fork, with primary CTAs on #enquire; (2) is source stored as saoc, nos or
+        null, derived only from the Host and never from the request body; (3) does the admin notice subject name the site while recipients
+        stay the ADMIN_EMAIL_ALLOWLIST; (4) is any new visitor email or new unsourced copy string introduced, and does the acknowledgement now follow the submission host (SAOC sender and site for the SAOC host, NOS for the NOS host); (4b) are the NOS enquiry styles scoped to [data-sponsor-enquiry=nos] so SAOC is untouched, and is the shared form changed only in its success state; (5) would checks A1-A3 fail if
+        each of those changes were reverted. Pre-existing behaviour in unchanged files is out of scope.
+      required: true
+    - id: A7
+      phase: 5
+      description: browser_deployed_check on the deployed NOS /national-show/sponsors, declared for the triad linter, non-required (it cannot pass behind the beta Basic Auth wall, see gate-hygiene A11). A8 is the real post-deploy proof.
+      type: browser_deployed_check
+      target: .agent/memory/scratch/sponsor-enquiry-both-hosts-browser-manifest.json
+      required: false
+    - id: A8
+      phase: 5
+      description: gws inbox check on the admin notice, declared for the triad linter, non-required. The email path is touched (subject of the admin notice), so this is applicable; A9 asserts the same thing with its own gws reads.
+      type: gws_inbox_check
+      target: .agent/memory/scratch/sponsor-enquiry-both-hosts-gws-manifest.json
+      required: false
+    - id: A9
+      phase: 5
+      description: RUN AFTER DEPLOY from the project root (needs .env.local), non-required, and it NEVER emails real admins by accident - it exits 77 (skip) unless SPONSOR_E2E_ADMIN_RECIPIENTS names the addresses that will receive the admin notices (the operator affirms the deployed ADMIN_EMAIL_ALLOWLIST equals it), and also refuses if .env.local ADMIN_EMAIL_ALLOWLIST differs. Then it submits one test-marked enquiry per host (beta.saoc.co.za and nos.saoc.co.za), asserts the sponsorEnquiries doc (source, null optionals, status) and the site-identifying admin notice via read-only gws, and deletes exactly those two docs (collection sponsorEnquiries, contactName E2E-TEST sponsor-enquiry-both-hosts <nonce> saoc|nos). Needs --allow-skips in the gate when it skips.
+      command: node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/checks/check-deployed-e2e.mjs
+      required: false
+    - id: A10
+      description: D2 (NOS Design P1) acknowledgement follows the submission host. RED on main - an SAOC-host submission is sent from the NOS sender with site nos and an SAOC subject; the NOS subject says SAOC; the email preview says "— SAOC" for both; a null or missing site must default to the SAOC identity; the route must pass site doc.source. PINs - one send to the submitted address, same body copy, nos keeps NOS_FORMS_FROM_ADDRESS.
+      command: pnpm exec tsx .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/checks/check-confirmation-site.mts
+    - id: A11
+      description: NOS Design ruling, declared values. RED on main - flat unlayered CSS scoped to [data-sponsor-enquiry="nos"] gives the card #F3F2D6, radius 16, shadow-sm, padding 32 (24 below 768), fields column max-width 640, Karla 500 14px ink labels, inputs 1px --rule border radius 8 min-height 48, 2px violet focus ring, NOS primary submit look, scroll-margin-top 121px at 700 and up and 68px below; the success box under the scope has no border, zero padding and a transparent background (NR-4); the field-label rule excludes the consent label, which takes its own rule Karla 450 16px / 1.5; the page renders the section inDocument (doc-h2 heading). PIN - no sponsor-enquiry selector without the nos scope, and app/globals.css, app/(marketing) and SponsorEnquirySection.tsx unchanged.
+      command: pnpm exec tsx .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/checks/check-nos-style.mts
+    - id: A12
+      phase: 5
+      description: RUN AFTER DEPLOY from the project root (needs .env.local), non-required. Real Chromium on the deployed NOS sponsors page at 1440 and 390 - hero CTA click lands the card 16..40px below the sticky chrome (NOS Design anchor gate), computed card/label/input/focus-ring/submit values match the ruling, and the SAOC /sponsors form labels are still the SAOC mono 11px. Also, per NOS Design, the consent label is Karla 450 16px / 1.5 with the checkbox on its first line, and with the API mocked in the browser (nothing reaches the server) the success state has 0 borders and 0 padding inside the card, keeps role=status with focus on the heading, and the card x and width do not move. Writes nothing. Exit 77 when credentials or the browser are missing.
+      command: node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/checks/check-deployed-render.mjs
+      required: false
