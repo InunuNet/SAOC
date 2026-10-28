@@ -1,6 +1,6 @@
 // sponsor-enquiry-both-hosts RUN-AFTER-DEPLOY render gate (non-required): the NOS Design ruling as rendered, not declared.
 // Real Chromium against the deployed NOS sponsors page at 1440x900 and 390x844:
-//   anchor gate : click the hero CTA (#enquire); the enquiry card's top must sit between the sticky chrome's bottom +16 and +40
+//   anchor gate : click the hero CTA (#enquire) below 1024, the first visible #enquire link from 1024 up (the hero CTA is hidden there by design); the enquiry card's top must sit between the sticky chrome's bottom +16 and +40
 //   computed    : card #F3F2D6 / radius 16 / shadow / padding 32 (24 below 768); label Karla 500 14; input 1px border, radius 8, height >= 48;
 //                 2px violet focus ring; submit background #211A57; fields column <= 640
 //   consent     : the consent label is EXCLUDED from the field-label rule - Karla 450 16px / line-height 1.5, checkbox centred on its first line;
@@ -8,7 +8,7 @@
 //   success     : (NR-4, no box in a box) the API is MOCKED in the browser (page.route fulfils 201; NOTHING reaches the server or Firestore),
 //                 a valid form is submitted, and inside the card there are 0 borders and 0 padding below the card, role=status stays with
 //                 the focus on the success heading, and the card's x and width do not move
-//   SAOC pin    : the SAOC /sponsors form labels are still the SAOC mono 11px (the NOS styling did not leak)
+//   SAOC pin    : the SAOC /sponsors form labels are still the SAOC mono at the 12px floor (globals.css, #71) (the NOS styling did not leak)
 // Writes nothing: the one submit is answered by an in-browser mock, never the server. Basic Auth is read from BETA_BASIC_AUTH_USER/PASSWORD in-script and never printed.
 // Run as: node --env-file-if-exists=.env.local <this file>   (from the project root, after deploy)
 // Exit 0 PASS, 1 FAIL (a real finding), 77 inconclusive (credentials, browser or host unavailable).
@@ -16,6 +16,7 @@ import { chromium } from 'playwright';
 
 const NOS = 'https://nos.saoc.co.za/national-show/sponsors';
 const SAOC = 'https://beta.saoc.co.za/sponsors';
+const HERO_CTA_HIDDEN_FROM = 1024;
 const VIEWPORTS = [{ name: '1440', width: 1440, height: 900, pad: 32 }, { name: '390', width: 390, height: 844, pad: 24 }];
 const user = process.env.BETA_BASIC_AUTH_USER;
 const pass = process.env.BETA_BASIC_AUTH_PASSWORD;
@@ -59,22 +60,27 @@ async function measure(page) {
 
 try {
   for (const vp of VIEWPORTS) {
-    const context = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, httpCredentials: { username: user, password: pass } });
+    let context;
+    try {
+    context = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, httpCredentials: { username: user, password: pass } });
     const page = await context.newPage();
     try {
       const res = await page.goto(NOS, { waitUntil: 'networkidle', timeout: 45000 });
       if (!res || res.status() !== 200) { fail(`${vp.name}: ${NOS} returned ${res?.status()}, want 200`); await context.close(); continue; }
     } catch (error) { console.error(`INCONCLUSIVE: could not load ${NOS} (${error.name})`); process.exit(77); }
 
-    const cta = page.locator('a[data-sponsors-hero-cta][href="#enquire"], [data-sponsors-hero-cta][href="#enquire"]').first();
-    if ((await cta.count()) === 0) { fail(`${vp.name}: hero CTA does not link to #enquire`); await context.close(); continue; }
-    await cta.click();
+    // The hero CTA is display:none from 1024 up by design (nos-structure.css SP-1), so there the first VISIBLE a[href="#enquire"] is clicked.
+    const cta = vp.width >= HERO_CTA_HIDDEN_FROM
+      ? page.locator('a[href="#enquire"]:visible').first()
+      : page.locator('a[data-sponsors-hero-cta][href="#enquire"], [data-sponsors-hero-cta][href="#enquire"]').first();
+    if ((await cta.count()) === 0) { fail(`${vp.name}: no visible CTA links to #enquire`); await context.close(); continue; }
+    await cta.click({ timeout: 15000 });
     await page.waitForTimeout(1200);
     const m = await measure(page);
     if (!m) { fail(`${vp.name}: no [data-sponsor-enquiry="nos"] card on the page`); await context.close(); continue; }
 
     const gap = m.cardTop - m.chromeBottom;
-    if (gap < 16 || gap > 40) fail(`${vp.name}: after the CTA click the card top sits ${gap.toFixed(1)}px below the chrome bottom, want 16..40`);
+    if (gap < 16 || gap > 40) fail(`${vp.name}: after the CTA click the card top sits ${gap.toFixed(1)}px below the chrome bottom (${m.chromeBottom === 0 ? 'no sticky chrome found, so this is the distance from the viewport top' : `sticky chrome bottom ${m.chromeBottom.toFixed(1)}`}), want 16..40`);
     if (m.card.bg !== rgb('#f3f2d6')) fail(`${vp.name}: card background ${m.card.bg}, want ${rgb('#f3f2d6')}`);
     if (m.card.radius !== '16px') fail(`${vp.name}: card radius ${m.card.radius}, want 16px`);
     if (!m.card.shadow || m.card.shadow === 'none') fail(`${vp.name}: card has no box-shadow`);
@@ -132,7 +138,12 @@ try {
       if (done.focusId !== 'enquire-success-heading') fail(`${vp.name}: focus is on "${done.focusId}", want enquire-success-heading`);
     }
     if (Math.abs(done.x - before.x) > 0.5 || Math.abs(done.width - before.width) > 0.5) fail(`${vp.name}: card moved on success (x ${before.x} -> ${done.x}, width ${before.width} -> ${done.width})`);
-    await context.close();
+    } catch (error) {
+      // One viewport failing must report, not crash before the next one runs.
+      fail(`${vp.name}: ${String(error?.message ?? error).split('\n')[0]}`);
+    } finally {
+      await context?.close().catch(() => {});
+    }
   }
 
   // SAOC pin: the SAOC form is not restyled.
@@ -144,7 +155,7 @@ try {
     else {
       const label = await page.evaluate(() => { const l = document.querySelector('[data-sponsor-enquiry="saoc"] form label'); if (!l) return null; const s = getComputedStyle(l); return { family: s.fontFamily, size: s.fontSize }; });
       if (!label) fail('saoc: no enquiry form label found');
-      else if (label.size !== '11px' || /karla/i.test(label.family)) fail(`saoc: label ${JSON.stringify(label)}, want the SAOC mono 11px (NOS styling must not leak)`);
+      else if (!/mono/i.test(label.family) || /karla/i.test(label.family) || label.size !== '12px') fail(`saoc: label ${JSON.stringify(label)}, want the SAOC mono label at the 12px floor (NOS styling must not leak)`);
     }
   } catch (error) { console.error(`INCONCLUSIVE: could not load ${SAOC} (${error.name})`); process.exit(77); }
   await context.close();
