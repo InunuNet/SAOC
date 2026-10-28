@@ -17,6 +17,7 @@ await withSite(async (site) => {
     const sha = async (u) => { if (!hashes.has(u)) hashes.set(u, createHash('sha256').update(await (await ctx.request.get(u)).body()).digest('hex')); return hashes.get(u); };
     const byFile = new Map(); for (const u of urls) { const h = await sha(u); byFile.set(h, [...(byFile.get(h) || []), u]); }
     const dup = [...byFile.values()].filter((us) => us.length > 1).map((us) => us[0]); check(dup.length === 0, `${w}: font file(s) fetched twice (same content, by hash, whether or not the URL differs): ${dup.map((u) => u.split('/').pop()).join(', ')}`);
+    if (process.env.DC_DEBUG) console.log(`DEBUG ${w}: ${urls.length} font requests, ${byFile.size} distinct files: ${[...byFile.values()].map((us) => us[0].split('/').pop()).join(', ')}`);
     const distinct = new Set([...byFile.values()].map((us) => us[0])); check(distinct.size <= 4, `${w}: ${distinct.size} distinct font files on the critical path (${[...distinct].map((u) => u.split('/').pop()).join(', ')}), want <=4`);
     for (const u of distinct) { const b = (await ctx.request.get(u)).headers()['content-length']; const n = b ? Number(b) : (await (await ctx.request.get(u)).body()).length; check(n <= 40960, `${w}: ${u.split('/').pop()} is ${(n / 1024).toFixed(1)} KB, want <=40 KB`); }
     const r = await page.evaluate(`(${USED})()`);
