@@ -24,6 +24,12 @@ else {
   const ov = JSON.parse(readFileSync(OV, 'utf8')); const have = new Map((ov.sanityExceptions?.substitutions ?? []).map((x) => [x.id, x]));
   if (ov.sanityExceptions?.appliesFromFixtureCapturedAt !== G.appliesFromFixtureCapturedAt) fails.push(`${OV}: sanityExceptions.appliesFromFixtureCapturedAt missing or different`);
   for (const s of G.substitutions) { const h = have.get(s.id); if (!h || h.from !== s.from || h.to !== s.to) fails.push(`${OV}: sanityExceptions ${s.id} missing or different from the golden`); }
+  // exceptRoutes (a code-string substitution skipped on /faq because the frozen fixture still holds the old wording) must be backed by a sanityExceptions row
+  // that supplies the same correction once the fixture is re-recorded; otherwise the exemption could hide a stale /faq answer for good.
+  for (const sub of ov.substitutions ?? []) if ((sub.exceptRoutes ?? []).length) {
+    if (!sub.exceptRoutes.every((r) => r === '/faq')) fails.push(`${OV}: ${sub.id} exempts a route other than /faq`);
+    const fromPlain = sub.from; if (!G.substitutions.some((x) => fromPlain.includes(x.from) && x.to !== x.from && sub.to.includes(x.to))) fails.push(`${OV}: ${sub.id} is exempt on /faq but no sanityExceptions row supplies its correction`);
+  }
   const lib = readFileSync('.agent/memory/project/specs/nos-content-standard/checks/_lib.mjs', 'utf8');
   if (!/sanityExceptions/.test(lib) || !/capturedAt/.test(lib)) fails.push('nos-content-standard/checks/_lib.mjs does not gate sanityExceptions on the fixture capturedAt');
 }
