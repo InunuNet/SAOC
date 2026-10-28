@@ -1,6 +1,7 @@
 // F1a: footer newsletter error state on the dark footer (NOS Design ruling, option c). Token --status-error-on-dark #E8959D (6.62:1 on #22281f).
 // A status summary on a dark ground is a 1px border plus the icon in the token, ivory text, and NO fill. The field in error takes the same border, aria-invalid and aria-describedby, and its focus ring stays ivory.
 // Gate at 1440 and 390: summary text >=4.5:1, border and icon >=3:1 against the footer ground, no fill. The API is stubbed (page.route) to answer 400 {field:'email'}, so nothing is written anywhere.
+import { readFileSync } from 'node:fs';
 import { withSite, openPage, check, finish, RGBA_FN, blend, ratio } from './lib.mjs';
 const GROUND = [0x22, 0x28, 0x1f]; const TOKEN = [0xe8, 0x95, 0x9d]; const same = (a, b) => a.every((v, i) => Math.abs(v - b[i]) <= 1);
 const PROBE = `() => { const rgba = ${RGBA_FN}; const f = document.querySelector('footer'); const i = f.querySelector('input[type=email]'); const id = i.getAttribute('aria-describedby'); const box = id && document.getElementById(id);
@@ -11,6 +12,14 @@ const PROBE = `() => { const rgba = ${RGBA_FN}; const f = document.querySelector
     out.box = { text: rgba(c.color), fill: rgba(c.backgroundColor), img: c.backgroundImage, sides: { top: side(c, 'Top'), right: side(c, 'Right'), bottom: side(c, 'Bottom'), left: side(c, 'Left') }, icon: ic ? rgba(ic.color) : null, iconFill: icon && icon.tagName.toLowerCase() === 'svg' ? rgba(ic.fill) : null, text_: box.textContent.trim().slice(0, 40) }; }
   return out; }`;
 await withSite(async ({ base, browser, ctxOpts }) => {
+  // PREVIEW-MODE topic alert (Codex round 5 at 032ffa26): with SHOW_PLACEHOLDER_PREVIEW=true the topic error is the VISIBLE "COPY GAP" alert (showCopyGap branch), whose warning icon inherited ivory instead of --status-error-on-dark.
+  // CHOSEN ROUTE: static, because the gate's server cannot render that branch without a second server with the beta wall up (both BETA_BASIC_AUTH_* set) plus SHOW_PLACEHOLDER_PREVIEW=true and basic-auth credentials in every context.
+  // LIMIT, stated: this proves the icon span carries the token class in source, not the painted colour in a browser; the painted colour is a phase-5 beta item when beta runs with the preview flag. The default (hidden alert) is covered at runtime below.
+  { const src = readFileSync('components/newsletter/NewsletterSignup.tsx', 'utf8'); const at = src.indexOf('showCopyGap ?', src.indexOf('topicsInvalid ?'));
+    const block = at >= 0 ? src.slice(at, src.indexOf('role="alert"', src.indexOf('role="alert"', at) + 1) > 0 ? src.indexOf('role="alert"', src.indexOf('role="alert"', at) + 1) : at + 900) : '';
+    const icon = /<span[^>]*aria-hidden="true"[^>]*>\s*⚠︎\s*<\/span>/.exec(block);
+    check(Boolean(icon), 'preview topic alert: the showCopyGap branch of the topics error has no aria-hidden ⚠︎ icon span');
+    if (icon) check(icon[0].includes('status-error-on-dark'), `preview topic alert: the icon span is ${icon[0]} and does not set --status-error-on-dark, so it inherits the alert text colour (ivory) instead of #E8959D`); }
   for (const width of [1440, 390]) {
     const { page, ctx } = await openPage(browser, ctxOpts, base, '/about', width);
     await page.route('**/api/newsletter/subscribe', (route) => route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error: 'Enter a valid email address.', field: 'email' }) }));

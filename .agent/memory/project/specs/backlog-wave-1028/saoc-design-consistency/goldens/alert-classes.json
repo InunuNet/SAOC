@@ -32,5 +32,32 @@
       "requireIconAndToken": true,
       "reason": "Field-level upload error. Allowed only with an aria-hidden icon beside status-error text, never colour alone."
     }
+  ],
+  "errorTextNote": "F1a: every use of a local ErrorText component (<ErrorText, <*ErrorText) under app/ and components/ is classified PER CALL SITE: file plus a key substring that must appear in the 200 characters from the opening tag. class field = an inline error beside one input (left-border-only ErrorText is the golden). class panel = an error about a whole panel or the page (a load failure, an unset-configuration notice): it must NOT use ErrorText; it uses the FormErrorAlert shape (border-2 border-[var(--status-error)], aria-hidden icon, status-error text), which is an (a) alert and is already enforced by the alert scan. So a panel entry here means the call site is still on ErrorText and FAILS. A new or reclassified ErrorText use fails until classified; a stale entry fails.",
+  "errorTextSites": [
+    {
+      "file": "components/admin/PaymentSettingsPanel.tsx",
+      "key": "No gateway is set",
+      "class": "panel",
+      "reason": "Panel-level: the whole checkout is refusing purchases until a gateway is chosen."
+    },
+    {
+      "file": "components/admin/PaymentSettingsPanel.tsx",
+      "key": "{gatewayError}",
+      "class": "field",
+      "reason": "Inline error beside the gateway selector."
+    },
+    {
+      "file": "components/admin/PaymentSettingsPanel.tsx",
+      "key": "{testAmountError}",
+      "class": "field",
+      "reason": "Inline error beside the test-amount input."
+    },
+    {
+      "file": "components/admin/PaymentSettingsPanel.tsx",
+      "key": "Recent changes could not be loaded",
+      "class": "panel",
+      "reason": "Panel-level: the change-history list failed to load."
+    }
   ]
 }
