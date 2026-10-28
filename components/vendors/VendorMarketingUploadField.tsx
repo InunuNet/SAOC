@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { CircleAlert } from 'lucide-react';
 
 // M2 F18 (vendor-gated-registration-flow) -- single logo/product-photo upload widget. POSTs
 // directly to /api/vendors/[id]/marketing-asset once a submission id exists -- mirrors F7's
@@ -97,8 +98,9 @@ export function VendorMarketingUploadField({
       {status === 'uploading' ? <p className="font-sans text-[13px] text-muted">Uploading…</p> : null}
       {status === 'success' ? <p className="font-sans text-[13px] text-ink">Uploaded.</p> : null}
       {status === 'error' && errorMessage ? (
-        <p role="alert" className="font-sans text-[13px] text-[var(--status-error)]">
-          {errorMessage}
+        <p role="alert" className="flex items-start gap-2 font-sans text-[13px] text-[var(--status-error)]">
+          <CircleAlert aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
+          <span>{errorMessage}</span>
         </p>
       ) : null}
     </div>

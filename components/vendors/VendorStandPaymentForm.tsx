@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { CircleAlert } from 'lucide-react';
 
 import { OzowSandboxTestModeBanner } from '@/components/tickets/OzowSandboxTestModeBanner';
 import { PayfastRedirectForm } from '@/components/tickets/PayfastRedirectForm';
@@ -122,8 +123,12 @@ export function VendorStandPaymentForm({ token, businessName }: VendorStandPayme
       </div>
 
       {error && (
-        <p className="font-sans text-[14px] text-ink" role="alert">
-          {error}
+        <p
+          className="flex items-start gap-2 rounded-sm border-2 border-[var(--status-error)] px-4 py-3 font-sans text-[14px] font-medium text-[var(--status-error)]"
+          role="alert"
+        >
+          <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+          <span>{error}</span>
         </p>
       )}
 
