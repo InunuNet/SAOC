@@ -1,60 +1,35 @@
 {
-  "note": "F1a A4 static enumeration. Every className string under app/ and components/ (components/nos-chrome/, components/nos/ and app/(nos)/ excluded as NOS-host-only) that carries focus:ring-*, focus-visible:ring-*, ring-offset-* or focus(-visible):outline-none must be THE ONE RING: focus-visible:outline-2 + focus-visible:outline-solid + focus-visible:outline-offset-[3px] (+ an outline colour), with no ring-* utility and no outline-none. Anything else must be listed here with a reason. Each entry names a file and a key (a substring of the className string). An entry matching no hit FAILS the check (stale). Unlisted hits FAIL. Rule (NOS Design/lead): every standalone action (buttons, links, CTAs, programmatic focus targets such as error-summary wrappers with tabIndex -1, including the equipment tables' add/remove row buttons) takes the one ring and is NEVER allowlisted. Only nav links (NAV-1) and form-control fields are allowlisted, one entry per component, never a glob.",
+  "note": "F1a A4 static enumeration. Every className string under app/ and components/ (.ts and .tsx; NOS-host-only code excluded: components/nos-chrome/, components/nos/, components/show/, components/tickets/TicketTypeCard.tsx, app/(nos)/) that carries focus:ring-*, focus-visible:ring-*, ring-offset-*, focus(-visible):outline-none or a focus outline-offset other than [3px] must be THE ONE RING: focus-visible:outline-2 + focus-visible:outline-solid + focus-visible:outline-offset-[3px] (+ an outline colour), with no ring-* utility and no outline-none. Anything else must be listed here with a reason. Each entry names a file and a key (a substring of the className string); one entry per component, never a glob. An entry matching no hit FAILS the check (stale). Unlisted hits FAIL. Rule (lead, revised): the one ring applies to all standalone actions AND form controls on SAOC surfaces.",
   "allow": [
     {
       "file": "components/chrome/Header.tsx",
       "key": "group relative inline-flex",
-      "reason": "NAV-1 underline focus: nav links keep the nav design's own underline focus ruling; F1b owns the nav."
+      "reason": "NAV-1 underline focus: the Header nav items keep the nav design's own underline focus ruling; F1b owns the nav."
     },
     {
       "file": "components/chrome/MobileMenu.tsx",
       "key": "group flex items-center",
-      "reason": "NAV-1 underline focus: nav links keep the nav design's own underline focus ruling; F1b owns the nav."
+      "reason": "NAV-1 underline focus: the MobileMenu drawer nav rows keep the nav design's own underline focus ruling; F1b owns the nav."
     },
     {
-      "file": "components/sponsors/SponsorEnquiryForm.tsx",
-      "key": "mt-0.5 h-6 w-6",
-      "reason": "form-control field focus: a text input, select, checkbox or radio keeps its field focus ring. Outside F1a's one-ring scope (the golden names hero CTAs, Menu, Join and footer links). (checkbox)"
+      "file": "components/admin/tokens.ts",
+      "key": "focus-visible:outline-offset-[-4px]",
+      "reason": "Codi ruling, inset ring on dark table headers: FOCUS_RING_ON_DARK (inset -4px, accent-soft). An outset ring would clip there."
     },
     {
-      "file": "components/vendors/VendorBooleanRadioField.tsx",
-      "key": "size-6 border border-rule",
-      "reason": "form-control field focus: a text input, select, checkbox or radio keeps its field focus ring. Outside F1a's one-ring scope (the golden names hero CTAs, Menu, Join and footer links). (radio)"
+      "file": "app/admin/login/GoogleSignInButton.tsx",
+      "key": "focus-visible:outline-offset-2",
+      "reason": "Provider sign-in button: a third-party brand button whose className carries the provider's brand hex values (tracked by A6). Admin-only."
     },
     {
-      "file": "components/vendors/VendorCheckboxField.tsx",
-      "key": "size-6 rounded-sm",
-      "reason": "form-control field focus: a text input, select, checkbox or radio keeps its field focus ring. Outside F1a's one-ring scope (the golden names hero CTAs, Menu, Join and footer links). (checkbox)"
+      "file": "app/admin/login/AppleSignInButton.tsx",
+      "key": "focus-visible:outline-offset-2",
+      "reason": "Provider sign-in button: a third-party brand button whose className carries the provider's brand hex values (tracked by A6). Admin-only."
     },
     {
-      "file": "components/vendors/VendorCheckboxGroupField.tsx",
-      "key": "size-6 shrink-0 accent-primary",
-      "reason": "form-control field focus: a text input, select, checkbox or radio keeps its field focus ring. Outside F1a's one-ring scope (the golden names hero CTAs, Menu, Join and footer links). (checkbox)"
-    },
-    {
-      "file": "components/vendors/VendorElectricalEquipmentTable.tsx",
-      "key": "px-3 py-2",
-      "reason": "form-control field focus: a text input, select, checkbox or radio keeps its field focus ring. Outside F1a's one-ring scope (the golden names hero CTAs, Menu, Join and footer links). (equipment table cell input)"
-    },
-    {
-      "file": "components/vendors/VendorGasEquipmentTable.tsx",
-      "key": "px-3 py-2",
-      "reason": "form-control field focus: a text input, select, checkbox or radio keeps its field focus ring. Outside F1a's one-ring scope (the golden names hero CTAs, Menu, Join and footer links). (equipment table cell input)"
-    },
-    {
-      "file": "components/vendors/VendorFormField.tsx",
-      "key": "block w-full rounded-sm border border-muted",
-      "reason": "form-control field focus: a text input, select, checkbox or radio keeps its field focus ring. Outside F1a's one-ring scope (the golden names hero CTAs, Menu, Join and footer links). (text input)"
-    },
-    {
-      "file": "components/vendors/VendorRadioGroupField.tsx",
-      "key": "size-6 border border-rule",
-      "reason": "form-control field focus: a text input, select, checkbox or radio keeps its field focus ring. Outside F1a's one-ring scope (the golden names hero CTAs, Menu, Join and footer links). (radio)"
-    },
-    {
-      "file": "components/vendors/VendorRegistrationCodeEntryForm.tsx",
-      "key": "w-full rounded-sm border border-rule bg-ivory px-3.5",
-      "reason": "form-control field focus: a text input, select, checkbox or radio keeps its field focus ring. Outside F1a's one-ring scope (the golden names hero CTAs, Menu, Join and footer links). (code input)"
+      "file": "app/admin/login/MicrosoftSignInButton.tsx",
+      "key": "focus-visible:outline-offset-2",
+      "reason": "Provider sign-in button: a third-party brand button whose className carries the provider's brand hex values (tracked by A6). Admin-only."
     }
   ]
 }
