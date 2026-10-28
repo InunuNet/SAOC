@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "node scripts/generate-image-variants.mjs && next dev --port 3002",
-    "build": "node scripts/generate-image-variants.mjs && next build",
+    "build": "node scripts/generate-image-variants.mjs && next build && node scripts/crimson-font-preload.mjs --verify",
     "start": "next start",
     "lint": "eslint .",
     "format": "prettier --write .",
