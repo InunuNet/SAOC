@@ -2,9 +2,9 @@
   "_source": "Every value traces to goldens/rulings.md or to the cited file:line on origin/main 8d9027c9.",
   "parityTolerancePx": 0.5,
   "iconWidthEm": 1.1,
-  "iconWidthSource": "app/(nos)/national-show/nos-structure.css:1284-1286 (.nos-theme .nk-icon width/height 1.1em); ruling answer 1",
-  "forwardGapPx": 10,
-  "forwardGapSource": "app/(nos)/national-show/nos-structure.css:1303 (.nos-theme .nk-btn gap: 10px); the gate also reads it live from a forward .nk-btn on the tickets page",
+  "iconWidthSource": "app/(nos)/national-show/nos-structure.css:1284-1286 on base (.nos-theme .nk-icon width/height 1.1em); NOS Design: '1.1em of the label, checked mirrored against unmirrored'",
+  "forwardGapPx": 8,
+  "forwardGapSource": "app/(nos)/national-show/nos-structure.css:2146 on base 8d9027c9 (.nos-theme .nk-visit a gap: 8px; the rule opens at :2143). NOS Design: 'These are text links, so they take the .nk-visit gap; 10 is the button gap.' The gate also reads it live from a forward .nk-visit a on /tickets",
   "hoverNudgePx": -3,
   "hoverNudgeSource": "ruling answer 3; mirrors nos-structure.css:1331-1333 (.nk-btn:hover .nk-icon translateX(3px)); timing nos-structure.css:1327-1329 (var(--dur-slow) var(--ease-nos), no-preference only)",
   "hoverSettleMs": 1500,
@@ -46,7 +46,17 @@
   ],
   "forwardReference": {
     "page": "/tickets",
-    "selector": "a.nk-btn:has(svg.nk-icon)"
+    "selector": ".nk-visit a:has(svg.nk-icon)"
   },
-  "fixtureStub": "synthetic past shows 2024 and 2023 (year + status only), test-only: the tracked capture has pastShowsQuery result [] so no real archive year exists in replay"
+  "fixtureStub": "synthetic past shows 2024 and 2023 (year + status only), test-only: the tracked capture has pastShowsQuery result [] so no real archive year exists in replay",
+  "iconWidthPx": 15.4,
+  "iconWidthPxSource": "1.1em of the 14px Caps label",
+  "caps": {
+    "fontFamilyMatch": "karla",
+    "fontWeight": "700",
+    "fontSizePx": 14,
+    "letterSpacingEm": 0.12,
+    "textTransform": "uppercase",
+    "source": "NOS Design: 'NR-8 Caps is 14'; the Caps tuple from type-tokens docs/nos-type-tokens.md is 'Caps (Karla 700, 14px, 0.12em, uppercase)'. type-tokens (feat/nos-type-tokens 4e7fe348) does not touch archive/[year]/page.tsx and its --w-caps token is not on main, so the gate asserts computed values, not a token name"
+  }
 }

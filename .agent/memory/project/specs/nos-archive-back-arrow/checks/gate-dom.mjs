@@ -2,6 +2,7 @@
 //   parity   (A6) mirror parity +-0.5px against a forward keepsake: icon width, icon-to-label gap, icon vertical centre against the label
 //   mirror   (A7) the icon is one svg.nk-icon, aria-hidden, leads the label with no literal space, at rest its computed transform is a pure scaleX(-1)
 //   hover    (A8) hover moves the icon -3px under no-preference and 0 under reduce
+//   caps     (A13) both labels compute the NR-8 Caps tuple: Karla, 700, 14px, 0.12em, uppercase
 //   focus    (A9) keyboard focus ring, tab-stop count and 44px target match the main baseline (goldens/baseline-main.json); --record writes that baseline
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { BASELINE_FILE, V, gotoSettled, launchChromium, newContext, withServer } from './_lib.mjs';
@@ -59,7 +60,7 @@ async function measureControl(page, spec) {
 const measure = (page, spec) => page.evaluate(measureInPage, spec);
 const near = (a, b, tol = TOL) => Math.abs(a - b) <= tol;
 
-/** A forward keepsake on NOS today: the first a.nk-btn with an icon on the tickets page, label then arrow. Gap and vertical offset are read from its boxes. */
+/** A forward keepsake text link on NOS today: the first .nk-visit a with an icon on the tickets page, label then arrow. Gap and vertical offset are read from its boxes. */
 async function forwardReference(page, server, c) {
   await gotoSettled(page, server, V.forwardReference.page, c);
   const ref = await page.evaluate((selector) => {
@@ -75,20 +76,21 @@ async function forwardReference(page, server, c) {
   }, V.forwardReference.selector);
   c.check(`a forward keepsake (${V.forwardReference.selector}) exists on ${V.forwardReference.page}`, ref !== null);
   if (ref) {
-    c.check(`the forward keepsake's flex gap is ${V.forwardGapPx}px (golden, nos-structure.css:1303); measured ${ref.columnGap}`, near(ref.columnGap, V.forwardGapPx, 0.01));
+    c.check(`the forward keepsake link's flex gap is ${V.forwardGapPx}px (golden, .nk-visit a, nos-structure.css:2146 on base); measured ${ref.columnGap}`, near(ref.columnGap, V.forwardGapPx, 0.01));
     c.check(`the forward keepsake's measured icon gap (${ref.gap.toFixed(2)}) equals its flex gap`, near(ref.gap, ref.columnGap));
   }
   return ref;
 }
 
 /** NOS_ARROW_SELFTEST=1: the gate's own proof that a correct implementation passes. Injects the spec's fix shape (keepsake ArrowIcon markup, scaleX(-1),
- * margin-inline-end 10px, -3px hover under no-preference only) into the served page, so the same measurements run against it. Never set in the contract. */
+ * margin-inline-end 8px, -3px hover under no-preference only) into the served page, so the same measurements run against it. Never set in the contract. */
 async function injectFixShape(page) {
   await page.evaluate(() => {
     const style = document.createElement('style');
-    style.textContent = `[data-selftest-arrow]{transform:scaleX(-1);margin-inline-end:10px}
+    style.textContent = `[data-selftest-arrow]{transform:scaleX(-1);margin-inline-end:8px}
       @media (prefers-reduced-motion: no-preference){[data-selftest-arrow]{transition:transform var(--dur-slow) var(--ease-nos)}
-      a:hover [data-selftest-arrow]{transform:translateX(-3px) scaleX(-1)}}`;
+      a:hover [data-selftest-arrow]{transform:translateX(-3px) scaleX(-1)}}
+      a[data-nos-backlink], main a[href="/archive/2023"] span:first-child{font-family:var(--sans);font-weight:700;font-size:14px;letter-spacing:.12em;text-transform:uppercase}`;
     document.head.append(style);
     const svg = '<svg class="nk-icon" data-selftest-arrow viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>';
     const back = document.querySelector('a[data-nos-backlink]');
@@ -118,15 +120,18 @@ async function parity(server, c, browser) {
     const ctl = await measureControl(page, link);
     const wantWidth = V.iconWidthEm * m.fontSize;
     c.check(`[${link.id}] icon width ${m.iconRect.width.toFixed(2)} = ${V.iconWidthEm}em of ${m.fontSize}px = ${wantWidth.toFixed(2)} (ruling answer 1)`, near(m.iconRect.width, wantWidth));
+    c.check(`[${link.id}] icon width ${m.iconRect.width.toFixed(2)} = ${V.iconWidthPx}px (1.1em of the ${V.caps.fontSizePx}px Caps label)`, near(m.iconRect.width, V.iconWidthPx));
     c.check(`[${link.id}] mirrored width ${m.iconRect.width.toFixed(2)} = unmirrored control ${ctl.iconRect.width.toFixed(2)}`, near(m.iconRect.width, ctl.iconRect.width));
     c.check(`[${link.id}] mirrored left edge ${m.iconRect.left.toFixed(2)} = unmirrored control ${ctl.iconRect.left.toFixed(2)} (mirrors about its own centre)`, near(m.iconRect.left, ctl.iconRect.left));
     c.check(`[${link.id}] mirrored vertical centre ${m.iconRect.cy.toFixed(2)} = unmirrored control ${ctl.iconRect.cy.toFixed(2)}`, near(m.iconRect.cy, ctl.iconRect.cy));
     const gap = m.labelRect.left - m.iconRect.right;
-    c.check(`[${link.id}] icon-to-label gap ${gap.toFixed(2)} = ${V.forwardGapPx}px, the forward keepsake gap (ruling answer 2)`, near(gap, V.forwardGapPx));
+    c.check(`[${link.id}] icon-to-label gap ${gap.toFixed(2)} = ${V.forwardGapPx}px, the forward text-link gap (NOS Design: .nk-visit gap)`, near(gap, V.forwardGapPx));
     if (fwd) c.check(`[${link.id}] gap ${gap.toFixed(2)} = the live forward keepsake gap ${fwd.gap.toFixed(2)}`, near(gap, fwd.gap));
     c.check(`[${link.id}] trailing-side spacing is margin-inline-end ${V.forwardGapPx}px (computed ${m.marginInlineEnd})`, m.marginInlineEnd !== null && near(parseFloat(m.marginInlineEnd), V.forwardGapPx, 0.01));
     const vDelta = m.iconRect.cy - m.labelRect.cy;
-    if (fwd) c.check(`[${link.id}] icon vertical centre vs label ${vDelta.toFixed(2)} = the forward keepsake's ${fwd.vDelta.toFixed(2)}`, near(vDelta, fwd.vDelta));
+    // The label's text-box centre sits a font-metric offset from the line-box centre, so the offset differs with label size (16px forward link vs 14px Caps): the back arrow must be
+    // no worse centred on its label than the forward keepsake, within the tolerance. Mirrored-vs-unmirrored vertical equality is the exact check above.
+    if (fwd) c.check(`[${link.id}] icon vertical centre vs label |${vDelta.toFixed(2)}| <= the forward keepsake's |${fwd.vDelta.toFixed(2)}| + ${TOL}`, Math.abs(vDelta) <= Math.abs(fwd.vDelta) + TOL);
   }
   await ctx.close();
 }
@@ -170,6 +175,32 @@ async function hover(server, c, browser) {
   }
 }
 
+async function caps(server, c, browser) {
+  const ctx = await newContext(browser); const page = await ctx.newPage();
+  await openLinks(page, server, c);
+  const want = V.caps;
+  for (const link of V.links) {
+    const s = await page.evaluate(({ selector, label }) => {
+      const el = document.querySelector(selector);
+      if (!el) return null;
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      let node = null;
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) { if (n.data.trim().endsWith(label)) { node = n; break; } } // endsWith: on base the text node is the glyph plus the label
+      if (!node) return null;
+      const cs = getComputedStyle(node.parentElement);
+      return { family: cs.fontFamily, weight: cs.fontWeight, size: parseFloat(cs.fontSize), spacing: parseFloat(cs.letterSpacing), transform: cs.textTransform };
+    }, link);
+    c.check(`[${link.id}] the label "${link.label}" exists`, s !== null);
+    if (!s) continue;
+    c.check(`[${link.id}] font-family is Karla (got ${s.family})`, s.family.toLowerCase().includes(want.fontFamilyMatch));
+    c.check(`[${link.id}] font-weight ${want.fontWeight} (got ${s.weight})`, s.weight === want.fontWeight);
+    c.check(`[${link.id}] font-size ${want.fontSizePx}px (got ${s.size})`, near(s.size, want.fontSizePx, 0.01));
+    c.check(`[${link.id}] letter-spacing ${want.letterSpacingEm}em = ${(want.letterSpacingEm * want.fontSizePx).toFixed(2)}px (got ${s.spacing})`, near(s.spacing, want.letterSpacingEm * want.fontSizePx, 0.01));
+    c.check(`[${link.id}] text-transform ${want.textTransform} (got ${s.transform})`, s.transform === want.textTransform);
+  }
+  await ctx.close();
+}
+
 async function tabTo(page, selector) {
   for (let i = 1; i <= 120; i += 1) {
     await page.keyboard.press('Tab');
@@ -210,7 +241,7 @@ async function focus(server, c, browser) {
   await ctx.close();
 }
 
-const MODES = { parity, mirror, hover, focus };
+const MODES = { parity, mirror, hover, caps, focus };
 if (!MODES[MODE]) { console.error(`usage: gate-dom.mjs <${Object.keys(MODES).join('|')}> [--record]`); process.exit(2); }
 await withServer(`gate-dom ${MODE}`, async (server, c) => {
   const browser = await launchChromium();

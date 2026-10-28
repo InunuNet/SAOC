@@ -43,7 +43,7 @@ assertions:
       description: "(b) zero U+2190 in the rendered HTML of /archive/2024, /archive/2023, /archive, /faq and / on the NOS host, each a 200. RED on main: /archive/2024 (two) and /archive/2023."
       command: node .agent/memory/project/specs/nos-archive-back-arrow/checks/gate-html.mjs
     - id: A9
-      description: "(c) mirror parity +-0.5px in the browser: icon width (1.1em), icon-to-label gap (the live forward .nk-btn gap, 10px) and icon vertical centre against the label, for both links. RED on main: no icon."
+      description: "(c) mirror parity +-0.5px in the browser: icon width (1.1em of the 14px Caps label = 15.4px, mirrored = unmirrored), icon-to-label gap (the live forward .nk-visit a gap, 8px) and icon vertical centre against the label, for both links. RED on main: no icon."
       command: node .agent/memory/project/specs/nos-archive-back-arrow/checks/gate-dom.mjs parity
     - id: A10
       description: "(d) one svg.nk-icon per link, aria-hidden, focusable=false, leads the label with no literal space, computed transform at rest is matrix(-1,0,0,1,0,0). RED on main: no icon."
@@ -54,3 +54,6 @@ assertions:
     - id: A12
       description: "(f) keyboard focus ring, tab-stop count and 44px target match the main baseline (goldens/baseline-main.json). GREEN on main by design: these must not change."
       command: node .agent/memory/project/specs/nos-archive-back-arrow/checks/gate-dom.mjs focus
+    - id: A13
+      description: "Both labels compute the NR-8 Caps tuple (NOS Design ruling): font-family Karla, weight 700, size 14px, letter-spacing 0.12em (1.68px), text-transform uppercase. RED on main: 12px, 0.14em / 0.18em."
+      command: node .agent/memory/project/specs/nos-archive-back-arrow/checks/gate-dom.mjs caps
