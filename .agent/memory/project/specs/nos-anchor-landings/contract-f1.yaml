@@ -37,8 +37,11 @@ assertions:
     - id: A6
       description: "The :2740 comment is corrected: 'not sticky under 780' is gone and the comment names 768 and --nos-header-h. RED on main."
       command: node .agent/memory/project/specs/nos-anchor-landings/checks/check-static.mjs comment
+    - id: A6b
+      description: "Sponsor card (scope add from SAOC): its scroll-margin-top is var(--nos-landing-air) below 768 and calc(var(--nos-header-h) + var(--nos-landing-air)) from 768, no literal length, no 700px card block. RED on main (68 / 121 literals)."
+      command: node .agent/memory/project/specs/nos-anchor-landings/checks/check-static.mjs sponsor-card
     - id: A7
-      description: "Diff scope: only nos-structure.css, nos-chrome.css, globals.css, docs/nos-anchor-landings.md and this spec changed; no SAOC-lane file (components/sponsors/*, sponsors/page.tsx, NewsletterSignup.tsx, app/layout.tsx), CLAUDE.md, AGENTS.md, .claude, execution, test-results or .env*."
+      description: "Diff scope: only nos-structure.css (hunk-level: the doc-variable block, the generic hash-target rules and the sponsor card rules), nos-chrome.css, globals.css, docs/nos-anchor-landings.md and this spec changed; no SAOC-lane file (components/sponsors/*, sponsors/page.tsx, NewsletterSignup.tsx, app/layout.tsx), CLAUDE.md, AGENTS.md, .claude, execution, test-results or .env*."
       command: node .agent/memory/project/specs/nos-anchor-landings/checks/check-diff-scope.mjs
     - id: A8
       description: "tsc --noEmit passes."

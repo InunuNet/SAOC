@@ -14,7 +14,26 @@ const bFirst = STRUCT.indexOf(TB, bStart);
 const bLast = bFirst < 0 ? -1 : STRUCT.indexOf(TB, bFirst + 1); // the >=768 variant is the second ticketing-bar rule
 if (bStart < 0 || bLast < 0) fail('generic hash-target rules not found in nos-structure.css');
 const B = STRUCT.slice(bStart, STRUCT.indexOf('}\n}', bLast) + 3);
+const cardRules = () => {
+  const out = []; const lines = STRUCT.split('\n'); let depth = 0; let cur = null;
+  lines.forEach((l, i) => {
+    if (depth === 0 && l.includes('{')) cur = { start: i + 1, text: '' };
+    if (cur) cur.text += l + '\n';
+    depth += (l.match(/\{/g) ?? []).length - (l.match(/\}/g) ?? []).length;
+    if (depth === 0 && cur) { if (cur.text.includes("data-sponsor-enquiry='nos'") && cur.text.includes('scroll-margin-top')) out.push({ ...cur, end: i + 1 }); cur = null; }
+  });
+  return out;
+};
 const checks = {
+  'sponsor-card'() {
+    const rules = cardRules();
+    if (rules.length < 2) fail('expected the card base rule and its >=768 media rule to declare scroll-margin-top');
+    const decls = rules.flatMap((r) => noComments(r.text).match(/scroll-margin-top:[^;]*;/g) ?? []);
+    if (decls.some((d) => /\d{2,}px/.test(d.replace(/var\([^)]*\)/g, '')))) fail(`a literal length remains in the card scroll-margin: ${decls.join(' ')}`);
+    if (!decls.includes('scroll-margin-top: var(--nos-landing-air);')) fail('card base margin must be var(--nos-landing-air)');
+    if (!decls.includes('scroll-margin-top: calc(var(--nos-header-h) + var(--nos-landing-air));')) fail('card >=768 margin must be calc(var(--nos-header-h) + var(--nos-landing-air))');
+    if (rules.some((r) => /min-width:\s*700px/.test(r.text))) fail('a 700px card media block remains');
+  },
   bp768() {
     const a = noComments(A);
     if (/780px/.test(a)) fail('780px still present in the doc-variable block');

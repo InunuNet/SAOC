@@ -55,6 +55,18 @@
   }
 }
 
+/* ---- Region C (scope add from SAOC, 2026-10-28): the sponsor card's scroll-margin-top declarations, whatever shape SAOC's card fix left them in, become exactly: ---- */
+.nos-theme [data-sponsor-enquiry='nos'] {
+  scroll-margin-top: var(--nos-landing-air); /* nothing pinned under 768 */
+  /* ...the rest of the card rule (background, radius, shadow, padding) is untouched... */
+}
+@media (min-width: 768px) {
+  .nos-theme [data-sponsor-enquiry='nos'] {
+    scroll-margin-top: calc(var(--nos-header-h) + var(--nos-landing-air));
+  }
+}
+/* No 700px card media block remains (24 under 768, header + 24 from 768). */
+
 /* ---- nos-chrome.css :root additions (after --nc-ease) ---- */
 /*  --nos-header-h: 97px;      rendered height of the pinned NOS header from 768 (measured 96.9px at 768-2056); probe-chrome.mjs fails if it drifts
     --nos-landing-air: 24px;   clear space between pinned chrome and a landed hash target (NOS Design 2026-10-28) */
