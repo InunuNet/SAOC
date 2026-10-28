@@ -1,6 +1,10 @@
-// F1a A4 (static half): ONE focus ring, enumerated. Scans every .ts/.tsx under app/ and components/ (NOS-host-only code excluded: components/nos-chrome/, components/nos/, app/(nos)/) for className strings carrying
+// F1a A4 (static half): ONE focus ring, enumerated. Scans every .ts/.tsx under app/ and components/ for className strings carrying
 // focus:ring-*, focus-visible:ring-*, ring-offset-* focus(-visible):outline-none or a focus outline-offset other than [3px] (cues that are not outline or ring, such as group-focus underline, focus:bg-*, focus:border-*, are ignored). A hit passes only if it IS the one ring (focus-visible:outline-2, outline-solid, outline-offset-[3px], no ring-*, no outline-none);
 // otherwise it must appear in goldens/focus-classes.json with a reason. Unlisted hits FAIL; a listed entry that matches no hit FAILS as stale. The runtime probes in check-focus-ring.mjs cover named elements only.
+// SCOPE, stated once. (1) The class-string scan above excludes ONLY the explicit EXCLUDED list below: components/nos-chrome/, components/nos/, components/show/, components/tickets/TicketTypeCard.tsx and app/(nos)/ (NOS-host chrome and pages).
+// NOS-routed SHARED components that live elsewhere (components/vendors/*, components/tickets/* other than TicketTypeCard, components/contact/NosContactAside.tsx) are IN SCOPE of the class-string scan ON PURPOSE.
+// (2) The NOS-routed exemption (derived from the import graph, printed, DC_LIST_NOS=1 lists the files) applies ONLY to the second, standalone-element pass further down. It does not touch the class-string scan, and check-error-summary-static.mjs
+// (the alert scan) likewise covers NOS-routed components on purpose.
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { check, finish } from './lib.mjs';

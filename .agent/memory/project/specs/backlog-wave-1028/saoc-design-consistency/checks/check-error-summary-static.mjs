@@ -1,5 +1,5 @@
 // F1a: EVERY alert on a SAOC surface is classified, and anything not explicitly (b) or (c) must be an (a) error summary that matches the golden.
-//   Enumerated by scanning every .tsx under app/ and components/ (NOS chrome, components/nos-chrome/, excluded) for role="alert", role={...'alert'...} and aria-live="assertive": no file list.
+//   Enumerated by scanning every .tsx under app/ and components/ (only NOS chrome, components/nos-chrome/, is excluded; NOS-routed components such as components/vendors/* and components/tickets/* are scanned ON PURPOSE, the standalone-focus NOS-routed exemption of check-focus-classes-static.mjs does not apply here) for role="alert", role={...'alert'...} and aria-live="assertive": no file list.
 //   (a) error summary / page-level error: border-2 border-[var(--status-error)], an aria-hidden icon, status-error text, NO background tint.
 //   (b) field-level alert of a named allowed kind, (c) not an error (status notice): listed in goldens/alert-classes.json with a reason. New alerts default to (a).
 // The old version only inspected alerts that already had the status-error border, so a summary MISSING its border was invisible to it (the unsubscribe page).
