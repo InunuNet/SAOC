@@ -163,7 +163,7 @@ export function NewsletterSignup({
           {topicsInvalid ? (
             showCopyGap ? (
               <p id={topicsErrorId} role="alert" className={`mt-1.5 border-l-2 px-4 font-sans text-[14px] text-ivory ${site === 'nos' ? 'border-error' : 'border-[var(--status-error-on-dark)]'}`}>
-                <span aria-hidden="true">⚠︎</span>{' '}
+                <span aria-hidden="true" className={site === 'nos' ? undefined : 'text-[var(--status-error-on-dark)]'}>⚠︎</span>{' '}
                 <span>COPY GAP — AI-generated placeholder: Select at least one newsletter topic.</span>
               </p>
             ) : (

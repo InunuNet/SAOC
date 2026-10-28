@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 import { StatusPill } from '@/components/admin/StatusPill';
 import { CARD_CLASS } from '@/components/admin/tokens';
+import { FormErrorAlert } from '@/components/ui/FormErrorAlert';
 import { formatAdminDateTime } from '@/lib/admin-format';
 import { PAYMENT_MODES, SELECTABLE_PAYMENT_MODES, type PaymentMode } from '@/lib/payment-mode';
 import type { PaymentSettingsChange } from '@/lib/payment-settings-audit';
@@ -122,7 +123,9 @@ export function PaymentSettingsPanel({
           ))}
         </div>
         {gateway === null ? (
-          <ErrorText>No gateway is set — checkout will refuse purchases until one is chosen.</ErrorText>
+          <div className="mt-3">
+            <FormErrorAlert>No gateway is set — checkout will refuse purchases until one is chosen.</FormErrorAlert>
+          </div>
         ) : null}
         {gatewayError ? <ErrorText>{gatewayError}</ErrorText> : null}
       </section>
@@ -183,7 +186,9 @@ export function PaymentSettingsPanel({
       <section className={CARD_CLASS}>
         <h2 className="font-sans text-[15px] text-ink">Recent changes</h2>
         {recentLoadFailed ? (
-          <ErrorText>Recent changes could not be loaded.</ErrorText>
+          <div className="mt-3">
+            <FormErrorAlert>Recent changes could not be loaded.</FormErrorAlert>
+          </div>
         ) : recent.length === 0 ? (
           <p className="mt-2 font-sans text-[13px] text-muted">No changes recorded yet.</p>
         ) : (
