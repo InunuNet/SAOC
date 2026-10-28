@@ -28,7 +28,7 @@ assertions:
       command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-fonts-network.mjs"
       timeout_seconds: 900
     - id: A3
-      description: "Lever 2 glyph coverage against the SHIPPED subset files: every served font has ê ë é è ô ï û ŉ and ‘ ’ “ ” – — … · • × R, nothing outside Latin + Latin-1 + the allowed symbol ranges. Fails on main: U+0149 is missing from every shipped file"
+      description: "Lever 2 glyph coverage against the SHIPPED subset files: every served font has ê ë é è ô ï û (U+0149 DROPPED by NOS Design ruling 2026-10-28) and ‘ ’ “ ” – — … · • × R, nothing outside Latin + Latin-1 + the allowed symbol ranges. Fails on main: U+0149 is missing from every shipped file"
       command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-font-glyphs.mjs"
       timeout_seconds: 900
     - id: A4
@@ -52,7 +52,7 @@ assertions:
       command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-critical-css-identical.mjs"
       timeout_seconds: 1500
     - id: A9
-      description: "Lever 4: favicon links total <=10 KB (<=15 KB with an .ico), apple-touch <=20 KB, each icon derived from the supplied emblem (goldens/favicon-source.json sha256) and not redrawn, 16/32/180 review renders present. Fails on main: 277.6 KB"
+      description: "Lever 4: icons fetched on page load total <=10 KB (no .ico allowance), apple-touch <=16 KB (NOS Design corrected caps), each icon derived from the supplied emblem (goldens/favicon-source.json sha256) and not redrawn, 16/32/180 review renders present. Fails on main: 277.6 KB"
       command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-favicon.mjs"
       timeout_seconds: 900
     - id: A10
@@ -102,3 +102,25 @@ assertions:
       phase: 5
       description: "RUN AFTER DEPLOY (phase 5, not part of the phase 4 gate). Deployed preload order and single font preload on / and /about."
       command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-preload-order.mjs"
+    - id: A21
+      description: "NOS Design favicon ruling: served 16 and 32 PNGs exist and are cropped to the flower (longer side >=87% of the cell, >=1px margin), the 180 is opaque on #F4F3EC with the flower at 72-80% (76% ruled). Fails on main (no 16/32 PNG icon links, apple icon transparent)"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-favicon-crop.mjs"
+      timeout_seconds: 900
+    - id: A22
+      description: "The 16/32/180 review renders in goldens/favicon-renders obey the same crop and opaque-ground rules (static, derived by checks/make-favicon-renders.mjs from the confirmed source app/icon.png)"
+      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-favicon-crop.mjs --goldens"
+    - id: A23
+      description: "Glyph ruling: U+2192 and U+203B never render from a system face. Any svg[data-glyph] is aria-hidden, 1em, currentColor, on the baseline; every status marker leads with a text mark in a shipped face or the status-mark SVG (if no shipped face has U+203B it must be the SVG). Source rule: when no shipped face has U+203B, components/show/_shared/StatusMarker.tsx must hold an aria-hidden 1em currentColor svg[data-glyph=status-mark] and no text mark (StatusMarker renders on the NOS host, unreachable from the local SAOC-host routes, so the source is checked as well as the DOM). Fails on main (no shipped face has U+203B, StatusMarker renders it as text)"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-glyph-svg.mjs"
+      timeout_seconds: 900
+    - id: A24
+      description: "REPORT ONLY: scan the Sanity fixtures for U+0149 and print each hit with file:line. Never converts, always exits 0; hits go to NOS Design, not into the content"
+      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/scan-fixtures-u0149.mjs"
+    - id: A25
+      phase: 5
+      description: "RUN AFTER DEPLOY (phase 5). Deployed favicon crop, caps and opaque 180. Plain shell check, reads beta credentials inside the scripts, never printed."
+      command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-favicon-crop.mjs"
+    - id: A26
+      phase: 5
+      description: "RUN AFTER DEPLOY (phase 5). Deployed glyph SVG rules and status marker mark on the ten routes."
+      command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-glyph-svg.mjs"

@@ -1,9 +1,9 @@
-// F1e lever 2 (glyph coverage, against the shipped subset files): every font file the site serves contains ê ë é è ô ï û ŉ and the typographic punctuation
-// ‘ ’ “ ” – — … · • × plus the letter R. Today NO shipped file has U+0149 (ŉ): Afrikaans text falls back to a system face. The subset stays Latin + Latin-1 plus
+// F1e lever 2 (glyph coverage, against the shipped subset files): every font file the site serves contains ê ë é è ô ï û and the typographic punctuation
+// ‘ ’ “ ” – — … · • × plus the letter R. U+0149 (ŉ) is NOT required (NOS Design ruling 2026-10-28: deprecated, Afrikaans now writes 'n; scan-fixtures-u0149.mjs reports any fixture hits). U+2192 and U+203B are governed by check-glyph-svg.mjs and the fallback walk. The subset stays Latin + Latin-1 plus
 // these: no code point outside Basic Latin, Latin-1, Latin Extended (U+0100-024F), U+02xx modifiers, combining marks (U+0300-036F), General Punctuation, currency/symbols (U+20AC, U+2122, U+2190-2193, U+2212, U+2215, U+FEFF).
 import { withSite, openPage, check, finish } from './lib.mjs';
 import { woff2Cmap } from './lib-woff2.mjs';
-const NEED = [...'êëéèôïûŉ‘’“”–—…·•×R']; const ALLOWED = [[0x20, 0x7e], [0xa0, 0xff], [0x100, 0x24f], [0x2b0, 0x2ff], [0x300, 0x36f], [0x2000, 0x206f], [0x20ac, 0x20ac], [0x2122, 0x2122], [0x2190, 0x2193], [0x2212, 0x2212], [0x2215, 0x2215], [0xfeff, 0xfeff], [0, 0x1f]];
+const NEED = [...'êëéèôïû‘’“”–—…·•×R']; const ALLOWED = [[0x20, 0x7e], [0xa0, 0xff], [0x100, 0x24f], [0x2b0, 0x2ff], [0x300, 0x36f], [0x2000, 0x206f], [0x20ac, 0x20ac], [0x2122, 0x2122], [0x2190, 0x2193], [0x2212, 0x2212], [0x2215, 0x2215], [0xfeff, 0xfeff], [0, 0x1f]];
 await withSite(async ({ base, browser, ctxOpts, deployed }) => {
   const files = new Set(); let ctx;
   for (const path of deployed ? ['/', '/about'] : ['/about']) {

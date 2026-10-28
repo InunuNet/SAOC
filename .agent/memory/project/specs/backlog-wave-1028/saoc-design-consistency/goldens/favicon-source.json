@@ -1,6 +1,5 @@
 {
   "path": ".agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/favicon-source/emblem-512.png",
   "sha256": "6824a04ff9f16dcebf2ec6be817a78edae8f65c902312e2baa3dcc8117104580",
-  "provenance": "copy of app/icon.png at origin/main 48d74378 (git blob 98c6aea92b02ae28a89bf258c05363a812641711), committed in d42f6cc0 as the council-approved SA Orchid Council emblem favicon; the NOS Design text does not name the file, to be confirmed",
-  "altCandidate": "branding/SA Orchid Council/emblem/Eulophia-speciosa-emblem.png (1254px, untracked, Brad active workstream, read-only)"
+  "provenance": "copy of app/icon.png at origin/main 48d74378 (git blob 98c6aea9, committed in d42f6cc0). CONFIRMED by NOS Design 2026-10-28 as the supplied emblem."
 }
