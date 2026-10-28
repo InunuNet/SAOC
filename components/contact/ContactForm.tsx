@@ -286,7 +286,7 @@ export function ContactForm({ site = 'saoc', markPlaceholders = false }: Contact
 
       {/* Inline error */}
       {showError ? (
-        <div ref={formError} tabIndex={-1} className="outline-none">
+        <div ref={formError} tabIndex={-1} className="focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]">
           <TicketFieldAlert id={FORM_ERROR_ID}>{errorMessage}</TicketFieldAlert>
         </div>
       ) : null}

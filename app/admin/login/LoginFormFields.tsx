@@ -22,7 +22,7 @@ interface LoginFormFieldsProps {
 // Matches ContactForm's input/label treatment (components/contact/ContactForm.tsx)
 // plus a visible focus ring — the site's own inputs otherwise rely on border colour alone.
 const inputClass =
-  'min-h-[44px] w-full rounded-sm border border-rule bg-ivory px-3.5 py-2.5 font-sans text-[16px] leading-[23.25px] text-ink placeholder:text-muted outline-none transition-colors focus:border-ink/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-primary disabled:opacity-60';
+  'min-h-[44px] w-full rounded-sm border border-rule bg-ivory px-3.5 py-2.5 font-sans text-[16px] leading-[23.25px] text-ink placeholder:text-muted transition-colors focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] disabled:opacity-60';
 const labelClass = 'font-mono text-[11px] tracking-[0.16em] text-muted';
 
 /**
@@ -108,7 +108,7 @@ export function LoginFormFields({
       </div>
 
       {error && (
-        <div ref={errorRef} tabIndex={-1} className="outline-none">
+        <div ref={errorRef} tabIndex={-1} className="focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]">
           <TicketFieldAlert>{error}</TicketFieldAlert>
         </div>
       )}
