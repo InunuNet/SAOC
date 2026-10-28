@@ -14,6 +14,7 @@ goldens:
   - .agent/memory/project/specs/council-1028/council-design-1/goldens/spec.md
   - .agent/memory/project/specs/council-1028/council-design-1/goldens/type-roles.json
   - .agent/memory/project/specs/council-1028/council-design-1/goldens/c1-footer-lockup.json
+  - .agent/memory/project/specs/council-1028/council-design-1/goldens/footer-reg-line.json
   - .agent/memory/project/specs/council-1028/council-design-1/goldens/c5-society-icons.json
   - .agent/memory/project/specs/council-1028/council-design-1/goldens/c5-icons/facebook.svg
   - .agent/memory/project/specs/council-1028/council-design-1/goldens/c5-icons/instagram.svg
@@ -42,7 +43,7 @@ assertions:
       description: "F1e supersession is recorded: check-fonts-network asserts <=3 with a COUNCIL-1 note, F1e contract A2 and A19 say <=3 and cite COUNCIL-1, docs/saoc-design-consistency.md records the change"
       command: "node .agent/memory/project/specs/council-1028/council-design-1/checks/check-f1e-supersession.mjs"
     - id: A6
-      description: "C1: footer lockup is the supplied vertical colour-on-dark file via a byte-identical copy in public/images/saoc/lockup; box 280 +-4 at 1440 and 390; served natural width >= box x DPR at DPR 1/2/3; aspect equals the source (not cropped, trimmed or recoloured); accessible name unchanged; no Lora/JetBrains in the footer; Header and MobileMenu still use the horizontal raster"
+      description: "C1: footer lockup is the supplied vertical colour-on-dark file via a byte-identical copy in public/images/saoc/lockup; rendered HEIGHT = the old lockup's baseline height +-4 at 1440 and 390 (NOS Design amendment: by height, max-width 100%, height auto); no horizontal overflow at 390/768/1023; served natural width >= rendered width x DPR at DPR 1/2/3; alt = SaocLockup's exported ACCESSIBLE_LABEL imported verbatim (not duplicated, not re-exported); footer reg line Manrope 13/500 tabular-nums, no transform/tracking, each item nowrap; aspect equals the source (not cropped, trimmed or recoloured); accessible name unchanged (equals ACCESSIBLE_LABEL); no Lora/JetBrains in the footer; Header and MobileMenu still use the horizontal raster"
       command: "DC_PROD=1 node .agent/memory/project/specs/council-1028/council-design-1/checks/check-c1-footer.mjs"
       timeout_seconds: 1800
     - id: A7
@@ -54,11 +55,15 @@ assertions:
       command: "DC_PROD=1 node .agent/memory/project/specs/council-1028/council-design-1/checks/check-c5-societies.mjs"
       timeout_seconds: 1800
     - id: A9
-      description: "Header height and F1b nav widths hold: against goldens/baseline-post-wave.json header and bar heights equal at 390/768/1100/1280/1366/1440, brand/nav/cta/search widths within 1px, the labelled Menu within +12px. Fails until @dev step 0 commits the baseline"
+      description: "Header height and F1b nav widths hold: against goldens/baseline-post-wave.json header and bar heights equal at 390/768/1100/1280/1366/1440, brand/nav/cta/search widths within 1px, the labelled Menu within +12px (accepted ceiling, MENU only); one row, no overlap, MENU-to-CTA gap >= baseline, also at 1383. Fails until @dev step 0 commits the baseline (which now also records footer lockup height)"
       command: "DC_PROD=1 node .agent/memory/project/specs/council-1028/council-design-1/checks/baseline.mjs header"
       timeout_seconds: 1800
+    - id: A37
+      description: "NOS Design ruling 2: chips, toggles and tabs on /events and /societies are t-label and their selected state differs from an unselected sibling by fill, border, underline, shadow or colour, never by weight alone"
+      command: "DC_PROD=1 node .agent/memory/project/specs/council-1028/council-design-1/checks/check-selected-state.mjs"
+      timeout_seconds: 900
     - id: A10
-      description: "NOS is untouched: every NOS element that carried font-mono/mono-label on the post-wave main computes the same family-first, size, weight, tracking, transform and line-height after the SAOC rename (nine NOS routes, footer excluded: NOS Site owns C2/TYPE-11)"
+      description: "NOS is untouched: every NOS element that carried font-mono/mono-label on the post-wave main computes the same family-first, size, weight, tracking, transform and line-height after the SAOC rename (nine NOS routes, footer excluded: NOS Site owns C2/TYPE-11). The baseline is captured on the main that already holds nos-type-tokens (NR-8 Label tuple, the :is() size variant, label.font-mono) and C2; the rename must reproduce those computed values"
       command: "DC_PROD=1 node .agent/memory/project/specs/council-1028/council-design-1/checks/baseline.mjs nos"
       timeout_seconds: 1800
     - id: A11

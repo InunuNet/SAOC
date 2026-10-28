@@ -1,0 +1,18 @@
+{
+ "ruling": "COUNCIL-1 contract rulings 2026-10-28, item 4 (final)",
+ "regLine": {
+  "role": "NOT t-label (meta, not a label)",
+  "family": "Manrope",
+  "fontSizePx": 13,
+  "fontWeight": "500",
+  "fontVariantNumeric": "tabular-nums",
+  "textTransform": "none",
+  "letterSpacing": "normal (0)",
+  "colour": "the footer's existing muted colour (text-ivory/65 today; unchanged)",
+  "wrap": "each registration item (REG# ... and NPO ...) is its own whitespace-nowrap unit; the line wraps BETWEEN items only, never inside a number. Render by splitting FOOTER_REG on 2+ spaces inside Footer.tsx; do not change the shared FOOTER_REG constant (NosFooter imports it and NOS must not move).",
+  "source": "components/chrome/footer-data.ts FOOTER_REG text, unchanged"
+ },
+ "email": {
+  "rule": "plain Manrope link, no transform, not t-num, not mono (confirmed)"
+ }
+}

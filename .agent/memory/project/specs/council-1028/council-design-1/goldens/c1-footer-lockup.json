@@ -1,5 +1,5 @@
 {
- "ruling": "COUNCIL-1 C1 (final)",
+ "ruling": "COUNCIL-1 C1 (final) + amendment 2026-10-28 (box by height)",
  "source": "public/downloads/media-kit/saoc/lockup/saoc-lockup-south-african-orchid-council-vertical-colour-on-dark.png",
  "sourceSha256": "ec6318089a38d148d22339a24ee1848769195a2205c8424102ae6adc783d0d2c",
  "naturalWidth": 1915,
@@ -7,22 +7,31 @@
  "colourType": "RGBA (transparent)",
  "servedCopy": "public/images/saoc/lockup/saoc-lockup-south-african-orchid-council-vertical-colour-on-dark.png",
  "servedCopyRule": "byte-identical copy of source (same sha256), under public/images/ because lib/image-loader.ts and scripts/generate-image-variants.mjs only ladder sources under /images/ (the NOS lockups follow the same convention in public/images/nos/lockup/). NOS Site's C2 SAOC credit uses this same path.",
- "boxPx": 280,
- "boxTolerancePx": 4,
- "boxNote": "the footer lockup renders w-[280px] today (components/chrome/Footer.tsx); ruling: current width +-4. Same box below 768 (no narrow tier).",
  "dprs": [
   1,
   2,
   3
  ],
- "servedRule": "served natural width >= box x DPR at DPR 1, 2 and 3 (840 px at 3x); resize-only ladder (lib/image-loader.ts widths), never recoloured, cropped or trimmed: served aspect ratio equals 1915/1531 within 0.5%",
+ "servedRule": "served natural width >= RENDERED width x DPR at DPR 1, 2 and 3 (resize-only ladder, lib/image-loader.ts widths); never recoloured, cropped or trimmed: served aspect ratio equals 1915/1531 within 0.5%",
  "aspectTolerance": 0.005,
  "accessibleName": "South African Orchid Council — Making a difference since 1968",
- "accessibleNameNote": "SaocLockup.ACCESSIBLE_LABEL today (aria-label on the link). The footer link's computed name must equal this string exactly; the img alt may carry it (then no aria-label) or be empty with the aria-label kept. Never both with different text.",
+ "accessibleNameNote": "AMENDED: the img alt IS SaocLockup's exported ACCESSIBLE_LABEL, imported verbatim (components/chrome/SaocLockup.tsx). The `export` is added by NOS Site's C2 (spec fix/nos-footer-colour-logos 07b1b326) and lands on main before this feature: do not re-export it and do not duplicate the string. No aria-label on the link (the alt carries the name); never both with different text. The string above is the value the checks compare to (it equals ACCESSIBLE_LABEL today; A-static also greps that FooterLockup imports ACCESSIBLE_LABEL rather than writing the literal).",
  "linkHref": "/",
  "retiredFromSaocFooter": [
   "SaocLockup tone=dark vertical (lapis E4 emblem plus Lora and JetBrains Mono text)"
  ],
  "drawerAndHeader": "UNCHANGED. Header.tsx and MobileMenu.tsx already render the raster /images/saoc-lockup-horizontal-full-name.png, not live Lora text, so the ruling's conditional (the drawer takes the supplied horizontal file if it renders live Lora text) is false. No change there; a guard asserts both still use the raster.",
- "byEye": "1440 and 390 screenshots of the footer for NOS Design (checks/shoot-footer.mjs writes them to .tmp/sandbox/council-1028/shots). The transparent top padding of the new PNG replaces the old -mt-[30px] emblem hack: re-measure so the artwork top sits on the column headings' top line (NOS Design F-rule); not asserted, judged by eye."
+ "byEye": "1440 and 390 screenshots of the footer for NOS Design (checks/shoot-footer.mjs writes them to .tmp/sandbox/council-1028/shots). The transparent top padding of the new PNG replaces the old -mt-[30px] emblem hack: re-measure so the artwork top sits on the column headings' top line (NOS Design F-rule); not asserted, judged by eye.",
+ "sizing": {
+  "rule": "The footer lockup's rendered HEIGHT equals the OLD footer lockup's rendered height (SaocLockup vertical/dark inside the w-[280px] box) within +-4 px, at 1440 and at 390. The supplied file is shorter than the live lockup at the same width, so width is NOT the invariant.",
+  "baselineSource": "goldens/baseline-post-wave.json -> footer[<width>].h, captured by baseline.mjs capture on the post-wave main BEFORE any edit (the old link box: the div wrapping SaocLockup, i.e. the lockup's own rendered height without the -mt-[30px] offset)",
+  "heightTolerancePx": 4,
+  "css": "max-width:100%; height:auto. The width is whatever reproduces the baseline height (dev derives it from the 1915/1531 aspect); it must never exceed the container.",
+  "noHorizontalOverflowAt": [
+   390,
+   768,
+   1023
+  ],
+  "overflowRule": "document.documentElement.scrollWidth <= clientWidth (+0) at 390, 768 and 1023, on /about"
+ }
 }

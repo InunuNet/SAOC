@@ -10,3 +10,6 @@
 2. **C02b is an addition.** `app/(nos)/national-show/page.tsx:96` (`EXHIBIT_LEAD`, rendered on the NOS home) is the identical `who’s subscriptions` sentence. Leaving it would put the typo on the home after the exhibitors page is fixed. Strike the entry to drop it.
 3. **Frozen text is not edited.** Lee-Ann's Drive copies and the sha256-frozen mirrors in `nos-content-standard/goldens/sources/` keep her wording. The two content gates (`gate-standard.mjs`, `gate-verbatim.mjs`) read them through `_lib.mjs`; @dev adds a pure `applyCouncil()` there driven by `nos-content-standard/goldens/council-overrides.json` (shape: `council-overrides-shape.json`).
 4. `scripts/seed-show-faq.ts` keeps the old FAQ wording: the Sanity items it seeds are already corrected in Sanity, and the seed is out of this feature's scope.
+
+## Sanity-vs-Drive exceptions (added 2026-10-28)
+`sanity-exceptions.json` lists the nine FAQ rows (q4, q7, q8, q15, q16, q26, q29, q40, q51) already applied in Sanity by the lead plus the Tygerberg liaison row (record only). Sanity now differs from Lee-Ann's frozen Drive mirrors on exactly these strings, per the council sheet of 2026-10-27. Gated on the Sanity fixture's capturedAt so today's 2026-10-26 fixture keeps every nos-content-standard gate green; the first re-record activates them. Asserted by A17.
