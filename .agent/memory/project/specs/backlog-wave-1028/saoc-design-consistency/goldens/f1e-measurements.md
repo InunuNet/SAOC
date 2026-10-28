@@ -28,3 +28,10 @@ Run-to-run spread is about 500 ms locally. Local numbers are more pessimistic th
 
 ## Hero
 - F1d hero 750w AVIF = 17,738 bytes (/about, orchid-violet-about). Bound 25,000.
+
+## Accepted limitations of the F1e checks (Codex A15 findings)
+Fixed in the checks: (a) check-font-fallback-walk.mjs now also walks every visible input/textarea placeholder, resolved through its ::placeholder style; (b) check-fonts-network.mjs detects duplicate fonts by FILE (sha256 of the response body), not by URL, and counts distinct files the same way.
+Accepted, not closed:
+- (c) check-preload-order.mjs proves the ORDER OF TAGS in the server HTML head, not the order of network requests. Reason: a browser's request order is a scheduling outcome that headless fixtures cannot reproduce faithfully. The outcome check is the phase-5 LCP gate (A11, median of 3 runs, LCP <= 2.5s on beta).
+- (d) check-favicon.mjs's mean difference <= 20/255 shows LIKENESS to the supplied emblem, not derivation. Reason: pixel comparison cannot prove how a file was made. Provenance is held by goldens/favicon-source.json (path + sha256, CONFIRMED app/icon.png) and the build path that derives every icon from app/icon.png; the crop and opacity rules are asserted separately by check-favicon-crop.mjs.
+Arrow guard A29: the ruled back arrow (svg[data-direction="back"], "All societies") on the society page is classified separately from the F1d baseline links, expected on /societies/[first] only (>=1, label "All societies", never wraps), unexpected anywhere else; its pixel position has no F1d baseline (it was a text glyph outside the baseline), so only its structure is asserted.

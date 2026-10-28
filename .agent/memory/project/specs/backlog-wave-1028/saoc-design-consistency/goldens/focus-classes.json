@@ -1,0 +1,35 @@
+{
+  "note": "F1a A4 static enumeration. Every className string under app/ and components/ (.ts and .tsx; NOS-host-only code excluded: components/nos-chrome/, components/nos/, components/show/, components/tickets/TicketTypeCard.tsx, app/(nos)/) that carries focus:ring-*, focus-visible:ring-*, ring-offset-*, focus(-visible):outline-none or a focus outline-offset other than [3px] must be THE ONE RING: focus-visible:outline-2 + focus-visible:outline-solid + focus-visible:outline-offset-[3px] (+ an outline colour), with no ring-* utility and no outline-none. Anything else must be listed here with a reason. Each entry names a file and a key (a substring of the className string); one entry per component, never a glob. An entry matching no hit FAILS the check (stale). Unlisted hits FAIL. Rule (lead, revised): the one ring applies to all standalone actions AND form controls on SAOC surfaces.",
+  "allow": [
+    {
+      "file": "components/chrome/Header.tsx",
+      "key": "group relative inline-flex",
+      "reason": "NAV-1 underline focus: the Header nav items keep the nav design's own underline focus ruling; F1b owns the nav."
+    },
+    {
+      "file": "components/chrome/MobileMenu.tsx",
+      "key": "group flex items-center",
+      "reason": "NAV-1 underline focus: the MobileMenu drawer nav rows keep the nav design's own underline focus ruling; F1b owns the nav."
+    },
+    {
+      "file": "components/admin/tokens.ts",
+      "key": "focus-visible:outline-offset-[-4px]",
+      "reason": "Codi ruling, inset ring on dark table headers: FOCUS_RING_ON_DARK (inset -4px, accent-soft). An outset ring would clip there."
+    },
+    {
+      "file": "app/admin/login/GoogleSignInButton.tsx",
+      "key": "focus-visible:outline-offset-2",
+      "reason": "Provider sign-in button: a third-party brand button whose className carries the provider's brand hex values (tracked by A6). Admin-only."
+    },
+    {
+      "file": "app/admin/login/AppleSignInButton.tsx",
+      "key": "focus-visible:outline-offset-2",
+      "reason": "Provider sign-in button: a third-party brand button whose className carries the provider's brand hex values (tracked by A6). Admin-only."
+    },
+    {
+      "file": "app/admin/login/MicrosoftSignInButton.tsx",
+      "key": "focus-visible:outline-offset-2",
+      "reason": "Provider sign-in button: a third-party brand button whose className carries the provider's brand hex values (tracked by A6). Admin-only."
+    }
+  ]
+}
