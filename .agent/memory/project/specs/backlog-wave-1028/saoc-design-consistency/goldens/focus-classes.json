@@ -55,6 +55,11 @@
       "file": "app/(marketing)/societies/SocietiesClient.tsx",
       "key": "py-2 font-sans text-[16px] text-ink placeholder:text-muted outline-none",
       "reason": "wrapper carries the ring via focus-within"
+    },
+    {
+      "file": "components/show/ShowJumpChips.tsx",
+      "key": "inline-flex min-h-[44px] items-center rounded-[length:var(--radius-pill)]",
+      "reason": "NOS default chip ring (2px offset, --ring-focus) kept for the NOS host. A SAOC route may render it only if the caller passes the one ring via linkClassName; check-focus-classes-static.mjs asserts that for every SAOC caller (MediaKitJumpNav on /media-kit)."
     }
   ]
 }

@@ -48,6 +48,12 @@ const TARGETS = [
   { name: 'drawer close', path: '/about', width: 390, sel: 'button[aria-label="Close menu"]', drawer: true },
   { name: 'drawer search', path: '/about', width: 390, sel: '[data-hd=drawer-search]', drawer: true },
   // Unauthenticated /events/submit: the members-only prompt's "Contact us about membership" link (app/(marketing)/events/submit/page.tsx) had no ring and no probe visited the route.
+  // /media-kit "On this page" chips (components/show/ShowJumpChips.tsx, a NOS-default control reused on a SAOC route): the golden SAOC ring (3px offset), not the NOS --ring-focus 2px default. Below 700px the chips live in a closed
+  // <details>; the probe opens it. Probed at 390, 700 and 1440.
+  { name: 'media-kit chip link @390', path: '/media-kit', width: 390, sel: '[data-sdc-probe]', pre: 'mediaKitChip' },
+  { name: 'media-kit chip link @700', path: '/media-kit', width: 700, sel: '[data-sdc-probe]', pre: 'mediaKitChip' },
+  { name: 'media-kit chip link @1440', path: '/media-kit', width: 1440, sel: '[data-sdc-probe]', pre: 'mediaKitChip' },
+  { name: 'media-kit jump summary @390', path: '/media-kit', width: 390, sel: '[data-sdc-probe]', pre: 'mediaKitSummary' },
   { name: 'events/submit membership link', path: '/events/submit', width: 1440, sel: 'main a[href="/contact"]' },
 ];
 // DC_FOCUS_ONLY=<substring of a target name> runs just the matching targets (a quick re-run against one defect).
@@ -60,6 +66,16 @@ await withSite(async ({ base, browser, ctxOpts, deployed }) => {
       await page.locator('[data-hd=menu]').click(); await page.waitForTimeout(500);
       const found = await page.evaluate(() => { const a = [...document.querySelectorAll('a')].find((x) => /^\s*Join a society\s*$/i.test(x.textContent || '') && x.getAttribute('data-hd') !== 'cta' && x.getClientRects().length > 0); if (a) a.setAttribute('data-sdc-probe', ''); return Boolean(a); });
       if (!found) { check(false, `${t.name}: no visible drawer "Join a society" link after opening the menu at ${t.width}px`); await ctx.close(); continue; }
+    }
+    if (t.pre === 'mediaKitChip' || t.pre === 'mediaKitSummary') {
+      // /media-kit is admin-only (lib/media-kit-gate.ts redirects a visitor to /admin/login). With no admin session the probe cannot reach the chips: a printed KNOWN GAP, guarded statically instead by the SAOC-caller assertion on
+      // <ShowJumpChips> in check-focus-classes-static.mjs. A run with a verified admin session (DC_BASE_URL on an authenticated origin or a fixture session) probes the real chips and asserts the ring.
+      if (/\/admin\/login/.test(page.url())) { console.log(`KNOWN GAP ${t.name}: /media-kit is admin-gated and redirected to /admin/login; NOT PROBED here (static SAOC-caller assertion in check-focus-classes-static.mjs guards the ring)`); await ctx.close(); continue; }
+      const found = await page.evaluate((pre) => { const vis = (e) => e.getClientRects().length > 0; const sum = [...document.querySelectorAll('details > summary')].find((x) => /On this page/.test(x.textContent || '') && vis(x));
+        if (pre === 'mediaKitSummary') { if (sum) sum.setAttribute('data-sdc-probe', ''); return Boolean(sum); }
+        if (sum) sum.closest('details').open = true; const a = [...document.querySelectorAll('nav[aria-label="On this page"] a')].find(vis); if (a) a.setAttribute('data-sdc-probe', ''); return Boolean(a); }, t.pre);
+      if (!found) { check(false, `${t.name}: no visible "On this page" ${t.pre === 'mediaKitSummary' ? 'summary' : 'chip link'} on /media-kit at ${t.width}px`); await ctx.close(); continue; }
+      await page.waitForTimeout(300);
     }
     if (t.pre === 'searchInput' || t.pre === 'searchResult') {
       await page.locator('[data-hd=search]').click(); const input = page.locator('[role=dialog] input').first(); await input.waitFor({ timeout: 10000 }).catch(() => {});
@@ -86,6 +102,6 @@ await withSite(async ({ base, browser, ctxOpts, deployed }) => {
     check(r.ring[3] > 0 && px.n > 0 && px.worst >= 3, `${t.name}: worst ring contrast ${px.worst.toFixed(2)}:1 against ${px.n} sampled ground pixels, want >=3:1`);
     await ctx.close();
   }
-  check(seen.length >= targets.filter((t) => !t.optional).length, 'not every required target was probed');
+  check(seen.length >= targets.filter((t) => !t.optional && !String(t.pre).startsWith('mediaKit')).length, 'not every required target was probed');
 });
 finish('focus-ring');
