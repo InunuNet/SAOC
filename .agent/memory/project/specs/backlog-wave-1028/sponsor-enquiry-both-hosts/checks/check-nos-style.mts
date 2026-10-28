@@ -6,7 +6,7 @@
 //   submit  : the NOS primary Button look (bg --primary, text --ivory, Karla 700 14px uppercase, min-height 50, --radius-button)
 //   heading : NOS doc-h2 role (the section is rendered inDocument)
 //   anchor  : NOS Design anchor ruling (2026-10-28, final): the NOS host zeroes the root scroll-padding THROUGH THE VARIABLE (--scroll-padding-top: 0 on html
-//             when the NOS chrome is present, at every width), declared in nos-structure.css only (globals.css is mid-flight elsewhere), so every NOS scroll-margin assumes zero; the card's scroll-margin-top is 121px at >=780, 24px below.
+//             when the NOS chrome is present, at every width), declared in nos-structure.css only (globals.css is mid-flight elsewhere), so every NOS scroll-margin assumes zero; the card's scroll-margin-top is 121px at >=768, 24px at <=767 (the header is pinned from 768, measured live).
 //             No header-height token exists in the repo (only the --doc-* ones), so 121 is the declared literal; a token is preferred if one appears.
 //   SAOC    : the SAOC root scroll-padding (globals.css, --scroll-padding-top 6.5rem consumed by html) is unchanged
 // The live scroll position and computed styles are proved by check-deployed-render.mjs (post-deploy); this half is the declared values.
@@ -170,7 +170,7 @@ for (const w of [390, 1440]) {
   expect(/karla/.test(cl.get('font-family') ?? '') && cl.get('font-weight') === '450' && px(cl.get('font-size'), 16) && ['1.5', '24px'].includes(cl.get('line-height') ?? ''), `RED consent label is Karla 450 16px / 1.5 at ${w}px (got ${cl.get('font-family')} ${cl.get('font-weight')} ${cl.get('font-size')} ${cl.get('line-height')})`);
 }
 // anchor: the card margin is declared for a root whose scroll-padding is zero (NOS Design anchor ruling)
-for (const [w, want] of [[390, 24], [779, 24], [780, 121], [1440, 121], [2056, 121]] as const) {
+for (const [w, want] of [[390, 24], [767, 24], [768, 121], [1024, 121], [1440, 121], [2056, 121]] as const) {
   const a = eff(['card', 'anchor'], w);
   expect(px(a.get('scroll-margin-top'), want), `RED #enquire scroll-margin-top is ${want}px at ${w}px (got ${a.get('scroll-margin-top')})`);
 }

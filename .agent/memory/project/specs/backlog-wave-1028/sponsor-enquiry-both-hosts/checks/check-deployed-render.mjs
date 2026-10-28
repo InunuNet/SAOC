@@ -1,7 +1,7 @@
 // sponsor-enquiry-both-hosts RUN-AFTER-DEPLOY render gate (non-required): the NOS Design ruling as rendered, not declared.
-// Real Chromium against the deployed NOS sponsors page at 390, 768, 1024, 1440 and 2056 wide:
+// Real Chromium against the deployed NOS sponsors page at 390, 767, 768, 1024, 1440 and 2056 wide (767 and 768 are the two sides of the header-pinned edge):
 //   anchor gate : click the hero CTA (#enquire) below 1024, the first visible #enquire link from 1024 up (the hero CTA is hidden there by design); the enquiry card's top must land 16..40px below whatever is pinned to the top (the sticky header's bottom), or
-//                 below the viewport top when nothing is pinned (NOS Design anchor ruling 2026-10-28: the NOS root scroll-padding is 0, card margin 121 at >=780 and 24 below).
+//                 below the viewport top when nothing is pinned (NOS Design anchor ruling 2026-10-28: the NOS root scroll-padding is 0, card margin 121 at >=768 and 24 at <=767).
 //                 The NOS html scroll-padding-top must also compute to 0px
 //   computed    : card #F3F2D6 / radius 16 / shadow / padding 32 (24 below 768); label Karla 500 14; input 1px border, radius 8, height >= 48;
 //                 2px violet focus ring; submit background #211A57; fields column <= 640
@@ -22,6 +22,7 @@ const SAOC = 'https://beta.saoc.co.za/sponsors';
 const HERO_CTA_HIDDEN_FROM = 1024;
 const VIEWPORTS = [
   { name: '390', width: 390, height: 844, pad: 24 },
+  { name: '767', width: 767, height: 1024, pad: 24 },
   { name: '768', width: 768, height: 1024, pad: 32 },
   { name: '1024', width: 1024, height: 768, pad: 32 },
   { name: '1440', width: 1440, height: 900, pad: 32 },
@@ -177,4 +178,4 @@ try {
 }
 
 if (failures.length) { console.error(`FAIL (${failures.length}):\n- ${failures.join('\n- ')}`); process.exit(1); }
-console.log('PASS: NOS enquiry card renders per the ruling at 390, 768, 1024, 1440 and 2056; anchor lands 16-40px under whatever is pinned; SAOC form and root scroll-padding unchanged');
+console.log('PASS: NOS enquiry card renders per the ruling at 390, 767, 768, 1024, 1440 and 2056; anchor lands 16-40px under whatever is pinned; SAOC form and root scroll-padding unchanged');

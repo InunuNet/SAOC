@@ -18,7 +18,7 @@ const ALLOWED = [
   [/--scroll-padding-top\s*:/, 'the --scroll-padding-top override'],
   [/^\s*(\/\*|\*)[^]*scroll-(padding|margin)[^]*$/, 'a comment about scroll-padding / scroll-margin'],
   [/^\s*scroll-margin-top\s*:\s*(24|68|121)px\s*;(\s*\/\*.*\*\/)?\s*$/, 'the sponsor card scroll-margin-top (24, 68 or 121px)'],
-  [/^\s*@media \(min-width: (700|768|779|780)px\) \{\s*$/, 'the card breakpoint media query'],
+  [/^\s*@media \(min-width: (700|767|768)px\) \{\s*$/, 'the card breakpoint media query'],
   [/^\s*(html[^{]*|\.nos-theme \[data-sponsor-enquiry='nos'\])\s*\{\s*$/, 'the html NOS override or sponsor card selector line'],
   [/^\s*\}\s*$/, 'a closing brace'],
   [/^\s*$/, 'a blank line'],
