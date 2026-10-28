@@ -43,16 +43,19 @@ assertions:
         each of those changes were reverted. Pre-existing behaviour in unchanged files is out of scope.
       required: true
     - id: A7
+      phase: 5
       description: browser_deployed_check on the deployed NOS /national-show/sponsors, declared for the triad linter, non-required (it cannot pass behind the beta Basic Auth wall, see gate-hygiene A11). A8 is the real post-deploy proof.
       type: browser_deployed_check
       target: .agent/memory/scratch/sponsor-enquiry-both-hosts-browser-manifest.json
       required: false
     - id: A8
+      phase: 5
       description: gws inbox check on the admin notice, declared for the triad linter, non-required. The email path is touched (subject of the admin notice), so this is applicable; A9 asserts the same thing with its own gws reads.
       type: gws_inbox_check
       target: .agent/memory/scratch/sponsor-enquiry-both-hosts-gws-manifest.json
       required: false
     - id: A9
+      phase: 5
       description: RUN AFTER DEPLOY from the project root (needs .env.local), non-required, and it NEVER emails real admins by accident - it exits 77 (skip) unless SPONSOR_E2E_ADMIN_RECIPIENTS names the addresses that will receive the admin notices (the operator affirms the deployed ADMIN_EMAIL_ALLOWLIST equals it), and also refuses if .env.local ADMIN_EMAIL_ALLOWLIST differs. Then it submits one test-marked enquiry per host (beta.saoc.co.za and nos.saoc.co.za), asserts the sponsorEnquiries doc (source, null optionals, status) and the site-identifying admin notice via read-only gws, and deletes exactly those two docs (collection sponsorEnquiries, contactName E2E-TEST sponsor-enquiry-both-hosts <nonce> saoc|nos). Needs --allow-skips in the gate when it skips.
       command: node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/checks/check-deployed-e2e.mjs
       required: false
@@ -63,6 +66,7 @@ assertions:
       description: NOS Design ruling, declared values. RED on main - flat unlayered CSS scoped to [data-sponsor-enquiry="nos"] gives the card #F3F2D6, radius 16, shadow-sm, padding 32 (24 below 768), fields column max-width 640, Karla 500 14px ink labels, inputs 1px --rule border radius 8 min-height 48, 2px violet focus ring, NOS primary submit look, scroll-margin-top 121px at 700 and up and 68px below; the success box under the scope has no border, zero padding and a transparent background (NR-4); the field-label rule excludes the consent label, which takes its own rule Karla 450 16px / 1.5; the page renders the section inDocument (doc-h2 heading). PIN - no sponsor-enquiry selector without the nos scope, and app/globals.css, app/(marketing) and SponsorEnquirySection.tsx unchanged.
       command: pnpm exec tsx .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/checks/check-nos-style.mts
     - id: A12
+      phase: 5
       description: RUN AFTER DEPLOY from the project root (needs .env.local), non-required. Real Chromium on the deployed NOS sponsors page at 1440 and 390 - hero CTA click lands the card 16..40px below the sticky chrome (NOS Design anchor gate), computed card/label/input/focus-ring/submit values match the ruling, and the SAOC /sponsors form labels are still the SAOC mono 11px. Also, per NOS Design, the consent label is Karla 450 16px / 1.5 with the checkbox on its first line, and with the API mocked in the browser (nothing reaches the server) the success state has 0 borders and 0 padding inside the card, keeps role=status with focus on the heading, and the card x and width do not move. Writes nothing. Exit 77 when credentials or the browser are missing.
       command: node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/checks/check-deployed-render.mjs
       required: false
