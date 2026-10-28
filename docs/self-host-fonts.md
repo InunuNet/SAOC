@@ -54,6 +54,5 @@ The build must succeed with the Google font hosts unreachable. The mission check
 `NEXT_FONT_GOOGLE_MOCKED_RESPONSES`, blocks the font hosts at the Node level, and then scans
 `.next` for any mention of `fonts.googleapis.com` or `fonts.gstatic.com`.
 
-Known leftover: the retry in `scripts/ci-e2e.sh` existed only for the `next/font/google`
-flake and is now dead code. It is left in place deliberately; removing it is a separate
-change.
+The retry that `scripts/ci-e2e.sh` once carried for the `next/font/google` flake has been
+removed; the script now only runs the command it is given and passes its exit status through.
