@@ -4564,19 +4564,17 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 /* ---- Sponsor enquiry card (sponsor-enquiry-both-hosts, NOS Design ruling 2026-10-28). The form is the
    shared SAOC component, so the NOS look is CSS scoped to [data-sponsor-enquiry='nos']. Unlayered on
    purpose: the form's Tailwind utilities are layered and an unlayered rule beats them. ---- */
-.nos-theme #enquire {
-  scroll-margin-top: 68px; /* sticky chrome + 24; overrides the section's Tailwind scroll-mt-36 */
-}
-@media (min-width: 700px) {
-  .nos-theme #enquire {
-    scroll-margin-top: 121px;
-  }
-}
 .nos-theme [data-sponsor-enquiry='nos'] {
+  scroll-margin-top: 68px; /* sticky chrome + 24; overrides the section's Tailwind scroll-mt-36 */
   background-color: var(--bone);
   border-radius: 16px;
   box-shadow: var(--shadow-sm);
   padding: 24px;
+}
+@media (min-width: 700px) {
+  .nos-theme [data-sponsor-enquiry='nos'] {
+    scroll-margin-top: 121px;
+  }
 }
 @media (min-width: 768px) {
   .nos-theme [data-sponsor-enquiry='nos'] {
