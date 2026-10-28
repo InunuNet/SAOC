@@ -15,6 +15,7 @@ goldens:
   - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/lcp-bounds.json
   - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/favicon-source.json
   - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/status-mark.md
+  - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/arrow-links-f1d-7ee06e9a.json
   - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/favicon-renders/favicon-review-sheet.png
   - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/proof-on-main.md
 
@@ -112,7 +113,7 @@ assertions:
       description: "The 16/32/48/180 review renders in goldens/favicon-renders obey the same crop and opaque-ground rules (static, derived by checks/make-favicon-renders.mjs from the confirmed source app/icon.png)"
       command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-favicon-crop.mjs --goldens"
     - id: A23
-      description: "Glyph ruling: U+2192 and U+203B never render from a system face. Any svg[data-glyph] is aria-hidden and currentColor; an ARROW svg is also 1em on the baseline; the status-mark svg is NOT 1em (its size is gated by A27). Home must show a status badge at 390 and 1440 and every badge leads with the status-mark SVG (or a text mark only if a shipped face has U+203B). Source rule: when no shipped face has U+203B, components/show/_shared/StatusMarker.tsx must hold an aria-hidden currentColor svg[data-glyph=status-mark] and no text mark (checked in source and in the SAOC Home DOM, where PlaceholderMarker, NavCards and ShowBand render it). Fails on main (no shipped face has U+203B, StatusMarker renders it as text)"
+      description: "Glyph ruling: U+2192 and U+203B never render from a system face. Any svg[data-glyph] is aria-hidden and currentColor; the ARROW svg (NOS Design ruling) is 1.25em wide +-0.5px and sits 0.5em + the label's letter-spacing after the label text (no literal space) +-0.5px, EXCEPT inside an element marked data-variant=corner (21 society cards, Home WOSA link) where it is 1em wide +-0.5px with no margin and no gap assertion (cap-midline measured on the title's first line); has its [data-part=shaft] centre at baseline - T ascent/2 +-0.5px and a [data-part=head] open 45-degree chevron with 0.4em arms, stroke ~0.1em, round caps and joins, fill none, currentColor, and must exist on /societies, /judging and Home; the status-mark svg is NOT 1em (its size is gated by A27). Home must show a status badge at 390 and 1440 and every badge leads with the status-mark SVG (or a text mark only if a shipped face has U+203B). Source rule: when no shipped face has U+203B, components/show/_shared/StatusMarker.tsx must hold an aria-hidden currentColor svg[data-glyph=status-mark] and no text mark (checked in source and in the SAOC Home DOM, where PlaceholderMarker, NavCards and ShowBand render it). Fails on main (no shipped face has U+203B, StatusMarker renders it as text)"
       command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-glyph-svg.mjs"
       timeout_seconds: 900
     - id: A24
@@ -134,3 +135,11 @@ assertions:
       phase: 5
       description: "RUN AFTER DEPLOY (phase 5). Deployed status mark geometry. The deployed preload twin of A7 is A20 (the font preload is resolved from .next/static at server start and could silently vanish on App Hosting's standalone output; A20 and A19 must pass on beta before launch)."
       command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-status-mark-geometry.mjs"
+    - id: A29
+      description: "Arrow swap moves nothing (NOS Design guard): for every arrow-bearing link or button on every ArrowIcon caller that renders on the fixture build (21 society cards, Judging, Home Full calendar and WOSA, a society page; 75 rows across 1440, 390 and 2056; /events, event pages, Sponsors, the NOS tickets pages, NOS vendors and the search overlay are listed as known gaps because fixtures render no arrow link or no page there) at 1440, 390 and 2056, link height and the label text top (relative to the link) equal the F1d baseline measured on 7ee06e9a (goldens/arrow-links-f1d-7ee06e9a.json) with delta 0.00 +-0.01 px, no title gains a line (title line count, from text nodes only, <= the baseline), same links, same order, same labels. Passes on F1d itself (guard)"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-arrow-links-delta.mjs"
+      timeout_seconds: 900
+    - id: A30
+      phase: 5
+      description: "RUN AFTER DEPLOY (phase 5). The arrow-swap delta guard against the deployed site. Plain shell check, reads beta credentials inside the scripts, never printed."
+      command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-arrow-links-delta.mjs"
