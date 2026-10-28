@@ -39,7 +39,7 @@ export function MediaKitJumpNav({ items }: MediaKitJumpNavProps) {
             <path d="M5 8l5 5 5-5" />
           </svg>
         </summary>
-        <div className="max-h-[60vh] overflow-y-auto pt-4 pb-3">
+        <div className="max-h-[60vh] overflow-y-auto px-2 pt-4 pb-3">
           <ShowJumpChips label={LABEL} items={items} className="mb-0" linkClassName={CHIP_RING} />
         </div>
       </details>
