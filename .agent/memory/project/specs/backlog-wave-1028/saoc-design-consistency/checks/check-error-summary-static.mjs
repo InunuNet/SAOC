@@ -28,6 +28,7 @@ for (const file of files) {
     const entry = classes.findIndex((c) => c.file === file && context.includes(c.key));
     if (entry >= 0) {
       const c = classes[entry]; used.add(entry); tally[c.class]++; check(Boolean(c.reason), `${label}: classification has no reason`);
+      if (c.srOnly) check(/\bsr-only\b/.test(resolve(text, map)), `${label}: (b) ${c.file} withheld alert (${c.key}) is not sr-only: the unsourced copy must not be visible (it needs the sr-only class)`);
       if (c.requireIconAndToken) { const box = resolve(src.slice(start, start + 900), map); check(/<\w*(Alert|Circle|Triangle|Octagon|Icon)\w*[^>]*aria-hidden/.test(box) || /aria-hidden="true">\s*[✕⚠]/.test(box), `${label}: (b) ${c.file} needs an aria-hidden icon beside the text (never colour alone)`); check(box.includes('text-[var(--status-error)]'), `${label}: (b) ${c.file} text is not the status-error token`); }
       continue; }
     tally.a++; const tag = resolve(text, map); const box = resolve(src.slice(start, start + 900), map);
@@ -50,6 +51,19 @@ for (const file of files) {
     check(sites[i].class === 'field', `${label}: panel-level error ("${sites[i].key}") renders through ${m[1]}, a field-level component; use the FormErrorAlert shape (border-2 status-error, aria-hidden icon, status-error text)`);
   }
 }
+// FIELD STYLING: classifying a site as field is not enough, the component that renders it must BE a field alert (TicketFieldAlert golden): border-l-2 only, a border colour token, no fill, an aria-hidden icon, a text colour token.
+const FIELD_BORDER = /\bborder-(error|\[var\(--status-error(-on-dark)?\)\])/; const FIELD_TEXT = /\btext-(error|\[var\(--status-error(-on-dark)?\)\])/;
+for (const file of new Set(sites.filter((c) => c.class === 'field').map((c) => c.file))) {
+  const src = readFileSync(file, 'utf8'); const defs = [...src.matchAll(/function\s+(\w*ErrorText)\b/g)]; const map = consts(src);
+  check(defs.length > 0, `${file}: has field-class ErrorText sites but no local ErrorText definition to check the field styling of`);
+  for (const dm of defs) { const at = src.indexOf('role="alert"', dm.index); const label = `${file}:${src.slice(0, dm.index).split('\n').length}`;
+    if (at < 0) { check(false, `${label}: ${dm[1]} has no role="alert" element`); continue; }
+    const { start, text } = openingTag(src, at); const tag = resolve(text, map); const box = resolve(src.slice(start, start + 900), map);
+    check(/\bborder-l-2\b/.test(tag) && !/(^|[\s"'`])border(-2|-[xytrb]-\d)?(\s|["'`])/.test(tag.replace(/border-l-2/, '')), `${label}: field alert ${dm[1]} is not a LEFT-border-only alert (needs border-l-2 and no full box border)`);
+    check(FIELD_BORDER.test(tag), `${label}: field alert ${dm[1]} border colour is not an error token (border-error or --status-error)`);
+    check(!BG.test(tag), `${label}: field alert ${dm[1]} carries a fill (${(tag.match(BG) || [''])[0].trim()}), want none or bg-transparent`);
+    check(/<\w*(Alert|Circle|Triangle|Octagon|Icon)\w*[^>]*aria-hidden/.test(box) || /aria-hidden="true">\s*[✕⚠]/.test(box), `${label}: field alert ${dm[1]} has no aria-hidden icon`);
+    check(FIELD_TEXT.test(tag), `${label}: field alert ${dm[1]} text colour is not an error token (text-error or --status-error)`); } }
 // A panel entry is satisfied by conversion: it matches no ErrorText use any more AND its key now sits inside a FormErrorAlert (so the alert scan holds its shape). A field entry that matches nothing is stale.
 sites.forEach((c, i) => { if (siteUsed.has(i)) return; const src = readFileSync(c.file, 'utf8'); const at = src.indexOf(c.key);
   if (c.class === 'panel') check(at >= 0 && /<FormErrorAlert\b/.test(src.slice(Math.max(0, at - 400), at)), `errorTextSites entry ${i + 1} (${c.file} / ${c.key}): panel-level site is no longer on ErrorText but is not inside a <FormErrorAlert> either`);
