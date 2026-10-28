@@ -115,7 +115,7 @@ export function PaymentSettingsPanel({
                 checked={gateway === option}
                 disabled={saving}
                 onChange={() => void handleGatewayChange(option)}
-                className="h-4 w-4"
+                className="h-4 w-4 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
               />
               {GATEWAY_LABELS[option]}
             </label>
@@ -145,7 +145,7 @@ export function PaymentSettingsPanel({
                   disabled={!selectable || saving}
                   readOnly
                   onChange={() => undefined}
-                  className="h-4 w-4"
+                  className="h-4 w-4 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
                 />
                 {MODE_LABELS[mode]}
               </label>
@@ -162,7 +162,7 @@ export function PaymentSettingsPanel({
             checked={testAmount}
             disabled={!testAmountAvailable || saving}
             onChange={(e) => void handleTestAmountChange(e.target.checked)}
-            className="mt-1 h-4 w-4"
+            className="mt-1 h-4 w-4 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
           />
           <span>
             <span className="block font-sans text-[15px] text-ink">

@@ -108,6 +108,7 @@ export function VendorStandPaymentForm({ token, businessName }: VendorStandPayme
               value={size}
               checked={boothSize === size}
               onChange={() => setBoothSize(size)}
+              className="outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
             />
             <span>{VENDOR_STAND_BOOTH_SIZE_LABELS[size]}</span>
           </label>
