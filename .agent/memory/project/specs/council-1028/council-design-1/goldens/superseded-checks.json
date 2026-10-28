@@ -1,0 +1,195 @@
+{
+ "schema": "council.superseded-checks/v1",
+ "note": "Every executable check that still names font-mono, JetBrains, --mono, mono-label, SaocLockup or Lora (scan of the post-wave tree, 2026-10-28). COUNCIL-1 C1/C4 retire those facts from the SAOC site, so each check is either UPDATED to the new fact, RETIRED (its assertion removed from the owning contract.yaml or the check deleted), or KEPT because the hit is unrelated. @dev sets disposition to update|retire|keep for every entry and adds a one-line 'COUNCIL-1 2026-10-28' note in the changed file or contract; keep needs a reason of 20+ chars. checks/check-superseded.mjs rescans the tree: a hit file missing here, a disposition left 'unreviewed', or an update/retire entry whose file still exists without the COUNCIL-1 marker, fails. NOS-lane files (nos-own-brand-chrome/*, nos-critique-r15/*, launch-weekend f19, nos-audit-fixes) pin the NOS reskin of .font-mono; update them to the same computed-style fact under the new role classes, never loosen them (baseline.mjs nos proves the NOS computed styles did not move).",
+ "entries": [
+  {
+   "file": ".agent/memory/project/specs/events-redesign/checks/static.mjs",
+   "hits": 1,
+   "firstHit": "77: mustNot('month h2 is not the mono label', h2, /font-mono|uppercase|text-\\[11px\\]/);",
+   "disposition": "unreviewed",
+   "note": ""
+  },
+  {
+   "file": ".agent/memory/project/specs/nos-critique-r15/checks/f2b-rendered.mjs",
+   "hits": 4,
+   "firstHit": "13: //   R5  lockup guard (OUT, byte-unchanged): the footer SaocLockup link (f2b-edits.json lockupGuard, matched by its line's class literal) at",
+   "disposition": "unreviewed",
+   "note": ""
+  },
+  {
+   "file": ".agent/memory/project/specs/nos-critique-r15/checks/f2b-static.mjs",
+   "hits": 2,
+   "firstHit": "9: //       design/design_handoff_saoc/README.md:192 and the SaocLockup exclusion.",
+   "disposition": "unreviewed",
+   "note": ""
+  },
+  {
+   "file": ".agent/memory/project/specs/saoc-content-standard/checks/f1_check.sh",
+   "hits": 1,
+   "firstHit": "74: mono-labels-gone)",
+   "disposition": "unreviewed",
+   "note": ""
+  },
+  {
+   "file": ".agent/memory/project/specs/saoc-content-standard/checks/gate-standard.mjs",
+   "hits": 1,
+   "firstHit": "167: out.eyebrows = qa('[data-doc-layout] .eyebrow, [data-doc-layout] p.font-mono.uppercase').map((e) => e.textContent.trim().slice(0, 40));",
+   "disposition": "unreviewed",
+   "note": ""
+  },
+  {
+   "file": ".agent/memory/project/specs/saoc-inner-heroes/checks/check-diff-scope.mjs",
+   "hits": 5,
+   "firstHit": "20: /^components\\/chrome\\/SaocLockup\\.tsx$/, // `sizes` lines only (footer emblem srcset, no visual change; shared with NOS)",
+   "disposition": "unreviewed",
+   "note": ""
+  },
+  {
+   "file": ".agent/memory/project/specs/saoc-inner-heroes/checks/gate-lgrf.mjs",
+   "hits": 1,
+   "firstHit": "12: const EYEBROW = '[data-page-hero-eyebrow], [data-nos-hero-eyebrow], section[data-page-hero] span.font-mono, [data-nos-hero] span.font-mono';",
+   "disposition": "unreviewed",
+   "note": ""
+  },
+  {
+   "file": ".agent/memory/project/specs/saoc-mono-floor/checks/check-diff-scope.mjs",
+   "hits": 1,
+   "firstHit": "6: const ALLOWED = [/^app\\/globals\\.css$/, /^components\\/chrome\\/SaocLockup\\.tsx$/, /^e2e\\/[^/]+\\.spec\\.ts$/, /^docs\\/saoc-mono-floor\\.md$/, /^",
+   "disposition": "unreviewed",
+   "note": ""
+  },
+  {
+   "file": ".agent/memory/project/specs/saoc-mono-floor/checks/check-static.mjs",
+   "hits": 12,
+   "firstHit": "17: must('.mono-label keeps its 0.2em tracking and uppercase', /\\.mono-label\\s*\\{[^}]*letter-spacing:\\s*0\\.2em[^}]*text-transform:\\s*uppercase/.",
+   "disposition": "unreviewed",
+   "note": ""
+  },
+  {
+   "file": ".agent/memory/project/specs/saoc-mono-floor/checks/gate-mono.mjs",
+   "hits": 1,
+   "firstHit": "39: const mono = /JetBrains Mono|ui-monospace|Menlo|monospace/i.test(cs.fontFamily);",
+   "disposition": "unreviewed",
+   "note": ""
+  },
+  {
+   "file": "contracts/checks/audit-fixes-2026-10-25/check-fonts.mjs",
+   "hits": 6,
+   "firstHit": "2: // Preload only what first paint needs. Pins: JetBrains Mono and Lora (SAOC lockup wordmark) stop",
+   "disposition": "unreviewed",
+   "note": ""
+  },
+  {
+   "file": "contracts/checks/audit-fixes-2026-10-25/check-scope.mjs",
+   "hits": 1,
+   "firstHit": "22: /^components\\/chrome\\/SaocLockup\\.tsx$/,",
+   "disposition": "unreviewed",
+   "note": ""
+  },
+  {
+   "file": "contracts/checks/f6-home-fidelity/eventrow-no-empty-host-span.mjs",
+   "hits": 1,
+   "firstHit": "22: const hostSpans = page.locator('span.font-mono.uppercase >> text=/^\\\\s*$/');",
+   "disposition": "unreviewed",
+   "note": ""
+  },
+  {
+   "file": "contracts/checks/launch-weekend/f19/check-p-fonts.mjs",
+   "hits": 1,
+   "firstHit": "6: // The NOS UtilityBar and chrome files are off limits, so a NOS element that today resolves to Manrope or JetBrains Mono (the utility bar) m",
+   "disposition": "unreviewed",
+   "note": ""
+  },
+  {
+   "file": "contracts/checks/nos-audit-fixes/check-tap-targets.mjs",
+   "hits": 1,
+   "firstHit": "84: keep: ['mt-5', 'font-mono', 'text-[12px]', 'tracking-[0.16em]', 'text-ink', 'underline', 'underline-offset-4', 'hover:text-accent'],",
+   "disposition": "unreviewed",
+   "note": ""
+  },
+  {
+   "file": "contracts/checks/nos-own-brand-chrome/check-i-fonts-console.mjs",
+   "hits": 2,
+   "firstHit": "1: // I: chrome text resolves to Fraunces / Karla only (never Crimson / Manrope / JetBrains / Cormorant /",
+   "disposition": "unreviewed",
+   "note": ""
+  },
+  {
+   "file": "contracts/checks/nos-own-brand-chrome/check-static.mjs",
+   "hits": 2,
+   "firstHit": "45: const m = s.match(/Cormorant|Jost|Crimson|Manrope|JetBrains|\\bfont-(mono|serif|sans)\\b/);",
+   "disposition": "unreviewed",
+   "note": ""
+  },
+  {
+   "file": "contracts/checks/nos-own-brand-chrome/f2/_f2lib.mjs",
+   "hits": 1,
+   "firstHit": "30: export const FAMILY_BAD = /cormorant|jost|mono|jetbrains|crimson|manrope|lora|courier|menlo|consolas|sfmono/i;",
+   "disposition": "unreviewed",
+   "note": ""
+  },
+  {
+   "file": "contracts/checks/nos-own-brand-chrome/f2/check-f2-fonts.mjs",
+   "hits": 1,
+   "firstHit": "3: // root layout still DECLARES Crimson/Manrope/JetBrains for SAOC pages, so only `loaded` is judged for those, but",
+   "disposition": "unreviewed",
+   "note": ""
+  },
+  {
+   "file": "contracts/checks/nos-own-brand-chrome/f2/check-f2-roles.mjs",
+   "hits": 3,
+   "firstHit": "107: // .font-mono (R25): no mono family anywhere; the class maps to the label role, Karla 700 12px .14em uppercase",
+   "disposition": "unreviewed",
+   "note": ""
+  },
+  {
+   "file": "contracts/checks/nos-own-brand-chrome/f2/check-f2-static.mjs",
+   "hits": 10,
+   "firstHit": "2: //  type-clean   : the NOS sources reference no Cormorant / Jost / JetBrains / Crimson / Manrope, no Tailwind font-mono, no var(--mono)",
+   "disposition": "unreviewed",
+   "note": ""
+  },
+  {
+   "file": "contracts/checks/polish-wave-2026-10-25/f9-static.mjs",
+   "hits": 1,
+   "firstHit": "28: for (const need of [\"label: 'Days'\", \"label: 'Hours'\", \"label: 'Minutes'\", \"label: 'Seconds'\", 'data-countdown-cell', 'data-countdown-value'",
+   "disposition": "unreviewed",
+   "note": ""
+  },
+  {
+   "file": "contracts/checks/saoc-full-name-lockup/check-raster-and-wiring.mjs",
+   "hits": 1,
+   "firstHit": "50: if (!readFileSync('components/chrome/SaocLockup.tsx', 'utf8').includes('const ACCESSIBLE_LABEL = `South African Orchid Council \u2014 ${TAGLINE}`",
+   "disposition": "unreviewed",
+   "note": ""
+  },
+  {
+   "file": "contracts/checks/saoc-full-name-lockup/check-wordmark-source.sh",
+   "hits": 2,
+   "firstHit": "7: F=\"components/chrome/SaocLockup.tsx\"",
+   "disposition": "unreviewed",
+   "note": ""
+  },
+  {
+   "file": "contracts/checks/saoc-societies-footer/check-societies-static.mjs",
+   "hits": 2,
+   "firstHit": "45: if (/\\bfont-mono\\b|tracking-\\[0\\.16em\\]|text-\\[11px\\]/.test(c)) failures.push(`chip label must not be mono 11px any more: ${c}`);",
+   "disposition": "unreviewed",
+   "note": ""
+  },
+  {
+   "file": "contracts/checks/vendor-form-label-readability-f1/check-labels-not-uppercase.mjs",
+   "hits": 3,
+   "firstHit": "4: // matches the mono stack (font-mono preserved), and letterSpacing is a non-zero value (unchanged",
+   "disposition": "unreviewed",
+   "note": ""
+  },
+  {
+   "file": "contracts/checks/vendor-form-label-readability-f1/check-uppercase-only-diff.sh",
+   "hits": 3,
+   "firstHit": "3: # touches the font-mono/text-[11px] label treatment differs from its old version by the",
+   "disposition": "unreviewed",
+   "note": ""
+  }
+ ]
+}

@@ -1,0 +1,23 @@
+{
+  "recordedAgainst": "origin/main 8d9027c9",
+  "links": {
+    "past-shows": {
+      "tabs": 5,
+      "focusVisible": true,
+      "outlineStyle": "solid",
+      "outlineWidth": "2px",
+      "outlineOffset": "2px",
+      "outlineColor": "rgb(251, 250, 240)",
+      "height": 44
+    },
+    "earlier": {
+      "tabs": 10,
+      "focusVisible": true,
+      "outlineStyle": "auto",
+      "outlineWidth": "1px",
+      "outlineOffset": "1px",
+      "outlineColor": "rgb(0, 95, 204)",
+      "height": 53.59375
+    }
+  }
+}

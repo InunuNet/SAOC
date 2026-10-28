@@ -211,19 +211,6 @@ autonomy: high
 assertions:
   phase: 4
   checks:
-    - id: A1
-      description: >
-        THE assertion: edit aboutPage.boardIntroText in the deployed Studio (real
-        browser automation, authenticated via the proven localStorage-token
-        mechanism), publish, call /api/revalidate with the correct secret, and poll
-        the deployed public /about page's rendered HTML for the sentinel — bounded at
-        120s, hard FAIL on timeout. ALWAYS attempts and verifies cleanup (field
-        cleared, re-published, confirmed absent via both the dataset and the live
-        page) regardless of whether the propagation check passed or failed. Currently
-        FAILS — see HEADLINE RESULT above; this is the correct, honest state of the
-        real system today, not a broken check.
-      command: node contracts/checks/f6-prove-cms-loop/check-studio-edit-reaches-site.mjs
-
     - id: A2
       description: >
         Negative control on the detection mechanism itself: a freshly-generated
@@ -231,3 +218,18 @@ assertions:
         live public page. Fast, read-only, non-mutating — proves A1's "found" branch
         is reachable and meaningful, not hardcoded true.
       command: node contracts/checks/f6-prove-cms-loop/check-detects-absence.mjs
+
+manual_only:
+  - id: A1
+    reason: "check-studio-edit-reaches-site.mjs writes to the production Sanity dataset (project 26yfbug4): Sanity 26yfbug4/production via the deployed Studio (Playwright publish) then restore; sentinel residue once sat on the live site for 3 days; run by hand only, with the operator present"
+    description: >
+      THE assertion: edit aboutPage.boardIntroText in the deployed Studio (real
+      browser automation, authenticated via the proven localStorage-token
+      mechanism), publish, call /api/revalidate with the correct secret, and poll
+      the deployed public /about page's rendered HTML for the sentinel — bounded at
+      120s, hard FAIL on timeout. ALWAYS attempts and verifies cleanup (field
+      cleared, re-published, confirmed absent via both the dataset and the live
+      page) regardless of whether the propagation check passed or failed. Currently
+      FAILS — see HEADLINE RESULT above; this is the correct, honest state of the
+      real system today, not a broken check.
+    command: node contracts/checks/f6-prove-cms-loop/check-studio-edit-reaches-site.mjs

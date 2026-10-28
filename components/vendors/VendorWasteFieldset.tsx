@@ -33,7 +33,7 @@ export function VendorWasteFieldset({ state, onFieldChange, disabled }: VendorWa
   return (
     <div className="space-y-5">
       <h2 className="font-serif font-normal text-[20px] text-ink">
-        Waste, cleaning and enviromental impacts
+        Waste, cleaning and environmental impacts
       </h2>
 
       <VendorCheckboxGroupField
@@ -59,7 +59,7 @@ export function VendorWasteFieldset({ state, onFieldChange, disabled }: VendorWa
       ) : null}
 
       <p className="font-sans text-[13px] leading-relaxed text-ink/70">
-        Vendors are responsible for maintaining a clean and safe booths throughout the event and for complying with the organiser&apos;s waste and recycling procedures.
+        Vendors are responsible for maintaining clean and safe booths throughout the event and for complying with the organiser&apos;s waste and recycling procedures.
       </p>
     </div>
   );

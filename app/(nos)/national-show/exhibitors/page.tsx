@@ -27,7 +27,7 @@ const GATEWAY_IDS = ['programme', 'vendors', 'international-guests', 'faq'] as c
 const CONTACT_LABEL = 'Contact';
 
 const STANDFIRST = [
-  'All South African Orchid Council members who’s subscriptions are valid may enter orchids for judging. If you are unsure, please check with your society.',
+  'All South African Orchid Council members whose subscriptions are valid may enter orchids for judging. If you are unsure, please check with your society.',
 ];
 
 const QUESTIONS = [

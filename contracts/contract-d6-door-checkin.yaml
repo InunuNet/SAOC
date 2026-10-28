@@ -178,42 +178,6 @@ assertions:
       kind: shell
       cmd: bash contracts/checks/admin-auth-hardening/server-ctl.sh start
 
-  - id: D6-11
-    description: >-
-      A real, valid session cookie for an authenticated NON-admin user (no admin
-      claim) is refused 403 by POST /api/admin/checkin, and the targeted real ticket is
-      left unmutated. The cookie is minted directly via Admin SDK createSessionCookie,
-      bypassing the app's own session-mint route's admin gate, so this proves the
-      checkin route's OWN admin-claim check specifically — the exact regression the
-      audit flagged (a route that verifies a session cookie but never checks the admin
-      claim would previously still satisfy the old grep). LOCAL-ONLY / CI-with-secrets.
-    verify:
-      kind: shell
-      cmd: node contracts/checks/d6-door-checkin/check-nonadmin-refused.mjs
-
-  - id: D6-12
-    description: >-
-      No session cookie, and a syntactically invalid session cookie, are both refused
-      401 by POST /api/admin/checkin against a real ticket, with a real Firestore
-      read-back proving no mutation occurred. LOCAL-ONLY / CI-with-secrets.
-    verify:
-      kind: shell
-      cmd: node contracts/checks/d6-door-checkin/check-noauth-refused.mjs
-
-  - id: D6-13
-    description: >-
-      A genuine admin session succeeds (200, success:true) against a real paid ticket,
-      and the REAL Firestore document is read back afterward to confirm status flips to
-      'checked-in' with a real checkedInAt timestamp — not merely that the literals
-      'tickets' and 'bookingRef' co-occur in the source. Also the required positive
-      control for D6-11/D6-12: without it, a route refusing every caller unconditionally
-      would satisfy both of those checks by accident. A second check-in of the same
-      ticket is then refused 409, proving the first write was real persisted state, not
-      a stateless success response. LOCAL-ONLY / CI-with-secrets.
-    verify:
-      kind: shell
-      cmd: node contracts/checks/d6-door-checkin/check-admin-succeeds.mjs
-
   - id: D6-14
     description: >-
       [RETIRED 2026-08-16] Was: checkin route sets the checkedInAt field on the ticket —
@@ -317,9 +281,6 @@ phases:
       - D6-09
       - D6-10
       - D6-SERVER-START
-      - D6-11
-      - D6-12
-      - D6-13
       - D6-14
       - D6-15
       - D6-16
@@ -328,3 +289,35 @@ phases:
       - D6-STOP-SERVER
       - D6-GATE-01
       - D6-GATE-02
+
+manual_only:
+  - id: D6-11
+    reason: "check-nonadmin-refused.mjs writes to the production Firestore (saoc-webapp): Firestore saoc-webapp tickets via createPaidTicketFixture (collection.add) plus Firebase Auth fixture users; run by hand only, with the operator present"
+    description: >-
+      A real, valid session cookie for an authenticated NON-admin user (no admin
+      claim) is refused 403 by POST /api/admin/checkin, and the targeted real ticket is
+      left unmutated. The cookie is minted directly via Admin SDK createSessionCookie,
+      bypassing the app's own session-mint route's admin gate, so this proves the
+      checkin route's OWN admin-claim check specifically — the exact regression the
+      audit flagged (a route that verifies a session cookie but never checks the admin
+      claim would previously still satisfy the old grep). LOCAL-ONLY / CI-with-secrets.
+    command: node contracts/checks/d6-door-checkin/check-nonadmin-refused.mjs
+  - id: D6-12
+    reason: "check-noauth-refused.mjs writes to the production Firestore (saoc-webapp): Firestore saoc-webapp tickets via createPaidTicketFixture (collection.add) plus Firebase Auth fixture users; run by hand only, with the operator present"
+    description: >-
+      No session cookie, and a syntactically invalid session cookie, are both refused
+      401 by POST /api/admin/checkin against a real ticket, with a real Firestore
+      read-back proving no mutation occurred. LOCAL-ONLY / CI-with-secrets.
+    command: node contracts/checks/d6-door-checkin/check-noauth-refused.mjs
+  - id: D6-13
+    reason: "check-admin-succeeds.mjs writes to the production Firestore (saoc-webapp): Firestore saoc-webapp tickets via createPaidTicketFixture (collection.add) plus Firebase Auth fixture users; run by hand only, with the operator present"
+    description: >-
+      A genuine admin session succeeds (200, success:true) against a real paid ticket,
+      and the REAL Firestore document is read back afterward to confirm status flips to
+      'checked-in' with a real checkedInAt timestamp — not merely that the literals
+      'tickets' and 'bookingRef' co-occur in the source. Also the required positive
+      control for D6-11/D6-12: without it, a route refusing every caller unconditionally
+      would satisfy both of those checks by accident. A second check-in of the same
+      ticket is then refused 409, proving the first write was real persisted state, not
+      a stateless success response. LOCAL-ONLY / CI-with-secrets.
+    command: node contracts/checks/d6-door-checkin/check-admin-succeeds.mjs

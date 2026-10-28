@@ -88,21 +88,24 @@ assertions:
         failing; a version that also flips status is caught by the unchanged-fields
         check.
       command: npx tsx .agent/memory/project/specs/ticketing-capacity-reconciliation-hold/goldens/check-markordersalerted-writes-positions.mjs
-    - id: A4
-      description: >
-        The real end-to-end proof against LIVE Firestore and the REAL, unmodified
-        getSoldCountsByTicketType (lib/data/tickets.ts) — not a fake, not a
-        reimplementation. Writes one sentinel-tagged reserved+expired order/position
-        pair for the 'exhibitor' fixture ticket type (same fixture already used safely
-        by contracts/checks/ticketing-hardening); proves it does NOT count before
-        alerting (negative control — an ordinary stranded reservation must still
-        release); calls the REAL markOrdersAlerted (the one live write, exactly the
-        field it's documented to write); proves it DOES count after alerting (the new
-        behaviour, through the real production capacity-counting path). Sweeps
-        sentinels and polls the held count back to baseline in a finally, so the next
-        check never inherits a held seat from this one. False-pass risk: an
-        implementation that holds every 'reserved' document unconditionally would pass
-        the post-alert check but is caught by the pre-alert negative control never
-        releasing; a no-op markOrdersAlerted is caught by the post-alert count staying
-        at baseline instead of baseline+1.
-      command: npx tsx .agent/memory/project/specs/ticketing-capacity-reconciliation-hold/goldens/check-live-reconciliation-holds-seat.mjs
+
+manual_only:
+  - id: A4
+    reason: "check-live-reconciliation-holds-seat.mjs writes to the production Firestore (saoc-webapp): Firestore saoc-webapp orders/tickets, sentinel-tagged expired reservations; run by hand only, with the operator present"
+    description: >
+      The real end-to-end proof against LIVE Firestore and the REAL, unmodified
+      getSoldCountsByTicketType (lib/data/tickets.ts) — not a fake, not a
+      reimplementation. Writes one sentinel-tagged reserved+expired order/position
+      pair for the 'exhibitor' fixture ticket type (same fixture already used safely
+      by contracts/checks/ticketing-hardening); proves it does NOT count before
+      alerting (negative control — an ordinary stranded reservation must still
+      release); calls the REAL markOrdersAlerted (the one live write, exactly the
+      field it's documented to write); proves it DOES count after alerting (the new
+      behaviour, through the real production capacity-counting path). Sweeps
+      sentinels and polls the held count back to baseline in a finally, so the next
+      check never inherits a held seat from this one. False-pass risk: an
+      implementation that holds every 'reserved' document unconditionally would pass
+      the post-alert check but is caught by the pre-alert negative control never
+      releasing; a no-op markOrdersAlerted is caught by the post-alert count staying
+      at baseline instead of baseline+1.
+    command: npx tsx .agent/memory/project/specs/ticketing-capacity-reconciliation-hold/goldens/check-live-reconciliation-holds-seat.mjs

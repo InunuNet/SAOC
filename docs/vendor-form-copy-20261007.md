@@ -51,9 +51,11 @@ Nine copy/structure items, reusing existing fieldset/note/primitive patterns in
    booth-confirmed-on-payment (`VendorPaymentFieldset.tsx`).
 9. **Additive consumer re-wire** — see "Backward compatibility" below.
 
-The waste section heading renders **"Waste, cleaning and enviromental impacts"** — the source
-document's own misspelling of "environmental," reproduced verbatim by the no-invention rule
-(`docs/rules/no-invention.md`), not corrected.
+The waste section heading now renders **"Waste, cleaning and environmental impacts"**. It first
+shipped with the source document's own misspelling ("enviromental"), reproduced verbatim under
+the no-invention rule (`docs/rules/no-invention.md`). The council correction sheets of 2026-10-27
+corrected it (C08), along with two other vendor-form strings (C07, C09) and C10; see
+[docs/council-copy-fixes-1028.md](council-copy-fixes-1028.md).
 
 ## The single admin file touched
 

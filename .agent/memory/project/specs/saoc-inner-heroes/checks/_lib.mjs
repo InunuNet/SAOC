@@ -17,7 +17,7 @@ export const SHOT_DIR = '.tmp/sandbox/saoc-pagehero-gate/shots';
 const LOG_DIR = '.tmp/sandbox/saoc-pagehero-gate';
 mkdirSync(SHOT_DIR, { recursive: true });
 
-/** Start `next start` on BASE_PORT + offset with BETA_PASSWORD_WALL_OFF=true and SANITY_FIXTURE_MODE=replay and placeholder preview on. */
+/** Start `next start` on BASE_PORT + offset with BETA_PASSWORD_WALL_OFF=true, live Sanity reads (replay opt-in) and placeholder preview on. */
 export function startServer(offset) {
   const port = BASE_PORT + offset;
   const env = {
@@ -25,9 +25,18 @@ export function startServer(offset) {
     SHOW_PLACEHOLDER_PREVIEW: 'true',
     NEXT_PUBLIC_NOS_SITE_URL: `http://nos.localhost:${port}`, NEXT_PUBLIC_SAOC_SITE_URL: `http://saoc.localhost:${port}`,
   };
-  env.BETA_PASSWORD_WALL_OFF = 'true'; // 10-26 gate environment: wall off, Sanity replay fixtures. The sandbox basic-auth values above stay as dummies.
-  env.SANITY_FIXTURE_MODE = 'replay';
-  env.SANITY_FIXTURE_DIR = process.env.SANITY_FIXTURE_DIR ?? resolve('.agent/memory/project/specs/nos-content-standard/fixtures/sanity'); // replay needs a recorded dir (lib/sanity-fixture.ts); the nos-content-standard capture
+  env.BETA_PASSWORD_WALL_OFF = 'true'; // 10-26 gate environment: wall off. The sandbox basic-auth values above stay as dummies.
+  // Sanity is read live (GET only, public dataset), as checks/f2-build.sh already does at build time. The recorded replay fixture cannot serve
+  // the runtime: the societyEvent queries take $todayStart (lib/sast-date.ts, SAST start of day), so every entry is keyed to the day it was
+  // recorded; from the next SAST midnight home, /events and /societies/[slug] fail closed with a 500 (SanityFixtureMiss) and each probe waits
+  // out its 20 s timeout - the 11 minute served-width run of 10-27. SAOC_GATE_SANITY_REPLAY=1 restores replay.
+  if (process.env.SAOC_GATE_SANITY_REPLAY === '1') {
+    env.SANITY_FIXTURE_MODE = 'replay';
+    env.SANITY_FIXTURE_DIR = process.env.SANITY_FIXTURE_DIR ?? resolve('.agent/memory/project/specs/nos-content-standard/fixtures/sanity');
+  } else {
+    delete env.SANITY_FIXTURE_MODE;
+    delete env.SANITY_FIXTURE_DIR;
+  }
   const log = openSync(`${LOG_DIR}/next-start-${port}.log`, 'w');
   const proc = spawn('node_modules/.bin/next', ['start', '-p', String(port)], { stdio: ['ignore', log, log], env });
   return { port, proc, saoc: `http://saoc.localhost:${port}` };
