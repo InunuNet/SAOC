@@ -1,10 +1,13 @@
 // council-copy-fixes A4 "no other string changes": every changed line against origin/main is exactly a copy-map substitution.
 //  - sourceFiles and pinFiles: `git diff -U0` removed lines, with every before->after (and pinSubs) substitution applied, must equal the added
 //    lines, pairwise and in order; a hunk with unequal -/+ counts fails.
-//  - looseFiles (gate plumbing that must learn the council overrides) and the council spec dir, docs/ and the new overrides file are allowed any change.
+//  - plumbingFiles (the nos-content-standard gate scripts taught the overrides): normalised back to origin/main by check-plumbing.mjs and then BYTE-EQUAL; a
+//    deleted assertion, a removed route or any other edit fails. No line-level exemption.
+//  - looseFiles (text pins and goldens) and the council spec dir, docs/ and the new overrides file are allowed any change.
 //  - any other changed path fails.
 import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import { checkPlumbing } from './check-plumbing.mjs';
 
 const MAP = JSON.parse(readFileSync('.agent/memory/project/specs/council-1028/council-copy-fixes/goldens/copy-map.json', 'utf8'));
 const BASE = process.env.COUNCIL_DIFF_BASE ?? 'origin/main';
@@ -19,6 +22,7 @@ const fails = [];
 
 const changed = git(['diff', '--name-only', `${BASE}...HEAD`]).split('\n').filter(Boolean);
 for (const file of changed) {
+  if (MAP.plumbingFiles.includes(file)) { fails.push(...checkPlumbing(file, git(['show', `HEAD:${file}`]), git(['show', `${BASE}:${file}`]))); continue; }
   if (loose.has(file) || allowedPrefixes.some((p) => file.startsWith(p))) continue;
   if (!strict.has(file)) { fails.push(`${file}: changed but not a listed source, pin or plumbing file`); continue; }
   const patch = git(['diff', '-U0', `${BASE}...HEAD`, '--', file]);
