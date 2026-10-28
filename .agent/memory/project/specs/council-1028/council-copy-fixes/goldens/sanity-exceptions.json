@@ -2,7 +2,7 @@
  "schema": "council.sanity-exceptions/v1",
  "note": "Rows the lead already applied in Sanity on 2026-10-28 (live on beta). Sanity text now differs from Lee-Ann's frozen Drive mirrors on exactly these strings, each by decision of the council correction sheets of 2026-10-27. The Drive mirrors and the Sanity fixtures stay byte-identical (A5). Exceptions are APPLIED to the expected (Drive) text by nos-content-standard/checks/_lib.mjs only when the Sanity fixture being replayed was captured on or after appliesFromFixtureCapturedAt, or when NOS_STD_FIXTURE=live. Today's fixture (capturedAt 2026-10-26T02:26:50Z) is older, so the exceptions are dormant and the gates stay green; the first re-record switches them on with no other edit.",
  "appliesFromFixtureCapturedAt": "2026-10-28T00:00:00Z",
- "reviewer": "Council correction sheet reviewer(s), as recorded in the sheet of 2026-10-27 (named per row in .tmp/sandbox/council-sheet-1028/change-list.md; @dev copies the reviewer name from that file, this golden does not invent one)",
+ "reviewer": "Caral-Anne, exactly as the council correction sheet writes it",
  "sheet": "Council correction sheet 2026-10-27",
  "driveSourceFile": ".agent/memory/project/specs/nos-content-standard/goldens/sources/faq.md",
  "substitutions": [
@@ -11,11 +11,12 @@
    "row": "F13",
    "sanityDoc": "showFaq-q15",
    "field": "answer[0]",
-   "from": "T&C’s On your ticket confirmation",
-   "to": "T&C’s on your ticket confirmation",
+   "from": "T&C’s On your",
+   "to": "T&C’s on your",
    "class": "A: \"On\" lowercased",
    "toBasis": "exact",
-   "sheet": "Council correction sheet 2026-10-27"
+   "sheet": "Council correction sheet 2026-10-27",
+   "basis": "the lead's applied span substitution (.tmp/sandbox/council-sheet-1028/apply-a.mjs)"
   },
   {
    "id": "SX-F14",
@@ -26,7 +27,8 @@
    "to": "attend more than one day",
    "class": "A: delete \"on\"",
    "toBasis": "exact",
-   "sheet": "Council correction sheet 2026-10-27"
+   "sheet": "Council correction sheet 2026-10-27",
+   "basis": "the lead's applied span substitution (.tmp/sandbox/council-sheet-1028/apply-a.mjs)"
   },
   {
    "id": "SX-F19",
@@ -37,7 +39,8 @@
    "to": "whose subscriptions",
    "class": "A: who’s -> whose (same sentence as exhibitors STANDFIRST, C02, already in the copy map)",
    "toBasis": "exact",
-   "sheet": "Council correction sheet 2026-10-27"
+   "sheet": "Council correction sheet 2026-10-27",
+   "basis": "the lead's applied span substitution (.tmp/sandbox/council-sheet-1028/apply-a.mjs)"
   },
   {
    "id": "SX-F28",
@@ -48,18 +51,20 @@
    "to": "refreshments",
    "class": "A: spelling",
    "toBasis": "exact",
-   "sheet": "Council correction sheet 2026-10-27"
+   "sheet": "Council correction sheet 2026-10-27",
+   "basis": "the lead's applied span substitution (.tmp/sandbox/council-sheet-1028/apply-a.mjs)"
   },
   {
    "id": "SX-W2b",
    "row": "W2b",
    "sanityDoc": "showFaq-q29",
    "field": "answer[0]",
-   "from": "attendees or the public please ensure",
-   "to": "attendees or the public, please ensure",
+   "from": "public please",
+   "to": "public, please",
    "class": "A: comma (same sentence as What to expect, C04, already in the copy map)",
    "toBasis": "exact",
-   "sheet": "Council correction sheet 2026-10-27"
+   "sheet": "Council correction sheet 2026-10-27",
+   "basis": "the lead's applied span substitution (.tmp/sandbox/council-sheet-1028/apply-a.mjs)"
   },
   {
    "id": "SX-F3",
@@ -69,30 +74,33 @@
    "from": "Walker Bay Orchid Society, Cape Orchid Society, Tygerberg Orchid Group, Southern Cape Orchid Society and Wild Orchids Southern Africa (WOSA)",
    "to": "Cape Orchid Society, Southern Cape Orchid Society, Tygerberg Orchid Group, Walker Bay Orchid Society and Wild Orchids Southern Africa (WOSA)",
    "class": "B: societies in alphabetical order",
-   "toBasis": "confirm-against-sanity",
-   "sheet": "Council correction sheet 2026-10-27"
+   "toBasis": "exact",
+   "sheet": "Council correction sheet 2026-10-27",
+   "basis": "the lead's applied span substitution (.tmp/sandbox/council-sheet-1028/apply-a.mjs)"
   },
   {
    "id": "SX-F5",
    "row": "F5",
    "sanityDoc": "showFaq-q7",
    "field": "answer[0]",
-   "from": "You do not need to belong to an orchid society to visit.",
-   "to": "",
+   "from": "The Show is open to the public. You do not need to belong to an orchid society to visit.",
+   "to": "The Show is open to the public.",
    "class": "B: sentence deleted (substitution leaves the preceding space; the override normaliser collapses whitespace)",
    "toBasis": "exact",
-   "sheet": "Council correction sheet 2026-10-27"
+   "sheet": "Council correction sheet 2026-10-27",
+   "basis": "the lead's applied span substitution (.tmp/sandbox/council-sheet-1028/apply-a.mjs)"
   },
   {
    "id": "SX-F6",
    "row": "F6",
    "sanityDoc": "showFaq-q8",
    "field": "answer[0]",
-   "from": "International guests and exhibitors, including international orchid vendors",
-   "to": "Yes, international guests and exhibitors, including international orchid vendors",
+   "from": "International guests and exhibitors, including",
+   "to": "Yes, international guests and exhibitors, including",
    "class": "B: answer now starts \"Yes,\"",
-   "toBasis": "confirm-against-sanity",
-   "sheet": "Council correction sheet 2026-10-27"
+   "toBasis": "exact",
+   "sheet": "Council correction sheet 2026-10-27",
+   "basis": "the lead's applied span substitution (.tmp/sandbox/council-sheet-1028/apply-a.mjs)"
   },
   {
    "id": "SX-F25",
@@ -102,8 +110,9 @@
    "from": "Lourens Grobler, Tinus Oberholzer, Michael Tibbs, Rob Fuchs, Elbert Wijaya and Hildegard Crous",
    "to": "Elbert Wijaya, Hildegard Crous, Lourens Grobler, Michael Tibbs, Rob Fuchs and Tinus Oberholzer",
    "class": "B: speakers alphabetical by first name; the lead applied the order only, \"being considered\" and \"should be published\" are untouched",
-   "toBasis": "confirm-against-sanity",
-   "sheet": "Council correction sheet 2026-10-27"
+   "toBasis": "exact",
+   "sheet": "Council correction sheet 2026-10-27",
+   "basis": "the lead's applied span substitution (.tmp/sandbox/council-sheet-1028/apply-a.mjs)"
   }
  ],
  "nonTextRows": [
@@ -116,5 +125,5 @@
    "effect": "Lee-Ann's society data says \"Liaison for communication: Not supplied\". No existing check compares this to Drive or to live Sanity: societies-content/check-render.mjs:53 asserts committee length 3 against a LOCAL snapshot (.tmp/sandbox/societies-content/after-apply.json), not live Sanity, and check-live-readonly.mjs projects no committee field. Recorded for completeness; no exception code needed."
   }
  ],
- "toBasisNote": "'exact' = the after-string is the reviewer's or the sheet's wording verbatim. 'confirm-against-sanity' = the after-string is taken from the change list (the lead's applied text may differ in punctuation or case); @dev reads the live published value (read-only GROQ via the fixture recorder) and corrects the 'to' string BEFORE the first re-record. check-sanity-exceptions.mjs verifies only 'from' against the frozen mirror, and that 'to' is non-identical to 'from'."
+ "toBasisNote": "Every from/to is the exact span the lead applied in Sanity (apply-a.mjs; backups in .tmp/sandbox/council-sheet-1028/backup/*.json). check-sanity-exceptions.mjs verifies each 'from' is unique in the frozen Drive FAQ mirror."
 }
