@@ -66,7 +66,7 @@ export function SponsorGrid({ sponsors }: SponsorGridProps) {
                     rel="noopener noreferrer"
                     className="mt-3 inline-flex min-h-6 items-center font-sans text-[13px] text-ink underline underline-offset-2"
                   >
-                    Visit website <ArrowIcon />
+                    Visit website<ArrowIcon />
                   </a>
                 ) : null}
               </div>

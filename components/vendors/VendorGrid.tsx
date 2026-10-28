@@ -99,7 +99,7 @@ export function VendorGrid({ nurseries }: VendorGridProps) {
               rel="noopener noreferrer"
               className="mt-auto pt-3 inline-block font-sans text-[13px] text-ink underline underline-offset-2"
             >
-              Visit website <ArrowIcon />
+              Visit website<ArrowIcon />
             </a>
           ) : null}
           {nursery.socialMedia && nursery.socialMedia.length > 0 ? (

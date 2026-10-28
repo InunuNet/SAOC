@@ -33,7 +33,7 @@ export function SocietyAbout({ society }: SocietyAboutProps) {
               rel="noopener noreferrer"
               className="inline-flex min-h-11 items-center text-ink underline underline-offset-2"
             >
-              Visit society website <ArrowIcon />
+              Visit society website<ArrowIcon />
             </a>
           ) : null}
           {society.facebookUrl ? (
@@ -43,7 +43,7 @@ export function SocietyAbout({ society }: SocietyAboutProps) {
               rel="noopener noreferrer"
               className="inline-flex min-h-11 items-center text-ink underline underline-offset-2"
             >
-              Facebook page <ArrowIcon />
+              Facebook page<ArrowIcon />
             </a>
           ) : null}
           {society.instagramUrl ? (
@@ -53,7 +53,7 @@ export function SocietyAbout({ society }: SocietyAboutProps) {
               rel="noopener noreferrer"
               className="inline-flex min-h-11 items-center text-ink underline underline-offset-2"
             >
-              Instagram page <ArrowIcon />
+              Instagram page<ArrowIcon />
             </a>
           ) : null}
         </div>
