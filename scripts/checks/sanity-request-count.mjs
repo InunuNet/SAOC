@@ -21,6 +21,10 @@ import {
   stubbedEnv,
 } from './lib/local-next-server.mjs';
 
+const ISOLATED_PATH = resolve(
+  REPO_ROOT,
+  '.agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/goldens/per-route-cold-isolated.json',
+);
 const TARGETS_PATH = resolve(
   REPO_ROOT,
   '.agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/goldens/request-count-targets.json',
@@ -38,9 +42,7 @@ const UNMATCHED_PATHS = {
 };
 const SAOC_TITLE_SUFFIX = 'South African Orchid Council';
 const NOS_TITLE_PART = 'The National Orchid Show';
-// Routes that must read Sanity on their first request (per-request pages): proves the stub is
-// reached, so zero warm counts mean the data cache held, not that no read ever happened.
-const POSITIVE_CONTROL_ROUTES = ['nos /workshops', 'nos /symposium', 'nos /wosa-conference'];
+const PORT_RELEASE_MS = 1000;
 // SAOC-host paths under the show trees are handed to the NOS origin by proxy.ts (308).
 const SAOC_REDIRECT_PATHS = ['/vsp/zz', '/tickets/a/b'];
 const PERMANENT_REDIRECT = 308;
@@ -48,6 +50,7 @@ const EXIT_FAIL = 1;
 const EXIT_SETUP = 2;
 
 const targets = JSON.parse(readFileSync(TARGETS_PATH, 'utf8'));
+const isolated = JSON.parse(readFileSync(ISOLATED_PATH, 'utf8'));
 const failures = [];
 const check = (ok, message) => {
   if (!ok) failures.push(message);
@@ -87,7 +90,28 @@ async function runBuild() {
   return 0;
 }
 
+// Positive control: each route alone on a fresh server with an empty data cache cannot borrow a
+// query another route cached, so its cold count must equal the golden exactly and a second request
+// must cost 0. A route that lost a Sanity read, or a counter that stopped counting, fails here.
+async function runIsolatedControl() {
+  for (const [label, expected] of Object.entries(isolated.isolated_cold_expected)) {
+    const { site, path } = splitRoute(label);
+    const server = await startServer({ port: PORT, countLog: COUNT_LOG, launched: true });
+    try {
+      const first = await countedGet(PORT, COUNT_LOG, server.hostFor(site), path);
+      const second = await countedGet(PORT, COUNT_LOG, server.hostFor(site), path);
+      console.log(`isolated ${label}: cold ${first.requests} (golden ${expected}), second ${second.requests}`);
+      check(first.requests === expected, `isolated ${label} cold ${first.requests} equals golden ${expected}`);
+      check(second.requests === isolated.isolated_then_second_request_expected_warm, `isolated ${label} second request ${second.requests} is 0`);
+    } finally {
+      server.stop();
+      await sleep(PORT_RELEASE_MS);
+    }
+  }
+}
+
 async function runAssert() {
+  await runIsolatedControl();
   const baseline = targets.baseline_origin_main_d52d3eb6;
   const builtFrom = existsSync(BUILD_STAMP) ? readFileSync(BUILD_STAMP, 'utf8') : null;
   check(builtFrom === sourceRevision(), 'the .next build was made from this exact source revision (run --build first)');
@@ -110,10 +134,8 @@ async function runAssert() {
   const warmTotal = rows.reduce((sum, row) => sum + row.warm, 0);
   const reduction = (1 - warmTotal / baseline.warm_total_per_pass) * 100;
   console.log(`BEFORE warm total ${baseline.warm_total_per_pass}, AFTER warm total ${warmTotal}, reduction ${reduction.toFixed(1)}%`);
-  for (const label of POSITIVE_CONTROL_ROUTES) {
-    const row = rows.find((candidate) => candidate.label === label);
-    check(Boolean(row) && row.cold > 0, `positive control ${label} cold ${row ? row.cold : 'missing'} > 0 (reads reach the stub)`);
-  }
+  const coldTotal = rows.reduce((sum, row) => sum + row.cold, 0);
+  check(coldTotal >= isolated.whole_pass_cold_total_floor, `whole-pass cold total ${coldTotal} >= ${isolated.whole_pass_cold_total_floor}`);
   check(existsSync(BUILD_LOG) && countLines(BUILD_LOG) > 0, `build-time Sanity requests recorded (${countLines(BUILD_LOG)}); run --build first`);
   check(rows.every((row) => row.status === 200), 'every measured route answers 200');
   check(warmTotal <= targets.targets.warm_total_per_pass_max, `warm total ${warmTotal} <= ${targets.targets.warm_total_per_pass_max}`);
