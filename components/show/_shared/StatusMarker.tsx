@@ -138,25 +138,33 @@ export function resolveStatusMarker({
 
 // U+203B (the reference mark) is not in the shipped Manrope subset, so the mark is an inline SVG:
 // an X with a dot in each quarter, 1em, currentColor, on the text baseline (F1e).
+// Cap height of the label face (Manrope) is ~0.72em; stroke is the label T's stem (~0.1em
+// = 3.33 of 24 viewBox units at that height); dots are 1.5x the stroke.
+const MARK_CAP_HEIGHT_EM = 0.72;
+const MARK_STROKE = 3.33;
+const MARK_DOT_RADIUS = 2.5;
+
 function ReferenceMark() {
+  const near = MARK_DOT_RADIUS;
+  const far = 24 - MARK_DOT_RADIUS;
   return (
     <span aria-hidden="true">
       <svg
         viewBox="0 0 24 24"
-        width="1em"
-        height="1em"
+        width={`${MARK_CAP_HEIGHT_EM}em`}
+        height={`${MARK_CAP_HEIGHT_EM}em`}
         fill="currentColor"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth={MARK_STROKE}
         strokeLinecap="round"
         focusable="false"
-        className="inline-block align-[-0.125em]"
+        className="inline-block align-baseline"
       >
-        <path d="M7 7l10 10M17 7L7 17" fill="none" />
-        <circle cx="12" cy="3.5" r="1.5" stroke="none" />
-        <circle cx="12" cy="20.5" r="1.5" stroke="none" />
-        <circle cx="3.5" cy="12" r="1.5" stroke="none" />
-        <circle cx="20.5" cy="12" r="1.5" stroke="none" />
+        <path d="M8 8l8 8M16 8l-8 8" fill="none" />
+        <circle cx="12" cy={near} r={MARK_DOT_RADIUS} stroke="none" />
+        <circle cx="12" cy={far} r={MARK_DOT_RADIUS} stroke="none" />
+        <circle cx={near} cy="12" r={MARK_DOT_RADIUS} stroke="none" />
+        <circle cx={far} cy="12" r={MARK_DOT_RADIUS} stroke="none" />
       </svg>
     </span>
   );
