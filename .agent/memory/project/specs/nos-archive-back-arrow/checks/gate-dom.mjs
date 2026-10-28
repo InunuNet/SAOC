@@ -3,12 +3,15 @@
 //   mirror   (A7) the icon is one svg.nk-icon, aria-hidden, leads the label with no literal space, at rest its computed transform is a pure scaleX(-1)
 //   hover    (A8) hover moves the icon -3px under no-preference and 0 under reduce
 //   caps     (A13) both labels compute the NR-8 Caps tuple: Karla, 700, 14px, 0.12em, uppercase
-//   focus    (A9) keyboard focus ring, tab-stop count and 44px target match the main baseline (goldens/baseline-main.json); --record writes that baseline
+//   focus    (A12) keyboard focus ring, tab-stop count and 44px target match the main baseline (goldens/baseline-main.json); --record writes that baseline
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { BASELINE_FILE, V, gotoSettled, launchChromium, newContext, withServer } from './_lib.mjs';
 
 const MODE = process.argv[2];
 const RECORD = process.argv.includes('--record');
+// Self-test injection runs only with the explicit --selftest flag. An inherited NOS_ARROW_SELFTEST must never replace the page the gate measures: refuse to run at all.
+const SELFTEST = process.argv.includes('--selftest');
+if (process.env.NOS_ARROW_SELFTEST !== undefined) { console.error('NOS_ARROW_SELFTEST is set in the environment; the environment variable is not a self-test switch (use --selftest). Refusing to run.'); process.exit(2); }
 const TOL = V.parityTolerancePx;
 
 /** Runs in the page. Everything a gate needs about one back-link: icon, label text node, boxes, styles. Returns null when the link is missing. */
@@ -93,7 +96,7 @@ async function forwardReference(page, server, c) {
   return ref;
 }
 
-/** NOS_ARROW_SELFTEST=1: the gate's own proof that a correct implementation passes. Injects the spec's fix shape (keepsake ArrowIcon markup, scaleX(-1),
+/** `--selftest` flag only: the gate's own proof that a correct implementation passes. Injects the spec's fix shape (keepsake ArrowIcon markup, scaleX(-1),
  * margin-inline-end 8px, -3px hover under no-preference only) into the served page, so the same measurements run against it. Never set in the contract. */
 async function injectFixShape(page) {
   await page.evaluate(() => {
@@ -114,7 +117,7 @@ async function injectFixShape(page) {
 
 async function openLinks(page, server, c) {
   await gotoSettled(page, server, V.links[0].page, c);
-  if (process.env.NOS_ARROW_SELFTEST === '1') await injectFixShape(page);
+  if (SELFTEST) await injectFixShape(page);
   await page.mouse.move(0, 0);
 }
 

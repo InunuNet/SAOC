@@ -76,7 +76,7 @@ Browser: Playwright chromium from `@playwright/test`, no install. If the default
 
 `goldens/baseline-main.json` is recorded once on main with `node .../gate-dom.mjs focus --record` (the same command re-records it; do not re-record on the fix branch).
 
-Gate self-proof: with the fix shape injected (`NOS_ARROW_SELFTEST=1`, never in the contract) A9, A10, A11 and A13 pass against a main build; A12 stays green on main.
+Gate self-proof: with the fix shape injected (`gate-dom.mjs <mode> --selftest`, never in the contract; the script refuses to run at all if `NOS_ARROW_SELFTEST` is set in the environment, and every contract command runs under `env -u NOS_ARROW_SELFTEST`) A9, A10, A11 and A13 pass against a main build; A12 stays green on main.
 
 ## Running the gate end to end
 
