@@ -1271,6 +1271,19 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 .nos-theme .nk-btn:hover .nk-icon {
   transform: translateX(3px);
 }
+/* Archive back links: the keepsake arrow mirrored, leading the label. Gap matches .nk-visit text links. */
+.nos-theme [data-nos-backarrow] .nk-icon {
+  margin-inline-end: 8px;
+  transform: scaleX(-1);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nos-theme [data-nos-backarrow] .nk-icon {
+    transition: transform var(--dur-slow) var(--ease-nos);
+  }
+  .nos-theme [data-nos-backarrow]:hover .nk-icon {
+    transform: translateX(-3px) scaleX(-1);
+  }
+}
 .nos-theme .nk-chip {
   display: inline-flex;
   align-items: center;
