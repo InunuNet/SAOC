@@ -1,0 +1,90 @@
+schema: athanor.contract/v1
+slug: nos-archive-back-arrow
+goal: The two U+2190 text arrows on the NOS archive year page ("Past shows" back link, "Earlier" link) become the NOS keepsake arrow mirrored via scaleX(-1), leading the label, so no system-glyph arrow remains on the NOS host.
+created_at: '2026-10-28'
+autonomy: high
+
+features:
+  - id: F1
+    name: Replace the two U+2190 text arrows in app/(nos)/national-show/archive/[year]/page.tsx with the mirrored NOS keepsake arrow
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/nos-archive-back-arrow/goldens/rulings.md
+  - .agent/memory/project/specs/nos-archive-back-arrow/goldens/values.json
+  - .agent/memory/project/specs/nos-archive-back-arrow/goldens/baseline-main.json
+  - .agent/memory/project/specs/nos-archive-back-arrow/goldens/codex-qa-prompt.md
+  - .agent/memory/project/specs/nos-archive-back-arrow/goldens/residue-fixture-clean.json
+  - .agent/memory/project/specs/nos-archive-back-arrow/goldens/fixture-stubs/70c1b662f86baf26d3260c7d2b8cc84f100afa978e1512eba90262f2eb8dabbd.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: "(a) zero U+2190 (and &larr;, &#8592;, &#x2190;, backslash-u2190) in app/(nos), components/nos, components/nos-chrome, components/tickets source. RED on main: archive/[year]/page.tsx:166 and :227."
+      command: node .agent/memory/project/specs/nos-archive-back-arrow/checks/check-source.mjs
+    - id: A2
+      description: "The archive page uses the NOS keepsake ArrowIcon from components/tickets/keepsake/parts, never components/ui/ArrowIcon (ruling b). RED on main: no import."
+      command: grep -q "components/tickets/keepsake/parts" "app/(nos)/national-show/archive/[year]/page.tsx"
+    - id: A3
+      description: "The archive page does not import components/ui/ArrowIcon (NOS keeps one arrow system, CRIT-13)."
+      command: node .agent/memory/project/specs/nos-archive-back-arrow/checks/check-imports.mjs
+    - id: A4
+      description: "The keepsake ArrowIcon (components/tickets/keepsake/parts.tsx) is unchanged since the base commit 8d9027c9 (ruling answer 1: the keepsake stands as it is)."
+      command: git diff --quiet 8d9027c9 -- components/tickets/keepsake/parts.tsx
+    - id: A5
+      description: "(g) tsc --noEmit passes."
+      command: pnpm exec tsc --noEmit
+      timeout_seconds: 300
+    - id: A6
+      description: "(g) eslint passes on the NOS route and component roots."
+      command: pnpm exec eslint "app/(nos)" components/nos components/nos-chrome components/tickets
+      timeout_seconds: 300
+    - id: A7
+      description: "(g) production build passes on Sanity fixture replay (zero Sanity API requests, zero fixture misses); leaves the .next the browser gates serve."
+      command: bash .agent/memory/project/specs/nos-archive-back-arrow/checks/build.sh
+      timeout_seconds: 900
+    - id: A8
+      description: "(b) zero U+2190 in the rendered HTML of /archive/2024, /archive/2023, /archive, /faq and / on the NOS host, each a 200. RED on main: /archive/2024 (two) and /archive/2023."
+      command: node .agent/memory/project/specs/nos-archive-back-arrow/checks/gate-html.mjs
+      timeout_seconds: 300
+    - id: A9
+      description: "(c) mirror parity +-0.5px in the browser: icon width (1.1em of the 14px Caps label = 15.4px, mirrored = unmirrored), icon-to-label gap (the live forward .nk-visit a gap, 8px) and icon vertical centre = the label cap midline against the label, for both links. RED on main: no icon."
+      command: env -u NOS_ARROW_SELFTEST node .agent/memory/project/specs/nos-archive-back-arrow/checks/gate-dom.mjs parity
+      timeout_seconds: 300
+    - id: A10
+      description: "(d) one svg.nk-icon per link, aria-hidden, focusable=false, leads the label with no literal space, computed transform at rest is matrix(-1,0,0,1,0,0). RED on main: no icon."
+      command: env -u NOS_ARROW_SELFTEST node .agent/memory/project/specs/nos-archive-back-arrow/checks/gate-dom.mjs mirror
+      timeout_seconds: 300
+    - id: A11
+      description: "(e) hover moves the icon -3px under prefers-reduced-motion no-preference and 0px under reduce; hovered, the computed transform keeps the mirror (matrix a = -1) with the translate; under reduce the icon has no transition. RED on main: no icon."
+      command: env -u NOS_ARROW_SELFTEST node .agent/memory/project/specs/nos-archive-back-arrow/checks/gate-dom.mjs hover
+      timeout_seconds: 300
+    - id: A12
+      description: "(f) keyboard focus ring, tab-stop count and 44px target match the main baseline (goldens/baseline-main.json). GREEN on main by design: these must not change."
+      command: env -u NOS_ARROW_SELFTEST node .agent/memory/project/specs/nos-archive-back-arrow/checks/gate-dom.mjs focus
+      timeout_seconds: 300
+    - id: A13
+      description: "Both labels compute the NR-8 Caps tuple (NOS Design ruling): font-family Karla, weight 700, size 14px, letter-spacing 0.12em (1.68px), text-transform uppercase. RED on main: 12px, 0.14em / 0.18em."
+      command: env -u NOS_ARROW_SELFTEST node .agent/memory/project/specs/nos-archive-back-arrow/checks/gate-dom.mjs caps
+      timeout_seconds: 300
+    - id: A17
+      description: "Layout integrity at 390px and under dir=rtl on /archive/2023 (Earlier and Later both present): no horizontal overflow and the icon/label gap stays 8px (+-0.5). Arrow direction under RTL is not asserted (no ruling)."
+      command: env -u NOS_ARROW_SELFTEST node .agent/memory/project/specs/nos-archive-back-arrow/checks/gate-dom.mjs layout
+      timeout_seconds: 300
+    - id: A14
+      description: Codex adversarial review of the whole diff against the rulings and goldens
+      type: codex_qa
+      target: .agent/memory/project/specs/nos-archive-back-arrow/goldens/codex-qa-prompt.md
+      timeout_seconds: 1300
+      required: true
+    - id: A15
+      description: BrowserAgent on beta confirms /archive/{year} shows the mirrored keepsake arrow on both links at 390 and 1280, with no system-glyph arrow
+      type: browser_deployed_check
+      target: .agent/memory/scratch/nos-archive-back-arrow-browser-manifest.json
+      required: true
+    - id: A16
+      description: gws inbox check not applicable (no email sent); declared non-required for the triad linter
+      type: gws_inbox_check
+      target: .agent/memory/scratch/nos-archive-back-arrow-gws-manifest.json
+      required: false

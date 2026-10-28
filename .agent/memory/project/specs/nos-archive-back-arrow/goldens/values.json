@@ -1,0 +1,89 @@
+{
+  "_source": "Every value traces to goldens/rulings.md or to the cited file:line on origin/main 8d9027c9.",
+  "parityTolerancePx": 0.5,
+  "iconWidthEm": 1.1,
+  "iconWidthSource": "app/(nos)/national-show/nos-structure.css:1284-1286 on base (.nos-theme .nk-icon width/height 1.1em); NOS Design: '1.1em of the label, checked mirrored against unmirrored'",
+  "forwardGapPx": 8,
+  "forwardGapSource": "app/(nos)/national-show/nos-structure.css:2146 on base 8d9027c9 (.nos-theme .nk-visit a gap: 8px; the rule opens at :2143). NOS Design: 'These are text links, so they take the .nk-visit gap; 10 is the button gap.' The gate also reads it live from a forward .nk-visit a on /tickets",
+  "hoverNudgePx": -3,
+  "hoverNudgeSource": "ruling answer 3; mirrors nos-structure.css:1331-1333 (.nk-btn:hover .nk-icon translateX(3px)); timing nos-structure.css:1327-1329 (var(--dur-slow) var(--ease-nos), no-preference only)",
+  "hoverSettleMs": 1500,
+  "targetFloorPx": 44,
+  "targetFloorSource": "app/(nos)/national-show/nos-structure.css:273-277 ([data-nos-backlink] min-height 44px)",
+  "forbiddenGlyphs": [
+    "←",
+    "&larr;",
+    "&#8592;",
+    "&#x2190;",
+    "\\u2190"
+  ],
+  "sourceRoots": [
+    "app/(nos)",
+    "components/nos",
+    "components/nos-chrome",
+    "components/tickets"
+  ],
+  "links": [
+    {
+      "id": "past-shows",
+      "page": "/archive/2024",
+      "selector": "a[data-nos-backlink]",
+      "label": "Past shows"
+    },
+    {
+      "id": "earlier",
+      "page": "/archive/2024",
+      "selector": "main a[href=\"/archive/2023\"]",
+      "label": "Earlier"
+    }
+  ],
+  "htmlPages": [
+    "/archive/2024",
+    "/archive/2023",
+    "/archive/2022",
+    "/archive",
+    "/faq",
+    "/"
+  ],
+  "forwardReference": {
+    "page": "/tickets",
+    "selector": ".nk-visit a:has(svg.nk-icon)"
+  },
+  "fixtureStub": "synthetic past shows 2024, 2023 and 2022 (year + status only), test-only: the tracked capture has pastShowsQuery result [] so no real archive year exists in replay",
+  "iconWidthPx": 15.4,
+  "iconWidthPxSource": "1.1em of the 14px Caps label",
+  "caps": {
+    "fontFamilyMatch": "karla",
+    "fontWeight": "700",
+    "fontSizePx": 14,
+    "letterSpacingEm": 0.12,
+    "textTransform": "uppercase",
+    "source": "NOS Design: 'NR-8 Caps is 14'; the Caps tuple from type-tokens docs/nos-type-tokens.md is 'Caps (Karla 700, 14px, 0.12em, uppercase)'. type-tokens (feat/nos-type-tokens 4e7fe348) does not touch archive/[year]/page.tsx and its --w-caps token is not on main, so the gate asserts computed values, not a token name"
+  },
+  "layout": {
+    "page": "/archive/2023",
+    "mobileViewport": {
+      "width": 390,
+      "height": 844
+    },
+    "desktopViewport": {
+      "width": 1280,
+      "height": 900
+    },
+    "links": [
+      {
+        "id": "past-shows",
+        "selector": "a[data-nos-backlink]",
+        "label": "Past shows"
+      },
+      {
+        "id": "earlier",
+        "selector": "main a[href=\"/archive/2022\"]",
+        "label": "Earlier"
+      }
+    ],
+    "later": "main a[href=\"/archive/2024\"]",
+    "gapPx": 8,
+    "source": "Codex round 4 (A14); layout integrity only at 390 and under dir=rtl. Arrow direction under RTL has no ruling and is not asserted. 2023 has both an Earlier (2022) and a Later (2024) link in the synthetic stub."
+  }
+}

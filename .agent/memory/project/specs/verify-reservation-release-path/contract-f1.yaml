@@ -45,30 +45,6 @@ assertions:
         code, so this is a baseline sanity gate, not a regression proof. False-pass risk: none
         realistic — a real next build failure is a hard compiler error.
       command: pnpm exec next build
-    - id: A2
-      description: >
-        Live, real-HTTP proof against a running dev server and real Firestore. Fills
-        TARGET_TICKET_TYPE ('exhibitor') to capacity-1 with ordinary unexpired reservations, adds
-        one reserved-but-already-expired sentinel position (simulating an abandoned cart holding
-        the last seat), confirms getSoldCountsByTicketType still reads capacity-1 (excludes the
-        expired one), then POSTs a real checkout request for the same ticket type and asserts
-        HTTP 201. False-pass risk: a version where the exclusion works in
-        getSoldCountsByTicketType but the live checkout route reads a stale or different count
-        would still pass an isolated count-only assertion but is caught here specifically by the
-        real HTTP round trip against the actual production route.
-      command: npx tsx .agent/memory/project/specs/verify-reservation-release-path/goldens/check-lazy-release-frees-and-resells.mjs
-      timeout_seconds: 150
-    - id: A3
-      description: >
-        Live Firestore negative control (no dev server required): a position written with
-        status='paid' and expiresAt 24 hours in the past must still be counted as held by the
-        real, unmodified getSoldCountsByTicketType — proving stillHoldsSeat's status-before-expiry
-        branch order holds against real data, not just by reading the source. False-pass risk: a
-        refactor that checks expiry before status (the exact regression
-        docs/ticketing-position-expiry-write.md warns against) would silently un-sell a real
-        paid buyer's seat and is caught directly here.
-      command: npx tsx .agent/memory/project/specs/verify-reservation-release-path/goldens/check-paid-order-not-released-by-expiry.mjs
-      timeout_seconds: 60
     - id: A4
       description: >
         Structural proof (grep-based, no live side effects) that
@@ -83,3 +59,31 @@ assertions:
         structural guard against reconcile-orders specifically being mistaken for it.
       command: bash .agent/memory/project/specs/verify-reservation-release-path/goldens/check-reconcile-orders-alert-only-not-release.sh
       timeout_seconds: 30
+
+manual_only:
+  - id: A2
+    reason: "check-lazy-release-frees-and-resells.mjs writes to the production Firestore (saoc-webapp): Firestore saoc-webapp orders/tickets via withCleanup/sentinel helpers; run by hand only, with the operator present"
+    description: >
+      Live, real-HTTP proof against a running dev server and real Firestore. Fills
+      TARGET_TICKET_TYPE ('exhibitor') to capacity-1 with ordinary unexpired reservations, adds
+      one reserved-but-already-expired sentinel position (simulating an abandoned cart holding
+      the last seat), confirms getSoldCountsByTicketType still reads capacity-1 (excludes the
+      expired one), then POSTs a real checkout request for the same ticket type and asserts
+      HTTP 201. False-pass risk: a version where the exclusion works in
+      getSoldCountsByTicketType but the live checkout route reads a stale or different count
+      would still pass an isolated count-only assertion but is caught here specifically by the
+      real HTTP round trip against the actual production route.
+    command: npx tsx .agent/memory/project/specs/verify-reservation-release-path/goldens/check-lazy-release-frees-and-resells.mjs
+    timeout_seconds: 150
+  - id: A3
+    reason: "check-paid-order-not-released-by-expiry.mjs writes to the production Firestore (saoc-webapp): Firestore saoc-webapp orders/tickets via withCleanup/sentinel helpers; run by hand only, with the operator present"
+    description: >
+      Live Firestore negative control (no dev server required): a position written with
+      status='paid' and expiresAt 24 hours in the past must still be counted as held by the
+      real, unmodified getSoldCountsByTicketType — proving stillHoldsSeat's status-before-expiry
+      branch order holds against real data, not just by reading the source. False-pass risk: a
+      refactor that checks expiry before status (the exact regression
+      docs/ticketing-position-expiry-write.md warns against) would silently un-sell a real
+      paid buyer's seat and is caught directly here.
+    command: npx tsx .agent/memory/project/specs/verify-reservation-release-path/goldens/check-paid-order-not-released-by-expiry.mjs
+    timeout_seconds: 60

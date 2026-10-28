@@ -99,7 +99,7 @@ export function Header() {
               alt=""
               width={3757}
               height={493}
-              sizes="(min-width: 780px) 405px, calc(100vw - 32px)"
+              sizes="(min-width: 780px) 405px, min(405px, calc(100vw - 32px))"
               priority
               className="h-auto w-full"
             />

@@ -97,22 +97,24 @@ assertions:
         fi; grep -q "from 'dotenv'" scripts/seed-sanity.ts && grep -q
         "quiet:[[:space:]]*true" scripts/seed-sanity.ts
 
-    - id: A6
-      description: >-
-        Running the actual call site (scripts/seed-sanity.ts) no longer
-        prints the vestauth banner or any dotenv tip line to stdout/stderr
-        (checked dynamically, not just statically -- catches cases where
-        quiet:true was set but on the wrong call or wrong option shape).
-        The script is expected to error on missing Sanity credentials in
-        this sandboxed environment; only its dotenv-related output is
-        checked, not its exit code.
-      command: >-
-        OUT=$(timeout 15 npx tsx scripts/seed-sanity.ts 2>&1); if echo
-        "$OUT" | grep -qiE "vestauth|injected env|injecting env|dotenvx"; then
-        echo "dotenv banner/tip still present in output:"; echo "$OUT"; exit
-        1; fi; exit 0
-
     # ---------- no-regression gate ----------
     - id: A7
       description: strict TypeScript type-check passes
       command: pnpm type-check
+
+manual_only:
+  - id: A6
+    reason: "seed-sanity.ts writes to the production Sanity dataset (project 26yfbug4): Sanity 26yfbug4/production, transaction().createOrReplace of every seeded doc (line 135); the script loads the write token from .env.local itself, so env -u SANITY_API_TOKEN would not stop the write; sentinel residue once sat on the live site for 3 days; run by hand only, with the operator present"
+    description: >-
+      Running the actual call site (scripts/seed-sanity.ts) no longer
+      prints the vestauth banner or any dotenv tip line to stdout/stderr
+      (checked dynamically, not just statically -- catches cases where
+      quiet:true was set but on the wrong call or wrong option shape).
+      The script is expected to error on missing Sanity credentials in
+      this sandboxed environment; only its dotenv-related output is
+      checked, not its exit code.
+    command: >-
+      OUT=$(timeout 15 npx tsx scripts/seed-sanity.ts 2>&1); if echo
+      "$OUT" | grep -qiE "vestauth|injected env|injecting env|dotenvx"; then
+      echo "dotenv banner/tip still present in output:"; echo "$OUT"; exit
+      1; fi; exit 0

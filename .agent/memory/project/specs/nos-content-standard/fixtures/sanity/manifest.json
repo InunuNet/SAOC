@@ -3,8 +3,8 @@
  "host": "26yfbug4.api.sanity.io",
  "perspective": "published",
  "publicDatasetReadsOnly": true,
- "requestCount": 8,
- "queryCount": 81,
+ "requestCount": 15,
+ "queryCount": 88,
  "queries": [
   {
    "key": "041dfdb7dd624887be0a0c382c97e4572597fd912941b98e22f60210f99eaac2",
@@ -660,6 +660,59 @@
    "queryHead": "*[_type == \"homePage\"][0]{ title, heroImages, missionText }",
    "params": {},
    "capturedAt": "2026-10-25T23:51:20.039Z"
+  },
+  {
+   "key": "2bdfb0df0e5d59f8127a1d514b4f4bcea24850b2ea11d5095a245d020007a5d4",
+   "queryHead": "*[_type == \"ticketType\" && slug.current == $slug && active == true][0]{ _id, name, \"slug\": slug.current, demo, active, p",
+   "params": {
+    "slug": "early-bird"
+   },
+   "capturedAt": "2026-10-27T20:15:32.755Z"
+  },
+  {
+   "key": "2d626a765cab8c94c5c725e2c09116e603351a4543b9cd0f5df54d0b5f88540d",
+   "queryHead": "*[_type == \"ticketType\" && slug.current == $slug && active == true][0]{ _id, name, \"slug\": slug.current, demo, active, p",
+   "params": {
+    "slug": "fictional-test-show-general-admission"
+   },
+   "capturedAt": "2026-10-27T20:15:32.946Z"
+  },
+  {
+   "key": "3f169246df14ee163abad37fa95889328bfbdcfbe9789417a8277fc01d5226cd",
+   "queryHead": "*[_type == \"ticketType\" && slug.current == $slug && active == true][0]{ _id, name, \"slug\": slug.current, demo, active, p",
+   "params": {
+    "slug": "weekend-pass-early-bird"
+   },
+   "capturedAt": "2026-10-27T20:15:33.205Z"
+  },
+  {
+   "key": "58f9cc9558c9c8ce72261bef988bb766e443add3ab08658b2079a6a1ab239e5d",
+   "queryHead": "*[_type == \"societyEvent\" && defined(slug.current)]{ \"slug\": slug.current, \"updatedAt\": _updatedAt }",
+   "params": {},
+   "capturedAt": "2026-10-27T20:15:33.405Z"
+  },
+  {
+   "key": "6f6a5ea784b6256955f0a1ed5d50924de98769111bd679e3ecd1040b507c571b",
+   "queryHead": "*[_type == \"ticketType\" && slug.current == $slug && active == true][0]{ _id, name, \"slug\": slug.current, demo, active, p",
+   "params": {
+    "slug": "field-trip"
+   },
+   "capturedAt": "2026-10-27T20:15:33.599Z"
+  },
+  {
+   "key": "87efc3278926c4c4fc46ca964ca50498b8ac01186b0d714625be71f57f830f93",
+   "queryHead": "*[_type == \"ticketType\" && slug.current == $slug && active == true][0]{ _id, name, \"slug\": slug.current, demo, active, p",
+   "params": {
+    "slug": "weekend-pass"
+   },
+   "capturedAt": "2026-10-27T20:15:33.827Z"
+  },
+  {
+   "key": "9f3a3d24d8a823655b661e969300756bca6456eabba631434c3c9196dd146ffe",
+   "queryHead": "*[_type == \"society\" && listed != false && defined(slug.current)]{ \"slug\": slug.current, \"updatedAt\": _updatedAt }",
+   "params": {},
+   "capturedAt": "2026-10-27T20:15:34.096Z"
   }
- ]
+ ],
+ "refreshedAt": "2026-10-27T20:16:38.939Z"
 }
