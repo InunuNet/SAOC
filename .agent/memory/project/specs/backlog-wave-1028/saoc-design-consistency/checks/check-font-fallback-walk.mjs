@@ -1,4 +1,4 @@
-// F1e lever 2 (computed-font walk): on the ten routes at 390 and 1440, every visible text node AND every visible input/textarea placeholder is set in a face the site actually ships, and every character in it
+// F1e lever 2 (computed-font walk): on the ten routes at 390 and 1440, every visible text node, every visible input/textarea placeholder AND every quoted ::before/::after content string is set in a face the site actually ships, and every character in it
 // exists in that face's served file. A character the file lacks, or a first font-family that is not a shipped @font-face (a system face), is a fallback: FAIL.
 // Characters are checked against each file's cmap (lib-woff2.mjs), not by eye.
 import { withSite, check, finish, tenRoutes, societyDetail } from './lib.mjs';
@@ -9,6 +9,10 @@ const TEXT = `() => { const out = []; const w = document.createTreeWalker(docume
   // Placeholder text is not a text node: walk every visible input/textarea placeholder in the face its ::placeholder resolves to.
   for (const el of document.querySelectorAll('input[placeholder], textarea[placeholder]')) { const t = (el.getAttribute('placeholder') || '').replace(/[\\s\\u200b-\\u200f\\u00ad]/g, ''); if (!t || el.getBoundingClientRect().width === 0) continue; const s = getComputedStyle(el); if (s.visibility === 'hidden' || s.display === 'none') continue; const c = getComputedStyle(el, '::placeholder');
     out.push({ fam: c.fontFamily.split(',')[0].replace(/['"\\s]/g, ''), wt: Number(c.fontWeight), st: c.fontStyle, text: t, tag: 'PLACEHOLDER(' + el.tagName + ')' }); }
+  // CSS-generated text (::before / ::after content) is not a text node either: walk every visible element's quoted pseudo content in the face the pseudo resolves to.
+  for (const el of document.body.querySelectorAll('*')) { if (['SCRIPT', 'STYLE', 'NOSCRIPT'].includes(el.tagName) || el.getBoundingClientRect().width === 0) continue; const own = getComputedStyle(el); if (own.visibility === 'hidden' || own.display === 'none') continue;
+    for (const ps of ['::before', '::after']) { const c = getComputedStyle(el, ps); const m = c.content.match(/^"([\\s\\S]*)"$/); if (!m || c.display === 'none') continue; const t = m[1].replace(/\\\\([0-9a-fA-F]{1,6}) ?/g, (_, h) => String.fromCodePoint(parseInt(h, 16))).replace(/[\\s\\u200b-\\u200f\\u00ad]/g, ''); if (!t) continue;
+      out.push({ fam: c.fontFamily.split(',')[0].replace(/['"\\s]/g, ''), wt: Number(c.fontWeight), st: c.fontStyle, text: t, tag: 'PSEUDO' + ps + '(' + el.tagName + ')' }); } }
   return out; }`;
 const inRange = (spec, w) => { const [a, b] = String(spec).trim().split(/\s+/).map(Number); return w >= a && w <= (b ?? a); };
 await withSite(async (site) => {
