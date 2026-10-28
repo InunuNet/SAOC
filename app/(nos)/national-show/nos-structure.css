@@ -1331,9 +1331,9 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 .nos-theme .nk-btn:hover .nk-icon {
   transform: translateX(3px);
 }
-/* Archive back links: the keepsake arrow mirrored, leading the label. Gap matches .nk-btn. */
+/* Archive back links: the keepsake arrow mirrored, leading the label. Gap matches .nk-visit text links. */
 .nos-theme [data-nos-backarrow] .nk-icon {
-  margin-inline-end: 10px;
+  margin-inline-end: 8px;
   transform: scaleX(-1);
 }
 @media (prefers-reduced-motion: no-preference) {

@@ -163,7 +163,7 @@ export default async function ShowYearPage({ params }: { params: Promise<{ year:
             href="/archive"
             data-nos-backlink=""
             data-nos-backarrow=""
-            className="inline-flex min-h-[44px] items-center font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--lilac-muted)] transition-colors duration-150 hover:text-ivory"
+            className="inline-flex min-h-[44px] items-center font-sans text-[14px] font-bold uppercase tracking-[0.12em] text-[var(--lilac-muted)] transition-colors duration-150 hover:text-ivory"
           >
             <ArrowIcon />
             Past shows
@@ -227,7 +227,7 @@ export default async function ShowYearPage({ params }: { params: Promise<{ year:
             data-nos-backarrow=""
             className="group flex flex-col gap-1"
           >
-            <span className="inline-flex items-center font-sans text-[12px] font-semibold uppercase tracking-[0.18em] text-muted transition-colors duration-150 group-hover:text-primary">
+            <span className="inline-flex items-center font-sans text-[14px] font-bold uppercase tracking-[0.12em] text-muted transition-colors duration-150 group-hover:text-primary">
               <ArrowIcon />
               Earlier
             </span>
@@ -243,7 +243,7 @@ export default async function ShowYearPage({ params }: { params: Promise<{ year:
             href={`/archive/${nextShow.year}`}
             className="group flex flex-col gap-1 text-right"
           >
-            <span className="font-sans text-[12px] font-semibold uppercase tracking-[0.18em] text-muted transition-colors duration-150 group-hover:text-primary">
+            <span className="font-sans text-[14px] font-bold uppercase tracking-[0.12em] text-muted transition-colors duration-150 group-hover:text-primary">
               Later →
             </span>
             <span className="font-serif text-[20px] font-medium text-ink transition-colors duration-150 group-hover:text-primary">
