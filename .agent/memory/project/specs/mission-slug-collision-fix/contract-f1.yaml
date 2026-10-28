@@ -25,28 +25,28 @@ assertions:
         
         # Create a "done" mission file in the past
         cat <<EOF > "$PAST_MISSION_FILE"
----
-schema: athanor.mission/v1
-slug: $SLUG
-goal: "Previously done mission"
-created_at: "${PAST_DATE}T00:00:00+00:00"
-started_at: "${PAST_DATE}T00:00:00+00:00"
-last_active_at: "${PAST_DATE}T00:00:00+00:00"
-status: done
-cost_estimate:
-  features: 0
-  milestones: 0
-  total_calls: 0
-last_checkpoint:
-  milestone: null
-  feature: null
-  ts: null
-features: []
-milestones: []
----
+        ---
+        schema: athanor.mission/v1
+        slug: $SLUG
+        goal: "Previously done mission"
+        created_at: "${PAST_DATE}T00:00:00+00:00"
+        started_at: "${PAST_DATE}T00:00:00+00:00"
+        last_active_at: "${PAST_DATE}T00:00:00+00:00"
+        status: done
+        cost_estimate:
+          features: 0
+          milestones: 0
+          total_calls: 0
+        last_checkpoint:
+          milestone: null
+          feature: null
+          ts: null
+        features: []
+        milestones: []
+        ---
 
-# Mission: Previously done mission
-EOF
+        # Mission: Previously done mission
+        EOF
         
         python3 execution/mission.py new "new mission goal" --slug "$SLUG" 2>&1 | grep -q "ERROR: mission slug '${SLUG}' already exists"
         EXIT_CODE=$?
@@ -65,28 +65,28 @@ EOF
 
         # Create a "done" mission file in the past
         cat <<EOF > "$PAST_MISSION_FILE"
----
-schema: athanor.mission/v1
-slug: $SLUG
-goal: "Previously done mission"
-created_at: "${PAST_DATE}T00:00:00+00:00"
-started_at: "${PAST_DATE}T00:00:00+00:00"
-last_active_at: "${PAST_DATE}T00:00:00+00:00"
-status: done
-cost_estimate:
-  features: 0
-  milestones: 0
-  total_calls: 0
-last_checkpoint:
-  milestone: null
-  feature: null
-  ts: null
-features: []
-milestones: []
----
+        ---
+        schema: athanor.mission/v1
+        slug: $SLUG
+        goal: "Previously done mission"
+        created_at: "${PAST_DATE}T00:00:00+00:00"
+        started_at: "${PAST_DATE}T00:00:00+00:00"
+        last_active_at: "${PAST_DATE}T00:00:00+00:00"
+        status: done
+        cost_estimate:
+          features: 0
+          milestones: 0
+          total_calls: 0
+        last_checkpoint:
+          milestone: null
+          feature: null
+          ts: null
+        features: []
+        milestones: []
+        ---
 
-# Mission: Previously done mission
-EOF
+        # Mission: Previously done mission
+        EOF
 
         python3 execution/mission.py new "new mission goal" --slug "$SLUG" > /dev/null 2>&1
         test ! -f "$NEW_MISSION_FILE"
