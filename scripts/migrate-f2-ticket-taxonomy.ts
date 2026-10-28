@@ -16,7 +16,7 @@
  *     happens FIRST, before any of that, so a plain accidental invocation can never touch
  *     the live dataset even if credentials happen to be present in the shell.
  *   - `--apply` is the ONLY flag that mutates. There is no `--dry-run` opt-out to forget —
- *     unlike the unsafe precedent (`fix-vip-and-weekend-pass-pricing.ts:79` and five other
+ *     unlike the unsafe precedent (`fix-vip-and-weekend-pass-pricing.ts:79`, removed, and five other
  *     scripts swept 2026-09-08, see docs/ticketing-complete-f2-open-decisions.md), whose
  *     default, no-flag invocation MUTATES.
  *   - `--verify` reads live state back (query only, `client.fetch`, never `.patch`/
