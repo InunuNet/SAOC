@@ -1,0 +1,49 @@
+{
+  "_comment": "Measured with goldens/reference-measure.mjs against a local `next start` (SITE_PUBLIC_LAUNCH=true, stub Sanity project, every apicdn/api.sanity.io request answered locally with a canned body and counted). 'warm' = Sanity HTTP requests caused by the SECOND request to a route within the cache window. Baseline = origin/main d52d3eb6. poc = baseline plus goldens/poc-experiment.patch (3 files).",
+  "baseline_origin_main_d52d3eb6": {
+    "build_time_sanity_requests": 61,
+    "routes": {
+      "saoc /": {"cold": 4, "warm": 4, "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate"},
+      "saoc /about": {"cold": 2, "warm": 2},
+      "saoc /societies": {"cold": 2, "warm": 2},
+      "saoc /events": {"cold": 3, "warm": 3},
+      "saoc /judging": {"cold": 2, "warm": 2},
+      "saoc /contact": {"cold": 3, "warm": 3},
+      "saoc /sponsors": {"cold": 1, "warm": 1},
+      "saoc /sitemap.xml": {"cold": 2, "warm": 2},
+      "nos /": {"cold": 8, "warm": 8},
+      "nos /about": {"cold": 2, "warm": 2},
+      "nos /faq": {"cold": 4, "warm": 4},
+      "nos /programme": {"cold": 7, "warm": 7},
+      "nos /what-to-expect": {"cold": 7, "warm": 7},
+      "nos /tickets": {"cold": 7, "warm": 7},
+      "nos /workshops": {"cold": 8, "warm": 8},
+      "nos /symposium": {"cold": 8, "warm": 8},
+      "nos /conferences": {"cold": 7, "warm": 7},
+      "nos /wosa-conference": {"cold": 9, "warm": 9},
+      "nos /sponsors": {"cold": 3, "warm": 3},
+      "nos /vendors": {"cold": 3, "warm": 3}
+    },
+    "warm_total_per_pass": 92
+  },
+  "poc_three_file_experiment": {
+    "build_time_sanity_requests": 31,
+    "warm_total_per_pass": 2,
+    "residual_warm": {"nos /symposium": 1, "nos /wosa-conference": 1},
+    "residual_cause": "lib/view-models/load-presenters.ts:185 calls client.fetch directly (no next cache options)"
+  },
+  "targets": {
+    "warm_total_per_pass_max": 2,
+    "warm_per_route_max": 1,
+    "isr_routes_warm_must_be_zero": true,
+    "min_reduction_percent_vs_baseline_warm_total": 95,
+    "ttl_check": "after SANITY_REVALIDATE_SECONDS+5 s the first request to /about may refetch (count >= 0, <= 2) and the next must be 0"
+  },
+  "isr_routes_expected": [
+    "saoc /", "saoc /about", "saoc /societies", "saoc /events", "saoc /judging", "saoc /contact", "saoc /sponsors",
+    "nos /", "nos /about", "nos /faq", "nos /programme", "nos /sponsors", "nos /vendors"
+  ],
+  "dynamic_routes_expected": [
+    "nos /what-to-expect", "nos /tickets", "nos /workshops", "nos /symposium", "nos /conferences", "nos /wosa-conference"
+  ]
+}

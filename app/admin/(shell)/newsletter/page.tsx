@@ -30,6 +30,7 @@ export default async function NewsletterAdminPage() {
         title={NEWSLETTER_COPY.adminHeading}
         subtitle={counts}
         actions={
+          // eslint-disable-next-line @next/next/no-html-link-for-pages -- API download endpoint, full navigation intended (root catch-all makes the rule match every path)
           <a href="/api/admin/newsletter/export-csv" className={BUTTON_SECONDARY}>
             {NEWSLETTER_COPY.adminDownloadCsv}
           </a>

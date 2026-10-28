@@ -139,6 +139,7 @@ export function QuickActionList({ options }: { options: QuickActionOptions }) {
   return (
     <ul>
       <li>
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- API download endpoint, full navigation intended (root catch-all makes the rule match every path) */}
         <a href="/api/admin/export-csv" className={ACTION_ROW_CLASS}>
           Download tickets CSV
           <span aria-hidden="true">→</span>
