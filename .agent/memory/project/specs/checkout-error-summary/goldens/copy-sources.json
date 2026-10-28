@@ -1,0 +1,8 @@
+{
+  "summaryHeading": {"text": "Please check the highlighted fields.", "source": "lib/vendor-register-response.ts:157 humaniseFieldError fallback; reused verbatim by components/vendors/VendorApplyForm.tsx SUMMARY_HEADING"},
+  "attendeeName": {"text": "Please enter the attendee name.", "source": "components/tickets/cartValidation.ts validateAttendees"},
+  "attendeeEmail": {"text": "Please enter a valid email address.", "source": "components/tickets/cartValidation.ts validateAttendees"},
+  "day": {"text": "Choose a day", "source": "lib/data/ticket-presentation.ts TICKET_COPY.chooseDay (the r45 day alert)"},
+  "serverRefusal": {"text": "<response.error verbatim>", "source": "app/api/tickets/checkout/route.ts error field via useTicketCart errorMessage"},
+  "attendeeRowPrefix": {"text": "Attendee {n}, {ticket type name}: {existing field message}", "source": "NOS Design ruling 2026-10-28, composed from CartAttendeeFields row label parts and cartValidation messages; used only when quantity > 1"}
+}
