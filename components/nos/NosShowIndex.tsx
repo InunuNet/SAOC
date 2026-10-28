@@ -36,7 +36,7 @@ const GROUPS: readonly IndexGroup[] = [
   {
     heading: 'Take part',
     hrefs: [
-      '/national-show/exhibitors',
+      '/national-show/award-entries',
       '/national-show/vendors',
       '/national-show/workshops',
       '/national-show/conferences',

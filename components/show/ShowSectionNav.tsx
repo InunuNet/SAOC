@@ -85,8 +85,8 @@ const SECTION_LINKS: readonly SectionLink[] = [
     hint: 'Guests and exhibitors from abroad',
   },
   {
-    href: '/national-show/exhibitors',
-    label: 'Exhibitor Entry Guide',
+    href: '/national-show/award-entries',
+    label: 'Award Entries',
     hint: 'Entry process, fees, classes and judging',
   },
   {

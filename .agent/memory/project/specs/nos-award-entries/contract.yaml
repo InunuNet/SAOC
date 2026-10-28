@@ -1,0 +1,82 @@
+# nos-award-entries. Authority: Brad's relayed council thread of 2026-10-28 (goldens/source-council-thread.md), no-invention source 3. Run every command from the repo root of the dev's worktree.
+# Gates A7/A8 start their own next start on NOS_AE_PORT+1 (default 3142) from a build made by checks/build.sh, read Sanity only from the captured fixture
+# (.agent/memory/project/specs/nos-content-standard/fixtures/sanity, replay), and kill the exact child PID. SANITY_NET_ALLOW stays unset.
+# Sanity-held rows (goldens/sanity-for-saoc.md) are SAOC's: the gate prints NOTE lines for them, it never fails on them.
+schema: athanor.contract/v1
+slug: nos-award-entries
+goal: On the NOS host, plant entrants are called Award Entries (page moved to /award-entries with a 308 from /exhibitors, split into National Show Awards and SAOC Awards with Brad's verbatim ledes) and only stand bookers are called exhibitors or vendors.
+created_at: '2026-10-28'
+autonomy: high
+exclusions:
+  - item: 'Sanity and Drive writes; the FAQ seed; the SAOC-lane files (components/newsletter/NewsletterSignup.tsx, app/layout.tsx, components/sponsors/*, app/(nos)/national-show/sponsors/page.tsx)'
+    reason: 'SAOC owns Sanity content and those files; goldens/sanity-for-saoc.md hands over the strings.'
+  - item: 'Renaming components, files, ids, CSS hooks (the route itself moves, SAOC-ruled Option R); any CSS or typography change'
+    reason: 'CLAUDE.md forbids restructuring routes; typography belongs to feat/nos-type-tokens.'
+features:
+  - id: F1
+    name: Award Entries terminology on the NOS host (audit rows R01-R10), page split into National Show Awards and SAOC Awards, class-b stand wording kept
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-award-entries/goldens/source-council-thread.md
+  - .agent/memory/project/specs/nos-award-entries/goldens/award-copy.json
+  - .agent/memory/project/specs/nos-award-entries/goldens/exhibitor-audit.json
+  - .agent/memory/project/specs/nos-award-entries/goldens/exhibitor-audit.md
+  - .agent/memory/project/specs/nos-award-entries/goldens/sanity-for-saoc.md
+  - .agent/memory/project/specs/nos-award-entries/goldens/exhibitor-visible-list.json
+  - .agent/memory/project/specs/nos-award-entries/goldens/exhibitor-visible-list.md
+  - .agent/memory/project/specs/nos-award-entries/goldens/elbert-bio-diff.md
+  - .agent/memory/project/specs/nos-award-entries/goldens/codex-qa-prompt.md
+  - .agent/memory/project/specs/nos-award-entries/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: frozen goldens and check scripts are unmodified since the architect wrote them (the lead edits them only when NOS Design rules a decision, then re-runs shasum to refresh checks.sha256)
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-award-entries/goldens/checks.sha256
+    - id: A2
+      description: static proof - every award string is verbatim from Brad's thread; every audit change row (labels and route paths) has its old text gone and new text present; every class-b keep row survives; the page has the title, both sections with data-award-type, both ledes, the marker label and no class-a exhibitor wording; route directory moved, proxy.ts 308s both old paths, no internal path string still points at /exhibitors
+      command: node .agent/memory/project/specs/nos-award-entries/checks/check-static.mjs
+    - id: A3
+      description: diff against origin/main is limited to the audited NOS-lane files, proxy.ts, the moved route page, this spec, docs/nos-award-entries.md and e2e/nos-award-entries*; no SAOC-lane file, protected file, CSS file or Sanity schema
+      command: node .agent/memory/project/specs/nos-award-entries/checks/check-diff-scope.mjs
+    - id: A4
+      description: typescript compiles
+      command: pnpm exec tsc --noEmit
+    - id: A5
+      description: lint is clean
+      command: pnpm exec eslint app components lib content scripts/generate-nos-route-manifest.ts
+    - id: A6
+      description: production build passes with the Sanity fixture in replay and no Sanity API request
+      command: execution/heartbeat_wrap.sh bash .agent/memory/project/specs/nos-award-entries/checks/build.sh
+    - id: A7
+      description: built site - /award-entries is 200 on the NOS host; /exhibitors and /national-show/exhibitors are one-hop 308s to it keeping the query; the SAOC-host show-prefix redirect still lands (one hop for the old path); the sitemap lists /award-entries and not /exhibitors; no link points at /exhibitors; title, og title, h1, breadcrumb and every header, footer and show-index link read Award Entries; /vendors h1 unchanged
+      command: execution/heartbeat_wrap.sh node .agent/memory/project/specs/nos-award-entries/checks/gate-render.mjs url
+    - id: A8
+      description: built site on the NOS host - both award sections in order with Brad's headings, the bare ledes verbatim, the visible awaiting-committee-copy marker, nothing else in either section; no class-a exhibitor wording in the page body; audit rows with a route are old-gone, new-present or kept; every visible exhibitor on every indexable NOS page is in goldens/exhibitor-visible-list.json (stand contexts only; Sanity-held rows are NOTEs)
+      command: execution/heartbeat_wrap.sh node .agent/memory/project/specs/nos-award-entries/checks/gate-render.mjs content
+    - id: A14
+      description: the gate-render helpers bite (a 404 at hop 2 fails, auth is re-sent on a cross-origin hop, a /award-entries link labelled otherwise fails, the #main skip link is excluded)
+      command: node .agent/memory/project/specs/nos-award-entries/checks/selftest.mjs
+    - id: A9
+      description: the SAOC hand-over list and the Elbert bio diff exist
+      command: test -f .agent/memory/project/specs/nos-award-entries/goldens/sanity-for-saoc.md && test -f .agent/memory/project/specs/nos-award-entries/goldens/elbert-bio-diff.md
+    - id: A10
+      description: docs page written and names the new title
+      command: test -f docs/nos-award-entries.md && grep -q "Award Entries" docs/nos-award-entries.md
+    - id: A11
+      description: Codex adversarial review of the diff against the spec (cross-model; falls back to the Agent-tool @qa only if codex is not on PATH, and the verdict says so)
+      type: codex_qa
+      target: .agent/memory/project/specs/nos-award-entries/goldens/codex-qa-prompt.md
+      timeout_seconds: 1300
+      required: true
+      command: execution/codex_qa.sh .agent/memory/project/specs/nos-award-entries/goldens/codex-qa-prompt.md
+    - id: A12
+      description: BrowserAgent against the deployed beta (optional - the change is copy-only; the built-site gate A7/A8 is the browser proof)
+      type: browser_deployed_check
+      target: .agent/memory/scratch/nos-award-entries-browser-manifest.json
+      required: false
+    - id: A13
+      description: gws inbox check (not applicable - no email is sent or changed)
+      type: gws_inbox_check
+      target: .agent/memory/scratch/nos-award-entries-gws-manifest.json
+      required: false
