@@ -60,58 +60,60 @@ goldens:
 assertions:
   phase: 4
   checks:
-    - id: A1
-      description: >-
-        A freshly signed-up Identity Platform account with NO custom claims (admin absent)
-        POSTs to /api/admin/session and is refused. Asserts: (1) the HTTP response is exactly
-        403 with body { "error": "Forbidden" } — no reason, no email, no extra field; (2) the
-        spawned server's real stdout/stderr, in the window after this specific request, contains
-        a "[admin-auth] refused" line whose logged reason is 'no-claim' and whose logged email
-        is this exact probe account's email — not merely that some refusal line appeared.
-      command: node contracts/checks/admin-session-refusal-log-enforcement-f1/check-no-claim.mjs
-
-    - id: A2
-      description: >-
-        An account with admin:true but emailVerified:false POSTs to /api/admin/session and is
-        refused. Asserts the same 403-with-no-leak response shape as A1, and that the captured
-        log window for this specific request contains "[admin-auth] refused" with reason
-        'email-unverified' and this exact probe account's email — proving this is a genuinely
-        distinct branch from A1's 'no-claim', not the same line reused.
-      command: >-
-        node contracts/checks/admin-session-refusal-log-enforcement-f1/check-email-unverified.mjs
-
-    - id: A3
-      description: >-
-        An account with admin:true AND emailVerified:true, but whose email (a randomly
-        generated @saoc-contract-check.invalid address) is certainly not on
-        ADMIN_EMAIL_ALLOWLIST, POSTs to /api/admin/session and is refused. Asserts the same
-        403-with-no-leak response shape, and that the captured log window contains
-        "[admin-auth] refused" with reason 'not-allowlisted' and this exact probe account's
-        email — proving all three classifyRefusal branches are independently reachable and
-        produce distinct reason values, not just two of three.
-      command: >-
-        node contracts/checks/admin-session-refusal-log-enforcement-f1/check-not-allowlisted.mjs
-
-    - id: A4
-      description: >-
-        The converse of A1-A3 — a genuinely eligible account (admin:true, emailVerified:true,
-        AND actually present on ADMIN_EMAIL_ALLOWLIST for the duration of this one check) POSTs
-        to /api/admin/session and succeeds (200, session cookie set). Asserts the captured log
-        window for this specific request contains ZERO occurrences of "[admin-auth] refused".
-        Without this check, a classifyRefusal that logged unconditionally on every request
-        (success or failure) would pass A1-A3 by coincidence — this is what proves the log is
-        actually conditioned on a real refusal. This check's own probe account is deleted (and
-        additionally removed from ADMIN_EMAIL_ALLOWLIST-equivalent test state, if the allowlist
-        env var itself was mutated to include it — see README "Refusal cases chosen" for how
-        eligibility is granted for this one check only) and confirmed gone via accounts:lookup
-        before the script exits, and its spawned server child process is confirmed no longer
-        running (process exit code observed, not just a kill signal sent) before the script
-        exits — each of A1-A4 proves its own cleanup individually; there is no separate
-        cross-process residue sweep, since each assertion runs as its own independent `node`
-        process with no shared in-memory state.
-      command: >-
-        node contracts/checks/admin-session-refusal-log-enforcement-f1/check-eligible-no-leak.mjs
-
     - id: A5
       description: pnpm lint passes with zero errors after the check-harness files are added.
       command: pnpm lint
+
+manual_only:
+  - id: A1
+    reason: "check-no-claim.mjs writes to the production Firebase Auth project: Firebase Auth saoc-webapp probe accounts (identitytoolkit signUp/delete); run by hand only, with the operator present"
+    description: >-
+      A freshly signed-up Identity Platform account with NO custom claims (admin absent)
+      POSTs to /api/admin/session and is refused. Asserts: (1) the HTTP response is exactly
+      403 with body { "error": "Forbidden" } — no reason, no email, no extra field; (2) the
+      spawned server's real stdout/stderr, in the window after this specific request, contains
+      a "[admin-auth] refused" line whose logged reason is 'no-claim' and whose logged email
+      is this exact probe account's email — not merely that some refusal line appeared.
+    command: node contracts/checks/admin-session-refusal-log-enforcement-f1/check-no-claim.mjs
+  - id: A2
+    reason: "check-email-unverified.mjs writes to the production Firebase Auth project: Firebase Auth saoc-webapp probe accounts (identitytoolkit signUp/delete); run by hand only, with the operator present"
+    description: >-
+      An account with admin:true but emailVerified:false POSTs to /api/admin/session and is
+      refused. Asserts the same 403-with-no-leak response shape as A1, and that the captured
+      log window for this specific request contains "[admin-auth] refused" with reason
+      'email-unverified' and this exact probe account's email — proving this is a genuinely
+      distinct branch from A1's 'no-claim', not the same line reused.
+    command: >-
+      node contracts/checks/admin-session-refusal-log-enforcement-f1/check-email-unverified.mjs
+  - id: A3
+    reason: "check-not-allowlisted.mjs writes to the production Firebase Auth project: Firebase Auth saoc-webapp probe accounts (identitytoolkit signUp/delete); run by hand only, with the operator present"
+    description: >-
+      An account with admin:true AND emailVerified:true, but whose email (a randomly
+      generated @saoc-contract-check.invalid address) is certainly not on
+      ADMIN_EMAIL_ALLOWLIST, POSTs to /api/admin/session and is refused. Asserts the same
+      403-with-no-leak response shape, and that the captured log window contains
+      "[admin-auth] refused" with reason 'not-allowlisted' and this exact probe account's
+      email — proving all three classifyRefusal branches are independently reachable and
+      produce distinct reason values, not just two of three.
+    command: >-
+      node contracts/checks/admin-session-refusal-log-enforcement-f1/check-not-allowlisted.mjs
+  - id: A4
+    reason: "check-eligible-no-leak.mjs writes to the production Firebase Auth project: Firebase Auth saoc-webapp probe accounts (identitytoolkit signUp/delete); run by hand only, with the operator present"
+    description: >-
+      The converse of A1-A3 — a genuinely eligible account (admin:true, emailVerified:true,
+      AND actually present on ADMIN_EMAIL_ALLOWLIST for the duration of this one check) POSTs
+      to /api/admin/session and succeeds (200, session cookie set). Asserts the captured log
+      window for this specific request contains ZERO occurrences of "[admin-auth] refused".
+      Without this check, a classifyRefusal that logged unconditionally on every request
+      (success or failure) would pass A1-A3 by coincidence — this is what proves the log is
+      actually conditioned on a real refusal. This check's own probe account is deleted (and
+      additionally removed from ADMIN_EMAIL_ALLOWLIST-equivalent test state, if the allowlist
+      env var itself was mutated to include it — see README "Refusal cases chosen" for how
+      eligibility is granted for this one check only) and confirmed gone via accounts:lookup
+      before the script exits, and its spawned server child process is confirmed no longer
+      running (process exit code observed, not just a kill signal sent) before the script
+      exits — each of A1-A4 proves its own cleanup individually; there is no separate
+      cross-process residue sweep, since each assertion runs as its own independent `node`
+      process with no shared in-memory state.
+    command: >-
+      node contracts/checks/admin-session-refusal-log-enforcement-f1/check-eligible-no-leak.mjs

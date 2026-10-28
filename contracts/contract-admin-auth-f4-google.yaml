@@ -109,19 +109,6 @@ assertions:
       timeout_seconds: 30
 
     # ---------- the claim-first defence's load-bearing enhancement ----------
-    - id: A-GRANT-04
-      description: >-
-        F4's core new security property. Against a pre-existing account shaped like a
-        self-registered squatter (password provider only, never verified — F3's own
-        createPreExistingUnverifiedFixture, the same fixture A-GRANT-02/03 use),
-        scripts/admin-grant.ts run without --existing prints an EXPLICIT warning naming the
-        password-only/no-federated-provider shape and telling the operator what to check
-        (whether the intended person has already signed in via a federated provider elsewhere)
-        — not just generic provenance (uid/creationTime), which A-GRANT-02 already covers and
-        this check does not duplicate.
-      command: node contracts/checks/admin-auth-f4-google/check-grant-squatter-warning.mjs
-      timeout_seconds: 90
-
     # ---------- docs ----------
     - id: A-DOCS-01
       description: >-
@@ -143,3 +130,18 @@ assertions:
       description: lint passes with zero errors
       command: pnpm lint
       timeout_seconds: 300
+
+manual_only:
+  - id: A-GRANT-04
+    reason: "check-grant-squatter-warning.mjs writes to the production Firebase Auth project: Firebase Auth saoc-webapp via identitytoolkit signUp/delete and scripts/admin-grant.ts custom claims; run by hand only, with the operator present"
+    description: >-
+      F4's core new security property. Against a pre-existing account shaped like a
+      self-registered squatter (password provider only, never verified — F3's own
+      createPreExistingUnverifiedFixture, the same fixture A-GRANT-02/03 use),
+      scripts/admin-grant.ts run without --existing prints an EXPLICIT warning naming the
+      password-only/no-federated-provider shape and telling the operator what to check
+      (whether the intended person has already signed in via a federated provider elsewhere)
+      — not just generic provenance (uid/creationTime), which A-GRANT-02 already covers and
+      this check does not duplicate.
+    command: node contracts/checks/admin-auth-f4-google/check-grant-squatter-warning.mjs
+    timeout_seconds: 90

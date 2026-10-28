@@ -147,42 +147,6 @@ autonomy: high
 assertions:
   phase: 4
   checks:
-    - id: A1
-      description: >
-        THE headline award assertion: edit award-am-saoc.threshold in the deployed
-        Studio, publish, call /api/revalidate with _type: 'award', and poll the
-        deployed /judging page for the sentinel — bounded at 120s, hard FAIL on
-        timeout, identical bound to F6/F2's A1. Baseline precondition requires the
-        field to already equal the correct backfilled value ('80–89 pts', verbatim
-        from lib/data/awards.ts) — not empty — since this field's correct steady
-        state is real content, not blank. ALWAYS attempts cleanup: restores the exact
-        original value (not empty), re-publishes, and verifies via both the dataset
-        and the live page that the SENTINEL (not the real value) is gone. Directly
-        proves the "silently dropped threshold" content is both restored AND
-        observably live — a sentinel appearing on /judging cannot be explained by the
-        static lib/data/awards import. Expected to FAIL today at the precondition
-        step (the `threshold` field does not exist on the schema yet); once @dev adds
-        the field and backfills it, expected to still fail at propagation until F1
-        (CDN purge, same mission) also lands.
-      command: node contracts/checks/cms-loop-f4-orphaned-types/check-award-threshold-reaches-site.mjs
-
-    - id: A2
-      description: >
-        THE headline curated-order assertion: temporarily set award-am-saoc.order to
-        99 (moving it from first to last in the curated AM/FCC/HCC/CCM/CBR/JC
-        sequence) via a real Studio publish, revalidate with _type: 'award', and poll
-        the live /judging page for AM/SAOC actually rendering LAST — bounded at 120s,
-        same discipline as A1. Baseline precondition requires order to already equal 1
-        AND the live page to already render AM/SAOC first. Cleanup always restores
-        order to 1 and verifies AM/SAOC is no longer rendered last on both the
-        dataset and the live page. Proves the curated order is genuinely read from
-        Sanity, not the hardcoded static array — the static array can never produce
-        this specific dynamic reordering. Detection logic (isRenderedFirst/Last) is
-        independently unit-tested by A4 before this check is trusted. Expected to
-        FAIL today at the precondition step (the `order` field does not exist on the
-        schema yet); same F1 dependency as A1 once wired.
-      command: node contracts/checks/cms-loop-f4-orphaned-types/check-award-order-reaches-site.mjs
-
     - id: A3
       description: >
         Negative control on the substring-detection mechanism for /judging: a
@@ -258,3 +222,41 @@ assertions:
         INVARIANT check: expected to PASS both before and after F4's change; a
         failure at any point is a standalone regression, independent of A6/A7.
       command: node contracts/checks/cms-loop-f4-orphaned-types/check-societies-unaffected.mjs
+
+manual_only:
+  - id: A1
+    reason: "check-award-threshold-reaches-site.mjs writes to the production Sanity dataset (project 26yfbug4): Sanity 26yfbug4/production via the deployed Studio (Playwright publish) then restore; sentinel residue once sat on the live site for 3 days; run by hand only, with the operator present"
+    description: >
+      THE headline award assertion: edit award-am-saoc.threshold in the deployed
+      Studio, publish, call /api/revalidate with _type: 'award', and poll the
+      deployed /judging page for the sentinel — bounded at 120s, hard FAIL on
+      timeout, identical bound to F6/F2's A1. Baseline precondition requires the
+      field to already equal the correct backfilled value ('80–89 pts', verbatim
+      from lib/data/awards.ts) — not empty — since this field's correct steady
+      state is real content, not blank. ALWAYS attempts cleanup: restores the exact
+      original value (not empty), re-publishes, and verifies via both the dataset
+      and the live page that the SENTINEL (not the real value) is gone. Directly
+      proves the "silently dropped threshold" content is both restored AND
+      observably live — a sentinel appearing on /judging cannot be explained by the
+      static lib/data/awards import. Expected to FAIL today at the precondition
+      step (the `threshold` field does not exist on the schema yet); once @dev adds
+      the field and backfills it, expected to still fail at propagation until F1
+      (CDN purge, same mission) also lands.
+    command: node contracts/checks/cms-loop-f4-orphaned-types/check-award-threshold-reaches-site.mjs
+  - id: A2
+    reason: "check-award-order-reaches-site.mjs writes to the production Sanity dataset (project 26yfbug4): Sanity 26yfbug4/production via the deployed Studio (Playwright publish) then restore; sentinel residue once sat on the live site for 3 days; run by hand only, with the operator present"
+    description: >
+      THE headline curated-order assertion: temporarily set award-am-saoc.order to
+      99 (moving it from first to last in the curated AM/FCC/HCC/CCM/CBR/JC
+      sequence) via a real Studio publish, revalidate with _type: 'award', and poll
+      the live /judging page for AM/SAOC actually rendering LAST — bounded at 120s,
+      same discipline as A1. Baseline precondition requires order to already equal 1
+      AND the live page to already render AM/SAOC first. Cleanup always restores
+      order to 1 and verifies AM/SAOC is no longer rendered last on both the
+      dataset and the live page. Proves the curated order is genuinely read from
+      Sanity, not the hardcoded static array — the static array can never produce
+      this specific dynamic reordering. Detection logic (isRenderedFirst/Last) is
+      independently unit-tested by A4 before this check is trusted. Expected to
+      FAIL today at the precondition step (the `order` field does not exist on the
+      schema yet); same F1 dependency as A1 once wired.
+    command: node contracts/checks/cms-loop-f4-orphaned-types/check-award-order-reaches-site.mjs
