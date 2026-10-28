@@ -72,10 +72,34 @@
       "note": "delivered in 3.8.58 (PR #85)",
       "result": "applied"
     },
+    "ATH-20261025-chain-preconditions": {
+      "at": "2026-10-25T06:02:54Z",
+      "harness_version": "3.8.70",
+      "note": "installed with 3.8.69",
+      "result": "applied"
+    },
+    "ATH-20261025-contract-gate-hooks": {
+      "at": "2026-10-25T06:02:54Z",
+      "harness_version": "3.8.70",
+      "note": "gate_hooks registry + two wrappers + CI registry tripwire; stock gate 59/59 green, prove-nonvacuous PASS; Codex PASS",
+      "result": "applied"
+    },
+    "ATH-20261025-contract-local-kinds": {
+      "at": "2026-10-25T06:02:54Z",
+      "harness_version": "3.8.70",
+      "note": "superseded by gate_hooks: residue guard + triad preflight now project-owned hooks (scripts/gate-hooks/), contract.py unpinned",
+      "result": "applied"
+    },
     "ATH-20261025-cross-platform-parity": {
       "at": "2026-10-25T00:45:36Z",
       "harness_version": "3.8.60",
       "note": "template 3.8.58 -> 3.8.60 via make update-template x2",
+      "result": "applied"
+    },
+    "ATH-20261025-floor-quoted-metachars": {
+      "at": "2026-10-25T05:40:18Z",
+      "harness_version": "3.8.70",
+      "note": "",
       "result": "applied"
     },
     "ATH-20261025-git-index-lock": {

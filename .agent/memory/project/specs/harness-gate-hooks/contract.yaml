@@ -1,0 +1,293 @@
+schema: athanor.contract/v1
+slug: harness-gate-hooks
+goal: Install the stock Athanor contract.py by moving SAOC's residue guard and triad coverage preflight into project-owned gate_hooks, and prove the stock gate still blocks what the pinned copy blocked.
+created_at: '2026-10-25'
+autonomy: high
+
+features:
+  - id: F1
+    name: Unpin execution/contract.py; residue and triad behaviours become gate_hooks; triad kinds become project kinds
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/README.md
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/registry.expected.json
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/scenario-matrix.json
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/harness-untouched.allowlist.txt
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/trivial-pass.yaml
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/mutate-then-fail.yaml
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/ui-missing-triad.yaml
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/ui-compliant.yaml
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/kinds-mixed.yaml
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/stubs/pass.sh
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/stubs/fail.sh
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/stubs/err.sh
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/stubs/linter_oob.sh
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-dropped-residue-post.json
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-triad-open.json
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-residue-post-as-pre.json
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-no-kinds.json
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-malformed.json
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-duplicate-malformed-before-valid.json
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-residue-timeout-5.json
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-extra-fourth-hook.json
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-reordered.json
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/stubs/scanner_bad_utf8.sh
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/stubs/linter_bad_utf8.sh
+
+notes: |
+  Governing rules: docs/rules/no-invention.md applies (no invented behaviour; the hooks port the pinned
+  copy's logic and do not extend it). Harness paths stay untouched apart from the update itself
+  (execution/contract.py is replaced by the stock file through `make update-template`; A47 enforces it).
+  The upstream dependency is recorded in .agent/memory/project/backlog.md as the
+  [HARNESS-DEP] entry "Unpin execution/contract.py once Athanor ships gate_hooks (2026-10-25)".
+  Dev steps: (1) write .agent/contract_kinds.json and the hook scripts; (2) remove execution/contract.py from
+  .agent/no-update; (3) run `make update-template` in the worktree (it exits 2 on the expected
+  CLONE-FOREIGN-BLOCKED notice for the project guide file, which is fine) and confirm A2; (4) rewrite the four legacy proofs; (5) write the
+  runner and docs. Hook and runner design lives in goldens/README.md. A10-A27 are hermetic: every scenario
+  scans a local residue fixture and no scenario touches live Sanity or the network. A30-A39 and A60-A61 are the
+  non-vacuity controls and must not be weakened.
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: "execution/contract.py is no longer pinned in .agent/no-update"
+      command: "! grep -qx \"execution/contract.py\" .agent/no-update"
+    - id: A2
+      description: "installed execution/contract.py is byte-identical to the stock template/execution/contract.py"
+      command: "cmp -s execution/contract.py template/execution/contract.py"
+    - id: A3
+      description: ".agent/contract_kinds.json equals the golden registry (two triad kinds, residue pre/post open, triad pre closed)"
+      command: "python3 execution/checks/json_equal.py .agent/contract_kinds.json .agent/memory/project/specs/harness-gate-hooks/goldens/registry.expected.json"
+    - id: A4
+      description: "residue hook script exists and is executable"
+      command: "test -x scripts/gate-hooks/residue_hook.py"
+    - id: A5
+      description: "triad hook script exists and is executable"
+      command: "test -x scripts/gate-hooks/triad_hook.py"
+    - id: A6
+      description: "regression guard: browser_deployed_check wrapper script still in place and executable"
+      command: "test -x execution/browser_deployed_check.sh"
+      nonvacuous: false
+      nonvacuous_reason: "Regression guard: the kind script exists and is executable at base and must stay so; it is green before and after by design."
+    - id: A7
+      description: "regression guard: gws_inbox_check wrapper script still in place and executable"
+      command: "test -x execution/gws_inbox_check.sh"
+      nonvacuous: false
+      nonvacuous_reason: "Regression guard: the kind script exists and is executable at base and must stay so; it is green before and after by design."
+    - id: A8
+      description: "this contract validates --strict under the installed (stock) contract.py"
+      command: "python3 execution/contract.py validate .agent/memory/project/specs/harness-gate-hooks/contract.yaml --strict"
+      nonvacuous: false
+      nonvacuous_reason: "Regression guard: the contract already validates strict under the pinned gate at base; after the swap it proves the stock validator accepts it."
+    - id: A10
+      description: "dirty residue fixture blocks the stock gate before any assertion; hooks-pre phase carries the finding"
+      command: "python3 scripts/gate-hooks/checks/prove_gate_hooks.py residue-dirty-blocks"
+      timeout_seconds: 180
+    - id: A11
+      description: "clean residue fixture passes the stock gate with no hook phase recorded"
+      command: "python3 scripts/gate-hooks/checks/prove_gate_hooks.py residue-clean-passes"
+      timeout_seconds: 180
+    - id: A12
+      description: "a crashing residue scanner is infrastructure: warns (on_error open) and the gate proceeds"
+      command: "python3 scripts/gate-hooks/checks/prove_gate_hooks.py residue-crash-open"
+      timeout_seconds: 180
+    - id: A13
+      description: "post hook runs after a failed assertion and catches residue that assertion introduced"
+      command: "python3 scripts/gate-hooks/checks/prove_gate_hooks.py residue-post-after-failed-assertion"
+      timeout_seconds: 180
+    - id: A14
+      description: "UI contract missing triad kinds, not baselined, is blocked"
+      command: "python3 scripts/gate-hooks/checks/prove_gate_hooks.py triad-ungrandfathered-blocks"
+      timeout_seconds: 180
+    - id: A15
+      description: "baselined and unedited (pin matches) UI contract proceeds with a grandfathered warning"
+      command: "python3 scripts/gate-hooks/checks/prove_gate_hooks.py triad-grandfathered-warns"
+      timeout_seconds: 180
+    - id: A16
+      description: "baselined then edited contract forfeits the grandfather and is blocked"
+      command: "python3 scripts/gate-hooks/checks/prove_gate_hooks.py triad-edited-blocks"
+      timeout_seconds: 180
+    - id: A17
+      description: "baselined without a pin is not honoured and is blocked"
+      command: "python3 scripts/gate-hooks/checks/prove_gate_hooks.py triad-listed-unpinned-blocks"
+      timeout_seconds: 180
+    - id: A18
+      description: "unreadable baseline (directory) blocks closed with exit 2"
+      command: "python3 scripts/gate-hooks/checks/prove_gate_hooks.py triad-baseline-dir-closed"
+      timeout_seconds: 180
+    - id: A19
+      description: "invalid-UTF-8 baseline blocks closed with exit 2, no traceback"
+      command: "python3 scripts/gate-hooks/checks/prove_gate_hooks.py triad-baseline-badutf8-closed"
+      timeout_seconds: 180
+    - id: A20
+      description: "unreadable pin file (directory) blocks closed with exit 2"
+      command: "python3 scripts/gate-hooks/checks/prove_gate_hooks.py triad-hash-dir-closed"
+      timeout_seconds: 180
+    - id: A21
+      description: "missing linter blocks closed with exit 2"
+      command: "python3 scripts/gate-hooks/checks/prove_gate_hooks.py triad-linter-missing-closed"
+      timeout_seconds: 180
+    - id: A22
+      description: "linter exiting outside 0/1 blocks closed with exit 2"
+      command: "python3 scripts/gate-hooks/checks/prove_gate_hooks.py triad-linter-oob-closed"
+      timeout_seconds: 180
+    - id: A23
+      description: "UI contract carrying all three triad kinds passes and runs its phase"
+      command: "python3 scripts/gate-hooks/checks/prove_gate_hooks.py triad-compliant-passes"
+      timeout_seconds: 180
+    - id: A24
+      description: "non-UI contract is exempt and never reads the baseline"
+      command: "python3 scripts/gate-hooks/checks/prove_gate_hooks.py triad-nonui-exempt-ignores-bad-baseline"
+      timeout_seconds: 180
+    - id: A25
+      description: "codex_qa, browser_deployed_check and gws_inbox_check dispatch under the stock gate (pass, fail, error mapping)"
+      command: "python3 scripts/gate-hooks/checks/prove_gate_hooks.py kinds-still-dispatch"
+      timeout_seconds: 180
+    - id: A30
+      description: "negative control: with every hook neutered to /usr/bin/true the residue-dirty-blocks scenario must MISMATCH (runner exit exactly 1), proving the hooks are what blocks"
+      command: "GATE_HOOKS_PROOF_NEUTER=1 python3 scripts/gate-hooks/checks/prove_gate_hooks.py residue-dirty-blocks; test $? -eq 1"
+      timeout_seconds: 180
+    - id: A31
+      description: "negative control: with every hook neutered to /usr/bin/true the residue-post-after-failed-assertion scenario must MISMATCH (runner exit exactly 1), proving the hooks are what blocks"
+      command: "GATE_HOOKS_PROOF_NEUTER=1 python3 scripts/gate-hooks/checks/prove_gate_hooks.py residue-post-after-failed-assertion; test $? -eq 1"
+      timeout_seconds: 180
+    - id: A32
+      description: "negative control: with every hook neutered to /usr/bin/true the triad-ungrandfathered-blocks scenario must MISMATCH (runner exit exactly 1), proving the hooks are what blocks"
+      command: "GATE_HOOKS_PROOF_NEUTER=1 python3 scripts/gate-hooks/checks/prove_gate_hooks.py triad-ungrandfathered-blocks; test $? -eq 1"
+      timeout_seconds: 180
+    - id: A33
+      description: "negative control: with every hook neutered to /usr/bin/true the triad-edited-blocks scenario must MISMATCH (runner exit exactly 1), proving the hooks are what blocks"
+      command: "GATE_HOOKS_PROOF_NEUTER=1 python3 scripts/gate-hooks/checks/prove_gate_hooks.py triad-edited-blocks; test $? -eq 1"
+      timeout_seconds: 180
+    - id: A34
+      description: "negative control: with every hook neutered to /usr/bin/true the triad-baseline-dir-closed scenario must MISMATCH (runner exit exactly 1), proving the hooks are what blocks"
+      command: "GATE_HOOKS_PROOF_NEUTER=1 python3 scripts/gate-hooks/checks/prove_gate_hooks.py triad-baseline-dir-closed; test $? -eq 1"
+      timeout_seconds: 180
+    - id: A35
+      description: "negative control: with every hook neutered to /usr/bin/true the triad-linter-missing-closed scenario must MISMATCH (runner exit exactly 1), proving the hooks are what blocks"
+      command: "GATE_HOOKS_PROOF_NEUTER=1 python3 scripts/gate-hooks/checks/prove_gate_hooks.py triad-linter-missing-closed; test $? -eq 1"
+      timeout_seconds: 180
+    - id: A36
+      description: "negative control: with every hook neutered to /usr/bin/true the triad-listed-unpinned-blocks scenario must MISMATCH (runner exit exactly 1), proving the hooks are what blocks"
+      command: "GATE_HOOKS_PROOF_NEUTER=1 python3 scripts/gate-hooks/checks/prove_gate_hooks.py triad-listed-unpinned-blocks; test $? -eq 1"
+      timeout_seconds: 180
+    - id: A37
+      description: "negative control: with every hook neutered to /usr/bin/true the triad-hash-dir-closed scenario must MISMATCH (runner exit exactly 1), proving the hooks are what blocks"
+      command: "GATE_HOOKS_PROOF_NEUTER=1 python3 scripts/gate-hooks/checks/prove_gate_hooks.py triad-hash-dir-closed; test $? -eq 1"
+      timeout_seconds: 180
+    - id: A38
+      description: "negative control: with every hook neutered to /usr/bin/true the triad-baseline-badutf8-closed scenario must MISMATCH (runner exit exactly 1), proving the hooks are what blocks"
+      command: "GATE_HOOKS_PROOF_NEUTER=1 python3 scripts/gate-hooks/checks/prove_gate_hooks.py triad-baseline-badutf8-closed; test $? -eq 1"
+      timeout_seconds: 180
+    - id: A39
+      description: "negative control: with every hook neutered to /usr/bin/true the triad-linter-oob-closed scenario must MISMATCH (runner exit exactly 1), proving the hooks are what blocks"
+      command: "GATE_HOOKS_PROOF_NEUTER=1 python3 scripts/gate-hooks/checks/prove_gate_hooks.py triad-linter-oob-closed; test $? -eq 1"
+      timeout_seconds: 180
+    - id: A40
+      description: "legacy residue proof rewritten for the stock gate passes"
+      command: "python3 execution/checks/verify_gate_residue_preflight.py"
+      timeout_seconds: 180
+      nonvacuous: false
+      nonvacuous_reason: "Passes at base under the pinned gate by design; the rewritten proof must keep passing under the stock gate. Non-vacuity of the blocking behaviour is carried by A10-A13 and neutered controls A30-A31."
+    - id: A41
+      description: "legacy triad enforcement proof rewritten for the stock gate passes"
+      command: "bash execution/checks/verify_f2_gate_enforcement.sh"
+      timeout_seconds: 180
+      nonvacuous: false
+      nonvacuous_reason: "Passes at base under the pinned gate by design; the rewritten proof must keep passing under the stock gate. Non-vacuity of the blocking behaviour is carried by A14-A17 and neutered controls A32-A33, A36."
+    - id: A42
+      description: "legacy triad fail-closed proof rewritten for the stock gate passes"
+      command: "bash execution/checks/verify_f2_triad_failclosed.sh"
+      timeout_seconds: 180
+      nonvacuous: false
+      nonvacuous_reason: "Passes at base under the pinned gate by design; the rewritten proof must keep passing under the stock gate. Non-vacuity is carried by A21-A22 and neutered controls A35, A39."
+    - id: A43
+      description: "legacy baseline-loading fail-closed proof rewritten for the stock gate passes"
+      command: "bash execution/checks/verify_f2_baseline_loading_failclosed.sh"
+      timeout_seconds: 180
+      nonvacuous: false
+      nonvacuous_reason: "Passes at base under the pinned gate by design; the rewritten proof must keep passing under the stock gate. Non-vacuity is carried by A18-A20 and neutered controls A34, A37, A38."
+    - id: A45
+      description: "docs/gate-hooks.md documents both hooks and the exit-code differences"
+      command: "grep -q \"residue-pre\" docs/gate-hooks.md"
+    - id: A46
+      description: "docs/verification-triad-gate.md points at the hook (no longer says the triad is unwired or lives in contract.py)"
+      command: "grep -q \"gate_hooks\" docs/verification-triad-gate.md"
+    - id: A47
+      description: "no harness-owned path changed versus base 5165668d other than the allowlist"
+      command: "bash scripts/gate-hooks/checks/verify_harness_untouched.sh"
+    - id: A48
+      description: "grandfather baseline and pin files are unchanged versus base (no editing the baseline to pass a scenario)"
+      command: "git diff --quiet 5165668d -- execution/triad-baseline-exempt.txt execution/triad-baseline-exempt.sha256 scripts/checks/triad-baseline-exempt.txt scripts/checks/triad-baseline-exempt.sha256"
+      nonvacuous: false
+      nonvacuous_reason: "Regression guard: the grandfather baseline and pin files are unchanged versus base, which is trivially true at base itself."
+    - id: A49
+      description: "real-baseline smoke: contracts/c5-submit-event.yaml (listed, pinned, unedited, linter exit 1) is reported grandfathered by the real hook"
+      command: "python3 scripts/gate-hooks/triad_hook.py contracts/c5-submit-event.yaml | grep -q grandfathered"
+      timeout_seconds: 60
+    - id: A26
+      description: "residue scanner emitting invalid UTF-8 is infrastructure (hook exit 2), fails open, never a finding"
+      command: "python3 scripts/gate-hooks/checks/prove_gate_hooks.py residue-scanner-bad-utf8-open"
+      timeout_seconds: 180
+    - id: A27
+      description: "triad linter emitting invalid UTF-8 is infrastructure (hook exit 2), fails closed with gate exit 2, never a finding"
+      command: "python3 scripts/gate-hooks/checks/prove_gate_hooks.py triad-linter-bad-utf8-closed"
+      timeout_seconds: 180
+    - id: A50
+      description: "registry tripwire passes on the real .agent/contract_kinds.json"
+      command: "python3 scripts/gate-hooks/checks/verify_registry_present.py"
+      timeout_seconds: 30
+    - id: A51
+      description: "registry tripwire fails (exit exactly 1) when the registry file is missing"
+      command: "python3 scripts/gate-hooks/checks/verify_registry_present.py .tmp/sandbox/gate-hooks-proof/no-such-registry.json; test $? -eq 1"
+      timeout_seconds: 30
+    - id: A52
+      description: "registry tripwire fails (exit exactly 1) on a malformed registry"
+      command: "python3 scripts/gate-hooks/checks/verify_registry_present.py .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-malformed.json; test $? -eq 1"
+      timeout_seconds: 30
+    - id: A53
+      description: "registry tripwire fails (exit exactly 1) when the residue-post hook is dropped"
+      command: "python3 scripts/gate-hooks/checks/verify_registry_present.py .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-dropped-residue-post.json; test $? -eq 1"
+      timeout_seconds: 30
+    - id: A54
+      description: "registry tripwire fails (exit exactly 1) when triad-coverage is downgraded to on_error open"
+      command: "python3 scripts/gate-hooks/checks/verify_registry_present.py .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-triad-open.json; test $? -eq 1"
+      timeout_seconds: 30
+    - id: A55
+      description: "registry tripwire fails (exit exactly 1) when residue-post is registered with the wrong stage"
+      command: "python3 scripts/gate-hooks/checks/verify_registry_present.py .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-residue-post-as-pre.json; test $? -eq 1"
+      timeout_seconds: 30
+    - id: A56
+      description: "registry tripwire fails (exit exactly 1) when the project kinds are missing"
+      command: "python3 scripts/gate-hooks/checks/verify_registry_present.py .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-no-kinds.json; test $? -eq 1"
+      timeout_seconds: 30
+    - id: A57
+      description: "CI runs the registry tripwire inside the dataset-residue-guard job"
+      command: "awk '/^  dataset-residue-guard:/{f=1;next} /^  [a-z0-9-]+:/{f=0} f' .github/workflows/ci.yml | grep -q verify_registry_present.py"
+      timeout_seconds: 30
+    - id: A60
+      description: "negative control: neutered hooks must make residue-scanner-bad-utf8-open MISMATCH (runner exit exactly 1)"
+      command: "GATE_HOOKS_PROOF_NEUTER=1 python3 scripts/gate-hooks/checks/prove_gate_hooks.py residue-scanner-bad-utf8-open; test $? -eq 1"
+      timeout_seconds: 180
+    - id: A61
+      description: "negative control: neutered hooks must make triad-linter-bad-utf8-closed MISMATCH (runner exit exactly 1)"
+      command: "GATE_HOOKS_PROOF_NEUTER=1 python3 scripts/gate-hooks/checks/prove_gate_hooks.py triad-linter-bad-utf8-closed; test $? -eq 1"
+      timeout_seconds: 180
+    - id: A58
+      description: "registry tripwire fails (exit exactly 1) on a malformed duplicate residue-pre placed before the valid one (the stock gate rejects such a registry and runs no hooks)"
+      command: "python3 scripts/gate-hooks/checks/verify_registry_present.py .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-duplicate-malformed-before-valid.json; test $? -eq 1"
+      timeout_seconds: 30
+    - id: A59
+      description: "registry tripwire fails (exit exactly 1) when the residue hook timeout is shortened to 5s (scans would time out and fail open)"
+      command: "python3 scripts/gate-hooks/checks/verify_registry_present.py .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-residue-timeout-5.json; test $? -eq 1"
+      timeout_seconds: 30
+    - id: A62
+      description: "registry tripwire fails (exit exactly 1) when a fourth hook is registered that duplicates residue-post (a name-keyed comparison collapses it)"
+      command: "python3 scripts/gate-hooks/checks/verify_registry_present.py .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-extra-fourth-hook.json; test $? -eq 1"
+      timeout_seconds: 30
+    - id: A63
+      description: "registry tripwire fails (exit exactly 1) when the hooks are reordered"
+      command: "python3 scripts/gate-hooks/checks/verify_registry_present.py .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-reordered.json; test $? -eq 1"
+      timeout_seconds: 30

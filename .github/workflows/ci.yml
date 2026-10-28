@@ -129,6 +129,10 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Tripwire: the stock gate silently runs no hooks when .agent/contract_kinds.json is
+      # missing or altered. Must run before the live scan. See docs/gate-hooks.md.
+      - name: Verify gate-hooks registry is present and intact
+        run: python3 scripts/gate-hooks/checks/verify_registry_present.py
       - name: Scan live Sanity dataset for test residue
         env:
           NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}

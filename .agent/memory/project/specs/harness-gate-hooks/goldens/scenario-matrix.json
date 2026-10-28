@@ -1,0 +1,481 @@
+{
+  "schema": "saoc.gate-hooks-scenario-matrix/v1",
+  "about": "Oracle for scripts/gate-hooks/checks/prove_gate_hooks.py. The runner reads this file; it never carries its own expectations. See README.md section 'Runner contract'.",
+  "defaults": {
+    "phase": 4,
+    "residue_fixture": "${REPO}/contracts/golden/dataset-residue-guard/fixture-clean.json",
+    "triad_baseline": "empty"
+  },
+  "scenarios": {
+    "residue-dirty-blocks": {
+      "description": "Confirmed residue in the scanned dataset blocks the gate before any assertion runs.",
+      "contract": "trivial-pass.yaml",
+      "env": {
+        "CONTRACT_GATE_RESIDUE_FIXTURE": "${REPO}/contracts/golden/dataset-residue-guard/fixture-all-patterns.json"
+      },
+      "expect": {
+        "exit": 1,
+        "phases": [
+          {
+            "phase": "hooks-pre",
+            "status": "FAIL",
+            "reason": "hook_finding",
+            "failing": [
+              "residue-pre"
+            ]
+          }
+        ],
+        "stdout_contains": [
+          "RESIDUE ALERT",
+          "HOOK FINDING: residue-pre (pre) reported a finding (exit 1)"
+        ],
+        "stdout_absent": [
+          "Phase 4 summary"
+        ]
+      }
+    },
+    "residue-clean-passes": {
+      "description": "A clean dataset does not block; the gate runs its phase and passes, and no hook phase is recorded.",
+      "contract": "trivial-pass.yaml",
+      "expect": {
+        "exit": 0,
+        "phases": [
+          {
+            "phase": "4",
+            "status": "PASS"
+          }
+        ],
+        "no_phase_prefix": "hooks-",
+        "overall": "PASS",
+        "stdout_contains": [
+          "ALL CLEAR",
+          "Phase 4 summary"
+        ]
+      }
+    },
+    "residue-crash-open": {
+      "description": "A scanner that crashes (nonexistent fixture, exit 1 without the confirmed-residue marker) is infrastructure: on_error open warns and the gate proceeds.",
+      "contract": "trivial-pass.yaml",
+      "env": {
+        "CONTRACT_GATE_RESIDUE_FIXTURE": "${SANDBOX}/does-not-exist.json"
+      },
+      "expect": {
+        "exit": 0,
+        "phases": [
+          {
+            "phase": "4",
+            "status": "PASS"
+          }
+        ],
+        "no_phase_prefix": "hooks-",
+        "overall": "PASS",
+        "stdout_contains": [
+          "RESIDUE GUARD ERROR",
+          "WARNING: gate hook residue-pre (pre) errored (exit 2); on_error is open, continuing",
+          "Phase 4 summary"
+        ],
+        "stdout_absent": [
+          "RESIDUE ALERT",
+          "HOOK FINDING"
+        ]
+      }
+    },
+    "residue-post-after-failed-assertion": {
+      "description": "The post hook still runs after a failed assertion, and it catches residue the assertion itself introduced.",
+      "contract": "mutate-then-fail.yaml",
+      "prepare": [
+        {
+          "copy": "${REPO}/contracts/golden/dataset-residue-guard/fixture-clean.json",
+          "to": "${SANDBOX}/residue.json"
+        }
+      ],
+      "env": {
+        "CONTRACT_GATE_RESIDUE_FIXTURE": "${SANDBOX}/residue.json",
+        "GATE_HOOKS_PROOF_DIRTY": "${REPO}/contracts/golden/dataset-residue-guard/fixture-all-patterns.json"
+      },
+      "expect": {
+        "exit": 2,
+        "phases": [
+          {
+            "phase": "4",
+            "status": "FAIL",
+            "failing": [
+              "A1"
+            ]
+          },
+          {
+            "phase": "hooks-post",
+            "status": "FAIL",
+            "reason": "hook_finding",
+            "failing": [
+              "residue-post"
+            ]
+          }
+        ],
+        "stdout_contains": [
+          "--- gate hook residue-post (post) ---",
+          "RESIDUE ALERT",
+          "HOOK FINDING block: a post-flight hook reported a finding: residue-post"
+        ]
+      }
+    },
+    "triad-ungrandfathered-blocks": {
+      "description": "A UI contract missing triad kinds, not in the baseline, is blocked before any assertion runs.",
+      "contract": "ui-missing-triad.yaml",
+      "triad_baseline": "empty",
+      "expect": {
+        "exit": 1,
+        "phases": [
+          {
+            "phase": "hooks-pre",
+            "status": "FAIL",
+            "reason": "hook_finding",
+            "failing": [
+              "triad-coverage"
+            ]
+          }
+        ],
+        "stdout_contains": [
+          "TRIAD PREFLIGHT BLOCKED",
+          "HOOK FINDING: triad-coverage (pre) reported a finding (exit 1)"
+        ],
+        "stdout_absent": [
+          "Phase 4 summary"
+        ]
+      }
+    },
+    "triad-grandfathered-warns": {
+      "description": "Listed in the baseline AND the pinned sha256 matches the live bytes: warn, exit 0 from the hook, the gate proceeds.",
+      "contract": "ui-missing-triad.yaml",
+      "triad_baseline": "listed_pinned",
+      "expect": {
+        "exit": 0,
+        "phases": [
+          {
+            "phase": "4",
+            "status": "PASS"
+          }
+        ],
+        "no_phase_prefix": "hooks-",
+        "overall": "PASS",
+        "stdout_contains": [
+          "grandfathered",
+          "Phase 4 summary"
+        ],
+        "stdout_absent": [
+          "TRIAD PREFLIGHT BLOCKED"
+        ]
+      }
+    },
+    "triad-edited-blocks": {
+      "description": "Listed and pinned, then edited after pinning: the hash no longer matches, so the grandfather is forfeited and the gate is blocked.",
+      "contract": "ui-missing-triad.yaml",
+      "triad_baseline": "listed_pinned_then_edited",
+      "expect": {
+        "exit": 1,
+        "phases": [
+          {
+            "phase": "hooks-pre",
+            "status": "FAIL",
+            "reason": "hook_finding",
+            "failing": [
+              "triad-coverage"
+            ]
+          }
+        ],
+        "stdout_contains": [
+          "TRIAD PREFLIGHT BLOCKED"
+        ],
+        "stdout_absent": [
+          "Phase 4 summary",
+          "grandfathered in the rollout baseline"
+        ]
+      }
+    },
+    "triad-listed-unpinned-blocks": {
+      "description": "Listed in the baseline but with no pin in the hash file: cannot be honoured as grandfathered, blocked.",
+      "contract": "ui-missing-triad.yaml",
+      "triad_baseline": "listed_unpinned",
+      "expect": {
+        "exit": 1,
+        "phases": [
+          {
+            "phase": "hooks-pre",
+            "status": "FAIL",
+            "reason": "hook_finding",
+            "failing": [
+              "triad-coverage"
+            ]
+          }
+        ],
+        "stdout_contains": [
+          "TRIAD PREFLIGHT BLOCKED"
+        ],
+        "stdout_absent": [
+          "Phase 4 summary"
+        ]
+      }
+    },
+    "triad-baseline-dir-closed": {
+      "description": "TRIAD_BASELINE_FILE is a directory: unreadable baseline is infrastructure, on_error closed blocks the gate (exit 2, not 1).",
+      "contract": "ui-missing-triad.yaml",
+      "triad_baseline": "dir",
+      "expect": {
+        "exit": 2,
+        "phases": [
+          {
+            "phase": "hooks-pre",
+            "status": "ERROR",
+            "reason": "hook_error",
+            "errors": [
+              "triad-coverage"
+            ]
+          }
+        ],
+        "stdout_contains": [
+          "TRIAD PREFLIGHT ERROR",
+          "HOOK ERROR: triad-coverage (pre) failed (exit 2); on_error is closed, so the gate is blocked"
+        ],
+        "stdout_absent": [
+          "Phase 4 summary",
+          "Traceback"
+        ]
+      }
+    },
+    "triad-baseline-badutf8-closed": {
+      "description": "TRIAD_BASELINE_FILE holds bytes that are not valid UTF-8: closed, exit 2, no raw traceback.",
+      "contract": "ui-missing-triad.yaml",
+      "triad_baseline": "bad_utf8",
+      "expect": {
+        "exit": 2,
+        "phases": [
+          {
+            "phase": "hooks-pre",
+            "status": "ERROR",
+            "reason": "hook_error",
+            "errors": [
+              "triad-coverage"
+            ]
+          }
+        ],
+        "stdout_contains": [
+          "TRIAD PREFLIGHT ERROR"
+        ],
+        "stdout_absent": [
+          "Phase 4 summary",
+          "Traceback"
+        ]
+      }
+    },
+    "triad-hash-dir-closed": {
+      "description": "The contract is listed in the baseline but TRIAD_BASELINE_HASH_FILE is a directory: closed, exit 2.",
+      "contract": "ui-missing-triad.yaml",
+      "triad_baseline": "hash_dir",
+      "expect": {
+        "exit": 2,
+        "phases": [
+          {
+            "phase": "hooks-pre",
+            "status": "ERROR",
+            "reason": "hook_error",
+            "errors": [
+              "triad-coverage"
+            ]
+          }
+        ],
+        "stdout_contains": [
+          "TRIAD PREFLIGHT ERROR"
+        ],
+        "stdout_absent": [
+          "Phase 4 summary",
+          "Traceback"
+        ]
+      }
+    },
+    "triad-linter-missing-closed": {
+      "description": "TRIAD_LINTER_SCRIPT_OVERRIDE names a script that does not exist: linter infrastructure error, closed, exit 2.",
+      "contract": "ui-missing-triad.yaml",
+      "triad_baseline": "empty",
+      "env": {
+        "TRIAD_LINTER_SCRIPT_OVERRIDE": "${SANDBOX}/stubs/does-not-exist.sh"
+      },
+      "expect": {
+        "exit": 2,
+        "phases": [
+          {
+            "phase": "hooks-pre",
+            "status": "ERROR",
+            "reason": "hook_error",
+            "errors": [
+              "triad-coverage"
+            ]
+          }
+        ],
+        "stdout_contains": [
+          "TRIAD PREFLIGHT ERROR"
+        ],
+        "stdout_absent": [
+          "Phase 4 summary"
+        ]
+      }
+    },
+    "triad-linter-oob-closed": {
+      "description": "The linter exits 5, outside its documented 0/1 classification contract: closed, exit 2, never a silent pass and never a finding.",
+      "contract": "ui-missing-triad.yaml",
+      "triad_baseline": "empty",
+      "env": {
+        "TRIAD_LINTER_SCRIPT_OVERRIDE": "${SANDBOX}/stubs/linter_oob.sh"
+      },
+      "expect": {
+        "exit": 2,
+        "phases": [
+          {
+            "phase": "hooks-pre",
+            "status": "ERROR",
+            "reason": "hook_error",
+            "errors": [
+              "triad-coverage"
+            ]
+          }
+        ],
+        "stdout_contains": [
+          "TRIAD PREFLIGHT ERROR"
+        ],
+        "stdout_absent": [
+          "Phase 4 summary",
+          "TRIAD PREFLIGHT BLOCKED"
+        ]
+      }
+    },
+    "triad-compliant-passes": {
+      "description": "A UI contract that declares all three triad kinds passes the hook and the gate runs.",
+      "contract": "ui-compliant.yaml",
+      "triad_baseline": "empty",
+      "expect": {
+        "exit": 0,
+        "phases": [
+          {
+            "phase": "4",
+            "status": "PASS",
+            "pass": 4
+          }
+        ],
+        "no_phase_prefix": "hooks-",
+        "overall": "PASS",
+        "stdout_contains": [
+          "declares all triad kinds",
+          "Phase 4 summary"
+        ]
+      }
+    },
+    "triad-nonui-exempt-ignores-bad-baseline": {
+      "description": "A non-UI contract is exempt; the baseline is only read when the linter reports a finding, so an unreadable baseline does not block it.",
+      "contract": "trivial-pass.yaml",
+      "triad_baseline": "dir",
+      "expect": {
+        "exit": 0,
+        "phases": [
+          {
+            "phase": "4",
+            "status": "PASS"
+          }
+        ],
+        "no_phase_prefix": "hooks-",
+        "overall": "PASS",
+        "stdout_contains": [
+          "EXEMPT",
+          "Phase 4 summary"
+        ]
+      }
+    },
+    "kinds-still-dispatch": {
+      "description": "codex_qa (built in), browser_deployed_check and gws_inbox_check (registered project kinds) all dispatch under the stock gate: exit 0 passes, exit 1 fails, exit 2 is inconclusive (error).",
+      "contract": "kinds-mixed.yaml",
+      "expect": {
+        "exit": 2,
+        "phases": [
+          {
+            "phase": "4",
+            "status": "FAIL",
+            "pass": 2,
+            "fail": 1,
+            "error": 1,
+            "failing": [
+              "A3"
+            ],
+            "errors": [
+              "A4"
+            ]
+          }
+        ],
+        "no_phase_prefix": "hooks-",
+        "stdout_contains": [
+          "codex_qa PASS",
+          "browser_deployed_check PASS",
+          "gws_inbox_check: stub fail"
+        ]
+      }
+    },
+    "residue-scanner-bad-utf8-open": {
+      "description": "The scanner emits invalid UTF-8 and exits 1. A decode failure is infrastructure, never a finding: the hook exits 2 and on_error open warns and proceeds.",
+      "contract": "trivial-pass.yaml",
+      "env": {
+        "RESIDUE_SCANNER_OVERRIDE": "${SANDBOX}/stubs/scanner_bad_utf8.sh"
+      },
+      "expect": {
+        "exit": 0,
+        "phases": [
+          {
+            "phase": "4",
+            "status": "PASS"
+          }
+        ],
+        "no_phase_prefix": "hooks-",
+        "overall": "PASS",
+        "stdout_contains": [
+          "RESIDUE GUARD ERROR",
+          "WARNING: gate hook residue-pre (pre) errored (exit 2); on_error is open, continuing",
+          "Phase 4 summary"
+        ],
+        "stdout_absent": [
+          "RESIDUE ALERT",
+          "HOOK FINDING",
+          "Traceback",
+          "UnicodeDecodeError"
+        ]
+      }
+    },
+    "triad-linter-bad-utf8-closed": {
+      "description": "The linter emits invalid UTF-8 and exits 1. A decode failure is infrastructure, never a finding: the hook exits 2 and on_error closed blocks the gate with exit 2, not 1.",
+      "contract": "ui-missing-triad.yaml",
+      "triad_baseline": "empty",
+      "env": {
+        "TRIAD_LINTER_SCRIPT_OVERRIDE": "${SANDBOX}/stubs/linter_bad_utf8.sh"
+      },
+      "expect": {
+        "exit": 2,
+        "phases": [
+          {
+            "phase": "hooks-pre",
+            "status": "ERROR",
+            "reason": "hook_error",
+            "errors": [
+              "triad-coverage"
+            ]
+          }
+        ],
+        "stdout_contains": [
+          "TRIAD PREFLIGHT ERROR",
+          "HOOK ERROR: triad-coverage (pre) failed (exit 2); on_error is closed, so the gate is blocked"
+        ],
+        "stdout_absent": [
+          "Phase 4 summary",
+          "TRIAD PREFLIGHT BLOCKED",
+          "HOOK FINDING",
+          "Traceback",
+          "UnicodeDecodeError"
+        ]
+      }
+    }
+  }
+}

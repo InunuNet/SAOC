@@ -1,0 +1,18 @@
+schema: athanor.contract/v1
+slug: gate-hooks-proof-trivial-pass
+goal: Throwaway non-UI contract for the gate-hooks proof; one passing assertion.
+created_at: '2026-10-25'
+autonomy: high
+
+features:
+  - id: F1
+    name: trivial passing assertion
+    status: pending
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: trivial passing shell assertion
+      command: test -n gate-hooks-proof
+      timeout_seconds: 10

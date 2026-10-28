@@ -1,0 +1,17 @@
+# Paths under the harness-owned trees that this feature is ALLOWED to change versus base
+# commit 5165668d (the committed Athanor 3.8.68 update). Anything else under execution/,
+# template/, init.sh, Makefile, .claude/hooks/ or .agent/{agents,rules,skills,workflows}/
+# that differs from the base is a harness edit and fails the check.
+execution/contract.py
+execution/checks/verify_gate_residue_preflight.py
+execution/checks/verify_f2_gate_enforcement.sh
+execution/checks/verify_f2_triad_failclosed.sh
+execution/checks/verify_f2_baseline_loading_failclosed.sh
+# Athanor 3.8.70 template update (64664d79, harness updater, not @dev)
+execution/hooks/check_autonomy.sh
+execution/shipped_blobs.txt
+execution/update_template.sha256.json
+template/.agent/version
+template/execution/hooks/check_autonomy.sh
+template/execution/shipped_blobs.txt
+template/execution/update_template.sha256.json

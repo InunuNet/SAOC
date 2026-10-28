@@ -3,6 +3,14 @@
 Mission `verification-triad-gate`. M1/F1 commits `6615513a`, `f8c8dd7a`. M2/F2 (enforcement —
 see below) closed the mechanism gap M1 deliberately left open.
 
+**Update 2026-10-25 (mission harness-gate-hooks).** `execution/contract.py` is no longer a pinned,
+locally patched copy; it is the stock Athanor gate. The triad preflight described below now runs
+as the project-owned `triad-coverage` entry under `gate_hooks` in `.agent/contract_kinds.json`
+(`scripts/gate-hooks/triad_hook.py`), and `browser_deployed_check` / `gws_inbox_check` are
+registered there as project kinds. The logic is the same; the references below to
+`gate_cmd()`, `_run_triad_coverage_preflight()` and exit codes 6 and 7 describe the pre-2026-10-25
+pinned gate. Current exit codes and behaviour: [docs/gate-hooks.md](gate-hooks.md).
+
 ## Why this exists
 
 On 2026-09-01, a wrong `SITE_URL` shipped a live vendor email whose links pointed at a
