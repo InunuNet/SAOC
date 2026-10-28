@@ -47,10 +47,13 @@ const TARGETS = [
   { name: 'footer newsletter topic checkbox', path: '/about', width: 1440, sel: 'footer form input[type=checkbox]', light: true },
   { name: 'drawer close', path: '/about', width: 390, sel: 'button[aria-label="Close menu"]', drawer: true },
   { name: 'drawer search', path: '/about', width: 390, sel: '[data-hd=drawer-search]', drawer: true },
+  // Unauthenticated /events/submit: the members-only prompt's "Contact us about membership" link (app/(marketing)/events/submit/page.tsx) had no ring and no probe visited the route.
+  { name: 'events/submit membership link', path: '/events/submit', width: 1440, sel: 'main a[href="/contact"]' },
 ];
+// DC_FOCUS_ONLY=<substring of a target name> runs just the matching targets (a quick re-run against one defect).
 // The Home hero CTA needs live Sanity events, so it is probed only on a deployed origin.
 await withSite(async ({ base, browser, ctxOpts, deployed }) => {
-  const seen = []; const targets = deployed ? TARGETS : TARGETS.filter((t) => t.path !== '/');
+  const seen = []; const targets = (deployed ? TARGETS : TARGETS.filter((t) => t.path !== '/')).filter((t) => !process.env.DC_FOCUS_ONLY || t.name.includes(process.env.DC_FOCUS_ONLY));
   for (const t of targets) {
     const { page, ctx } = await openPage(browser, ctxOpts, base, t.path, t.width);
     if (t.pre === 'drawerJoin') {

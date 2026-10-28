@@ -27,6 +27,36 @@ for (const file of files) {
     check(false, `${label}: ${why}: "${lit.replace(/\s+/g, ' ').slice(0, 110)}"`);
   }
 }
+// Second pass (F1a Codex finding, /events/submit "Contact us about membership"): a STANDALONE <a>, <Link> or <button> whose className carries NO focus or outline utility at all paints the browser default, not the one ring.
+// The first pass only sees strings that already contain a focus utility, so it was blind to this. An element is standalone when it is a <button>, or a link whose classes build a box (flex/block/padding/bg/border/size...);
+// a link with no className, or only prose classes (underline, colour, font), is an in-prose link and stays exempt. className={IDENT} is resolved to its literal definition in the same file; an unresolvable
+// reference (a prop, a spread, an import) is skipped, a printed gap not a pass. Same allowlist (file + key substring) as above.
+const TAG = /<(a|Link|button)\b/g; const BOX = /(?:^|[\s"'`:])(?:inline-flex|flex|inline-block|block|grid|min-h-\S+|min-w-\S+|h-\d\S*|w-\d\S*|size-\S+|p[xylrtb]?-\S+|bg-\S+|border(?:-\S+)?|rounded(?:-\S+)?|absolute|relative)(?=[\s"'`]|$)/;
+const tagText = (src, from) => { let depth = 0, q = null; for (let i = from; i < src.length; i++) { const ch = src[i]; if (q) { if (ch === q && src[i - 1] !== '\\') q = null; continue; } if (depth > 0 && (ch === '"' || ch === "'" || ch === '`')) { q = ch; continue; } if (ch === '{') depth++; else if (ch === '}') depth--; else if (ch === '>' && depth === 0) return src.slice(from, i + 1); } return src.slice(from, from + 600); };
+const FOCUSY = /focus|outline/; let standalone = 0, covered = 0, unresolved = 0;
+// Constants are resolved across files by name (FOCUS_RING from admin/tokens.ts, HERO_CTA_BASE in Hero.tsx...): every `const NAME = <literals>` under app/ and components/. ${NAME} inside a template literal resolves the same way.
+const DEFS = new Map(); const srcOf = new Map(files.map((f) => [f, blank(readFileSync(f, 'utf8'))]));
+for (const src of srcOf.values()) for (const d of src.matchAll(/(?:const|let)\s+([A-Za-z_$][\w$]*)\b[^=\n]*=([\s\S]*?)(?:;\n|\n\n)/g)) { const lits = [...d[2].matchAll(LIT)].map((x) => x[1] ?? x[2] ?? x[3]); const refs = [...d[2].matchAll(/\$\{\s*([A-Za-z_$][\w$]*)\s*\}/g)].map((x) => x[1]); if (lits.length || refs.length) DEFS.set(d[1], (DEFS.get(d[1]) || '') + ' ' + lits.join(' ') + ' ' + refs.map((r) => '${' + r + '}').join(' ')); }
+const expand = (t, depth = 0) => depth > 4 ? t : t.replace(/\$\{\s*([A-Za-z_$][\w$]*)\s*\}/g, (_, n) => DEFS.has(n) ? ' ' + expand(DEFS.get(n), depth + 1) + ' ' : ' ');
+// Classes whose CSS rule carries a :focus / :focus-visible selector (app/globals.css, SAOC side): an element using one is covered by that rule.
+const CSS_FOCUS = new Set(); for (const m of readFileSync('app/globals.css', 'utf8').matchAll(/\.([A-Za-z_][\w-]*)[^{,]*?:focus(?:-visible|-within)?\b/g)) CSS_FOCUS.add(m[1]);
+for (const file of files) {
+  const src = srcOf.get(file);
+  for (const m of src.matchAll(TAG)) {
+    const tag = tagText(src, m.index); const cn = /\bclassName\s*=\s*(\{[\s\S]*\}|"[^"]*"|'[^']*')/.exec(tag); if (!cn) continue;
+    const lits = [...cn[1].matchAll(LIT)].map((x) => x[1] ?? x[2] ?? x[3]); const ids = [...cn[1].replace(LIT, ' ').matchAll(/\b[A-Za-z_$][\w$]*\b/g)].map((x) => x[0]).filter((x) => !['cn', 'clsx', 'join', 'props', 'true', 'false', 'null', 'undefined'].includes(x));
+    if (/\b(?:className|props|rest)\b/.test(cn[1].replace(LIT, ' ')) || /(?:^|\s)nk-/.test(lits.join(' '))) { unresolved++; continue; } // a className prop pass-through is the caller's (probed at runtime); nk-* classes are NOS Design's CSS (NOS-host styling, excluded like components/show)
+    const known = ids.filter((id) => DEFS.has(id)); const unknown = ids.filter((id) => !DEFS.has(id));
+    const text = expand(lits.join(' ') + ' ' + known.map((id) => DEFS.get(id)).join(' '));
+    const isButton = m[1] === 'button'; if (!isButton && !BOX.test(text)) { if (!(lits.length || known.length)) continue; continue; }
+    if (!(lits.length || known.length) || (unknown.length && !FOCUSY.test(text) && !text.trim())) { unresolved++; continue; }
+    standalone++; if (FOCUSY.test(text) || text.split(/\s+/).some((c) => CSS_FOCUS.has(c))) { covered++; continue; }
+    const line = src.slice(0, m.index).split('\n').length; const label = `${file}:${line}`;
+    const i = allow.findIndex((a) => a.file === file && text.includes(a.key));
+    if (i >= 0) { used.add(i); continue; }
+    check(false, `${label}: standalone <${m[1]}> className has no focus or outline utility (browser default ring, not the one ring): "${text.replace(/\s+/g, ' ').trim().slice(0, 110)}"`);
+  }
+}
 allow.forEach((a, i) => check(used.has(i), `goldens/focus-classes.json entry ${i + 1} (${a.file} / ${a.key}) matches no hit: stale, remove or fix it`));
-console.log(`focus class strings: ${hits} (the one ring: ${one}, allowlisted: ${used.size} entries)`);
+console.log(`focus class strings: ${hits} (the one ring: ${one}, allowlisted: ${used.size} entries); standalone elements: ${standalone} (with a focus utility: ${covered}, className unresolvable and skipped: ${unresolved})`);
 finish('focus-classes-static');
