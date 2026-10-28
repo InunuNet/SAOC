@@ -84,12 +84,14 @@ assertions:
       target: "Adversarially review git diff origin/main...HEAD against the goldens in .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/. Try to pass the font, preload and favicon checks while a glyph still falls back, a font is fetched twice, the hero is queued behind CSS, or the favicon is redrawn."
       required: true
     - id: A16
-      description: "browser_deployed_check on beta /about, declared for the triad linter but non-required. It cannot pass while the beta Basic Auth wall is up (execution/browser_deployed_check.sh live re-check sends no auth, HARNESS defect, backlog.md 2026-10-07). The authenticated post-deploy shell assertions are the real proof."
+      phase: 5
+      description: "PHASE 5 (manifest is written by the post-deploy BrowserAgent/gws run, so it cannot exist at the phase 4 gate). browser_deployed_check on beta /about, declared for the triad linter but non-required. It cannot pass while the beta Basic Auth wall is up (execution/browser_deployed_check.sh live re-check sends no auth, HARNESS defect, backlog.md 2026-10-07). The authenticated post-deploy shell assertions are the real proof."
       type: browser_deployed_check
       target: .agent/memory/scratch/saoc-dc-f1e-browser-manifest.json
       required: false
     - id: A17
-      description: "gws inbox check, no email path is touched; declared non-required to satisfy the triad coverage linter, expected to skip"
+      phase: 5
+      description: "PHASE 5 (manifest is written by the post-deploy BrowserAgent/gws run, so it cannot exist at the phase 4 gate). gws inbox check, no email path is touched; declared non-required to satisfy the triad coverage linter, expected to skip"
       type: gws_inbox_check
       target: .agent/memory/scratch/saoc-dc-f1e-gws-manifest.json
       required: false
