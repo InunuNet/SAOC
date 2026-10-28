@@ -26,7 +26,10 @@ for (const file of files) {
     const { start, text } = openingTag(src, m.index); const line = src.slice(0, m.index).split('\n').length; const label = `${file}:${line}`;
     const context = src.slice(Math.max(0, start - 300), start) + text;
     const entry = classes.findIndex((c) => c.file === file && context.includes(c.key));
-    if (entry >= 0) { used.add(entry); tally[classes[entry].class]++; check(Boolean(classes[entry].reason), `${label}: classification has no reason`); continue; }
+    if (entry >= 0) {
+      const c = classes[entry]; used.add(entry); tally[c.class]++; check(Boolean(c.reason), `${label}: classification has no reason`);
+      if (c.requireIconAndToken) { const box = resolve(src.slice(start, start + 900), map); check(/<\w*(Alert|Circle|Triangle|Octagon|Icon)\w*[^>]*aria-hidden/.test(box) || /aria-hidden="true">\s*[✕⚠]/.test(box), `${label}: (b) ${c.file} needs an aria-hidden icon beside the text (never colour alone)`); check(box.includes('text-[var(--status-error)]'), `${label}: (b) ${c.file} text is not the status-error token`); }
+      continue; }
     tally.a++; const tag = resolve(text, map); const box = resolve(src.slice(start, start + 900), map);
     check(tag.includes('border-[var(--status-error)]'), `${label}: unclassified alert is not an (a) error summary: no border-[var(--status-error)] (list it in goldens/alert-classes.json as (b)/(c) with a reason, or give it the summary border)`);
     check(/\bborder-2\b/.test(tag), `${label}: (a) border is not 2px (needs border-2)`);
