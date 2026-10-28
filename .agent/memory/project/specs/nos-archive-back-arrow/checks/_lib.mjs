@@ -40,7 +40,10 @@ export function startServer() {
   delete env.BETA_PASSWORD_WALL_OFF;
   delete env.SITE_PUBLIC_LAUNCH;
   delete env.K_SERVICE; // the fixture is inert on the hosted runtime; the gate is never hosted
+  delete env.SANITY_NET_ALLOW; // SANITY_NET_ALLOW=api would let the network guard pass live Sanity API requests unlogged
+  delete env.SANITY_FIXTURE_RECORD_CONFIRM;
   Object.assign(env, fixtureEnv());
+  if (env.SANITY_NET_ALLOW) throw new Error('SANITY_NET_ALLOW must be empty in the gate server env'); // self-check: zero live requests is only provable with the guard fully closed
   const log = openSync(`${LOG_DIR}/next-start-${PORT}.log`, 'w');
   const proc = spawn(`${ROOT}/node_modules/.bin/next`, ['start', '-p', String(PORT)], { cwd: ROOT, stdio: ['ignore', log, log], env });
   writeFileSync(`${PID_DIR}/${PORT}.pid`, String(proc.pid)); // the exact child PID is the only thing ever killed

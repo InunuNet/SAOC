@@ -14,6 +14,10 @@ export SITE_URL="http://nos.localhost:${PORT}"
 unset BETA_PASSWORD_WALL_OFF
 unset SITE_PUBLIC_LAUNCH
 unset K_SERVICE
+# The network guard allows the Sanity API host when SANITY_NET_ALLOW=api (the capture run), and record mode needs the confirm flag: neither may leak in from the caller.
+unset SANITY_NET_ALLOW
+unset SANITY_FIXTURE_RECORD_CONFIRM
+[ -z "${SANITY_NET_ALLOW:-}" ] || { echo "SANITY_NET_ALLOW must be empty for the gate build" >&2; exit 1; }
 bash "$SPEC/checks/prep-fixtures.sh"
 FIX_LOG="$PWD/.tmp/sandbox/nos-archive-back-arrow-gate/fixture-logs-build"
 mkdir -p "$FIX_LOG"
