@@ -667,8 +667,6 @@
   padding-left: 16px;
   border-left: 1.5px solid var(--olive-deep);
 }
-.nos-theme .nos-facts dt {
-}
 .nos-theme .nos-facts dd {
   margin: 4px 0 0;
   font-family: var(--serif);
@@ -983,8 +981,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   gap: 4px;
   align-content: start;
 }
-.nos-theme .nos-pr-facts dt {
-}
 .nos-theme .nos-pr-facts dd {
   margin: 0;
   font-size: 1rem;
@@ -1139,8 +1135,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 }
 .nos-theme .nos-ev-main > * {
   margin: 0;
-}
-.nos-theme .nos-ev-main > p:not(.doc-standfirst) {
 }
 .nos-theme [data-doc-aside] .nk-grid {
   margin: 0;
@@ -2034,8 +2028,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   padding-block: 12px;
   border-bottom: 1px solid color-mix(in srgb, var(--rule-soft) 22%, transparent);
 }
-.nos-theme .nk-facts dt {
-}
 .nos-theme .nk-facts dd {
   margin: 0;
   font-family: var(--sans);
@@ -2832,8 +2824,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     text-transform: none;
     color: var(--label-ink-on-dark);
   }
-  .nos-theme .hero-facts dd {
-  }
 }
 @media (max-width: 767px) {
   .nos-theme .nos-hero-actions .btn,
@@ -3052,7 +3042,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   transition: transform var(--dur-slow) var(--ease-nos);
 }
 .nos-theme .nos-sp-reach p {
-  grid-column: 1 / -1;
+  grid-column: 1;
   margin: 0;
 }
 .nos-theme .nos-sp-go {
@@ -3449,8 +3439,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   display: grid;
   gap: 4px;
 }
-.nos-theme .nos-pg-hours .k {
-}
 .nos-theme .nos-pg-hours .v {
   font-size: 1rem;
   line-height: 1.45;
@@ -3743,8 +3731,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   text-decoration-thickness: 2px;
   text-underline-offset: 6px;
 }
-.nos-theme .nos-numbers dt {
-}
 .nos-theme .nos-numbers dd.nos-numbers-note {
   order: 0;
   font-size: 14.5px;
@@ -3769,8 +3755,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 }
 .nos-theme .nos-ab-main > * {
   margin: 0;
-}
-.nos-theme .nos-ab-main > p:not(.doc-standfirst):not(.nos-ab-closing) {
 }
 .nos-theme .nos-ab-main .nos-ab-closing {
   margin-top: 16px;
@@ -3830,8 +3814,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 }
 .nos-theme .nos-cr-main > * {
   margin: 0;
-}
-.nos-theme .nos-cr-text {
 }
 .nos-theme .nos-cr-link {
   display: inline-flex;
@@ -4291,7 +4273,8 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   margin: 0;
 }
 .nos-theme .nos-hm-rows p {
-  grid-column: 1 / -1;
+  grid-column: 1;
+  max-width: 70ch;
   margin: 0;
 }
 .nos-theme .nos-hm-rows a > span {

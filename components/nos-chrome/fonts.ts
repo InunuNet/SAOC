@@ -1,12 +1,12 @@
 import localFont from 'next/font/local';
 
-// The chrome sits outside `.nos-theme`, so it declares the same two families as
-// app/(nos)/national-show/layout.tsx with a character-identical config
-// (next/font then emits one set of files). Fraunces is the display and menu-panel
+// The one declaration of the two NOS families: the chrome (outside `.nos-theme`) uses it directly
+// and components/nos/NosThemeScope.tsx imports it, so each family is one next/font instance and
+// one woff2. Fraunces is the display and menu-panel
 // face (variable, opsz axis); Karla carries nav, body and labels. `preload: false` on both:
 // the chrome is imported by the shared marketing layout, and a preload there would make every
 // SAOC route fetch the NOS faces; they load on first use, which only NOS routes make.
-const fraunces = localFont({
+export const fraunces = localFont({
   src: [
     { path: '../../app/fonts/fraunces/Fraunces-latin-normal.woff2', weight: '100 900', style: 'normal' },
     { path: '../../app/fonts/fraunces/Fraunces-latin-italic.woff2', weight: '100 900', style: 'italic' },
@@ -17,7 +17,7 @@ const fraunces = localFont({
   adjustFontFallback: 'Times New Roman',
 });
 
-const karla = localFont({
+export const karla = localFont({
   src: [
     { path: '../../app/fonts/karla/Karla-latin-normal.woff2', weight: '400 700', style: 'normal' },
   ],
