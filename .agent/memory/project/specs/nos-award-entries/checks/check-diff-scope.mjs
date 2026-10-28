@@ -10,7 +10,7 @@ const changed = [...new Set([...git('diff', '--name-only', base), ...git('ls-fil
 const SAOC_LANE = ['components/newsletter/NewsletterSignup.tsx', 'app/layout.tsx', 'components/sponsors/', 'app/(nos)/national-show/sponsors/page.tsx'];
 const PROTECTED = ['CLAUDE.md', 'AGENTS.md', 'GEMINI.md', '.claude/', 'execution/', 'test-results/', '.env', 'sanity/', 'content/drive-source/', 'comms.md'];
 const allowedFiles = new Set(rows.filter((r) => r.action === 'change').map((r) => r.file));
-allowedFiles.add('app/(nos)/national-show/exhibitors/page.tsx');
+for (const f of ['app/(nos)/national-show/exhibitors/page.tsx', 'app/(nos)/national-show/award-entries/page.tsx', 'proxy.ts']) allowedFiles.add(f);
 const allowedPrefixes = [`${SPEC}/`, 'docs/nos-award-entries.md', 'e2e/nos-award-entries'];
 const failures = [];
 for (const f of changed) {

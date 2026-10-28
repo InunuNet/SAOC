@@ -17,3 +17,5 @@ Proposed wording uses only Brad's terms (goldens/source-council-thread.md). Sent
 Kept as correct (class b, no action): showFaq-q1, q8, q32; international presenter bios that mention having exhibited.
 
 After SAOC changes S1/S2 the NOS gate (gate-render.mjs content) prints NOTE lines for the Sanity-held rows; they turn from "still rendered" to "not rendered" once the fixture is re-captured.
+
+| S10 | Any Sanity portable-text link or CMS field pointing at `/exhibitors` or `/national-show/exhibitors` | old path | `/award-entries` (the 308 keeps old links working, but repoint them) |

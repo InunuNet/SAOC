@@ -4,13 +4,13 @@
 # Sanity-held rows (goldens/sanity-for-saoc.md) are SAOC's: the gate prints NOTE lines for them, it never fails on them.
 schema: athanor.contract/v1
 slug: nos-award-entries
-goal: On the NOS host, plant entrants are called Award Entries (page retitled, split into National Show Awards and SAOC Awards with Brad's verbatim lines) and only stand bookers are called exhibitors or vendors.
+goal: On the NOS host, plant entrants are called Award Entries (page moved to /award-entries with a 308 from /exhibitors, split into National Show Awards and SAOC Awards with Brad's verbatim ledes) and only stand bookers are called exhibitors or vendors.
 created_at: '2026-10-28'
 autonomy: high
 exclusions:
   - item: 'Sanity and Drive writes; the FAQ seed; the SAOC-lane files (components/newsletter/NewsletterSignup.tsx, app/layout.tsx, components/sponsors/*, app/(nos)/national-show/sponsors/page.tsx)'
     reason: 'SAOC owns Sanity content and those files; goldens/sanity-for-saoc.md hands over the strings.'
-  - item: 'Renaming components, routes, files, ids, CSS hooks; any CSS or typography change'
+  - item: 'Renaming components, files, ids, CSS hooks (the route itself moves, SAOC-ruled Option R); any CSS or typography change'
     reason: 'CLAUDE.md forbids restructuring routes; typography belongs to feat/nos-type-tokens.'
 features:
   - id: F1
@@ -22,6 +22,8 @@ goldens:
   - .agent/memory/project/specs/nos-award-entries/goldens/exhibitor-audit.json
   - .agent/memory/project/specs/nos-award-entries/goldens/exhibitor-audit.md
   - .agent/memory/project/specs/nos-award-entries/goldens/sanity-for-saoc.md
+  - .agent/memory/project/specs/nos-award-entries/goldens/exhibitor-visible-list.json
+  - .agent/memory/project/specs/nos-award-entries/goldens/exhibitor-visible-list.md
   - .agent/memory/project/specs/nos-award-entries/goldens/elbert-bio-diff.md
   - .agent/memory/project/specs/nos-award-entries/goldens/codex-qa-prompt.md
   - .agent/memory/project/specs/nos-award-entries/goldens/checks.sha256
@@ -32,10 +34,10 @@ assertions:
       description: frozen goldens and check scripts are unmodified since the architect wrote them (the lead edits them only when NOS Design rules a decision, then re-runs shasum to refresh checks.sha256)
       command: shasum -a 256 -c .agent/memory/project/specs/nos-award-entries/goldens/checks.sha256
     - id: A2
-      description: static proof - every award string is verbatim from Brad's thread; every audit change row has its old text gone and new text present; every class-b keep row survives; the page has the title, both sections with data-award-type, both definition lines, the marker label, and no class-a exhibitor wording; no route rename, nav href and ShowBand href unchanged
+      description: static proof - every award string is verbatim from Brad's thread; every audit change row (labels and route paths) has its old text gone and new text present; every class-b keep row survives; the page has the title, both sections with data-award-type, both ledes, the marker label and no class-a exhibitor wording; route directory moved, proxy.ts 308s both old paths, no internal path string still points at /exhibitors
       command: node .agent/memory/project/specs/nos-award-entries/checks/check-static.mjs
     - id: A3
-      description: diff against origin/main is limited to the audited NOS-lane files, this spec, docs/nos-award-entries.md and e2e/nos-award-entries*; no SAOC-lane file, protected file, CSS file or Sanity schema
+      description: diff against origin/main is limited to the audited NOS-lane files, proxy.ts, the moved route page, this spec, docs/nos-award-entries.md and e2e/nos-award-entries*; no SAOC-lane file, protected file, CSS file or Sanity schema
       command: node .agent/memory/project/specs/nos-award-entries/checks/check-diff-scope.mjs
     - id: A4
       description: typescript compiles
@@ -47,10 +49,10 @@ assertions:
       description: production build passes with the Sanity fixture in replay and no Sanity API request
       command: execution/heartbeat_wrap.sh bash .agent/memory/project/specs/nos-award-entries/checks/build.sh
     - id: A7
-      description: built site on the NOS host - /exhibitors returns 200, /award-entries is 404, document title, og title, h1, breadcrumb and every menu link to /exhibitors read Award Entries, Plant Entry/Registration is gone
+      description: built site - /award-entries is 200 on the NOS host; /exhibitors and /national-show/exhibitors are one-hop 308s to it keeping the query; the SAOC-host show-prefix redirect still lands (one hop for the old path); the sitemap lists /award-entries and not /exhibitors; no link points at /exhibitors; title, og title, h1, breadcrumb and every header, footer and show-index link read Award Entries; /vendors h1 unchanged
       command: execution/heartbeat_wrap.sh node .agent/memory/project/specs/nos-award-entries/checks/gate-render.mjs url
     - id: A8
-      description: built site on the NOS host - both award sections in order with Brad's headings, the two definition lines verbatim, the visible awaiting-committee-copy marker, nothing else in either section; no class-a exhibitor wording in the page body; audit rows with a route are old-gone, new-present or kept
+      description: built site on the NOS host - both award sections in order with Brad's headings, the bare ledes verbatim, the visible awaiting-committee-copy marker, nothing else in either section; no class-a exhibitor wording in the page body; audit rows with a route are old-gone, new-present or kept; every visible exhibitor on every indexable NOS page is in goldens/exhibitor-visible-list.json (stand contexts only; Sanity-held rows are NOTEs)
       command: execution/heartbeat_wrap.sh node .agent/memory/project/specs/nos-award-entries/checks/gate-render.mjs content
     - id: A9
       description: the SAOC hand-over list and the Elbert bio diff exist

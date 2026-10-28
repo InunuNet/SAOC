@@ -62,24 +62,46 @@ try {
   const open = async (p) => { const page = await context.newPage(); const res = await page.goto(`${NOS}${p}`, { waitUntil: 'load' }); await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {}); return { page, res }; };
 
   if (MODE === 'url') {
-    const ex = await get('/exhibitors');
-    check('/exhibitors on the NOS host returns 200 (URL path unchanged)', ex.status === 200, `status ${ex.status}`);
-    const gone = await get('/award-entries');
-    check('/award-entries is not a route (no rename)', gone.status === 404, `status ${gone.status}`);
-    const { page } = await open('/exhibitors');
+    const NEW = '/award-entries';
+    const ok = await get(NEW);
+    check(`${NEW} on the NOS host returns 200`, ok.status === 200, `status ${ok.status}`);
+    const loc = (r) => r.headers.get('location') ?? '';
+    for (const old of ['/exhibitors', '/national-show/exhibitors']) {
+      const r1 = await get(`${old}`);
+      check(`NOS host ${old} is a 308 permanent redirect`, r1.status === 308, `status ${r1.status}`);
+      check(`NOS host ${old} lands on ${NEW} in one hop`, new URL(loc(r1), NOS).pathname === NEW, loc(r1));
+      const r2 = await get(`${old}?utm_source=x&a=1`);
+      check(`NOS host ${old} keeps the query string`, new URL(loc(r2), NOS).search === '?utm_source=x&a=1', loc(r2));
+    }
+    const saoc = `http://saoc.localhost:${PORT}`;
+    const sr = await fetch(`${saoc}/national-show/exhibitors?utm_source=x`, { headers: { authorization: AUTH }, redirect: 'manual' });
+    check('SAOC host /national-show/exhibitors is a 308 straight to the NOS /award-entries (one hop, query kept)', sr.status === 308 && new URL(loc(sr), saoc).pathname === NEW && new URL(loc(sr), saoc).search === '?utm_source=x' && new URL(loc(sr), saoc).host.startsWith('nos.'), `${sr.status} ${loc(sr)}`);
+    const sf = await fetch(`${saoc}/national-show/award-entries`, { headers: { authorization: AUTH }, redirect: 'follow' });
+    check('SAOC host /national-show/award-entries lands on a 200 (show-prefix redirect still works)', sf.status === 200 && new URL(sf.url).pathname === NEW, `${sf.status} ${sf.url}`);
+    const site = await get('/sitemap.xml');
+    const xml = await site.text();
+    check('sitemap lists /award-entries', xml.includes('/award-entries'));
+    check('sitemap does not list /exhibitors', !/\/exhibitors<|\/exhibitors\//.test(xml));
+
+    const { page } = await open(NEW);
     check('document title contains "Award Entries"', (await page.title()).includes(copy.pageTitle), await page.title());
     check('og:title contains "Award Entries"', ((await page.locator('meta[property="og:title"]').getAttribute('content').catch(() => '')) ?? '').includes(copy.pageTitle));
     check('h1 reads "Award Entries"', norm(await page.locator('h1').first().textContent()) === copy.pageTitle);
     const crumb = norm((await page.locator('nav[aria-label="Breadcrumb"] [aria-current="page"]').first().textContent().catch(() => '')) ?? '');
     check('breadcrumb current page reads "Award Entries"', crumb === copy.pageTitle, crumb);
-    for (const p of ['/exhibitors', '/']) {
-      const { page: pg } = p === '/exhibitors' ? { page } : await open(p);
-      const labels = await pg.$$eval('a[href$="/exhibitors"]', (as) => as.map((a) => (a.textContent ?? '').replace(/[→\s ]+/g, ' ').trim()).filter(Boolean));
-      check(`${p}: every link to /exhibitors reads "Award Entries" (${labels.length} found)`, labels.length > 0 && labels.every((l) => l === copy.pageTitle), JSON.stringify(labels));
+    for (const p of [NEW, '/']) {
+      const { page: pg } = p === NEW ? { page } : await open(p);
+      const links = await pg.$$eval('a[href]', (as) => as.map((a) => ({ path: new URL(a.href).pathname, text: (a.textContent ?? '').replace(/[→\s ]+/g, ' ').trim() })));
+      const toNew = links.filter((l) => l.path === NEW && l.text);
+      check(`${p}: every link to ${NEW} reads "Award Entries" (header, footer, show index; ${toNew.length} found)`, toNew.length > 0 && toNew.every((l) => l.text === copy.pageTitle), JSON.stringify(toNew.map((l) => l.text)));
+      check(`${p}: no link points at /exhibitors`, !links.some((l) => /^\/(national-show\/)?exhibitors$/.test(l.path)), JSON.stringify(links.filter((l) => /exhibitors$/.test(l.path))));
       check(`${p}: "Plant Entry/Registration" is gone`, !(await pg.evaluate(() => document.documentElement.textContent)).includes('Plant Entry/Registration'));
     }
+    // Vendor pages keep their titles (AE-1 open questions a, b, c are with Lee-Ann).
+    const v = await open('/vendors');
+    check('/vendors h1 is unchanged ("Exhibitors and vendors")', norm(await v.page.locator('h1').first().textContent()) === 'Exhibitors and vendors');
   } else {
-    const { page } = await open('/exhibitors');
+    const { page } = await open('/award-entries');
     const sections = await page.$$eval('section[data-award-type]', (els) => els.map((s) => ({
       type: s.getAttribute('data-award-type'),
       h2: s.querySelector('h2')?.textContent ?? '',
@@ -91,23 +113,24 @@ try {
     for (const want of copy.sections) {
       const s = sections.find((x) => x.type === want.awardType);
       if (!s) continue;
-      check(`${want.awardType}: heading reads "${want.heading}"`, norm(s.h2) === want.heading, norm(s.h2));
-      check(`${want.awardType}: the definition line is rendered verbatim`, s.ps.map(norm).includes(want.definition), JSON.stringify(s.ps.map(norm)));
+      check(`${want.awardType}: h2 reads "${want.heading}"`, norm(s.h2) === want.heading, norm(s.h2));
+      check(`${want.awardType}: the lede is the bare definition sentence, verbatim`, s.ps.map(norm).includes(want.lede), JSON.stringify(s.ps.map(norm)));
       check(`${want.awardType}: the awaiting-committee-copy marker is visible`, !!s.marker && norm(s.marker).toLowerCase().includes(copy.markerLabel.toLowerCase()), String(s.marker));
-      const rest = norm(s.total.replace(s.h2, '').replace(want.definition, '').replace(s.marker ?? '', ''));
+      const rest = norm(s.total.replace(s.h2, '').replace(want.lede, '').replace(s.marker ?? '', ''));
       check(`${want.awardType}: nothing else is written in the section (no invented copy)`, rest === '', rest);
     }
-    // No class-a "exhibitor" wording left in the page body (site chrome and the show index set aside; class-b phrases removed first).
+    const headings = await page.$$eval('main h2', (els) => els.map((e) => e.textContent));
+    check('the two award h2s are sequential siblings at the same level', headings.length >= 2 && headings.filter((h) => copy.sections.some((s) => s.heading === norm(h ?? ''))).length === 2);
     const body = await page.evaluate(() => { const m = document.querySelector('main').cloneNode(true); m.querySelectorAll('nav.nos-index').forEach((e) => e.remove()); return m.textContent ?? ''; });
     let text = norm(body); for (const re of CLASS_B_PHRASES) text = text.replace(re, '');
     const stray = text.match(/.{0,40}exhibitors?.{0,40}/gi);
-    check('/exhibitors body has no class-a "exhibitor" wording', !stray, stray ? stray.join(' | ') : '');
+    check('/award-entries body has no class-a "exhibitor" wording', !stray, stray ? stray.join(' | ') : '');
 
-    // Audit rows with a rendered route: old text gone, new text present (change); class-b text still there (keep). Sanity-held rows are notes.
+    // Audit rows with a rendered route: old text gone, new text present (change); class-b text kept (keep). Sanity-held rows are notes.
     const cache = new Map();
     const loaded = async (route) => { if (!cache.has(route)) { const { page: pg } = await open(route); cache.set(route, { text: norm(await pg.evaluate(() => document.documentElement.textContent)), aria: await pg.$$eval('[aria-label]', (els) => els.map((e) => e.getAttribute('aria-label'))) }); } return cache.get(route); };
     for (const r of audit) {
-      if (!r.route) continue;
+      if (!r.route || (r.class === 'c')) continue;
       const oldText = r.visible ?? r.current; const newText = r.visibleNew ?? r.new;
       if (r.sanityHeld) { const { text } = await loaded(r.route); console.log(`NOTE ${r.id} (Sanity-held, SAOC to update): old text ${text.includes(norm(oldText.split(' / ')[0])) ? 'still rendered' : 'not rendered'} on ${r.route}`); continue; }
       if (r.action === 'change') {
@@ -120,6 +143,26 @@ try {
         check(`${r.id} ${r.route}: class-b text kept ("${oldText}")`, text.includes(norm(oldText)));
       }
     }
+
+    // AE-1 gate: every visible "exhibitor" on every indexable NOS page must be in the signed-off list (goldens/exhibitor-visible-list.json).
+    const allow = JSON.parse(readFileSync(`${SPEC}/goldens/exhibitor-visible-list.json`, 'utf8')).entries;
+    const manifest = JSON.parse(readFileSync('content/national-show-routes.json', 'utf8')).routes;
+    const crawl = ['/', ...manifest.filter((r) => r.indexable && !r.dynamic && r.slug.startsWith('/national-show/')).map((r) => r.slug.replace('/national-show', ''))];
+    let seen = 0;
+    for (const route of [...new Set(crawl)]) {
+      const { page: pg, res } = await open(route);
+      if (!res || res.status() !== 200) { console.log(`NOTE crawl ${route}: status ${res?.status()}`); await pg.close(); continue; }
+      const text = await pg.evaluate(() => document.body.innerText);
+      for (const line of text.split('\n').filter((l) => /exhibitor/i.test(l))) {
+        seen += 1;
+        const low = line.toLowerCase();
+        const hit = allow.find((e) => (e.exact ? low.trim() === e.fragment : low.includes(e.fragment)));
+        if (!hit) check(`visible "exhibitor" on ${route} is in the signed-off list`, false, line.trim().slice(0, 160));
+        else if (hit.status !== 'stand') console.log(`NOTE ${route}: ${hit.status} (${hit.ref ?? '-'}): ${line.trim().slice(0, 100)}`);
+      }
+      await pg.close();
+    }
+    console.log(`visible-exhibitor crawl: ${seen} line(s) across ${new Set(crawl).size} route(s)`);
   }
   // Fixture proof: this server read Sanity only from the capture.
   const lines = (f) => (existsSync(`${FIX_LOG}/${f}`) ? readFileSync(`${FIX_LOG}/${f}`, 'utf8').split('\n').filter(Boolean) : []);

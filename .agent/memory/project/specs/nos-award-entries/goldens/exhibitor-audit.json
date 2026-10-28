@@ -1,5 +1,5 @@
 {
-  "_note": "Audit of every user-visible 'exhibitor' string (and the two page-title strings) on origin/main 3c30e11. class a = plant entrant for judging; b = stand-booking vendor/exhibitor; c = internal identifier/file/code or unrendered. action: change (NOS lane, spec'd edit) | keep (class b, must survive) | leave (class c / out of scope) | saoc (SAOC lane or Sanity-held, listed not spec'd). 'current'/'new' are SOURCE substrings (check-static); 'visible'/'visibleNew' are the rendered text where it differs. route is a NOS-host path (gate-render).",
+  "_note": "Audit of every user-visible 'exhibitor' string (and the two page-title strings) on origin/main 3c30e11. class a = plant entrant for judging; b = stand-booking vendor/exhibitor; c = internal identifier/file/code or unrendered. action: change (NOS lane, spec'd edit) | keep (class b, must survive) | leave (class c / out of scope) | saoc (SAOC lane or Sanity-held, listed not spec'd). 'current'/'new' are SOURCE substrings (check-static); 'visible'/'visibleNew' are the rendered text where it differs. route is a NOS-host path (gate-render). Route moves to /award-entries with a 308 from /exhibitors (SAOC ruled Option R); `file` of page rows is the pre-move path and check-static maps it to app/(nos)/national-show/award-entries/page.tsx.",
   "rows": [
     {
       "id": "R01",
@@ -11,7 +11,7 @@
       "visibleNew": "Award Entries",
       "class": "a",
       "action": "change",
-      "route": "/exhibitors",
+      "route": "/award-entries",
       "decision": null,
       "note": "Title, h1, breadcrumb and og title all derive from PAGE_TITLE. main already says Plant Entry/Registration (#143); Brad's screenshot (Exhibitor information) is a stale surface."
     },
@@ -40,7 +40,7 @@
       "where": "aria-label",
       "class": "a",
       "action": "change",
-      "route": "/exhibitors",
+      "route": "/award-entries",
       "decision": "D3",
       "note": "aria-label of the aside nav (assistive tech only)."
     },
@@ -52,7 +52,7 @@
       "new": "recognising outstanding Award Entries.",
       "class": "a",
       "action": "change",
-      "route": "/exhibitors",
+      "route": "/award-entries",
       "decision": "D3",
       "note": "Lee-Ann FAQ 25 answer. Twin in Sanity showFaq-q25 (SAOC list S1)."
     },
@@ -66,7 +66,7 @@
       "visibleNew": "When can Display Exhibitors set up their displays?",
       "class": "b",
       "action": "change",
-      "route": "/exhibitors",
+      "route": "/award-entries",
       "decision": "D2",
       "note": "Setting up displays = Brad's Display Exhibitors definition (19:11). Class b, so only the term is aligned. Twin in Sanity showFaq-q28 (S2) and scripts/seed-show-faq.ts:303 (S5)."
     },
@@ -78,7 +78,7 @@
       "new": "The specific Display Exhibitor setup, judging,",
       "class": "b",
       "action": "change",
-      "route": "/exhibitors",
+      "route": "/award-entries",
       "decision": "D2",
       "note": "Same answer as R05."
     },
@@ -116,7 +116,7 @@
       "action": "change",
       "route": null,
       "decision": null,
-      "note": "Route manifest label (feeds the sitemap, not rendered). Slug /national-show/exhibitors is unchanged."
+      "note": "Route manifest label (feeds the sitemap). Slug moves in R39."
     },
     {
       "id": "R10",
@@ -321,12 +321,12 @@
       "file": "components/nos/hero-photos.ts",
       "line": 69,
       "current": "'/national-show/exhibitors': 'D1',",
-      "new": "'/national-show/exhibitors': 'D1',",
+      "new": "'/national-show/award-entries': 'D1',",
       "class": "c",
-      "action": "leave",
+      "action": "change",
       "route": null,
       "decision": null,
-      "note": "Route key. URL path stays; no route rename."
+      "note": "Route key follows the route move (Option R, SAOC ruling)."
     },
     {
       "id": "R27",
@@ -440,6 +440,114 @@
       "route": null,
       "decision": "D2",
       "note": "S5. SAOC runs the FAQ seed; the seed must match S2 or a reseed reverts it."
+    },
+    {
+      "id": "R36",
+      "file": "components/nos-chrome/nos-nav.ts",
+      "line": 133,
+      "current": "href: showPath('/exhibitors'),",
+      "new": "href: showPath('/award-entries'),",
+      "class": "c",
+      "action": "change",
+      "route": null,
+      "decision": null,
+      "note": "Nav leaf href (id stays 'exhibitors'). Header, show index and footer resolve it from here."
+    },
+    {
+      "id": "R37",
+      "file": "components/nos/NosShowIndex.tsx",
+      "line": 39,
+      "current": "'/national-show/exhibitors',",
+      "new": "'/national-show/award-entries',",
+      "class": "c",
+      "action": "change",
+      "route": null,
+      "decision": null,
+      "note": "Show-index href."
+    },
+    {
+      "id": "R38",
+      "file": "components/show/ShowSectionNav.tsx",
+      "line": 88,
+      "current": "href: '/national-show/exhibitors',",
+      "new": "href: '/national-show/award-entries',",
+      "class": "c",
+      "action": "change",
+      "route": null,
+      "decision": null,
+      "note": "Unrendered component; kept in step."
+    },
+    {
+      "id": "R39",
+      "file": "content/national-show-routes.json",
+      "line": 205,
+      "current": "\"slug\": \"/national-show/exhibitors\",",
+      "new": "\"slug\": \"/national-show/award-entries\",",
+      "class": "c",
+      "action": "change",
+      "route": null,
+      "decision": null,
+      "note": "Manifest slug; app/sitemap.ts derives the NOS sitemap from it."
+    },
+    {
+      "id": "R40",
+      "file": "scripts/generate-nos-route-manifest.ts",
+      "line": 240,
+      "current": "slug: '/national-show/exhibitors',",
+      "new": "slug: '/national-show/award-entries',",
+      "class": "c",
+      "action": "change",
+      "route": null,
+      "decision": null,
+      "note": "Generator of R39."
+    },
+    {
+      "id": "R41",
+      "file": "components/home/ShowBand.tsx",
+      "line": 202,
+      "current": "href={nosUrl('/exhibitors')}",
+      "new": "href={nosUrl('/award-entries')}",
+      "class": "c",
+      "action": "change",
+      "route": null,
+      "decision": null,
+      "note": "SAOC-host home band CTA target."
+    },
+    {
+      "id": "R42",
+      "file": "app/(nos)/national-show/exhibitors/page.tsx",
+      "line": 62,
+      "current": "path: '/national-show/exhibitors',",
+      "new": "path: '/national-show/award-entries',",
+      "class": "c",
+      "action": "change",
+      "route": null,
+      "decision": null,
+      "note": "buildPageMetadata canonical path."
+    },
+    {
+      "id": "R43",
+      "file": "app/(nos)/national-show/exhibitors/page.tsx",
+      "line": 97,
+      "current": "route=\"/national-show/exhibitors\"",
+      "new": "route=\"/national-show/award-entries\"",
+      "class": "c",
+      "action": "change",
+      "route": null,
+      "decision": null,
+      "note": "NosHero route (hero photo lookup, R26)."
+    },
+    {
+      "id": "R44",
+      "file": "app/(nos)/national-show/exhibitors/page.tsx",
+      "line": 137,
+      "current": "current=\"/national-show/exhibitors\"",
+      "new": "current=\"/national-show/award-entries\"",
+      "class": "c",
+      "action": "change",
+      "route": null,
+      "decision": null,
+      "note": "NosShowIndex current."
     }
   ]
 }
