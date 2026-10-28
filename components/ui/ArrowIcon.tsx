@@ -12,6 +12,10 @@
 // adds to the label's own trailing letter-spacing. "corner" is a card's right-aligned arrow that
 // shares the title's first line: 1em wide, no margin. Callers mark the card or link element
 // with data-variant="corner".
+//
+// direction="back" mirrors the label arrow (scaleX(-1)) for a link that leads with it: same 1.25em
+// box, head and stem, but the 0.5em gap goes after the arrow (margin-inline-end), with no literal
+// space in the markup.
 
 export type ArrowVariant = 'label' | 'corner';
 
@@ -21,21 +25,24 @@ const ARROW_START_X = 1;
 const ARROW_OFFSET_X = 1;
 
 const VARIANT_WIDTH_UNITS: Record<ArrowVariant, number> = { label: 25, corner: 20 };
+const BACK_CLASSES = 'me-[0.5em] -scale-x-100';
 const VARIANT_CLASSES: Record<ArrowVariant, string> = { label: 'ms-[0.5em]', corner: '' };
 
 interface ArrowIconProps {
   className?: string;
   variant?: ArrowVariant;
+  direction?: 'forward' | 'back';
 }
 
-export function ArrowIcon({ className, variant = 'label' }: ArrowIconProps) {
+export function ArrowIcon({ className, variant = 'label', direction = 'forward' }: ArrowIconProps) {
   const widthUnits = VARIANT_WIDTH_UNITS[variant];
   const tipX = widthUnits - ARROW_OFFSET_X;
   const armX = (tipX - ARROW_ARM).toFixed(3);
   const shaft = `M${ARROW_START_X} ${ARROW_CENTRE_Y}H${tipX}`;
   const head = `M${armX} ${ARROW_CENTRE_Y - ARROW_ARM}L${tipX} ${ARROW_CENTRE_Y}L${armX} ${ARROW_CENTRE_Y + ARROW_ARM}`;
+  const back = direction === 'back';
   const classes = [
-    VARIANT_CLASSES[variant],
+    back ? BACK_CLASSES : VARIANT_CLASSES[variant],
     'inline-block align-[calc(0.5cap-0.5em)]',
     className ?? '',
   ]
@@ -55,6 +62,7 @@ export function ArrowIcon({ className, variant = 'label' }: ArrowIconProps) {
       aria-hidden="true"
       focusable="false"
       data-glyph="arrow"
+      data-direction={back ? 'back' : undefined}
       className={classes}
     >
       <path data-part="shaft" d={shaft} />

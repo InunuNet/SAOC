@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { RouteHero } from '@/components/ui/RouteHero';
+import { ArrowIcon } from '@/components/ui/ArrowIcon';
 import { CTASection } from '@/components/ui/CTASection';
 import { client } from '@/sanity/lib/client';
 import { sanityFetch } from '@/sanity/lib/fetch';
@@ -146,7 +147,10 @@ export default async function SocietyPage({
           href="/societies"
           className="flex min-h-6 items-center font-mono text-[12px] uppercase tracking-[0.18em] text-muted"
         >
-          ← All societies
+          <span>
+            <ArrowIcon direction="back" />
+            All societies
+          </span>
         </Link>
       </div>
 
