@@ -1,4 +1,4 @@
-// F1a: one focus ring across hero CTA, Menu, Join and a footer link. Geometry equal to the existing hero CTA ring
+// F1a: one focus ring across hero CTA, Menu, Join (header at 1440 and the open drawer's link at 390) and a footer link. Geometry equal to the existing hero CTA ring
 // (outline 2px solid, offset 3px) and the settled ring colour reaches 3:1 against the PIXELS painted just outside it (photograph, scrim and
 // panels included): a band 2-6px outside the element box (the 2px ring at a 3px offset paints 3-5px out) is screenshotted with the outline hidden and the WORST-case contrast is used.
 import { withSite, openPage, check, finish, RGBA_FN, blend, ratio } from './lib.mjs';
@@ -25,6 +25,8 @@ const TARGETS = [
   { name: 'hero CTA', path: '/', width: 1440, sel: '.home-hero a' },
   { name: 'Menu', path: '/about', width: 1100, sel: '[data-hd=menu]' },
   { name: 'Join', path: '/about', width: 1440, sel: '[data-hd=cta]' },
+  // The drawer's own "Join a society" link (MobileMenu), at 390 with the drawer OPEN: the header Join is not the link a phone keyboard user lands on.
+  { name: 'drawer Join', path: '/about', width: 390, sel: '[data-sdc-probe]', pre: 'drawerJoin' },
   // Footer: the lockup, an Explore text link, a legal-bar link, and (when the session shows it) the media-kit link, each by a stable selector.
   { name: 'footer lockup', path: '/about', width: 1440, sel: 'footer a[href="/"]' },
   { name: 'footer explore link', path: '/about', width: 1440, sel: 'footer a[href="/about"]' },
@@ -37,6 +39,11 @@ await withSite(async ({ base, browser, ctxOpts, deployed }) => {
   const seen = []; const targets = deployed ? TARGETS : TARGETS.filter((t) => t.path !== '/');
   for (const t of targets) {
     const { page, ctx } = await openPage(browser, ctxOpts, base, t.path, t.width);
+    if (t.pre === 'drawerJoin') {
+      await page.locator('[data-hd=menu]').click(); await page.waitForTimeout(500);
+      const found = await page.evaluate(() => { const a = [...document.querySelectorAll('a')].find((x) => /^\s*Join a society\s*$/i.test(x.textContent || '') && x.getAttribute('data-hd') !== 'cta' && x.getClientRects().length > 0); if (a) a.setAttribute('data-sdc-probe', ''); return Boolean(a); });
+      if (!found) { check(false, `${t.name}: no visible drawer "Join a society" link after opening the menu at ${t.width}px`); await ctx.close(); continue; }
+    }
     await page.keyboard.press('Shift'); // keyboard modality, so :focus-visible applies
     const r = await page.evaluate(`(${PROBE})(${JSON.stringify(t.sel)})`);
     if (!r) { if (!t.optional) check(false, `${t.name}: selector ${t.sel} not found`); await ctx.close(); continue; }

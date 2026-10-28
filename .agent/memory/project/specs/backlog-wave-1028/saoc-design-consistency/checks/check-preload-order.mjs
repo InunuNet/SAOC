@@ -1,13 +1,16 @@
-// F1e: in the SERVER HTML <head> the hero image preload comes BEFORE every stylesheet link (and before the font preload), exactly one font is preloaded, and it is the file
+// F1e (also the SAOC 404, hero checks excepted): in the SERVER HTML <head> the hero image preload comes BEFORE every stylesheet link (and before the font preload), exactly one font is preloaded, and it is the file
 // that renders the h1/hero face (not an italic or an unused weight). Reads the raw HTML (no JS).
 import { withSite, openPage, check, finish } from './lib.mjs';
 await withSite(async ({ base, browser, ctxOpts, deployed }) => {
   const user = process.env.BETA_BASIC_AUTH_USER; const pass = process.env.BETA_BASIC_AUTH_PASSWORD;
   const headers = process.env.DC_BASE_URL && user && pass ? { Authorization: 'Basic ' + Buffer.from(`${user}:${pass}`).toString('base64') } : {};
-  for (const path of deployed ? ['/', '/about'] : ['/about']) {
+  // The SAOC 404 (app/not-found.tsx) renders outside SaocFrame: it has no hero image, but it must still ship exactly one Crimson font preload for its h1.
+  const NOT_FOUND = '/this-page-does-not-exist-sdc';
+  for (const path of deployed ? ['/', '/about', NOT_FOUND] : ['/about', NOT_FOUND]) {
+    const isNotFound = path === NOT_FOUND;
     const html = await (await fetch(base + path, { headers })).text(); const head = html.slice(0, html.indexOf('</head>') + 7);
     const hero = head.search(/<link[^>]*rel="preload"[^>]*as="image"[^>]*imagesrcset/i); const css = head.search(/<link[^>]*rel="stylesheet"/i);
-    check(hero >= 0, `${path}: no hero image preload (imagesrcset) in <head>`); check(css >= 0 && hero >= 0 && hero < css, `${path}: hero preload at ${hero} is not before the first stylesheet at ${css}`);
+    if (!isNotFound) { check(hero >= 0, `${path}: no hero image preload (imagesrcset) in <head>`); check(css >= 0 && hero >= 0 && hero < css, `${path}: hero preload at ${hero} is not before the first stylesheet at ${css}`); }
     const fonts = [...head.matchAll(/<link[^>]*rel="preload"[^>]*as="font"[^>]*>/gi)].map((m) => m[0]); check(fonts.length === 1, `${path}: ${fonts.length} font preloads, want exactly 1 (the h1/hero face)`);
     const { page, ctx } = await openPage(browser, ctxOpts, base, path, 1440);
     const h1src = await page.evaluate(() => { const h = document.querySelector('h1'); const c = getComputedStyle(h); const fam = c.fontFamily.split(',')[0].replace(/['"\s]/g, ''); const wt = Number(c.fontWeight);
