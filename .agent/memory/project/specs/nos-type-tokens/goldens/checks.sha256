@@ -1,6 +1,6 @@
 06c78998263f205fc20d9b90b07050fed3abb8a4219412f41b96414fd27c60a4  .agent/memory/project/specs/nos-type-tokens/checks/_lib.mjs
 da4e7f8b162a03b769bdad40b151c564bad5ca1ab721a1d9596be2d1eec820af  .agent/memory/project/specs/nos-type-tokens/checks/check-fixture-misses.mjs
-33dcc44c88fa69f207047550ce27ef988f97232384773b2c5214d40143dd3510  .agent/memory/project/specs/nos-type-tokens/checks/check-static.mjs
+884e0b9b242cf2b6e6983d5399ec0c1f31fb08ed1ae2136873eac2a53b05cc66  .agent/memory/project/specs/nos-type-tokens/checks/check-static.mjs
 7a240835da0813b06189164eff01e4e15934b57c3b47a56c098056eb07067018  .agent/memory/project/specs/nos-type-tokens/checks/collect.mjs
 57f3474d61bf50d986cd3e4f03975b262820fc5c88f552066b7776537dcca976  .agent/memory/project/specs/nos-type-tokens/checks/gate-type.mjs
 01dd22b15140748127166eaa170161f117ed39093250e377fc8aa3d8cdc15ffd  .agent/memory/project/specs/nos-type-tokens/checks/gen-today-stub.mjs

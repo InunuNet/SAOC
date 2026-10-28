@@ -6,11 +6,13 @@ const FONTS = ['components/nos-chrome/fonts.ts', 'components/nos/NosThemeScope.t
 const CSS = ['app/(nos)/national-show/nos-theme.css', 'app/(nos)/national-show/nos-structure.css', 'components/nos-chrome/nos-chrome.css'];
 const checks = {
   // NR-6: one Karla declaration with a wght range, in both files. A quartet of discrete 400/500/600/700 faces makes 450 render as 500.
-  'karla-range': () => FONTS.every((f) => {
-    const src = read(f);
-    const block = src.slice(src.indexOf('const karla'), src.indexOf('variable: \'--font-nos-karla\''));
-    return (block.match(/Karla-latin-normal\.woff2/g) ?? []).length === 1 && /weight:\s*'400 700'/.test(block);
-  }),
+  'karla-range': () => {
+    const src = read(FONTS[0]);
+    const block = src.slice(src.indexOf('const karla') >= 0 ? src.indexOf('const karla') : src.indexOf('karla ='), src.indexOf('--font-nos-karla') + 20);
+    const oneFace = (block.match(/Karla-latin-normal\.woff2/g) ?? []).length === 1 && /weight:\s*'400 700'/.test(block);
+    // After the dedupe fonts.ts is the only localFont owner; NosThemeScope must import from it, not declare its own.
+    return oneFace && !/localFont\s*\(/.test(read(FONTS[1]));
+  },
   // R-M: the one prose measure token, 38rem, defined once and used; the per-size 60ch cap on bare p is gone.
   'measure-token': () => CSS.slice(0, 2).some((f) => /--nos-measure:\s*38rem/.test(read(f))) && CSS.slice(0, 2).some((f) => /var\(--nos-measure\)/.test(read(f))),
   'no-60ch': () => !/\.nos-theme p\s*\{[^}]*60ch/.test(read(CSS[1])),
@@ -25,10 +27,8 @@ const checks = {
 const ALLOWED = [/^app\/\(nos\)\//, /^components\/nos\//, /^components\/nos-chrome\//, /^components\/show\//, /^components\/contact\/NosContactAside\.tsx$/, /^e2e\//, /^docs\//, /^\.agent\/memory\//, /^README\.md$/];
 checks.scope = () => {
   const git = (...a) => execFileSync('git', a, { encoding: 'utf8' }).split('\n').filter(Boolean);
-  // The branch is based on #133's head (f22e989a), so its files are not this PR's diff; the base is that commit while it is an ancestor of HEAD.
-  const PR133 = 'f22e989a';
-  const isAncestor = (() => { try { execFileSync('git', ['merge-base', '--is-ancestor', PR133, 'HEAD']); return true; } catch { return false; } })();
-  const base = process.env.NOS_TYPE_BASE_REF ?? (isAncestor ? PR133 : git('merge-base', 'HEAD', 'origin/main')[0]);
+  // #133 is on main now, so the diff is this branch against its merge-base with origin/main (NOS_TYPE_BASE_REF overrides).
+  const base = process.env.NOS_TYPE_BASE_REF ?? git('merge-base', 'HEAD', 'origin/main')[0];
   const files = [...new Set([...git('diff', '--name-only', base), ...git('ls-files', '--others', '--exclude-standard')])];
   const out = files.filter((f) => !ALLOWED.some((re) => re.test(f)));
   if (out.length) console.error(`outside the NOS surface:\n${out.join('\n')}`);
@@ -46,7 +46,7 @@ checks.shots = () => {
   return missing.length === 0;
 };
 // TYPE-11, CSS-only route: the chrome scope re-points the Tailwind --font-sans (and --font-serif) at the NOS faces, and the SAOC-lane NewsletterSignup.tsx is not edited.
-checks['footer-font-var'] = () => /\.nf[^{]*\{[^}]*--font-sans:\s*var\(--nc-sans\)/.test(read(CSS[2])) && !execFileSync('git', ['diff', '--name-only', process.env.NOS_TYPE_BASE_REF ?? 'f22e989a'], { encoding: 'utf8' }).includes('NewsletterSignup.tsx');
+checks['footer-font-var'] = () => /\.nf[^{]*\{[^}]*--font-sans:\s*var\(--nc-sans\)/.test(read(CSS[2])) && !execFileSync('git', ['diff', '--name-only', process.env.NOS_TYPE_BASE_REF ?? execFileSync('git', ['merge-base', 'HEAD', 'origin/main'], { encoding: 'utf8' }).trim()], { encoding: 'utf8' }).includes('NewsletterSignup.tsx');
 const name = process.argv[2];
 if (!name || !checks[name]) { console.error(`usage: check-static.mjs <${Object.keys(checks).join('|')}>`); process.exit(2); }
 if (!checks[name]()) { console.error(`check-static ${name} FAILED`); process.exit(1); }

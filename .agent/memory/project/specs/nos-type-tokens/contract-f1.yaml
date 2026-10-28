@@ -1,6 +1,6 @@
 # nos-type-tokens: NOS Design NR-1 (weight band), NR-6 (body 450, standfirst, measure), NR-7 (one h1, one h2), NR-8 (three labels), plus S-2 (numeral colour). TYPE-11 (footer family) is in, CSS-only route.
 # Authority: NOS Design ruling 2026-10-28 (root comms.md). NR-2..5 (layout) are frozen and out of scope. Values live in goldens/values.json and are the ruling's own.
-# Base: the head of PR #133 (f22e989a); never push to its branch; this PR merges after #133 and says so in its body (spec.md section 1). Sources: docs/rules/no-invention.md and the NOS Design ruling block in root comms.md.
+# Base: #133 is on main now (it was the head f22e989a); this PR diffs against its merge-base with origin/main (spec.md section 1). Sources: docs/rules/no-invention.md and the NOS Design ruling block in root comms.md.
 # A1 pins the checks and goldens: @dev implements against them and may not edit them. Run from the repo root of the implementation worktree.
 # FIXTURE REPLAY ONLY: A12 and A13 run on SANITY_FIXTURE_MODE=replay from a sandbox copy of the tracked nos-content-standard capture, K_SERVICE unset, the Sanity API blocked
 # (checks/block-sanity-net.cjs); servers are killed by exact PID from a pidfile, never pkill. Known-pending fixture misses are listed in goldens/values.json fixture.knownMisses with the PR that closes each.
@@ -38,7 +38,7 @@ assertions:
       description: selftest - each clamp reproduces the ruling's 390/1440/2056 column, the weight band edges (31.99 is 400, 32 is 300, 20 is 400, 19.99 is 500), the contrast numbers (olive 5.53, old numeral 4.10), the label tuples reject 12px tracked caps and a 14.5px label, hero fact dd is 20/22/23.2, and no Fraunces role clamp straddles a weight-band edge at 390/1440/2056 or at its min and max
       command: node .agent/memory/project/specs/nos-type-tokens/checks/selftest.mjs
     - id: A3
-      description: Karla is ONE face with a 400-700 range in both components/nos-chrome/fonts.ts and components/nos/NosThemeScope.tsx (discrete 400/500/600/700 faces make 450 render as 500)
+      description: Karla is ONE face with a 400-700 range in components/nos-chrome/fonts.ts, the single localFont owner, and components/nos/NosThemeScope.tsx does not call localFont (discrete 400/500/600/700 faces make 450 render as 500)
       command: node .agent/memory/project/specs/nos-type-tokens/checks/check-static.mjs karla-range
     - id: A4
       description: the prose measure token --nos-measure is 38rem and is used
