@@ -84,10 +84,6 @@ assertions:
       description: both concurrency checks run against the Firebase emulator or an equivalent transaction-faithful harness, not a plain in-memory mock of the transaction
       command: node contracts/checks/conference-workshop-tickets-f4/check-concurrency-tests-use-real-transaction-harness.mjs
 
-    - id: A14
-      description: a full PayFast SANDBOX checkout-to-ITN-to-ticket-issued flow succeeds for the early-bird (day-visitor EB) product
-      command: node contracts/checks/conference-workshop-tickets-f4/check-payfast-sandbox-e2e-early-bird.mjs
-
     - id: A15
       description: lib/payfast.ts is byte-unchanged by this feature — the sandbox flow is exercised, not modified
       command: git diff --quiet HEAD -- lib/payfast.ts
@@ -156,3 +152,9 @@ assertions:
     - id: A26
       description: 'lib/checkout-reservation.ts has no top-level import reaching firebase-admin or lib/data/* (a cheap static grep over its own import lines, never a full build — this file is client-reachable via lib/vendor-stand-pricing.ts). Proven to bite against an in-memory copy with the build-breaking import re-added before asserting the real file passes.'
       command: node contracts/checks/conference-workshop-tickets-f4/check-checkout-reservation-client-safe-imports.mjs
+
+manual_only:
+  - id: A14
+    reason: "PayFast is never used for testing (CLAUDE.md Tech Stack); check-payfast-sandbox-e2e-early-bird.mjs writes to the production Firestore (saoc-webapp): Firestore saoc-webapp orders/tickets plus PayFast sandbox ITN signed locally; run by hand only, with the operator present"
+    description: a full PayFast SANDBOX checkout-to-ITN-to-ticket-issued flow succeeds for the early-bird (day-visitor EB) product
+    command: node contracts/checks/conference-workshop-tickets-f4/check-payfast-sandbox-e2e-early-bird.mjs

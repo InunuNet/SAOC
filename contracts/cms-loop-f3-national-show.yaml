@@ -207,28 +207,6 @@ autonomy: high
 assertions:
   phase: 4
   checks:
-    - id: A1
-      description: >
-        THE positive-path, user-visible-outcome assertion (mandatory per dispatch
-        brief): edits title, location, AND countdownDate together in the deployed
-        Studio (real browser automation), publishes once, calls /api/revalidate, and
-        polls the deployed /national-show page for all three sentinel values while
-        confirming the OLD values are gone (two-sided, not just presence) — bounded at
-        120s / 10s intervals, hard FAIL on timeout, guaranteed baseline-exact cleanup
-        verified via both the dataset and the live page. Covers a text field AND the
-        countdown date together, satisfying "partial wiring can't pass" (title alone
-        wired without location/countdownDate would fail this). GATED: refuses to run
-        (hard fail, no mutation) unless F1's short-TTL fix is confirmed live —
-        assertF1Deployed() in _shared.mjs. Executed live twice during authoring (see
-        "WHAT WAS VERIFIED LIVE" above) — first run surfaced and led to fixing two
-        real bugs in this check's own verification logic (a dataset-read race, and an
-        impossible-to-satisfy pre-implementation cleanup condition); second run
-        confirmed the fixes and correctly FAILED for the honest reason (not wired
-        yet), with cleanup verified on the first attempt. Production independently
-        re-confirmed clean afterward. Expected to keep FAILing until @dev wires these
-        fields.
-      command: node contracts/checks/cms-loop-f3-national-show/check-headline-round-trip.mjs
-
     - id: A2
       description: >
         Regression assertion (mandatory per dispatch brief): the HOME PAGE's
@@ -304,3 +282,27 @@ assertions:
         both corrected the dataset and wired the field. Confirmed live 2026-08-06:
         correctly FAILS today (dataset still references the original seeded asset).
       command: node contracts/checks/cms-loop-f3-national-show/check-hero-visual-neutrality.mjs
+
+manual_only:
+  - id: A1
+    reason: "check-headline-round-trip.mjs writes to the production Sanity dataset (project 26yfbug4): Sanity 26yfbug4/production nationalShow doc via client.patch().set().commit(); sentinel residue once sat on the live site for 3 days; run by hand only, with the operator present"
+    description: >
+      THE positive-path, user-visible-outcome assertion (mandatory per dispatch
+      brief): edits title, location, AND countdownDate together in the deployed
+      Studio (real browser automation), publishes once, calls /api/revalidate, and
+      polls the deployed /national-show page for all three sentinel values while
+      confirming the OLD values are gone (two-sided, not just presence) — bounded at
+      120s / 10s intervals, hard FAIL on timeout, guaranteed baseline-exact cleanup
+      verified via both the dataset and the live page. Covers a text field AND the
+      countdown date together, satisfying "partial wiring can't pass" (title alone
+      wired without location/countdownDate would fail this). GATED: refuses to run
+      (hard fail, no mutation) unless F1's short-TTL fix is confirmed live —
+      assertF1Deployed() in _shared.mjs. Executed live twice during authoring (see
+      "WHAT WAS VERIFIED LIVE" above) — first run surfaced and led to fixing two
+      real bugs in this check's own verification logic (a dataset-read race, and an
+      impossible-to-satisfy pre-implementation cleanup condition); second run
+      confirmed the fixes and correctly FAILED for the honest reason (not wired
+      yet), with cleanup verified on the first attempt. Production independently
+      re-confirmed clean afterward. Expected to keep FAILing until @dev wires these
+      fields.
+    command: node contracts/checks/cms-loop-f3-national-show/check-headline-round-trip.mjs

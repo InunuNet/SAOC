@@ -308,25 +308,6 @@ assertions:
       command: node contracts/checks/f2-deploy-next16/etag-changed-deployed.mjs
 
     # ---------- A9 — PRIMARY: positive-path secret resolution (the actual defect) ----------
-    - id: A9
-      description: >-
-        On the deployed host, POST /api/revalidate with the CORRECT x-sanity-secret must
-        return 200, while a wrong secret and an absent secret must each still return 401 —
-        all three conditions checked in one run so weakening the auth guard (e.g. removing
-        it) cannot pass this check. Also checks GET /api/draft?secret=<correct>&slug=/
-        returns a 3xx redirect (not followed), while wrong/absent secret still return 401.
-        This is the assertion the original six missed: every prior check exercised only the
-        negative path, so a green gate certified a feature where draft-mode preview and
-        Sanity webhook revalidation were completely dead in prod. FAILED against the LIVE
-        2026-07-30 baseline (see this contract's header) with 401 for the correct secret on
-        both routes — a genuine, currently-reproducible production defect, not a stale
-        baseline. Reads the secret via `grep '^SANITY_REVALIDATE_SECRET=' .env.local | cut
-        -d= -f2-` (never `node -e "require('dotenv')..."` — the dotenv banner pollutes
-        stdout and silently corrupts the header value) and asserts it is exactly 43 chars
-        before use; the value itself is never logged or printed. Unreachable host, missing
-        secret, or a browser/fetch failure is a hard FAIL, never a SKIP (Athanor#1322).
-      command: node contracts/checks/f2-deploy-next16/positive-path-secret-resolution-deployed.mjs
-
     # ---------- A10 — build-identity discriminator (resolves the df5ee43 contradiction) ----------
     - id: A10
       description: >-
@@ -348,3 +329,24 @@ assertions:
         token, an unreachable API, or a target SHA unknown even after `git fetch origin` is
         a hard FAIL, never a SKIP (Athanor#1322).
       command: node contracts/checks/f2-deploy-next16/build-identity-deployed.mjs
+
+manual_only:
+  - id: A9
+    reason: "positive-path-secret-resolution-deployed.mjs sends a state-changing request to the deployed host: deployed host POST /api/revalidate with the real SANITY_REVALIDATE_SECRET (ISR cache write); run by hand only, with the operator present"
+    description: >-
+      On the deployed host, POST /api/revalidate with the CORRECT x-sanity-secret must
+      return 200, while a wrong secret and an absent secret must each still return 401 —
+      all three conditions checked in one run so weakening the auth guard (e.g. removing
+      it) cannot pass this check. Also checks GET /api/draft?secret=<correct>&slug=/
+      returns a 3xx redirect (not followed), while wrong/absent secret still return 401.
+      This is the assertion the original six missed: every prior check exercised only the
+      negative path, so a green gate certified a feature where draft-mode preview and
+      Sanity webhook revalidation were completely dead in prod. FAILED against the LIVE
+      2026-07-30 baseline (see this contract's header) with 401 for the correct secret on
+      both routes — a genuine, currently-reproducible production defect, not a stale
+      baseline. Reads the secret via `grep '^SANITY_REVALIDATE_SECRET=' .env.local | cut
+      -d= -f2-` (never `node -e "require('dotenv')..."` — the dotenv banner pollutes
+      stdout and silently corrupts the header value) and asserts it is exactly 43 chars
+      before use; the value itself is never logged or printed. Unreachable host, missing
+      secret, or a browser/fetch failure is a hard FAIL, never a SKIP (Athanor#1322).
+    command: node contracts/checks/f2-deploy-next16/positive-path-secret-resolution-deployed.mjs

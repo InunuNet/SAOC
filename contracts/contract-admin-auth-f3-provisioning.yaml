@@ -93,59 +93,8 @@ assertions:
       timeout_seconds: 240
 
     # ---------- grant: fresh-create + idempotency ----------
-    - id: A-GRANT-01
-      description: >-
-        F3 - scripts/admin-grant.ts, run as a real child process, creates a never-before-seen
-        account, sets admin:true, sets emailVerified:true. Re-run on the same email (now taking
-        the pre-existing-account branch, so it is run with --existing) is idempotent - no
-        error, no second account (same uid), same end state. No server dependency (Admin SDK
-        only).
-      command: node contracts/checks/admin-auth-f3-provisioning/check-grant-fixture.mjs
-      timeout_seconds: 90
-
     # ---------- grant: pre-registration / pre-hijacking defence (2026-08-15 amendment) ----------
-    - id: A-GRANT-02
-      description: >-
-        F3 - pre-registration/pre-hijacking defence. Against an account scripts/admin-grant.ts
-        did NOT create (password provider, emailVerified:false - what a self-registered
-        squatter looks like, since the accounts:signUp endpoint is still open), running
-        admin-grant.ts WITHOUT --existing must refuse: exit non-zero, no admin claim set, no
-        emailVerified change, and the account's provenance (creationTime/uid) printed before
-        refusing. No server dependency (Admin SDK only).
-      command: node contracts/checks/admin-auth-f3-provisioning/check-grant-existing-refused.mjs
-      timeout_seconds: 90
-
-    - id: A-GRANT-03
-      description: >-
-        F3 - with the explicit --existing opt-in, granting onto the SAME pre-existing account
-        must succeed (admin:true set) but must NEVER set emailVerified:true on an account the
-        script did not itself create - emailVerified stays false, and no password reset link is
-        printed on this branch. This is the load-bearing fix: even a deliberately-confirmed
-        grant cannot manufacture a verified email for a mailbox the operator does not control.
-        No server dependency (Admin SDK only).
-      command: node contracts/checks/admin-auth-f3-provisioning/check-grant-existing-explicit.mjs
-      timeout_seconds: 90
-
     # ---------- revoke: the mission's real point ----------
-    - id: A-REVOKE-01
-      description: >-
-        F3 - the core proof. scripts/admin-grant.ts provisions a fixture, a real session cookie
-        is minted and confirmed working, then scripts/admin-revoke.ts is run as a real child
-        process and the SAME cookie is confirmed refused at /admin and /api/admin/tickets
-        immediately (not after 5 days). Also confirms the admin claim reads back false and that
-        a FRESH session-mint attempt for the same identity is refused, proving claim-clearing
-        works independently of session revocation. Requires the ADMIN_EMAIL_ALLOWLIST
-        precondition above.
-      command: node contracts/checks/admin-auth-f3-provisioning/check-revoke-effective.mjs
-      timeout_seconds: 120
-
-    - id: A-REVOKE-02
-      description: >-
-        F3 - revoking an email with no Firebase Auth account behind it is a safe no-op (exit 0,
-        explanatory stdout), never a crash. No server dependency.
-      command: node contracts/checks/admin-auth-f3-provisioning/check-revoke-idempotent.mjs
-      timeout_seconds: 60
-
     # ---------- structural: scripts exist, use the right SDK, never leak secrets ----------
     - id: A-STRUCT-01
       description: >-
@@ -195,3 +144,56 @@ assertions:
         `bash contracts/checks/admin-auth-hardening/server-ctl.sh stop` by hand.
       command: bash contracts/checks/admin-auth-hardening/server-ctl.sh stop
       timeout_seconds: 30
+
+manual_only:
+  - id: A-GRANT-01
+    reason: "check-grant-fixture.mjs writes to the production Firebase Auth project: Firebase Auth saoc-webapp via identitytoolkit signUp/delete and scripts/admin-grant.ts custom claims; run by hand only, with the operator present"
+    description: >-
+      F3 - scripts/admin-grant.ts, run as a real child process, creates a never-before-seen
+      account, sets admin:true, sets emailVerified:true. Re-run on the same email (now taking
+      the pre-existing-account branch, so it is run with --existing) is idempotent - no
+      error, no second account (same uid), same end state. No server dependency (Admin SDK
+      only).
+    command: node contracts/checks/admin-auth-f3-provisioning/check-grant-fixture.mjs
+    timeout_seconds: 90
+  - id: A-GRANT-02
+    reason: "check-grant-existing-refused.mjs writes to the production Firebase Auth project: Firebase Auth saoc-webapp via identitytoolkit signUp/delete and scripts/admin-grant.ts custom claims; run by hand only, with the operator present"
+    description: >-
+      F3 - pre-registration/pre-hijacking defence. Against an account scripts/admin-grant.ts
+      did NOT create (password provider, emailVerified:false - what a self-registered
+      squatter looks like, since the accounts:signUp endpoint is still open), running
+      admin-grant.ts WITHOUT --existing must refuse: exit non-zero, no admin claim set, no
+      emailVerified change, and the account's provenance (creationTime/uid) printed before
+      refusing. No server dependency (Admin SDK only).
+    command: node contracts/checks/admin-auth-f3-provisioning/check-grant-existing-refused.mjs
+    timeout_seconds: 90
+  - id: A-GRANT-03
+    reason: "check-grant-existing-explicit.mjs writes to the production Firebase Auth project: Firebase Auth saoc-webapp via identitytoolkit signUp/delete and scripts/admin-grant.ts custom claims; run by hand only, with the operator present"
+    description: >-
+      F3 - with the explicit --existing opt-in, granting onto the SAME pre-existing account
+      must succeed (admin:true set) but must NEVER set emailVerified:true on an account the
+      script did not itself create - emailVerified stays false, and no password reset link is
+      printed on this branch. This is the load-bearing fix: even a deliberately-confirmed
+      grant cannot manufacture a verified email for a mailbox the operator does not control.
+      No server dependency (Admin SDK only).
+    command: node contracts/checks/admin-auth-f3-provisioning/check-grant-existing-explicit.mjs
+    timeout_seconds: 90
+  - id: A-REVOKE-01
+    reason: "check-revoke-effective.mjs writes to the production Firebase Auth project: Firebase Auth saoc-webapp via identitytoolkit signUp/delete and scripts/admin-grant.ts custom claims; run by hand only, with the operator present"
+    description: >-
+      F3 - the core proof. scripts/admin-grant.ts provisions a fixture, a real session cookie
+      is minted and confirmed working, then scripts/admin-revoke.ts is run as a real child
+      process and the SAME cookie is confirmed refused at /admin and /api/admin/tickets
+      immediately (not after 5 days). Also confirms the admin claim reads back false and that
+      a FRESH session-mint attempt for the same identity is refused, proving claim-clearing
+      works independently of session revocation. Requires the ADMIN_EMAIL_ALLOWLIST
+      precondition above.
+    command: node contracts/checks/admin-auth-f3-provisioning/check-revoke-effective.mjs
+    timeout_seconds: 120
+  - id: A-REVOKE-02
+    reason: "check-revoke-idempotent.mjs writes to the production Firebase Auth project: Firebase Auth saoc-webapp via identitytoolkit signUp/delete and scripts/admin-grant.ts custom claims; run by hand only, with the operator present"
+    description: >-
+      F3 - revoking an email with no Firebase Auth account behind it is a safe no-op (exit 0,
+      explanatory stdout), never a crash. No server dependency.
+    command: node contracts/checks/admin-auth-f3-provisioning/check-revoke-idempotent.mjs
+    timeout_seconds: 60
