@@ -100,3 +100,6 @@ FAIL (38):
 
 ## Amendment 2 (NR-7): check-nos-page.mts gains "h2 Talk to us about sponsorship has class nos-card-title"
 Red on main (`nos-sp-card-title` only) and red on the dev's 66f5d66e (same h2 unchanged); green once the class is added (verified by a one-line trial, discarded).
+
+## Amendment 3 (NOS Design, success box NR-4 and consent label): check-nos-style.mts (A11) and check-deployed-render.mjs (A12)
+A11 adds: no bare `label` rule (the field-label rule must exclude the consent label via :not([for='se-consent']) or a checkbox :has/:not), a consent rule (Karla 450 16px / 1.5), and a `[role='status']` rule under the nos scope (no border, zero padding, transparent). Red on main (46 failing lines now) and on 66f5d66e; a throwaway CSS trial with those rules made it pass, then was discarded. A12 adds consent computed style plus first-line checkbox alignment, and a mocked-API success state (page.route fulfils 201; nothing reaches the server): 0 borders and 0 padding inside the success state, transparent, focus on #enquire-success-heading, card x and width unchanged. A12 syntax-checked and exits 77 without credentials; it cannot run until deploy.
