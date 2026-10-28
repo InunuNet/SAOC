@@ -18,8 +18,15 @@ export interface RouteHeroProps extends Omit<PageHeroProps, 'image' | 'imagePosi
   children?: ReactNode;
 }
 
-export function RouteHero({ route, children, ...heroProps }: RouteHeroProps) {
+// The event hero's facts are left-aligned to the h1 edge (NOS Design 2026-10-27); every other hero centres them.
+const EVENT_HERO_ROUTE = '/events/[slug]';
+
+export function RouteHero({ route, children, ...rest }: RouteHeroProps) {
   const photo = saocHeroPhoto(route);
+  const heroProps: PageHeroProps = {
+    factsAlign: route === EVENT_HERO_ROUTE ? 'start' : undefined,
+    ...rest,
+  };
   return (
     <>
       {photo.typographic ? (

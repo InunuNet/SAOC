@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { LegalBreadcrumb } from '@/components/legal/LegalBreadcrumb';
 import { NosHero } from '@/components/nos/NosHero';
 import { DocumentLayout, type DocumentIndexEntry } from '@/components/ui/DocumentLayout';
+import { DraftNotice } from '@/components/ui/DraftNotice';
 import { RouteHero } from '@/components/ui/RouteHero';
 import { ProvisionalFigure } from '@/components/ui/ProvisionalFigure';
 import { PROVISIONAL_REFUND_POLICY } from '@/lib/provisional-figures';
@@ -79,12 +80,11 @@ export default async function RefundsPage() {
 
       <DocumentLayout index={INDEX}>
         <div className="doc-prose">
-          <p className="text-[14px] text-muted">
-            <strong className="font-medium">Draft pending legal review.</strong>{' '}
+          <DraftNotice leadIn="Draft pending legal review.">
             This page has been drafted with AI assistance and has not yet been reviewed by a
             qualified legal professional. It does not constitute legal advice and should not be
             relied upon as SAOC&rsquo;s final policy until formal review is complete.
-          </p>
+          </DraftNotice>
 
           <h2 id="terms-pending-confirmation" className="doc-h2">
             Terms pending confirmation
