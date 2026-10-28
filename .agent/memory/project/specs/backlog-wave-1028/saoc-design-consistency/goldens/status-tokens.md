@@ -1,6 +1,8 @@
 # SAOC status tokens (NOS Design 2026-10-28)
 
-On the SAOC base (app/globals.css :root): --status-error #8f2834, --status-success #2f5d3a, --status-warning #7a5a12. Text plus icon only, never colour alone. Error summaries: same token as a 2px border (`border-2 border-[var(--status-error)]`), no tint.
+On the SAOC base (app/globals.css :root): --status-error #8f2834, --status-success #2f5d3a, --status-warning #7a5a12. Text plus icon only, never colour alone. Error summaries on a light ground: same token as a 2px border (`border-2 border-[var(--status-error)]`), no tint.
+
+DARK GROUNDS (NOS Design ruling, option c, footer newsletter error): new token --status-error-on-dark #E8959D (6.62:1 on the footer #22281f, allowed in A6 as a ruled token). On a dark ground a status summary is a 1px border plus the icon in --status-error-on-dark, ivory text, and NO fill: the "no tint" rule stands, dark grounds use the -on-dark token and never a filled panel. The input in error takes the same border, with aria-invalid="true" and aria-describedby pointing at the summary; the focus ring stays ivory. Gate (check-newsletter-error.mjs, 1440 and 390, footer newsletter error state): text >=4.5:1, border and icon >=3:1 against #22281f, no fill. Do not reuse the hex on any other ground without measuring it; a success state or the NOS royal footer that falls under 3:1 is reported, not shipped.
 Today --status-error is referenced by components/vendors/* and defined only in app/(nos)/national-show/nos-theme.css; on the SAOC base it resolves to nothing.
 
 Note for the dev: the vendor forms render only on the NOS host (SAOC host 308-redirects /national-show/vendors/apply to nos.localhost), so the SAOC-host guarantee is the token itself plus the static summary check.
@@ -11,3 +13,5 @@ Reference ring = hero CTA ring in components/home/Hero.tsx:33: `outline 2px soli
 
 # Newsletter contrast (F1a)
 Measured on main: footer ground #22281f, field fill ivory/10, placeholder ivory/40 = 3.00:1 (need 4.5), border ivory/20 = 1.85:1 (need 3). Existing tokens reach it without a new colour: --ivory (#f4f3ec) or --primary-100 (#e8e6dc) at higher alpha/solid for the placeholder, --accent-soft (#c2b393) or --ivory for the border. No gap to report; dev picks among existing tokens and the check measures.
+
+Measured grounds for #E8959D (WCAG ratio): #22281f SAOC footer 6.62, #211A57 NOS royal 6.83, #1A1445 NOS royal-900 7.49, #0B0A14 NOS black 8.63. All pass 3:1 for border and icon and 4.5:1 for text. Reported, not shipped: the light-ground status tokens fail on the dark footer (--status-success #2f5d3a 1.97:1, --status-warning #7a5a12 2.37:1, --status-error #8f2834 1.81:1), so a footer success or warning summary must not use them; the footer success line today is plain ivory text with no status colour. A dark-ground success or warning needs its own ruled -on-dark token, measured first.
