@@ -1,0 +1,19 @@
+path width headerH token headerPos indexTop indexBottom headingTop spt verdict
+/national-show/faq 390 146.8 0.0 relative 0.0 48.0 63.8 0px ok
+/national-show/plan-your-visit 390 146.8 0.0 relative 0.0 48.0 63.6 0px ok
+/national-show/faq 767 154.9 0.0 relative 0.0 48.0 64.0 0px ok
+/national-show/plan-your-visit 767 154.9 0.0 relative 0.0 48.0 63.5 0px ok
+/national-show/faq 768 96.9 0.0 sticky 0.0 48.0 64.1 104px FAIL: header 96.9 != token 0; scroll-padding-top 104px; index bar top 0.0 under header bottom 96.9; heading 64.1 under header bottom 96.9
+/national-show/plan-your-visit 768 96.9 0.0 sticky 0.0 48.0 64.1 104px FAIL: header 96.9 != token 0; scroll-padding-top 104px; index bar top 0.0 under header bottom 96.9; heading 64.1 under header bottom 96.9
+/national-show/faq 779 96.9 0.0 sticky 0.0 48.0 63.8 104px FAIL: header 96.9 != token 0; scroll-padding-top 104px; index bar top 0.0 under header bottom 96.9; heading 63.8 under header bottom 96.9
+/national-show/plan-your-visit 779 96.9 0.0 sticky 0.0 48.0 63.6 104px FAIL: header 96.9 != token 0; scroll-padding-top 104px; index bar top 0.0 under header bottom 96.9; heading 63.6 under header bottom 96.9
+/national-show/faq 780 96.9 0.0 sticky 97.0 145.0 160.9 104px FAIL: header 96.9 != token 0; scroll-padding-top 104px
+/national-show/plan-your-visit 780 96.9 0.0 sticky 97.0 145.0 160.7 104px FAIL: header 96.9 != token 0; scroll-padding-top 104px
+/national-show/faq 1023 96.9 0.0 sticky 97.0 145.0 161.3 104px FAIL: header 96.9 != token 0; scroll-padding-top 104px
+/national-show/plan-your-visit 1023 96.9 0.0 sticky 97.0 145.0 160.5 104px FAIL: header 96.9 != token 0; scroll-padding-top 104px
+/national-show/faq 1024 96.9 0.0 sticky 112.4 701.8 112.4 104px FAIL: header 96.9 != token 0; scroll-padding-top 104px
+/national-show/plan-your-visit 1024 96.9 0.0 sticky 100.0 570.9 111.7 104px FAIL: header 96.9 != token 0; scroll-padding-top 104px
+/national-show/faq 1440 96.9 0.0 sticky 111.9 711.9 111.9 104px FAIL: header 96.9 != token 0; scroll-padding-top 104px
+/national-show/plan-your-visit 1440 96.9 0.0 sticky 100.0 568.0 111.6 104px FAIL: header 96.9 != token 0; scroll-padding-top 104px
+/national-show/faq 2056 96.9 0.0 sticky 111.9 711.9 111.9 104px FAIL: header 96.9 != token 0; scroll-padding-top 104px
+/national-show/plan-your-visit 2056 96.9 0.0 sticky 100.0 568.0 112.4 104px FAIL: header 96.9 != token 0; scroll-padding-top 104px

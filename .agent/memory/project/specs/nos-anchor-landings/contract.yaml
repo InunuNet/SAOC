@@ -1,0 +1,77 @@
+schema: athanor.contract/v1
+slug: nos-anchor-landings
+goal: Every NOS hash target (faq, plan-your-visit, sponsors) lands 24px below the pinned chrome at 390, 767, 768, 779, 780, 1024, 1440 and 2056, with the header height, the 24px air and the index-bar height each defined once as a token
+created_at: '2026-10-28'
+autonomy: high
+
+features:
+  - id: F1
+    name: NOS anchor landings - --nos-header-h / --nos-landing-air / --doc-index-bar-h tokens, doc variables switched at 768, generic hash-target rules derived from the tokens
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/nos-anchor-landings/goldens/expected-landings.md
+  - .agent/memory/project/specs/nos-anchor-landings/goldens/expected-nos-structure-blocks.css
+  - .agent/memory/project/specs/nos-anchor-landings/goldens/red-main-a13-8w.txt
+  - .agent/memory/project/specs/nos-anchor-landings/goldens/red-main-probe-chrome.txt
+  - .agent/memory/project/specs/nos-anchor-landings/goldens/codex-qa-prompt.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: "The vendored A13 survey script is byte-identical to SAOC's d8280e06 copy (provenance in PROVENANCE.md). RED if edited."
+      command: test "$(shasum -a 256 .agent/memory/project/specs/nos-anchor-landings/checks/check-nos-anchor-landings.mjs | cut -d' ' -f1)" = ba7c95f2e4e74370def555a30374a4dd4ec804c7ccb798e03137e8250214dcaf
+    - id: A2
+      description: "The doc variables switch at 768 (--doc-index-top in a min-width: 768px block, no 780px in the block, the <1024 index-band heading override present). RED on main: the block switches at 780."
+      command: node .agent/memory/project/specs/nos-anchor-landings/checks/check-static.mjs bp768
+    - id: A3
+      description: "Tokens defined once: --nos-header-h 97px and --nos-landing-air 24px in the nos-chrome.css :root, --doc-index-bar-h 48px in globals.css and used by the index bar height; none redefined with a literal in nos-structure.css. RED on main: no token."
+      command: node .agent/memory/project/specs/nos-anchor-landings/checks/check-static.mjs token-def
+    - id: A4
+      description: "The tokens are used: --doc-index-top derives from --nos-header-h, --doc-scroll-margin from --nos-landing-air and --doc-index-bar-h, the generic hash-target rules (plain and ticketing-bar) from --nos-header-h and --nos-landing-air. RED on main."
+      command: node .agent/memory/project/specs/nos-anchor-landings/checks/check-static.mjs token-use
+    - id: A5
+      description: "No literal 97, 121, 112, 136 or 80 in the edited rules (the doc-variable block and the generic hash-target rules, comments excluded). RED on main: 112, 136, 80 and 97 are all literals."
+      command: node .agent/memory/project/specs/nos-anchor-landings/checks/check-static.mjs no-literals
+    - id: A6
+      description: "The :2740 comment is corrected: 'not sticky under 780' is gone and the comment names 768 and --nos-header-h. RED on main."
+      command: node .agent/memory/project/specs/nos-anchor-landings/checks/check-static.mjs comment
+    - id: A7
+      description: "Diff scope: only nos-structure.css, nos-chrome.css, globals.css, docs/nos-anchor-landings.md and this spec changed; no SAOC-lane file (components/sponsors/*, sponsors/page.tsx, NewsletterSignup.tsx, app/layout.tsx), CLAUDE.md, AGENTS.md, .claude, execution, test-results or .env*."
+      command: node .agent/memory/project/specs/nos-anchor-landings/checks/check-diff-scope.mjs
+    - id: A8
+      description: "tsc --noEmit passes."
+      command: pnpm exec tsc --noEmit
+      timeout_seconds: 300
+    - id: A9
+      description: "eslint passes on the touched roots."
+      command: pnpm exec eslint "app/(nos)" components/nos-chrome
+      timeout_seconds: 300
+    - id: A10
+      description: "Production build passes on Sanity fixture replay (zero Sanity API requests, zero fixture misses), from a clean .next (the script refuses a stale one). Leaves the .next the rendered gate serves."
+      command: bash .agent/memory/project/specs/nos-anchor-landings/checks/build.sh
+      timeout_seconds: 900
+    - id: A11
+      description: "RENDERED gate: the vendored A13 survey at 390, 767, 768, 779, 780, 1024, 1440 and 2056 - every /faq, /plan-your-visit and /sponsors hash target lands 24 +/-2 below the pinned chrome (header plus sub-nav bar; 0 when nothing is pinned) - and the chrome probe: header renders --nos-header-h +/-1 from 768, html scroll-padding-top is 0px, the index bar never sits under the header, no heading under the bar. RED on main (176 of 176 asserted landings fail). Needs SAOC's card fix (scroll-padding 0 on the NOS host and the sponsors card margin) on the base."
+      command: bash .agent/memory/project/specs/nos-anchor-landings/checks/gate-rendered.sh
+      timeout_seconds: 1200
+    - id: A12
+      description: "Docs: docs/nos-anchor-landings.md exists and names the three tokens, the 768 switch and the measured header height."
+      command: grep -q "nos-header-h" docs/nos-anchor-landings.md && grep -q "nos-landing-air" docs/nos-anchor-landings.md && grep -q "doc-index-bar-h" docs/nos-anchor-landings.md && grep -q "768" docs/nos-anchor-landings.md
+    - id: A13
+      description: Codex adversarial review of the whole diff against the rulings and goldens
+      type: codex_qa
+      target: .agent/memory/project/specs/nos-anchor-landings/goldens/codex-qa-prompt.md
+      timeout_seconds: 1300
+      required: true
+    - id: A14
+      description: BrowserAgent against the deployed site is not required for this CSS change (the rendered A11 gate is the browser evidence); declared non-required for the triad linter
+      type: browser_deployed_check
+      target: .agent/memory/scratch/nos-anchor-landings-browser-manifest.json
+      required: false
+    - id: A15
+      description: gws inbox check not applicable (no email sent); declared non-required for the triad linter
+      type: gws_inbox_check
+      target: .agent/memory/scratch/nos-anchor-landings-gws-manifest.json
+      required: false

@@ -1,0 +1,61 @@
+/* GOLDEN: the target text of the two nos-structure.css regions this build rewrites. Dev reproduces these blocks (comments may be tightened,
+   selectors, properties and token use may not). Everything else in the file is untouched. */
+
+/* ---- Region A: replaces the "Sticky values the shared CSS reads (SAOC 9bff74a6)" comment and the three .nos-theme media blocks ---- */
+/* Sticky values the shared CSS reads (SAOC 9bff74a6): the aside sticks at 100px; an h2 lands 24px (--nos-landing-air) below the
+   pinned chrome. The header pins from 768 (it scrolls away below that; measured bottom 97, --nos-header-h); under 1024 the index is
+   a 48px sticky bar (--doc-index-bar-h) under it, from 1024 a side card, so the pinned chrome is the header alone there.
+   --doc-scroll-margin is the total landing distance of an h2 from the viewport top, not a remainder. */
+.nos-theme {
+  --doc-aside-top: 100px;
+  --doc-index-top: env(safe-area-inset-top, 0px);
+  --doc-scroll-margin: calc(var(--doc-index-top) + var(--doc-index-bar-h) + var(--nos-landing-air));
+}
+@media (min-width: 768px) {
+  .nos-theme {
+    --doc-index-top: calc(env(safe-area-inset-top, 0px) + var(--nos-header-h));
+  }
+}
+@media (min-width: 1024px) {
+  .nos-theme {
+    --doc-scroll-margin: calc(var(--doc-index-top) + var(--nos-landing-air));
+  }
+}
+@media (max-width: 1023.98px) {
+  /* globals.css lands an index-band heading 16px under the bar; NOS lands it by the same rule as every band. */
+  .nos-theme .doc-layout--index [data-doc-main] .doc-h2[id] {
+    scroll-margin-top: calc(var(--doc-scroll-margin) - var(--scroll-padding-top, 0px));
+  }
+}
+
+/* ---- Region B: replaces the four 112px hash-target rules (data-nos-group, [id], and the two ticketing-bar variants) ---- */
+.nos-theme [data-nos-group] {
+  scroll-margin-top: var(--nos-landing-air);
+}
+
+/* Hash links land 24px below whatever is pinned: nothing under 768, the header from 768 (nos-chrome.css zeroes html scroll-padding-top). */
+.nos-theme [id] {
+  scroll-margin-top: var(--nos-landing-air);
+}
+@media (min-width: 768px) {
+  .nos-theme [data-nos-group],
+  .nos-theme [id] {
+    scroll-margin-top: calc(var(--nos-header-h) + var(--nos-landing-air));
+  }
+}
+/* Ticketing pages: the sticky testing bar (44px from 700px, 48px from 768px) sits above the header. */
+@media (min-width: 700px) {
+  body:has([data-ticketing-test-bar]) .nos-theme [id] {
+    scroll-margin-top: calc(var(--nos-landing-air) + 44px);
+  }
+}
+@media (min-width: 768px) {
+  body:has([data-ticketing-test-bar]) .nos-theme [id] {
+    scroll-margin-top: calc(var(--nos-header-h) + var(--nos-landing-air) + 48px);
+  }
+}
+
+/* ---- nos-chrome.css :root additions (after --nc-ease) ---- */
+/*  --nos-header-h: 97px;      rendered height of the pinned NOS header from 768 (measured 96.9px at 768-2056); probe-chrome.mjs fails if it drifts
+    --nos-landing-air: 24px;   clear space between pinned chrome and a landed hash target (NOS Design 2026-10-28) */
+/* ---- globals.css: html block next to --scroll-padding-top gets  --doc-index-bar-h: 48px;  and the index bar rule's  height: 48px  becomes  height: var(--doc-index-bar-h, 48px); ---- */
