@@ -42,9 +42,14 @@ function toCards(partners?: SanityPartner[] | null): PartnerCard[] {
 }
 
 // The arrow shares the title's baseline but is set in 20px, so its cap midline sits lower than the
-// title's. Lift it by half the cap-height difference (Crimson Pro cap height 0.583em) so the shaft
-// sits on the title's cap midline; the title is clamp(28px, 3.2vw, 42px).
-const PARTNER_ARROW_LIFT = 'calc((clamp(28px, 3.2vw, 42px) - 20px) * -0.2915)';
+// title's. Lift it by half the difference between the title's T height and the arrow's own cap
+// height (the `cap` unit the svg is positioned with), so the shaft lands on the title's cap midline.
+// Crimson Pro (app/fonts/crimson-pro, read from the shipped woff2): T glyph yMax 591 / 1024
+// unitsPerEm = 0.5771em (canvas T actualBoundingBoxAscent agrees); OS/2 sCapHeight 587 / 1024 =
+// 0.5732em. The title is clamp(28px, 3.2vw, 42px) and the arrow is 20px.
+const CRIMSON_T_HEIGHT_EM = 0.5771;
+const CRIMSON_CAP_HEIGHT_EM = 0.5732;
+const PARTNER_ARROW_LIFT = `calc((clamp(28px, 3.2vw, 42px) * ${CRIMSON_T_HEIGHT_EM} - 20px * ${CRIMSON_CAP_HEIGHT_EM}) * -0.5)`;
 
 export function PartnersSection({ partners }: PartnersSectionProps) {
   const cards = toCards(partners);
