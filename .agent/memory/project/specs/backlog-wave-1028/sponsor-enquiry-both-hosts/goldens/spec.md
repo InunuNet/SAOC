@@ -37,3 +37,24 @@ All form labels, the heading "Sponsorship enquiry", consent label, success strin
 
 ## E2E (A9, post-deploy, required:false)
 Run from the project root after deploy. Touches only Firestore collection `sponsorEnquiries`, docs with `contactName` exactly `E2E-TEST sponsor-enquiry-both-hosts <nonce> saoc|nos` (two docs, deleted by the script; it refuses to delete unless exactly one matches). It also triggers 2 admin notices per allowlist recipient and 2 visitor acknowledgements to `e2e-test@example.com` (reserved, undeliverable); mail cannot be unsent. Beta Basic Auth and `FIREBASE_ADMIN_*` are read in-script, never printed. Assumes `nos.saoc.co.za` is the live NOS host (apphosting.yaml) and shares the Firestore project in `.env.local`.
+
+---
+# Amendment 2026-10-28: NOS Design rulings, D2 in scope, A9 gate
+
+## NOS Design rulings (final; they answer Questions 1-5 above)
+- No new mailto line. The existing inline mailto links in Lee-Ann's FAQ answers are her sourced copy and stay.
+- The form sits in the document column after "Become a sponsor": `<SponsorEnquirySection site="nos" inDocument />` (A3, A11), so the heading is the NOS `doc-h2` role.
+- Static warm card, declared in the NOS stylesheets (`app/(nos)/national-show/nos-structure.css`) as flat, unlayered rules scoped to `[data-sponsor-enquiry='nos']` so SAOC and the shared form are untouched. The mechanism is fixed by the shared form being SAOC-pinned (A4): styling is CSS, not a class change in the form. Unlayered is required: the form's Tailwind utilities are layered and an unlayered rule beats them (same reason as the r55 note in nos-theme.css). Values (A11): card background #F3F2D6, radius 16, `--shadow-sm`, padding 32 (24 below 768); fields column max-width 640; labels Karla 500 14px ink, no tracking, no caps; inputs 1px `--rule` border, radius 8, min-height 48 (16px text is already global); focus ring 2px violet (`--accent` #7E3F97); submit takes the NOS primary Button look (bg `--primary`, text `--ivory`, Karla 700 14px uppercase, min-height 50, `--radius-button`); anchor `scroll-margin-top` 121px at >=700 and 68px below 700 (this overrides the section's Tailwind `scroll-mt-36`).
+- Success state is the heading only, focused, inside `role="status"`, replacing the form in place. That is what the shared form already does for `site="nos"` (the body renders for saoc only), so no form change is needed; A4 allows edits inside the success block only and pins SAOC's heading plus body.
+- The CTA label stays "Talk to us about sponsorship".
+- Anchor gate (NOS Design): after the CTA click the card top sits between chrome bottom +16 and +40 at 1440 and 390. Cannot be static; A12 measures it with Chromium on the deployed page (post-deploy, non-required). A11 pins the declared 121/68 values the gate depends on.
+
+## D2 is now in scope (NOS Design P1, lead agrees): the acknowledgement follows the submission host
+`sendSponsorEnquiryConfirmationEmail({ contactName, email, site })`: `site` is `'saoc' | 'nos' | null | undefined`; anything but `'nos'` means the SAOC identity. SAOC: sender `FORMS_FROM_ADDRESS`, `site: 'saoc'` on the mailer call (reply-to follows), subject `We received your sponsorship enquiry — SAOC`. NOS: sender `NOS_FORMS_FROM_ADDRESS`, `site: 'nos'`, subject names the National Orchid Show (composed from the existing label, same as the admin notice). The email preview takes the same label. The route passes `site: doc.source`. Body copy, recipient and the single send do not change. This is a bug fix on the existing email, not a new email (A10, A4). The admin notice sender stays `FORMS_FROM_ADDRESS` for both hosts (internal; not ruled; flag only if Design wants otherwise).
+
+## A9 can no longer email real admins by accident
+`SPONSOR_E2E_ADMIN_RECIPIENTS` (comma-separated) must be set or A9 exits 77. It is the operator's statement of who receives the admin notices, i.e. that the deployed `ADMIN_EMAIL_ALLOWLIST` secret (not readable by the script) equals it, which in practice means pointing the secret at a test inbox for the run. As a tripwire A9 also exits 77 when `.env.local` has a different `ADMIN_EMAIL_ALLOWLIST`. Not set by default anywhere, so it skips in every gate.
+
+## New open items for NOS Design (small)
+- The shared success box is `border border-rule bg-parchment p-8`; inside the warm card that is a box in a box. Leave, or neutralise it (background transparent, no border, no padding) under the nos scope? Not ruled, not asserted.
+- The label rule restyles every `label` in the card, including the consent label (SAOC 15px sans); intended?
