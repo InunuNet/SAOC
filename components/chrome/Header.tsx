@@ -91,7 +91,7 @@ export function Header() {
             href="/"
             data-hd="brand"
             aria-current={navAriaCurrent(pathname, '/')}
-            className="mr-3 flex aspect-[405/70] w-[min(100%,405px)] shrink-0 items-center rounded-sm max-[780px]:mr-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+            className="mr-3 flex aspect-[405/70] w-[min(100%,405px)] shrink-0 items-center rounded-sm max-[780px]:mr-0 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
             aria-label="South African Orchid Council — Making a difference since 1968"
           >
             <Image
@@ -171,7 +171,7 @@ export function Header() {
             data-hd="search"
             type="button"
             aria-label="Open search"
-            className="hidden size-11 items-center justify-center rounded-sm text-ink transition-colors duration-150 hover:text-primary min-[1384px]:inline-flex focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+            className="hidden size-11 items-center justify-center rounded-sm text-ink transition-colors duration-150 hover:text-primary min-[1384px]:inline-flex outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
             onClick={() => setSearchOpen(true)}
           >
             <Search size={18} strokeWidth={1.5} />
