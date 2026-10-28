@@ -1,0 +1,52 @@
+{
+  "_source": "Every value traces to goldens/rulings.md or to the cited file:line on origin/main 8d9027c9.",
+  "parityTolerancePx": 0.5,
+  "iconWidthEm": 1.1,
+  "iconWidthSource": "app/(nos)/national-show/nos-structure.css:1284-1286 (.nos-theme .nk-icon width/height 1.1em); ruling answer 1",
+  "forwardGapPx": 10,
+  "forwardGapSource": "app/(nos)/national-show/nos-structure.css:1303 (.nos-theme .nk-btn gap: 10px); the gate also reads it live from a forward .nk-btn on the tickets page",
+  "hoverNudgePx": -3,
+  "hoverNudgeSource": "ruling answer 3; mirrors nos-structure.css:1331-1333 (.nk-btn:hover .nk-icon translateX(3px)); timing nos-structure.css:1327-1329 (var(--dur-slow) var(--ease-nos), no-preference only)",
+  "hoverSettleMs": 1500,
+  "targetFloorPx": 44,
+  "targetFloorSource": "app/(nos)/national-show/nos-structure.css:273-277 ([data-nos-backlink] min-height 44px)",
+  "forbiddenGlyphs": [
+    "←",
+    "&larr;",
+    "&#8592;",
+    "&#x2190;",
+    "\\u2190"
+  ],
+  "sourceRoots": [
+    "app/(nos)",
+    "components/nos",
+    "components/nos-chrome",
+    "components/tickets"
+  ],
+  "links": [
+    {
+      "id": "past-shows",
+      "page": "/archive/2024",
+      "selector": "a[data-nos-backlink]",
+      "label": "Past shows"
+    },
+    {
+      "id": "earlier",
+      "page": "/archive/2024",
+      "selector": "main a[href=\"/archive/2023\"]",
+      "label": "Earlier"
+    }
+  ],
+  "htmlPages": [
+    "/archive/2024",
+    "/archive/2023",
+    "/archive",
+    "/faq",
+    "/"
+  ],
+  "forwardReference": {
+    "page": "/tickets",
+    "selector": "a.nk-btn:has(svg.nk-icon)"
+  },
+  "fixtureStub": "synthetic past shows 2024 and 2023 (year + status only), test-only: the tracked capture has pastShowsQuery result [] so no real archive year exists in replay"
+}

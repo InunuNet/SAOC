@@ -1,0 +1,56 @@
+schema: athanor.contract/v1
+slug: nos-archive-back-arrow
+goal: The two U+2190 text arrows on the NOS archive year page ("Past shows" back link, "Earlier" link) become the NOS keepsake arrow mirrored via scaleX(-1), leading the label, so no system-glyph arrow remains on the NOS host.
+created_at: '2026-10-28'
+autonomy: high
+
+features:
+  - id: F1
+    name: Replace the two U+2190 text arrows in app/(nos)/national-show/archive/[year]/page.tsx with the mirrored NOS keepsake arrow
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/nos-archive-back-arrow/goldens/rulings.md
+  - .agent/memory/project/specs/nos-archive-back-arrow/goldens/values.json
+  - .agent/memory/project/specs/nos-archive-back-arrow/goldens/baseline-main.json
+  - .agent/memory/project/specs/nos-archive-back-arrow/goldens/fixture-stubs/70c1b662f86baf26d3260c7d2b8cc84f100afa978e1512eba90262f2eb8dabbd.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: "(a) zero U+2190 (and &larr;, &#8592;, &#x2190;, backslash-u2190) in app/(nos), components/nos, components/nos-chrome, components/tickets source. RED on main: archive/[year]/page.tsx:166 and :227."
+      command: node .agent/memory/project/specs/nos-archive-back-arrow/checks/check-source.mjs
+    - id: A2
+      description: "The archive page uses the NOS keepsake ArrowIcon from components/tickets/keepsake/parts, never components/ui/ArrowIcon (ruling b). RED on main: no import."
+      command: grep -q "components/tickets/keepsake/parts" "app/(nos)/national-show/archive/[year]/page.tsx"
+    - id: A3
+      description: "The archive page does not import components/ui/ArrowIcon (NOS keeps one arrow system, CRIT-13)."
+      command: node .agent/memory/project/specs/nos-archive-back-arrow/checks/check-imports.mjs
+    - id: A4
+      description: "The keepsake ArrowIcon (components/tickets/keepsake/parts.tsx) is unchanged since the base commit 8d9027c9 (ruling answer 1: the keepsake stands as it is)."
+      command: git diff --quiet 8d9027c9 -- components/tickets/keepsake/parts.tsx
+    - id: A5
+      description: "(g) tsc --noEmit passes."
+      command: pnpm exec tsc --noEmit
+    - id: A6
+      description: "(g) eslint passes on the NOS route and component roots."
+      command: pnpm exec eslint "app/(nos)" components/nos components/nos-chrome components/tickets
+    - id: A7
+      description: "(g) production build passes on Sanity fixture replay (zero Sanity API requests, zero fixture misses); leaves the .next the browser gates serve."
+      command: bash .agent/memory/project/specs/nos-archive-back-arrow/checks/build.sh
+    - id: A8
+      description: "(b) zero U+2190 in the rendered HTML of /archive/2024, /archive/2023, /archive, /faq and / on the NOS host, each a 200. RED on main: /archive/2024 (two) and /archive/2023."
+      command: node .agent/memory/project/specs/nos-archive-back-arrow/checks/gate-html.mjs
+    - id: A9
+      description: "(c) mirror parity +-0.5px in the browser: icon width (1.1em), icon-to-label gap (the live forward .nk-btn gap, 10px) and icon vertical centre against the label, for both links. RED on main: no icon."
+      command: node .agent/memory/project/specs/nos-archive-back-arrow/checks/gate-dom.mjs parity
+    - id: A10
+      description: "(d) one svg.nk-icon per link, aria-hidden, focusable=false, leads the label with no literal space, computed transform at rest is matrix(-1,0,0,1,0,0). RED on main: no icon."
+      command: node .agent/memory/project/specs/nos-archive-back-arrow/checks/gate-dom.mjs mirror
+    - id: A11
+      description: "(e) hover moves the icon -3px under prefers-reduced-motion no-preference and 0px under reduce. RED on main: no icon."
+      command: node .agent/memory/project/specs/nos-archive-back-arrow/checks/gate-dom.mjs hover
+    - id: A12
+      description: "(f) keyboard focus ring, tab-stop count and 44px target match the main baseline (goldens/baseline-main.json). GREEN on main by design: these must not change."
+      command: node .agent/memory/project/specs/nos-archive-back-arrow/checks/gate-dom.mjs focus
