@@ -1,0 +1,21 @@
+{
+  "_note": "Every string here is Brad's, from goldens/source-council-thread.md (check-static.mjs proves each is a verbatim substring of it). Headings and definition labels differ on purpose: headings are the 19:13 wording, definition lines are the 19:11 wording.",
+  "pageTitle": "Award Entries",
+  "sections": [
+    {
+      "awardType": "national-show",
+      "heading": "National Show Awards",
+      "definition": "National Show Award Entries — Orchids submitted for judging in the National Orchid Show's competitive classes."
+    },
+    {
+      "awardType": "saoc",
+      "heading": "SAOC Awards",
+      "definition": "SAOC Award Entries — Orchids submitted for consideration for formal SAOC awards, according to the applicable judging rules."
+    }
+  ],
+  "markerLabel": "Awaiting official SAOC committee copy",
+  "vendorTerms": {
+    "Retail Vendors": "Retail Vendors — Businesses selling orchids, plants and related products.",
+    "Display Exhibitors": "Display Exhibitors — Societies, growers or individuals presenting orchid displays for public viewing."
+  }
+}

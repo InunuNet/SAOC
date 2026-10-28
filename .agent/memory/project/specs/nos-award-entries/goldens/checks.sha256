@@ -1,0 +1,11 @@
+546bcb99d6c3644bd8a476c913f7942e95512eb06376a22aa5856a617e06ee8c  .agent/memory/project/specs/nos-award-entries/goldens/source-council-thread.md
+0bea6a916bf3edfb4a87adbf65d9140421999bf70e37c0721bcf833b962678c3  .agent/memory/project/specs/nos-award-entries/goldens/award-copy.json
+f77b265979df3243a06da69f1d3ab017b03629e2fa39bb254ee5e24465d41f1a  .agent/memory/project/specs/nos-award-entries/goldens/exhibitor-audit.json
+a6d5e4c4f7cdb4a188ca7a262a980c152b10b29ce5beae094e74d1501f38c666  .agent/memory/project/specs/nos-award-entries/goldens/exhibitor-audit.md
+556437e905d91b328806d04ec3ae677afc26b8135d1bb51f8c17d1497c0f500d  .agent/memory/project/specs/nos-award-entries/goldens/sanity-for-saoc.md
+db0ff66156b959e4fb0da454ba3aaee89e059063612d1fa6c03faf9f3d0ef640  .agent/memory/project/specs/nos-award-entries/goldens/elbert-bio-diff.md
+d567350ce2f1ef88181fb1bb9aaefe3351d5b8d650d16e24168051994ee6cb61  .agent/memory/project/specs/nos-award-entries/goldens/codex-qa-prompt.md
+fadb209752fe307ebf2f1398d772aa467e6cf8a96c2c2307b39904071bf36357  .agent/memory/project/specs/nos-award-entries/checks/check-static.mjs
+a5e396da7b912754c47a9ba279f61a901a9e0347e5ac5fa13d07d10da8397d67  .agent/memory/project/specs/nos-award-entries/checks/check-diff-scope.mjs
+c24275fa6eee07475f64cee25818b6b432e633731bb94189e942a7bbe7bcdb8b  .agent/memory/project/specs/nos-award-entries/checks/gate-render.mjs
+e57ff552e9bbff0d54d7f0d60aa70d129eef3f9639d67ffddb9fd144f85cb354  .agent/memory/project/specs/nos-award-entries/checks/build.sh
