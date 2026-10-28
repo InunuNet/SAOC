@@ -17,6 +17,7 @@ import { NosBreadcrumb } from '@/components/nos/NosBreadcrumb';
 import { NosHero } from '@/components/nos/NosHero';
 import { NosSection } from '@/components/nos/NosSection';
 import { ConfirmationBadge } from '@/components/show';
+import { ArrowIcon } from '@/components/tickets/keepsake/parts';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
@@ -161,9 +162,11 @@ export default async function ShowYearPage({ params }: { params: Promise<{ year:
           <Link
             href="/archive"
             data-nos-backlink=""
+            data-nos-backarrow=""
             className="inline-flex min-h-[44px] items-center font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--lilac-muted)] transition-colors duration-150 hover:text-ivory"
           >
-            ← Past shows
+            <ArrowIcon />
+            Past shows
           </Link>
         }
       />
@@ -221,10 +224,12 @@ export default async function ShowYearPage({ params }: { params: Promise<{ year:
         {prevShow ? (
           <Link
             href={`/archive/${prevShow.year}`}
+            data-nos-backarrow=""
             className="group flex flex-col gap-1"
           >
-            <span className="font-sans text-[12px] font-semibold uppercase tracking-[0.18em] text-muted transition-colors duration-150 group-hover:text-primary">
-              ← Earlier
+            <span className="inline-flex items-center font-sans text-[12px] font-semibold uppercase tracking-[0.18em] text-muted transition-colors duration-150 group-hover:text-primary">
+              <ArrowIcon />
+              Earlier
             </span>
             <span className="font-serif text-[20px] font-medium text-ink transition-colors duration-150 group-hover:text-primary">
               {prevShow.host ? `${prevShow.year} — ${prevShow.host}` : prevShow.year}
