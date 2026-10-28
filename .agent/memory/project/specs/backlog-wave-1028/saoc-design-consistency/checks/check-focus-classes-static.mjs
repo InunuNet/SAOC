@@ -81,10 +81,10 @@ for (const file of files) {
 }
 // A shared NOS component whose DEFAULT class string is the NOS ring (allowlisted in goldens/focus-classes.json) may be rendered on a SAOC route only if the SAOC caller passes the one ring through the named prop. Each SAOC (non-NOS-only)
 // file that renders the component is asserted here instead of scanning the NOS default: the prop must be present and resolve to THE ONE RING.
-const WRAPPED = [{ comp: 'ShowJumpChips', prop: 'linkClassName', file: 'components/show/ShowJumpChips.tsx' }]; let wrapped = 0;
+const WRAPPED = [{ comp: 'ShowJumpChips', prop: 'linkClassName', file: 'components/show/ShowJumpChips.tsx' }, { comp: 'VenueCard', prop: 'linkClassName', file: 'components/show/VenueCard.tsx' }]; let wrapped = 0;
 for (const file of files) { const src = srcOf.get(file); for (const w of WRAPPED) for (const m of src.matchAll(new RegExp(`<${w.comp}\\b`, 'g'))) {
   const tag = tagText(src, m.index); const at = new RegExp(`\\b${w.prop}\\s*=\\s*(\\{[\\s\\S]*\\}|"[^"]*"|'[^']*')`).exec(tag); const line = src.slice(0, m.index).split('\n').length; wrapped++;
-  if (!at) { check(false, `${file}:${line}: <${w.comp}> rendered on a SAOC route without ${w.prop}: it falls back to the NOS default ring (2px offset, --ring-focus), not the one SAOC ring`); continue; }
+  if (!at) { check(false, `${file}:${line}: <${w.comp}> rendered on a SAOC route without ${w.prop}: it falls back to the component NOS default (no ring, or the NOS --ring-focus 2px ring), not the one SAOC ring`); continue; }
   const txt = expand([...at[1].matchAll(LIT)].map((x) => x[1] ?? x[2] ?? x[3]).join(' ') + ' ' + [...at[1].replace(LIT, ' ').matchAll(/\b[A-Za-z_$][\w$]*\b/g)].map((x) => DEFS.get(x[0]) ?? '').join(' '));
   // EFFECTIVE ring = the component's default class string with the offset and colour utilities the override replaces removed, plus the override (a trailing ! only raises its priority). The override must supply the 3px offset and a
   // non-NOS colour; width and style may come from the default. Tailwind: a bare `outline` is outline-style solid.
@@ -95,5 +95,5 @@ for (const file of files) { const src = srcOf.get(file); for (const w of WRAPPED
 allow.forEach((a, i) => check(used.has(i), `goldens/focus-classes.json entry ${i + 1} (${a.file} / ${a.key}) matches no hit: stale, remove or fix it`));
 if (process.env.DC_LIST_NOS) for (const f of [...nosExempt].sort()) console.log(`NOS-ROUTED ${f}`);
 if (nosExempt.size) { const dirs = new Map(); for (const f of nosExempt) { const d = f.replace(/\/[^/]+$/, ''); dirs.set(d, (dirs.get(d) || 0) + 1); } console.log(`NOS-ROUTED, exempt from the standalone pass (${nosExempt.size} files imported only from app/(nos) or NOS-only files; proxy.ts serves their routes on the NOS host): ${[...dirs].map(([d, n]) => `${d} (${n})`).join(', ')}`); }
-console.log(`focus class strings: ${hits} (the one ring: ${one}, allowlisted: ${used.size} entries); SAOC <ShowJumpChips> callers checked: ${wrapped}; standalone elements: ${standalone} (with a focus utility: ${covered}, className unresolvable and skipped: ${unresolved})`);
+console.log(`focus class strings: ${hits} (the one ring: ${one}, allowlisted: ${used.size} entries); SAOC wrapped-component callers checked (ShowJumpChips, VenueCard): ${wrapped}; standalone elements: ${standalone} (with a focus utility: ${covered}, className unresolvable and skipped: ${unresolved})`);
 finish('focus-classes-static');
