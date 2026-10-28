@@ -164,8 +164,9 @@ export function NewsletterSignup({
                 <span>COPY GAP — AI-generated placeholder: Select at least one newsletter topic.</span>
               </p>
             ) : (
-              <p id={topicsErrorId} role="alert" className="sr-only">
-                {NEWSLETTER_COPY.genericError}
+              <p id={topicsErrorId} role="alert" className={site === 'nos' ? 'sr-only' : errorClassName}>
+                {site === 'nos' ? null : errorIcon}
+                {site === 'nos' ? NEWSLETTER_COPY.genericError : <span>{NEWSLETTER_COPY.genericError}</span>}
               </p>
             )
           ) : null}
