@@ -106,7 +106,7 @@ export default async function ContactPage() {
                     {c.email ? (
                       <a
                         href={`mailto:${c.email}`}
-                        className="mt-1 inline-flex min-h-11 items-center font-sans text-[14px] text-ink underline underline-offset-2 hover:text-accent"
+                        className="mt-1 inline-flex min-h-11 items-center font-sans text-[14px] text-ink underline underline-offset-2 hover:text-accent outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
                       >
                         {c.email}
                       </a>

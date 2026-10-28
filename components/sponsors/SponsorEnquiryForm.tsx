@@ -329,7 +329,7 @@ export function SponsorEnquiryForm({ site }: SponsorEnquiryFormProps) {
           </label>
           <a
             href="/privacy"
-            className="inline-flex min-h-11 items-center font-sans text-[15px] text-ink underline underline-offset-2"
+            className="inline-flex min-h-11 items-center font-sans text-[15px] text-ink underline underline-offset-2 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
           >
             {ENQUIRY_PRIVACY_LINK_TEXT}
           </a>

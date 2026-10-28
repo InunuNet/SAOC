@@ -30,7 +30,7 @@ export function SocietyAbout({ society }: SocietyAboutProps) {
               href={society.website}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center text-ink underline underline-offset-2"
+              className="inline-flex min-h-11 items-center text-ink underline underline-offset-2 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
             >
               Visit society website →
             </a>
@@ -40,7 +40,7 @@ export function SocietyAbout({ society }: SocietyAboutProps) {
               href={society.facebookUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center text-ink underline underline-offset-2"
+              className="inline-flex min-h-11 items-center text-ink underline underline-offset-2 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
             >
               Facebook page →
             </a>
@@ -50,7 +50,7 @@ export function SocietyAbout({ society }: SocietyAboutProps) {
               href={society.instagramUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center text-ink underline underline-offset-2"
+              className="inline-flex min-h-11 items-center text-ink underline underline-offset-2 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
             >
               Instagram page →
             </a>
