@@ -56,3 +56,6 @@ assertions:
       phase: 5
       description: "Post-deploy nav spacing and Menu label on the deployed header at 1280 and 1383. RUN AFTER DEPLOY (phase 5). Plain shell check, reads beta credentials inside the scripts, never printed."
       command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-nav-spacing.mjs"
+    - id: A12
+      description: "Guard, NOS Design add: at 1280 and 1383 on /sponsors and /contact the open Menu drawer's a[href] for that route has aria-current=page and is the only page-current link (passes on main-equivalent code paths that already use navAriaCurrent; guards regression)"
+      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-nav-drawer-current.mjs"
