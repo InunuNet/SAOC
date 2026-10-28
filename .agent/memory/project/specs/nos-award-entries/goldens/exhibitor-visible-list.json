@@ -121,6 +121,18 @@
       "context": "ticketsPage.ticketIncludesNote in Sanity; SAOC to rule (D9)",
       "status": "pendingSaoc",
       "ref": "S7"
+    },
+    {
+      "fragment": "speakers, judges, exhibitors and researchers",
+      "context": "/international-guests intro: \"Profiles of international speakers, judges, exhibitors and researchers attending the Show.\" (class b, stand)",
+      "status": "stand",
+      "ref": null
+    },
+    {
+      "fragment": "award-winning exhibitors",
+      "context": "/vendors, Lee-Ann's copy (vendors/page.tsx:36): stand-bookers who have won awards (class b, stand). Also raised to Lee-Ann under vvvvv.",
+      "status": "stand",
+      "ref": "vvvvv"
     }
   ]
 }

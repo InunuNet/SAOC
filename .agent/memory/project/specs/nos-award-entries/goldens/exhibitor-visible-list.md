@@ -24,5 +24,7 @@ Source of truth: `exhibitor-visible-list.json` (the gate reads it). Expectation:
 | `when can exhibitors set up` | FAQ q28 question in Sanity; SAOC to apply S2 | pendingSaoc | S2 |
 | `specific exhibitor setup` | FAQ q28 answer in Sanity; SAOC to apply S2 | pendingSaoc | S2 |
 | `exhibitor stages` | ticketsPage.ticketIncludesNote in Sanity; SAOC to rule (D9) | pendingSaoc | S7 |
+| `speakers, judges, exhibitors and researchers` | /international-guests intro: "Profiles of international speakers, judges, exhibitors and researchers attending the Show." (class b, stand) | stand | - |
+| `award-winning exhibitors` | /vendors, Lee-Ann's copy (vendors/page.tsx:36): stand-bookers who have won awards (class b, stand). Also raised to Lee-Ann under vvvvv. | stand | vvvvv |
 
 Removed from the NOS host by this change (plant entrants): page title/h1/breadcrumb/menu/footer "Plant Entry/Registration", "More for exhibitors" (aria-label), "recognising outstanding orchids and exhibitors" (page copy), and the SAOC-host home band CTA "Exhibitor info".
