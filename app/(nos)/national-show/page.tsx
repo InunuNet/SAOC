@@ -309,21 +309,14 @@ export default async function NationalShowPage() {
                 ) : null}
               </div>
 
-              <div>
-                <p
-                  data-nos-hero-text="countdown-opens-in"
-                  className="mb-3 font-sans text-[12px] font-bold uppercase tracking-[0.14em] text-ivory/90"
-                >
-                  Opens in
-                </p>
-                <Suspense fallback={null}>
-                  <ShowCountdown
-                    countdownDate={sanityShow?.countdownDate}
-                    edition={edition}
-                    pendingLabel={visitorInfo?.pendingLabel}
-                  />
-                </Suspense>
-              </div>
+              <Suspense fallback={null}>
+                <ShowCountdown
+                  label="Opens in"
+                  countdownDate={sanityShow?.countdownDate}
+                  edition={edition}
+                  pendingLabel={visitorInfo?.pendingLabel}
+                />
+              </Suspense>
             </div>
 
             <dl className="nos-hero-facts">

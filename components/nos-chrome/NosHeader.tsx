@@ -252,7 +252,7 @@ export function NosHeader({ nav, saocHomeHref, contactHref }: NosHeaderProps) {
           >
             <picture>
               <source
-                media="(max-width: 779px)"
+                media="(max-width: 767px)"
                 srcSet={narrowLockup.srcSet}
                 sizes={narrowLockup.sizes}
               />

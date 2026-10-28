@@ -623,11 +623,11 @@ h3.font-serif {
    properties only, so another site's theme supplies its own values.
    ============================================================ */
 
-/* Hero facts: dd above dt, centred, no divider, no box, no caps. DOM order stays dt then dd. */
+/* Hero facts: dd above dt, no divider, no box, no caps. DOM order stays dt then dd.
+   Alignment is per hero (PageHero `factsAlign`, rules after the media query below). */
 .hero-facts {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
   align-items: flex-start;
   gap: 20px 40px;
   margin: 32px 0 0;
@@ -636,8 +636,6 @@ h3.font-serif {
 .hero-facts > div {
   display: flex;
   flex-direction: column-reverse;
-  align-items: center;
-  text-align: center;
 }
 .hero-facts dd {
   margin: 0;
@@ -661,6 +659,30 @@ h3.font-serif {
 @media (min-width: 640px) {
   .hero-facts {
     gap: 24px 40px;
+  }
+}
+/* Centred by default. */
+.hero-facts[data-facts-align='center'] {
+  justify-content: center;
+}
+.hero-facts[data-facts-align='center'] > div {
+  align-items: center;
+  text-align: center;
+}
+/* Event hero only (NOS Design 2026-10-27): a left-aligned row from the h1 edge; from 1024px the cells
+   share one row and wrap their text instead of overflowing. */
+.hero-facts[data-facts-align='start'] > div {
+  align-items: flex-start;
+  min-width: 0;
+  text-align: left;
+}
+.hero-facts[data-facts-align='start'] dd,
+.hero-facts[data-facts-align='start'] dt {
+  overflow-wrap: anywhere;
+}
+@media (min-width: 1024px) {
+  .hero-facts[data-facts-align='start'] {
+    flex-wrap: nowrap;
   }
 }
 

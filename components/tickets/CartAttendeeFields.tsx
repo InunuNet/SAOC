@@ -4,6 +4,7 @@
 // component and validation pattern — the same per-position requirement the backend
 // already enforces uniformly across every ticket type today.
 import type { CartAttendee } from '@/lib/cart';
+import { CONTACT_FIELD_MAX_LENGTHS } from '@/lib/contact-input';
 import { TicketFormField } from '@/components/tickets/TicketFormField';
 import type { TicketTypeCardData } from '@/components/tickets/TicketTypeCard';
 
@@ -60,6 +61,7 @@ export function CartAttendeeFields({
                     label="Attendee name"
                     type="text"
                     autoComplete="name"
+                    maxLength={CONTACT_FIELD_MAX_LENGTHS.name}
                     value={row.attendeeName}
                     onChange={(value) => onAttendeeChange(type.slug, index, 'attendeeName', value)}
                     disabled={disabled}
@@ -70,6 +72,7 @@ export function CartAttendeeFields({
                     label="Email address"
                     type="email"
                     autoComplete="email"
+                    maxLength={CONTACT_FIELD_MAX_LENGTHS.email}
                     value={row.attendeeEmail}
                     onChange={(value) => onAttendeeChange(type.slug, index, 'attendeeEmail', value)}
                     disabled={disabled}

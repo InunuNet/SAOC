@@ -11,9 +11,9 @@ import type { Page } from '@playwright/test';
 import { NOS_GROUPS } from './utils/nos-nav-hrefs';
 import { nosBase } from './utils/site-urls';
 
-// Shared with the SAOC header (HD-1): inline nav from 1384, lockup + CTA + Menu from 780, lockup on its own row below.
+// NOS header: inline nav from 1384, lockup + CTA + Menu from 768 (H-a, NOS Design), lockup on its own row below.
 const PANEL_BREAKPOINT = 1384;
-const ROW_BREAKPOINT = 780;
+const ROW_BREAKPOINT = 768;
 const LOCKUP_FOOTPRINT_PX = 405;
 const MIN_TARGET_PX = 44;
 const PANEL_MIN_WIDTH = 320;
