@@ -199,11 +199,11 @@ export function ShowBand({ show, detailsHref, showPhoto = true, split }: ShowBan
                 Show details
               </a>
               <a
-                href={nosUrl('/exhibitors')}
+                href={nosUrl('/award-entries')}
                 data-show-band-cta="tertiary"
                 className="inline-flex items-center justify-center text-[14px] font-medium tracking-[0.01em] rounded-[2px] border transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-accent-soft focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 min-h-[44px] px-1 border-transparent text-ivory underline decoration-accent decoration-1 underline-offset-4 hover:text-accent-soft hover:decoration-accent-soft"
               >
-                Exhibitor info
+                Award Entries
               </a>
             </div>
           </div>

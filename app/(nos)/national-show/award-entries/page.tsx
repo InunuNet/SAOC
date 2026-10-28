@@ -5,6 +5,7 @@ import type { NavLeaf } from '@/components/chrome/nav-config';
 import { NOS_NAV } from '@/components/nos-chrome/nos-nav';
 import { heroFactsFromShow, NosHero } from '@/components/nos/NosHero';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
+import { ExhibitorStatusBadge } from '@/components/show/ExhibitorStatusBadge';
 import { DocumentLayout } from '@/components/ui/DocumentLayout';
 import { loadShowFacts } from '@/lib/data/show-facts';
 import { NOS_CONTACT_PATH, nosPath } from '@/lib/nos-paths';
@@ -20,9 +21,9 @@ export const revalidate = 60;
 // FAQ 29 (photography) lives on What to expect. Her own entry guide (schedule, classes, entry form)
 // is still owed (owner item iiii); the Sanity showExhibitorInfo and showExhibitorStep schemas stay
 // in place for when it arrives. The gateway beside the text is nav labels only.
-const PAGE_TITLE = 'Plant Entry/Registration';
+const PAGE_TITLE = 'Award Entries';
 const FACTS_LABELS = ['Dates', 'Venue'] as const;
-const GATEWAY_LABEL = 'More for exhibitors';
+const GATEWAY_LABEL = 'More on Award Entries';
 const GATEWAY_IDS = ['programme', 'vendors', 'international-guests', 'faq'] as const;
 const CONTACT_LABEL = 'Contact';
 
@@ -30,11 +31,26 @@ const STANDFIRST = [
   'All South African Orchid Council members whose subscriptions are valid may enter orchids for judging. If you are unsure, please check with your society.',
 ];
 
+const AWARD_SECTIONS = [
+  {
+    awardType: 'national-show',
+    heading: 'National Show Awards',
+    lede: "Orchids submitted for judging in the National Orchid Show's competitive classes.",
+  },
+  {
+    awardType: 'saoc',
+    heading: 'SAOC Awards',
+    lede: 'Orchids submitted for consideration for formal SAOC awards, according to the applicable judging rules.',
+  },
+] as const;
+
+const AWARD_PENDING_LABEL = 'Awaiting official SAOC committee copy';
+
 const QUESTIONS = [
   {
     question: 'Will the orchids be judged?',
     paragraphs: [
-      'Yes. Judging and awards form part of the National Orchid Show, recognising outstanding orchids and exhibitors.',
+      'Yes. Judging and awards form part of the National Orchid Show, recognising outstanding orchids.',
     ],
   },
   {
@@ -44,9 +60,9 @@ const QUESTIONS = [
     ],
   },
   {
-    question: 'When can exhibitors set up their displays?',
+    question: 'When can Display Exhibitors set up their displays?',
     paragraphs: [
-      'The venue access period currently planned for the organisers is 21 September 2027 at 09:00 to 27 September 2027 at 16:00. The specific exhibitor setup, judging, public opening and dismantling times are published in the programme and will also be sent via email.',
+      'The venue access period currently planned for the organisers is 21 September 2027 at 09:00 to 27 September 2027 at 16:00. The specific Display Exhibitor setup, judging, public opening and dismantling times are published in the programme and will also be sent via email.',
     ],
   },
   {
@@ -59,7 +75,7 @@ export const metadata: Metadata = buildPageMetadata({
   title: PAGE_TITLE,
   image: nosOgImage(`${PAGE_TITLE} — National Orchid Show`),
   description: STANDFIRST[0],
-  path: '/national-show/exhibitors',
+  path: '/national-show/award-entries',
 });
 
 function collectLeaves(node: unknown, into: Map<string, NavLeaf>): void {
@@ -94,7 +110,7 @@ export default async function ExhibitorEntryGuidePage() {
   return (
     <>
       <NosHero
-        route="/national-show/exhibitors"
+        route="/national-show/award-entries"
         title={PAGE_TITLE}
         crumbLabel={PAGE_TITLE}
         facts={heroFactsFromShow(showFacts, FACTS_LABELS)}
@@ -133,8 +149,15 @@ export default async function ExhibitorEntryGuidePage() {
             </section>
           ))}
         </div>
+        {AWARD_SECTIONS.map((section) => (
+          <section key={section.awardType} data-award-type={section.awardType}>
+            <h2 className="doc-h2 nos-ex-q">{section.heading}</h2>
+            <p>{section.lede}</p>
+            <ExhibitorStatusBadge status="pending" pendingLabel={AWARD_PENDING_LABEL} />
+          </section>
+        ))}
       </DocumentLayout>
-      <NosShowIndex current="/national-show/exhibitors" />
+      <NosShowIndex current="/national-show/award-entries" />
     </>
   );
 }
