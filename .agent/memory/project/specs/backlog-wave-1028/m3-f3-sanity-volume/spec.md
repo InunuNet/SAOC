@@ -12,6 +12,16 @@ P1. `app/not-found.tsx`: remove `requestSite()` (import `:9`, uses `:29`, `:69`)
      * NOS host: proxy.ts already rewrites every unmatched NOS path to `/national-show/<path>`; add
        `app/(nos)/national-show/[...slug]/page.tsx` calling `notFound()` (resolves to `(nos)/national-show/not-found.tsx`).
      * Both catch-alls: `generateStaticParams` returning `[]`, no `dynamic` export, no headers()/cookies().
+     * NOS host, short top-level trees that proxy.ts passes through un-rewritten (verified at proxy.ts:253-273: NOS_TOP_LEVEL_PREFIXES
+       and SHARED_PREFIXES call NextResponse.next()): add `app/(nos)/vsp/[...slug]/page.tsx` and
+       `app/(nos)/tickets/[slug]/[...rest]/page.tsx` (`/tickets/<a>/<b>`; `(nos)/tickets/[slug]` covers one segment), each only
+       `notFound()`, resolving to `(nos)/not-found.tsx` (NOS chrome). On the SAOC host `/vsp/*` and `/tickets/*` are 308 redirects to
+       the NOS origin (SHOW_PREFIXES), so they need no SAOC 404.
+     * Shared tree `/newsletter/<unknown>`: `app/(shared)/layout.tsx` already calls `requestSite()` and wraps NOS in `NosThemeScope`, so that
+       subtree is already dynamic. Add `app/(shared)/newsletter/[...rest]/page.tsx` (only `notFound()`) and `app/(shared)/not-found.tsx`,
+       host-aware with `requestSite()`: SAOC host renders `NotFoundSection`, NOS host renders `NosPageNotFound` (bare: the layout owns the
+       chrome and the theme scope). A group-level not-found only enters that group's own tree, so it should not make other routes dynamic; A11's
+       ISR checks prove it. Only the (shared) not-found may read headers; the root not-found and every catch-all may not.
    - Metadata: `(marketing)/not-found.tsx` and `national-show/not-found.tsx` already export their own `metadata`.
    - If a catch-all cannot be made to build static or loses the host-correct title/chrome, STOP and report DECISION NEEDED
      (fallback: neutral root 404 on the NOS host). Do not re-add headers() to the root not-found.
@@ -52,9 +62,14 @@ Sanity publish still triggers the tag webhook for immediate refresh (if the webh
 (keep the preload beside it as `scripts/checks/sanity-count-preload.mjs`). Flags: `--build` (run `next build` with the preload and
 `NEXT_PUBLIC_SANITY_PROJECT_ID=fakeproj`, FIREBASE_* blanked so no Firestore read occurs, even if `.env.local` exists),
 `--assert` (measure, then compare with `goldens/request-count-targets.json` targets; also assert ISR routes answer `s-maxage=60`),
-`--ttl-check` (wait SANITY_REVALIDATE_SECONDS+5 s, prove the cache expires and then holds again), `--notfound` (unmatched path returns 404
-on both hosts, SAOC title ends "South African Orchid Council", NOS title contains "The National Orchid Show").
+`--ttl-check` (wait SANITY_REVALIDATE_SECONDS+5 s, prove the cache expires and then holds again), `--notfound` (the A13 path matrix: 404 on both hosts, SAOC title ends "South African Orchid Council", NOS title contains "The National Orchid Show").
 Empty `.next/cache/fetch-cache` first with `fs.rmSync` on that fixed path. Never use the real project id or any token.
+
+## Accepted gaps (documented, NOT fixed here)
+
+Unknown NOS-host paths that proxy.ts treats as host-neutral (`isHostNeutralPath`, proxy.ts:226): any path with a file extension,
+`/og/*`, unknown `/admin/*`, `/api/*`, `/studio/*`. They render the headerless root not-found (SAOC chrome) on nos.saoc.co.za.
+Accepted by NOS Site and team-lead: none is a page a visitor navigates to.
 
 ## Not in this contract (follow-ups, named for Brad)
 
