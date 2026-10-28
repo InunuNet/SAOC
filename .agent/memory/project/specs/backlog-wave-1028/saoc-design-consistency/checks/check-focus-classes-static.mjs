@@ -8,31 +8,17 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { check, finish } from './lib.mjs';
-const ROOTS = ['app', 'components']; const SEED_EXCLUDED = ['components/nos-chrome/', 'components/nos/', 'app/(nos)/']; const DERIVED_EXCLUDED = ['components/tickets/TicketTypeCard.tsx', 'components/show/'];
+import { ROOTS, SEED_EXCLUDED, DERIVED_EXCLUDED, blank, buildGraph } from './lib-nos-graph.mjs';
 const SPEC = process.env.DC_FOCUS_CLASSES || '.agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/focus-classes.json';
 const allow = JSON.parse(readFileSync(SPEC, 'utf8')).allow;
-const walk = (dir) => readdirSync(dir).flatMap((n) => { const p = join(dir, n); return statSync(p).isDirectory() ? (n === 'node_modules' ? [] : walk(p)) : /\.tsx?$/.test(n) && !/\.(d|test|spec)\.tsx?$/.test(n) ? [p] : []; });
 const HIT = /\b(?:focus|focus-visible|focus-within):ring-|(?:^|[\s"'`:])ring-offset-|(?:^|[\s"'`])(?:[\w-]+:)*outline-none\b|\bfocus(?:-visible)?:outline-offset-(?!\[3px\])/;
 const RING = /\bfocus(?:-visible|-within)?:ring-|(?:^|[\s"'`:])ring-offset-/; const NONE = /(?:^|[\s"'`])(?:[\w-]+:)*outline-none\b/; const NONE_FOCUS = /(?:^|[\s"'`])(?:[\w-]*focus[\w-]*:)+outline-none\b/;
 const isOne = (s) => /\bfocus-visible:outline-2\b/.test(s) && /\bfocus-visible:outline-solid\b/.test(s) && /\bfocus-visible:outline-offset-\[3px\]/.test(s) && !RING.test(s) && !NONE_FOCUS.test(s); // a bare outline-none only clears the resting state; the focus-visible ring then paints, so it is allowed WITH the one ring, never alone
 // Comments are blanked first (same length, so line numbers hold): an apostrophe in prose would otherwise pair quotes across code. Strings: "..." and '...' stay on one line, `...` may span lines.
-const blank = (t) => t.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' ')).replace(/^(\s*)\/\/.*$/gm, (m, a) => a + ' '.repeat(m.length - a.length));
 const LIT = /"((?:[^"\\\n]|\\.)*)"|'((?:[^'\\\n]|\\.)*)'|`((?:[^`\\]|\\[\s\S])*)`/g;
 // Import graph, built once. SEED_EXCLUDED (NOS chrome and pages) is NOS by path. DERIVED_EXCLUDED (components/show/, TicketTypeCard) is NOS only while the import graph says so: a file there that a SAOC file imports (directly, or through a
 // barrel by name) is NOT exempt, so e.g. ShowJumpChips on the SAOC /media-kit route is scanned. A file is NOS-only when it has importers and EVERY importer is under SEED_EXCLUDED, itself NOS-only, or a derived candidate that is NOS-only (fixed point).
-const ALL = [...ROOTS.flatMap(walk)]; const importers = new Map(ALL.map((f) => [f, new Set()])); const TXT = new Map(ALL.map((f) => [f, blank(readFileSync(f, 'utf8'))]));
-const resolveImp = (from, spec) => { const base = spec.startsWith('@/') ? spec.slice(2) : spec.startsWith('.') ? join(from, '..', spec) : null; if (!base) return null; for (const c of [base + '.tsx', base + '.ts', join(base, 'index.tsx'), join(base, 'index.ts')]) if (importers.has(c)) return c; return null; };
-const barrelMap = (barrel) => { const map = new Map(); const all = new Set(); const t = TXT.get(barrel); for (const m of t.matchAll(/export\s*(?:type\s*)?\{([^}]*)\}\s*from\s*['"]([^'"]+)['"]/g)) { const f = resolveImp(barrel, m[2]); if (!f) continue; for (const n of m[1].split(',')) { const nm = n.trim().split(/\s+as\s+/).pop(); if (nm) map.set(nm, f); } } for (const m of t.matchAll(/export\s*\*\s*from\s*['"]([^'"]+)['"]/g)) { const f = resolveImp(barrel, m[1]); if (f) all.add(f); } return { map, all }; };
-for (const f of ALL) for (const m of TXT.get(f).matchAll(/import\s+(?:type\s+)?([^;'"]*?)\s*from\s*['"]([^'"]+)['"]|export\s*(?:\{[^}]*\}|\*)\s*from\s*['"]([^'"]+)['"]/g)) {
-  if (/\/index\.tsx?$/.test(f) && m[3] !== undefined) continue; // a barrel's own re-exports are not imports: the real importers reach the files by name through it
-  if (/^import\s+type\b/.test(m[0])) continue; // type-only imports are erased, they render nothing
-  const spec = m[2] ?? m[3]; const t = resolveImp(f, spec); if (!t || t === f) continue;
-  if (/\/index\.tsx?$/.test(t) && m[1] !== undefined && /\{/.test(m[1])) { const { map, all } = barrelMap(t); const names = [...m[1].matchAll(/([A-Za-z_$][\w$]*)\s*(?:,|\}|$)/g)].map((x) => x[1]); const hit = new Set(); for (const n of m[1].replace(/[{}]/g, '').split(',')) { if (/^\s*type\s/.test(n)) continue; const nm = n.trim().split(/\s+as\s+/)[0]; if (map.has(nm)) hit.add(map.get(nm)); } if (names.length && hit.size === 0 && all.size === 0) importers.get(t).add(f); for (const h of hit) importers.get(h).add(f); for (const h of all) importers.get(h).add(f); }
-  else importers.get(t).add(f);
-}
-const seedFile = (f) => SEED_EXCLUDED.some((x) => f.startsWith(x)); const derivedCand = (f) => DERIVED_EXCLUDED.some((x) => f.startsWith(x)); const nosOnly = new Set();
-for (let changed = true; changed;) { changed = false; for (const [f, imps] of importers) if (!nosOnly.has(f) && !seedFile(f) && imps.size > 0 && [...imps].every((i) => seedFile(i) || nosOnly.has(i))) { nosOnly.add(f); changed = true; } }
-const files = ALL.filter((f) => !seedFile(f) && !(derivedCand(f) && (nosOnly.has(f) || importers.get(f).size === 0)));
+const { ALL, TXT, importers, nosOnly, seedFile, derivedCand, files } = buildGraph();
 const used = new Set(); let hits = 0, one = 0;
 for (const file of files) {
   const src = blank(readFileSync(file, 'utf8')); if (!HIT.test(src)) continue;
