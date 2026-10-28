@@ -648,7 +648,6 @@ h3.font-serif {
 .hero-facts dd {
   margin: 0;
   font-family: var(--serif);
-  font-weight: 300;
   font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
   line-height: 1.1;
   letter-spacing: -0.01em;
@@ -667,6 +666,27 @@ h3.font-serif {
 @media (min-width: 640px) {
   .hero-facts {
     gap: 24px 40px;
+  }
+}
+/* Weight band: 400 at 24-31.99px, 300 from 32px (the dd reaches 32px at a 1280px viewport). */
+.hero-facts dd {
+  font-weight: 400;
+}
+@media (min-width: 1280px) {
+  .hero-facts dd {
+    font-weight: 300;
+  }
+}
+/* SA-6 /about levers, global, 768-1439: one facts row inside the 48% copy column. */
+@media (min-width: 768px) and (max-width: 1439.98px) {
+  .hero-facts {
+    gap: 24px;
+  }
+  .hero-facts dt {
+    max-width: 18ch;
+  }
+  .hero-facts dd {
+    white-space: nowrap;
   }
 }
 
