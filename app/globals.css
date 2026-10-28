@@ -21,6 +21,7 @@
   --status-error: #8f2834;
   --status-success: #2f5d3a;
   --status-warning: #7a5a12;
+  --status-error-on-dark: #E8959D;
   --muted: #636660; /* captions, meta, taglines */
 
   --rule: #d9d7c9; /* hairlines, dividers */

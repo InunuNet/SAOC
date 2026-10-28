@@ -115,11 +115,11 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
             submitLabel={FOOTER_BULLETIN.submitLabel}
             fieldsClassName="flex flex-wrap items-end gap-0"
             labelClassName="sr-only"
-            inputClassName="min-h-11 min-w-0 flex-1 bg-ivory/10 border border-accent-soft text-ivory placeholder:text-ivory/75 font-sans text-[16px] px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-ivory"
+            inputClassName="min-h-11 min-w-0 flex-1 bg-ivory/10 border border-accent-soft aria-invalid:border-[var(--status-error-on-dark)] text-ivory placeholder:text-ivory/75 font-sans text-[16px] px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-ivory"
             buttonClassName="min-h-11 min-w-11 bg-accent text-primary-800 font-sans text-[13px] font-medium px-4 py-2 hover:bg-accent-soft transition-colors duration-150 shrink-0 disabled:opacity-60 outline-ivory focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]"
             statusClassName="mt-2 font-sans text-[13px] text-ivory/80 empty:hidden"
-            errorClassName="mt-2 flex items-start gap-2 border-2 border-[var(--status-error)] bg-ivory px-3 py-2 font-sans text-[13px] font-medium text-[var(--status-error)]"
-            errorIcon={<CircleAlert aria-hidden="true" className="mt-px size-4 shrink-0" />}
+            errorClassName="mt-2 flex items-start gap-2 border border-[var(--status-error-on-dark)] px-3 py-2 font-sans text-[13px] text-ivory"
+            errorIcon={<CircleAlert aria-hidden="true" className="mt-px size-4 shrink-0 text-[var(--status-error-on-dark)]" />}
           />
         </div>
       </div>
