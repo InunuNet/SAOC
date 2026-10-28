@@ -6,7 +6,7 @@
 //   submit  : the NOS primary Button look (bg --primary, text --ivory, Karla 700 14px uppercase, min-height 50, --radius-button)
 //   heading : NOS doc-h2 role (the section is rendered inDocument)
 //   anchor  : NOS Design anchor ruling (2026-10-28, final): the NOS host zeroes the root scroll-padding THROUGH THE VARIABLE (--scroll-padding-top: 0 on html
-//             when the NOS chrome is present, at every width), so every NOS scroll-margin assumes zero; the card's scroll-margin-top is 121px at >=780, 24px below.
+//             when the NOS chrome is present, at every width), declared in nos-structure.css only (globals.css is mid-flight elsewhere), so every NOS scroll-margin assumes zero; the card's scroll-margin-top is 121px at >=780, 24px below.
 //             No header-height token exists in the repo (only the --doc-* ones), so 121 is the declared literal; a token is preferred if one appears.
 //   SAOC    : the SAOC root scroll-padding (globals.css, --scroll-padding-top 6.5rem consumed by html) is unchanged
 // The live scroll position and computed styles are proved by check-deployed-render.mjs (post-deploy); this half is the declared values.
@@ -63,8 +63,6 @@ function parse(text: string, media: string[], layered: boolean, out: Rule[], nes
   }
 }
 const rules: Rule[] = []; const nested: string[] = [];
-const chromeRules: Rule[] = []; const chromeNested: string[] = [];
-parse(readFileSync('components/nos-chrome/nos-chrome.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, ''), [], false, chromeRules, chromeNested);
 for (const f of readdirSync(DIR).filter((n) => n.endsWith('.css')).sort()) parse(readFileSync(`${DIR}/${f}`, 'utf8').replace(/\/\*[\s\S]*?\*\//g, ''), [], false, rules, nested);
 
 function mediaMatches(media: string[], width: number): boolean {
@@ -179,7 +177,7 @@ for (const [w, want] of [[390, 24], [779, 24], [780, 121], [1440, 121], [2056, 1
 // NOS root scroll-padding is zeroed through the variable, at every width, only when the NOS chrome (#nh) or the NOS theme is present
 const rootDecl = (w: number, prop: string): string | undefined => {
   let v: string | undefined;
-  for (const r of [...chromeRules, ...rules]) {
+  for (const r of rules) {
     if (!/^html\b/.test(r.selector) || !/#nh|nos/.test(r.selector)) continue;
     if (r.media.length && !mediaMatches(r.media, w)) continue;
     const d = r.decls.get(prop); if (d !== undefined) v = d.toLowerCase();
@@ -187,9 +185,9 @@ const rootDecl = (w: number, prop: string): string | undefined => {
   return v;
 };
 for (const w of [390, 767, 768, 1024, 1440, 2056]) {
-  expect(['0', '0px'].includes(rootDecl(w, '--scroll-padding-top') ?? ''), `RED the NOS host sets --scroll-padding-top to 0 on html at ${w}px (got ${rootDecl(w, '--scroll-padding-top')}); a rule such as html:has(#nh) { --scroll-padding-top: 0px }, not limited to a max-width media query`);
+  expect(['0', '0px'].includes(rootDecl(w, '--scroll-padding-top') ?? ''), `RED the NOS host sets --scroll-padding-top to 0 on html at ${w}px (got ${rootDecl(w, '--scroll-padding-top')}); declared in app/(nos)/national-show/nos-structure.css (not globals.css, not nos-chrome.css), e.g. html:has(#nh) { --scroll-padding-top: 0px }, not limited to a max-width media query`);
 }
-expect(chromeRules.concat(rules).filter((r) => /^html\b/.test(r.selector) && r.decls.has('--scroll-padding-top')).every((r) => /#nh|nos/.test(r.selector)), 'every html --scroll-padding-top override is scoped to the NOS host (#nh or nos), never bare html');
+expect(rules.filter((r) => /^html\b/.test(r.selector) && r.decls.has('--scroll-padding-top')).every((r) => /#nh|nos/.test(r.selector)), 'every html --scroll-padding-top override is scoped to the NOS host (#nh or nos), never bare html');
 // SAOC guard: the SAOC root scroll-padding stays as it is
 const globals = readFileSync('app/globals.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
 expect(/--scroll-padding-top\s*:\s*6\.5rem\s*;/.test(globals) && /(^|[\s;{])scroll-padding-top\s*:\s*var\(--scroll-padding-top\)\s*;/.test(globals), 'PIN SAOC root scroll-padding unchanged: app/globals.css still declares --scroll-padding-top: 6.5rem and html scroll-padding-top: var(--scroll-padding-top)');
