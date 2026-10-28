@@ -648,6 +648,7 @@ h3.font-serif {
 .hero-facts dd {
   margin: 0;
   font-family: var(--serif);
+  font-weight: 300;
   font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
   line-height: 1.1;
   letter-spacing: -0.01em;
@@ -668,48 +669,48 @@ h3.font-serif {
     gap: 24px 40px;
   }
 }
-/* A fact never breaks inside a word: cells keep their longest word, the dd balances over at most 3 lines
+/* SAOC host only (the NOS hero reuses .hero-facts and keeps its own scale, so none of the rules below reach it).
+   A fact never breaks inside a word: cells keep their longest word, the dd balances over at most 3 lines
    (breaking at spaces only); factsAlign="start" starts the row, and any wrapped row, at the h1's left edge. */
-.hero-facts > div {
+.hero-facts:not(.nos-theme *) > div {
   min-width: min-content;
 }
-.hero-facts dd {
+.hero-facts:not(.nos-theme *) dd {
   overflow-wrap: normal;
   word-break: normal;
   text-wrap: balance;
+  font-weight: 400;
 }
-[data-facts-align='start'].hero-facts {
+.hero-facts[data-facts-align='start']:not(.nos-theme *) {
   justify-content: flex-start;
 }
-[data-facts-align='start'].hero-facts > div {
+.hero-facts[data-facts-align='start']:not(.nos-theme *) > div {
   align-items: flex-start;
   text-align: left;
 }
 /* Weight band: 400 at 24-31.99px, 300 from 32px (the dd reaches 32px at a 1280px viewport). */
-.hero-facts dd {
-  font-weight: 400;
-}
 @media (min-width: 1280px) {
-  .hero-facts dd {
+  .hero-facts:not(.nos-theme *) dd {
     font-weight: 300;
   }
 }
-/* SA-6 /about levers, global, 768-1439: one facts row inside the 48% copy column. */
+/* SA-6 /about levers, global, 768-1439: one facts row inside the 48% copy column. A start-aligned row
+   (the event facts) may wrap its values at spaces, so only the centred row holds each dd on one line. */
 @media (min-width: 768px) and (max-width: 1439.98px) {
-  .hero-facts {
+  .hero-facts:not(.nos-theme *) {
     gap: 24px;
   }
-  .hero-facts dd {
+  .hero-facts:not([data-facts-align='start']):not(.nos-theme *) dd {
     white-space: nowrap;
   }
 }
 @media (min-width: 1024px) and (max-width: 1279.98px) {
-  .hero-facts dt {
+  .hero-facts:not(.nos-theme *) dt {
     max-width: 14ch;
   }
 }
 @media (min-width: 768px) and (max-width: 1023.98px), (min-width: 1280px) and (max-width: 1439.98px) {
-  .hero-facts dt {
+  .hero-facts:not(.nos-theme *) dt {
     max-width: 18ch;
   }
 }
