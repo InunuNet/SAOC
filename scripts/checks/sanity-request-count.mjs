@@ -4,8 +4,9 @@
 //   --assert     BEFORE/AFTER table, compare with goldens/request-count-targets.json
 //   --ttl-check  cache expires after SANITY_REVALIDATE_SECONDS and then holds again
 //   --notfound   unmatched URL returns 404 with host-correct chrome on both hosts
-import { spawn } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { execFileSync, spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import {
@@ -27,6 +28,7 @@ const TARGETS_PATH = resolve(
 const PORT = 3218;
 const COUNT_LOG = resolve(SANDBOX_DIR, 'run.log');
 const BUILD_LOG = resolve(SANDBOX_DIR, 'build.log');
+const BUILD_STAMP = resolve(SANDBOX_DIR, 'build.stamp');
 const REVALIDATE_SECONDS = 60;
 const TTL_MARGIN_SECONDS = 5;
 const ISR_CACHE_CONTROL = 's-maxage=60';
@@ -54,6 +56,14 @@ const splitRoute = (label) => {
   return { site, path };
 };
 
+// Identifies the source revision a build was made from: HEAD plus a digest of any uncommitted
+// change, so --assert can refuse to measure a stale `.next`.
+function sourceRevision() {
+  const git = (...args) => execFileSync('git', args, { cwd: REPO_ROOT, encoding: 'utf8' });
+  const dirty = createHash('sha256').update(git('status', '--porcelain')).update(git('diff', 'HEAD')).digest('hex');
+  return `${git('rev-parse', 'HEAD').trim()} ${dirty}`;
+}
+
 function measuredRoutes() {
   const labels = Object.keys(targets.baseline_origin_main_d52d3eb6.routes);
   return labels.map((label) => ({ label, ...splitRoute(label) }));
@@ -69,11 +79,15 @@ async function runBuild() {
   });
   const code = await new Promise((done) => build.on('exit', done));
   console.log(`build-time sanity requests: ${countLines(BUILD_LOG)} (baseline ${targets.baseline_origin_main_d52d3eb6.build_time_sanity_requests})`);
-  return code === 0 ? 0 : EXIT_FAIL;
+  if (code !== 0) return EXIT_FAIL;
+  writeFileSync(BUILD_STAMP, sourceRevision());
+  return 0;
 }
 
 async function runAssert() {
   const baseline = targets.baseline_origin_main_d52d3eb6;
+  const builtFrom = existsSync(BUILD_STAMP) ? readFileSync(BUILD_STAMP, 'utf8') : null;
+  check(builtFrom === sourceRevision(), 'the .next build was made from this exact source revision (run --build first)');
   const server = await startServer({ port: PORT, countLog: COUNT_LOG, launched: true });
   const rows = [];
   try {
