@@ -198,7 +198,7 @@ export function VendorApplyForm() {
       </p>
 
       {clientErrors.length > 0 ? (
-        <div ref={summaryRef} id={SUMMARY_ID} tabIndex={-1} className="focus:outline-2 focus:outline-solid focus:outline-primary focus:outline-offset-[3px]">
+        <div ref={summaryRef} id={SUMMARY_ID} tabIndex={-1} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
           <div
             role="alert"
             className="space-y-2 rounded-sm border-2 border-[var(--status-error)] p-4"

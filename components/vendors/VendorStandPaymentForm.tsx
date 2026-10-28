@@ -108,7 +108,6 @@ export function VendorStandPaymentForm({ token, businessName }: VendorStandPayme
               value={size}
               checked={boothSize === size}
               onChange={() => setBoothSize(size)}
-              className="outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
             />
             <span>{VENDOR_STAND_BOOTH_SIZE_LABELS[size]}</span>
           </label>
@@ -138,7 +137,7 @@ export function VendorStandPaymentForm({ token, businessName }: VendorStandPayme
       <button
         type="submit"
         disabled={submitting}
-        className="rounded-sm border border-rule bg-ivory px-4 py-2 font-sans text-[14px] font-medium text-ink transition-colors hover:bg-parchment disabled:cursor-not-allowed disabled:opacity-50 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
+        className="rounded-sm border border-rule bg-ivory px-4 py-2 font-sans text-[14px] font-medium text-ink transition-colors hover:bg-parchment disabled:cursor-not-allowed disabled:opacity-50"
       >
         {submitting ? 'Starting payment…' : 'Pay Now'}
       </button>

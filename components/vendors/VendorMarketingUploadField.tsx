@@ -93,7 +93,7 @@ export function VendorMarketingUploadField({
         accept={ALLOWED_MIME_TYPES.join(',')}
         onChange={handleFileChange}
         disabled={status === 'uploading'}
-        className="block w-full font-sans text-[14px] text-ink file:mr-3 file:rounded-sm file:border file:border-rule file:bg-ivory file:px-3 file:py-1.5 file:font-sans file:text-[13px] file:text-ink outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
+        className="block w-full font-sans text-[14px] text-ink file:mr-3 file:rounded-sm file:border file:border-rule file:bg-ivory file:px-3 file:py-1.5 file:font-sans file:text-[13px] file:text-ink"
       />
       {status === 'uploading' ? <p className="font-sans text-[13px] text-muted">Uploading…</p> : null}
       {status === 'success' ? <p className="font-sans text-[13px] text-ink">Uploaded.</p> : null}

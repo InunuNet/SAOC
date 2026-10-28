@@ -27,7 +27,7 @@ const requirementLegendClass = 'nos-form-label';
 const optionLabelClass = 'flex min-h-11 items-center gap-2 font-sans text-[15px] text-ink';
 // Native control (exempt from WCAG 1.4.11); the label row keeps a 44px hit area.
 const checkboxClass =
-  'size-6 shrink-0 accent-primary outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] disabled:opacity-60';
+  'size-6 shrink-0 accent-primary outline-none focus:ring-2 focus:ring-primary disabled:opacity-60';
 const errorClass = 'font-sans text-[14px] text-[var(--status-error)]';
 
 export function VendorCheckboxGroupField({
