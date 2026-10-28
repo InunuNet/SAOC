@@ -100,7 +100,8 @@ test.describe('SAOC nav hrefs are reachable from the rendered header', () => {
       await page.goto('/');
 
       await expect(page.locator('header [data-hd="nav"]')).toBeVisible();
-      await expect(page.locator('header [data-hd="nav"] [data-hd="item"]')).toHaveCount(5);
+      // Visible items only: Sponsors and Contact stay in the DOM (display:none) so the same markup gives all 7 at 1384+.
+      await expect(page.locator('header [data-hd="nav"] [data-hd="item"]:visible')).toHaveCount(5);
       await page.getByRole('button', { name: 'Menu', exact: true }).click();
       const dialog = page.getByRole('dialog');
       await expect(dialog).toBeVisible();

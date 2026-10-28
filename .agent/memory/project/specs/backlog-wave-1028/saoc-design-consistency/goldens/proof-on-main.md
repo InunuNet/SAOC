@@ -57,3 +57,32 @@ check-focus-ring.mjs now waits for `document.getAnimations()` to finish plus a 3
 check-focus-ring.mjs no longer composites ancestor background-colors. For every target it hides the outline, screenshots a band 6-9px outside the element box (animations frozen) and takes the WORST-case contrast of the settled ring colour (alpha-blended per pixel) against those pixels, so photographs, scrims and panels are measured. The element must be fully inside the viewport or the check fails rather than skip.
 - Beta Home hero CTA: the CTA sits on the photograph under the sage scrim, not a solid panel; the ivory 2px ring passes the pixel test (crop: goldens/hero-cta-focus-ring-crop.png, ring visible at 1440).
 - Still FAIL on beta/main: Menu and Join (outline none), footer lockup/explore/legal links (1px none; worst pixel contrast 2.52:1 over 659-3448 sampled pixels).
+
+## Amendment 2026-10-28 (F1b dev findings on test inputs)
+- e2e/nav-rendered-reachability.spec.ts counts `[data-hd="item"]:visible` (5 at 1280 and 1383); Sponsors and Contact stay in the DOM hidden by CSS so the same markup gives 7 at 1384+.
+- checks/lib.mjs readiness now waits for HTTP 200 AND `data-hd="nav"` in the /about HTML (420s ceiling), then warms /about, /judging, /sponsors, /members, /memorandum-of-incorporation, /privacy, /terms, /refunds, /societies and /contact before measuring; openPage also waits for `<header>`. Verified warm (check-nav-spacing autostarts, fails as expected on main, server stopped). NOT verified on a truly cold .next: a cold start from the spec worktree (symlinked node_modules, no .env) never became ready in 420s, which is a worktree-environment limit, not a readiness-logic result. A cold run from a real checkout is still the proof to take.
+
+## Amendment 2026-10-28 (Codex round 3 on check-focus-ring.mjs)
+The pixel band is now 2-6px outside the element box (the 2px ring at offset 3px paints 3-5px out, so the exact footprint is inside the sampled band; worst case over the band). The viewport guard fails any target whose ring box (element +-5px) is clipped on ANY side, horizontally included. Beta: hero CTA passes; Menu now also reads 1.03:1 (ivory/dark pixels vs the unset outline), Join/footer links as before (2.52:1).
+
+## Amendment 2026-10-28 (F1c: NOS Design ruling SA-6 /about; assertions appended, A-numbers kept)
+- A8 is now the lock and prints its case. On main: `/about@1280: hero is 545px, want 480 +-4` FAIL; the script prints `CASE B (fallback)` (about@1024 = 496) because only /about is out.
+- A9 `FAIL hero-facts-row`: `/about@1024: dd tops differ by 82.6px`, `column gap is 40px, want 24px`, `dt max-width is 238px, want 18ch (165px)`, `dd white-space is normal, want nowrap` (same at 1280, tops differ 85.4px).
+- A10 `FAIL hero-dd-weight`: `/about@390: dd 24.0px has weight 300, want 400`; 26.9px at 768 and 29.4px at 1024 likewise (9 problems).
+- A11 PASS on main (guard): `.hero-facts` is styled only in app/globals.css on the SAOC host; the NOS overrides sit under app/(nos)/.
+
+## F1e critical path (2026-10-28): proof on main 48d74378 and baseline F1d b105bf09
+Both built and served with `next build` + `next start` (README recipe) and measured via saoc.localhost. Full numbers: goldens/f1e-measurements.md.
+- A1 `FAIL fonts-static`: `CrimsonPro-latin-normal.woff2 is declared 4 times` (italic 4, Manrope 4, JetBrains Mono 2).
+- A2 `FAIL fonts-network`: `/about@390: font file(s) requested twice: Manrope..., CrimsonPro_latin_normal..., CrimsonPro_latin_italic...` and `5 distinct font files on the critical path, want <=3` (every route).
+- A3 `FAIL font-glyphs`: `...woff2: missing ŉ U+0149` for every shipped file.
+- A4 `FAIL font-fallback-walk`: `/@390: <SPAN> "→" has → U+2192 missing from CrimsonPro_latin_normal...`, `※ U+203B missing from Manrope` (Home, Societies, Judging).
+- A5 PASS (guard): CLS 0.0022 / 0.0104 / 0.0040 / 0.0026. A6 PASS (guard).
+- A7 `FAIL preload-order`: `/about: 0 font preloads, want exactly 1`. The hero preload already precedes the stylesheets on main (guard half).
+- A8 SKIP-passes (inlineCss not enabled).
+- A9 `FAIL favicon`: `favicon links total 277.6 KB, want <=15 KB` (same on F1d).
+- A10 main `FAIL hero-750-avif: /about hero has no AVIF srcset`; on F1d the 750w AVIF is 17,738 bytes (PASS, bound 25,000).
+- A11 main: `/ LCP 4512 FCP 1659 gap 2853`, `/about LCP 4730 FCP 2257 gap 2473` (first run 3988 and 4215); F1d: `/ LCP 4588`, `/about LCP 4362 FCP 2259 gap 2103`. FAIL on both (want LCP <=2500 and /about gap <=1000).
+- A12 to A14 are guards that pass on F1d (hero sharpness, priority/AVIF, no fade); the F1d dev owns their proof.
+- A15 to A17 triad, A18 to A20 phase 5.
+Not verified: the DC_PROD autostart path in lib.mjs (it needs a full `next build` from the dev's checkout); the same recipe was run by hand through start-prod.sh. The scripts were run against the manually started servers via DC_BASE_URL.
