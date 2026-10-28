@@ -108,7 +108,7 @@ export function LoginFormFields({
       </div>
 
       {error && (
-        <div ref={errorRef} tabIndex={-1} className="focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]">
+        <div ref={errorRef} tabIndex={-1} className="focus:outline-2 focus:outline-solid focus:outline-primary focus:outline-offset-[3px]">
           <TicketFieldAlert>{error}</TicketFieldAlert>
         </div>
       )}
