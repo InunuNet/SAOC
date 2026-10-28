@@ -10,4 +10,4 @@ async function render(size, fill, bg) {
   const canvas = sharp({ create: { width: size, height: size, channels: 4, background: bg ?? { r: 0, g: 0, b: 0, alpha: 0 } } }).composite([{ input: f, left: Math.floor((size - m.width) / 2), top: Math.floor((size - m.height) / 2) }]);
   return (bg ? canvas.flatten({ background: bg }) : canvas).png({ compressionLevel: 9, palette: true, colours: size < 180 ? 256 : 128, effort: 10 }).toBuffer();
 }
-for (const [size, fill, bg] of [[16, 14 / 16], [32, 30 / 32], [180, 0.76, { r: 0xf4, g: 0xf3, b: 0xec }]]) { const b = await render(size, fill, bg); writeFileSync(`${SPEC}favicon-renders/favicon-${size}.png`, b); console.log(size, b.length, 'bytes'); }
+for (const [size, fill, bg] of [[16, 14 / 16], [32, 30 / 32], [48, 46 / 48], [180, 0.76, { r: 0xf4, g: 0xf3, b: 0xec }]]) { const b = await render(size, fill, bg); writeFileSync(`${SPEC}favicon-renders/favicon-${size}.png`, b); console.log(size, b.length, 'bytes'); }

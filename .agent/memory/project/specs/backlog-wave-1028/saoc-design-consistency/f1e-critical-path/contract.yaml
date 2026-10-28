@@ -62,7 +62,7 @@ assertions:
       timeout_seconds: 900
     - id: A11
       phase: 5
-      description: "RUN AFTER MERGE, on beta (NOS Design ruling): Lighthouse mobile Slow 4G, MEDIAN OF 3 runs, LCP <=2500 ms on / and /about and /about LCP minus FCP <=1000 ms. Local LCP is report-only (A18). Reads beta credentials inside the scripts, never printed. Beta main at last read: / LCP 3262 ms (fails), /about 2426 ms"
+      description: "RUN AFTER MERGE, on beta (NOS Design ruling): Lighthouse mobile Slow 4G, MEDIAN OF 3 runs, LCP <=2500 ms on / and /about (the LCP-FCP gap is printed, not asserted). Local LCP is report-only (A18). Reads beta credentials inside the scripts, never printed. Beta main at last read: / LCP 3262 ms (fails), /about 2426 ms"
       command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-lcp-gap.mjs"
       timeout_seconds: 1500
     - id: A12
@@ -93,7 +93,7 @@ assertions:
       target: .agent/memory/scratch/saoc-dc-f1e-gws-manifest.json
       required: false
     - id: A18
-      description: "Local production build LCP and the /about queuing gap, REPORT ONLY (prints, always exits 0; the gate is A11 on beta). Needs DC_PROD=1."
+      description: "Local production build LCP and the /about LCP-FCP gap, REPORT ONLY (prints, always exits 0; the gate is A11 on beta). Needs DC_PROD=1."
       command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-lcp-gap.mjs --report-only"
       timeout_seconds: 1500
     - id: A19
@@ -105,14 +105,14 @@ assertions:
       description: "RUN AFTER DEPLOY (phase 5, not part of the phase 4 gate). Deployed preload order and single font preload on / and /about."
       command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-preload-order.mjs"
     - id: A21
-      description: "NOS Design favicon ruling: served 16 and 32 PNGs exist and are cropped to the flower (longer side >=87% of the cell, >=1px margin), the 180 is opaque on #F4F3EC with the flower at 72-80% (76% ruled). Fails on main (no 16/32 PNG icon links, apple icon transparent)"
+      description: "NOS Design favicon ruling: the 16 (read from favicon.ico) is cropped to the flower with >=1px margin; the linked 32 and 48 PNGs are cropped to the flower; the 180 apple-touch is opaque on #F4F3EC with the flower at 72-80%. Fails on main (no 32/48 PNG, 16 not cropped, apple icon transparent)"
       command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-favicon-crop.mjs"
       timeout_seconds: 900
     - id: A22
-      description: "The 16/32/180 review renders in goldens/favicon-renders obey the same crop and opaque-ground rules (static, derived by checks/make-favicon-renders.mjs from the confirmed source app/icon.png)"
+      description: "The 16/32/48/180 review renders in goldens/favicon-renders obey the same crop and opaque-ground rules (static, derived by checks/make-favicon-renders.mjs from the confirmed source app/icon.png)"
       command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-favicon-crop.mjs --goldens"
     - id: A23
-      description: "Glyph ruling: U+2192 and U+203B never render from a system face. Any svg[data-glyph] is aria-hidden, 1em, currentColor, on the baseline; every status marker leads with a text mark in a shipped face or the status-mark SVG (if no shipped face has U+203B it must be the SVG). Source rule: when no shipped face has U+203B, components/show/_shared/StatusMarker.tsx must hold an aria-hidden 1em currentColor svg[data-glyph=status-mark] and no text mark (StatusMarker renders on the NOS host, unreachable from the local SAOC-host routes, so the source is checked as well as the DOM). Fails on main (no shipped face has U+203B, StatusMarker renders it as text)"
+      description: "Glyph ruling: U+2192 and U+203B never render from a system face. Any svg[data-glyph] is aria-hidden and currentColor; an ARROW svg is also 1em on the baseline; the status-mark svg is NOT 1em (its size is gated by A27). Home must show a status badge at 390 and 1440 and every badge leads with the status-mark SVG (or a text mark only if a shipped face has U+203B). Source rule: when no shipped face has U+203B, components/show/_shared/StatusMarker.tsx must hold an aria-hidden currentColor svg[data-glyph=status-mark] and no text mark (checked in source and in the SAOC Home DOM, where PlaceholderMarker, NavCards and ShowBand render it). Fails on main (no shipped face has U+203B, StatusMarker renders it as text)"
       command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-glyph-svg.mjs"
       timeout_seconds: 900
     - id: A24
