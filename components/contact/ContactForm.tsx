@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
+import { FormErrorAlert } from '@/components/ui/FormErrorAlert';
 import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import { NOS_CONTACT_SUCCESS_BODY_PLACEHOLDER } from '@/lib/nos-contact-copy';
 import { useHydrated } from '@/lib/hooks/useHydrated';
@@ -287,7 +288,7 @@ export function ContactForm({ site = 'saoc', markPlaceholders = false }: Contact
       {/* Inline error */}
       {showError ? (
         <div ref={formError} tabIndex={-1} className="focus:outline-2 focus:outline-solid focus:outline-primary focus:outline-offset-[3px]">
-          <TicketFieldAlert id={FORM_ERROR_ID}>{errorMessage}</TicketFieldAlert>
+          <FormErrorAlert id={FORM_ERROR_ID}>{errorMessage}</FormErrorAlert>
         </div>
       ) : null}
 

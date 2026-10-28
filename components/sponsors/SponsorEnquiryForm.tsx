@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 
 import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
+import { FormErrorAlert } from '@/components/ui/FormErrorAlert';
 import {
   ENQUIRY_CONSENT_LABEL,
   ENQUIRY_LABELS,
@@ -355,7 +356,7 @@ export function SponsorEnquiryForm({ site }: SponsorEnquiryFormProps) {
       </div>
 
       {status === 'error' && errorMessage !== '' ? (
-        <TicketFieldAlert id={FORM_ERROR_ID}>{errorMessage}</TicketFieldAlert>
+        <FormErrorAlert id={FORM_ERROR_ID}>{errorMessage}</FormErrorAlert>
       ) : null}
 
       <button

@@ -14,6 +14,7 @@
 import { useState } from 'react';
 
 import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
+import { FormErrorAlert } from '@/components/ui/FormErrorAlert';
 import { useHydrated } from '@/lib/hooks/useHydrated';
 
 type Status = 'idle' | 'submitting' | 'success' | 'error';
@@ -222,7 +223,7 @@ export function SuggestionForm() {
 
       {/* Inline error */}
       {status === 'error' && errorMessage ? (
-        <TicketFieldAlert id={FORM_ERROR_ID}>{errorMessage}</TicketFieldAlert>
+        <FormErrorAlert id={FORM_ERROR_ID}>{errorMessage}</FormErrorAlert>
       ) : null}
 
       <button

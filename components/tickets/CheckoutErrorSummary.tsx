@@ -4,7 +4,7 @@
 import { CircleAlert } from 'lucide-react';
 import type { Ref } from 'react';
 
-import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
+import { FormErrorAlert } from '@/components/ui/FormErrorAlert';
 
 export interface CheckoutErrorEntry {
   key: string;
@@ -68,7 +68,7 @@ export function CheckoutErrorSummary({
           </ul>
         </div>
       ) : (
-        <TicketFieldAlert>{serverMessage}</TicketFieldAlert>
+        <FormErrorAlert>{serverMessage}</FormErrorAlert>
       )}
     </div>
   );

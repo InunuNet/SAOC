@@ -3,6 +3,7 @@
 import { useEffect, useRef, type FormEvent } from 'react';
 
 import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
+import { FormErrorAlert } from '@/components/ui/FormErrorAlert';
 import { useHydrated } from '@/lib/hooks/useHydrated';
 
 interface LoginFormFieldsProps {
@@ -109,7 +110,7 @@ export function LoginFormFields({
 
       {error && (
         <div ref={errorRef} tabIndex={-1} className="focus:outline-2 focus:outline-solid focus:outline-primary focus:outline-offset-[3px]">
-          <TicketFieldAlert>{error}</TicketFieldAlert>
+          <FormErrorAlert>{error}</FormErrorAlert>
         </div>
       )}
 
