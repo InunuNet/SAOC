@@ -150,7 +150,7 @@ export function NewsletterSignup({
                   onChange={(event) => toggleTopic(topic, event.target.checked)}
                   aria-invalid={topicsInvalid ? 'true' : undefined}
                   aria-describedby={topicsInvalid ? topicsErrorId : undefined}
-                  className={`size-6 shrink-0 accent-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-ivory${site === 'nos' ? '' : ' aria-invalid:shadow-[0_0_0_1px_var(--status-error-on-dark)]'}`}
+                  className={`size-6 shrink-0 accent-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-ivory${site === 'nos' ? '' : ' aria-invalid:outline-1 aria-invalid:outline-solid aria-invalid:outline-[var(--status-error-on-dark)]'}`}
                   style={site === 'nos' ? { accentColor: 'var(--nc-gold)' } : undefined}
                 />
                 {topic === 'saoc' ? NEWSLETTER_COPY.topicLabelSaoc : NEWSLETTER_COPY.topicLabelNos}
