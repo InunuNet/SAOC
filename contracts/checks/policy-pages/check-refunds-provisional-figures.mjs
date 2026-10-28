@@ -111,8 +111,14 @@ function stripTags(s) {
   return s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-const markBlocks = [...html.matchAll(MARK_PATTERN)].map((m) => m[1]);
-const htmlWithoutMarks = html.replace(MARK_PATTERN, ' ');
+// <script>/<style> payloads (Tailwind class strings, URL escapes) are not page copy; strip
+// them first so a figure-shaped string or a <mark> inside one is never scanned.
+const pageHtml = html
+  .replace(/<script\b[\s\S]*?<\/script\s*>/gi, ' ')
+  .replace(/<style\b[\s\S]*?<\/style\s*>/gi, ' ');
+
+const markBlocks = [...pageHtml.matchAll(MARK_PATTERN)].map((m) => m[1]);
+const htmlWithoutMarks = pageHtml.replace(MARK_PATTERN, ' ');
 
 // 1. No bare figure outside any provisional-figure mark.
 const outsideText = stripTags(htmlWithoutMarks);

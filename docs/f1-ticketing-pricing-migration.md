@@ -162,47 +162,9 @@ All queries that select ticket-type data (`activeTicketTypesQuery`, `activeTicke
 
 ## Live Dataset Patch Script
 
-**File:** `scripts/fix-vip-and-weekend-pass-pricing.ts`
-
-Idempotent patch script that updates the live Sanity dataset. Three documents patched atomically:
-
-1. `ticketType-vip`: `price: 300` → `price: 480`
-2. `ticketType-weekend-pass`: `price: 400` → `price: 380`, add `regularPrice: 400`, add `earlyBirdCutoff: "2027-07-31"`, unset `releasedQuantity`
-3. `ticketType-early-bird-weekend-pass`: `active: false` (retired, never deleted — pre-production dataset may reference it)
-
-### Prerequisites
-
-Requires `.env.local` with:
-- `NEXT_PUBLIC_SANITY_PROJECT_ID`
-- `NEXT_PUBLIC_SANITY_DATASET`
-- `SANITY_API_TOKEN` (Editor or Admin role, write-enabled)
-
-### Run the Patch
-
-```bash
-# Dry run (shows what would be patched, makes no writes)
-npx tsx scripts/fix-vip-and-weekend-pass-pricing.ts --dry-run
-
-# Execute the patch
-npx tsx scripts/fix-vip-and-weekend-pass-pricing.ts
-
-# Verify all fields were corrected
-npx tsx scripts/fix-vip-and-weekend-pass-pricing.ts --verify
-```
-
-**Output example (dry run):**
-```
-Patching VIP/Weekend Pass pricing in Sanity dataset "production" (project 12345abc)
-  ticketType-vip: would set price = 480
-  ticketType-weekend-pass: would set price = 380, regularPrice = 400, earlyBirdCutoff = 2027-07-31; would unset releasedQuantity
-  ticketType-early-bird-weekend-pass: would set active = false
-Dry run complete — no documents were written.
-```
-
-The script is:
-- **Idempotent:** running it twice against already-corrected documents is harmless.
-- **Safe on old seeds:** `scripts/seed-ticketing.ts` uses `createIfNotExists`, so re-seeding a fresh dataset will use the corrected values from `ADMISSION_PRODUCTS` without needing this patch.
-- **One-time only:** this is a historical correction for the live dataset; new Sanity instances seed from the corrected source.
+The one-off patch script for the live Sanity dataset was removed (chore/drop-vip-pricing-script).
+It wrote to live Sanity by default and could overwrite settled prices. Ticket prices are managed in
+Sanity Studio.
 
 ---
 

@@ -9,7 +9,7 @@ import {
   PUBLIC_FORM_RATE_LIMIT_MAX_ATTEMPTS,
   PUBLIC_FORM_RATE_LIMIT_WINDOW_MS,
 } from '@/lib/public-form-rate-limit';
-import { isHoneypotHit } from '@/lib/request-guards';
+import { isBodyWithinLimit, isHoneypotHit } from '@/lib/request-guards';
 import {
   VENDOR_APPLICATIONS_COLLECTION,
   buildVendorApplication,
@@ -41,7 +41,13 @@ import { saocUrl } from '@/lib/site-hosts';
 
 const attempts = createAttemptStore(PUBLIC_FORM_RATE_LIMIT_WINDOW_MS);
 
+// Cap on the request body, checked against Content-Length before the body is buffered.
+const MAX_BODY_BYTES = 16384;
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  if (!isBodyWithinLimit(request.headers.get('content-length'), MAX_BODY_BYTES)) {
+    return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
+  }
   const ip = clientIpFromForwardedFor(request.headers.get('x-forwarded-for'));
   const limit = consumeRateLimit(
     { now: new Date(), ...scopeAttemptsToRequest(attempts) },
