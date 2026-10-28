@@ -1,5 +1,6 @@
 {
   "path": ".agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/favicon-source/emblem-512.png",
   "sha256": "6824a04ff9f16dcebf2ec6be817a78edae8f65c902312e2baa3dcc8117104580",
-  "provenance": "copy of app/icon.png at origin/main 48d74378 (git blob 98c6aea9, committed in d42f6cc0). CONFIRMED by NOS Design 2026-10-28 as the supplied emblem."
+  "provenance": "copy of app/icon.png at origin/main 48d74378 (git blob 98c6aea9, committed in d42f6cc0). CONFIRMED by NOS Design 2026-10-28 as the supplied emblem.",
+  "rendersApproval": "NOS Design GO on the 16/32/180 renders, 2026-10-28 (lead relay)"
 }
