@@ -12,6 +12,7 @@ features:
 goldens:
   - .agent/memory/project/specs/council-1028/council-copy-fixes/goldens/copy-map.json
   - .agent/memory/project/specs/council-1028/council-copy-fixes/goldens/council-overrides-shape.json
+  - .agent/memory/project/specs/council-1028/council-copy-fixes/goldens/sanity-exceptions.json
   - .agent/memory/project/specs/council-1028/council-copy-fixes/goldens/README.md
 
 assertions:
@@ -57,6 +58,9 @@ assertions:
     - id: A12
       description: "docs/council-copy-fixes-1028.md exists and names every copy-map id C01..C10 and C02b"
       command: "node .agent/memory/project/specs/council-1028/council-copy-fixes/checks/check-doc.mjs"
+    - id: A17
+      description: "Sanity-vs-Drive exception list: the 9 FAQ rows the lead already applied in Sanity (q15, q16, q26, q51, q29, q4, q7, q8, q40) are each listed once with the council sheet of 2026-10-27, each 'from' is unique in the frozen Drive FAQ mirror, and council-overrides.json carries them under sanityExceptions gated by _lib.mjs on the Sanity fixture's capturedAt (dormant against today's 2026-10-26 fixture, active after any re-record or NOS_STD_FIXTURE=live) so nos-content-standard gates never go red on these rows. The Tygerberg liaison row has no comparing check and is recorded only"
+      command: "node .agent/memory/project/specs/council-1028/council-copy-fixes/checks/check-sanity-exceptions.mjs"
     - id: A13
       description: "Lint is clean"
       command: "pnpm exec eslint app components lib e2e"
