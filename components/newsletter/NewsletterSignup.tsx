@@ -159,14 +159,13 @@ export function NewsletterSignup({
           </div>
           {topicsInvalid ? (
             showCopyGap ? (
-              <p id={topicsErrorId} role="alert" className={site === 'nos' ? 'mt-1.5 border-l-2 border-error px-4 font-sans text-[14px] text-ivory' : errorClassName}>
-                {site === 'nos' ? <span aria-hidden="true">⚠︎</span> : errorIcon}{' '}
+              <p id={topicsErrorId} role="alert" className={`mt-1.5 border-l-2 px-4 font-sans text-[14px] text-ivory ${site === 'nos' ? 'border-error' : 'border-[var(--status-error-on-dark)]'}`}>
+                <span aria-hidden="true">⚠︎</span>{' '}
                 <span>COPY GAP — AI-generated placeholder: Select at least one newsletter topic.</span>
               </p>
             ) : (
-              <p id={topicsErrorId} role="alert" className={site === 'nos' ? 'sr-only' : errorClassName}>
-                {site === 'nos' ? null : errorIcon}
-                {site === 'nos' ? NEWSLETTER_COPY.genericError : <span>{NEWSLETTER_COPY.genericError}</span>}
+              <p id={topicsErrorId} role="alert" className="sr-only">
+                {NEWSLETTER_COPY.genericError}
               </p>
             )
           ) : null}
