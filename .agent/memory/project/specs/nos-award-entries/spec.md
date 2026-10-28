@@ -39,17 +39,17 @@ Brad's wording is used character for character, so the only judgement left is pl
 ## Decisions (DECISION NEEDED for NOS Design unless stated; the default is what the checks encode)
 | id | question | recommendation (default) |
 |---|---|---|
-| D1 | (settled by AE-1) shared copy above, then the two sections | Q&A block sits above the sections; a paragraph moves under one award only where its text says which (none does today). Ambiguous copy goes to the Lee-Ann doc via SAOC. |
+| D1 | (settled by AE-1) shared copy above, then National Show Awards then SAOC Awards | Q&A block sits above the sections; a paragraph moves under one award only where its text says which (none does today). Ambiguous copy goes to the Lee-Ann doc via SAOC. |
 | D2 | "When can exhibitors set up their displays?" is class b (Brad's Display Exhibitors "present orchid displays") | Swap to "Display Exhibitors" in the question and "Display Exhibitor setup" in the answer. Alternative: leave the question as Lee-Ann wrote it. |
-| D3 | Grammar of the two class-a sentence swaps: "recognising outstanding orchids and exhibitors." and aria-label "More for exhibitors" | "recognising outstanding Award Entries." and "More for Award Entries". Alternative: ask Lee-Ann for her own sentence; until then the swap uses Brad's term only. |
-| D4 | Keep "Exhibitors and vendors" as the /vendors title and nav label, or rename to "Display Exhibitors and Retail Vendors" | Keep: both are stand bookers, which Brad allows. Rename only if Brad asks. |
-| D5 | Nav group and home band heading "Exhibit & trade" (a verb) | Keep. |
+| D3 | (settled by AE-1 for the gateway label) "More for Award Entries". Still open: the sentence "recognising outstanding orchids and exhibitors." | "recognising outstanding Award Entries." (Brad's term only) or Lee-Ann's own sentence. |
+| D4 | (closed pending Lee-Ann, AE-1 a/c) /vendors title and group label | Unchanged and asserted unchanged. |
+| D5 | (closed pending Lee-Ann) "Exhibit & trade" | Unchanged. |
 | D6 | Lee-Ann's /vendors paragraph "Exhibitors will present stunning displays ... compete for prestigious national awards" and the tickets card "I'm exhibiting orchids / Apply to exhibit" (links to /vendors/apply) | Keep: stand copy. Flag to Brad that "compete for national awards" overlaps with Award Entries. |
 | D7 | Archive statistic label "Exhibitors" and "{n} exhibitors took part." | Keep until Lee-Ann says what the historical count measured. |
 | D8 | `lib/ticket-taxonomy.ts` label "Exhibitor Entry" (unrendered) and Studio option title | Leave the lib label (class c); SAOC may retitle the Studio option (S3), value unchanged. |
 | D9 | ticketsPage.ticketIncludesNote "entry to all exhibitor stages" | SAOC to rule; no wording proposed. |
 | D12 | (closed by SAOC) Route | Option R chosen: /award-entries + 308 from /exhibitors. Option K dropped. |
-| D10 | Where the "Retail Vendors" and "Display Exhibitors" definition lines (19:11) are shown | Not placed by this feature (the thread does not say). Recommendation: two definition paragraphs at the top of /vendors, verbatim from award-copy.json vendorTerms. |
+| D10 | (closed, waits on AE-1 b/c) Retail Vendors / Display Exhibitors lines | Not placed. |
 | D11 | (settled by AE-1) the label is not rendered; lede is the bare sentence | n/a |
 
 ## Gates (contract.yaml) and proof the static checks bite

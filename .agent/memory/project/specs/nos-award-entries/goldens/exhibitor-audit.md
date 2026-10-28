@@ -4,7 +4,7 @@ Generated from `exhibitor-audit.json` (the machine-readable twin the checks read
 
 Classes: **a** plant entrant for judging (Award Entries), **b** stand-booking vendor/exhibitor (kept; Retail Vendors / Display Exhibitors where the text says which), **c** identifier, path, code or unrendered. Class-c rows with action `change` are the route move (SAOC Option R); every other class-c identifier is left.
 
-Rows: a=13, b=18, c=13. Actions: change=20, keep=11, leave=3, saoc (SAOC lane / Sanity-held)=10. Raw `git grep -i exhibitor` over source outside docs, contracts, drive mirrors and .agent: 1,197 hits, nearly all class c (components/show/Exhibitor*, StatusMarker, Sanity schema types, CSS hooks, contracts), left untouched.
+Rows: a=14, b=19, c=13. Actions: change=23, keep=11, leave=3, saoc (SAOC lane / Sanity-held)=9. Raw `git grep -i exhibitor` over source outside docs, contracts, drive mirrors and .agent: 1,197 hits, nearly all class c, left untouched.
 
 | id | file:line | current | class | action | new | route | decision | note |
 |---|---|---|---|---|---|---|---|---|
@@ -42,7 +42,7 @@ Rows: a=13, b=18, c=13. Actions: change=20, keep=11, leave=3, saoc (SAOC lane / 
 | R32 | sanity:showFaq-q1, q8, q32 | `orchid societies, growers, exhibitors, vendors and enthusiasts / international exhibitors and vendors / international guests and exhibitors` | b | saoc | `unchanged` | /faq | - | General show description and stand questions. Kept. |
 | R33 | sanity:conferencePresenter (international presenter bio) | `as an exhibitor, participating for more than 10 years` | b | saoc | `unchanged` | /international-guests | - | A presenter's biography; his history as a show exhibitor is a statement of fact. Kept. |
 | R34 | sanity/schemas/documents/ticketType.ts:145 | `{ title: 'Exhibitor Entry', value: 'exhibitor-entry' }` | a | saoc | `title only (value unchanged)` | - | D8 | S3. Studio option label for a ticket category; not on any NOS page. Value 'exhibitor-entry' is class c and stays. |
-| R35 | scripts/seed-show-faq.ts:303 | `question: 'When can exhibitors set up their displays?'` | b | saoc | `question: 'When can Display Exhibitors set up their displays?'` | - | D2 | S5. SAOC runs the FAQ seed; the seed must match S2 or a reseed reverts it. |
+| R35 | scripts/seed-show-faq.ts:303 | `question: 'When can exhibitors set up their displays?',` | b | change | `question: 'When can Display Exhibitors set up their displays?',` | - | D2 | S5 moved into our PR (SAOC ruling): the FAQ seed is code. SAOC runs the seed/Sanity write after NOS Design signs off and this PR merges. |
 | R36 | components/nos-chrome/nos-nav.ts:133 | `href: showPath('/exhibitors'),` | c | change | `href: showPath('/award-entries'),` | - | - | Nav leaf href (id stays 'exhibitors'). Header, show index and footer resolve it from here. |
 | R37 | components/nos/NosShowIndex.tsx:39 | `'/national-show/exhibitors',` | c | change | `'/national-show/award-entries',` | - | - | Show-index href. |
 | R38 | components/show/ShowSectionNav.tsx:88 | `href: '/national-show/exhibitors',` | c | change | `href: '/national-show/award-entries',` | - | - | Unrendered component; kept in step. |
@@ -52,3 +52,5 @@ Rows: a=13, b=18, c=13. Actions: change=20, keep=11, leave=3, saoc (SAOC lane / 
 | R42 | app/(nos)/national-show/exhibitors/page.tsx:62 | `path: '/national-show/exhibitors',` | c | change | `path: '/national-show/award-entries',` | - | - | buildPageMetadata canonical path. |
 | R43 | app/(nos)/national-show/exhibitors/page.tsx:97 | `route="/national-show/exhibitors"` | c | change | `route="/national-show/award-entries"` | - | - | NosHero route (hero photo lookup, R26). |
 | R44 | app/(nos)/national-show/exhibitors/page.tsx:137 | `current="/national-show/exhibitors"` | c | change | `current="/national-show/award-entries"` | - | - | NosShowIndex current. |
+| R45 | scripts/seed-show-faq.ts:305 | `The specific exhibitor setup, judging,` | b | change | `The specific Display Exhibitor setup, judging,` | - | D2 | Same answer as R35, in the seed. |
+| R46 | scripts/seed-show-faq.ts:281 | `recognising outstanding orchids and exhibitors.` | a | change | `recognising outstanding Award Entries.` | - | D3 | FAQ 25 answer in the seed; twin of R04/R29. Included so a reseed cannot revert S1. |

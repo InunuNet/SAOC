@@ -8,7 +8,7 @@ Proposed wording uses only Brad's terms (goldens/source-council-thread.md). Sent
 | S2 | Sanity `showFaq-q28` question and answer | "When can exhibitors set up their displays?" / "The specific exhibitor setup, judging, ..." | "When can Display Exhibitors set up their displays?" / "The specific Display Exhibitor setup, judging, ..." (D2) |
 | S3 | `sanity/schemas/documents/ticketType.ts:145` Studio option title (value `exhibitor-entry` must not change) | `Exhibitor Entry` | title only, e.g. `Award Entry` (D8); not shown on any NOS page |
 | S4 | showPage `01-national-show-landing` (seed `content/show-pages/01-national-show-landing.json:36`) | "...Workshops, Exhibitors, Sponsors..." names the page that was Exhibitors | "...Workshops, Award Entries, Sponsors..." |
-| S5 | `scripts/seed-show-faq.ts:303` (SAOC runs the FAQ seed) | same question as S2 | same as S2, or a reseed reverts S2 |
+| S5 | `scripts/seed-show-faq.ts:281,303,305` | q25 sentence, q28 question and answer | EDITED IN OUR PR (audit R35, R45, R46); SAOC runs the seed/Sanity write for S1-S4 after NOS Design signs off and the PR merges |
 | S6 | `app/(marketing)/about/page.tsx:159` (SAOC host) | "...growers, exhibitors, breeders, judges..." | SAOC to decide whether this means plant entrants |
 | S7 | Sanity `ticketsPage.ticketIncludesNote` | "...and entry to all exhibitor stages." | no wording proposed (D9): the retired exhibitor-stages concept does not say which kind of exhibitor |
 | S8 | `app/(nos)/national-show/sponsors/page.tsx:60`, `components/sponsors/*` | "Exhibitors and vendors" (class b, correct) | no change; listed because the files are SAOC's |

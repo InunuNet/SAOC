@@ -433,13 +433,13 @@
       "id": "R35",
       "file": "scripts/seed-show-faq.ts",
       "line": 303,
-      "current": "question: 'When can exhibitors set up their displays?'",
-      "new": "question: 'When can Display Exhibitors set up their displays?'",
+      "current": "question: 'When can exhibitors set up their displays?',",
+      "new": "question: 'When can Display Exhibitors set up their displays?',",
       "class": "b",
-      "action": "saoc",
+      "action": "change",
       "route": null,
       "decision": "D2",
-      "note": "S5. SAOC runs the FAQ seed; the seed must match S2 or a reseed reverts it."
+      "note": "S5 moved into our PR (SAOC ruling): the FAQ seed is code. SAOC runs the seed/Sanity write after NOS Design signs off and this PR merges."
     },
     {
       "id": "R36",
@@ -548,6 +548,30 @@
       "route": null,
       "decision": null,
       "note": "NosShowIndex current."
+    },
+    {
+      "id": "R45",
+      "file": "scripts/seed-show-faq.ts",
+      "line": 305,
+      "current": "The specific exhibitor setup, judging,",
+      "new": "The specific Display Exhibitor setup, judging,",
+      "class": "b",
+      "action": "change",
+      "route": null,
+      "decision": "D2",
+      "note": "Same answer as R35, in the seed."
+    },
+    {
+      "id": "R46",
+      "file": "scripts/seed-show-faq.ts",
+      "line": 281,
+      "current": "recognising outstanding orchids and exhibitors.",
+      "new": "recognising outstanding Award Entries.",
+      "class": "a",
+      "action": "change",
+      "route": null,
+      "decision": "D3",
+      "note": "FAQ 25 answer in the seed; twin of R04/R29. Included so a reseed cannot revert S1."
     }
   ]
 }
