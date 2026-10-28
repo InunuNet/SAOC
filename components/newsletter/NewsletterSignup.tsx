@@ -63,7 +63,10 @@ export function NewsletterSignup({
 
   const errorId = `${inputId}-error`;
   const topicsErrorId = `${inputId}-topics-error`;
-  const showError = status === 'error' && errorMessage !== '';
+  const hasError = status === 'error' && errorMessage !== '';
+  // genericError is unsourced copy: announce it to screen readers but render no visible summary.
+  const errorWithheld = hasError && errorMessage === NEWSLETTER_COPY.genericError;
+  const showError = hasError && !errorWithheld;
   const orderedTopics: NewsletterTopic[] = site === 'nos' ? ['nos', 'saoc'] : ['saoc', 'nos'];
 
   function toggleTopic(topic: NewsletterTopic, checked: boolean) {
@@ -136,7 +139,7 @@ export function NewsletterSignup({
           onChange={(e) => setEmail(e.target.value)}
           placeholder={placeholder}
           aria-invalid={emailInvalid ? 'true' : undefined}
-          aria-describedby={showError ? errorId : undefined}
+          aria-describedby={hasError ? errorId : undefined}
           className={inputClassName}
         />
         <fieldset className="mt-2 w-full basis-full">
@@ -203,6 +206,11 @@ export function NewsletterSignup({
           <p id={errorId} className={errorClassName}>
             {errorIcon}
             <span>{errorMessage}</span>
+          </p>
+        ) : null}
+        {errorWithheld ? (
+          <p id={errorId} role="alert" className="sr-only">
+            {errorMessage}
           </p>
         ) : null}
       </div>
