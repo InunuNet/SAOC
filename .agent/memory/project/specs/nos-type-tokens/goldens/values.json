@@ -1,0 +1,302 @@
+{
+ "_source": "NOS Design ruling 2026-10-28 (root comms.md, [NOS Design -> NOS Site] NR-1..NR-12 full text, section 1 scale, rules R-W R-M R-O R-C R-F). Every number below is copied from that ruling; none is invented. Items the ruling leaves open are listed in spec.md under OPEN and are NOT encoded as a pass condition.",
+ "viewports": [
+  390,
+  768,
+  1280,
+  1440,
+  2056
+ ],
+ "tolerancePx": 0.6,
+ "colours": {
+  "ink700": "rgb(58, 54, 84)",
+  "ink500": "rgb(106, 103, 128)",
+  "royal": "rgb(33, 26, 87)",
+  "olive": "rgb(106, 104, 41)",
+  "oliveLight": "rgb(167, 168, 65)",
+  "lilac": "rgb(216, 201, 236)",
+  "violetBanned": "rgb(126, 63, 151)"
+ },
+ "weightBand": {
+  "_note": "R-W. size>=32 -> 300; 20<=size<32 -> 400; size<20 -> 500. Strict on the band edges (31.99 is 400).",
+  "hiMin": 32,
+  "midMin": 20,
+  "hi": 300,
+  "mid": 400,
+  "lo": 500,
+  "skipBoxPx": 2
+ },
+ "clamps": {
+  "display": {
+   "a": 28.1,
+   "b": 3.05,
+   "min": 40,
+   "max": 84,
+   "weight": 300,
+   "opsz": 72,
+   "fraunces": true
+  },
+  "h2": {
+   "a": 29,
+   "b": 0.762,
+   "min": 32,
+   "max": 44,
+   "weight": 300,
+   "opsz": 48,
+   "fraunces": true
+  },
+  "name": {
+   "a": 30.5,
+   "b": 0.381,
+   "min": 32,
+   "max": 40,
+   "weight": 300,
+   "opsz": 48,
+   "fraunces": true
+  },
+  "h3": {
+   "a": 20.9,
+   "b": 0.286,
+   "min": 22,
+   "max": 26,
+   "weight": 400,
+   "opsz": 24,
+   "fraunces": true
+  },
+  "title": {
+   "a": 19.26,
+   "b": 0.19,
+   "min": 20,
+   "max": 22,
+   "weight": 400,
+   "opsz": 24,
+   "fraunces": true
+  },
+  "standfirst": {
+   "a": 18.9,
+   "b": 0.286,
+   "min": 20,
+   "max": 24,
+   "weight": 400,
+   "lh": 1.45,
+   "fraunces": true
+  },
+  "body": {
+   "a": 15.53,
+   "b": 0.12,
+   "min": 16,
+   "max": 18,
+   "weight": 450,
+   "lh": 1.6
+  },
+  "meta": {
+   "a": 13.63,
+   "b": 0.095,
+   "min": 14,
+   "max": 15,
+   "weight": 400
+  },
+  "heroLedeHub": {
+   "a": 18.5,
+   "b": 0.38,
+   "min": 20,
+   "max": 26,
+   "weight": 400,
+   "opsz": 28,
+   "fraunces": true
+  },
+  "themeLine": {
+   "a": 17,
+   "b": 0.62,
+   "min": 20,
+   "max": 28,
+   "weight": 400,
+   "fraunces": true
+  },
+  "heroFactDd": {
+   "a": 19.26,
+   "b": 0.19,
+   "min": 20,
+   "max": 24,
+   "weight": 400,
+   "opsz": 24,
+   "fraunces": true,
+   "expect": {
+    "390": 20,
+    "1440": 22,
+    "2056": 23.2,
+    "tolPx": 0.5,
+    "_note": "NOS Design answer 2: keep the clamp; 24 is only the cap"
+   }
+  }
+ },
+ "measurePx": 608,
+ "measureTolPx": 1.5,
+ "standfirstBodyRatio": {
+  "min": 1.25,
+  "max": 1.4,
+  "atViewport": 1440
+ },
+ "floors": {
+  "minHeadingPx": 14,
+  "minRunningTextPx": 14,
+  "minCapsPx": 13
+ },
+ "labels": {
+  "_note": "NR-8 / TYPE-6. Three tuples only. Caps are 14px everywhere (NOS Design 2026-10-28): tracking 0.12em = 1.68px. The nav link (.nh-label) uses the Form-label tuple (Karla 500 14 ink); olive is for the Label role only.",
+  "maxTuplesPerRoute": 3,
+  "label": {
+   "weight": 600,
+   "size": 14,
+   "tracking": 0,
+   "transform": "none"
+  },
+  "formLabel": {
+   "weight": 500,
+   "size": 14,
+   "tracking": 0,
+   "transform": "none"
+  },
+  "caps": {
+   "weight": 700,
+   "sizes": [
+    14
+   ],
+   "trackingEm": 0.12,
+   "transform": "uppercase"
+  },
+  "capsAllowSelectors": [
+   "button",
+   "[role=button]",
+   "a[class*=btn]",
+   "a[class*=cta]",
+   ".nf-head",
+   "[class*=pill]",
+   "[class*=status]",
+   "[data-nos-hero-text*=countdown]"
+  ],
+  "labelSetSelector": "dt, label, legend, .nos-label, [class*=label], [class*=eyebrow]",
+  "colours": {
+   "_note": "NOS Design answer 1: NR-8 supersedes the section 1 table. The Label tuple is olive on light grounds and olive-light on dark; Form label stays ink; Caps per ground.",
+   "light": "olive",
+   "dark": "oliveLight",
+   "lightLuminanceMin": 0.4
+  },
+  "navLinkClass": "nh-label"
+ },
+ "exempt": {
+  "lockup": "[data-testid=\"nf-saoc-lockup\"], a[aria-label*=\"Making a difference since 1968\"]",
+  "testBanner": "[aria-label=\"Testing only, not live\"]",
+  "_note": "The SAOC lockup is a logotype artwork (S-3, SaocLockup.tsx); the Testing-only banner is the SAOC launch gate. Both are outside this mission and excluded from every walk."
+ },
+ "roles": {
+  "hooks": {
+   "cardTitle": "nos-card-title",
+   "h3Visual": "nos-h3-visual"
+  },
+  "nameSelector": ".nos-pr-head h3",
+  "docH3Selector": ".doc-prose > .doc-h3",
+  "standfirstSelector": ".doc-standfirst",
+  "closingSelector": ".nos-ab-closing",
+  "proseSelector": "main p, main li",
+  "heroLedeHubSelector": ".nos-hero-hub .nos-hero-lede",
+  "themeLineSelector": ".nos-hero-inner .nos-hero-lede[data-nos-lede=theme]",
+  "heroFactDdSelector": "dl[data-hero-facts] dd",
+  "numSelector": ".nos-num"
+ },
+ "s2": {
+  "routes": [
+   "/faq",
+   "/plan-your-visit"
+  ],
+  "minContrast": 4.5,
+  "colour": "rgb(106, 104, 41)"
+ },
+ "fonts": {
+  "routes": [
+   "/",
+   "/about",
+   "/faq"
+  ],
+  "viewport": 1440,
+  "karlaFilesExactly": 1,
+  "cap": {
+   "enabled": false,
+   "maxFontFilesPerRoute": 3,
+   "_note": "OFF. The 3-file cap is out of this PR: SAOC's F1e (feat/sdc-f1e-critical-path) is rewriting font loading in app/layout.tsx and TYPE-15 builds on it after NR-9/NR-12. Counts are recorded, not failed. Flip enabled to true in TYPE-15."
+  },
+  "_note": "Karla is counted as distinct url() sources across @font-face rules of the Karla family (a next/font local() fallback face is not a file), and must be exactly 1."
+ },
+ "weight450Probe": {
+  "route": "/about",
+  "note": "widths of one string at 400, 450 and 500 in the page Karla must be strictly increasing by more than 1px; a static 400/500/600/700 declaration renders 450 as 500."
+ },
+ "chromePanelOpen": {
+  "route": "/about",
+  "burger": "#nh-burger",
+  "note": "the Menu panel is opened and its text walked under R-W."
+ },
+ "baseline": {
+  "_note": "Measured with checks/gate-type.mjs on origin/main 48d74378, fixture replay: the gate is RED there. Counts vary by a few percent run to run (live-dated content), so the red proof asserts a floor, not an exact number.",
+  "rwViolationsFloor": 1000,
+  "fraunces": {
+   "nodesFloor": 3000
+  }
+ },
+ "fixture": {
+  "_note": "Fixture replay only. Each known-pending miss names the PR that closes it. After both PRs merge to main, delete the matching knownMisses entries (the allowance must drop to zero); HUB_SERIF_FIXTURE_STRICT=1 ignores the whole list and fails on any miss, so the removal can be proven before the entries are deleted. Any miss not listed fails the gate. Known misses are counted and reported by PR, never silently dropped.",
+  "knownMisses": [
+   {
+    "contains": "*[_type == \"societyEvent\" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart)",
+    "closedBy": "fix/fixture-stable-clock (_clock.json pins today to the recording day; lib/sast-date.ts defaults to fixtureNow())"
+   },
+   {
+    "contains": "*[_type == \"ticketType\" && slug.current == $slug && active == true][0]",
+    "closedBy": "sanity-fixture-refresh, PR #128 (merges after #127; adds the early-bird, weekend-pass-early-bird and other ticketType slugs)"
+   },
+   {
+    "contains": "*[_type == \"society\" && listed != false && defined(slug.current)]{ \"slug\": slug.current, \"updatedAt\": _updatedAt }",
+    "closedBy": "sanity-fixture-refresh PR #128 (merges after #127): key 9f3a3d24, the society slug and updatedAt list (generateStaticParams of /societies/[slug])"
+   },
+   {
+    "contains": "*[_type == \"societyEvent\" && defined(slug.current)]{ \"slug\": slug.current, \"updatedAt\": _updatedAt }",
+    "closedBy": "sanity-fixture-refresh PR #128 (merges after #127): key 58f9cc95, the societyEvent slug and updatedAt list (generateStaticParams of /events/[slug])"
+   }
+  ],
+  "stubs": {
+   "dir": "goldens/fixture-stubs",
+   "_note": "The two build-time slug-list queries (keys 9f3a3d24 and 58f9cc95, generateStaticParams of /societies/[slug] and /events/[slug]) are in fixture.knownMisses, closed by sanity-fixture-refresh PR #128. Until it merges the gate supplies them as tolerated empty-array stubs, overlaid ONLY onto the sandbox copy after the rsync (the tracked fixture dir is never written), with --ignore-existing so a real capture wins. They return no pre-rendered pages and no content. HUB_SERIF_FIXTURE_STRICT=1 skips the overlay and the whole allowance, so those two keys fail the build. REMOVABLE with the other #128 entries: when #128 merges, merge origin/main, then delete goldens/fixture-stubs, this stubs entry and every fixture.knownMisses entry closed by #128.",
+   "closedBy": "sanity-fixture-refresh PR #128 (both keys, 9f3a3d24 and 58f9cc95, are already recorded there; no scope change)"
+  },
+  "dateKeyedStub": {
+   "closedBy": "fix/fixture-stable-clock (_clock.json pins today to the recording day; lib/sast-date.ts defaults to fixtureNow())",
+   "_note": "The societyEvent `$todayStart` entries are keyed by the SAST day, so a fixed-filename stub cannot cover them. checks/gen-today-stub.mjs re-keys every captured entry whose params carry todayStart for TODAY, with the recording day's result, using the fixture layer's own key function (sha256 of the trimmed query, a newline, the params with keys sorted recursively), into the SANDBOX copy only with wx (never overwrites). The tracked dir is never written. HUB_SERIF_FIXTURE_STRICT=1 skips it. selftest proves the key replica reproduces every tracked file name and that the SAST day maths reproduces each entry's recorded params. REMOVABLE: delete gen-today-stub.mjs, its call in _lib.mjs and prep-fixtures.sh, and the societyEvent knownMisses entry when fix/fixture-stable-clock merges to main."
+  },
+  "unknownSlugStub": {
+   "closedBy": null,
+   "permanent": true,
+   "_note": "Test-only unknown-slug stub. The gates' not-found probe slugs (sweep-routes.json /tickets/<slug>) can never be in a recording, so checks/gen-today-stub.mjs writes a null result (GROQ's answer for no match) keyed from every captured ticketType by-slug entry, sandbox copy only, wx. Permanent: not closed by #128 or any PR. HUB_SERIF_FIXTURE_STRICT=1 skips it with the other stubs."
+  }
+ },
+ "shots": {
+  "viewports": [
+   390,
+   1440,
+   2056
+  ],
+  "_note": "full-page renders of every walked route, kept in evidence/shots for NOS Design R-W walk review"
+ },
+ "measureScope": "prose p and li, standfirst and closing only; p inside cards, ticket stubs, forms and the footer take their container width",
+ "exemptNodes": [
+  {
+   "route": "/sponsors",
+   "headingStartsWith": "Talk to us about sponsorship",
+   "check": "h2 role",
+   "reason": "The sponsors page is in SAOC's lane while their sponsor-enquiry PR rewrites it; SAOC is asked to add nos-card-title in that PR. Remove this exemption when it merges."
+  }
+ ],
+ "measureExempt": {
+  "selector": ".nos-hm-rows p, .nos-sp-reach p",
+  "reason": "NOS Design ruling 5 (2026-10-28): the old layout stays frozen; the exemption expires with NR-2, when those blocks get their archetype."
+ }
+}

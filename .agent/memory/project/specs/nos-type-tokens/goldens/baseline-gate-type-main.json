@@ -1,0 +1,43 @@
+{
+ "_note": "Output of checks/gate-type.mjs on origin/main 48d74378 (before NR-1/6/7/8), fixture replay. The gate is RED here; it must be GREEN (0 failures) after the change. Failure groups are summarised, counts vary a few percent run to run.",
+ "stats": {
+  "pages": 120,
+  "frauncesNodes": 3670,
+  "wViolations": 1322,
+  "perViewport": {
+   "390": 24,
+   "768": 24,
+   "1280": 24,
+   "1440": 24,
+   "2056": 24
+  }
+ },
+ "failureCount": 8956,
+ "failureGroups": [
+  "675x NR-6 body weight: p 400, want 450 (e.g. /@390, /@390, /@390)",
+  "545x NR-6 body weight: p.font-sans.text-[16px] 400, want 450 (e.g. /privacy@390, /privacy@390, /privacy@390)",
+  "545x NR-6 body line-height: p.font-sans.text-[16px] 24.8px, want 25.6px (e.g. /privacy@390, /privacy@390, /privacy@390)",
+  "545x R-C body colour: p.font-sans.text-[16px] oklab(0.269334 0.0216806 -0.103139 / 0.85), want ink-700 (e.g. /privacy@390, /privacy@390, /privacy@390)",
+  "390x NR-6 body line-height: p 24.8px, want 25.6px (e.g. /what-to-expect@390, /what-to-expect@390, /what-to-expect@390)",
+  "316x R-W: span.nos-faq-qn 17px weight 300, want 500 (e.g. /faq@768, /faq@768, /faq@768)",
+  "288x NR-8 label tuple: span.nh-label 14.5px w600 ls normal none is not Label, Form label or Caps (e.g. /@1440, /@1440, /@1440)",
+  "240x NR-8 label tuple: div.nf-head 12px w700 ls 1.68px uppercase is not Label, Form label or Caps (e.g. /@390, /@390, /about@390)",
+  "177x R-F heading <14px: h3 12px (e.g. /about@390, /about@390, /about@390)",
+  "177x NR-8 violet text: h3 (e.g. /about@390, /about@390, /about@390)",
+  "177x NR-8 label tuple: h3 12px w600 ls 1.68px uppercase is not Label, Form label or Caps (e.g. /about@390, /about@390, /about@390)",
+  "163x NR-6 body size: p 16px, want 18 (e.g. /@2056, /@2056, /@2056)",
+  "151x NR-6 body line-height: p 27.2px, want 25.6px (e.g. /international-guests@390, /international-guests@390, /international-guests@390)",
+  "146x R-M measure: p width 569.8, want 608 (e.g. /what-to-expect@768, /what-to-expect@768, /what-to-expect@768)",
+  "130x NR-6 body weight: li 400, want 450 (e.g. /plan-your-visit@390, /plan-your-visit@390, /plan-your-visit@390)",
+  "130x NR-6 body line-height: li 24.8px, want 25.6px (e.g. /plan-your-visit@390, /plan-your-visit@390, /plan-your-visit@390)",
+  "128x NR-8 label tuple: dt 15px w400 ls normal none is not Label, Form label or Caps (e.g. /about@768, /about@768, /what-to-expect@768)",
+  "109x NR-6 body size: p 16px, want 17.07 (e.g. /@1280, /@1280, /@1280)",
+  "109x NR-6 body size: p.font-sans.text-[16px] 16px, want 17.07 (e.g. /privacy@1280, /privacy@1280, /privacy@1280)",
+  "109x NR-6 body size: p 16px, want 17.26 (e.g. /@1440, /@1440, /@1440)",
+  "109x NR-6 body size: p.font-sans.text-[16px] 16px, want 17.26 (e.g. /privacy@1440, /privacy@1440, /privacy@1440)",
+  "109x NR-6 body size: p.font-sans.text-[16px] 16px, want 18 (e.g. /privacy@2056, /privacy@2056, /privacy@2056)",
+  "99x R-O h1 opsz: \"opsz\" 24, want opsz 72 (e.g. /about@390, /what-to-expect@390, /plan-your-visit@390)",
+  "99x R-W: dd 24px weight 300, want 400 (e.g. /about@1280, /about@1280, /what-to-expect@1280)",
+  "95x S-2 colour: rgb(127, 125, 51), want rgb(106, 104, 41) (e.g. /plan-your-visit@390, /plan-your-visit@390, /plan-your-visit@390)"
+ ]
+}

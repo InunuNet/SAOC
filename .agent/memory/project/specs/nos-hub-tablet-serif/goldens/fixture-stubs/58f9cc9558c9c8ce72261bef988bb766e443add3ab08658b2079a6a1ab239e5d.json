@@ -1,0 +1,1 @@
+{"query": "*[_type == \"societyEvent\" && defined(slug.current)]{ \"slug\": slug.current, \"updatedAt\": _updatedAt }", "params": {}, "result": [], "capturedAt": "stub: generateStaticParams, build-time only; empty means no pre-rendered pages, nothing invented"}

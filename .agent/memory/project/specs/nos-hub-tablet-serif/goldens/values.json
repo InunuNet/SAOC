@@ -1,0 +1,810 @@
+{
+  "_source": "NOS Design H-a (P2) and LT-1 (P2) rulings, quoted in ../spec.md. Every number here is either the ruling's own or measured from nos-theme.css on the nos-pagehero head (30cb1e1a); nothing is invented.",
+  "hub": {
+    "route": "/",
+    "band": {
+      "_ruling": "768-1023 uses the 390 order: photo first, as a 2/1 band (the inner-page G2 ratio), then copy. Hero about 1000px. Gate: shots at 768 and 1023; served width >= box x DPR.",
+      "viewports": [
+        {
+          "name": "768@2",
+          "width": 768,
+          "height": 1024,
+          "dsf": 2
+        },
+        {
+          "name": "820@2",
+          "width": 820,
+          "height": 1180,
+          "dsf": 2
+        },
+        {
+          "name": "1023@2",
+          "width": 1023,
+          "height": 800,
+          "dsf": 2
+        }
+      ],
+      "servedWidth": {
+        "_ruling": "NOS Design served-width ruling plus the HB-3 addendum: the hub photo served width (currentSrc decoded in a bare new Image(), naturalWidth) is at least ceil(max(boxW, boxH x srcW/srcH) x DPR) at every viewport below. Baseline on #76 a6c252e2 (hub sizes still 100vw): 390@3 short (1200 of 1350), 1023@2 short (2048 of 2306, the pre-H-a 4:3 box 1023x767); H-a (2:1 band) removes the 1023 shortfall. 1024T@2 is the tall-viewport case: the desktop media height is the hero min-height clamp(600px, 100svh - 97px, 820px) (nos-theme.css:536), so a 1024x1366 viewport has an 820px tall media and paints 820 x 1.5 = 1230 css px.",
+        "requiredFormula": "max(boxW, boxH x srcW/srcH) x DPR (NOS Design ruling for every served-width gate), srcW/srcH from the source file",
+        "sourcePath": "/images/orchid-dark.jpg",
+        "sourceAspect": "5184 x 3456 = 3:2",
+        "viewports": [
+          {
+            "name": "390@2",
+            "width": 390,
+            "height": 844,
+            "dsf": 2
+          },
+          {
+            "name": "390@3",
+            "width": 390,
+            "height": 844,
+            "dsf": 3
+          },
+          {
+            "name": "768@2",
+            "width": 768,
+            "height": 1024,
+            "dsf": 2
+          },
+          {
+            "name": "820@2",
+            "width": 820,
+            "height": 1180,
+            "dsf": 2
+          },
+          {
+            "name": "900@2",
+            "width": 900,
+            "height": 1200,
+            "dsf": 2
+          },
+          {
+            "name": "1023@2",
+            "width": 1023,
+            "height": 800,
+            "dsf": 2
+          },
+          {
+            "name": "1024@2",
+            "width": 1024,
+            "height": 768,
+            "dsf": 2
+          },
+          {
+            "name": "1024T@2",
+            "width": 1024,
+            "height": 1366,
+            "dsf": 2
+          },
+          {
+            "name": "1280@2",
+            "width": 1280,
+            "height": 800,
+            "dsf": 2
+          },
+          {
+            "name": "2056@2",
+            "width": 2056,
+            "height": 1200,
+            "dsf": 2
+          }
+        ],
+        "required": {
+          "390@2": 900,
+          "390@3": 1350,
+          "768@2": 1536,
+          "820@2": 1640,
+          "900@2": 1800,
+          "1023@2": 2046,
+          "1024@2": 2013,
+          "1024T@2": 2460,
+          "1280@2": 2109,
+          "2056@2": 3208
+        },
+        "requiredNote": "expected required device px, hand-derived from the CSS boxes (phone 390x300; tablet band w x w/2; desktop media 78% of the viewport wide and hero-min-height tall, hero 671 / 820 / 703 / 820 at these viewports); the gate computes them from the live boxes"
+      },
+      "firstScreen": {
+        "_ruling": "NOS Design H-a cap ruling (c), 2026-10-27, root comms.md: the key facts must be in the first screen on a portrait tablet. With the header included (page coordinates from the document top at scroll 0), the bottom of the last hero facts row, and of the primary CTA if it sits below the facts, must be <= viewport height - 16. No spacing change; the 2/1 band and its crop are untouched.",
+        "marginPx": 16,
+        "factsRow": {
+          "_note": "The hub renders its own facts row, dl.nos-hero-facts, from FACT_LABELS = ['Dates', 'Venue'] (app/(nos)/national-show/page.tsx:156, HM-G1); it does not use NosHero's dl[data-hero-facts] (that is the inner-page row). The row is expected on the hub in both modes, so an absent or short row FAILS the gate; the CTA is never a fallback.",
+          "selector": "dl.nos-hero-facts, dl[data-hero-facts]",
+          "minRows": 2,
+          "labels": [
+            "Dates",
+            "Venue"
+          ],
+          "primaryCtaSelector": ".nos-hero-actions a, .nos-hero-actions button"
+        },
+        "modes": [
+          {
+            "name": "preview",
+            "placeholderPreview": true
+          },
+          {
+            "name": "public",
+            "placeholderPreview": false
+          }
+        ],
+        "viewports": [
+          {
+            "name": "768x1024@2",
+            "width": 768,
+            "height": 1024,
+            "dsf": 2
+          },
+          {
+            "name": "820x1180@2",
+            "width": 820,
+            "height": 1180,
+            "dsf": 2
+          },
+          {
+            "name": "1023x1366@2",
+            "width": 1023,
+            "height": 1366,
+            "dsf": 2
+          }
+        ],
+        "breakdownViewportWidth": 768,
+        "specHeroHeightAt768": 902,
+        "shotPattern": "evidence/hub-first-screen-<mode>-<width>x<height>.png",
+        "breakdownPattern": "evidence/hub-breakdown-<mode>-<width>.json"
+      },
+      "mediaAspect": 2,
+      "mediaAspectTolerance": 0.01,
+      "mediaFlushToHeroTop": 1,
+      "mediaFullWidthTolerance": 1,
+      "heroSizes": {
+        "_ruling": "HB-3 and addendum: the hub photo sizes declare the cover width per band, as #76 does for the inner panel. <=767: the media is 300px tall (nos-theme.css:772-775) on a 3:2 source, so it paints 450px. 768-1023: the band is 2:1 on 3:2, width-driven, so 100vw. >=1024: the media is 78% of the viewport wide and hero-min-height tall, at most 820px (nos-theme.css:536), so it paints at most 820 x 1.5 = 1230px, more than 100vw at 1024-1230 wide.",
+        "constants": {
+          "HUB_PHONE_BAND_HEIGHT_PX": 300,
+          "HUB_DESKTOP_MAX_HEIGHT_PX": 820,
+          "HUB_SOURCE_ASPECT": 1.5
+        },
+        "sizes": "(max-width: 767px) max(100vw, 450px), (min-width: 1024px) max(100vw, 1230px), 100vw"
+      },
+      "heroMaxHeightRuling": "RETIRED 2026-10-27 (NOS Design H-a cap ruling (c), root comms.md): the fixed 1100 cap is gone; the hero height is reported only. Replaced by band.firstScreen below.",
+      "heroHeightMeasured": {
+        "768@2": 902,
+        "820@2": 937,
+        "1023@2": 1057
+      },
+      "heroHeightNote": "Measured by the architect on a production build of the nos-pagehero head (30cb1e1a) with only the H-a and LT-1 css applied, headless Chromium, live Sanity data. The ruling expected about 1000 (1190 - 565 + 384 = 1009); the copy block measures 518px at 768 and 545px at 1023, so the hero is 902 at 768 and 1057 at 1023. The cap is the ruling's ~1000 plus 10 percent; the lead's first figure of 1050 fails 1023 by 7px. Reported, not asserted, except the cap.",
+      "scrim": "none",
+      "mask": "none"
+    },
+    "phone": {
+      "_ruling": "R74 / R80 #1 (nos-theme.css:772-780): below 768 the photo leads, 300px tall, full width. Unchanged by this PR.",
+      "viewports": [
+        {
+          "name": "390@3",
+          "width": 390,
+          "height": 844,
+          "dsf": 3
+        },
+        {
+          "name": "767@2",
+          "width": 767,
+          "height": 1024,
+          "dsf": 2
+        }
+      ],
+      "mediaHeight": 300,
+      "mediaHeightTolerance": 1
+    },
+    "desktop": {
+      "_ruling": "1024+ is the full-bleed hero and stays as on the #76 head: media absolute, inset 0 0 0 22% (nos-theme.css:538-544), masked, scrim present, min-height clamp(600px, 100svh - 97px, 820px) (:535). h1Px are the computed h1 sizes measured on the #76 head plus these changes (neither touches the hero title at 1024+); the base rule at nos-theme.css:562 is superseded at 1024+ by `clamp(52px, 4.9vw, 96px)` (:801-803, R68), so these are the measured results of that clamp.",
+      "viewports": [
+        {
+          "name": "1024@1",
+          "h1Px": 59.32,
+          "width": 1024,
+          "height": 768,
+          "dsf": 1
+        },
+        {
+          "name": "1280@1",
+          "h1Px": 67.14,
+          "width": 1280,
+          "height": 800,
+          "dsf": 1
+        },
+        {
+          "name": "1440@1",
+          "h1Px": 72.02,
+          "width": 1440,
+          "height": 900,
+          "dsf": 1
+        },
+        {
+          "name": "2056@2",
+          "h1Px": 84,
+          "width": 2056,
+          "height": 1200,
+          "dsf": 2
+        }
+      ],
+      "mediaLeftShare": 0.22,
+      "mediaLeftShareTolerance": 0.01,
+      "heroMinHeight": {
+        "floorPx": 600,
+        "ceilPx": 820,
+        "headerPx": 97
+      },
+      "_superseded": "nos-type-tokens (NOS Design NR-7, 2026-10-28): h1Px re-pinned to the Display clamp(40px, 28.1px + 3.05vw, 84px): 1440 -> 72.02 and 2056 -> 84 (the ruling columns, 2056 going down is intended); 1024 -> 59.32 and 1280 -> 67.14 are the same clamp evaluated at those widths. Countdown final.blockWidth re-pinned to 278.89 (768-1023) and 302.89 (1024+), tolerance 1, no Caps exemption (NR-12 re-pins again).",
+      "h1TolerancePx": 0.6
+    },
+    "header": {
+      "_ruling": "NOS Design H-a 768 cut (a), 2026-10-27 (root comms.md, block 'H-a 768 cut: (a), single-row header from 768'): at 768 the header wrapped to two rows (a breakpoint off-by-one at 779px) and put the hero top at y155 against y97 at 820. Apply the 820 header from 768 up (the same lockup, Tickets and Menu on the right, one row); below 768 nothing changes. Source: the existing 820 header rules in components/nos-chrome/nos-chrome.css (the max-width 779px row-break media query) and the picture source media in NosHeader.tsx; the change is those two numbers, 779px to 767px. Nothing is invented.",
+      "oneRowViewports": [
+        {
+          "name": "768@2",
+          "width": 768,
+          "height": 1024,
+          "dsf": 2
+        },
+        {
+          "name": "779@2",
+          "width": 779,
+          "height": 1024,
+          "dsf": 2
+        },
+        {
+          "name": "780@2",
+          "width": 780,
+          "height": 1024,
+          "dsf": 2
+        },
+        {
+          "name": "1023@2",
+          "width": 1023,
+          "height": 1366,
+          "dsf": 2
+        }
+      ],
+      "referenceViewport": {
+        "name": "820@2",
+        "width": 820,
+        "height": 1180,
+        "dsf": 2
+      },
+      "modes": [
+        "preview",
+        "public"
+      ],
+      "oneRowCentreTolerancePx": 1,
+      "heroTopTolerancePx": 1,
+      "lockupTolerancePx": 1,
+      "heroTopAt820Px": 97,
+      "heroTopNote": "measured at 820 and 1023 on 64221fb0 (96.97); at 768 it was 154.9 with the two-row header. The gate compares to the 820 value measured in the same run and to this golden.",
+      "breakpointCss": {
+        "from": "max-width: 779px",
+        "to": "max-width: 767px"
+      },
+      "twoRowViewports": [
+        {
+          "name": "767@2",
+          "width": 767,
+          "height": 1024,
+          "dsf": 2
+        },
+        {
+          "name": "390@3",
+          "width": 390,
+          "height": 844,
+          "dsf": 3
+        }
+      ],
+      "pixelTolerance": 0,
+      "baseline": {
+        "ref": "derived: git merge-base HEAD origin/main (checks/capture-main-baseline.sh)",
+        "dir": ".tmp/sandbox/hub-main-baseline",
+        "portOffset": 9,
+        "shotsDir": "evidence/header-baseline",
+        "branchShotsDir": "evidence/header-branch",
+        "_note": "The main baseline is built from a git archive of the base ref (no worktree, no stash) under .tmp/sandbox, with fixture replay only, and its header strips (the full-width strip from the top of the page to the bottom of #nh) are captured at 767x1024@2 and 390x844@3. The branch strips are captured by the same function and compared exactly (0 differing pixels).",
+        "_refNote": "Was pinned to origin/main e9edbe4af20cde369b6fb29b3360f0646b680ec5, which went stale when the branch merged main 48d74378. The baseline for A21 and A24 is now derived from the merge-base of HEAD and origin/main at run time and rebuilt when it changes (the stamp is the SHA plus the capture script hash). It is printed on every run. HUB_SERIF_BASE_REF overrides it."
+      }
+    },
+    "unchanged": {
+      "_ruling": "The 2/1 band, its crop and the hero spacing are not touched by the 768 cut. Values measured on the 64221fb0 build in fixture replay at 768, 820 and 1023 (computed style): object-fit cover, object-position 68% 50% (the hub photo focal point), copy padding 40px, copy gap 32px, body gap 24px, row gap 48px, CTA group gap 16px, facts column gap 32px and row gap 20px. The 768 band is 768x384 (2:1), asserted by the band verdict.",
+      "viewports": [
+        {
+          "name": "768@2",
+          "width": 768,
+          "height": 1024,
+          "dsf": 2
+        },
+        {
+          "name": "820@2",
+          "width": 820,
+          "height": 1180,
+          "dsf": 2
+        },
+        {
+          "name": "1023@2",
+          "width": 1023,
+          "height": 1366,
+          "dsf": 2
+        }
+      ],
+      "cropFit": "cover",
+      "cropPosition": "68% 50%",
+      "spacingPx": {
+        "copyPaddingTopPx": 40,
+        "copyPaddingBottomPx": 40,
+        "copyGapPx": 32,
+        "bodyGapPx": 24,
+        "rowGapPx": 48,
+        "ctaGroupGapPx": 16,
+        "factsColGapPx": 32,
+        "factsRowGapPx": 20
+      }
+    },
+    "countdown": {
+      "_ruling": "NOS Design P1, 2026-10-27: in the 768 and 820 shots 'OPENS IN' showed with no countdown value under it. If that is a capture before hydration, the shots are recaptured after the countdown renders; if the value is really empty (preview mode), that is a bug: the label must never render without its value, so the whole block is hidden until it has one. The gate asserts no state ever shows the label without its value, from the first server paint (JS disabled) through hydration.",
+      "labelSelector": "[data-nos-hero-text=\"countdown-opens-in\"]",
+      "valueSelector": "[data-nos-hero-text=\"countdown-days-value\"], [data-nos-hero-text=\"countdown-tbc\"]",
+      "viewports": [
+        {
+          "name": "768@2",
+          "width": 768,
+          "height": 1024,
+          "dsf": 2
+        },
+        {
+          "name": "820@2",
+          "width": 820,
+          "height": 1180,
+          "dsf": 2
+        }
+      ],
+      "modes": [
+        "preview",
+        "public"
+      ],
+      "settleTimeoutMs": 20000,
+      "sampleWindowMs": 6000
+    },
+    "countdownFit": {
+      "_ruling": "NOS Design H-a countdown wrap, 2026-10-27, root comms.md block 'H-a countdown wrap: (a) + (b), a deterministic fit'. Dev measurement that prompted it: .nos-hero-row is 640 wide, the CTA group 319.7, the gap 48, the countdown 273.4-276.5 (641.1 against 640, a knife edge, the same on main e9edbe4a). (a) everywhere: tabular-nums on .nos-figure; when the face has no tnum, each unit gets a ch min-width, 3ch for days and 2ch for the others, so the width never changes between ticks. (b) at 768-1023 only: the CTA-to-countdown column gap goes 48 to 32; >=1024 keeps 48 and <768 is unchanged. (c) is rejected.",
+      "_branch": "Which branch of (a) applies is MEASURED, not assumed: checks/measure-tnum.mjs loads app/fonts/fraunces/Fraunces-latin-normal.woff2 (the NOS face, components/nos/NosThemeScope.tsx) at the countdown's own settings (42px, weight 300, opsz 72) and compares digit advances with tnum off and on. Result on this tree: spread 8.86px both ways, so the face has no tnum and the branch is ch-min-width (evidence/tnum-branch.json). The 0 digit is the widest (25.08px) so n ch is a true upper bound for n digits. nos-theme.css:429 already declares tabular-nums on .nos-figure.font-serif; that stays and does nothing for this face.",
+      "_scope": "Files that own it, exactly: app/(nos)/national-show/nos-theme.css (the .nos-theme .nos-figure.font-serif rule near line 424 gets the ch min-width, keyed on the existing data-nos-hero-text=\"countdown-days-value\" attribute for 3ch and 2ch for the other three; the .nos-theme .nos-hero-row rule near line 612 gets a (min-width: 768px) and (max-width: 1023px) block that sets column-gap: 32px only) and, only if a hook is genuinely needed, components/show/ShowCountdown.tsx. No other file. .nos-figure is used by exactly one component, components/show/ShowCountdown.tsx (nos-structure.css .nos-figures is a different class). That component renders on three pages: / (the hub, app/(nos)/national-show/page.tsx), /tickets (app/(nos)/national-show/tickets/page.tsx via TicketsMasthead) and /tickets/<slug> (app/(nos)/tickets/[slug]/page.tsx via TicketsMasthead). The ticket page does not render it (corrected): only / and /tickets are in the parity check. Only the hub has .nos-hero-row, so (b) is a hub rule. The ch fallback also sets text-align: center on .nos-figure (same rule, nos-theme.css only); the parity tolerance allows the text-align difference on the .nos-figure boxes only. REVISED: the unit gap lives in components/show/ShowCountdown.tsx (one class change, gap-6 to gap-4 lg:gap-6), which is in scope for that change only; nos-theme.css carries no unit-gap rule.",
+      "portOffsets": {
+        "preview": 13,
+        "public": 14,
+        "baseline-preview": 15,
+        "baseline-public": 16
+      },
+      "gapViewports": [
+        {
+          "name": "390x844@3",
+          "width": 390,
+          "height": 844,
+          "dsf": 3
+        },
+        {
+          "name": "640x900@1",
+          "width": 640,
+          "height": 900,
+          "dsf": 1
+        },
+        {
+          "name": "767x1024@2",
+          "width": 767,
+          "height": 1024,
+          "dsf": 2
+        },
+        {
+          "name": "768x1024@2",
+          "width": 768,
+          "height": 1024,
+          "dsf": 2
+        },
+        {
+          "name": "820x1180@2",
+          "width": 820,
+          "height": 1180,
+          "dsf": 2
+        },
+        {
+          "name": "1023x1366@2",
+          "width": 1023,
+          "height": 1366,
+          "dsf": 2
+        },
+        {
+          "name": "1024x1366@2",
+          "width": 1024,
+          "height": 1366,
+          "dsf": 2
+        },
+        {
+          "name": "1280x800@2",
+          "width": 1280,
+          "height": 800,
+          "dsf": 2
+        }
+      ],
+      "worstCase": {
+        "_note": "Same row means beside the CTA group and vertically overlapping it (countdown top above the CTA bottom, countdown left at or after the CTA right edge plus the gap), not top equal to top: the row is align-items flex-end so the tops differ whenever the heights do; a wrapped countdown sits a whole row lower. The two tops are printed in every note. Slack = row content width - CTA group width - column gap - countdown width, at least 8px. The strings are injected in one task with textContent, so a tick cannot undo them and the shot shows them. NOS Design addition: alongside same-row, the countdown bottom equals the CTA group bottom within 1px (flex-end is the designed alignment) at 768, 820 and 1023 in both modes with the worst-case strings.",
+        "viewports": [
+          {
+            "name": "768x1024@2",
+            "width": 768,
+            "height": 1024,
+            "dsf": 2
+          },
+          {
+            "name": "820x1180@2",
+            "width": 820,
+            "height": 1180,
+            "dsf": 2
+          },
+          {
+            "name": "1023x1366@2",
+            "width": 1023,
+            "height": 1366,
+            "dsf": 2
+          }
+        ],
+        "strings": [
+          {
+            "name": "888",
+            "days": "888",
+            "other": "88"
+          },
+          {
+            "name": "widest",
+            "useWidestDigit": true
+          }
+        ],
+        "minSlackPx": 8,
+        "topTolerancePx": 1,
+        "bottomTolerancePx": 1,
+        "wrapViewports": [
+          {
+            "name": "1024x800@1",
+            "width": 1024,
+            "height": 800,
+            "dsf": 1
+          },
+          {
+            "name": "1100x800@1",
+            "width": 1100,
+            "height": 800,
+            "dsf": 1
+          },
+          {
+            "name": "1279x800@1",
+            "width": 1279,
+            "height": 800,
+            "dsf": 1
+          }
+        ]
+      },
+      "ticks": {
+        "viewport": {
+          "name": "768x1024@2",
+          "width": 768,
+          "height": 1024,
+          "dsf": 2
+        },
+        "minTicks": 60,
+        "durationMs": 64000,
+        "stepMs": 100,
+        "widthTolerancePx": 0.5,
+        "_note": "Real time, no fake clock: 64 s sampled every 100 ms sees at least 60 seconds-value changes, so every seconds value 00-59 (and the digit pairs that change width on a proportional face) is displayed. The verdict fails if fewer than 60 ticks were seen. NOS Design addition: on every sample each figure's text centre (Range over its text) equals its label element's centre within 0.5px; on the ch fallback the figure boxes carry text-align: center (computed value checked on every page). Run on the hub and on /tickets.",
+        "centreTolerancePx": 0.5,
+        "routes": [
+          "/",
+          "/tickets"
+        ]
+      },
+      "parity": {
+        "_note": "Hub and /tickets are compared with the baseline of the branch's merge-base with origin/main (48d74378 at the time of writing, derived by capture-main-baseline.sh) with identical injected strings. /tickets/<slug> does NOT render the countdown (app/(nos)/tickets/[slug]/page.tsx only mentions TicketsMasthead in a comment), so it has no parity leg; A24 instead fails if any /tickets/<slug> page that answers 200 starts rendering the countdown, and if none answers 200. The only tolerated difference is the width of the .nos-figure boxes and what that moves inside the countdown block: see parityVerdict in checks/countdown-fit-verdict.mjs. NOS Design accepted label BOX growth at 1024 and up: the label text (top, height and width of its text range), the computed styles and the text centre relative to its column must stay identical; only the label box widths may grow. Pixels are not compared because HB-3 serves a different hero photo variant at 390 and above 1024. The units gap is the second tolerated difference (16 on the branch below 1024, 24 on main): the block may be narrower by exactly 3 x the delta, nothing else. Accepted difference below 768 (option A, confirmed): the branch always stacks and main is digit-dependent in 640-767, so parity below 768 is taken at 390 and 640 only, and at 640 both builds are injected with the widest string (000/00/00/00) so main stacks deterministically; 700 is removed for good. The unit gap (16 vs 24) is excluded from the wrapper's gap properties (column-gap and row-gap) in the style compare. Computed styles are compared exactly except that two rgb() colours may differ by 1 per channel (0.01 alpha) as a backstop, after the gate lets transitions and animations settle; no other property has a tolerance.",
+        "tolerancePx": 0.5,
+        "inject": [
+          "187",
+          "05",
+          "42",
+          "17"
+        ],
+        "styleProps": [
+          "display",
+          "position",
+          "marginTop",
+          "marginRight",
+          "marginBottom",
+          "marginLeft",
+          "paddingTop",
+          "paddingRight",
+          "paddingBottom",
+          "paddingLeft",
+          "columnGap",
+          "rowGap",
+          "flexDirection",
+          "flexWrap",
+          "flexGrow",
+          "flexShrink",
+          "flexBasis",
+          "alignItems",
+          "justifyContent",
+          "textAlign",
+          "fontFamily",
+          "fontSize",
+          "fontWeight",
+          "fontVariationSettings",
+          "fontVariantNumeric",
+          "letterSpacing",
+          "lineHeight",
+          "color",
+          "opacity",
+          "visibility"
+        ],
+        "pages": [
+          {
+            "name": "hub",
+            "route": "/",
+            "viewports": [
+              {
+                "name": "390x844@3",
+                "width": 390,
+                "height": 844,
+                "dsf": 3
+              },
+              {
+                "name": "640x900@1",
+                "width": 640,
+                "height": 900,
+                "dsf": 1,
+                "injectWidest": true
+              },
+              {
+                "name": "1024x1366@2",
+                "width": 1024,
+                "height": 1366,
+                "dsf": 2
+              },
+              {
+                "name": "1280x800@2",
+                "width": 1280,
+                "height": 800,
+                "dsf": 2
+              },
+              {
+                "name": "1440x900@2",
+                "width": 1440,
+                "height": 900,
+                "dsf": 2
+              },
+              {
+                "name": "2056x1200@1",
+                "width": 2056,
+                "height": 1200,
+                "dsf": 1
+              }
+            ]
+          },
+          {
+            "name": "tickets hub",
+            "route": "/tickets",
+            "viewports": [
+              {
+                "name": "390x844@3",
+                "width": 390,
+                "height": 844,
+                "dsf": 3
+              },
+              {
+                "name": "1024x1366@2",
+                "width": 1024,
+                "height": 1366,
+                "dsf": 2
+              },
+              {
+                "name": "1440x900@2",
+                "width": 1440,
+                "height": 900,
+                "dsf": 2
+              }
+            ]
+          }
+        ]
+      },
+      "_unitGap": "NOS Design countdown gap, REVISED (comms.md, supersedes the hub-scoped nos-theme.css override): component-level in components/show/ShowCountdown.tsx, on BOTH / and /tickets, the gap between the four units is 16 below 1024 and 24 at 1024 and up, by changing the units wrapper's Tailwind gap-6 to gap-4 lg:gap-6. lg is 1024 here: Tailwind v4.1 default --breakpoint-lg is 64rem, no stylesheet under app/ or components/ defines --breakpoint-* (A23 scans for it), and html sets no root font-size (default 16px); A24 additionally measures the computed gap at 390, 640, 767, 768, 820, 1023 (16) and 1024, 1280 (24) on both pages. The nos-theme.css override is dropped and A23 fails if it is present. Unchanged: figure size, CTA group, the 32px CTA column-gap at 768-1023 (nos-theme.css), the 8px slack rule, text-align center and the widest-digit ch floors at every width. The earlier 2x2-below-360 clause is struck: there is no 2x2 and no floor exception.",
+      "overflow": {
+        "_note": "No horizontal overflow at 320, 360 and 390 on both pages that render the countdown, with the worst-case strings injected (the page no wider than the viewport, the countdown block inside the viewport and no wider than its container). The 2x2-below-360 clause is struck (NOS Design): there is no 2x2 and no floor exception; the ch floors apply everywhere. A24 prints the block, copy and container widths and the unit gap at every phone width. If 320 still overflows the dev stops and sends the numbers; nothing is invented.",
+        "viewports": [
+          {
+            "name": "320x640@2",
+            "width": 320,
+            "height": 640,
+            "dsf": 2
+          },
+          {
+            "name": "360x740@3",
+            "width": 360,
+            "height": 740,
+            "dsf": 3
+          },
+          {
+            "name": "390x844@3",
+            "width": 390,
+            "height": 844,
+            "dsf": 3
+          }
+        ],
+        "routes": [
+          "/",
+          "/tickets"
+        ]
+      },
+      "final": {
+        "_note": "NOS Design's GO is conditional on the final-form re-run reproducing EXACTLY these numbers (comms.md, option A block): countdown block 273.6 (floors 75.2 + 3 x 50.2 + 3 x 16) below 1024 and 297.6 from 1024 (gap 24), slack 14.8 at 768 (row 640 - CTA 319.7 - gap 32 - 273.6), facts bottom 1005 against the 1008 limit at 768 (pinned as not above 1005.5; lower is not a regression), no wrap at 1024-1279, no overflow at 320-390 on / and /tickets. Any number that moves goes back to NOS Design. The block width is the span of the four unit columns (the wrapper box is stretched to its container on phones).",
+        "blockWidthBelow1024": 278.89,
+        "blockWidthFrom1024": 302.89,
+        "widthTolerancePx": 1,
+        "slackAt768": 9.4,
+        "slackTolerancePx": 0.5,
+        "factsBottomAt768Max": 1005.5,
+        "factsBottomLimitPx": 1008
+      },
+      "stack": {
+        "_note": "NOS Design option A (accepted; B rejected): below 768 the countdown deterministically stacks under the CTA group. At 767 the row is 639 and 319.7 + 48 + 273.6 = 641.3, at 700 it is 572, so it stacks at every width below 768 whatever the strings; the ch floors make that independent of the digits. ACCEPTED DIFFERENCE (NOS Design, confirmed): below 768 the countdown ALWAYS stacks under the CTA group, with no narrower sliver and no CSS change; main is digit-dependent in 640-767 (measured on main 48d74378: with narrow digits it sits beside the CTAs from 640, with the ruled worst case 888 it stacks up to 671, with wide digits it stacks at every width, and with live strings it flips from tick to tick). Parity below 768 is taken at 390 and 640 only, and at 640 both builds are given the widest string (000/00/00/00) so main stacks deterministically; the 700 parity viewport is removed for good (main fits beside the CTAs there on narrow digits).",
+        "viewports": [
+          {
+            "name": "700x1024@2",
+            "width": 700,
+            "height": 1024,
+            "dsf": 2
+          },
+          {
+            "name": "767x1024@2",
+            "width": 767,
+            "height": 1024,
+            "dsf": 2
+          }
+        ]
+      }
+    }
+  },
+  "lt1": {
+    "_ruling": "Any display-serif heading computed at >= 32px has weight 300; below 32px (h3s 20-22px) stays 400. SAOC already encodes the same size rule in scripts/checks/type-render-check.mjs:5.",
+    "thresholdPx": 32,
+    "epsilonPx": 0.01,
+    "displayWeight": "300",
+    "smallWeight": "400",
+    "viewports": [
+      {
+        "name": "1280@1",
+        "width": 1280,
+        "height": 900,
+        "dsf": 1
+      },
+      {
+        "name": "390@1",
+        "width": 390,
+        "height": 844,
+        "dsf": 1
+      },
+      {
+        "name": "888@1",
+        "width": 888,
+        "height": 900,
+        "dsf": 1
+      },
+      {
+        "name": "889@1",
+        "width": 889,
+        "height": 900,
+        "dsf": 1
+      }
+    ],
+    "fluidStep": {
+      "_ruling": "NOS Design, scope (a)-(d) approved as folded, plus widths 888 and 889: the 28-44px .nos-opsz-fluid headings compute 31.97px at 888 (weight 400) and 32.04px at 889 (weight 300), so the min-width: 889px gate is proven exactly where it computes to 32px.",
+      "viewports": [
+        "888@1",
+        "889@1"
+      ],
+      "note": "No non-h2 .nos-opsz-fluid heading is guaranteed to render (on origin/main after #93 the 404 h1 is a NosHero title, and every SectionHeading is an h2), so the 888/889 pair is gated by classification of every heading that does render; where a fluid non-h2 heading renders its size and weight are asserted as well."
+    },
+    "minRoutesSwept": 20,
+    "witness": {
+      "route": "/plan-your-visit",
+      "minDisplaySerifHeadings": 4,
+      "sizesPx": {
+        "1280@1": "doc-h2",
+        "390@1": "doc-h2"
+      },
+      "note": "the ruling's witness: its section h2s are the shared content-standard .doc-h2 (main #106, nos-structure.css .nos-theme .doc-h2, clamp(32px, 24px + 1.6vw, 39px): 39px at 1280, 32px at 390). The gate reads the expected size from a probe h2.doc-h2 computed in the same viewport, never a hard-coded figure; the keys only select the viewports; weight must be 300 (LT-1 is about weight). The original ruling figure of 48px at 1280 is superseded by #106. At least the h1 plus three h2s."
+    },
+    "artefact": "evidence/lt1-sweep.json",
+    "notFound": {
+      "_ruling": "NOS Design (H-a ruling, 404): on the nos host the not-found h1 is Fraunces 400 at 44px; the LT-1 rule is weight 300 at >=32px, so it is 300. The not-found page is in the computed-weight sweep.",
+      "status": 404,
+      "h1Count": 1,
+      "weight": "300",
+      "minSizePx": 32,
+      "viewports": [
+        "1280@1",
+        "390@1",
+        "888@1",
+        "889@1"
+      ],
+      "forbiddenText": [
+        "Find a society"
+      ],
+      "forbiddenTextNote": "NOS Design TK-404: the SAOC root not-found (washed photo, 'Go home' / 'Find a society') must never render inside the NOS chrome. Read from document.body.innerText, never the raw HTML (the RSC payload carries the SAOC strings on every page).",
+      "heroTitleSelector": ".nos-hero-title"
+    }
+  },
+  "tl1": {
+    "_ruling": "NOS Design TL-1 (P3): the /tickets/[slug] loading shell has no lede, so at 390@3 the hero grows 427 -> 457.84px (+31px) when the page settles. Loader for /tickets/[slug] only: two aria-hidden skeleton bars, no text (R7), each the lede's line-height tall and at the lede's margin, widths 100% and 70%, the amended bar treatment below, no new token. Not a taller min-height (it would shift the 1-line cases and change the hero rhythm).",
+    "loaderBars": 2,
+    "barWidths": [
+      100,
+      70
+    ],
+    "viewports": [
+      {
+        "name": "1440",
+        "width": 1440,
+        "height": 900,
+        "dsf": 1
+      },
+      {
+        "name": "390@3",
+        "width": 390,
+        "height": 844,
+        "dsf": 3
+      }
+    ],
+    "holdMs": 800,
+    "_amended": "NOS Design amendment: each line stays a 1lh box (the 2lh reserve is unchanged). Inside each box one bar 0.55lh tall, centred, 2px radius, no pulse, 100% and 70% wide. Colour is the lede's own text colour at 15% opacity (bg-current/15 or the existing token /15), NOT bg-bone; no new token.",
+    "barHeightLh": 0.55,
+    "barRadiusPx": 2,
+    "barAlpha": 0.15,
+    "minGapLh": 0.3,
+    "crumbTruncateBelowPx": 768,
+    "_tl2": "NOS Design TL-2 (P3): (a) below 768 the last breadcrumb (the current page, the product name) is truncated to one line with an ellipsis by CSS only, the full text staying in the DOM and the accessible name (the h1 carries the full name); scoped to the current-page crumb on the nos host below 768 only. (b) The title wrap is an accepted residual, recorded per slug, never reserved. Static or prefetch options are skipped (the ticket routes read live stock and price)."
+  },
+  "fixture": {
+    "_note": "Fixture replay only. Each known-pending miss names the PR that closes it. After both PRs merge to main, delete the matching knownMisses entries (the allowance must drop to zero); HUB_SERIF_FIXTURE_STRICT=1 ignores the whole list and fails on any miss, so the removal can be proven before the entries are deleted. Any miss not listed fails the gate. Known misses are counted and reported by PR, never silently dropped.",
+    "knownMisses": [
+      {
+        "contains": "*[_type == \"societyEvent\" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart)",
+        "closedBy": "fix/fixture-stable-clock (_clock.json pins today to the recording day; lib/sast-date.ts defaults to fixtureNow())"
+      },
+      {
+        "contains": "*[_type == \"ticketType\" && slug.current == $slug && active == true][0]",
+        "closedBy": "sanity-fixture-refresh, PR #128 (merges after #127; adds the early-bird, weekend-pass-early-bird and other ticketType slugs)"
+      },
+      {
+        "contains": "*[_type == \"society\" && listed != false && defined(slug.current)]{ \"slug\": slug.current, \"updatedAt\": _updatedAt }",
+        "closedBy": "sanity-fixture-refresh PR #128 (merges after #127): key 9f3a3d24, the society slug and updatedAt list (generateStaticParams of /societies/[slug])"
+      },
+      {
+        "contains": "*[_type == \"societyEvent\" && defined(slug.current)]{ \"slug\": slug.current, \"updatedAt\": _updatedAt }",
+        "closedBy": "sanity-fixture-refresh PR #128 (merges after #127): key 58f9cc95, the societyEvent slug and updatedAt list (generateStaticParams of /events/[slug])"
+      }
+    ],
+    "stubs": {
+      "dir": "goldens/fixture-stubs",
+      "_note": "The two build-time slug-list queries (keys 9f3a3d24 and 58f9cc95, generateStaticParams of /societies/[slug] and /events/[slug]) are in fixture.knownMisses, closed by sanity-fixture-refresh PR #128. Until it merges the gate supplies them as tolerated empty-array stubs, overlaid ONLY onto the sandbox copy after the rsync (the tracked fixture dir is never written), with --ignore-existing so a real capture wins. They return no pre-rendered pages and no content. HUB_SERIF_FIXTURE_STRICT=1 skips the overlay and the whole allowance, so those two keys fail the build. REMOVABLE with the other #128 entries: when #128 merges, merge origin/main, then delete goldens/fixture-stubs, this stubs entry and every fixture.knownMisses entry closed by #128.",
+      "closedBy": "sanity-fixture-refresh PR #128 (both keys, 9f3a3d24 and 58f9cc95, are already recorded there; no scope change)"
+    },
+    "dateKeyedStub": {
+      "closedBy": "fix/fixture-stable-clock (_clock.json pins today to the recording day; lib/sast-date.ts defaults to fixtureNow())",
+      "_note": "The societyEvent `$todayStart` entries are keyed by the SAST day, so a fixed-filename stub cannot cover them. checks/gen-today-stub.mjs re-keys every captured entry whose params carry todayStart for TODAY, with the recording day's result, using the fixture layer's own key function (sha256 of the trimmed query, a newline, the params with keys sorted recursively), into the SANDBOX copy only with wx (never overwrites). The tracked dir is never written. HUB_SERIF_FIXTURE_STRICT=1 skips it. selftest proves the key replica reproduces every tracked file name and that the SAST day maths reproduces each entry's recorded params. REMOVABLE: delete gen-today-stub.mjs, its call in _lib.mjs and prep-fixtures.sh, and the societyEvent knownMisses entry when fix/fixture-stable-clock merges to main."
+    },
+    "unknownSlugStub": {
+      "closedBy": null,
+      "permanent": true,
+      "_note": "Test-only unknown-slug stub. The gates' not-found probe slugs (sweep-routes.json /tickets/<slug>) can never be in a recording, so checks/gen-today-stub.mjs writes a null result (GROQ's answer for no match) keyed from every captured ticketType by-slug entry, sandbox copy only, wx. Permanent: not closed by #128 or any PR. HUB_SERIF_FIXTURE_STRICT=1 skips it with the other stubs."
+    }
+  }
+}

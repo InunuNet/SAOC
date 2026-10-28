@@ -1,0 +1,81 @@
+# nos-type-tokens: NOS Design NR-1 (weight band), NR-6 (body 450, standfirst, measure), NR-7 (one h1, one h2), NR-8 (three labels), plus S-2 (numeral colour). TYPE-11 (footer family) is in, CSS-only route.
+# Authority: NOS Design ruling 2026-10-28 (root comms.md). NR-2..5 (layout) are frozen and out of scope. Values live in goldens/values.json and are the ruling's own.
+# Base: the head of PR #133 (f22e989a); never push to its branch; this PR merges after #133 and says so in its body (spec.md section 1). Sources: docs/rules/no-invention.md and the NOS Design ruling block in root comms.md.
+# A1 pins the checks and goldens: @dev implements against them and may not edit them. Run from the repo root of the implementation worktree.
+# FIXTURE REPLAY ONLY: A12 and A13 run on SANITY_FIXTURE_MODE=replay from a sandbox copy of the tracked nos-content-standard capture, K_SERVICE unset, the Sanity API blocked
+# (checks/block-sanity-net.cjs); servers are killed by exact PID from a pidfile, never pkill. Known-pending fixture misses are listed in goldens/values.json fixture.knownMisses with the PR that closes each.
+# SITE_PUBLIC_LAUNCH and BETA_PASSWORD_WALL_OFF are never set (only deleted from the child env).
+# Red proof: goldens/baseline-gate-type-main.json is gate-type.mjs run on origin/main 48d74378 (1,313 R-W violations, 10,390 failures); A13 must reach zero.
+# A13 runs on the A12 build: NOS_TYPE_PORT (default 3141), gate server at +14.
+schema: athanor.contract/v1
+slug: nos-type-tokens
+goal: Every NOS Fraunces node follows Brad's weight band (300 at 32px and up, 400 at 20-31.99, 500 below 20), body copy is Karla at a real weight 450 on one 38rem measure, there is one h1 and one h2 treatment and three label treatments, the FAQ and plan-your-visit numerals meet 4.5:1, on a computed-style walk of every NOS route at 390/768/1280/1440/2056.
+created_at: '2026-10-28'
+autonomy: high
+exclusions:
+  - item: 'app/(marketing)/**, components/chrome/**, components/newsletter/**, components/legal/**, app/globals.css (NewsletterSignup.tsx is untouched; A16)'
+    reason: 'SAOC lanes and shared components. Overrides go inside .nos-theme or .nf; A9 fails on any change outside the NOS surface.'
+  - item: 'NR-2..NR-5 layout, NosShowIndex retirement, NR-9 underline, NR-10 reveal bar, NR-11 /tickets order, NR-12 countdown seconds, S-1 nav breakpoint, S-3 lockup scale, S-4 LCP'
+    reason: 'Separate items in the same ruling; NR-2..5 are frozen pending Brad.'
+features:
+  - id: F1
+    name: NOS type tokens - weight band, body 450 and measure, one h1/h2, three labels, S-2 numerals, footer family
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-type-tokens/spec.md
+  - .agent/memory/project/specs/nos-type-tokens/inventory.md
+  - .agent/memory/project/specs/nos-type-tokens/goldens/values.json
+  - .agent/memory/project/specs/nos-type-tokens/goldens/sweep-routes.json
+  - .agent/memory/project/specs/nos-type-tokens/goldens/baseline-gate-type-main.json
+  - .agent/memory/project/specs/nos-type-tokens/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: frozen goldens and check scripts are unmodified since the architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-type-tokens/goldens/checks.sha256
+    - id: A2
+      description: selftest - each clamp reproduces the ruling's 390/1440/2056 column, the weight band edges (31.99 is 400, 32 is 300, 20 is 400, 19.99 is 500), the contrast numbers (olive 5.53, old numeral 4.10), the label tuples reject 12px tracked caps and a 14.5px label, hero fact dd is 20/22/23.2, and no Fraunces role clamp straddles a weight-band edge at 390/1440/2056 or at its min and max
+      command: node .agent/memory/project/specs/nos-type-tokens/checks/selftest.mjs
+    - id: A3
+      description: Karla is ONE face with a 400-700 range in both components/nos-chrome/fonts.ts and components/nos/NosThemeScope.tsx (discrete 400/500/600/700 faces make 450 render as 500)
+      command: node .agent/memory/project/specs/nos-type-tokens/checks/check-static.mjs karla-range
+    - id: A4
+      description: the prose measure token --nos-measure is 38rem and is used
+      command: node .agent/memory/project/specs/nos-type-tokens/checks/check-static.mjs measure-token
+    - id: A5
+      description: the .nos-theme p max-width 60ch rule is gone
+      command: node .agent/memory/project/specs/nos-type-tokens/checks/check-static.mjs no-60ch
+    - id: A6
+      description: the nos-card-title and nos-h3-visual role hook classes exist in the NOS css
+      command: node .agent/memory/project/specs/nos-type-tokens/checks/check-static.mjs role-hooks
+    - id: A7
+      description: FrauncesLedeScope (the second, 300-only italic) is no longer used by the about and symposium layouts; the theme line takes the main variable italic at 400
+      command: node .agent/memory/project/specs/nos-type-tokens/checks/check-static.mjs no-lede-scope
+    - id: A8
+      description: .nos-num no longer uses --olive-deep (S-2 colour is #6A6829)
+      command: node .agent/memory/project/specs/nos-type-tokens/checks/check-static.mjs num-colour
+    - id: A9
+      description: diff limited to the NOS surface (app/(nos), components/nos, components/nos-chrome, components/show, e2e, docs, .agent/memory)
+      command: node .agent/memory/project/specs/nos-type-tokens/checks/check-static.mjs scope
+    - id: A10
+      description: typescript compiles
+      command: pnpm exec tsc --noEmit
+    - id: A11
+      description: eslint is clean on the whole tree including the changed and new files
+      command: pnpm exec eslint app components lib e2e
+    - id: A12
+      description: production build passes on Sanity fixture replay only (no live Sanity read; a miss outside the known-pending list fails; local site URLs; wall-off and launch flags unset)
+      command: bash .agent/memory/project/specs/nos-type-tokens/checks/build.sh
+    - id: A13
+      description: the computed-style walk on the A12 build - 24 pages at each of 390, 768, 1280, 1440 and 2056 with the Menu panel opened - has zero failures - R-W on every Fraunces node, R-F floors, body 450 / size / lh / colour / measure, a real 450 instance and one Karla face, h1 Display role, h2 one role per class, Name/H3 roles and h3 not above its h2, hero lede / theme line / fact dd, three label tuples (Caps 14px everywhere, nav link .nh-label is Form label) with Label in olive 6A6829 on light and A7A841 on dark, no violet text, measure scoped to prose p/li/standfirst/closing (.nos-hm-rows p and .nos-sp-reach p exempt until NR-2), S-2 colour and contrast at 390 and up, footer text, inputs and buttons computing Karla (TYPE-11, family only, footer sizes skipped), and full-page renders at 390/1440/2056 written to evidence/shots
+      command: node .agent/memory/project/specs/nos-type-tokens/checks/gate-type.mjs
+    - id: A15
+      description: renders for NOS Design's R-W walk exist for all 24 routes at 390, 1440 and 2056 (TYPE-1, TYPE-2, TYPE-3, TYPE-4, TYPE-5, TYPE-6 selectors are asserted in A13)
+      command: node .agent/memory/project/specs/nos-type-tokens/checks/check-static.mjs shots
+    - id: A16
+      description: TYPE-11 CSS route - nos-chrome.css sets --font-sans to the Karla token on .nf, and components/newsletter/NewsletterSignup.tsx is not changed
+      command: node .agent/memory/project/specs/nos-type-tokens/checks/check-static.mjs footer-font-var
+    - id: A14
+      description: docs/nos-type-tokens.md exists and records the scale, the role map and the gate
+      command: test -f docs/nos-type-tokens.md

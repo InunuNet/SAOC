@@ -1,0 +1,129 @@
+{
+  "_source": "Derived from app/(nos)/ on the nos-pagehero head (30cb1e1a) and the nos-pagehero crop-map.json nosRoutes. Paths are NOS-host paths (nos.localhost), as the nos-pagehero gates use them. Every directory under app/(nos)/ and app/(shared)/{privacy,terms,refunds,newsletter/unsubscribe} has an entry; the catch-all [...slug] and the dynamic [slug] / [year] pages are reached by discovery.",
+  "required": [
+    "/",
+    "/about",
+    "/what-to-expect",
+    "/plan-your-visit",
+    "/faq",
+    "/programme",
+    "/workshops",
+    "/symposium",
+    "/wosa-conference",
+    "/conferences",
+    "/international-guests",
+    "/exhibitors",
+    "/vendors",
+    "/vendors/apply",
+    "/sponsors",
+    "/contact",
+    "/tickets",
+    "/tickets/confirmation",
+    "/tickets/cancelled",
+    "/privacy",
+    "/terms",
+    "/refunds"
+  ],
+  "conditional": [
+    {
+      "path": "/sa-exhibitors",
+      "reason": "removed by SAOC #90 (88693ec2): now a 308 redirect to /vendors, which is swept in its own right; if it answers 200 it is swept, otherwise logged NOT SWEPT"
+    },
+    {
+      "path": "/archive",
+      "reason": "data-dependent: 404s when the archive has no visible past shows (past-shows-public); the 404 is then swept as the not-found page"
+    },
+    {
+      "path": "/media-kit",
+      "reason": "gated: redirects (307) to the admin login in the gate environment; an /admin landing is not a NOS surface and is skipped"
+    },
+    {
+      "path": "/newsletter/unsubscribe",
+      "reason": "token-dependent legal page; swept when it renders"
+    },
+    {
+      "path": "/vendors/register",
+      "reason": "token-gated (vendor-gated-registration-flow); swept when it renders"
+    },
+    {
+      "path": "/vendors/photos",
+      "reason": "token-gated; swept when it renders"
+    },
+    {
+      "path": "/vendors/payment",
+      "reason": "token-gated; swept when it renders"
+    },
+    {
+      "path": "/vendors/payment/status",
+      "reason": "needs a payment reference; swept when it renders"
+    },
+    {
+      "path": "/vsp",
+      "reason": "short alias of /vendors/payment/status; swept when it renders"
+    }
+  ],
+  "discover": [
+    {
+      "from": "/tickets",
+      "selector": "a[href^=\"/tickets/\"]",
+      "exclude": "/(confirmation|cancelled)(/|$|\\?)",
+      "label": "tickets/[slug] (the first real product link, as the nos-pagehero gates discover it)",
+      "limit": 2
+    },
+    {
+      "from": "/archive",
+      "selector": "a[href^=\"/archive/\"]",
+      "exclude": "^$",
+      "label": "archive/[year]",
+      "limit": 2
+    },
+    {
+      "from": "/",
+      "selector": "[data-nos-destinations] a, .nos-index a",
+      "exclude": "^$",
+      "label": "hub destination links (reaches any show page the catch-all [...slug] serves)",
+      "limit": 40
+    }
+  ],
+  "skipPathPrefixes": [
+    "/admin",
+    "/api",
+    "/studio",
+    "/_next"
+  ],
+  "notFoundRoutes": [
+    {
+      "path": "/zz-not-a-route-pagehero",
+      "required": true,
+      "requireHeroTitle": false,
+      "source": "an unmatched nos-host URL renders app/not-found.tsx (NosFrame, NosThemeScope, NosPageNotFound on the nos host, per origin/main c020ad1d #93)"
+    },
+    {
+      "path": "/tickets/zz-not-a-ticket-slug",
+      "required": true,
+      "requireHeroTitle": true,
+      "source": "TK-404: an unknown ticket slug must answer 404 and render the NOS not-found (typographic NosHero title) exactly as an unmatched route does"
+    },
+    {
+      "path": "/archive/1900",
+      "required": true,
+      "requireHeroTitle": true,
+      "source": "an unrecorded archive year (or a withheld archive) answers 404 with the NOS not-found; /national-show/archive/<year> 308s to /archive/<year> on the nos host"
+    }
+  ],
+  "notFoundNote": "Both resolve to app/(nos)/national-show/not-found.tsx (NosPageNotFound). On the #76 head that file is a NosSection with an h1 `nos-opsz-fluid` clamp(28px, 3.6vw, 44px) at weight 400 (NOS Design's 44px/400 reading); on origin/main after #93 it is a typographic NosHero whose h1 is `.nos-hero-title`, already weight 300. The gate is behavioural, so it holds for either markup.",
+  "dynamicSegments": {
+    "app/(nos)/tickets/[slug]": "/tickets/zz-not-a-ticket-slug",
+    "app/(nos)/national-show/archive/[year]": "/archive/1900"
+  },
+  "dynamicSegmentsNote": "Every directory under app/(nos) whose name is a dynamic segment ([param]) must be a key here with a bad-param path in notFoundRoutes; gate-not-found.mjs fails on an unlisted one, so a new dynamic NOS route cannot ship without its bad-param 404 being swept. On origin/main c020ad1d the only two are tickets/[slug] and national-show/archive/[year].",
+  "validTicketProbe": {
+    "hub": "/tickets",
+    "linkPattern": "^/tickets/[a-z0-9-]+$",
+    "exclude": [
+      "/tickets/cancelled",
+      "/tickets/confirmation"
+    ],
+    "note": "a real ticket slug found on the hub must still answer 200 (the fix must not 404 live products); logged NOT CHECKED when the hub offers no such link"
+  }
+}
