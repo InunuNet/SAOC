@@ -11,6 +11,8 @@ features:
 
 goldens:
   - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/status-tokens.md
+  - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/alert-classes.json
+  - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/focus-classes.json
   - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/proof-on-main.md
 
 assertions:
@@ -38,7 +40,7 @@ assertions:
       description: "Codex adversarial QA of the whole diff against the goldens and proof-on-main"
       type: codex_qa
       target: >-
-        Adversarially review git diff origin/main...HEAD against the goldens in .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/. Find an input, width or route where the claimed fix does not hold and the checks still pass.
+        Adversarially review git diff origin/main...HEAD against ONLY these goldens: .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/status-tokens.md, .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/alert-classes.json, .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/focus-classes.json, and the F1a section of proof-on-main.md (the other features' goldens in that directory are out of scope). Arrow glyphs, fonts and the favicon belong to F1e; hero, h2 and heading roles to F1c; nav to F1b; LCP to F1d. Do not fail F1a on another feature's golden. Find an input, width or route where the claimed fix does not hold and the checks still pass.
       required: true
       timeout_seconds: 900
     - id: A8

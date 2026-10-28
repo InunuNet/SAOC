@@ -29,7 +29,7 @@ assertions:
       description: "Codex adversarial QA of the whole diff against the goldens and proof-on-main"
       type: codex_qa
       target: >-
-        Adversarially review git diff origin/main...HEAD against the goldens in .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/. Find an input, width or route where the claimed fix does not hold and the checks still pass.
+        Adversarially review git diff origin/main...HEAD against ONLY these goldens: .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/nav-widths.md, and the F1b section of proof-on-main.md (the other features' goldens in that directory are out of scope). Focus rings and status tokens belong to F1a; arrow glyphs to F1e. Do not fail F1b on another feature's golden. Find an input, width or route where the claimed fix does not hold and the checks still pass.
       required: true
     - id: A5
       phase: 5
