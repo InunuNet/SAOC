@@ -4560,3 +4560,69 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 .nos-theme [data-doc-aside] .nk-admit {
   font-style: normal;
 }
+
+/* ---- Sponsor enquiry card (sponsor-enquiry-both-hosts, NOS Design ruling 2026-10-28). The form is the
+   shared SAOC component, so the NOS look is CSS scoped to [data-sponsor-enquiry='nos']. Unlayered on
+   purpose: the form's Tailwind utilities are layered and an unlayered rule beats them. ---- */
+.nos-theme #enquire {
+  scroll-margin-top: 68px; /* sticky chrome + 24; overrides the section's Tailwind scroll-mt-36 */
+}
+@media (min-width: 700px) {
+  .nos-theme #enquire {
+    scroll-margin-top: 121px;
+  }
+}
+.nos-theme [data-sponsor-enquiry='nos'] {
+  background-color: var(--bone);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  padding: 24px;
+}
+@media (min-width: 768px) {
+  .nos-theme [data-sponsor-enquiry='nos'] {
+    padding: 32px;
+  }
+}
+.nos-theme [data-sponsor-enquiry='nos'] form {
+  max-width: 640px;
+}
+.nos-theme [data-sponsor-enquiry='nos'] label {
+  font-family: var(--font-nos-karla), 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+}
+.nos-theme [data-sponsor-enquiry='nos'] input:not([type='checkbox']),
+.nos-theme [data-sponsor-enquiry='nos'] select,
+.nos-theme [data-sponsor-enquiry='nos'] textarea {
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  min-height: 48px;
+}
+.nos-theme [data-sponsor-enquiry='nos'] input:focus-visible,
+.nos-theme [data-sponsor-enquiry='nos'] select:focus-visible,
+.nos-theme [data-sponsor-enquiry='nos'] textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+.nos-theme [data-sponsor-enquiry='nos'] button[type='submit'] {
+  background-color: var(--primary);
+  color: var(--ivory);
+  font-family: var(--font-nos-karla), 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  min-height: 50px;
+  border-radius: var(--radius-button);
+}
+.nos-theme [data-sponsor-enquiry='nos'] button[type='submit']:hover:not(:disabled) {
+  background-color: var(--primary-700);
+}
+.nos-theme [data-sponsor-enquiry='nos'] button[type='submit']:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: none;
+}
