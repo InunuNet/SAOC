@@ -40,6 +40,7 @@ assertions:
       target: >-
         Adversarially review git diff origin/main...HEAD against the goldens in .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/. Find an input, width or route where the claimed fix does not hold and the checks still pass.
       required: true
+      timeout_seconds: 900
     - id: A8
       phase: 5
       description: "PHASE 5 (manifest is written by the post-deploy BrowserAgent/gws run, so it cannot exist at the phase 4 gate). browser_deployed_check on beta /about, declared for the triad linter but non-required. It cannot pass while the beta Basic Auth wall is up (execution/browser_deployed_check.sh live re-check sends no auth, HARNESS defect, backlog.md 2026-10-07). The authenticated post-deploy shell assertion is the real proof."
