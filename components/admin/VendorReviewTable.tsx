@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 
 import type { VendorSubmission, VendorSubmissionStatus, VendorStandOrderStatus } from '@/types/index';
@@ -7,6 +8,7 @@ import type { VendorReviewAction } from '@/lib/vendor-review';
 import { isVendorListingEligible } from '@/lib/vendor-listing';
 import { formatAdminDate, formatAdminDateTime } from '@/lib/admin-format';
 import { vendorCategoryLabels } from '@/lib/vendor-category-labels';
+import { STAND_PAYMENT_LABELS } from '@/lib/vendor-stand-payment-labels';
 import { DetailDrawer, DetailSection } from './DetailDrawer';
 import { StatusPill } from './StatusPill';
 import { AdminTable } from './table/AdminTable';
@@ -16,17 +18,6 @@ import { BUTTON_PRIMARY, BUTTON_SECONDARY, FOCUS_RING } from './tokens';
 import { useDrawerParam } from './useDrawerParam';
 import { VendorPaymentLinkControl } from './VendorPaymentLinkControl';
 import { VendorPhotoLinkControl } from './VendorPhotoLinkControl';
-
-// F32 (vendor-gated-registration-flow, M3) — read-only display labels only. This is NOT the
-// office-use `paymentReceived` (F7/EFT) signal, which the table renders separately below, so
-// an operator never conflates "gateway-paid" with "office-confirmed manually".
-const STAND_PAYMENT_LABELS: Record<VendorStandOrderStatus | 'not-started', string> = {
-  'not-started': 'Not started',
-  pending: 'Pending',
-  paid: 'Paid',
-  failed: 'Failed',
-  cancelled: 'Failed',
-};
 
 // Stand-payment pill tones reuse StatusPill's existing styles: in-flight reads as "in progress",
 // paid as "settled", anything else as neutral.
@@ -346,17 +337,14 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
       standOrderStatus: standPaymentStatusById[row.id] ?? null,
     });
     const busy = pendingId === row.id;
-    const hasAnyAction =
-      actions.length > 0 ||
-      (row.status === 'approved' && standPaymentStatus !== 'paid') ||
-      showPhotoLink ||
-      showPublishListing;
 
     return (
       <div>
         {errorBanner}
         <div className="flex flex-wrap items-start gap-3">
-          {!hasAnyAction ? <span className="text-muted">—</span> : null}
+          <Link href={`/admin/vendors/${row.id}`} className={BUTTON_SECONDARY}>
+            View full registration
+          </Link>
           {actions.map((action) => (
             <button
               key={action}
