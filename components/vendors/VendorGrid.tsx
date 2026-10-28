@@ -96,7 +96,7 @@ export function VendorGrid({ nurseries }: VendorGridProps) {
               href={nursery.website}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-auto pt-3 inline-block font-sans text-[13px] text-ink underline underline-offset-2"
+              className="mt-auto pt-3 inline-block font-sans text-[13px] text-ink underline underline-offset-2 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
             >
               Visit website →
             </a>
@@ -110,7 +110,7 @@ export function VendorGrid({ nurseries }: VendorGridProps) {
                     href={social.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-sans text-[13px] text-ink underline underline-offset-2"
+                    className="font-sans text-[13px] text-ink underline underline-offset-2 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
                   >
                     {social.platform ?? 'Social'}
                   </a>
