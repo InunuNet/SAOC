@@ -30,30 +30,33 @@ export async function generateMetadata(): Promise<Metadata> {
   return { ...nosNotFoundMetadata, title: { absolute: `Page not found | ${SHOW_TITLE}` } };
 }
 
+// The hero band stops 64px (mb-16) short of the dark footer, so the parchment page shows between them.
 export function NotFoundSection() {
   return (
-    <RouteHero
-      route="/404"
-      eyebrow="404 — Page not found"
-      heading="This orchid has left the bench."
-      lede="The page you’re looking for doesn’t exist or may have moved. Start from the home page or find a society near you."
-      actions={
-        <div className="mt-10 flex flex-wrap justify-center gap-4">
-          <Link
-            href="/"
-            className="font-sans text-[14px] font-medium bg-accent px-6 py-3 text-ink transition-colors duration-150 hover:bg-accent-soft"
-          >
-            Go home
-          </Link>
-          <Link
-            href="/societies"
-            className="font-sans text-[14px] font-medium border border-ivory/40 px-6 py-3 text-ivory transition-colors duration-150 hover:bg-ivory/10"
-          >
-            Find a society
-          </Link>
-        </div>
-      }
-    />
+    <div className="mb-16">
+      <RouteHero
+        route="/404"
+        eyebrow="404 — Page not found"
+        heading="This orchid has left the bench."
+        lede="The page you’re looking for doesn’t exist or may have moved. Start from the home page or find a society near you."
+        actions={
+          <div className="mt-10 flex flex-wrap justify-center gap-4">
+            <Link
+              href="/"
+              className="font-sans text-[14px] font-medium bg-accent px-6 py-3 text-ink transition-colors duration-150 hover:bg-accent-soft"
+            >
+              Go home
+            </Link>
+            <Link
+              href="/societies"
+              className="font-sans text-[14px] font-medium border border-ivory/40 px-6 py-3 text-ivory transition-colors duration-150 hover:bg-ivory/10"
+            >
+              Find a society
+            </Link>
+          </div>
+        }
+      />
+    </div>
   );
 }
 

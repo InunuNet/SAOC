@@ -141,6 +141,7 @@ export default async function EventDetailPage({
         eyebrow={event.kind ?? undefined}
         heading={event.title}
         facts={eventFacts(event, show)}
+        factsAlign="start"
       >
         {/* National Show events carry the show band (SV-1): straight after the hero when there is no
             document layout, otherwise after the layout */}

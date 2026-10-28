@@ -668,6 +668,23 @@ h3.font-serif {
     gap: 24px 40px;
   }
 }
+/* A fact never breaks inside a word: cells keep their longest word, the dd balances over at most 3 lines
+   (breaking at spaces only); factsAlign="start" starts the row, and any wrapped row, at the h1's left edge. */
+.hero-facts > div {
+  min-width: min-content;
+}
+.hero-facts dd {
+  overflow-wrap: normal;
+  word-break: normal;
+  text-wrap: balance;
+}
+[data-facts-align='start'].hero-facts {
+  justify-content: flex-start;
+}
+[data-facts-align='start'].hero-facts > div {
+  align-items: flex-start;
+  text-align: left;
+}
 /* Weight band: 400 at 24-31.99px, 300 from 32px (the dd reaches 32px at a 1280px viewport). */
 .hero-facts dd {
   font-weight: 400;
