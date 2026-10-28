@@ -62,7 +62,7 @@ grep -q "exhibitorPasses" components/vendors/VendorStaffPassesFieldset.tsx && fa
 grep -q "wasteTypes" components/vendors/VendorWasteFieldset.tsx || fail "VendorWasteFieldset.tsx must render wasteTypes."
 grep -q "General waste" components/vendors/VendorWasteFieldset.tsx || fail "VendorWasteFieldset.tsx must use the verbatim source label \"General waste\"."
 grep -q "Food Waste" components/vendors/VendorWasteFieldset.tsx || fail "VendorWasteFieldset.tsx must use the verbatim source capitalisation \"Food Waste\"."
-grep -q "Vendors are responsible for maintaining a clean and safe booths throughout the event" components/vendors/VendorWasteFieldset.tsx \
+grep -q "Vendors are responsible for maintaining clean and safe booths throughout the event" components/vendors/VendorWasteFieldset.tsx \
   || fail "VendorWasteFieldset.tsx must render the waste advisory note verbatim, typo included."
 grep -q "specialWasteRequirements" components/vendors/VendorWasteFieldset.tsx && fail "specialWasteRequirements has no source text under this heading -- must not be rendered."
 

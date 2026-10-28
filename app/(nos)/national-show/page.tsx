@@ -93,7 +93,7 @@ const HOURS = [["Thursday VIP Ticket Holders", "14.00 to 19.00"], ["Friday & Sat
 const SYMPOSIUM_LINE = "The National Show Symposium will feature an outstanding programme of presentations by respected local and international speakers covering orchid cultivation, breeding, conservation, taxonomy, judging, sustainability and emerging scientific research.";
 const WOSA_LINE = "A Conference held by Wild Orchids Southern Africa (WOSA) will highlight the ecology and conservation of indigenous orchids, illustrating how research undertaken in natural habitats continues to influence cultivation practices, breeding programmes and the long-term future of orchids.";
 const WORKSHOPS_LINE = "Workshops are planned as part of the wider event programme.";
-const EXHIBIT_LEAD = "All South African Orchid Council members who’s subscriptions are valid may enter orchids for judging. If you are unsure, please check with your society.";
+const EXHIBIT_LEAD = "All South African Orchid Council members whose subscriptions are valid may enter orchids for judging. If you are unsure, please check with your society.";
 const EXHIBIT_BODY = "All submitted orchids will be placed in the Show display. Regional Societies may also have their own displays by booking a stand. They will also be able to sell society plants on behalf of their members.";
 const CLOSING = "Whether your passion lies in conservation, scientific discovery, judging, growing or simply enjoying the extraordinary beauty of orchids, the National Orchid Show – Western Cape 2027 offers an unforgettable experience that celebrates the complete journey of orchids and the people dedicated to their future.";
 
