@@ -39,5 +39,32 @@ await withSite(async ({ base, browser, ctxOpts }) => {
     check(ring.s === 'solid' && ring.w === '2px' && ring.o === '3px' && Math.min(ring.col[0], ring.col[1], ring.col[2]) >= 220, `${w}: focus ring in the error state is ${ring.w} ${ring.s} offset ${ring.o} rgb(${ring.col.slice(0, 3).map(Math.round)}), want 2px solid offset 3px ivory`);
     await ctx.close();
   }
+  // TOPIC error (interim treatment while NEWSLETTER_COPY.genericError is unsourced placeholder copy, withheld under no-invention): the sr-only role=alert (announced) plus a 1px --status-error-on-dark outline on the
+  // invalid checkbox, which carries aria-invalid and aria-describedby the alert. No visible summary, no fill. Uncheck the only topic and submit; no request is made (client-side), nothing is written.
+  const TOPIC = `() => { const rgba = ${RGBA_FN}; const f = document.querySelector('footer'); const cb = f.querySelector('input[type=checkbox]'); const id = cb.getAttribute('aria-describedby'); const al = id && document.getElementById(id); const c = getComputedStyle(cb);
+    const out = { footer: rgba(getComputedStyle(f).backgroundColor), invalid: cb.getAttribute('aria-invalid'), describedby: id, checked: cb.checked, out: { w: c.outlineWidth, s: c.outlineStyle, col: rgba(c.outlineColor) }, cbFill: rgba(c.backgroundColor), alert: null };
+    if (al) { const a = getComputedStyle(al), r = al.getBoundingClientRect(); out.alert = { role: al.getAttribute('role'), text: al.textContent.trim(), hiddenAttr: al.hidden || al.closest('[aria-hidden="true"]') !== null, display: a.display, visibility: a.visibility, srOnly: r.width <= 1 && r.height <= 1, fill: rgba(a.backgroundColor), img: a.backgroundImage, borderW: parseFloat(a.borderTopWidth) + parseFloat(a.borderLeftWidth) }; }
+    return out; }`;
+  for (const width of [1440, 390]) {
+    const { page, ctx } = await openPage(browser, ctxOpts, base, '/about', width); const w = `topic @${width}`;
+    const cb = page.locator('footer input[type=checkbox]').first(); const submit = page.locator('footer form button[type=submit]');
+    await cb.scrollIntoViewIfNeeded(); await page.waitForFunction(() => { const b = document.querySelector('footer form button[type=submit]'); return b && !b.disabled; }, null, { timeout: 15000 }).catch(() => {});
+    await cb.uncheck(); await submit.click(); await page.waitForTimeout(600);
+    await page.evaluate(() => document.activeElement && document.activeElement.blur()); // resting state: the outline must show without focus
+    const r = await page.evaluate(`(${TOPIC})()`); const ground = r.footer.slice(0, 3);
+    check(!r.checked, `${w}: the topic checkbox is still checked, the empty-topics path was not reached`);
+    check(r.invalid === 'true', `${w}: invalid topic checkbox has no aria-invalid="true"`);
+    check(Boolean(r.alert), `${w}: topic checkbox aria-describedby (${r.describedby}) does not point at a rendered alert`);
+    check(r.out.s === 'solid' && parseFloat(r.out.w) === 1 && same(r.out.col.slice(0, 3), TOKEN), `${w}: invalid topic checkbox outline is ${r.out.w} ${r.out.s} rgb(${r.out.col.slice(0, 3).map(Math.round)}), want 1px solid #E8959D`);
+    check(ratio(blend(r.out.col, ground), ground) >= 3, `${w}: topic outline ${ratio(blend(r.out.col, ground), ground).toFixed(2)}:1 on the footer, want >=3:1`);
+    check(r.cbFill[3] === 0, `${w}: invalid topic checkbox has a fill (background ${r.cbFill})`);
+    if (r.alert) {
+      const a = r.alert; check(a.role === 'alert', `${w}: topic error role is "${a.role}", want alert (announced)`);
+      check(a.text.length > 0 && !a.hiddenAttr && a.display !== 'none' && a.visibility !== 'hidden', `${w}: topic alert is empty, aria-hidden or display:none, so it is not announced (text "${a.text.slice(0, 30)}", display ${a.display})`);
+      check(a.srOnly, `${w}: while the copy is withheld the topic alert must be sr-only (1px box); a visible summary needs sourced copy`);
+      check(a.fill[3] === 0 && a.img === 'none', `${w}: topic alert has a fill (${a.fill}, ${a.img})`);
+    }
+    await ctx.close();
+  }
 });
 finish('newsletter-error');

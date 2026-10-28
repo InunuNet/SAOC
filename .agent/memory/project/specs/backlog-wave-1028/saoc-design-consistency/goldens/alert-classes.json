@@ -11,7 +11,7 @@
       "class": "b",
       "file": "components/newsletter/NewsletterSignup.tsx",
       "key": "topicsErrorId",
-      "reason": "Footer newsletter topics field error: left-border-only field alert (or its sr-only mirror for screen readers) tied to the fieldset by aria-describedby."
+      "reason": "Footer newsletter topics field error, INTERIM ruled treatment (lead, no-invention): NEWSLETTER_COPY.genericError is unsourced placeholder copy and is withheld by default, so the topic error is the sr-only role=alert (announced) plus a 1px --status-error-on-dark outline on the invalid checkbox, which carries aria-invalid and aria-describedby the alert; no visible summary, no fill. SWITCH-OVER: once sourced copy exists it becomes a visible left-border-only field alert (border-l-2, bg-transparent) with the aria-hidden icon in --status-error-on-dark. Gate: check-newsletter-error.mjs (topic case)."
     },
     {
       "class": "b",
