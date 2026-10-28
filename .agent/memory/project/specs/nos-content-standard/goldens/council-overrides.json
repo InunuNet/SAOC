@@ -51,5 +51,65 @@
       "from": "\u0077ho’s subscriptions",
       "to": "whose subscriptions"
     }
-  ]
+  ],
+  "sanityExceptions": {
+    "appliesFromFixtureCapturedAt": "2026-10-28T00:00:00Z",
+    "note": "Rows already applied in Sanity on 2026-10-28; applied to the expected Drive text only when the replayed fixture was captured on or after appliesFromFixtureCapturedAt, or NOS_STD_FIXTURE=live.",
+    "substitutions": [
+      {
+        "id": "SX-F13",
+        "sanityDoc": "showFaq-q15",
+        "from": "\u0054&C’s On your",
+        "to": "T&C’s on your"
+      },
+      {
+        "id": "SX-F14",
+        "sanityDoc": "showFaq-q16",
+        "from": "\u0061ttend on more than one day",
+        "to": "attend more than one day"
+      },
+      {
+        "id": "SX-F19",
+        "sanityDoc": "showFaq-q26",
+        "from": "\u0077ho’s subscriptions",
+        "to": "whose subscriptions"
+      },
+      {
+        "id": "SX-F28",
+        "sanityDoc": "showFaq-q51",
+        "from": "\u0072efrenshments",
+        "to": "refreshments"
+      },
+      {
+        "id": "SX-W2b",
+        "sanityDoc": "showFaq-q29",
+        "from": "\u0070ublic please",
+        "to": "public, please"
+      },
+      {
+        "id": "SX-F3",
+        "sanityDoc": "showFaq-q4",
+        "from": "\u0057alker Bay Orchid Society, Cape Orchid Society, Tygerberg Orchid Group, Southern Cape Orchid Society and Wild Orchids Southern Africa (WOSA)",
+        "to": "Cape Orchid Society, Southern Cape Orchid Society, Tygerberg Orchid Group, Walker Bay Orchid Society and Wild Orchids Southern Africa (WOSA)"
+      },
+      {
+        "id": "SX-F5",
+        "sanityDoc": "showFaq-q7",
+        "from": "\u0054he Show is open to the public. You do not need to belong to an orchid society to visit.",
+        "to": "The Show is open to the public."
+      },
+      {
+        "id": "SX-F6",
+        "sanityDoc": "showFaq-q8",
+        "from": "\u0049nternational guests and exhibitors, including",
+        "to": "Yes, international guests and exhibitors, including"
+      },
+      {
+        "id": "SX-F25",
+        "sanityDoc": "showFaq-q40",
+        "from": "\u004courens Grobler, Tinus Oberholzer, Michael Tibbs, Rob Fuchs, Elbert Wijaya and Hildegard Crous",
+        "to": "Elbert Wijaya, Hildegard Crous, Lourens Grobler, Michael Tibbs, Rob Fuchs and Tinus Oberholzer"
+      }
+    ]
+  }
 }
