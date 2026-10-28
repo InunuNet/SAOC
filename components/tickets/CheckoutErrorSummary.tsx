@@ -1,6 +1,7 @@
 // Focused error summary for the ticket checkout. Same markup, classes and tokens as the vendor
 // application's summary (components/vendors/VendorApplyForm.tsx); a server refusal renders its
 // message verbatim in the same focusable container, with no heading and no links.
+import { CircleAlert } from 'lucide-react';
 import type { Ref } from 'react';
 
 import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
@@ -28,7 +29,7 @@ function focusTarget(selector: string) {
 }
 
 const SUMMARY_CLASS =
-  'scroll-mt-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary';
+  'scroll-mt-40 focus:outline-2 focus:outline-solid focus:outline-primary focus:outline-offset-[3px]';
 
 export function CheckoutErrorSummary({
   id,
@@ -43,9 +44,12 @@ export function CheckoutErrorSummary({
       {entries.length > 0 ? (
         <div
           role="alert"
-          className="space-y-2 rounded-sm border border-[var(--status-error)] bg-bone p-4"
+          className="space-y-2 rounded-sm border-2 border-[var(--status-error)] p-4"
         >
-          <p className="font-sans text-[15px] font-medium text-[var(--status-error)]">{heading}</p>
+          <p className="flex items-start gap-2 font-sans text-[15px] font-medium text-[var(--status-error)]">
+            <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            <span>{heading}</span>
+          </p>
           <ul className="list-disc space-y-1 pl-5 font-sans text-[14px] text-ink">
             {entries.map((entry) => (
               <li key={entry.key}>
