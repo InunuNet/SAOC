@@ -17,6 +17,7 @@ none('jetbrains|JetBrains', ['app', 'components', 'lib', 'next.config.ts', 'pack
 none('--mono|var\\(--font-mono', ['app', 'components'], 'mono token still referenced');
 none('\\.mono-label|mono-label', ['app', 'components'], 'mono-label utility still referenced');
 if (existsSync('app/fonts/jetbrains-mono')) fails.push('app/fonts/jetbrains-mono still exists (delete the font file and its OFL.txt)');
+for (const gone of ['components/chrome/SaocLockup.tsx', 'app/fonts/lora', 'scripts/checks/footer-render-check.mjs']) if (existsSync(gone)) fails.push(gone + ' still exists (C1 deletes it once ACCESSIBLE_LABEL has moved; NOS C2 has already removed the NosFooter use)');
 const footer = readFileSync('components/chrome/Footer.tsx', 'utf8');
 if (/SaocLockup/.test(footer)) fails.push('components/chrome/Footer.tsx still imports or renders SaocLockup (C1: the footer lockup is the supplied image file)');
 // F1e A1 invariant carried over: every font file named once in app/layout.tsx.

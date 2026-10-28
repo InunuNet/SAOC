@@ -58,8 +58,12 @@ assertions:
       description: "Header height and F1b nav widths hold: against goldens/baseline-post-wave.json header and bar heights equal at 390/768/1100/1280/1366/1440, brand/nav/cta/search widths within 1px, the labelled Menu within +12px (accepted ceiling, MENU only); one row, no overlap, MENU-to-CTA gap >= baseline, also at 1383. Fails until @dev step 0 commits the baseline (which now also records footer lockup height)"
       command: "DC_PROD=1 node .agent/memory/project/specs/council-1028/council-design-1/checks/baseline.mjs header"
       timeout_seconds: 1800
+    - id: A37
+      description: "NOS Design ruling 2: chips, toggles and tabs on /events and /societies are t-label and their selected state differs from an unselected sibling by fill, border, underline, shadow or colour, never by weight alone"
+      command: "DC_PROD=1 node .agent/memory/project/specs/council-1028/council-design-1/checks/check-selected-state.mjs"
+      timeout_seconds: 900
     - id: A10
-      description: "NOS is untouched: every NOS element that carried font-mono/mono-label on the post-wave main computes the same family-first, size, weight, tracking, transform and line-height after the SAOC rename (nine NOS routes, footer excluded: NOS Site owns C2/TYPE-11)"
+      description: "NOS is untouched: every NOS element that carried font-mono/mono-label on the post-wave main computes the same family-first, size, weight, tracking, transform and line-height after the SAOC rename (nine NOS routes, footer excluded: NOS Site owns C2/TYPE-11). The baseline is captured on the main that already holds nos-type-tokens (NR-8 Label tuple, the :is() size variant, label.font-mono) and C2; the rename must reproduce those computed values"
       command: "DC_PROD=1 node .agent/memory/project/specs/council-1028/council-design-1/checks/baseline.mjs nos"
       timeout_seconds: 1800
     - id: A11

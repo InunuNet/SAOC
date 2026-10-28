@@ -15,7 +15,7 @@ const sha = (p) => createHash('sha256').update(readFileSync(p)).digest('hex');
 check(sha(G.source) === G.sourceSha256, `${G.source} differs from the golden sha256 (the supplied file was changed)`);
 try { check(sha(G.servedCopy) === G.sourceSha256, `${G.servedCopy} is not a byte-identical copy of the supplied file`); } catch { check(false, `${G.servedCopy} does not exist`); }
 const fl = readFileSync('components/chrome/FooterLockup.tsx', 'utf8');
-check(/import\s*\{[^}]*ACCESSIBLE_LABEL[^}]*\}\s*from\s*['"][^'"]*SaocLockup['"]/.test(fl), 'FooterLockup.tsx must import ACCESSIBLE_LABEL from SaocLockup (NOS Design amendment: alt is the exported label verbatim)');
+check(/import\s*\{[^}]*ACCESSIBLE_LABEL[^}]*\}\s*from\s*['"][^'"]+['"]/.test(fl), 'FooterLockup.tsx must import the exported ACCESSIBLE_LABEL (NOS Design amendment: alt is the exported label verbatim; its module may have moved from SaocLockup.tsx)');
 check(!/Making a difference since 1968/.test(fl) && !/export\s+(const|\{)[^\n]*ACCESSIBLE_LABEL/.test(fl), 'FooterLockup.tsx duplicates or re-exports the label string');
 const header = readFileSync('components/chrome/Header.tsx', 'utf8'); const drawer = readFileSync('components/chrome/MobileMenu.tsx', 'utf8');
 for (const [n, s] of [['Header.tsx', header], ['MobileMenu.tsx', drawer]]) check(s.includes('/images/saoc-lockup-horizontal-full-name.png') && !/import\s*\{[^}]*SaocLockup[^}]*\}/.test(s), `${n} must still render the horizontal raster lockup and not the live SaocLockup (ruling's drawer clause is a no-op)`);
