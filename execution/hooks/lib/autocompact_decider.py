@@ -82,16 +82,23 @@ def _record_path(settings_path, record_path):
 def arm_route_a(settings_path=SETTINGS_LOCAL, window=AUTOCOMPACT_FLOOR, record_path=None):
     """Merge autoCompactWindow into the settings file, preserving every other key.
 
-    The prior value (or its absence) is saved so disarm can restore it exactly.
+    The prior value (or its absence) is saved on the first arm only so disarm can
+    restore it exactly; every arm records the value it wrote, so disarm can tell a
+    manual edit made since from its own window.
     """
     settings_path = Path(settings_path)
     record = _record_path(settings_path, record_path)
     data = _read_json(settings_path)
-    if not record.exists():
+    saved = _read_record(record) if record.exists() else None
+    if saved is not None:
+        saved["written"] = window
+        record.write_text(json.dumps(saved))
+    else:
         record.parent.mkdir(parents=True, exist_ok=True)
         record.write_text(json.dumps({
             "had_prior": "autoCompactWindow" in data,
             "prior": data.get("autoCompactWindow"),
+            "written": window,
             "ts": time.time(),
         }))
     data["autoCompactWindow"] = window
@@ -99,21 +106,42 @@ def arm_route_a(settings_path=SETTINGS_LOCAL, window=AUTOCOMPACT_FLOOR, record_p
     settings_path.write_text(json.dumps(data, indent=2) + "\n")
 
 
+def _read_record(record):
+    """The arm record, or None when it cannot be read (corrupt JSON, wrong shape)."""
+    try:
+        data = json.loads(Path(record).read_text())
+    except (OSError, ValueError):
+        return None
+    return data if isinstance(data, dict) else None
+
+
 def disarm_route_a(settings_path=SETTINGS_LOCAL, record_path=None):
-    """Restore autoCompactWindow to its pre-arm state; no record or file is a no-op."""
+    """Restore autoCompactWindow to its pre-arm state; no record or file is a no-op.
+
+    Returns "kept" when the current value is not the one we wrote (a manual edit):
+    that value stays and only the record is dropped. An unreadable record removes
+    the window outright, so a lowered window can never outlive its record.
+    """
     settings_path = Path(settings_path)
     record = _record_path(settings_path, record_path)
     if not record.exists():
-        return
-    saved = _read_json(record)
+        return None
+    saved = _read_record(record)
+    outcome = None
     if settings_path.exists():
         data = _read_json(settings_path)
-        if saved.get("had_prior"):
+        if saved is None:
+            data.pop("autoCompactWindow", None)
+        elif "written" in saved and data.get("autoCompactWindow") != saved["written"]:
+            outcome = "kept"
+        elif saved.get("had_prior"):
             data["autoCompactWindow"] = saved.get("prior")
         else:
             data.pop("autoCompactWindow", None)
-        settings_path.write_text(json.dumps(data, indent=2) + "\n")
+        if outcome != "kept":
+            settings_path.write_text(json.dumps(data, indent=2) + "\n")
     record.unlink()
+    return outcome
 
 
 def expire_route_a(settings_path=SETTINGS_LOCAL, record_path=None):

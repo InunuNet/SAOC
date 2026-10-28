@@ -53,3 +53,10 @@ count, an exit code, a diff — and stop.
 Running out mid-mission and leaving the tree half-changed is worse than
 shipping two of five features cleanly. Finish what you started, commit it,
 report exactly what you did not reach and why.
+
+## Compaction is yours to schedule
+
+Do not wait for the operator to compact. After a finished, committed feature with
+large context, run `python3 execution/compact.py now`: it types `/compact` into your
+own terminal when it can. A settings change alone applies only at session start.
+Mid-task, `compact.py delay` pushes the window out for the next start; `restore` hands control back.
