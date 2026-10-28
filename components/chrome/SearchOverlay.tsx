@@ -160,11 +160,12 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
                       <SuggestionLink
                         href={s.href}
                         onClick={onClose}
+                        data-variant="corner"
                         className="flex items-center justify-between px-3 py-2 rounded-sm hover:bg-bone text-ink"
                       >
-                        <span>{s.label}</span>
+                        <span data-corner-title>{s.label}</span>
                         <span aria-hidden className="text-muted">
-                          <ArrowIcon />
+                          <ArrowIcon variant="corner" />
                         </span>
                       </SuggestionLink>
                     </li>
@@ -192,16 +193,17 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
                     <Link
                       href={r.href}
                       onClick={onClose}
+                      data-variant="corner"
                       className="flex items-center justify-between px-3 py-2 rounded-sm hover:bg-bone text-ink"
                     >
                       <span>
-                        <span className="block">{r.item.name}</span>
+                        <span data-corner-title className="block">{r.item.name}</span>
                         <span className="block font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
                           {[r.item.province, r.item.region].filter(Boolean).join(' · ')}
                         </span>
                       </span>
                       <span aria-hidden className="text-muted">
-                        <ArrowIcon />
+                        <ArrowIcon variant="corner" />
                       </span>
                     </Link>
                   </li>
