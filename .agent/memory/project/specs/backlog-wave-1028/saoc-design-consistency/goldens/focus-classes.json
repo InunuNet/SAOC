@@ -1,0 +1,4 @@
+{
+  "note": "F1a A4 static enumeration. Every className string under app/ and components/ (components/nos-chrome/, components/nos/ and app/(nos)/ excluded as NOS-host-only) that carries focus:ring-*, focus-visible:ring-*, ring-offset-* or focus(-visible):outline-none must be THE ONE RING: focus-visible:outline-2 + focus-visible:outline-solid + focus-visible:outline-offset-[3px] (+ an outline colour), with no ring-* utility and no outline-none. Anything else must be listed here with a reason. Each entry names a file and a key (a substring of the className string). An entry matching no hit FAILS the check (stale). Unlisted hits FAIL.",
+  "allow": []
+}

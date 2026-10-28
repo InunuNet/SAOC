@@ -24,6 +24,7 @@ const SAMPLE = `async ({ b64, ox, oy, w, h, ring }) => {
 const TARGETS = [
   { name: 'hero CTA', path: '/', width: 1440, sel: '.home-hero a' },
   { name: 'Menu', path: '/about', width: 1100, sel: '[data-hd=menu]' },
+  { name: 'header logo', path: '/about', width: 1440, sel: 'header a[aria-label^="South African Orchid Council"]' },
   { name: 'Join', path: '/about', width: 1440, sel: '[data-hd=cta]' },
   // The drawer's own "Join a society" link (MobileMenu), at 390 with the drawer OPEN: the header Join is not the link a phone keyboard user lands on.
   { name: 'drawer Join', path: '/about', width: 390, sel: '[data-sdc-probe]', pre: 'drawerJoin' },
