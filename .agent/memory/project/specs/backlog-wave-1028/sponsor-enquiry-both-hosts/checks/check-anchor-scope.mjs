@@ -16,7 +16,6 @@ if (untouched) failures.push(`app/globals.css and app/(marketing) must be unchan
 const NOS = 'app/(nos)/national-show/nos-structure.css';
 const ALLOWED = [
   [/--scroll-padding-top\s*:/, 'the --scroll-padding-top override'],
-  [/^\s*(\/\*|\*)[^]*scroll-(padding|margin)[^]*$/, 'a comment about scroll-padding / scroll-margin'],
   [/^\s*scroll-margin-top\s*:\s*(24|68|121)px\s*;(\s*\/\*.*\*\/)?\s*$/, 'the sponsor card scroll-margin-top (24, 68 or 121px)'],
   [/^\s*@media \(min-width: 768px\) \{\s*$/, 'the card breakpoint media query (768 only)'],
   [/^\s*(html[^{]*|\.nos-theme \[data-sponsor-enquiry='nos'\])\s*\{\s*$/, 'the html NOS override or sponsor card selector line'],
@@ -24,8 +23,18 @@ const ALLOWED = [
   [/^\s*$/, 'a blank line'],
 ];
 const lines = git('diff', '-U0', base, '--', NOS).split('\n').filter((l) => /^[+-]/.test(l) && !/^(\+\+\+|---)/.test(l));
-for (const line of lines) {
-  const text = line.slice(1);
+// A comment is judged as a whole block: it opens with /* and runs to */ over any number of changed lines (this file's multi-line
+// comments carry no leading *), and the block is allowed only if its text is about scroll-padding or scroll-margin.
+const COMMENT_TOPIC = /scroll-(padding|margin)/;
+for (let i = 0; i < lines.length; i += 1) {
+  const line = lines[i]; const text = line.slice(1);
+  if (/^\s*\/\*/.test(text)) {
+    const sign = line[0]; const block = [text];
+    while (!/\*\//.test(block[block.length - 1]) && i + 1 < lines.length && lines[i + 1][0] === sign) { i += 1; block.push(lines[i].slice(1)); }
+    if (!/\*\//.test(block[block.length - 1])) failures.push(`${NOS} has an unterminated changed comment: ${text.trim().slice(0, 100)}`);
+    else if (!COMMENT_TOPIC.test(block.join(' '))) failures.push(`${NOS} changed a comment that is not about scroll-padding or scroll-margin: ${text.trim().slice(0, 100)}`);
+    continue;
+  }
   const removedOldBreakpoint = line.startsWith('-') && /^\s*@media \(min-width: 700px\) \{\s*$/.test(text);
   if (!removedOldBreakpoint && !ALLOWED.some(([re]) => re.test(text))) failures.push(`${NOS} changed outside the anchor fix: ${line.trim().slice(0, 120)}`);
 }

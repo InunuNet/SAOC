@@ -32,15 +32,18 @@ assertions:
       description: Typecheck stays green with the shared form on the NOS page.
       command: pnpm exec tsc --noEmit
     - id: A6
-      description: Codex adversarial QA scoped to the actual diff.
+      description: Codex adversarial QA scoped to the anchor-fix diff (NOS Design anchor ruling 2026-10-28). The original F2 review shipped in #144; this follow-up judges only the anchor change.
       type: codex_qa
       target: >-
-        Review ONLY git diff origin/main...HEAD on feat/sponsor-enquiry-both-hosts. Judge, against
-        .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/goldens/spec.md: (1) does the NOS page reuse the existing
-        SponsorEnquirySection and /api/sponsors/enquire with no fork, with primary CTAs on #enquire; (2) is source stored as saoc, nos or
-        null, derived only from the Host and never from the request body; (3) does the admin notice subject name the site while recipients
-        stay the ADMIN_EMAIL_ALLOWLIST; (4) is any new visitor email or new unsourced copy string introduced, and does the acknowledgement now follow the submission host (SAOC sender and site for the SAOC host, NOS for the NOS host); (4b) are the NOS enquiry styles scoped to [data-sponsor-enquiry=nos] so SAOC is untouched, and is the shared form changed only in its success state; (5) would checks A1-A3 fail if
-        each of those changes were reverted. Pre-existing behaviour in unchanged files is out of scope.
+        Review ONLY git diff origin/main...HEAD on the branch under test (the sponsor card anchor fix). Judge, against
+        .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/goldens/spec.md (anchor bullets): (1) the NOS host sets
+        --scroll-padding-top to 0 on html at every width, in app/(nos)/national-show/nos-structure.css, through a selector scoped to the NOS
+        host (html:has(#nh)) and never bare html; (2) the sponsor card scroll-margin-top is 24px at 767px and below and 121px from 768px up;
+        (3) app/globals.css, app/(marketing) and the shared SponsorEnquirySection are unchanged, so the SAOC root scroll-padding (6.5rem) is
+        untouched; (4) no other NOS stylesheet changed, and the only nos-structure.css edits are that variable, the comment about it and the
+        card scroll-margin lines; (5) could the zeroing rule match any SAOC page (is #nh rendered only by the NOS header, and can any
+        non-NOS route or layout render it); (6) does zeroing the root scroll-padding on NOS pages change where any other NOS hash target
+        lands, in a way the diff should have accounted for. Pre-existing behaviour in unchanged files is out of scope.
       required: true
     - id: A7
       phase: 5
