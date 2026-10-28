@@ -14,6 +14,7 @@
 @media (min-width: 768px) {
   .nos-theme {
     --doc-index-top: calc(env(safe-area-inset-top, 0px) + var(--nos-header-h));
+    --doc-scroll-margin: calc(var(--nos-header-h) + var(--doc-index-bar-h) + var(--nos-landing-air));
   }
 }
 @media (min-width: 1024px) {

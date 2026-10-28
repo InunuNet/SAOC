@@ -53,6 +53,7 @@ const checks = {
     if (!/--doc-index-top:\s*calc\([^;]*var\(--nos-header-h\)/.test(a)) fail('--doc-index-top does not derive from var(--nos-header-h)');
     if (!/--doc-scroll-margin:[^;]*var\(--nos-landing-air\)/.test(a)) fail('--doc-scroll-margin does not use var(--nos-landing-air)');
     if (!/var\(--doc-index-bar-h\)/.test(a)) fail('the <1024 margin does not use var(--doc-index-bar-h)');
+    if (!/@media \(min-width: 768px\)\s*\{\s*\.nos-theme\s*\{[^}]*--doc-scroll-margin:\s*calc\(var\(--nos-header-h\) \+ var\(--doc-index-bar-h\) \+ var\(--nos-landing-air\)\);/.test(a)) fail('768-1023 --doc-scroll-margin must be the composed calc(var(--nos-header-h) + var(--doc-index-bar-h) + var(--nos-landing-air)) inside the min-width: 768px block (NOS Design 2026-10-29)');
     if (!/\.nos-theme \.doc-layout--index \[data-doc-main\] \.doc-h2\[id\]\s*\{\s*scroll-margin-top:\s*calc\(var\(--doc-scroll-margin\)/.test(a)) fail('index-band heading override must use var(--doc-scroll-margin)');
     if ((b.match(/var\(--nos-header-h\)/g) ?? []).length < 2) fail('generic hash-target rules must use var(--nos-header-h) at >=768 (plain and ticketing-bar variants)');
     if ((b.match(/var\(--nos-landing-air\)/g) ?? []).length < 4) fail('generic hash-target rules must use var(--nos-landing-air) in every rule');

@@ -22,6 +22,9 @@ Header: `.nh` (components/nos-chrome/nos-chrome.css:24) is `position: sticky` fr
 
 Gate on main with the wrapper: 176 of 176 asserted landings fail; the chrome probe fails at 768-2056 (no token, scroll-padding 104).
 
+## NOS Design confirmation (root comms.md:5207, 2026-10-29)
+Yes: the pinned doc-index bar counts as chrome. 768-1023 landing = calc(var(--nos-header-h) + var(--doc-index-bar-h) + var(--nos-landing-air)); from 768 the bar's sticky top = var(--nos-header-h); gate = 24 +/-2 below the lowest pinned element at all 8 widths, with no bar/header overlap (probe-chrome.mjs asserts it). This settles the sub-nav caveat below. The card swap (edit 4b) is in this build with SAOC's approval.
+
 ## Decision
 Three tokens, each defined once; every band's value is `pinned-chrome bottom + --nos-landing-air`.
 
@@ -39,7 +42,7 @@ The token NOS Design asked for is **`--nos-header-h`** (name goes to NOS Design)
 3. `app/(nos)/national-show/nos-structure.css`, doc-variable block (:2737-2755), replace with:
    - corrected comment (header pins from 768, bottom 97 = `--nos-header-h`; bar 48 under 1024; side card from 1024);
    - base: `--doc-index-top: env(safe-area-inset-top, 0px)`, `--doc-scroll-margin: calc(var(--doc-index-top) + var(--doc-index-bar-h) + var(--nos-landing-air))` (390/767: 72);
-   - `@media (min-width: 768px)`: `--doc-index-top: calc(env(safe-area-inset-top, 0px) + var(--nos-header-h))` (768-1023: 169);
+   - `@media (min-width: 768px)`: `--doc-index-top: calc(env(safe-area-inset-top, 0px) + var(--nos-header-h))` (the bar's sticky top is the header height, not 0) and `--doc-scroll-margin: calc(var(--nos-header-h) + var(--doc-index-bar-h) + var(--nos-landing-air))` (768-1023: 169, the composed form, never the literal);
    - `@media (min-width: 1024px)`: `--doc-scroll-margin: calc(var(--doc-index-top) + var(--nos-landing-air))` (121);
    - `@media (max-width: 1023.98px)`: `.nos-theme .doc-layout--index [data-doc-main] .doc-h2[id] { scroll-margin-top: calc(var(--doc-scroll-margin) - var(--scroll-padding-top, 0px)); }` (specificity 0,5,0 beats globals.css:863's 0,4,0 so the shared `+64` stays for SAOC).
 4. Same file, hash-target rules (:591-609): `[data-nos-group]` and `[id]` become `var(--nos-landing-air)`, with a `min-width: 768px` block of `calc(var(--nos-header-h) + var(--nos-landing-air))`; ticketing-bar variants `calc(var(--nos-landing-air) + 44px)` (>=700) and `calc(var(--nos-header-h) + var(--nos-landing-air) + 48px)` (>=768). The 44/48 testing-bar heights are existing literals and stay.
