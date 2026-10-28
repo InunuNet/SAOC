@@ -78,7 +78,8 @@ const walk = (d) => {
     readFileSync(p, 'utf8').split('\n').forEach((l, i) => { if (OLD_REF.test(l) && !/^\s*(\/\/|\*|\/\*)/.test(l)) hits.push(`${p}:${i + 1}`); });
   }
 };
-for (const d of ['app', 'components', 'lib']) walk(d);
+for (const d of ['app', 'components', 'lib', 'e2e']) walk(d);
+if (existsSync('playwright.config.ts') && OLD_REF.test(readFileSync('playwright.config.ts', 'utf8'))) hits.push('playwright.config.ts');
 for (const f of ['content/national-show-routes.json', 'scripts/generate-nos-route-manifest.ts']) readFileSync(f, 'utf8').split('\n').forEach((l, i) => { if (OLD_REF.test(l)) hits.push(`${f}:${i + 1}`); });
 check('no internal path string or href still points at /exhibitors', hits.length === 0, hits.join(', '));
 const band = read('components/home/ShowBand.tsx') ?? '';

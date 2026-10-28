@@ -7,7 +7,7 @@ c92f4b16dfd5e6a9701423b24e6b23b0d91a9f0d90b064609d107036ad49ddbb  .agent/memory/
 60e12b095ac3e8b718fec7e7512b5e4ec28c148b453b0f24b2840481db395f1d  .agent/memory/project/specs/nos-award-entries/goldens/sanity-for-saoc.md
 db0ff66156b959e4fb0da454ba3aaee89e059063612d1fa6c03faf9f3d0ef640  .agent/memory/project/specs/nos-award-entries/goldens/elbert-bio-diff.md
 c081ea5a20c8efad4c2196bbbb9a061322d5b41df783e22116a06977cb7c3968  .agent/memory/project/specs/nos-award-entries/goldens/codex-qa-prompt.md
-356a4fe5b7e2a9a3cb46c1819ace12465b31afdf2b2481d777a8f7196ec9ec1a  .agent/memory/project/specs/nos-award-entries/checks/check-static.mjs
+e94ed816f03565d9185d3205978d3e83e6e578220ab4f6d5ef2670e29a593cf3  .agent/memory/project/specs/nos-award-entries/checks/check-static.mjs
 beed69acd40351797e3ba4fa4c9bcb85d1dcd97a676e9bfc9bf5e19b7c5fb400  .agent/memory/project/specs/nos-award-entries/checks/check-diff-scope.mjs
 afcf1c194d2b2ebb060888b024d71998a62ce6f94e623761493f77b27cb60ff3  .agent/memory/project/specs/nos-award-entries/checks/gate-render.mjs
 e57ff552e9bbff0d54d7f0d60aa70d129eef3f9639d67ffddb9fd144f85cb354  .agent/memory/project/specs/nos-award-entries/checks/build.sh
