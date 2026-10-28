@@ -16,6 +16,7 @@ await withSite(async ({ base, browser, ctxOpts, deployed }) => {
     const h1src = await page.evaluate(() => { const h = document.querySelector('h1'); const c = getComputedStyle(h); const fam = c.fontFamily.split(',')[0].replace(/['"\s]/g, ''); const wt = Number(c.fontWeight);
       const rules = [...document.styleSheets].flatMap((s) => { try { return [...s.cssRules]; } catch { return []; } }).filter((r) => r.type === CSSRule.FONT_FACE_RULE && r.style.getPropertyValue('font-family').replace(/['"\s]/g, '') === fam && (r.style.getPropertyValue('font-style') || 'normal') === c.fontStyle);
       const r = rules.find((x) => { const [a, b] = (x.style.getPropertyValue('font-weight') || '400').trim().split(/\s+/).map(Number); return wt >= a && wt <= (b ?? a); }) ?? rules[0]; const m = r && r.style.getPropertyValue('src').match(/url\(["']?([^"')]+)/); return m ? new URL(m[1], r.parentStyleSheet.href || location.href).pathname : null; });
+    check(Boolean(h1src), `${path}: the h1 face resolves to no @font-face file, so the preloaded font cannot be shown to be the h1 face`);
     if (fonts[0] && h1src) check(fonts[0].includes(h1src.split('/').pop()) || fonts[0].includes(h1src), `${path}: the preloaded font is not the h1 face (${h1src.split('/').pop()}): ${fonts[0].slice(0, 120)}`);
     await ctx.close();
   }

@@ -67,3 +67,7 @@ assertions:
     - id: A13
       description: "SAOC /404: a parchment gap of at least 64px between the band's bottom and the footer's top at 390, 1440 and 2056 (fails on main: gap 0, the band runs into the dark footer)"
       command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-404-footer-gap.mjs"
+
+    - id: A14
+      description: "/about tablet band (NOS Design ruling (a), final), prod build with fixtures at 769/880/960/1023: /about facts take <=2 rows, no mid-word break, no overflow; /about hero <=520; the other 7 routes 480 +-4. The 480 +-4 lock at 768/1024/1280/1440/2056 stays with A2/A8. Measured on F1c dev 271aacfc: /about 480/488/504/516, others 480, 2 rows max"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-about-tablet-band.mjs"
