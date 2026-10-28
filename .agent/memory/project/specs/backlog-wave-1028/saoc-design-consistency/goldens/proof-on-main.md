@@ -86,3 +86,6 @@ Both built and served with `next build` + `next start` (README recipe) and measu
 - A12 to A14 are guards that pass on F1d (hero sharpness, priority/AVIF, no fade); the F1d dev owns their proof.
 - A15 to A17 triad, A18 to A20 phase 5.
 Not verified: the DC_PROD autostart path in lib.mjs (it needs a full `next build` from the dev's checkout); the same recipe was run by hand through start-prod.sh. The scripts were run against the manually started servers via DC_BASE_URL.
+
+## F1b A12 (guard)
+Guard, not a fail-on-main: main has no 1280-1383 inline band or icon Menu at those widths, so it fails there for the wrong reason; the aria-current wiring (MobileMenu.tsx navAriaCurrent) already exists. Passes on feat/sdc-f1b-nav@79472b8f (run 2026-10-28).
