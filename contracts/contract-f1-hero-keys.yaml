@@ -105,17 +105,6 @@ assertions:
         missing token is a hard FAIL, never a skip.
       command: node --import tsx/esm contracts/checks/f1-hero-keys/check-hero-keys-live.mjs
 
-    - id: A3
-      description: >
-        Regression guard AND the actual data-repair mechanism: running
-        scripts/seed-page-singletons.ts twice in a row leaves homePage.heroImages
-        with the same 4 valid, unique `_key`s and the same asset references both
-        times — proves the reuse branch backfills/preserves keys instead of
-        regenerating them (which would be pointless churn) or re-uploading
-        duplicate image assets (which would bloat the media library). This is a
-        real integration run against the live dataset, not a mock.
-      command: node --import tsx/esm contracts/checks/f1-hero-keys/check-seed-idempotent-keys.mjs
-
     - id: A4
       description: >
         Fast, network-free structural check that the fix is actually present in
@@ -127,3 +116,16 @@ assertions:
     - id: A5
       description: strict TypeScript type-check passes after the edit (no `any`, no broken types)
       command: pnpm type-check
+
+manual_only:
+  - id: A3
+    reason: "check-seed-idempotent-keys.mjs writes to the production Sanity dataset (project 26yfbug4): Sanity 26yfbug4/production homePage via a real run of scripts/seed-page-singletons.ts, twice; sentinel residue once sat on the live site for 3 days; run by hand only, with the operator present"
+    description: >
+      Regression guard AND the actual data-repair mechanism: running
+      scripts/seed-page-singletons.ts twice in a row leaves homePage.heroImages
+      with the same 4 valid, unique `_key`s and the same asset references both
+      times — proves the reuse branch backfills/preserves keys instead of
+      regenerating them (which would be pointless churn) or re-uploading
+      duplicate image assets (which would bloat the media library). This is a
+      real integration run against the live dataset, not a mock.
+    command: node --import tsx/esm contracts/checks/f1-hero-keys/check-seed-idempotent-keys.mjs

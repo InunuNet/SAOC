@@ -117,17 +117,9 @@ assertions:
 
     - id: A9
       description: >-
-        The live-dataset patch script exists, follows the --dry-run/--verify pattern (no raw
-        one-off mutation), and touches exactly the three documents this feature's data change
-        requires — never a client.delete() call.
-      command: >-
-        test -f scripts/fix-vip-and-weekend-pass-pricing.ts &&
-        grep -q -- "--dry-run" scripts/fix-vip-and-weekend-pass-pricing.ts &&
-        grep -q -- "--verify" scripts/fix-vip-and-weekend-pass-pricing.ts &&
-        grep -q "ticketType-vip" scripts/fix-vip-and-weekend-pass-pricing.ts &&
-        grep -q "ticketType-weekend-pass" scripts/fix-vip-and-weekend-pass-pricing.ts &&
-        grep -q "ticketType-early-bird-weekend-pass" scripts/fix-vip-and-weekend-pass-pricing.ts &&
-        ! grep -q "\.delete(" scripts/fix-vip-and-weekend-pass-pricing.ts
+        The live-patch script was retired: scripts/fix-vip-and-weekend-pass-pricing.ts no
+        longer exists (it patched the live Sanity dataset by default).
+      command: test ! -f scripts/fix-vip-and-weekend-pass-pricing.ts
 
     - id: A10
       description: TypeScript compiles cleanly after the schema/type/route changes.

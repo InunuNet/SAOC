@@ -39,6 +39,7 @@ interface TicketFormFieldProps {
   disabled: boolean;
   error?: string;
   autoComplete?: 'name' | 'email';
+  maxLength?: number;
 }
 
 export function TicketFormField({
@@ -50,6 +51,7 @@ export function TicketFormField({
   disabled,
   error,
   autoComplete,
+  maxLength,
 }: TicketFormFieldProps) {
   return (
     <div className="space-y-1.5">
@@ -61,13 +63,15 @@ export function TicketFormField({
         type={type}
         autoComplete={autoComplete}
         required
+        maxLength={maxLength}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
         aria-invalid={Boolean(error)}
+        aria-describedby={error ? `${id}-error` : undefined}
         className="w-full rounded-sm border border-rule bg-ivory px-3.5 py-2.5 font-sans text-[15px] text-ink placeholder:text-muted transition-colors focus:border-ink/40 disabled:opacity-60"
       />
-      {error ? <TicketFieldAlert>{error}</TicketFieldAlert> : null}
+      {error ? <TicketFieldAlert id={`${id}-error`}>{error}</TicketFieldAlert> : null}
     </div>
   );
 }

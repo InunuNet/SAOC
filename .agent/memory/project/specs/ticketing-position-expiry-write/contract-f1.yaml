@@ -66,19 +66,22 @@ assertions:
         how the bug happened twice) is caught by this running against orders.ts
         specifically.
       command: npx tsx .agent/memory/project/specs/ticketing-position-expiry-write/goldens/check-createorderwithposition-expiry.mjs
-    - id: A4
-      description: >
-        The live regression proof against real Firestore and the REAL, unmodified
-        getSoldCountsByTicketType — this IS
-        ticketing-capacity-reconciliation-hold's own A4 negative control, lifted out to
-        run standalone. Writes one real reservation through the real
-        buildReservationDocs + writeReservationPair with expiresAt a few seconds in the
-        past, reads the position back from Firestore to prove expiresAt survived the
-        round trip as a real Timestamp (not a plain Date, which stillHoldsSeat's
-        `instanceof Timestamp` check would silently reject), then asserts
-        getSoldCountsByTicketType does NOT count it. Reuses the ticketing-hardening
-        sentinel/lock/manifest/sweep infrastructure. False-pass risk: a fix that sets
-        position.expiresAt to a plain JS Date rather than a Firestore Timestamp would
-        pass A2/A3 (which never leave the process) but is caught here specifically by
-        the real Firestore round-trip and the explicit `instanceof Timestamp` check.
-      command: npx tsx .agent/memory/project/specs/ticketing-position-expiry-write/goldens/check-live-expired-position-releases.mjs
+
+manual_only:
+  - id: A4
+    reason: "check-live-expired-position-releases.mjs writes to the production Firestore (saoc-webapp): Firestore saoc-webapp orders/tickets, sentinel-tagged expired reservations; run by hand only, with the operator present"
+    description: >
+      The live regression proof against real Firestore and the REAL, unmodified
+      getSoldCountsByTicketType — this IS
+      ticketing-capacity-reconciliation-hold's own A4 negative control, lifted out to
+      run standalone. Writes one real reservation through the real
+      buildReservationDocs + writeReservationPair with expiresAt a few seconds in the
+      past, reads the position back from Firestore to prove expiresAt survived the
+      round trip as a real Timestamp (not a plain Date, which stillHoldsSeat's
+      `instanceof Timestamp` check would silently reject), then asserts
+      getSoldCountsByTicketType does NOT count it. Reuses the ticketing-hardening
+      sentinel/lock/manifest/sweep infrastructure. False-pass risk: a fix that sets
+      position.expiresAt to a plain JS Date rather than a Firestore Timestamp would
+      pass A2/A3 (which never leave the process) but is caught here specifically by
+      the real Firestore round-trip and the explicit `instanceof Timestamp` check.
+    command: npx tsx .agent/memory/project/specs/ticketing-position-expiry-write/goldens/check-live-expired-position-releases.mjs

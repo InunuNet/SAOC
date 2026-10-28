@@ -12,8 +12,11 @@ import {
   type CartAttendee,
 } from '@/lib/cart';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
-import { emptyAttendee, validateAttendees } from '@/components/tickets/cartValidation';
-import type { AttendeeFieldErrors } from '@/components/tickets/CartAttendeeFields';
+import { emptyAttendee, keepFlagged, validateAttendees } from '@/components/tickets/cartValidation';
+import {
+  attendeeRowKey,
+  type AttendeeFieldErrors,
+} from '@/components/tickets/CartAttendeeFields';
 import type { TicketTypeCardData } from '@/components/tickets/TicketTypeCard';
 
 export type CheckoutStatus = 'idle' | 'submitting' | 'error';
@@ -41,6 +44,19 @@ function resizeRows(rows: CartAttendee[], quantity: number): CartAttendee[] {
   return [...rows, ...Array.from({ length: quantity - rows.length }, emptyAttendee)];
 }
 
+function pruneRowErrors(
+  errors: AttendeeFieldErrors,
+  slug: string,
+  rowCount: number
+): AttendeeFieldErrors {
+  const kept: AttendeeFieldErrors = {};
+  for (let index = 0; index < rowCount; index += 1) {
+    const key = attendeeRowKey(slug, index);
+    if (errors[key]) kept[key] = errors[key];
+  }
+  return kept;
+}
+
 export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
   const [quantity, setQuantityState] = useState(init.quantity);
   const [day, setDay] = useState<string | null>(init.day);
@@ -59,6 +75,8 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
     const clamped = Math.min(CART_MAX_LINE_ITEMS, Math.max(0, Math.trunc(next)));
     setQuantityState(clamped);
     setAttendees((prev) => resizeRows(prev, clamped));
+    // A removed attendee's errors go with it, so a row added back later starts clean.
+    setAttendeeErrors((prev) => pruneRowErrors(prev, ticketType.slug, clamped));
   }
 
   function updateAttendeeField(
@@ -67,7 +85,26 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
     field: keyof CartAttendee,
     value: string
   ) {
-    setAttendees((prev) => prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)));
+    const next = attendees.map((row, i) => (i === index ? { ...row, [field]: value } : row));
+    setAttendees(next);
+    // After a failed submit, re-validate as the buyer corrects: a fixed field drops its error,
+    // and a field that was not already flagged never gains one while typing.
+    if (Object.keys(attendeeErrors).length > 0) {
+      setAttendeeErrors(keepFlagged(attendeeErrors, validateCurrent(next)));
+    }
+  }
+
+  function validateCurrent(rows: CartAttendee[]): AttendeeFieldErrors {
+    return validateAttendees([ticketType], { [ticketType.slug]: quantity }, {
+      [ticketType.slug]: rows,
+    });
+  }
+
+  // Runs on every submit attempt, ahead of the day check, so one summary covers both.
+  function validate(): boolean {
+    const rowErrors = validateCurrent(attendees);
+    setAttendeeErrors(rowErrors);
+    return Object.keys(rowErrors).length === 0;
   }
 
   async function submit() {
@@ -76,11 +113,6 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
     setErrorStatus(null);
 
     const quantities = { [ticketType.slug]: quantity };
-    const rowErrors = validateAttendees([ticketType], quantities, {
-      [ticketType.slug]: attendees,
-    });
-    setAttendeeErrors(rowErrors);
-    if (Object.keys(rowErrors).length > 0) return;
 
     const chosenDays =
       ticketType.requiresDaySelection && day
@@ -152,6 +184,7 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
     setQuantity,
     setDay,
     updateAttendeeField,
+    validate,
     submit,
   };
 }

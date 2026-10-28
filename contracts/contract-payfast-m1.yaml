@@ -159,56 +159,6 @@ assertions:
     - id: A17
       description: F3 - validates the ITN signature
       command: 'grep -Eq "generateSignature|validateSignature|signature" lib/payments/payfast.ts'
-    - id: A18
-      description: >-
-        F3 - BEHAVIOURAL, CORRECTED 2026-08-20 (this assertion previously asserted the
-        INVERSE of shipped behaviour — see contracts/checks/payfast-m1/check-itn-source-ip-
-        validation.mts's header for the full correction record; it was passing 5/5 for an
-        unrelated reason, order-not-found on both fixtures, and would have stayed green if
-        IP-rejection had ever been reintroduced). Source IP is advisory only and never gates
-        the ITN write path (deliberate, app/api/tickets/itn/route.ts:69-86,
-        lib/payments/payfast.ts verifyNotification — 2026-08-18). Calls route.ts's POST()
-        directly with a real dns.lookup()-resolved PayFast IP and a bogus TEST-NET-3 IP,
-        both with a valid signature and a successful server-confirm — BOTH must result in
-        the ticket becoming paid, proving source IP cannot reject an otherwise-authenticated
-        payment. LOCAL-ONLY: needs PAYFAST_SANDBOX_* and FIREBASE_ADMIN_* from .env.local,
-        absent from CI; emits a distinct ::warning::...skipping A18 (exit 0, NOT a pass)
-        when those creds are unavailable — this exit-0-on-skip shape is a known,
-        not-yet-fixed instrument-vs-absence hazard shared by A19-A21, unaddressed here (see
-        the check script's header for why not).
-      command: 'pnpm exec tsx contracts/checks/payfast-m1/check-itn-source-ip-validation.mts'
-      timeout_seconds: 120
-    - id: A19
-      description: >-
-        F3 - BEHAVIOURAL: the server-confirm response is genuinely consumed, not
-        fetched-and-ignored, and exact-matched (not substring/prefix). Stubs
-        globalThis.fetch and drives four cases (INVALID body, VALID+PENDING,
-        VALID+COMPLETE, 'VALIDx' trailing content) through the real POST() handler — see
-        contracts/checks/payfast-m1/check-itn-server-confirm-and-status-gating.mts (also
-        covers A21). LOCAL-ONLY, same credential/skip convention as A18.
-      command: 'pnpm exec tsx contracts/checks/payfast-m1/check-itn-server-confirm-and-status-gating.mts'
-      timeout_seconds: 120
-    - id: A20
-      description: >-
-        F3 - BEHAVIOURAL: amount_gross is COMPARED to the reserved ticket's stored
-        amount, not merely read. Exercises a gross tamper, an exact match, the
-        AMOUNT_MATCH_TOLERANCE_CENTS (1) reject boundary, and an unparseable/sub-cent
-        amount, all read directly from route.ts's own integer-cents comparison — see
-        contracts/checks/payfast-m1/check-itn-amount-tamper-rejected.mts. LOCAL-ONLY,
-        same credential/skip convention as A18.
-      command: 'pnpm exec tsx contracts/checks/payfast-m1/check-itn-amount-tamper-rejected.mts'
-      timeout_seconds: 120
-    - id: A21
-      description: >-
-        F3 - BEHAVIOURAL: only payment_status COMPLETE (with a VALID server-confirm)
-        marks a ticket paid, and the persisted pf_payment_id equals exactly what was
-        posted (not blank, not a disconnected value) — folded into A19's script
-        (check-itn-server-confirm-and-status-gating.mts) since both claims are proved by
-        the same four-scenario run against the same fixture; kept as a separate
-        assertion ID because it is a distinct claim from the audit. LOCAL-ONLY, same
-        credential/skip convention as A18.
-      command: 'pnpm exec tsx contracts/checks/payfast-m1/check-itn-server-confirm-and-status-gating.mts'
-      timeout_seconds: 120
     - id: A22
       description: F3 - logs on failure paths (fail-closed, no silent swallow)
       command: 'grep -Eq "console.error|logger\." app/api/tickets/itn/route.ts'
@@ -224,57 +174,6 @@ assertions:
     - id: A29
       description: F3 - client IP extraction never trusts the first XFF hop as the source of truth
       command: 'if grep -Eq "forwardedFor\.split\(.,.\)\[0\]" lib/payfast.ts app/api/tickets/itn/route.ts; then exit 1; fi'
-    - id: A30
-      description: >-
-        F3 - BEHAVIOURAL: the paid write is atomic and idempotent under a genuine
-        concurrent race between two otherwise-identical ITNs (deterministically forced,
-        not timing-hoped — see the script's header comment for why a simple sequential
-        replay does NOT discriminate this claim, only the route's separate
-        non-transactional fast path does), and never resurrects a ticket that transitions
-        to 'checked-in' mid-flight. See
-        contracts/checks/payfast-m1/check-itn-atomic-idempotent-write.mts. Companion
-        structural proof: check-paid-write-inside-transaction-scope.mjs (AST-based,
-        CI-runnable, no credentials needed) proves transaction.update(docRef, ...) is a
-        lexical descendant of the db.runTransaction callback. The behavioural half is
-        LOCAL-ONLY, same credential/skip convention as A18.
-
-        DEAD ASSERTION REPAIRED (2026-08-20, dead-assertion-sweep). Scenario 1's third
-        check compared `afterRace?.pf_payment_id === pfPaymentIdAfterWinner` on the
-        position document — unfalsifiable, since F10 moved payment identity to
-        `order.gatewayPaymentId` and nothing writes `position.pf_payment_id`
-        (`buildReservationDocs` only ever initialises it to null), so both sides read
-        null on every run regardless of whether the transaction's idempotency guard held.
-        Verified independently against `lib/orders.ts`, `lib/checkout-reservation.ts`,
-        `lib/comp-tickets.ts` before repair. Repaired to compare `order.gatewayPaymentId`
-        instead (the live field `markOrderAndPositionPaidByPaymentId` actually writes),
-        resolving the sibling order via the position's `orderId`, same pattern scenario 2
-        already used. Observed RED against a scratch mutant of
-        `markOrderAndPositionPaidByPaymentId` with its `order?.status !== 'reserved'`
-        transactional guard disabled (`if (false)` in place of the real check), run via
-        `ITN_ROUTE_IMPORT_OVERRIDE` per the harness's own documented convention — the
-        loser's transaction then overwrote `gatewayPaymentId`, exactly the failure this
-        assertion exists to catch — and GREEN against the real, unmodified route/adapter.
-        No production file (`lib/orders.ts`, `app/api/tickets/`, `lib/payments/`) was
-        edited; the mutant lived only under the gitignored `_mutants/` scratch dir and
-        was removed after the proof. The sibling `purchasedAt` idempotency assertion in
-        this same scenario, and all of scenario 2 (which already asserted
-        `order.gatewayPaymentId` correctly), were live before this repair and are
-        untouched by it.
-      command: 'pnpm exec tsx contracts/checks/payfast-m1/check-itn-atomic-idempotent-write.mts && pnpm exec tsx contracts/checks/payfast-m1/check-paid-write-inside-transaction-scope.mjs'
-      timeout_seconds: 150
-    - id: A31
-      description: >-
-        F3 - the transactional re-read (transaction.get(docRef) before
-        transaction.update(docRef, ...), inside the SAME db.runTransaction callback,
-        get preceding update) is proved both behaviourally and structurally by the same
-        two scripts as A30 (check-itn-atomic-idempotent-write.mts /
-        check-paid-write-inside-transaction-scope.mjs) — kept as a separate assertion ID
-        because it names a distinct claim (re-read-before-write, not merely
-        "transactional") from the audit, but not a separate script: A30 and A31 were
-        never separable claims once tested behaviourally, since disabling either half of
-        the guard breaks the same race and resurrection scenarios.
-      command: 'pnpm exec tsx contracts/checks/payfast-m1/check-itn-atomic-idempotent-write.mts && pnpm exec tsx contracts/checks/payfast-m1/check-paid-write-inside-transaction-scope.mjs'
-      timeout_seconds: 150
     - id: A32
       description: >-
         F3 - AST/scope proof (TypeScript compiler API, not line-number comparison) that
@@ -314,3 +213,112 @@ assertions:
         contracts/checks/payfast-m1/check-suite-leaves-no-ticket-residue.mjs.
       command: 'pnpm exec tsx contracts/checks/payfast-m1/check-suite-leaves-no-ticket-residue.mjs'
       timeout_seconds: 180
+
+manual_only:
+  - id: A18
+    reason: "check-itn-source-ip-validation.mts writes to the production Firestore (saoc-webapp): Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged; run by hand only, with the operator present"
+    description: >-
+      F3 - BEHAVIOURAL, CORRECTED 2026-08-20 (this assertion previously asserted the
+      INVERSE of shipped behaviour — see contracts/checks/payfast-m1/check-itn-source-ip-
+      validation.mts's header for the full correction record; it was passing 5/5 for an
+      unrelated reason, order-not-found on both fixtures, and would have stayed green if
+      IP-rejection had ever been reintroduced). Source IP is advisory only and never gates
+      the ITN write path (deliberate, app/api/tickets/itn/route.ts:69-86,
+      lib/payments/payfast.ts verifyNotification — 2026-08-18). Calls route.ts's POST()
+      directly with a real dns.lookup()-resolved PayFast IP and a bogus TEST-NET-3 IP,
+      both with a valid signature and a successful server-confirm — BOTH must result in
+      the ticket becoming paid, proving source IP cannot reject an otherwise-authenticated
+      payment. LOCAL-ONLY: needs PAYFAST_SANDBOX_* and FIREBASE_ADMIN_* from .env.local,
+      absent from CI; emits a distinct ::warning::...skipping A18 (exit 0, NOT a pass)
+      when those creds are unavailable — this exit-0-on-skip shape is a known,
+      not-yet-fixed instrument-vs-absence hazard shared by A19-A21, unaddressed here (see
+      the check script's header for why not).
+    command: 'pnpm exec tsx contracts/checks/payfast-m1/check-itn-source-ip-validation.mts'
+    timeout_seconds: 120
+  - id: A19
+    reason: "check-itn-server-confirm-and-status-gating.mts writes to the production Firestore (saoc-webapp): Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged; run by hand only, with the operator present"
+    description: >-
+      F3 - BEHAVIOURAL: the server-confirm response is genuinely consumed, not
+      fetched-and-ignored, and exact-matched (not substring/prefix). Stubs
+      globalThis.fetch and drives four cases (INVALID body, VALID+PENDING,
+      VALID+COMPLETE, 'VALIDx' trailing content) through the real POST() handler — see
+      contracts/checks/payfast-m1/check-itn-server-confirm-and-status-gating.mts (also
+      covers A21). LOCAL-ONLY, same credential/skip convention as A18.
+    command: 'pnpm exec tsx contracts/checks/payfast-m1/check-itn-server-confirm-and-status-gating.mts'
+    timeout_seconds: 120
+  - id: A20
+    reason: "check-itn-amount-tamper-rejected.mts writes to the production Firestore (saoc-webapp): Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged; run by hand only, with the operator present"
+    description: >-
+      F3 - BEHAVIOURAL: amount_gross is COMPARED to the reserved ticket's stored
+      amount, not merely read. Exercises a gross tamper, an exact match, the
+      AMOUNT_MATCH_TOLERANCE_CENTS (1) reject boundary, and an unparseable/sub-cent
+      amount, all read directly from route.ts's own integer-cents comparison — see
+      contracts/checks/payfast-m1/check-itn-amount-tamper-rejected.mts. LOCAL-ONLY,
+      same credential/skip convention as A18.
+    command: 'pnpm exec tsx contracts/checks/payfast-m1/check-itn-amount-tamper-rejected.mts'
+    timeout_seconds: 120
+  - id: A21
+    reason: "check-itn-server-confirm-and-status-gating.mts writes to the production Firestore (saoc-webapp): Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged; run by hand only, with the operator present"
+    description: >-
+      F3 - BEHAVIOURAL: only payment_status COMPLETE (with a VALID server-confirm)
+      marks a ticket paid, and the persisted pf_payment_id equals exactly what was
+      posted (not blank, not a disconnected value) — folded into A19's script
+      (check-itn-server-confirm-and-status-gating.mts) since both claims are proved by
+      the same four-scenario run against the same fixture; kept as a separate
+      assertion ID because it is a distinct claim from the audit. LOCAL-ONLY, same
+      credential/skip convention as A18.
+    command: 'pnpm exec tsx contracts/checks/payfast-m1/check-itn-server-confirm-and-status-gating.mts'
+    timeout_seconds: 120
+  - id: A30
+    reason: "check-itn-atomic-idempotent-write.mts writes to the production Firestore (saoc-webapp): Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged; run by hand only, with the operator present"
+    description: >-
+      F3 - BEHAVIOURAL: the paid write is atomic and idempotent under a genuine
+      concurrent race between two otherwise-identical ITNs (deterministically forced,
+      not timing-hoped — see the script's header comment for why a simple sequential
+      replay does NOT discriminate this claim, only the route's separate
+      non-transactional fast path does), and never resurrects a ticket that transitions
+      to 'checked-in' mid-flight. See
+      contracts/checks/payfast-m1/check-itn-atomic-idempotent-write.mts. Companion
+      structural proof: check-paid-write-inside-transaction-scope.mjs (AST-based,
+      CI-runnable, no credentials needed) proves transaction.update(docRef, ...) is a
+      lexical descendant of the db.runTransaction callback. The behavioural half is
+      LOCAL-ONLY, same credential/skip convention as A18.
+
+      DEAD ASSERTION REPAIRED (2026-08-20, dead-assertion-sweep). Scenario 1's third
+      check compared `afterRace?.pf_payment_id === pfPaymentIdAfterWinner` on the
+      position document — unfalsifiable, since F10 moved payment identity to
+      `order.gatewayPaymentId` and nothing writes `position.pf_payment_id`
+      (`buildReservationDocs` only ever initialises it to null), so both sides read
+      null on every run regardless of whether the transaction's idempotency guard held.
+      Verified independently against `lib/orders.ts`, `lib/checkout-reservation.ts`,
+      `lib/comp-tickets.ts` before repair. Repaired to compare `order.gatewayPaymentId`
+      instead (the live field `markOrderAndPositionPaidByPaymentId` actually writes),
+      resolving the sibling order via the position's `orderId`, same pattern scenario 2
+      already used. Observed RED against a scratch mutant of
+      `markOrderAndPositionPaidByPaymentId` with its `order?.status !== 'reserved'`
+      transactional guard disabled (`if (false)` in place of the real check), run via
+      `ITN_ROUTE_IMPORT_OVERRIDE` per the harness's own documented convention — the
+      loser's transaction then overwrote `gatewayPaymentId`, exactly the failure this
+      assertion exists to catch — and GREEN against the real, unmodified route/adapter.
+      No production file (`lib/orders.ts`, `app/api/tickets/`, `lib/payments/`) was
+      edited; the mutant lived only under the gitignored `_mutants/` scratch dir and
+      was removed after the proof. The sibling `purchasedAt` idempotency assertion in
+      this same scenario, and all of scenario 2 (which already asserted
+      `order.gatewayPaymentId` correctly), were live before this repair and are
+      untouched by it.
+    command: 'pnpm exec tsx contracts/checks/payfast-m1/check-itn-atomic-idempotent-write.mts && pnpm exec tsx contracts/checks/payfast-m1/check-paid-write-inside-transaction-scope.mjs'
+    timeout_seconds: 150
+  - id: A31
+    reason: "check-itn-atomic-idempotent-write.mts writes to the production Firestore (saoc-webapp): Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged; run by hand only, with the operator present"
+    description: >-
+      F3 - the transactional re-read (transaction.get(docRef) before
+      transaction.update(docRef, ...), inside the SAME db.runTransaction callback,
+      get preceding update) is proved both behaviourally and structurally by the same
+      two scripts as A30 (check-itn-atomic-idempotent-write.mts /
+      check-paid-write-inside-transaction-scope.mjs) — kept as a separate assertion ID
+      because it names a distinct claim (re-read-before-write, not merely
+      "transactional") from the audit, but not a separate script: A30 and A31 were
+      never separable claims once tested behaviourally, since disabling either half of
+      the guard breaks the same race and resurrection scenarios.
+    command: 'pnpm exec tsx contracts/checks/payfast-m1/check-itn-atomic-idempotent-write.mts && pnpm exec tsx contracts/checks/payfast-m1/check-paid-write-inside-transaction-scope.mjs'
+    timeout_seconds: 150

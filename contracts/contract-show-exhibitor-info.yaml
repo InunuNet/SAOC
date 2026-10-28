@@ -265,14 +265,6 @@ assertions:
     - id: A21
       description: 'STRUCTURAL: F1 - the seed is runnable. An unrunnable seed script is not a seed script.'
       command: 'grep -q "seed:exhibitor" package.json'
-    - id: A22
-      timeout_seconds: 1200
-      description: >-
-        DATASET: F1 - re-running the seed moves no document revision, creates no duplicate, and does
-        NOT revert an editor's change (proven against the real dataset, with verified cleanup).
-        Exit 2 means residue was left and must be treated as a live content incident.
-      command: 'node contracts/checks/show-exhibitor-info/check-seed-idempotent.mjs'
-
     # ================= F2/F3 — page structure (STRUCTURAL) =================
     - id: A23
       description: 'STRUCTURAL: F2 - the page and its route-level loading state exist'
@@ -360,15 +352,6 @@ assertions:
         showClass documents), no judging-page copy is duplicated, and neither the venue nor an
         explicit show date range is repeated here.
       command: 'node contracts/checks/show-exhibitor-info/check-no-duplication.mjs'
-    - id: A36
-      timeout_seconds: 1800
-      description: >-
-        THE DEADLINE-CHANGE TEST - a write to the dataset provably reaches the rendered page
-        (two-sided: the new value appears AND the old one disappears), proving the committee can set
-        a real deadline without a developer. Phase 2 proves fail-closed behaviourally: an
-        unrecognised status still renders the pending marker and the raw value never leaks to the
-        page. Verified restore of both baselines; exit 2 means residue was left.
-      command: 'node contracts/checks/show-exhibitor-info/check-cms-round-trip.mjs'
     - id: A37
       timeout_seconds: 180
       description: >-
@@ -443,21 +426,6 @@ assertions:
       command: >-
         grep -Eq "^const [A-Z_]*FALLBACK[A-Z_]*\b" components/show/ExhibitorStatusBadge.tsx &&
         for l in pendingLabel researchLabel questionLabel; do grep -q "$l" components/show/ExhibitorStatusBadge.tsx || { echo "$l is no longer a prop — the labels must stay editable"; exit 1; }; done
-
-    - id: A47
-      timeout_seconds: 1500
-      description: >-
-        RENDERED: F-5 - THE SAFETY DEVICE HAS NO OFF SWITCH, proven with the switch flipped. Clears
-        all three label fields in the dataset and requires that the SAME NUMBER of markers still
-        render and that every one still carries non-empty visible text. QA cleared these three
-        fields and measured 23 bordered boxes containing nothing but an aria-hidden glyph: a
-        sighted reader saw 23 empty rectangles and a screen-reader user was told nothing, while the
-        researched convention stayed on the page reading as settled SAOC policy. Markers are
-        counted STRUCTURALLY via a data attribute derived from neither the dataset nor the copy —
-        the copy is precisely what this test removes, so counting it would be circular, and the
-        glyph is aria-hidden, so counting that would score an unreadable box as working. Mutating;
-        verified restore; exit 2 means the labels are still cleared on the live page.
-      command: 'node contracts/checks/show-exhibitor-info/check-marker-fallback.mjs'
 
     - id: A48
       description: >-
@@ -539,3 +507,38 @@ assertions:
       timeout_seconds: 900
       description: production build succeeds
       command: 'pnpm build'
+
+manual_only:
+  - id: A22
+    reason: "check-seed-idempotent.mjs writes to the production Sanity dataset (project 26yfbug4): Sanity 26yfbug4/production showExhibitorInfo/showVisitorInfo/nationalShow docs (commitAndCaptureRev, seed run); sentinel residue once sat on the live site for 3 days; run by hand only, with the operator present"
+    timeout_seconds: 1200
+    description: >-
+      DATASET: F1 - re-running the seed moves no document revision, creates no duplicate, and does
+      NOT revert an editor's change (proven against the real dataset, with verified cleanup).
+      Exit 2 means residue was left and must be treated as a live content incident.
+    command: 'node contracts/checks/show-exhibitor-info/check-seed-idempotent.mjs'
+  - id: A36
+    reason: "check-cms-round-trip.mjs writes to the production Sanity dataset (project 26yfbug4): Sanity 26yfbug4/production showExhibitorInfo/showVisitorInfo/nationalShow docs (commitAndCaptureRev, seed run); sentinel residue once sat on the live site for 3 days; run by hand only, with the operator present"
+    timeout_seconds: 1800
+    description: >-
+      THE DEADLINE-CHANGE TEST - a write to the dataset provably reaches the rendered page
+      (two-sided: the new value appears AND the old one disappears), proving the committee can set
+      a real deadline without a developer. Phase 2 proves fail-closed behaviourally: an
+      unrecognised status still renders the pending marker and the raw value never leaks to the
+      page. Verified restore of both baselines; exit 2 means residue was left.
+    command: 'node contracts/checks/show-exhibitor-info/check-cms-round-trip.mjs'
+  - id: A47
+    reason: "check-marker-fallback.mjs writes to the production Sanity dataset (project 26yfbug4): Sanity 26yfbug4/production showExhibitorInfo/showVisitorInfo/nationalShow docs (commitAndCaptureRev, seed run); sentinel residue once sat on the live site for 3 days; run by hand only, with the operator present"
+    timeout_seconds: 1500
+    description: >-
+      RENDERED: F-5 - THE SAFETY DEVICE HAS NO OFF SWITCH, proven with the switch flipped. Clears
+      all three label fields in the dataset and requires that the SAME NUMBER of markers still
+      render and that every one still carries non-empty visible text. QA cleared these three
+      fields and measured 23 bordered boxes containing nothing but an aria-hidden glyph: a
+      sighted reader saw 23 empty rectangles and a screen-reader user was told nothing, while the
+      researched convention stayed on the page reading as settled SAOC policy. Markers are
+      counted STRUCTURALLY via a data attribute derived from neither the dataset nor the copy —
+      the copy is precisely what this test removes, so counting it would be circular, and the
+      glyph is aria-hidden, so counting that would score an unreadable box as working. Mutating;
+      verified restore; exit 2 means the labels are still cleared on the live page.
+    command: 'node contracts/checks/show-exhibitor-info/check-marker-fallback.mjs'

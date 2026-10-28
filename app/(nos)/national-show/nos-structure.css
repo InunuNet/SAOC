@@ -4154,6 +4154,12 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 .nos-theme .nos-hm-h2 {
   margin: 0 0 clamp(20px, 3vw, 32px);
 }
+/* LT-1: the clamp reaches 32px at an 800px viewport (1.2rem + 1.6vw), where it takes the light weight. */
+@media (min-width: 800px) {
+  .nos-theme .nos-hm-h2 {
+    font-weight: 300;
+  }
+}
 .nos-theme .nos-hm-lead {
   margin: 0 0 20px;
 }
