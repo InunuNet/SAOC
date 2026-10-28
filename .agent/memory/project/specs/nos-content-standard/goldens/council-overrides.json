@@ -4,51 +4,51 @@
   "substitutions": [
     {
       "id": "C01",
-      "from": "\u0054hicket types and prices are on the website.",
+      "from": "Thicket types and prices are on the website.",
       "to": "Ticket types and prices are on the website."
     },
     {
       "id": "C02",
       "exceptRoutes": ["/faq"],
-      "from": "\u006dembers who’s\u0020subscriptions are valid",
+      "from": "members who’s subscriptions are valid",
       "to": "members whose subscriptions are valid"
     },
     {
       "id": "C02b",
       "exceptRoutes": ["/faq"],
-      "from": "\u006dembers who’s\u0020subscriptions are valid",
+      "from": "members who’s subscriptions are valid",
       "to": "members whose subscriptions are valid"
     },
     {
       "id": "C03",
-      "from": "\u0065vent that takes\u0020please every three years",
+      "from": "event that takes please every three years",
       "to": "event that takes place every three years"
     },
     {
       "id": "C04",
       "exceptRoutes": ["/faq"],
-      "from": "\u0061ttendees or the public please ensure",
+      "from": "attendees or the public please ensure",
       "to": "attendees or the public, please ensure"
     },
     {
       "id": "C05",
-      "from": "\u0054here are two stairways: one may be suitable for visitors using crutches",
+      "from": "There are two stairways: one may be suitable for visitors using crutches",
       "to": "There are two stairways, one of which may be suitable for visitors using crutches"
     },
     {
       "id": "C06",
-      "from": "\u006deet orchid societies from across the country",
+      "from": "meet orchid societies from across the country",
       "to": "meet members of the orchid societies from across the country"
     },
     {
       "id": "pin-takes-please",
-      "from": "\u0074akes please",
+      "from": "takes please",
       "to": "takes place"
     },
     {
       "id": "pin-whos-subscriptions",
       "exceptRoutes": ["/faq"],
-      "from": "\u0077ho’s subscriptions",
+      "from": "who’s subscriptions",
       "to": "whose subscriptions"
     }
   ],
@@ -59,55 +59,55 @@
       {
         "id": "SX-F13",
         "sanityDoc": "showFaq-q15",
-        "from": "\u0054&C’s On your",
+        "from": "T&C’s On your",
         "to": "T&C’s on your"
       },
       {
         "id": "SX-F14",
         "sanityDoc": "showFaq-q16",
-        "from": "\u0061ttend on more than one day",
+        "from": "attend on more than one day",
         "to": "attend more than one day"
       },
       {
         "id": "SX-F19",
         "sanityDoc": "showFaq-q26",
-        "from": "\u0077ho’s subscriptions",
+        "from": "who’s subscriptions",
         "to": "whose subscriptions"
       },
       {
         "id": "SX-F28",
         "sanityDoc": "showFaq-q51",
-        "from": "\u0072efrenshments",
+        "from": "refrenshments",
         "to": "refreshments"
       },
       {
         "id": "SX-W2b",
         "sanityDoc": "showFaq-q29",
-        "from": "\u0070ublic please",
+        "from": "public please",
         "to": "public, please"
       },
       {
         "id": "SX-F3",
         "sanityDoc": "showFaq-q4",
-        "from": "\u0057alker Bay Orchid Society, Cape Orchid Society, Tygerberg Orchid Group, Southern Cape Orchid Society and Wild Orchids Southern Africa (WOSA)",
+        "from": "Walker Bay Orchid Society, Cape Orchid Society, Tygerberg Orchid Group, Southern Cape Orchid Society and Wild Orchids Southern Africa (WOSA)",
         "to": "Cape Orchid Society, Southern Cape Orchid Society, Tygerberg Orchid Group, Walker Bay Orchid Society and Wild Orchids Southern Africa (WOSA)"
       },
       {
         "id": "SX-F5",
         "sanityDoc": "showFaq-q7",
-        "from": "\u0054he Show is open to the public. You do not need to belong to an orchid society to visit.",
+        "from": "The Show is open to the public. You do not need to belong to an orchid society to visit.",
         "to": "The Show is open to the public."
       },
       {
         "id": "SX-F6",
         "sanityDoc": "showFaq-q8",
-        "from": "\u0049nternational guests and exhibitors, including",
+        "from": "International guests and exhibitors, including",
         "to": "Yes, international guests and exhibitors, including"
       },
       {
         "id": "SX-F25",
         "sanityDoc": "showFaq-q40",
-        "from": "\u004courens Grobler, Tinus Oberholzer, Michael Tibbs, Rob Fuchs, Elbert Wijaya and Hildegard Crous",
+        "from": "Lourens Grobler, Tinus Oberholzer, Michael Tibbs, Rob Fuchs, Elbert Wijaya and Hildegard Crous",
         "to": "Elbert Wijaya, Hildegard Crous, Lourens Grobler, Michael Tibbs, Rob Fuchs and Tinus Oberholzer"
       }
     ]
