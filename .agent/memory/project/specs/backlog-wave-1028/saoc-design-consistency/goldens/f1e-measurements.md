@@ -35,3 +35,11 @@ Accepted, not closed:
 - (c) check-preload-order.mjs proves the ORDER OF TAGS in the server HTML head, not the order of network requests. Reason: a browser's request order is a scheduling outcome that headless fixtures cannot reproduce faithfully. The outcome check is the phase-5 LCP gate (A11, median of 3 runs, LCP <= 2.5s on beta).
 - (d) check-favicon.mjs's mean difference <= 20/255 shows LIKENESS to the supplied emblem, not derivation. Reason: pixel comparison cannot prove how a file was made. Provenance is held by goldens/favicon-source.json (path + sha256, CONFIRMED app/icon.png) and the build path that derives every icon from app/icon.png; the crop and opacity rules are asserted separately by check-favicon-crop.mjs.
 Arrow guard A29: the ruled back arrow (svg[data-direction="back"], "All societies") on the society page is classified separately from the F1d baseline links, expected on /societies/[first] only (>=1, label "All societies", never wraps), unexpected anywhere else; its pixel position has no F1d baseline (it was a text glyph outside the baseline), so only its structure is asserted.
+
+## Accepted limitation (e): fetch() plus CSS duplicate download
+
+The font walk and the network dedupe cannot see a woff2 fetched twice by script and by CSS. No SAOC code fetch()es a woff2, proved by this grep (must print nothing): `grep -rnE "fetch\([^)]*woff" app components lib`. Fonts load only through next/font @font-face rules, so the CSS request is the only request.
+
+## CSS-generated text (::before / ::after content)
+
+check-font-fallback-walk.mjs also walks every visible element's quoted pseudo-element content in the face the pseudo resolves to. Real case: app/(marketing)/sponsors/page.tsx:133 `before:content-['—']` (U+2014) resolves to Manrope, whose served woff2 cmap has U+2014 (verified with lib-woff2.mjs on wt-sdc-f1e d5057e0f). No product finding. The walk passes on d5057e0f.

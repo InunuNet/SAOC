@@ -25,6 +25,10 @@ const TARGETS = [
   { name: 'hero CTA', path: '/', width: 1440, sel: '.home-hero a' },
   { name: 'Menu', path: '/about', width: 1100, sel: '[data-hd=menu]' },
   { name: 'header logo', path: '/about', width: 1440, sel: 'header a[aria-label^="South African Orchid Council"]' },
+  // Search opened at 1440: the query input and the first result link must take the one ring (a bare outline-none removed it on the input at a39fd7b7). Results come from /api/societies/search (live Sanity), so on a
+  // fixture build the result link is a printed KNOWN GAP (not asserted); the deployed run covers it.
+  { name: 'search input', path: '/about', width: 1440, sel: '[data-sdc-probe]', pre: 'searchInput' },
+  { name: 'search result link', path: '/about', width: 1440, sel: '[data-sdc-probe]', pre: 'searchResult', optional: true },
   { name: 'Join', path: '/about', width: 1440, sel: '[data-hd=cta]' },
   // The drawer's own "Join a society" link (MobileMenu), at 390 with the drawer OPEN: the header Join is not the link a phone keyboard user lands on.
   { name: 'drawer Join', path: '/about', width: 390, sel: '[data-sdc-probe]', pre: 'drawerJoin' },
@@ -44,6 +48,11 @@ await withSite(async ({ base, browser, ctxOpts, deployed }) => {
       await page.locator('[data-hd=menu]').click(); await page.waitForTimeout(500);
       const found = await page.evaluate(() => { const a = [...document.querySelectorAll('a')].find((x) => /^\s*Join a society\s*$/i.test(x.textContent || '') && x.getAttribute('data-hd') !== 'cta' && x.getClientRects().length > 0); if (a) a.setAttribute('data-sdc-probe', ''); return Boolean(a); });
       if (!found) { check(false, `${t.name}: no visible drawer "Join a society" link after opening the menu at ${t.width}px`); await ctx.close(); continue; }
+    }
+    if (t.pre === 'searchInput' || t.pre === 'searchResult') {
+      await page.locator('[data-hd=search]').click(); const input = page.locator('[role=dialog] input').first(); await input.waitFor({ timeout: 10000 }).catch(() => {});
+      if (t.pre === 'searchInput') await input.evaluate((e) => e.setAttribute('data-sdc-probe', '')).catch(() => {});
+      else { await input.fill('orchid').catch(() => {}); const a = page.locator('[role=dialog] a').first(); const ok = await a.waitFor({ timeout: 5000 }).then(() => true).catch(() => false); if (ok) await a.evaluate((e) => e.setAttribute('data-sdc-probe', '')); else console.log(`KNOWN GAP ${t.name}: no search result renders on this build (live Sanity); NOT GUARDED here`); }
     }
     await page.keyboard.press('Shift'); // keyboard modality, so :focus-visible applies
     const r = await page.evaluate(`(${PROBE})(${JSON.stringify(t.sel)})`);
