@@ -683,10 +683,15 @@ h3.font-serif {
     gap: 24px;
   }
   .hero-facts dt {
-    max-width: 18ch;
+    max-width: 14ch;
   }
   .hero-facts dd {
     white-space: nowrap;
+  }
+}
+@media (min-width: 1280px) and (max-width: 1439.98px) {
+  .hero-facts dt {
+    max-width: 18ch;
   }
 }
 
