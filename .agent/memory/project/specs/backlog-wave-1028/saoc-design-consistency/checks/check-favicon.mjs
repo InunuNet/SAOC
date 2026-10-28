@@ -1,8 +1,9 @@
 // F1e lever 4: the favicon weighs <=10 KB in total (NOS Design ruling, corrected: icons fetched on page load total <=10 KB, no .ico allowance); the 180px apple-touch icon <=16 KB (iOS fetches it lazily). The icons are DERIVED from the supplied emblem recorded in goldens/favicon-source.json (path + sha256),
-// never redrawn: each shipped PNG icon is compared with that source resized by Lanczos, mean absolute channel difference <= 14/255. 16/32/180 review renders exist.
+// never redrawn: each shipped PNG icon and every favicon.ico entry (16/32/48 required) is compared with that source resized by Lanczos, mean absolute channel difference <= 14/255. 16/32/180 review renders exist.
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import sharp from 'sharp';
+import { icoImages } from './lib-ico.mjs';
 import { withSite, openPage, check, finish } from './lib.mjs';
 // Distance between a shipped icon and the supplied emblem after the allowed derivations (flatten, trim to artwork, scale, pad): both are flattened on the icon's own background
 // colour, trimmed to the artwork, fitted into 64x64 and compared per RGB channel.
@@ -24,6 +25,12 @@ await withSite(async ({ base, browser, ctxOpts }) => {
   for (const l of links) {
     const res = await ctx.request.get(l.href); check(res.status() === 200, `${l.href} -> ${res.status()}`); const body = await res.body(); const apple = l.rel.includes('apple');
     if (apple) check(body.length <= 16384, `apple-touch icon ${l.href.split('/').pop()} is ${(body.length / 1024).toFixed(1)} KB, want <=16 KB`); else { total += body.length; }
+    if (src && (/\.ico(\?|$)/.test(l.href) || /icon/.test(res.headers()['content-type'] || '') && !/png/.test(res.headers()['content-type'] || ''))) {
+      const entries = await icoImages(body); const sizes = entries.map((e) => e.size);
+      for (const want of [16, 32, 48]) check(sizes.includes(want), `${l.href.split('/').pop()} has no ${want}px entry (found ${sizes.join(',') || 'none'})`);
+      for (const e of entries) { const mean = await emblemDistance(e.png, src); check(mean <= 20, `${l.href.split('/').pop()} ${e.size}px entry differs from the supplied emblem by ${mean.toFixed(1)}/255 mean, want <=20 (derived, not redrawn)`); }
+      continue;
+    }
     if (src && /image\/png/.test(res.headers()['content-type'] || '')) {
       const m = await sharp(body).metadata(); const mean = await emblemDistance(body, src); check(mean <= 20, `${l.href.split('/').pop()} (${m.width}px) differs from the supplied emblem by ${mean.toFixed(1)}/255 mean, want <=20 (derived, not redrawn)`);
     }

@@ -3,21 +3,11 @@
 // Default: reads the icons the site serves on /about. `--goldens`: runs the same rules on goldens/favicon-renders (proves the review renders obey the ruling).
 import { readFileSync, existsSync } from 'node:fs';
 import sharp from 'sharp';
+import { icoImages } from './lib-ico.mjs';
 import { withSite, openPage, check, finish } from './lib.mjs';
 const GROUND = [0xf4, 0xf3, 0xec]; const SPEC = process.env.DC_FAVICON_DIR || '.agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/favicon-renders/';
 // Flower bounds: alpha > 16 for icons with transparency, else any pixel further than 24/channel from the corner (ground) pixel.
-// favicon.ico entries: PNG-embedded images pass through; 32bpp BMP (DIB, height doubled, bottom-up BGRA) is converted to a raw RGBA PNG.
-export async function icoImages(buf) {
-  const n = buf.readUInt16LE(4); const out = [];
-  for (let i = 0; i < n; i++) {
-    const o = 6 + i * 16; const w = buf[o] || 256; const len = buf.readUInt32LE(o + 8); const off = buf.readUInt32LE(o + 12); const d = buf.subarray(off, off + len);
-    if (d.readUInt32BE(0) === 0x89504e47) { out.push({ size: w, png: Buffer.from(d) }); continue; }
-    const hdr = d.readUInt32LE(0); if (d.readUInt16LE(14) !== 32) continue; const raw = Buffer.alloc(w * w * 4);
-    for (let y = 0; y < w; y++) for (let x = 0; x < w; x++) { const s = hdr + ((w - 1 - y) * w + x) * 4; const t = (y * w + x) * 4; raw[t] = d[s + 2]; raw[t + 1] = d[s + 1]; raw[t + 2] = d[s]; raw[t + 3] = d[s + 3]; }
-    out.push({ size: w, png: await sharp(raw, { raw: { width: w, height: w, channels: 4 } }).png().toBuffer() });
-  }
-  return out;
-}
+export { icoImages };
 export async function flowerBox(buf) {
   const { data, info } = await sharp(buf).ensureAlpha().raw().toBuffer({ resolveWithObject: true }); const { width: w, height: h } = info; const c = [data[0], data[1], data[2]];
   const opaque = (() => { for (let i = 3; i < data.length; i += 4) if (data[i] < 255) return false; return true; })(); let x0 = w, y0 = h, x1 = -1, y1 = -1;

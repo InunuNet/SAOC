@@ -1,7 +1,7 @@
 // F1c A12 (NOS Design beta check): /events/[slug] facts (factsAlign=start). "Western Cape" must not break mid-word.
 // Ruled fix: overflow-wrap normal; cell min-width min-content; dd balanced, <=3 lines, breaks at spaces only; flex-wrap onto a second row starting at h1.left;
 // F1c levers apply (column gap 24 at 768-1279, dd weight 400 below 32px).
-// Route: the 19th national show event if linked from /events, else the first /events/[slug] with a facts row. Events need live Sanity, so locally (fixture replay has no events) this prints KNOWN GAP;
+// Route: the 19th national show event if linked from /events, else the first /events/[slug] with a facts row. Events need live Sanity, so locally (fixture replay has no events) it FAILS loudly (zero facts rendered is never a pass);
 // the failing-on-main proof is the phase-5 run against beta.
 import { withSite, openPage, check, finish } from './lib.mjs';
 const PROBE = `() => { const dl = document.querySelector('.hero-facts'); if (!dl) return null; const h1 = document.querySelector('h1'); const h1l = h1.getBoundingClientRect().left;
@@ -17,11 +17,11 @@ await withSite(async ({ base, browser, ctxOpts, live }) => {
     if (status === 200) { const hrefs = await page.$$eval('a[href^="/events/"]', (as) => as.map((a) => ({ h: a.getAttribute('href'), t: a.textContent || '' })).filter((x) => !/\.ics/.test(x.h) && x.h.split('/').length === 3));
       const nat = hrefs.find((x) => /19(th)?\b.*national|national.*19/i.test(x.h + ' ' + x.t)); slug = (nat || hrefs[0] || {}).h || null; }
     await ctx.close(); }
-  if (!slug) { console.log(`KNOWN GAP: no /events/[slug] link renders${live ? '' : ' (fixture replay has no events; run with DC_BASE_URL=beta, phase 5)'}; A12 NOT GUARDED here`); finish('event-facts'); return; }
+  if (!slug) { check(false, `no /events/[slug] link renders${live ? '' : ' (fixture replay has no events: A12 is a phase-5 check, run it with DC_BASE_URL=beta)'}; zero event facts rendered, so nothing is proven`); finish('event-facts'); return; }
   for (const width of [1024, 1200, 1280, 1440, 2056]) {
     const { page, ctx, status } = await openPage(browser, ctxOpts, base, slug, width); const w = `${slug}@${width}`; check(status === 200, `${w} status ${status}`);
     const r = await page.evaluate(`(${PROBE})()`);
-    if (!r) { console.log(`KNOWN GAP: ${w} has no .hero-facts row`); await ctx.close(); continue; }
+    if (!r) { check(false, `${w} has no .hero-facts row, zero event facts rendered`); await ctx.close(); continue; }
     check(r.factsOver <= 0 && r.factsRight <= r.copyRight + 0.5, `${w}: facts overflow the copy column (scroll overflow ${r.factsOver}, right ${r.factsRight.toFixed(0)} vs ${r.copyRight.toFixed(0)})`);
     if (width < 1280) check(r.gap === '24px', `${w}: column gap is ${r.gap}, want 24px`);
     const first = Math.min(...r.cells.map((c) => c.top));
