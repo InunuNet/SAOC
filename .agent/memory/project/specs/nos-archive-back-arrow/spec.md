@@ -77,3 +77,14 @@ Browser: Playwright chromium from `@playwright/test`, no install. If the default
 `goldens/baseline-main.json` is recorded once on main with `node .../gate-dom.mjs focus --record` (the same command re-records it; do not re-record on the fix branch).
 
 Gate self-proof: with the fix shape injected (`NOS_ARROW_SELFTEST=1`, never in the contract) A9, A10, A11 and A13 pass against a main build; A12 stays green on main.
+
+## Running the gate end to end
+
+```
+CONTRACT_GATE_RESIDUE_FIXTURE=.agent/memory/project/specs/nos-archive-back-arrow/goldens/residue-fixture-clean.json \
+  python3 execution/contract.py gate .agent/memory/project/specs/nos-archive-back-arrow/contract.yaml --phase 4 --run-checks
+```
+
+- **Residue guard.** `contract.py` runs `scripts/scan-dataset-residue.ts` before and after the assertions. Pointed at the live dataset it fails open on any scanner error (and the Sanity CDN quota is exhausted). `CONTRACT_GATE_RESIDUE_FIXTURE` (execution/contract.py:777) switches the scan to a local JSON file, so the guard runs for real, reads no live dataset, and cannot fail open. `goldens/residue-fixture-clean.json` is a copy of `contracts/golden/dataset-residue-guard/fixture-clean.json`; the scan prints "ALL CLEAR" on it.
+- **Timeouts.** Shell assertions default to 60s; A5-A13 carry their own `timeout_seconds` (build 900, the rest 300).
+- **Triad.** A14 (`codex_qa`), A15 (`browser_deployed_check`) and A16 (`gws_inbox_check`, `required: false`: no email is sent) are declared the way admin-redesign/contract-f1.yaml does. A14 runs the Codex wrapper against `goldens/codex-qa-prompt.md`. A15 needs `.agent/memory/scratch/nos-archive-back-arrow-browser-manifest.json`, written by the orchestrator's BrowserAgent run against the deployed beta origin at the HEAD commit within 4 hours (docs/verification-triad-gate.md); until it exists A15 cannot pass. The scratch manifests are not part of this commit.
