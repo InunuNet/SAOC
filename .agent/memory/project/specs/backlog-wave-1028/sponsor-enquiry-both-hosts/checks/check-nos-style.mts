@@ -72,7 +72,7 @@ function mediaMatches(media: string[], width: number): boolean {
 
 const NOS_ATTR = /\[data-sponsor-enquiry\s*=\s*["']?nos["']?\]/;
 const CONTROL = String.raw`(?:input|select|textarea)(?:\[[^\]]*\]|:not\([^)]*\))*`;
-type Kind = 'card' | 'anchor' | 'fields' | 'input' | 'focus' | 'label' | 'submit' | 'other';
+type Kind = 'card' | 'anchor' | 'fields' | 'input' | 'focus' | 'label' | 'labelBare' | 'consent' | 'status' | 'submit' | 'other';
 function classify(selector: string): Kind {
   if (/^(?:\.nos-theme\s+)?(?:section)?#enquire$/.test(selector)) return 'anchor';
   const m = NOS_ATTR.exec(selector);
@@ -81,7 +81,10 @@ function classify(selector: string): Kind {
   if (tail === '') return 'card';
   if (new RegExp(`^(?:${CONTROL}|:is\\(\\s*input\\s*,[^)]*\\)(?:\\[[^\\]]*\\]|:not\\([^)]*\\))*)$`).test(tail)) return 'input';
   if (new RegExp(`^(?:${CONTROL}|:is\\([^)]*\\)|\\*)?:focus-visible$`).test(tail)) return 'focus';
-  if (/^label(?::not\([^)]*\))?$/.test(tail)) return 'label';
+  if (/^label(?:\[for=["']?se-consent["']?\]|:has\([^)]*(?:se-consent|checkbox)[^)]*\))$/.test(tail)) return 'consent';
+  if (/^label:not\([^)]*(?:se-consent|checkbox)[^)]*\)$/.test(tail)) return 'label';
+  if (/^label(?::not\([^)]*\))?$/.test(tail)) return 'labelBare';
+  if (/^(?:div)?\[role=["']?status["']?\]$/.test(tail)) return 'status';
   if (/^button(?:\[type=["']?submit["']?\])?$/.test(tail)) return 'submit';
   return 'fields';
 }
@@ -92,7 +95,7 @@ function longhands(prop: string, value: string): Array<[string, string]> {
     return [[`${prop}-top`, t ?? ''], [`${prop}-right`, r ?? ''], [`${prop}-bottom`, b ?? ''], [`${prop}-left`, l ?? '']];
   }
   if (prop === 'border') {
-    const tok = splitTop(value, ' '); const w = tok.find((t) => /^\d+px$/.test(t)) ?? ''; const st = tok.find((t) => /^(solid|dashed|none)$/.test(t)) ?? '';
+    const tok = splitTop(value, ' '); const w = tok.find((t) => /^\d+(px)?$/.test(t)) ?? ''; const st = tok.find((t) => /^(solid|dashed|none)$/.test(t)) ?? '';
     const color = tok.filter((t) => t !== w && t !== st).join(' ');
     return [['border-width', w], ['border-style', st], ['border-color', color]];
   }
@@ -150,6 +153,18 @@ for (const w of [390, 1440]) {
   expect(oneOf(s.get('background-color'), PRIMARY) && oneOf(s.get('color'), IVORY), `RED submit is the NOS primary button colours at ${w}px (got ${s.get('background-color')} on ${s.get('color')})`);
   expect(/karla/.test(s.get('font-family') ?? '') && s.get('font-weight') === '700' && px(s.get('font-size'), 14) && s.get('text-transform') === 'uppercase', `RED submit type is Karla 700 14px uppercase at ${w}px`);
   expect(px(s.get('min-height'), 50) && oneOf(s.get('border-radius'), ['var(--radius-button)', '10px']), `RED submit min-height 50 and --radius-button at ${w}px`);
+}
+// NR-4 (NOS Design): the success box inside the card is no box in a box - transparent, no border, no padding. role=status stays (A4).
+// NOS Design: the consent label is EXCLUDED from the field-label rule and takes the body role (Karla 450 16px / 1.5).
+expect(!rules.some((r) => classify(r.selector) === 'labelBare'), 'RED the field-label rule excludes the consent label (label:not([for="se-consent"]) or :not(:has(input[type=checkbox]))), no bare label rule');
+for (const w of [390, 1440]) {
+  const st = eff(['status'], w);
+  const noBorder = st.get('border-style') === 'none' || ['0', '0px'].includes(st.get('border-width') ?? '');
+  expect(noBorder, `RED success box (role=status) has no border at ${w}px (got ${st.get('border-width')} ${st.get('border-style')})`);
+  expect(['top', 'right', 'bottom', 'left'].every((side) => ['0', '0px'].includes(st.get(`padding-${side}`) ?? '')), `RED success box has zero padding at ${w}px (got ${st.get('padding-top')})`);
+  expect(['transparent', 'none'].includes(st.get('background-color') ?? ''), `RED success box background is transparent at ${w}px (got ${st.get('background-color')})`);
+  const cl = eff(['consent'], w);
+  expect(/karla/.test(cl.get('font-family') ?? '') && cl.get('font-weight') === '450' && px(cl.get('font-size'), 16) && ['1.5', '24px'].includes(cl.get('line-height') ?? ''), `RED consent label is Karla 450 16px / 1.5 at ${w}px (got ${cl.get('font-family')} ${cl.get('font-weight')} ${cl.get('font-size')} ${cl.get('line-height')})`);
 }
 // anchor
 for (const [w, want] of [[390, 68], [699, 68], [700, 121], [1440, 121]] as const) {

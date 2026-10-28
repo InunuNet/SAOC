@@ -3,8 +3,13 @@
 //   anchor gate : click the hero CTA (#enquire); the enquiry card's top must sit between the sticky chrome's bottom +16 and +40
 //   computed    : card #F3F2D6 / radius 16 / shadow / padding 32 (24 below 768); label Karla 500 14; input 1px border, radius 8, height >= 48;
 //                 2px violet focus ring; submit background #211A57; fields column <= 640
+//   consent     : the consent label is EXCLUDED from the field-label rule - Karla 450 16px / line-height 1.5, checkbox centred on its first line;
+//                 field labels stay Karla 500 14px
+//   success     : (NR-4, no box in a box) the API is MOCKED in the browser (page.route fulfils 201; NOTHING reaches the server or Firestore),
+//                 a valid form is submitted, and inside the card there are 0 borders and 0 padding below the card, role=status stays with
+//                 the focus on the success heading, and the card's x and width do not move
 //   SAOC pin    : the SAOC /sponsors form labels are still the SAOC mono 11px (the NOS styling did not leak)
-// Submits nothing, writes nothing. Basic Auth is read from BETA_BASIC_AUTH_USER/PASSWORD in-script and never printed.
+// Writes nothing: the one submit is answered by an in-browser mock, never the server. Basic Auth is read from BETA_BASIC_AUTH_USER/PASSWORD in-script and never printed.
 // Run as: node --env-file-if-exists=.env.local <this file>   (from the project root, after deploy)
 // Exit 0 PASS, 1 FAIL (a real finding), 77 inconclusive (credentials, browser or host unavailable).
 import { chromium } from 'playwright';
@@ -82,6 +87,51 @@ try {
     await page.locator('[data-sponsor-enquiry="nos"] form input[type="text"]').first().focus();
     const ring = await page.evaluate(() => { const s = getComputedStyle(document.activeElement); return { width: s.outlineWidth, color: s.outlineColor, style: s.outlineStyle }; });
     if (ring.width !== '2px' || ring.style === 'none' || ring.color !== rgb('#7e3f97')) fail(`${vp.name}: focus ring ${JSON.stringify(ring)}, want 2px violet ${rgb('#7e3f97')}`);
+
+    // Consent label: body role, checkbox aligned to the first line; field labels untouched.
+    const consent = await page.evaluate(() => {
+      const label = document.querySelector('[data-sponsor-enquiry="nos"] label[for="se-consent"]');
+      const box = document.getElementById('se-consent');
+      const text = label?.querySelector('span');
+      if (!label || !box || !text) return null;
+      const s = getComputedStyle(label);
+      const range = document.createRange(); range.selectNodeContents(text);
+      const line = range.getClientRects()[0];
+      const b = box.getBoundingClientRect();
+      return { family: s.fontFamily, size: s.fontSize, weight: s.fontWeight, lineHeight: s.lineHeight, delta: line ? Math.abs((b.top + b.height / 2) - (line.top + line.height / 2)) : null };
+    });
+    if (!consent) fail(`${vp.name}: consent label not found`);
+    else {
+      if (!/karla/i.test(consent.family) || consent.size !== '16px' || consent.weight !== '450' || consent.lineHeight !== '24px') fail(`${vp.name}: consent label ${JSON.stringify(consent)}, want Karla 450 16px / 24px line-height`);
+      if (consent.delta === null || consent.delta > 1.5) fail(`${vp.name}: checkbox centre is ${consent.delta}px off the first line's centre, want <= 1.5`);
+    }
+
+    // Success state with the API mocked: no box in a box, card does not move, focus on the heading.
+    await page.route(/\/api\/sponsors\/enquire$/, (route) => route.fulfill({ status: 201, contentType: 'application/json', body: '{"success":true}' }));
+    const before = await page.evaluate(() => { const r = document.querySelector('[data-sponsor-enquiry="nos"]').getBoundingClientRect(); return { x: r.x + scrollX, width: r.width }; });
+    const scope = page.locator('[data-sponsor-enquiry="nos"]');
+    await scope.locator('#se-contactName').fill('Render Check');
+    await scope.locator('#se-email').fill('render-check@example.com');
+    await scope.locator('#se-message').fill('Render check only, the API is mocked.');
+    await scope.locator('#se-consent').check();
+    await scope.locator('button[type="submit"]').click();
+    await page.waitForSelector('[data-sponsor-enquiry="nos"] [role="status"]', { timeout: 10000 }).catch(() => {});
+    const done = await page.evaluate(() => {
+      const card = document.querySelector('[data-sponsor-enquiry="nos"]');
+      const status = card.querySelector('[role="status"]');
+      const r = card.getBoundingClientRect();
+      const inner = status ? [status, ...status.querySelectorAll('*')] : [];
+      const bad = inner.filter((el) => { const s = getComputedStyle(el); return ['Top', 'Right', 'Bottom', 'Left'].some((d) => parseFloat(s['border' + d + 'Width']) > 0 && s['border' + d + 'Style'] !== 'none') || ['Top', 'Right', 'Bottom', 'Left'].some((d) => parseFloat(s['padding' + d]) > 0); }).length;
+      const st = status && getComputedStyle(status);
+      return { hasStatus: Boolean(status), bad, bg: st && st.backgroundColor, focusId: document.activeElement && document.activeElement.id, x: r.x + scrollX, width: r.width };
+    });
+    if (!done.hasStatus) fail(`${vp.name}: no role=status success state after a (mocked) submit`);
+    else {
+      if (done.bad !== 0) fail(`${vp.name}: ${done.bad} element(s) inside the success state carry a border or padding (no box in a box)`);
+      if (done.bg !== 'rgba(0, 0, 0, 0)' && done.bg !== 'transparent') fail(`${vp.name}: success box background ${done.bg}, want transparent`);
+      if (done.focusId !== 'enquire-success-heading') fail(`${vp.name}: focus is on "${done.focusId}", want enquire-success-heading`);
+    }
+    if (Math.abs(done.x - before.x) > 0.5 || Math.abs(done.width - before.width) > 0.5) fail(`${vp.name}: card moved on success (x ${before.x} -> ${done.x}, width ${before.width} -> ${done.width})`);
     await context.close();
   }
 
