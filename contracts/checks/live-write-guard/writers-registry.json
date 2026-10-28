@@ -3,19 +3,19 @@
  "scripts": {
   ".agent/memory/project/specs/nav-focus-underline/checks/compare-geometry.mjs": {
    "class": "STATIC_FP",
-   "match": ".",
+   "match": "const m = baseline\\(\\);\\s*mutate\\(m\\);\\s*const f = compare\\(m",
    "note": "write tokens are DOM mutate callbacks or a guard regex asserting absence",
    "target": "source text only"
   },
   ".agent/memory/project/specs/nos-faq-public-r57b/checks/static.mjs": {
    "class": "STATIC_FP",
-   "match": ".",
+   "match": "if \\(/\\\\\\.\\(create\\|createOrReplace\\|patch\\|delete\\|mutate\\|transaction\\)\\\\\\(\\|createClient/\\.test\\(code\\)\\) failures\\.push\\(`S5: a Sanity write or client in an added line",
    "note": "write tokens are DOM mutate callbacks or a guard regex asserting absence",
    "target": "source text only"
   },
   ".agent/memory/project/specs/nos-faq-r57/checks/static.mjs": {
    "class": "STATIC_FP",
-   "match": ".",
+   "match": "if \\(/\\\\\\.\\(create\\|createOrReplace\\|patch\\|delete\\|mutate\\|transaction\\)\\\\\\(\\|createClient/\\.test\\(code\\)\\) failures\\.push\\(`S6: \\$\\{rel\\}: a Sanity write or client in an added line",
    "note": "write tokens are DOM mutate callbacks or a guard regex asserting absence",
    "target": "source text only"
   },
@@ -251,7 +251,7 @@
   },
   "contracts/checks/launch-weekend/f30/check-d-static.mjs": {
    "class": "STATIC_FP",
-   "match": ".",
+   "match": "!/\\\\\\.\\(createOrReplace\\|createOrUpdate\\|patch\\|delete\\|mutate\\|transaction\\)\\\\s\\*\\\\\\(/\\.test\\(body\\)\\);\\s*\\}\\s*must\\('lib uses createIfNotExists', lib\\.includes\\('createIfNotExists'\\)\\);",
    "note": "write tokens occur inside fixture strings, regexes or a local shell function",
    "target": "source text and fixture strings only"
   },
@@ -313,13 +313,13 @@
   },
   "contracts/checks/payfast-m1/check-server-confirm-fetch-outside-transaction-scope.mjs": {
    "class": "STATIC_FP",
-   "match": ".",
+   "match": "const ORDERS_LIB_ESCAPES = \\[\\s*\\[\\s*'confirm fetch moved inside the transaction callback',\\s*`[^`]*fetch\\(PAYFAST_SANDBOX_VALIDATE_URL, \\{ method: 'POST' \\}\\)[^`]*`",
    "note": "write tokens occur inside fixture strings, regexes or a local shell function",
    "target": "source text and fixture strings only"
   },
   "contracts/checks/payment-seam-f2/check-reject-path-mutations.sh": {
    "class": "STATIC_FP",
-   "match": ".",
+   "match": "(?m)^mutate\\(\\) \\{\\n  local label=\\\"\\$1\\\"; shift\\n  total=\\$\\(\\(total \\+ 1\\)\\)",
    "note": "write tokens occur inside fixture strings, regexes or a local shell function",
    "target": "source text and fixture strings only"
   },
@@ -522,7 +522,7 @@
   },
   "contracts/checks/vendor-flow-notifications/check-apply-route-wiring.mjs": {
    "class": "STATIC_FP",
-   "match": ".",
+   "match": "const KNOWN_UNWIRED_FIXTURE = `[^`]*initAdmin\\(\\);[^`]*\\.collection\\(VENDOR_APPLICATIONS_COLLECTION\\)\\.add\\(\\{[^`]*`;",
    "note": "write tokens occur inside fixture strings, regexes or a local shell function",
    "target": "source text and fixture strings only"
   },

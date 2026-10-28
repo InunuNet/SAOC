@@ -69,6 +69,8 @@ INLINE_WRITE = re.compile(
 )
 LOCAL_ONLY = re.compile(r"(127\.0\.0\.1|localhost)")
 FIXTURE_ENV = "SAOC_FIXTURE_REPLAY"
+# A safe-class evidence regex that matches any of these proves nothing about the script it names.
+TRIVIAL_SAMPLES = ("", "x", "console.log(1)\n", "#!/usr/bin/env bash\necho ok\n")
 
 
 def contract_files(root):
@@ -188,7 +190,11 @@ def scan(root, registry):
                         stats["safe"] += 1
                 elif cls in SAFE_CLASSES:
                     rx = entry.get("match")
-                    if rx and not re.search(rx, open(sp, errors="ignore").read()):
+                    if not isinstance(rx, str) or not rx.strip():
+                        violations.append((rel, cid, s, f"{cls} entry has no evidence `match` regex"))
+                    elif any(re.search(rx, t) for t in TRIVIAL_SAMPLES):
+                        violations.append((rel, cid, s, f"{cls} evidence /{rx}/ matches a trivial script; make it script-specific"))
+                    elif not re.search(rx, open(sp, errors="ignore").read()):
                         violations.append((rel, cid, s, f"{cls} evidence /{rx}/ no longer matches the script"))
                     else:
                         stats["safe"] += 1
