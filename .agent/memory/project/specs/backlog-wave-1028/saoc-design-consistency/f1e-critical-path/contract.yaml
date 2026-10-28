@@ -14,6 +14,7 @@ goldens:
   - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/lcp-queue.md
   - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/lcp-bounds.json
   - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/favicon-source.json
+  - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/status-mark.md
   - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/favicon-renders/favicon-review-sheet.png
   - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/proof-on-main.md
 
@@ -24,11 +25,11 @@ assertions:
       description: "Lever 1: app/layout.tsx names each font file once (one declaration with a weight range). Fails on main: Crimson normal and italic, Manrope each declared 4x, JetBrains 2x"
       command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-fonts-static.mjs"
     - id: A2
-      description: "Lever 1 gate: on the ten routes at 390 and 1440, cold cache, no font URL requested twice, <=3 distinct font files on the critical path, no loaded face unused by rendered text. Fails on main: every route requests Crimson normal, italic and Manrope twice and loads 5 files"
+      description: "Lever 1 gate: on the ten routes at 390 and 1440, cold cache, no font URL requested twice, <=4 distinct font files on the critical path (NOS Design: SAOC cap 4; NOS routes' <=3 is NOS Site's TYPE-15, not asserted here), each <=40 KB, no loaded face unused by rendered text. Fails on main: every route requests Crimson normal, italic and Manrope twice and loads 5 files"
       command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-fonts-network.mjs"
       timeout_seconds: 900
     - id: A3
-      description: "Lever 2 glyph coverage against the SHIPPED subset files: every served font has ê ë é è ô ï û ŉ and ‘ ’ “ ” – — … · • × R, nothing outside Latin + Latin-1 + the allowed symbol ranges. Fails on main: U+0149 is missing from every shipped file"
+      description: "Lever 2 glyph coverage against the SHIPPED subset files: every served font has ê ë é è ô ï û (U+0149 DROPPED by NOS Design ruling 2026-10-28) and ‘ ’ “ ” – — … · • × R, nothing outside Latin + Latin-1 + the allowed symbol ranges. Fails on main: U+0149 is missing from every shipped file"
       command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-font-glyphs.mjs"
       timeout_seconds: 900
     - id: A4
@@ -52,7 +53,7 @@ assertions:
       command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-critical-css-identical.mjs"
       timeout_seconds: 1500
     - id: A9
-      description: "Lever 4: favicon links total <=10 KB (<=15 KB with an .ico), apple-touch <=20 KB, each icon derived from the supplied emblem (goldens/favicon-source.json sha256) and not redrawn, 16/32/180 review renders present. Fails on main: 277.6 KB"
+      description: "Lever 4: icons fetched on page load total <=10 KB (no .ico allowance), apple-touch <=16 KB (NOS Design corrected caps), each icon derived from the supplied emblem (goldens/favicon-source.json sha256) and not redrawn, 16/32/180 review renders present. Fails on main: 277.6 KB"
       command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-favicon.mjs"
       timeout_seconds: 900
     - id: A10
@@ -60,8 +61,9 @@ assertions:
       command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-750-avif.mjs"
       timeout_seconds: 900
     - id: A11
-      description: "Local production build, Lighthouse mobile Slow 4G: LCP <=2500 ms on / and /about and /about LCP minus FCP <=1000 ms (image-queuing gap closed). Fails on main (about 4.5 s, gap 2.5 s) and on F1d (4.4 s, gap 2.1 s)"
-      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-lcp-gap.mjs"
+      phase: 5
+      description: "RUN AFTER MERGE, on beta (NOS Design ruling): Lighthouse mobile Slow 4G, MEDIAN OF 3 runs, LCP <=2500 ms on / and /about (the LCP-FCP gap is printed, not asserted). Local LCP is report-only (A18). Reads beta credentials inside the scripts, never printed. Beta main at last read: / LCP 3262 ms (fails), /about 2426 ms"
+      command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-lcp-gap.mjs"
       timeout_seconds: 1500
     - id: A12
       description: "Not-allowed guard (no fewer px than box x DPR): hero sharpness at 390@3 and 2056@2 and the 1200w byte bound still hold on the production build. Regression guard, passes on F1d"
@@ -91,14 +93,44 @@ assertions:
       target: .agent/memory/scratch/saoc-dc-f1e-gws-manifest.json
       required: false
     - id: A18
-      phase: 5
-      description: "RUN AFTER DEPLOY (phase 5, not part of the phase 4 gate). Deployed Lighthouse mobile Slow 4G LCP <=2500 ms on / and /about and the /about queuing gap <=1000 ms. Plain shell check, reads beta credentials inside the scripts, never printed."
-      command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-lcp-gap.mjs"
+      description: "Local production build LCP and the /about LCP-FCP gap, REPORT ONLY (prints, always exits 0; the gate is A11 on beta). Needs DC_PROD=1."
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-lcp-gap.mjs --report-only"
+      timeout_seconds: 1500
     - id: A19
       phase: 5
-      description: "RUN AFTER DEPLOY (phase 5, not part of the phase 4 gate). Deployed fonts: no duplicate requests, <=3 files, one font preload, hero preload before CSS."
+      description: "RUN AFTER DEPLOY (phase 5, not part of the phase 4 gate). Deployed fonts: no duplicate requests, <=4 files each <=40 KB, one font preload, hero preload before CSS."
       command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-fonts-network.mjs"
     - id: A20
       phase: 5
       description: "RUN AFTER DEPLOY (phase 5, not part of the phase 4 gate). Deployed preload order and single font preload on / and /about."
       command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-preload-order.mjs"
+    - id: A21
+      description: "NOS Design favicon ruling: the 16 (read from favicon.ico) is cropped to the flower with >=1px margin; the linked 32 and 48 PNGs are cropped to the flower; the 180 apple-touch is opaque on #F4F3EC with the flower at 72-80%. Fails on main (no 32/48 PNG, 16 not cropped, apple icon transparent)"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-favicon-crop.mjs"
+      timeout_seconds: 900
+    - id: A22
+      description: "The 16/32/48/180 review renders in goldens/favicon-renders obey the same crop and opaque-ground rules (static, derived by checks/make-favicon-renders.mjs from the confirmed source app/icon.png)"
+      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-favicon-crop.mjs --goldens"
+    - id: A23
+      description: "Glyph ruling: U+2192 and U+203B never render from a system face. Any svg[data-glyph] is aria-hidden and currentColor; an ARROW svg is also 1em on the baseline; the status-mark svg is NOT 1em (its size is gated by A27). Home must show a status badge at 390 and 1440 and every badge leads with the status-mark SVG (or a text mark only if a shipped face has U+203B). Source rule: when no shipped face has U+203B, components/show/_shared/StatusMarker.tsx must hold an aria-hidden currentColor svg[data-glyph=status-mark] and no text mark (checked in source and in the SAOC Home DOM, where PlaceholderMarker, NavCards and ShowBand render it). Fails on main (no shipped face has U+203B, StatusMarker renders it as text)"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-glyph-svg.mjs"
+      timeout_seconds: 900
+    - id: A24
+      description: "REPORT ONLY: scan the Sanity fixtures for U+0149 and print each hit with file:line. Never converts, always exits 0; hits go to NOS Design, not into the content"
+      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/scan-fixtures-u0149.mjs"
+    - id: A25
+      phase: 5
+      description: "RUN AFTER DEPLOY (phase 5). Deployed favicon crop, caps and opaque 180. Plain shell check, reads beta credentials inside the scripts, never printed."
+      command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-favicon-crop.mjs"
+    - id: A26
+      phase: 5
+      description: "RUN AFTER DEPLOY (phase 5). Deployed glyph SVG rules and status marker mark on the ten routes."
+      command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-glyph-svg.mjs"
+    - id: A27
+      description: "Status mark geometry (NOS Design ReferenceMark): in the badge label's font the mark top = T top - 4% overshoot and bottom = baseline + 4% overshoot (+-0.5px), strokes ~0.1em round-capped, dots (<circle>) 1.5x the stroke, at 1440 and 390 on the Home status badge. Fails on main (no svg status mark)"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-status-mark-geometry.mjs"
+      timeout_seconds: 900
+    - id: A28
+      phase: 5
+      description: "RUN AFTER DEPLOY (phase 5). Deployed status mark geometry. The deployed preload twin of A7 is A20 (the font preload is resolved from .next/static at server start and could silently vanish on App Hosting's standalone output; A20 and A19 must pass on beta before launch)."
+      command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-status-mark-geometry.mjs"
