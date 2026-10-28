@@ -1,0 +1,68 @@
+schema: athanor.contract/v1
+slug: onsale-followups
+goal: The ticket on-sale contract's A7 fails closed, and a regression guard proves hub cards and JSON-LD offers only ever carry the active show's ticket types.
+created_at: '2026-10-28'
+autonomy: high
+
+features:
+  - id: F1
+    name: harden ticket-onsale-predicate A7 and lock the hub/JSON-LD wrong-show filter with fixture-replay checks
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/backlog-wave-1028/onsale-followups/goldens/proof-on-main.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: the prerendered /national-show page does not reach firebase-admin, and the check fails closed when the sweep is missing or silent
+      command: python3 contracts/checks/onsale-followups/check-national-show-not-prerendered-admin.py .
+      timeout_seconds: 60
+    - id: A2
+      description: buildShowOffers (replayed from lib/data/national-show-offers.ts, red until exported there), hub cards and JSON-LD offers exclude other-show ticket types (demo cleared, recorded catalogue plus a same-slug impostor), under active, other and no show
+      command: pnpm exec tsx contracts/checks/onsale-followups/check-hub-show-filter.mts
+      timeout_seconds: 120
+    - id: A3
+      description: the hub ticket-type query selects the show reference
+      command: 'sed -n ''/^export const activeTicketTypesByCategoryQuery/,/^`);/p'' sanity/queries.ts | grep -q "^    show,$"'
+      timeout_seconds: 10
+    - id: A4
+      description: the tickets hub loader passes the resolved active show to buildHubCards
+      command: 'sed -n ''/buildHubCards({/,/});/p'' lib/data/admission-availability.ts | grep -q "^      activeShowId,$"'
+      timeout_seconds: 10
+    - id: A6
+      description: the prerendered /national-show page passes resolveActiveShow(...) into buildShowOffers (live code only, comments stripped before matching; the page must import buildShowOffers from '@/lib/data/national-show-offers' and declare no local one; forwarding inside buildShowOffers is replayed behaviourally by A2)
+      command: node contracts/checks/onsale-followups/check-page-call-site.mjs
+      timeout_seconds: 10
+    - id: A5
+      description: ticket-onsale-predicate A7 calls the fail-closed helper and carries no negated pipeline
+      command: sh contracts/checks/onsale-followups/check-a7-rewired.sh
+      timeout_seconds: 10
+    - id: A7
+      description: Codex adversarial QA scoped to the actual change (the buildShowOffers move and the cutoff fix); pre-existing behaviour in unchanged files is out of scope
+      type: codex_qa
+      target: >-
+        Review ONLY the product diff of git diff origin/main...HEAD on feat/onsale-followups, which is
+        lib/data/national-show-offers.ts (buildShowOffers moved out of app/(nos)/national-show/page.tsx, with
+        cutoffBySlug built from the show-filtered types only) and the page.tsx import and call site. Judge two things
+        only: is the move behaviour-preserving apart from the cutoff fix, and would the checks in
+        contracts/checks/onsale-followups/ (A2 buildShowOffers replay including validThrough, A6 call site) fail if
+        either of THOSE changes were reverted or broken. Pre-existing behaviour in unchanged files (ticket-hub-source.ts,
+        ticket-offers.ts, sanity/queries.ts) and check-strength gaps on that unchanged code are out of scope; do not
+        report them.
+      required: true
+    - id: A8
+      description: browser_deployed_check on the NOS /national-show hub, declared for the triad linter but non-required. It cannot pass while the Basic Auth wall is up, because its live re-check (execution/browser_deployed_check.sh:188) sends no auth and gets 401 (HARNESS defect, backlog.md 2026-10-07 entry "browser_deployed_check.sh's own independent live re-check cannot pass for ANY page"). A10 is the real post-deploy proof.
+      type: browser_deployed_check
+      target: .agent/memory/scratch/onsale-followups-browser-manifest.json
+      required: false
+    - id: A9
+      description: gws inbox check is not applicable (no email path is touched); declared non-required only to satisfy the triad coverage linter, expected to skip
+      type: gws_inbox_check
+      target: .agent/memory/scratch/onsale-followups-gws-manifest.json
+      required: false
+    - id: A10
+      description: RUN AFTER DEPLOY from the project root (needs .env.local, which a worktree lacks, so it is inconclusive/exit 2 inside the gate), non-required, not a pre-deploy gate assertion. Plain check (not the browser_deployed_check kind, see A8) that the deployed NOS /national-show Event JSON-LD has the active show's VIP offer price (EXPECT_VIP_PRICE, default 300) and no 999 or wrong-show offer; reads BETA_BASIC_AUTH_USER/PASSWORD inside the script, never printed. Exit 77 (contract.py skip) if credentials are absent; the gate then needs --allow-skips.
+      command: node --env-file-if-exists=.env.local contracts/checks/onsale-followups/check-deployed-nos-jsonld.mjs
+      required: false

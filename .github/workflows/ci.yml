@@ -87,6 +87,10 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: E2E tests
+        # The checkout-error-summary e2e renders the real form on /ticket-fixtures/buy, which 404s
+        # unless this flag is set. CI only: never in apphosting.yaml or an .env example.
+        env:
+          TICKET_FIXTURES: '1'
         run: bash scripts/ci-e2e.sh pnpm test:e2e
 
       # ADDED 2026-09-08 (mission ticketing-complete M1/F7, contract-f7.yaml A20/A25/
