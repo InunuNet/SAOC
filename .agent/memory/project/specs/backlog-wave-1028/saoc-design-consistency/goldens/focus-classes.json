@@ -30,6 +30,26 @@
       "file": "app/admin/login/MicrosoftSignInButton.tsx",
       "key": "focus-visible:outline-offset-2",
       "reason": "Provider sign-in button: a third-party brand button whose className carries the provider's brand hex values (tracked by A6). Admin-only."
+    },
+    {
+      "file": "components/contact/ContactForm.tsx",
+      "key": "text-[22px] text-ink outline-none",
+      "reason": "programmatic focus target heading; not interactive; focus is moved by script for screen-reader announcement"
+    },
+    {
+      "file": "components/sponsors/SponsorEnquiryForm.tsx",
+      "key": "text-[22px] text-ink outline-none",
+      "reason": "programmatic focus target heading; not interactive; focus is moved by script for screen-reader announcement"
+    },
+    {
+      "file": "components/sponsors/SponsorEnquirySection.tsx",
+      "key": "outline-none",
+      "reason": "programmatic focus target heading; not interactive; focus is moved by script for screen-reader announcement (both the document and standalone branches)"
+    },
+    {
+      "file": "components/events/EventCard.tsx",
+      "key": "border-b border-rule py-5 outline-none",
+      "reason": "NAV-1-family underline focus (title underline plus 2px left bar)"
     }
   ]
 }
