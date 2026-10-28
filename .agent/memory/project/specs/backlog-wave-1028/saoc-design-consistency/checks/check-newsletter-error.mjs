@@ -66,6 +66,25 @@ await withSite(async ({ base, browser, ctxOpts }) => {
     }
     await ctx.close();
   }
+  // POINTER-SUBMIT focus (Codex F1a finding at a0a3737a): a real mouse click on submit makes the script focus the invalid field, and a script focus after a pointer event does NOT match :focus-visible, so a
+  // not-focus-visible invalid cue paints the 1px error outline instead of the ivory ring. The cases above blur or press a key first and cannot see it. Here nothing is blurred and no key is pressed:
+  // activeElement must be the invalid field and its computed outline must be the 2px solid ivory ring at 3px offset. (The blurred 1px on-dark cue above is unchanged.)
+  const FOCUSED = `() => { const rgba = ${RGBA_FN}; const el = document.activeElement; if (!el || el === document.body) return { tag: null }; const c = getComputedStyle(el); return { tag: el.tagName.toLowerCase(), type: el.getAttribute('type'), inFooter: Boolean(el.closest('footer')), invalid: el.getAttribute('aria-invalid'), fv: el.matches(':focus-visible'), w: c.outlineWidth, s: c.outlineStyle, o: c.outlineOffset, col: rgba(c.outlineColor) }; }`;
+  for (const width of [1440, 390]) {
+    for (const kind of ['email', 'topic']) {
+      const { page, ctx } = await openPage(browser, ctxOpts, base, '/about', width); const w = `pointer-submit ${kind} @${width}`;
+      await page.route('**/api/newsletter/subscribe', (route) => route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error: 'Enter a valid email address.', field: 'email' }) }));
+      const input = page.locator('footer input[type=email]'); const cb = page.locator('footer input[type=checkbox]').first(); const submit = page.locator('footer form button[type=submit]');
+      await input.scrollIntoViewIfNeeded(); await page.waitForFunction(() => { const b = document.querySelector('footer form button[type=submit]'); return b && !b.disabled; }, null, { timeout: 15000 }).catch(() => {});
+      if (kind === 'email') await input.fill('not-an-email'); else await cb.uncheck();
+      const box = await submit.boundingBox(); await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2); await page.waitForTimeout(600);
+      const f = await page.evaluate(`(${FOCUSED})()`);
+      check(f.tag === 'input' && f.inFooter && f.type === (kind === 'email' ? 'email' : 'checkbox'), `${w}: after a pointer submit document.activeElement is not the invalid ${kind} field (${JSON.stringify({ tag: f.tag, type: f.type })})`);
+      check(f.invalid === 'true', `${w}: the focused field has no aria-invalid="true" (${f.invalid})`);
+      check(f.s === 'solid' && f.w === '2px' && f.o === '3px' && Math.min(f.col[0], f.col[1], f.col[2]) >= 220, `${w}: focused invalid ${kind} outline is ${f.w} ${f.s} offset ${f.o} rgb(${(f.col || []).slice(0, 3).map(Math.round)}) (matches :focus-visible: ${f.fv}), want the 2px solid ivory ring at 3px offset, not the 1px error cue`);
+      await ctx.close();
+    }
+  }
   // SEQUENTIAL cases (Codex A7 finding at b69f13c2): the topic-error branch left emailInvalid set, so the email field kept aria-invalid="true" with no aria-describedby target. A fresh page cannot see that, so each
   // order is driven on one page: (1) invalid email, then the only topic unchecked; (2) the only topic unchecked, then an invalid email with a topic checked. Neither field may keep a stale invalid state or a dangling describedby.
   const STATE = `() => { const f = document.querySelector('footer'); const st = (el) => { const id = el.getAttribute('aria-describedby'); const t = id && document.getElementById(id); return { invalid: el.getAttribute('aria-invalid') === 'true', describedby: id, target: Boolean(t), text: t ? t.textContent.trim().slice(0, 30) : '' }; };
