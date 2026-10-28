@@ -4586,7 +4586,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 .nos-theme [data-sponsor-enquiry='nos'] form {
   max-width: 640px;
 }
-.nos-theme [data-sponsor-enquiry='nos'] label {
+.nos-theme [data-sponsor-enquiry='nos'] label:not([for='se-consent']) {
   font-family: var(--font-nos-karla), 'Helvetica Neue', Arial, sans-serif;
   font-size: 14px;
   font-weight: 500;
@@ -4625,4 +4625,20 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
   box-shadow: none;
+}
+/* The consent label keeps body reading size; the checkbox sits on the first line. */
+.nos-theme [data-sponsor-enquiry='nos'] label[for='se-consent'] {
+  font-family: var(--font-nos-karla), 'Helvetica Neue', Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 450;
+  line-height: 1.5;
+}
+.nos-theme [data-sponsor-enquiry='nos'] label[for='se-consent'] input[type='checkbox'] {
+  margin-top: 0;
+}
+/* The success state sits straight on the card: no box in a box. */
+.nos-theme [data-sponsor-enquiry='nos'] [role='status'] {
+  background-color: transparent;
+  border: 0;
+  padding: 0;
 }

@@ -184,7 +184,7 @@ export default async function ShowSponsorsPage() {
       <DocumentLayout
         aside={
           <div data-sp-card="" className="nos-sp-card">
-            <h2 className="nos-sp-card-title">{CTA_LABEL}</h2>
+            <h2 className="nos-sp-card-title nos-card-title">{CTA_LABEL}</h2>
             <p>{CARD_SENTENCE}</p>
             <div className="nos-sp-who">
               <span>Lee-Ann, organising committee</span>
