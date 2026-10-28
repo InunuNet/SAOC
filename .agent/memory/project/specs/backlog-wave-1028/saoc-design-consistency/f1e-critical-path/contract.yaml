@@ -1,0 +1,104 @@
+schema: athanor.contract/v1
+slug: saoc-dc-f1e-critical-path
+goal: Mobile Slow 4G LCP <=2.5s on / and /about by cutting the critical path (fonts, preload order, favicon), never by lowering hero px, lazy-loading or fading.
+created_at: '2026-10-28'
+autonomy: high
+
+features:
+  - id: F1
+    name: F1e LCP critical path (fonts dedupe + subset + preload, optional critical CSS, favicon, hero queueing)
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/f1e-measurements.md
+  - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/lcp-queue.md
+  - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/lcp-bounds.json
+  - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/favicon-source.json
+  - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/favicon-renders/favicon-review-sheet.png
+  - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/proof-on-main.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: "Lever 1: app/layout.tsx names each font file once (one declaration with a weight range). Fails on main: Crimson normal and italic, Manrope each declared 4x, JetBrains 2x"
+      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-fonts-static.mjs"
+    - id: A2
+      description: "Lever 1 gate: on the ten routes at 390 and 1440, cold cache, no font URL requested twice, <=3 distinct font files on the critical path, no loaded face unused by rendered text. Fails on main: every route requests Crimson normal, italic and Manrope twice and loads 5 files"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-fonts-network.mjs"
+      timeout_seconds: 900
+    - id: A3
+      description: "Lever 2 glyph coverage against the SHIPPED subset files: every served font has ê ë é è ô ï û ŉ and ‘ ’ “ ” – — … · • × R, nothing outside Latin + Latin-1 + the allowed symbol ranges. Fails on main: U+0149 is missing from every shipped file"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-font-glyphs.mjs"
+      timeout_seconds: 900
+    - id: A4
+      description: "Lever 2 computed-font walk: on the ten routes at 390 and 1440 every visible text node is set in a shipped face that contains every character in it (cmap check, not by eye). Fails on main: arrow U+2192 and U+203B fall back on Home, Societies and Judging"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-font-fallback-walk.mjs"
+      timeout_seconds: 900
+    - id: A5
+      description: "Lever 2: CLS < 0.02 across the font swap (fonts delayed 1500 ms) at 390 and 1440 on / and /about. Guard, passes on main (0.0104 worst, /about@390), so it must still pass once fonts are subset and preloaded"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-cls-font-swap.mjs"
+      timeout_seconds: 900
+    - id: A6
+      description: "Lever 2: every shipped @font-face is font-display swap and Crimson Pro has the metric-matched size-adjust fallback face. Guard, passes on main"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-font-swap-css.mjs"
+      timeout_seconds: 900
+    - id: A7
+      description: "Lever 2 and the preload-order check: server-HTML head has the hero image preload BEFORE the first stylesheet, and exactly ONE font preload that is the h1/hero face. Fails on main: 0 font preloads (the hero-before-CSS half already passes on main)"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-preload-order.mjs"
+      timeout_seconds: 900
+    - id: A8
+      description: "Lever 3 (OPTIONAL critical CSS): SKIP-passes while next.config.ts does not enable inlineCss; once enabled, needs DC_BASE_URL_BEFORE/AFTER and ANY differing first-viewport pixel at 390/1440/2056 on the ten routes, or any FOUC, fails. Passes (skip) on main by design"
+      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-critical-css-identical.mjs"
+      timeout_seconds: 1500
+    - id: A9
+      description: "Lever 4: favicon links total <=10 KB (<=15 KB with an .ico), apple-touch <=20 KB, each icon derived from the supplied emblem (goldens/favicon-source.json sha256) and not redrawn, 16/32/180 review renders present. Fails on main: 277.6 KB"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-favicon.mjs"
+      timeout_seconds: 900
+    - id: A10
+      description: "The /about hero 750w AVIF exists and is <=25,000 bytes (F1d measured 17,738). Fails on main: no AVIF"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-750-avif.mjs"
+      timeout_seconds: 900
+    - id: A11
+      description: "Local production build, Lighthouse mobile Slow 4G: LCP <=2500 ms on / and /about and /about LCP minus FCP <=1000 ms (image-queuing gap closed). Fails on main (about 4.5 s, gap 2.5 s) and on F1d (4.4 s, gap 2.1 s)"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-lcp-gap.mjs"
+      timeout_seconds: 1500
+    - id: A12
+      description: "Not-allowed guard (no fewer px than box x DPR): hero sharpness at 390@3 and 2056@2 and the 1200w byte bound still hold on the production build. Regression guard, passes on F1d"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-bytes-sharpness.mjs"
+      timeout_seconds: 900
+    - id: A13
+      description: "Not-allowed guard (no lazy-loading above the fold, one priority hero, one preload, AVIF-first picture). Regression guard on F1d"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-priority.mjs"
+      timeout_seconds: 900
+    - id: A14
+      description: "Not-allowed guard (no fade): no opacity animation or transition on the hero img, its wrappers or the h1 on the production build. Regression guard on F1d"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-no-fade.mjs"
+      timeout_seconds: 900
+    - id: A15
+      description: "Codex adversarial QA of the whole diff against the goldens and proof-on-main"
+      type: codex_qa
+      target: "Adversarially review git diff origin/main...HEAD against the goldens in .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/. Try to pass the font, preload and favicon checks while a glyph still falls back, a font is fetched twice, the hero is queued behind CSS, or the favicon is redrawn."
+      required: true
+    - id: A16
+      description: "browser_deployed_check on beta /about, declared for the triad linter but non-required. It cannot pass while the beta Basic Auth wall is up (execution/browser_deployed_check.sh live re-check sends no auth, HARNESS defect, backlog.md 2026-10-07). The authenticated post-deploy shell assertions are the real proof."
+      type: browser_deployed_check
+      target: .agent/memory/scratch/saoc-dc-f1e-browser-manifest.json
+      required: false
+    - id: A17
+      description: "gws inbox check, no email path is touched; declared non-required to satisfy the triad coverage linter, expected to skip"
+      type: gws_inbox_check
+      target: .agent/memory/scratch/saoc-dc-f1e-gws-manifest.json
+      required: false
+    - id: A18
+      phase: 5
+      description: "RUN AFTER DEPLOY (phase 5, not part of the phase 4 gate). Deployed Lighthouse mobile Slow 4G LCP <=2500 ms on / and /about and the /about queuing gap <=1000 ms. Plain shell check, reads beta credentials inside the scripts, never printed."
+      command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-lcp-gap.mjs"
+    - id: A19
+      phase: 5
+      description: "RUN AFTER DEPLOY (phase 5, not part of the phase 4 gate). Deployed fonts: no duplicate requests, <=3 files, one font preload, hero preload before CSS."
+      command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-fonts-network.mjs"
+    - id: A20
+      phase: 5
+      description: "RUN AFTER DEPLOY (phase 5, not part of the phase 4 gate). Deployed preload order and single font preload on / and /about."
+      command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-preload-order.mjs"

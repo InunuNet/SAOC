@@ -3,9 +3,9 @@
 import { withSite, openPage, check, finish } from './lib.mjs';
 const ROUTES = ['/about', '/judging', '/sponsors', '/members', '/memorandum-of-incorporation', '/privacy', '/terms', '/refunds', '/societies', '/contact'];
 const clamp = (vw) => Math.min(44, Math.max(32, 29 + 0.00762 * vw));
-await withSite(async ({ base, browser, ctxOpts, deployed }) => {
+await withSite(async ({ base, browser, ctxOpts, deployed, live }) => {
   // Home and the Events list need live Sanity events, so they are probed only on a deployed origin.
-  const routes = deployed ? ['/', ...ROUTES, '/events'] : ROUTES;
+  const routes = [...(deployed ? ['/'] : []), ...ROUTES, ...(live ? ['/events'] : [])];
   for (const width of [390, 1440, 2056]) for (const path of routes) {
     const { page, ctx, status } = await openPage(browser, ctxOpts, base, path, width);
     check(status === 200, `${path}@${width} status ${status}`);
