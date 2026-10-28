@@ -73,7 +73,7 @@ export function PartnersSection({ partners }: PartnersSectionProps) {
                     aria-hidden="true"
                     className="col-start-2 row-start-1 min-[900px]:col-start-3 font-serif font-normal text-[20px] text-primary transition-[translate,color] duration-150 ease-(--ease) group-hover:translate-x-1 group-hover:text-accent group-focus-visible:translate-x-1 group-focus-visible:text-accent motion-reduce:group-hover:translate-x-0 motion-reduce:group-focus-visible:translate-x-0"
                   >
-                    <ArrowIcon />
+                    <ArrowIcon variant="corner" />
                   </span>
                 ) : null}
               </>
@@ -86,6 +86,7 @@ export function PartnersSection({ partners }: PartnersSectionProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 data-partner-row
+                data-variant="corner"
                 className={`group ${rowBase} transition-colors duration-150 ease-(--ease) hover:bg-accent/8 focus-visible:bg-accent/8 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]`}
               >
                 {body}
