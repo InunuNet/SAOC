@@ -94,6 +94,36 @@ await withSite(async ({ base, browser, ctxOpts }) => {
       await ctx.close();
     }
   }
+  // REQUEST-FAILURE paths (Codex round 7 at cb25f0ce): NEWSLETTER_COPY.genericError is unsourced placeholder copy, withheld by default (no-invention), on EVERY path that would show it, not only the topic one. Three ways it reaches the form:
+  // (1) the fetch rejects (network failure: the catch path), (2) a non-OK reply with no `error` field (the `data.error ?? genericError` fallback), (3) a non-OK reply whose body.error IS genericError (lib/newsletter-handler.ts returns it on its 400/500
+  // paths, so the server supplies the same string). For each: the genericError text must appear in NO visible node of the footer (sr-only, display:none and visibility:hidden nodes do not count as visible), a role=alert that is announced (rendered,
+  // non-empty, not aria-hidden) must exist, and no footer alert or status node may carry a fill. Stubbed with page.route, so nothing is written. The text is read from the copy file in the working tree, not hard-coded.
+  const GENERIC = /genericError:\s*'([^']+)'/.exec(readFileSync('components/chrome/newsletter-copy.ts', 'utf8'))?.[1];
+  check(Boolean(GENERIC), 'request-failure: could not read NEWSLETTER_COPY.genericError from components/chrome/newsletter-copy.ts');
+  const FAILURE = `(text) => { const rgba = ${RGBA_FN}; const f = document.querySelector('footer'); const norm = (t) => t.replace(/\\s+/g, ' ').trim(); const hits = []; const alerts = [];
+    const visible = (el) => { for (let n = el; n && n !== document.documentElement; n = n.parentElement) { const c = getComputedStyle(n); if (c.display === 'none' || c.visibility === 'hidden' || n.hidden || n.getAttribute('aria-hidden') === 'true') return false; } const r = el.getBoundingClientRect(); return r.width > 1 && r.height > 1; };
+    for (const el of f.querySelectorAll('*')) { if (el.children.length === 0 && norm(el.textContent).includes(text)) hits.push({ tag: el.tagName.toLowerCase(), cls: String(el.className).slice(0, 60), visible: visible(el) }); }
+    for (const el of f.querySelectorAll('[role=alert], [role=status]')) { const c = getComputedStyle(el); const rendered = (() => { for (let n = el; n && n !== document.documentElement; n = n.parentElement) { const k = getComputedStyle(n); if (k.display === 'none' || k.visibility === 'hidden' || n.hidden || n.getAttribute('aria-hidden') === 'true') return false; } return true; })();
+      alerts.push({ role: el.getAttribute('role'), text: norm(el.textContent), rendered, fill: rgba(c.backgroundColor), img: c.backgroundImage }); }
+    return { hits, alerts }; }`;
+  const CASES = [['network failure', (route) => route.abort('failed')], ['non-OK reply without an error field', (route) => route.fulfill({ status: 500, contentType: 'application/json', body: '{}' })],
+    ['server reply carrying genericError', (route) => route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: GENERIC }) })]];
+  if (GENERIC) for (const width of [1440, 390]) {
+    for (const [label, handler] of CASES) {
+      const { page, ctx } = await openPage(browser, ctxOpts, base, '/about', width); const w = `${label} @${width}`;
+      await page.route('**/api/newsletter/subscribe', handler);
+      const input = page.locator('footer input[type=email]'); const submit = page.locator('footer form button[type=submit]');
+      await input.scrollIntoViewIfNeeded(); await page.waitForFunction(() => { const b = document.querySelector('footer form button[type=submit]'); return b && !b.disabled; }, null, { timeout: 15000 }).catch(() => {});
+      await input.fill('valid@example.com'); await submit.click(); await page.waitForTimeout(800);
+      const r = await page.evaluate(`(${FAILURE})(${JSON.stringify(GENERIC)})`);
+      const shown = r.hits.filter((h) => h.visible);
+      check(shown.length === 0, `${w}: the unsourced genericError "${GENERIC}" is visible in the footer (${JSON.stringify(shown)}); it must be withheld (sr-only alert only) on every path`);
+      const ann = r.alerts.filter((a) => a.role === 'alert' && a.rendered && a.text.length > 0);
+      check(ann.length > 0, `${w}: no announced role=alert in the footer after the failure (alerts: ${JSON.stringify(r.alerts)}); the withheld error must still be announced`);
+      check(r.alerts.every((a) => a.fill[3] === 0 && a.img === 'none'), `${w}: a footer alert or status node carries a fill (${JSON.stringify(r.alerts.filter((a) => a.fill[3] !== 0 || a.img !== 'none'))})`);
+      await ctx.close();
+    }
+  }
   // SEQUENTIAL cases (Codex A7 finding at b69f13c2): the topic-error branch left emailInvalid set, so the email field kept aria-invalid="true" with no aria-describedby target. A fresh page cannot see that, so each
   // order is driven on one page: (1) invalid email, then the only topic unchecked; (2) the only topic unchecked, then an invalid email with a topic checked. Neither field may keep a stale invalid state or a dangling describedby.
   const STATE = `() => { const f = document.querySelector('footer'); const st = (el) => { const id = el.getAttribute('aria-describedby'); const t = id && document.getElementById(id); return { invalid: el.getAttribute('aria-invalid') === 'true', describedby: id, target: Boolean(t), text: t ? t.textContent.trim().slice(0, 30) : '' }; };
