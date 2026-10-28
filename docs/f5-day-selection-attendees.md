@@ -27,9 +27,14 @@ The active show's `startDate` and `endDate` (from Sanity) are parsed via `buildS
 1. Parses the raw Sanity datetime values (strings with UTC offset, e.g. `'2027-09-23T00:00:00Z'`) into JavaScript `Date` objects via `parseUtcDatetime()` — a strict validator that rejects bare-parsed datetimes (a real published bug from prior work, see project memory `reference_firestore_timestamps_are_utc`).
 2. Computes the inclusive list of calendar days via `computeShowDays(window)` using a **fixed UTC+2 offset** (South Africa Standard Time, no DST).
 
-**Why UTC+2 is not arbitrary:** The show runs in South Africa (SAST, UTC+2). A date boundary like "2027-09-23" on a ticket must mean "September 23 in South Africa" at visitor arrival time, not "September 23 in UTC." Without the +2h offset, a naive `.getUTCDate()` on a date string like `'2027-09-23T00:00:00Z'` would derive "2027-09-22" locally (16:00 UTC previous day = 18:00 SAST that same day). This was a real defect found in prior work; **any future change to the offset or date-parsing logic must verify against both SAST-local dates and UTC round-trips.**
+**How the offset works:** `lib/show-window-lookup.ts` defines `SAST_OFFSET_MS` (2 hours). `computeShowDays` shifts both the window's `startDate` and `endDate` instants forward by `SAST_OFFSET_MS`, reads the UTC calendar day of each shifted instant (which is the SAST calendar day), then walks whole calendar days inclusively in 24-hour steps. It does not divide the span by a day length.
 
-Example: `computeShowDays()` for a show `2027-09-23T00:00:00Z` to `2027-09-26T23:59:59Z` returns `['2027-09-23', '2027-09-24', '2027-09-25', '2027-09-26']` (four days, SAST-local). A Day Visitor picking `chosenDay: '2027-09-24'` is valid.
+**Why it is not arbitrary:** an instant between 22:00 and 24:00 UTC is already the next calendar day in South Africa. Reading the UTC day of the raw instant would put it a day early; shifting by +2h first gives the SAST day. **Any future change to the offset or date-parsing logic must verify against both SAST-local dates and UTC round-trips.**
+
+Examples (both verified by running `computeShowDays`):
+
+- The four-day SAST window, midnight SAST on 23 Sept to 23:59:59 SAST on 26 Sept: `2027-09-22T22:00:00Z` to `2027-09-26T21:59:59Z` returns `['2027-09-23', '2027-09-24', '2027-09-25', '2027-09-26']`. A Day Visitor picking `chosenDay: '2027-09-24'` is valid.
+- The trap: `2027-09-23T00:00:00Z` to `2027-09-26T23:59:59Z` returns **five** days, ending `2027-09-27`, because `23:59:59Z` is already 01:59:59 SAST on the 27th.
 
 ---
 

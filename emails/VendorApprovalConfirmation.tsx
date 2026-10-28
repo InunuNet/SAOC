@@ -8,6 +8,7 @@ import EmailShell, {
   ShellText,
 } from './_shared/EmailShell';
 
+import { getBoothTypeLabel } from '@/lib/vendor-booth-type-labels';
 import type { VendorBoothType } from '@/types/index';
 
 /** Never blank, never the literal word "undefined" -- see formatBoothNumber below. */
@@ -229,7 +230,7 @@ export default function VendorApprovalConfirmation({
             soon as possible if anything needs correcting before show day.
           </ShellText>
           <ShellDetailRow label="Booth number:">{formatBoothNumber(boothNumber)}</ShellDetailRow>
-          <ShellDetailRow label="Booth type:">{formatOptionalField(boothType)}</ShellDetailRow>
+          <ShellDetailRow label="Booth type:">{formatOptionalField(getBoothTypeLabel(boothType))}</ShellDetailRow>
           {(() => {
             const staffAttendance = resolveStaffAttendanceDisplay({
               staffPerDay,

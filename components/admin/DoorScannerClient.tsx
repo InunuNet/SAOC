@@ -247,7 +247,11 @@ export function DoorScannerClient({ initialCheckedInCount }: DoorScannerClientPr
           subtitle={checkedInCount === null ? undefined : `Checked in: ${checkedInCount}`}
         />
 
-        <div className="aspect-square w-full overflow-hidden rounded-[2px] border border-rule bg-ivory">
+        <div
+          className={`aspect-square w-full overflow-hidden rounded-[2px] border border-rule bg-ivory${
+            cameraFailed ? ' hidden' : ''
+          }`}
+        >
           <div id={SCANNER_ELEMENT_ID} className="h-full w-full" />
         </div>
 
