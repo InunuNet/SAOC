@@ -43,3 +43,11 @@ The font walk and the network dedupe cannot see a woff2 fetched twice by script 
 ## CSS-generated text (::before / ::after content)
 
 check-font-fallback-walk.mjs also walks every visible element's quoted pseudo-element content in the face the pseudo resolves to. Real case: app/(marketing)/sponsors/page.tsx:133 `before:content-['—']` (U+2014) resolves to Manrope, whose served woff2 cmap has U+2014 (verified with lib-woff2.mjs on wt-sdc-f1e d5057e0f). No product finding. The walk passes on d5057e0f.
+
+## Evidence: font FILE count per route is measured, not read from declared faces (wt-sdc-f1e 9dccfbe5, DC_PROD, `DC_DEBUG=1 node checks/check-fonts-network.mjs`)
+
+Codex A15 claimed Home uses five distinct font files (Crimson Pro normal and italic, Manrope, JetBrains Mono, Lora). That is a static union of declared faces. The network measurement, cold cache, requests to network idle, distinct by sha256:
+- `/` at 390 and at 1440: 4 requests, 4 distinct files: CrimsonPro_latin_normal, JetBrainsMono_latin_normal, Manrope_latin_normal, CrimsonPro_latin_italic. Lora is NOT fetched on Home.
+- Why: SaocLockup's Lora face (`preload: false`, weight 500) loads only when a text wordmark variant renders. Home's footer lockup renders the raster emblem variant, so no Lora text exists and the browser never requests the file.
+- Lora is fetched on /judging, /members and /contact at both widths and on /societies at 1440; none of those exceed 4 (no Crimson italic there).
+- Every other route: 3 files (Crimson normal, Manrope, JetBrains Mono), or 4 with Lora. No route exceeds 4 and none fetches a file twice. PASS fonts-network.
