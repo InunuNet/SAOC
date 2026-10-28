@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { RouteHero } from '@/components/ui/RouteHero';
 import { ContactForm } from '@/components/contact';
 import { VenueCard } from '@/components/show';
+import { SAOC_LINK_RING } from '@/components/ui/saoc-link-ring';
 import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import {
@@ -125,6 +126,7 @@ export default async function ContactPage() {
               status={info?.confirmations?.venue}
               pendingLabel={info?.pendingLabel}
               researchLabel={info?.researchLabel}
+              linkClassName={SAOC_LINK_RING}
             />
             <p className="font-sans text-[16px] leading-[1.55] text-ink/70">
               Visiting the show?{' '}

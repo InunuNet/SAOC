@@ -7,6 +7,7 @@ import { ShowBand } from '@/components/home';
 import { JsonLd, eventJsonLd } from '@/components/seo/JsonLd';
 import { DocumentLayout } from '@/components/ui/DocumentLayout';
 import { VenueCard } from '@/components/show';
+import { SAOC_LINK_RING } from '@/components/ui/saoc-link-ring';
 import { RouteHero } from '@/components/ui/RouteHero';
 import { buildEventMetadata } from '@/lib/event-metadata';
 import { isNationalShowEvent } from '@/lib/events-list';
@@ -73,7 +74,7 @@ function hasVenueDetail(venue: ShowVenue | null | undefined): venue is ShowVenue
  * and location strings, so it shows a block only when the location adds to the name.
  */
 function venueBlock(event: SanityEvent, show: ShowIdentity | null): ReactNode | null {
-  if (show) return hasVenueDetail(show.venue) ? <VenueCard venue={show.venue} /> : null;
+  if (show) return hasVenueDetail(show.venue) ? <VenueCard venue={show.venue} linkClassName={SAOC_LINK_RING} /> : null;
   if (!event.venue || !event.location) return null;
   return (
     <section>
