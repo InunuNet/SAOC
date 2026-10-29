@@ -22,6 +22,8 @@ import {
   startServer,
   stubbedEnv,
 } from './lib/local-next-server.mjs';
+import { countQuery, queryFingerprint } from './lib/groq-fingerprint.mjs';
+import { goldenReadQuery, judgeCachedControl } from './lib/live-reads-control.mjs';
 
 const ISOLATED_PATH = resolve(
   REPO_ROOT,
@@ -35,6 +37,7 @@ const LIVE_READS_PATH = resolve(
   REPO_ROOT,
   '.agent/memory/project/specs/backlog-wave-1028/m3-f4-gate-hardening/goldens/live-reads-behaviour.json',
 );
+const QUERIES_PATH = resolve(REPO_ROOT, 'sanity/queries.ts');
 const PORT = 3218;
 const COUNT_LOG = resolve(SANDBOX_DIR, 'run.log');
 const BUILD_LOG = resolve(SANDBOX_DIR, 'build.log');
@@ -213,23 +216,30 @@ async function runLiveReads() {
   const server = await startServer({ port: PORT, countLog: COUNT_LOG, launched: true });
   try {
     const host = server.hostFor(golden.host);
+    const beforeFirst = countLines(COUNT_LOG);
     const first = await countedGet(PORT, COUNT_LOG, host, golden.path);
     check(first.status === golden.expected_status, `${golden.host} ${golden.path} first request is ${golden.expected_status} (got ${first.status})`);
     const before = countLines(COUNT_LOG);
     const second = await countedGet(PORT, COUNT_LOG, host, golden.path);
     check(second.status === golden.expected_status, `second request is ${golden.expected_status} (got ${second.status})`);
-    // The preload logs the URL-encoded query, where a space is `+`; compare on plain spaces.
-    const lines = linesSince(COUNT_LOG, before).map((line) => line.replace(/\+/g, ' ').replace(/\s+/g, ' '));
-    const occurrences = (fingerprint) => lines.filter((line) => line.includes(fingerprint)).length;
+    // Each read is matched by the hash of its exact query text from sanity/queries.ts, never by a
+    // substring another query could also contain (PR #160 Codex finding P3).
+    const firstLines = linesSince(COUNT_LOG, beforeFirst).slice(0, before - beforeFirst);
+    const lines = linesSince(COUNT_LOG, before);
+    const fingerprintOf = (read) => queryFingerprint(goldenReadQuery(QUERIES_PATH, read));
     for (const read of golden.second_request_must_contain) {
-      const count = occurrences(read.fingerprint);
+      const count = countQuery(lines, fingerprintOf(read));
       console.log(`second request ${read.name}: ${count} request(s)`);
       check(count >= 1, `second request re-reads ${read.name} live`);
     }
     for (const read of golden.second_request_must_not_contain) {
-      const count = occurrences(read.fingerprint);
-      console.log(`second request ${read.name}: ${count} request(s)`);
-      check(count === 0, `second request serves ${read.name} from cache`);
+      const fingerprint = fingerprintOf(read);
+      const firstCount = countQuery(firstLines, fingerprint);
+      const count = countQuery(lines, fingerprint);
+      console.log(`${read.name}: ${firstCount} request(s) first, ${count} second`);
+      const problems = judgeCachedControl(read.name, firstCount, count);
+      for (const problem of problems) check(false, problem);
+      if (problems.length === 0) check(true, `${read.name} cached: seen once, absent on second request`);
     }
   } finally {
     server.stop();

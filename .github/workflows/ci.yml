@@ -76,6 +76,11 @@ jobs:
       - name: Cache-header probe selftest
         run: node scripts/checks/cache-headers-probe.mjs --selftest
 
+      - name: Gate regression tests (Codex findings on PR 154)
+        run: |
+          node --test 'scripts/checks/regressions/*.test.mjs'
+          python3 -B -m unittest discover -s scripts/checks/regressions
+
       - name: Build
         # The two site origins, as in apphosting.yaml: lib/site-hosts.ts throws in production without them.
         env:
