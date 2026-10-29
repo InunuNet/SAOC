@@ -1,7 +1,7 @@
 import { createHmac } from 'node:crypto';
 import { isIP } from 'node:net';
 
-import { clientIpFromForwardedFor } from './client-ip';
+import { trustedClientIpFromForwardedFor } from './client-ip';
 
 /**
  * Durable, cross-instance abuse limiter backed by Firestore (SEC-15, and the limiter half of
@@ -86,6 +86,7 @@ export function abuseKeyStamp(scope: string, key: string): string {
   if (!secret) {
     throw new AbuseLimiterUnavailableError('abuse limiter secret is not configured');
   }
+  // anchor: stamp-hash
   return hashAbuseKey(secret, scope, key);
 }
 
@@ -142,8 +143,10 @@ export async function consumeAbuseLimit(
   let decision: AbuseLimitDecision;
   try {
     const db = deps.db ?? (await defaultDb());
+    // anchor: limiter-doc-id
     const ref = db.collection(ABUSE_LIMITS_COLLECTION).doc(`${input.scope}:${keyHash}`);
     decision = await db.runTransaction(async (transaction): Promise<AbuseLimitDecision> => {
+      // anchor: limiter-tx-read
       const snapshot = await transaction.get(ref);
       const entries = snapshot.exists ? parseEntries(snapshot.data()) : [];
       // anchor: limiter-window
@@ -203,7 +206,7 @@ function expandIpv6(address: string): string[] | null {
  * address is the IPv4 identity, anything else is the single shared `unknown` bucket.
  */
 export function clientActorKey(header: string | null | undefined): string {
-  const hop = clientIpFromForwardedFor(header);
+  const hop = trustedClientIpFromForwardedFor(header);
   if (hop === null) return UNKNOWN_ACTOR;
   const mapped = hop.match(IPV4_MAPPED_PREFIX);
   const address = mapped ? mapped[1] : hop;

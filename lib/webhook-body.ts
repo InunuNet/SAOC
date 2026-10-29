@@ -23,7 +23,11 @@ export async function readCappedBody(
   const declared = request.headers.get('content-length');
   if (declared !== null && DECIMAL_INTEGER.test(declared)) {
     // anchor: webhook-declared
-    if (Number(declared) > maxBytes) return { ok: false, bytesSeen: Number(declared) };
+    if (Number(declared) > maxBytes) {
+      // anchor: webhook-declared-cancel
+      await request.body?.cancel();
+      return { ok: false, bytesSeen: Number(declared) };
+    }
   }
   if (request.body === null) return { ok: true, text: '' };
 

@@ -10,6 +10,7 @@ import {
   type AbuseLimitDecision,
 } from '@/lib/abuse-limiter';
 import { requireCheckoutAppCheck } from '@/lib/app-check';
+import { buyerPairKey } from '@/lib/buyer-email';
 import { generateBookingRef } from '@/lib/booking-ref';
 import {
   CHECKOUT_LIMITS,
@@ -548,14 +549,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  // SEC-02: per-buyer request limit (first line item's email), before any Sanity read so a
+  // SEC-02: per-buyer request limit, scoped to the (actor, first line item's email) pair, before any Sanity read so a
   // refused request costs no Sanity quota.
-  const buyerEmail = lineItems[0].attendeeEmail.trim().toLowerCase();
+  const buyerIdentity = buyerPairKey(actorKey, lineItems[0].attendeeEmail);
   let buyerLimit: AbuseLimitDecision;
   try {
     buyerLimit = await consumeAbuseLimit({
       scope: 'checkout-buyer',
-      key: buyerEmail,
+      key: buyerIdentity,
       maxAttempts: CHECKOUT_LIMITS.buyerRequests,
       windowMs: CHECKOUT_LIMITS.buyerWindowMs,
     });
@@ -1013,7 +1014,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       dayCapCapacityByType,
       actor: {
         clientKey: abuseKeyStamp('checkout-actor', actorKey),
-        buyerKey: abuseKeyStamp('checkout-buyer', buyerEmail),
+        buyerKey: abuseKeyStamp('checkout-buyer', buyerIdentity),
       },
     });
   } catch (error) {
