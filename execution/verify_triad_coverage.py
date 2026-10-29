@@ -16,13 +16,23 @@ Classifies the given contract as "UI/workflow" or "non-UI", then:
 Classification heuristic (golden spec, goldens/README.md design answer 5):
 a contract is "UI/workflow" if ANY assertion's command/cmd/target string
 contains a path-shaped reference under `app/` (this project's Next.js route
-tree) -- e.g. "app/(marketing)/page.tsx" or "app/api/vendors/route.ts".
+tree) -- e.g. "app/(marketing)/page.tsx" or "app/api/vendors/route.ts" -- OR
+a literal URL on the deployed site (`https://saoc.co.za`, `https://beta.saoc.co.za`,
+`http://nos.saoc.co.za/x`, host-boundary matched, case-insensitive). The URL
+rule closes the dodge where a contract checks the live site by curl/browser
+without ever naming an `app/` file. It looks only at which kinds are declared:
+`required: false` triad assertions still satisfy the linter.
 
 Known limitations (ship honestly, per project convention -- do not discover
 these in production):
-  - False negative: a UI contract whose assertions only ever reference a
-    Firestore collection name or an API route with no literal `app/`
-    substring is invisible to this linter and will not be flagged.
+  - False negative, URLs: closed for literal `saoc.co.za` URLs. Still not
+    detected: a URL built from a shell/env variable ("$SITE_URL/x"), a
+    `localhost` URL, and a site reached through a helper script whose body
+    holds the URL. A UI contract that only does any of those is invisible
+    here.
+  - False negative, no path: a UI contract whose assertions only ever
+    reference a Firestore collection name or an API route with no literal
+    `app/` substring and no deployed-site URL is not flagged.
   - False positive: a non-UI contract whose shell command happens to contain
     the substring `app/` unrelated to the Next.js route tree (e.g. inside a
     quoted string or a comment) gets misclassified as UI/workflow and
@@ -40,6 +50,11 @@ import sys
 from pathlib import Path
 
 APP_PATH_PATTERN = re.compile(r"\bapp/")
+# A literal URL on the deployed site; the lookahead stops `saoc.co.za.evil.example` and
+# `saoc.co.zaxyz` matching, and a `user@saoc.co.za` email has no scheme so never matches.
+DEPLOYED_SITE_URL_PATTERN = re.compile(
+    r"https?://(?:[a-z0-9-]+\.)*saoc\.co\.za(?=[:/?#\s'\"\\)]|$)", re.IGNORECASE
+)
 TRIAD_KINDS = ("codex_qa", "browser_deployed_check", "gws_inbox_check")
 
 # Tri-state shape signal for iter_assertions_with_shape()/assertion_kind().
@@ -235,7 +250,7 @@ def is_ui_workflow_contract(contract: dict) -> bool:
         if not isinstance(assertion, dict):
             continue
         for text in assertion_text_fields(assertion):
-            if APP_PATH_PATTERN.search(text):
+            if APP_PATH_PATTERN.search(text) or DEPLOYED_SITE_URL_PATTERN.search(text):
                 return True
     return False
 
@@ -257,13 +272,13 @@ def main() -> int:
         return usage_error(err)
 
     if not is_ui_workflow_contract(contract):
-        print(f"EXEMPT: {sys.argv[1]} does not reference an app/ path -- non-UI, no triad required")
+        print(f"EXEMPT: {sys.argv[1]} does not reference an app/ path or a deployed-site URL -- non-UI, no triad required")
         return 0
 
     present = declared_kinds(contract)
     missing = [kind for kind in TRIAD_KINDS if kind not in present]
     if missing:
-        print(f"FAIL: {sys.argv[1]} is a UI/workflow contract (references an app/ path) "
+        print(f"FAIL: {sys.argv[1]} is a UI/workflow contract (references an app/ path or a deployed-site URL) "
               f"but is missing triad kind(s): {', '.join(missing)}")
         return 1
 
