@@ -50,10 +50,13 @@ import sys
 from pathlib import Path
 
 APP_PATH_PATTERN = re.compile(r"\bapp/")
-# A literal URL on the deployed site; the lookahead stops `saoc.co.za.evil.example` and
-# `saoc.co.zaxyz` matching, and a `user@saoc.co.za` email has no scheme so never matches.
+# A literal URL on the deployed site. Optional userinfo is skipped, so `user@saoc.co.za` and
+# `evil.com@saoc.co.za` (whose real host is saoc.co.za) match; the lookahead then accepts a single
+# trailing dot (a rooted host) and any terminator that is not part of a hostname, so a shell
+# `; | & , ] } > )` or a backtick ends the host while `saoc.co.za.evil.example` and
+# `saoc.co.zaxyz` do not match. A `user@saoc.co.za` email has no scheme so never matches.
 DEPLOYED_SITE_URL_PATTERN = re.compile(
-    r"https?://(?:[a-z0-9-]+\.)*saoc\.co\.za(?=[:/?#\s'\"\\)]|$)", re.IGNORECASE
+    r"https?://(?:[^\s/@]+@)?(?:[a-z0-9-]+\.)*saoc\.co\.za(?=\.?(?:[^a-z0-9.@-]|$))", re.IGNORECASE
 )
 TRIAD_KINDS = ("codex_qa", "browser_deployed_check", "gws_inbox_check")
 
