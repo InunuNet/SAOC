@@ -1,0 +1,205 @@
+{
+  "_comment": "Buy-path Sanity reads that must bypass the 60 s data cache (sanityFetch live: true). Consumed by scripts/checks/buy-path-live-reads.mts (rule 1 and 2) and by checks/mutate_live_reads.py (mutations). A sanityFetch call passes when its options object has a `live` property whose value is the literal `true` or the identifier `live` (the loadTicketCardViewModels parameter). A call that omits `live`, passes `live: false`, or spreads an unknown object FAILS unless listed in `allow_not_live`.",
+  "files_every_sanityfetch_must_be_live": [
+    "app/(nos)/tickets/[slug]/page.tsx",
+    "app/(nos)/tickets/[slug]/layout.tsx",
+    "lib/data/ticket-type-lookup.ts",
+    "lib/view-models/load-ticket-card.ts",
+    "lib/data/admission-availability.ts"
+  ],
+  "allow_not_live": [
+    {
+      "file": "app/(nos)/tickets/[slug]/page.tsx",
+      "query_identifier": "ticketsPageQuery",
+      "reason": "page copy strings (sold-out and sales-closed messages); accepted 60 s staleness per docs/sanity-request-volume.md"
+    },
+    {
+      "file": "lib/data/admission-availability.ts",
+      "query_identifier": "ticketTypesByPoolQuery",
+      "reason": "capacity-pool sibling membership and headcountPerUnit for the sold-out display only; shared with the hub through loadTicketCardViewModels, so making it live would raise hub Sanity volume; checkout re-reads live. Open question for the team lead, see spec.md finding 2"
+    }
+  ],
+  "callers_must_pass_live_true": [
+    {
+      "file": "app/(nos)/tickets/[slug]/page.tsx",
+      "callee": "loadTicketCardViewModels"
+    }
+  ],
+  "minimum_sites_found": {
+    "app/(nos)/tickets/[slug]/page.tsx": {
+      "sanityFetch": 3,
+      "loadTicketCardViewModels": 1
+    },
+    "lib/data/ticket-type-lookup.ts": {
+      "sanityFetch": 1
+    },
+    "lib/view-models/load-ticket-card.ts": {
+      "sanityFetch": 1
+    },
+    "lib/data/admission-availability.ts": {
+      "sanityFetch": 4
+    }
+  },
+  "_minimum_sites_note": "Guards against a checker that silently finds zero calls (renamed import, wrapper) and so passes vacuously. A file with fewer matched calls than listed fails with setup error exit 2.",
+  "mutations": [
+    {
+      "id": "M1",
+      "file": "app/(nos)/tickets/[slug]/page.tsx",
+      "regex": "(nationalShowSalesQuery,\\s*tags: \\['nationalShow', 'sanity'\\]),\\s*live: true",
+      "replace": "\\1"
+    },
+    {
+      "id": "M2",
+      "file": "app/(nos)/tickets/[slug]/page.tsx",
+      "regex": "(activeShowWindowQuery,\\s*tags: \\['show', 'sanity'\\]),\\s*live: true",
+      "replace": "\\1"
+    },
+    {
+      "id": "M3",
+      "file": "app/(nos)/tickets/[slug]/page.tsx",
+      "regex": "loadTicketCardViewModels\\(\\{ live: true \\}\\)",
+      "replace": "loadTicketCardViewModels()"
+    },
+    {
+      "id": "M4",
+      "file": "lib/data/ticket-type-lookup.ts",
+      "regex": "\\n\\s*live: true,",
+      "replace": ""
+    },
+    {
+      "id": "M5",
+      "file": "lib/view-models/load-ticket-card.ts",
+      "regex": "(query: ticketTypeBySlugQuery,(?:(?!live: true,).)*?)\\n\\s*live: true,",
+      "replace": "\\1"
+    },
+    {
+      "id": "M6",
+      "file": "lib/data/admission-availability.ts",
+      "regex": "(query: activeTicketTypesByCategoryQuery,(?:(?!live,).)*?)\\n\\s*live,",
+      "replace": "\\1"
+    },
+    {
+      "id": "M7",
+      "file": "lib/data/admission-availability.ts",
+      "regex": "(activeShowWindowQuery, tags: \\['show', 'sanity'\\]), live \\}",
+      "replace": "\\1 }"
+    },
+    {
+      "id": "M8",
+      "file": "lib/data/admission-availability.ts",
+      "regex": "(query: nationalShowSalesQuery,(?:(?!live,).)*?)\\n\\s*live,",
+      "replace": "\\1"
+    },
+    {
+      "id": "M9",
+      "file": "app/(nos)/tickets/[slug]/layout.tsx",
+      "regex": "fetchTicketTypeBySlug\\(slug\\)",
+      "replace": "sanityFetch({ query: 'x' })",
+      "prepend_import": "import { sanityFetch } from '@/sanity/lib/fetch';\n",
+      "_note": "layout.tsx has no direct sanityFetch today; M9 proves a NEW non-live sanityFetch added to a covered file is caught"
+    },
+    {
+      "id": "D1",
+      "file": "lib/data/ticket-type-lookup.ts",
+      "_note": "aliased import: sf({...}) with no live",
+      "edits": [
+        {
+          "regex": "import \\{ sanityFetch \\} from '@/sanity/lib/fetch';",
+          "replace": "import { sanityFetch as sf } from '@/sanity/lib/fetch';"
+        },
+        {
+          "regex": "return sanityFetch<SanityTicketType \\| null>\\(\\{",
+          "replace": "return sf<SanityTicketType | null>({"
+        },
+        {
+          "regex": "\\n    live: true,",
+          "replace": ""
+        }
+      ]
+    },
+    {
+      "id": "D2",
+      "file": "lib/data/ticket-type-lookup.ts",
+      "_note": "namespace import: sx.sanityFetch({...}) with no live",
+      "edits": [
+        {
+          "regex": "import \\{ sanityFetch \\} from '@/sanity/lib/fetch';",
+          "replace": "import * as sx from '@/sanity/lib/fetch';"
+        },
+        {
+          "regex": "return sanityFetch<SanityTicketType \\| null>\\(\\{",
+          "replace": "return sx.sanityFetch<SanityTicketType | null>({"
+        },
+        {
+          "regex": "\\n    live: true,",
+          "replace": ""
+        }
+      ]
+    },
+    {
+      "id": "D3",
+      "file": "lib/data/ticket-type-lookup.ts",
+      "_note": "non-call reference: const w = sanityFetch; w({...}) with no live",
+      "edits": [
+        {
+          "regex": "(import \\{ sanityFetch \\} from '@/sanity/lib/fetch';)",
+          "replace": "\\1\\nconst w = sanityFetch;"
+        },
+        {
+          "regex": "return sanityFetch<SanityTicketType \\| null>\\(\\{",
+          "replace": "return w<SanityTicketType | null>({"
+        },
+        {
+          "regex": "\\n    live: true,",
+          "replace": ""
+        }
+      ]
+    },
+    {
+      "id": "D4",
+      "file": "lib/data/ticket-type-lookup.ts",
+      "_note": "local const live = false passed as shorthand `live`",
+      "edits": [
+        {
+          "regex": "(export function fetchTicketTypeBySlug\\(slug: string\\): Promise<SanityTicketType \\| null> \\{\\n)",
+          "replace": "\\1  const live = false;\\n"
+        },
+        {
+          "regex": "\\n    live: true,",
+          "replace": "\n    live,"
+        }
+      ]
+    },
+    {
+      "id": "D5",
+      "file": "lib/data/ticket-type-lookup.ts",
+      "_note": "local const live = false passed as `live: live`",
+      "edits": [
+        {
+          "regex": "(export function fetchTicketTypeBySlug\\(slug: string\\): Promise<SanityTicketType \\| null> \\{\\n)",
+          "replace": "\\1  const live = false;\\n"
+        },
+        {
+          "regex": "\\n    live: true,",
+          "replace": "\n    live: live,"
+        }
+      ]
+    },
+    {
+      "id": "D6",
+      "file": "lib/data/ticket-type-lookup.ts",
+      "_note": "a Sanity client under another name: sanityClient.fetch(...) bypasses sanityFetch altogether",
+      "edits": [
+        {
+          "regex": "import \\{ sanityFetch \\} from '@/sanity/lib/fetch';",
+          "replace": "import { sanityFetch } from '@/sanity/lib/fetch';\nimport { client as sanityClient } from '@/sanity/lib/client';"
+        },
+        {
+          "regex": "(export function fetchTicketTypeBySlug\\(slug: string\\): Promise<SanityTicketType \\| null> \\{\\n)",
+          "replace": "export const dodge = () => sanityClient.fetch('*');\n\n\\1"
+        }
+      ]
+    }
+  ],
+  "_dodge_rules": "Mutations D1-D6 are QA-found dodges (M3/F4 QA, 2026-10-29). The checker must (a) resolve aliased and namespace imports of the sanityFetch module (any specifier ending sanity/lib/fetch, relative or alias) to the same callee; (b) flag any NON-call reference to sanityFetch in a covered file (assignment, argument, array/object member) as a violation; (c) accept the `live` identifier (shorthand or `live: live`) only when it resolves to a parameter of the enclosing function, never a local const or outer variable; (d) flag any `.fetch(` call whose receiver resolves to a binding imported from a sanity/lib/client module (any import name) or created by createClient in the file, in addition to the literal receiver `client`."
+}

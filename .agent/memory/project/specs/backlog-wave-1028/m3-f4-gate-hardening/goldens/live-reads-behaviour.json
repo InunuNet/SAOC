@@ -1,0 +1,15 @@
+{
+  "_comment": "Behavioural expectations for `node scripts/checks/sanity-request-count.mjs --live-reads`: NOS host, GET /tickets/<slug> twice against the stubbed production server (SITE_PUBLIC_LAUNCH=true). The stub answers every Sanity query with result null, so the page 404s after its reads; the three live reads below run before the notFound(), on every request. Fingerprints are substrings of the decoded, whitespace-collapsed query prefix that sanity-count-preload.mjs writes to the count log (first 90 chars).",
+  "host": "nos",
+  "path": "/tickets/no-such-ticket-f4",
+  "expected_status": 404,
+  "second_request_must_contain": [
+    {"name": "ticketTypeBySlugQuery", "fingerprint": "_type == \"ticketType\" && slug.current"},
+    {"name": "nationalShowSalesQuery", "fingerprint": "_type == \"nationalShow\"][0]"},
+    {"name": "activeShowWindowQuery", "fingerprint": "_type == \"show\"]"}
+  ],
+  "second_request_must_not_contain": [
+    {"name": "ticketsPageQuery", "fingerprint": "_type == \"ticketsPage\"", "reason": "positive control: the one NON-live read on this page is served from the data cache on the second request, proving the harness tells a cached read from a live one"}
+  ],
+  "covers": "page.tsx:108, page.tsx:109 and ticket-type-lookup.ts at runtime. page.tsx:168 and loadTicketCardViewModels need a ticketType document and a purchasable state, which the null stub cannot produce; they are covered by the AST check (buy-path-live-reads.mts) and mutations M3 and M6-M8."
+}

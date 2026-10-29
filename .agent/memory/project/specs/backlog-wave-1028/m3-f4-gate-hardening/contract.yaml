@@ -1,0 +1,139 @@
+schema: athanor.contract/v1
+slug: backlog-wave-2026-10-28
+goal: Make the ticket buy-path live reads and static-asset caching regress loudly in the gate and in CI, and stop the triad classifier being dodged by a URL-shaped assertion, without touching product code or HARNESS-owned files.
+created_at: '2026-10-29'
+autonomy: high
+
+features:
+  - id: F4a
+    name: Pin every buy-path sanityFetch to live (AST check plus a behavioural re-read check), add /tickets/[slug] to the cache-headers spawn probe, and run both in CI
+    status: pending
+  - id: F4b
+    name: cache-headers-probe asserts immutable on /_next/static once launched and never immutable while walled
+    status: pending
+  - id: F4c
+    name: verify_triad_coverage.py classifies a contract that checks the deployed saoc.co.za site by URL as UI/workflow, without requiring the triad kinds to be required
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/backlog-wave-1028/m3-f4-gate-hardening/goldens/spec.md
+  - .agent/memory/project/specs/backlog-wave-1028/m3-f4-gate-hardening/goldens/buy-path-live-reads.json
+  - .agent/memory/project/specs/backlog-wave-1028/m3-f4-gate-hardening/goldens/live-reads-behaviour.json
+  - .agent/memory/project/specs/backlog-wave-1028/m3-f4-gate-hardening/goldens/triad-classifier-cases.json
+  - .agent/memory/project/specs/backlog-wave-1028/m3-f4-gate-hardening/goldens/upstream-codex-wrapper-issue.md
+  - .agent/memory/project/specs/backlog-wave-1028/m3-f4-gate-hardening/goldens/codex-qa-prompt.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: F4a the AST check exists and every covered sanityFetch call passes live (fails on main, the script does not exist)
+      command: pnpm exec tsx scripts/checks/buy-path-live-reads.mts
+      timeout_seconds: 120
+    - id: A2
+      description: F4a mutation proof, fifteen sandbox mutations (nine dropping live at page.tsx 108/109/168, ticket-type-lookup, load-ticket-card, the three admission-availability reads, and a new non-live sanityFetch in layout.tsx, plus six QA-found dodges (aliased and namespace imports, a non-call reference, a local live const, sanityClient.fetch)) are each caught with exit 1 naming the file, unmutated control exits 0
+      command: python3 .agent/memory/project/specs/backlog-wave-1028/m3-f4-gate-hardening/checks/mutate_live_reads.py
+      timeout_seconds: 600
+    - id: A3
+      description: F4a the request-count harness has the --live-reads mode and a linesSince helper (fails on main)
+      command: grep -q -- "--live-reads" scripts/checks/sanity-request-count.mjs
+    - id: A4
+      description: Production build with Sanity stubbed locally (no live request, Firebase blanked)
+      command: node scripts/checks/sanity-request-count.mjs --build
+      timeout_seconds: 900
+    - id: A5
+      description: F4a behavioural, /tickets/<slug> on the NOS host re-reads ticketType, nationalShow sales and show window on the SECOND request while the non-live ticketsPage read is served from cache (fails on main, no such mode)
+      command: node scripts/checks/sanity-request-count.mjs --live-reads
+      timeout_seconds: 300
+    - id: A6
+      description: Regression, the existing request-count assertion (warm total, ISR routes at 0) still passes with the changed harness
+      command: node scripts/checks/sanity-request-count.mjs --assert
+      timeout_seconds: 900
+    - id: A7
+      description: F4a and F4b the probe selftest passes with the added static and walled vectors
+      command: node scripts/checks/cache-headers-probe.mjs --selftest
+    - id: A8
+      description: F4a and F4b local spawn on both hosts, /tickets/<unknown slug> answers 404 with no-store and a discovered /_next/static css and js asset on each host answers public, max-age=31536000, immutable
+      command: node scripts/checks/cache-headers-probe.mjs --spawn
+      timeout_seconds: 300
+    - id: A9
+      description: F4b expectations carry the launched immutable rule (fails on main)
+      command: grep -q "max-age=31536000, immutable" .agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/goldens/cache-header-expectations.json
+    - id: A10
+      description: F4b walled rule rejects immutable (fails on main)
+      command: grep -q "public|s-maxage|immutable" .agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/goldens/cache-header-expectations.json
+    - id: A11
+      description: F4a the unknown ticket slug route is in the dynamic list with its 404 status (fails on main)
+      command: grep -q "no-such-ticket-f4" .agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/goldens/cache-header-expectations.json
+    - id: A12
+      description: The probe and harness stay GET-only
+      command: >-
+        ! grep -nEi "method[\"']?: *[\"']?(POST|PUT|PATCH|DELETE)" scripts/checks/cache-headers-probe.mjs scripts/checks/sanity-request-count.mjs scripts/checks/buy-path-live-reads.mts
+    - id: A13
+      description: F4a CI runs the AST check (fails on main)
+      command: grep -q "buy-path-live-reads.mts" .github/workflows/ci.yml
+    - id: A14
+      description: F4a CI runs the behavioural re-read check (fails on main)
+      command: grep -q "sanity-request-count.mjs --live-reads" .github/workflows/ci.yml
+    - id: A15
+      description: F4a and F4b CI runs the spawn probe (fails on main)
+      command: grep -q "cache-headers-probe.mjs --spawn" .github/workflows/ci.yml
+    - id: A16
+      description: The new CI steps are blocking, not continue-on-error
+      command: '! grep -q "continue-on-error" .github/workflows/ci.yml'
+    - id: A17
+      description: ci.yml is still valid YAML
+      command: python3 -c "import yaml; yaml.safe_load(open('.github/workflows/ci.yml'))"
+    - id: A18
+      description: F4c every fixture classifies as specified, the six URL cases flip from exit 0 to exit 1, the lookalike, email, description and non-site cases stay exempt, required false triad kinds still pass, app/ rule unchanged, missing file is exit 2 (fails on main)
+      command: python3 .agent/memory/project/specs/backlog-wave-1028/m3-f4-gate-hardening/checks/run_triad_cases.py
+    - id: A19
+      description: F4c the linter docstring no longer claims URL-only contracts are an unfixed false negative (fails on main)
+      command: '! grep -q "Firestore collection name or an API route with no literal" execution/verify_triad_coverage.py'
+    - id: A20
+      description: F4c the existing triad checks still pass (phases dict, mixed shape, synthesized kind, kinds declared, preflight ordering)
+      command: for f in verify_f2_phases_dict_classification verify_f2_mixed_shape_masquerade verify_f2_synthesized_kind_classification verify_triad_kinds_declared verify_f2_preflight_ordering; do python3 execution/checks/$f.py > /dev/null 2>&1 || exit 1; done
+      timeout_seconds: 300
+    - id: A21
+      description: HARNESS-owned files are untouched, contract.py and codex_qa.sh (pinned, upstream issue only)
+      command: git diff --quiet origin/main -- execution/contract.py execution/codex_qa.sh .agent/no-update .agent/update-manifest.yaml
+    - id: A22
+      description: No product code changed, the loaders, the ticket page, sanityFetch, the proxy wall and the checkout route are byte-identical to origin/main
+      command: git diff --quiet origin/main -- proxy.ts sanity/lib app/api/tickets "app/(nos)/tickets" lib/data lib/view-models lib/show-window-lookup.ts
+    - id: A23
+      description: The upstream issue text for the Codex wrapper defect is written for the team lead to file
+      command: grep -q "_run_wrapper" .agent/memory/project/specs/backlog-wave-1028/m3-f4-gate-hardening/goldens/upstream-codex-wrapper-issue.md
+    - id: A24
+      description: docs record the AST check, the behavioural mode and the closed QA L1 item (fails on main)
+      command: grep -q "buy-path-live-reads" docs/sanity-request-volume.md
+    - id: A25
+      description: docs no longer list QA L1 as open
+      command: '! grep -q "QA L1: the gate does not pin" docs/sanity-request-volume.md'
+    - id: A26
+      description: launch checklist names the immutable static-asset expectation (fails on main)
+      command: grep -q "immutable" docs/launch-checklist.md
+    - id: A27
+      description: verification-triad-gate doc records that a deployed-site URL now classifies as UI/workflow (fails on main)
+      command: grep -q "saoc.co.za" docs/verification-triad-gate.md
+    - id: A28
+      phase: 5
+      description: browser_deployed_check declared for the triad linter, non-required. No UI changes in this feature, and a browser check cannot pass behind the beta Basic Auth wall (backlog 2026-10-28 line 826). A29 is the real post-deploy proof.
+      type: browser_deployed_check
+      target: .agent/memory/scratch/backlog-wave-2026-10-28-m3-f4-browser-manifest.json
+      required: false
+    - id: A29
+      phase: 5
+      description: gws inbox check declared non-required, N/A. No email path is touched; declared only so the triad linter sees the kind.
+      type: gws_inbox_check
+      target: .agent/memory/scratch/backlog-wave-2026-10-28-m3-f4-gws-manifest.json
+      required: false
+    - id: A30
+      phase: 5
+      description: RUN AFTER DEPLOY from the project root (needs .env.local), non-required. Live probe in walled mode (Basic Auth read inside node, never printed), now including /tickets/<unknown slug> and a discovered /_next/static asset that must be private, no-store and never immutable. Exit 77 when credentials are missing. Use --mode launched after SITE_PUBLIC_LAUNCH flips.
+      command: node --env-file-if-exists=.env.local scripts/checks/cache-headers-probe.mjs --live --mode walled
+      required: false
+    - id: A31
+      description: Codex adversarial review of the whole diff against the spec (cross-model; the Agent-tool @qa only if codex is not on PATH, and the verdict says so)
+      type: codex_qa
+      target: .agent/memory/project/specs/backlog-wave-1028/m3-f4-gate-hardening/goldens/codex-qa-prompt.md
+      timeout_seconds: 1300

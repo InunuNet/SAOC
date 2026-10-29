@@ -1,0 +1,180 @@
+{
+  "_comment": "Expected exit code of `python3 execution/verify_triad_coverage.py <fixture>` AFTER the fix. 'before_fix' records what origin/main returns today (measured 2026-10-29), so the changed rows are the dodge being closed. 0 = PASS or EXEMPT, 1 = FAIL (UI/workflow contract missing a triad kind), 2 = usage error. QA-found terminator and userinfo cases added 2026-10-29: the boundary after the host is any character that cannot continue a hostname.",
+  "cases": [
+    {
+      "file": "url-only-saoc.yaml",
+      "expect": 1,
+      "before_fix": 0,
+      "why": "the literal example from the backlog details file"
+    },
+    {
+      "file": "url-only-nos-status.yaml",
+      "expect": 1,
+      "before_fix": 0,
+      "why": "status-code probe of the deployed NOS host"
+    },
+    {
+      "file": "url-in-target-field.yaml",
+      "expect": 1,
+      "before_fix": 0,
+      "why": "target field is scanned like command and cmd"
+    },
+    {
+      "file": "url-in-verify-cmd-list.yaml",
+      "expect": 1,
+      "before_fix": 0,
+      "why": "nested verify.cmd, plain list shape, URL with a port"
+    },
+    {
+      "file": "url-uppercase-host.yaml",
+      "expect": 1,
+      "before_fix": 0,
+      "why": "scheme and host match case-insensitively"
+    },
+    {
+      "file": "url-in-phases-dict.yaml",
+      "expect": 1,
+      "before_fix": 0,
+      "why": "phases-dict shape"
+    },
+    {
+      "file": "url-with-all-triad-nonrequired.yaml",
+      "expect": 0,
+      "before_fix": 0,
+      "why": "backlog line 826: declaring the triad kinds as required: false satisfies the linter; the fix must not start demanding required: true"
+    },
+    {
+      "file": "url-in-description-only.yaml",
+      "expect": 0,
+      "before_fix": 0,
+      "why": "description is prose, never scanned"
+    },
+    {
+      "file": "url-not-the-site.yaml",
+      "expect": 0,
+      "before_fix": 0,
+      "why": "github.com and the localhost Alembic proxy are not the deployed site"
+    },
+    {
+      "file": "url-lookalike-hosts.yaml",
+      "expect": 0,
+      "before_fix": 0,
+      "why": "saoc.co.za.evil.example and notsaoc.co.za must not match"
+    },
+    {
+      "file": "email-domain-only.yaml",
+      "expect": 0,
+      "before_fix": 0,
+      "why": "an address is not a URL"
+    },
+    {
+      "file": "app-path-shell-only.yaml",
+      "expect": 1,
+      "before_fix": 1,
+      "why": "existing app/ rule unchanged"
+    },
+    {
+      "file": "app-path-all-triad.yaml",
+      "expect": 0,
+      "before_fix": 0,
+      "why": "existing app/ rule unchanged"
+    },
+    {
+      "file": "term-semicolon.yaml",
+      "expect": 1,
+      "before_fix": "see run against ada42c41 (0 for every URL case)",
+      "why": "URL ended by ;"
+    },
+    {
+      "file": "term-pipe.yaml",
+      "expect": 1,
+      "before_fix": "see run against ada42c41 (0 for every URL case)",
+      "why": "URL ended by |"
+    },
+    {
+      "file": "term-ampersand.yaml",
+      "expect": 1,
+      "before_fix": "see run against ada42c41 (0 for every URL case)",
+      "why": "URL ended by &&"
+    },
+    {
+      "file": "term-backtick.yaml",
+      "expect": 1,
+      "before_fix": "see run against ada42c41 (0 for every URL case)",
+      "why": "URL ended by a backtick"
+    },
+    {
+      "file": "term-bracket.yaml",
+      "expect": 1,
+      "before_fix": "see run against ada42c41 (0 for every URL case)",
+      "why": "URL ended by ]"
+    },
+    {
+      "file": "term-comma.yaml",
+      "expect": 1,
+      "before_fix": "see run against ada42c41 (0 for every URL case)",
+      "why": "URL ended by ,"
+    },
+    {
+      "file": "term-redirect.yaml",
+      "expect": 1,
+      "before_fix": "see run against ada42c41 (0 for every URL case)",
+      "why": "URL ended by >"
+    },
+    {
+      "file": "term-brace.yaml",
+      "expect": 1,
+      "before_fix": "see run against ada42c41 (0 for every URL case)",
+      "why": "URL ended by }"
+    },
+    {
+      "file": "userinfo.yaml",
+      "expect": 1,
+      "before_fix": "see run against ada42c41 (0 for every URL case)",
+      "why": "userinfo before the deployed host"
+    },
+    {
+      "file": "userinfo-decoy.yaml",
+      "expect": 1,
+      "before_fix": "see run against ada42c41 (0 for every URL case)",
+      "why": "the real host is saoc.co.za, evil.com is userinfo"
+    },
+    {
+      "file": "trailing-dot.yaml",
+      "expect": 1,
+      "before_fix": "see run against ada42c41 (0 for every URL case)",
+      "why": "fully-qualified trailing dot or sentence end"
+    },
+    {
+      "file": "quoted-single.yaml",
+      "expect": 1,
+      "before_fix": "see run against ada42c41 (0 for every URL case)",
+      "why": "single-quoted URL"
+    },
+    {
+      "file": "lookalike-hyphen.yaml",
+      "expect": 0,
+      "before_fix": 0,
+      "why": "hyphen continues the host label"
+    },
+    {
+      "file": "lookalike-dot-com.yaml",
+      "expect": 0,
+      "before_fix": 0,
+      "why": "suffix attack, dot continues the host"
+    },
+    {
+      "file": "userinfo-reversed.yaml",
+      "expect": 0,
+      "before_fix": 0,
+      "why": "saoc.co.za is userinfo, the host is evil.com"
+    },
+    {
+      "file": "path-decoy.yaml",
+      "expect": 0,
+      "before_fix": 0,
+      "why": "saoc.co.za only appears in the path"
+    }
+  ],
+  "missing_file_expect": 2
+}
