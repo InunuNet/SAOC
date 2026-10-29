@@ -18,7 +18,7 @@ Closes the vendor-stand half of SEC-06 (sandbox-paid stand orders read as paid) 
 | Settlement emails the admin and the vendor on every paid order | same file `:304-326` assigns `paidNotice`, sent `:422-491` | a sandbox payment emails a real vendor a receipt |
 | Readers that treat `status === 'paid'` as paid | `initiate/route.ts:124,231` (already-paid refusal), `resend-payment-link/route.ts:68`, `payment/page.tsx:146` (page fallback), `app/admin/(shell)/vendors/page.tsx:64` (cast), `app/admin/(shell)/vendors/[id]/page.tsx:26,58-60`, `VendorReviewTable.tsx:361` (hides the link control on `paid`), `payment/status/page.tsx:91-96` (shows "confirmed") | all go through one rule after F5 |
 | `paymentReceived` is written by two different actors | settlement (no `paymentConfirmedBy`) and `app/api/admin/vendors/[id]/payment/route.ts` -> `lib/vendor-payment.ts` (patch always sets `paymentConfirmedBy`) | the two are told apart by `paymentConfirmedBy`; see D2 |
-| Booth allocation is not gated by payment | `decideVendorPaymentUpdate` in `lib/vendor-payment.ts`: only `status === 'approved'` and booth uniqueness; `isVendorListingEligible` in `lib/vendor-listing.ts`: eligibility is `status === 'approved'` only | nothing to gate; see DECISION NEEDED N2 |
+| Booth allocation is not gated by payment | `decideVendorPaymentUpdate` in `lib/vendor-payment.ts`: only `status === 'approved'` and booth uniqueness; `isVendorListingEligible` in `lib/vendor-listing.ts`: eligibility is `status === 'approved'` only | nothing to gate; see N2 |
 | Token is a non-revocable 30 day bearer, nonce unused | `lib/vendor-stand-payment-token.ts:46` TTL, the 128-bit nonce is minted in `mint`, `verify` returns only `vendorSubmissionId` and `expiresAt` | holds |
 | Resend mints without invalidating | `resend-payment-link/route.ts:89-92`: `mint`, return `paymentUrl`, no record | holds; copy-only since #150 |
 | Re-initiate overwrites the live attempt | `initiate/route.ts:213` fresh `attemptId`, `:242` `.set()`; the only guard is the gateway-Pending hold (`:131-134`, `lib/payments/pending-hold.ts`) | holds; absent until a gateway reports Pending |
@@ -53,13 +53,13 @@ Each decision names its source. A value with no source in the repo, Brad's or Le
 - Writers: approval (`review/route.ts`) and resend each write the record **before** the link is emailed or returned; a failed write in the approval callback means no email (logged, non-fatal, same shape as the existing step). Revoke is a new route.
 
 ### D4. Bounded expiry. Source: existing constant; keep it. NAMED only for any change.
-- `VENDOR_STAND_PAYMENT_TOKEN_DEFAULT_TTL_MS` is 30 days (`lib/vendor-stand-payment-token.ts:46`, rationale in its comment: slow committee-to-vendor turnaround). It is already a bound; what was unbounded is the optional `ttlMs` override and the lack of a stored expiry. F5 adds `VENDOR_STAND_PAYMENT_TOKEN_MAX_TTL_MS` (equal to the default), clamps `ttlMs` to it, throws `RangeError` for a non-positive or non-finite `ttlMs`, and stores `expiresAt` on the record so an admin can see and the server can enforce it independent of the token. Recommendation: keep 30 days (DECISION NEEDED N3).
+- `VENDOR_STAND_PAYMENT_TOKEN_DEFAULT_TTL_MS` is 30 days (`lib/vendor-stand-payment-token.ts:46`, rationale in its comment: slow committee-to-vendor turnaround). It is already a bound; what was unbounded is the optional `ttlMs` override and the lack of a stored expiry. F5 adds `VENDOR_STAND_PAYMENT_TOKEN_MAX_TTL_MS` (equal to the default), clamps `ttlMs` to it, throws `RangeError` for a non-positive or non-finite `ttlMs`, and stores `expiresAt` on the record so an admin can see and the server can enforce it independent of the token. Decided: keep 30 days (N3).
 
 ### D5. In-flight attempt window: 30 minutes. NAMED, source `lib/tickets-constants.ts:9`.
 - Audit fix sketch: "refuse a re-initiate while a non-expired attempt from the last N minutes exists, regardless of gateway pending state." N is the time a payment attempt can legitimately be open at the gateway. The repo's only measured figure for that is `RESERVATION_TTL_MINUTES = 30` (`lib/tickets-constants.ts:9`, whose comment ties it to the observed sandbox bank round trip with margin; reused here as the same gateway-attempt budget, an assumption stated, not measured for stand payments).
 - Rule: `status === 'pending'` and `0 <= now - createdAt < 30 min` (a small forward skew, 5 minutes, is tolerated as in `pending-hold.ts`; a `createdAt` further in the future, missing or unreadable is treated as no attempt, so a bad document can never lock a vendor out). Gateway-Pending hold (72 h, `lib/payments/pending-hold.ts:7`) is unchanged and outranks it. `failed` and `cancelled` never block a retry.
 - Reasons and copy (existing strings, verbatim): `already-paid` -> `ALREADY_PAID_MESSAGE` 409; `pending-hold` and `attempt-in-flight` -> `PENDING_NOTICE_BODY` ("We're still waiting for payment confirmation. Please don't refresh or submit payment again.") 409.
-- Cost: a vendor who closes the tab at the bank without cancelling waits up to 30 minutes to retry; Ozow sends a Cancelled notification which clears it at once. DECISION NEEDED N1.
+- Cost: a vendor who closes the tab at the bank without cancelling waits up to 30 minutes to retry; Ozow sends a Cancelled notification which clears it at once. Decided: N1.
 
 ### D6. Initiate rate limit. NAMED; source F3's precedent.
 - Two limits through F3's `consumeAbuseLimit` (durable, Firestore, fail closed): per actor `12 / 15 min` before the body is parsed (`clientActorKey(request.headers.get('x-forwarded-for'))`, trusted hop only), and per submission id `6 / hour`, consumed **after** verify, the link gate and the status checks. Order matters: only a holder of a currently valid link can spend a vendor's budget, so a leaked, superseded or revoked link cannot exhaust it and lock the vendor out. Numbers are F3's own D3 (`12 per 15 min` per actor, `6 per hour` per buyer) in `.agent/memory/project/specs/sec-abuse-controls/spec.md`, themselves NAMED and awaiting SAOC approval; F5 reuses them, so one approval covers both. They live in `STAND_PAYMENT_LIMITS` (frozen, golden-pinned).
@@ -148,15 +148,17 @@ Read and deliberately not touched: `app/api/admin/vendors/[id]/payment/route.ts`
 - **H3, links.** The 2 vendors' emailed links have a 30 day TTL and will have lapsed by go-live. After the flip an admin resends (copy-only) from the vendor row; the old link is superseded automatically.
 - **H4, legacy links.** Approved vendors who have an emailed link and no record keep a working link until a resend or revoke. If a specific link is known leaked, use the revoke route (or a resend).
 - **H5, copy.** Committee copy needed for the `test-paid` pill and a revoke button label (D8).
-- **H6, CLAUDE.md** `vendorStandOrders` row: add `issuedInTestMode` and `standPaymentLink`; floor-protected, so SAOC.
+- **H6, CLAUDE.md** `vendorStandOrders` row (`issuedInTestMode`, `standPaymentLink`): done by SAOC via Route 1 when F5 merges. Not an F5 item.
 
-## DECISION NEEDED (recommendation first)
-- **N1. In-flight window 30 minutes.** Recommend 30, source `lib/tickets-constants.ts:9`. Alternative 10 minutes (less wait after an abandoned attempt, a shorter protection against a leaked link; no source for 10).
-- **N2. Booth allocation and listing publication are not gated on payment.** Recommend leave: allocation is a committee decision independent of payment (`lib/vendor-payment.ts` "judgement call"), listing eligibility is `approved` only, and gating either would be a behaviour change beyond SEC-06. The audit's "stand allocation refuse sandbox" has no payment gate to attach to in this code. Alternative: require a counted payment (or office receipt) to allocate a booth.
-- **N3. Link lifetime 30 days.** Recommend keep (existing constant, existing rationale). Alternative: shorter, needs Lee-Ann's turnaround input.
-- **N4. Initiate limits 12 / 15 min per actor and 6 / hour per submission.** Recommend reuse F3 D3 so one approval covers both. Alternative: stricter 6 and 3 (risks a shared venue connection).
-- **N5. Legacy links.** Recommend accept the migration window plus revoke-on-demand (H4). Alternative: a one-off prod write giving every approved submission a record: refused, NOS Site writes no prod data.
-- **N6. `test-paid` pill label and revoke button** need committee copy; stopgap in place.
+## Decided by SAOC lead 2026-10-29 (hunk list cleared as specified at 1c350798)
+- **N1.** In-flight window 30 minutes (`RESERVATION_TTL_MINUTES`, `lib/tickets-constants.ts:9`).
+- **N2.** Booth allocation and listing publication stay ungated. SAOC logs it as a business-process question, not a security gap.
+- **N3.** Keep the 30-day link lifetime.
+- **N4.** Reuse F3's limits: 12 per 15 minutes per actor, 6 per hour per submission.
+- **N5.** Legacy record-less links stay valid until a resend or revoke. They are HMAC-bound and expire within 30 days, so there is no backfill.
+- **N6.** `Test paid` ships as the flagged admin-only stopgap. No revoke button and no new copy: the revoke route is API-only.
+- **Hand-offs accepted by SAOC:** the 2 prod stand orders are never stamped, and an admin resends after the go-live flip (go-live checklist). SAOC adds the `CLAUDE.md` `vendorStandOrders` row via Route 1 when F5 merges (H6 is no longer an open item).
+- **Cache-header expectations file:** F5 touches only its two entries (D9). SAOC adds its own `/admin`, `/api/admin` and `/events/submit` entries after F5 merges.
 
 ## Not proven / limits
 Pure goldens and static wiring: they do not prove the deployed Firestore transaction behaviour, a real Ozow/PayFast round trip, a real revoke through a browser, or the production `X-Forwarded-For` hop count (F3 H4). The triad browser and inbox checks are post-deploy only (A22, A23, non-required). The approved-booth-size-from-submission idea in the SEC-22 sketch is not done: the vendor chooses 1, 2 or 3 at payment time by design.
