@@ -55,4 +55,5 @@ a04b81e57c4cf2c7a8bfe176deb586bb2c94f2b3e362e0565c701800e82929d5  .agent/memory/
 33823d60694c10322c17307b1e5069602bb6a89faf31aeccb4462931691a7e23  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/measure-arrow-links.mjs
 58d8187ea9db516c2cbe7e72aa65bdb7dc93054608d8636c8cd3e81814ab3b25  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/README.md
 aed889733c9a095ab0d39178839f1b726dfeeb6e14781413fac739959ce83f5f  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/scan-fixtures-u0149.mjs
-752ead8a3f7915727134b577373662545f76b8917194db5f700a7c439b3c63df  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/verify-pins.mjs
+e391de1d9a90b9791e980fab2424d7c1f605e98b85146a6d6fc6b82b416fd0e4  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/verify-pins.mjs
+f8a13afb67aec3f91958b4a0563042fd73394d6cd727cece23b239ecb1980465  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/f1c-headings-heroes/contract.yaml
