@@ -1,12 +1,16 @@
-import { Suspense } from 'react';
+import { Fragment, Suspense, type ReactNode } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { NOS_NAV } from '@/components/nos-chrome/nos-nav';
 import { ShowCountdown } from '@/components/show';
 import { Button } from '@/components/nos/Button';
+import { ExhibitorStageCard } from '@/components/nos/ExhibitorStageCard';
+import { JudgingGroupCard } from '@/components/nos/JudgingGroupCard';
 import { NosHero } from '@/components/nos/NosHero';
 import { NosSection } from '@/components/nos/NosSection';
+import { SectionHeading } from '@/components/nos/SectionHeading';
+import { StatusMarker } from '@/components/show/_shared/StatusMarker';
 import { JsonLd, nationalShowEventJsonLd } from '@/components/seo/JsonLd';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import {
@@ -17,6 +21,17 @@ import {
   showVisitorInfoQuery,
 } from '@/sanity/queries';
 import { buildShowFacts } from '@/lib/data/show-facts';
+import {
+  JUDGING_GROUPS,
+  JUDGING_GROUPS_HEADING,
+  LANDING_CTA,
+  LANDING_FIGURES,
+  LANDING_INTRO,
+  PLANT_ENTRY_HEADING,
+  PLANT_ENTRY_STAGES,
+  type JudgingGroup,
+} from '@/lib/data/nos-home-landing';
+import { COLUMN_CLASS, SPAN_CLASS, resolveGridLayout } from '@/lib/grid-columns';
 import { cheapestAdmission, formatRand } from '@/components/nos/cheapest-admission';
 import { buildShowOffers, type SanityHubTicketType } from '@/lib/data/national-show-offers';
 import { TICKET_CATEGORIES } from '@/lib/data/ticket-hub-source';
@@ -113,6 +128,41 @@ const PROGRAMME_ROWS = [
   { id: 'wosa-conference', line: WOSA_LINE },
   { id: 'workshops', line: WORKSHOPS_LINE },
 ] as const;
+
+// C-4 / R13: the judging grid's column count is derived from the live group count, never a literal.
+// Counts divisible by five keep the five-up grid; any other count takes the orphan-free layout.
+const JUDGING_WIDE_COLUMNS = 5;
+const JUDGING_GRID_LAYOUT = resolveGridLayout(JUDGING_GROUPS.length);
+const JUDGING_COLUMNS_CLASS =
+  JUDGING_GROUPS.length % JUDGING_WIDE_COLUMNS === 0
+    ? 'lg:grid-cols-5'
+    : COLUMN_CLASS[JUDGING_GRID_LAYOUT.columns];
+// An odd count leaves a lone last card in the two-up grid; it spans the row there, as at desktop.
+const JUDGING_ODD_SPAN_CLASS = JUDGING_GROUPS.length % 2 === 1 ? 'sm:col-span-2' : '';
+
+/** Her description with each of her italic runs (species and section names) set in <em>. */
+function withItalics(group: JudgingGroup): ReactNode {
+  if (group.description === null) return null;
+  const parts: ReactNode[] = [];
+  let cursor = 0;
+  for (const run of group.italics) {
+    const at = group.description.indexOf(run, cursor);
+    if (at < 0) throw new Error(`national-show hub: italic run "${run}" not in group ${group.n}`);
+    parts.push(group.description.slice(cursor, at), <em key={at}>{run}</em>);
+    cursor = at + run.length;
+  }
+  parts.push(group.description.slice(cursor));
+  return parts.map((part, i) => <Fragment key={i}>{part}</Fragment>);
+}
+
+function judgingCardSpanClass(index: number): string {
+  if (index !== JUDGING_GROUPS.length - 1) return '';
+  const lgSpan =
+    JUDGING_GROUPS.length % JUDGING_WIDE_COLUMNS !== 0 && JUDGING_GRID_LAYOUT.finalCardSpans > 1
+      ? SPAN_CLASS[JUDGING_GRID_LAYOUT.finalCardSpans]
+      : '';
+  return [JUDGING_ODD_SPAN_CLASS, lgSpan].filter(Boolean).join(' ');
+}
 
 // The hub keeps the full NOS default title; the group template would only repeat the show's name.
 export const metadata: Metadata = {
@@ -280,6 +330,29 @@ export default async function NationalShowPage() {
         }
       />
 
+      <NosSection
+        tone="gold"
+        data-hm-section="intro"
+        wrapClassName="nos-about"
+      >
+        <div>
+          <SectionHeading title={LANDING_INTRO.tagline} />
+          {LANDING_INTRO.paragraphs.map((paragraph) => (
+            <p key={paragraph} className="mt-6 font-sans text-[16px] leading-[1.55] text-ink/80">
+              {paragraph}
+            </p>
+          ))}
+        </div>
+        <ul className="nos-figures">
+          {LANDING_FIGURES.map(({ value, label }) => (
+            <li key={label} data-hm-figure="">
+              <span className="nos-figure font-serif">{value}</span>{' '}
+              <span className="nos-figure-label">{label}</span>
+            </li>
+          ))}
+        </ul>
+      </NosSection>
+
       <NosSection data-hm-section="about" aria-labelledby="hm-about-h" wrapClassName="nos-about">
         <div>
           <h2 id="hm-about-h" className="nos-hm-h2">
@@ -325,6 +398,56 @@ export default async function NationalShowPage() {
             );
           })}
         </ul>
+      </NosSection>
+
+      <NosSection tone="gold" data-hm-section="judging" className="nos-section-joined">
+        <SectionHeading title={JUDGING_GROUPS_HEADING} />
+        <div className={`mt-10 grid grid-cols-1 gap-7 sm:grid-cols-2 ${JUDGING_COLUMNS_CLASS}`}>
+          {JUDGING_GROUPS.map((group, index) => (
+            <div key={group.n} data-hm-judging-card="" className={judgingCardSpanClass(index)}>
+              <JudgingGroupCard
+                code={String(group.n)}
+                group={`Group ${group.n}`}
+                name={group.name}
+                description={withItalics(group)}
+              />
+            </div>
+          ))}
+        </div>
+      </NosSection>
+
+      <NosSection tone="royal" data-hm-section="plant-entry">
+        <SectionHeading title={PLANT_ENTRY_HEADING} tone="on-dark" />
+        <div className="mt-12 grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-4">
+          {PLANT_ENTRY_STAGES.map(({ stage, title, description }) => (
+            <div key={stage} data-hm-stage="" className="h-full [&>*]:h-full">
+              <ExhibitorStageCard stage={stage} title={title} description={description} />
+            </div>
+          ))}
+        </div>
+        <div className="mt-14 flex flex-col items-start gap-5">
+          <p className="font-serif tracking-[-0.015em] text-[clamp(1.5rem,1.2rem+1.2vw,2rem)] leading-tight text-ivory">
+            {LANDING_CTA.startPlanning}
+          </p>
+          {/* Her form is not supplied yet: plain text, never a link, with the one pending marker. */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <p className="font-sans text-[18px] font-semibold leading-[1.55] text-ivory">
+              {LANDING_CTA.registerHere}
+            </p>
+            <span data-hm-register-marker="">
+              <StatusMarker
+                kind="confirmation"
+                status="pending"
+                pendingLabel={visitorInfo?.pendingLabel}
+                tone="dark"
+                as="span"
+              />
+            </span>
+          </div>
+          <p className="max-w-[58ch] font-sans text-[18px] leading-[1.55] text-[var(--lilac-muted)]">
+            {LANDING_CTA.openingSentence}
+          </p>
+        </div>
       </NosSection>
 
       <NosSection data-hm-section="programme" aria-labelledby="hm-programme-h">

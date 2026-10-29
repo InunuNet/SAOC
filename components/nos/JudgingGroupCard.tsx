@@ -7,13 +7,16 @@
 // illustrative element, per the "emblem is the only illustration" rule.
 // =============================================================
 
+import type { ReactNode } from 'react';
+
 import { Card } from './Card';
 
 export interface NosJudgingGroupCardProps {
   code: string;
   group: string;
   name: string;
-  description: string;
+  /** Null renders no description paragraph at all (a group her document names and leaves there). */
+  description: ReactNode | null;
 }
 
 export function JudgingGroupCard({ code, group, name, description }: NosJudgingGroupCardProps) {
@@ -29,7 +32,9 @@ export function JudgingGroupCard({ code, group, name, description }: NosJudgingG
         {group}
       </p>
       <h3 className="font-serif text-[17px] font-medium leading-snug text-ink">{name}</h3>
-      <p className="font-sans text-[16px] leading-[1.55] text-muted">{description}</p>
+      {description ? (
+        <p className="font-sans text-[16px] leading-[1.55] text-muted">{description}</p>
+      ) : null}
     </Card>
   );
 }

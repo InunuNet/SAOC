@@ -2670,21 +2670,34 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   flex-wrap: wrap;
   gap: 0 32px;
   margin: 0;
+  padding: 0;
+  list-style: none;
 }
-.nos-theme .nos-figures > div {
+.nos-theme .nos-figures > li {
   flex: 1 1 calc(50% - 32px);
   display: flex;
-  flex-direction: column-reverse;
-  justify-content: flex-end;
+  flex-direction: column;
+  justify-content: flex-start;
   border-top: 1px solid var(--rule);
   padding: 20px 0 28px;
 }
-.nos-theme .nos-figures dd {
-  margin: 0;
+/* An odd count never leaves a lone figure beside an empty cell: the last one takes the row, and from
+   1280px three figures sit in one row. */
+.nos-theme .nos-figures > li:last-child:nth-child(odd) {
+  flex-basis: 100%;
+}
+@media (min-width: 1280px) {
+  .nos-theme .nos-figures > li,
+  .nos-theme .nos-figures > li:last-child:nth-child(odd) {
+    flex-basis: calc(33.333% - 32px);
+  }
+}
+.nos-theme .nos-figures .nos-figure {
   font-size: clamp(2.6rem, 2rem + 2vw, 61px);
   color: var(--primary);
+  text-align: left;
 }
-.nos-theme .nos-figures dt {
+.nos-theme .nos-figures .nos-figure-label {
   margin-top: 10px;
   font-size: 14px;
   color: var(--muted);
