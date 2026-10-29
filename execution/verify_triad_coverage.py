@@ -30,9 +30,9 @@ these in production):
     `localhost` URL, and a site reached through a helper script whose body
     holds the URL. A UI contract that only does any of those is invisible
     here.
-  - False negative, no path: a UI contract whose assertions only ever
-    reference a Firestore collection name or an API route with no literal
-    `app/` substring and no deployed-site URL is not flagged.
+  - False negative, no path: a UI contract that names neither an `app/`
+    path nor a deployed-site URL (only a collection, an API route or a
+    component name) is not flagged.
   - False positive: a non-UI contract whose shell command happens to contain
     the substring `app/` unrelated to the Next.js route tree (e.g. inside a
     quoted string or a comment) gets misclassified as UI/workflow and
