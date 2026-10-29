@@ -1,0 +1,41 @@
+schema: athanor.contract/v1
+slug: content-what-to-expect-v11
+goal: The home, What to expect and Programme pages render Lee-Ann's What to Expect v1.2 copy verbatim (hours incl. the Sunset Cocktails line, food, photography, accessibility, narrative, Day Pass admission row) with no old v1.0 strings and no price literals in code.
+created_at: '2026-10-29'
+autonomy: high
+
+features:
+  - id: F1
+    name: Align the three NOS pages to What to Expect v1.2 (copy only, no visual change, prices stay Sanity-sourced)
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/content-what-to-expect-v11/goldens/strings.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: every golden is a verbatim passage of v1.2, the three page sources carry every golden string, no old string remains in any of them, the Day Pass row is wired after Early-Bird Exhibition, and no price literal is in the code of the three page files or in the goldens
+      command: node .agent/memory/project/specs/content-what-to-expect-v11/checks/check-static.mjs
+    - id: A2
+      description: typescript compiles
+      command: pnpm exec tsc --noEmit
+    - id: A3
+      description: production build passes (nos-content-standard build script, live Sanity)
+      command: execution/heartbeat_wrap.sh bash .agent/memory/project/specs/content-what-to-expect-v11/checks/build.sh
+    - id: A4
+      description: built pages render every golden string verbatim (copy, hours rows incl. Sunset in one element with no empty dd, Programme Thursday spans, Day Pass Ticket row keyed ticketType-day-visitor) and none of the old v1.0 strings or the cloakroom section
+      command: execution/heartbeat_wrap.sh node .agent/memory/project/specs/content-what-to-expect-v11/checks/check-rendered.mjs
+    - id: A5
+      description: design handoff bundle is untouched by this change
+      command: git diff --quiet HEAD -- design/design_handoff_saoc
+    - id: A6
+      description: the old nos-content-standard gates that read the frozen What to Expect source (A8 gate-verbatim, and A7 gate-standard with WE-G1, PG-G1 and HM-G1) run in normal fixture-replay mode with no failure in scope for /, /what-to-expect or /programme (both gates are red on main for unrelated reasons, so the scope filter is the proof; the unrelated count is printed)
+      command: execution/heartbeat_wrap.sh node .agent/memory/project/specs/content-what-to-expect-v11/checks/check-old-gates.mjs
+    - id: A7
+      description: the nos-content-standard re-freeze is pinned - route table, gate-standard, spec.md and the frozen what-to-expect.md match checks.sha256
+      command: sh -c "grep -E 'route-table.json|gate-standard.mjs|goldens/spec.md|what-to-expect.md' .agent/memory/project/specs/nos-content-standard/goldens/checks.sha256 | shasum -a 256 -c -"
+    - id: A8
+      description: the frozen source is byte-identical to Lee-Ann's Drive v1.2
+      command: cmp -s "content/drive-source/National Show/3. What to expect/What to Expect/v1.2/content.md" .agent/memory/project/specs/nos-content-standard/goldens/sources/what-to-expect.md
