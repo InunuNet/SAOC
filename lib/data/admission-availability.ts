@@ -45,7 +45,8 @@ interface PoolSibling {
 
 export async function getAdmissionSoldOutBySlug(
   types: AdmissionAvailabilitySource[],
-  activeShowId: string | null
+  activeShowId: string | null,
+  { live = false }: { live?: boolean } = {}
 ): Promise<Record<string, boolean>> {
   try {
     const soldCounts = await getSoldCountsByTicketType(NATIONAL_SHOW_ID);
@@ -71,6 +72,7 @@ export async function getAdmissionSoldOutBySlug(
           query: ticketTypesByPoolQuery,
           params: { pool: poolKey, showId: activeShowId },
           tags: ['ticketType', 'sanity'],
+          live,
         })) ?? [];
       for (const sibling of siblings) {
         if (!sibling.slug || sibling.slug in poolConfigByType) continue;
@@ -212,7 +214,7 @@ export async function loadTicketCardViewModels(
           headcountPerUnit: t.headcountPerUnit,
         });
       }
-      const verdict = await getAdmissionSoldOutBySlug(sources, activeShowId);
+      const verdict = await getAdmissionSoldOutBySlug(sources, activeShowId, { live });
       for (const card of Object.values(built.cards)) {
         if (
           card &&

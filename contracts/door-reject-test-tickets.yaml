@@ -1,0 +1,119 @@
+# Gate environment (contract.py gate, residue guard and build assertion A15). Without these the
+# residue guard fails open and the build reads live Sanity:
+#   NEXT_PUBLIC_SANITY_PROJECT_ID, NEXT_PUBLIC_SANITY_DATASET  (read from apphosting.yaml, as
+#       .agent/memory/project/specs/nos-content-standard/checks/build.sh does)
+#   NEXT_PUBLIC_SAOC_SITE_URL, NEXT_PUBLIC_NOS_SITE_URL, SITE_URL  (the site-URL values in apphosting.yaml)
+#   SANITY_FIXTURE_MODE=replay
+#   SANITY_FIXTURE_DIR=$PWD/.agent/memory/project/specs/nos-content-standard/fixtures/sanity
+#   (unset K_SERVICE; the fixture loader refuses replay on the hosted runtime)
+schema: athanor.contract/v1
+slug: door-reject-test-tickets
+goal: Reject sandbox and unmarked tickets at the door as soon as the existing launch flag switches to live, while preserving committee scanner testing.
+created_at: '2026-10-23'
+autonomy: high
+features:
+  - id: F1
+    name: >-
+      Stamp every new order and ticket with a server-derived boolean issuedInTestMode
+      in buildReservationDocs, buildMultiReservationDocs and createOrderWithPosition.
+      Export the pure decideTestTicketAdmission({ issuedInTestMode, liveMode }) function
+      from lib/checkin-test-ticket-guard.ts. Live admission requires literal false;
+      test mode always returns allow from this guard. Call it in lib/checkin.ts inside
+      the transaction after the ticket read and show check, before status checks and
+      any checked-in write. The real admin route uses this service; do not duplicate
+      admission logic in the route. Return HTTP 403 with success false, code test_ticket
+      and error 'Test ticket — not valid for entry'. Extend the refusal and audit enums
+      and route mapping with test_ticket. Reuse DoorResultBanner unchanged visually.
+      Preserve issuance provenance during payment updates; never backfill legacy tickets
+      to false. Full implementation boundaries and acceptance rules are in the golden README.
+    status: pending
+  - id: F4
+    name: >-
+      Mission nos-security-tiered-access F4 (SEC-06). Re-base on main, keep the literal-false
+      admit-list so untagged legacy documents are refused live, and stamp via the new
+      lib/ticket-issuance-mode.ts isIssuanceTestMode() (launch constant OR sandbox-only
+      gateway flag) in both builders and createOrderWithPosition. Spec:
+      .agent/memory/project/specs/door-reject-test-tickets/spec.md.
+    status: pending
+goldens:
+  - contracts/golden/door-reject-test-tickets/README.md
+  - contracts/golden/door-reject-test-tickets/truth-table.json
+  - contracts/golden/door-reject-test-tickets/legacy-untagged.json
+  - contracts/golden/door-reject-test-tickets/codex-qa-prompt.md
+  - .agent/memory/project/specs/door-reject-test-tickets/spec.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Pure exported guard consumes the golden live/test truth table including missing, null and non-booleans; explicit undefined also fails closed in live mode.
+      command: node --test --test-name-pattern='truth table' contracts/checks/door-reject-test-tickets/admission.test.mjs
+    - id: A2
+      description: Both reservation builders and the comp creation primitive emit boolean own-properties on orders and every ticket in both modes, ignore forged input markers, and contain no undefined properties.
+      command: node --test --test-name-pattern='builders' contracts/checks/door-reject-test-tickets/admission.test.mjs
+    - id: A3
+      description: Real POST through real admission service calls the real guard before checked-in writes; every golden refusal produces no admission write, explicit HTTP/code/copy, one audit record, and existing rendered error banner.
+      command: node --test --test-name-pattern='route' contracts/checks/door-reject-test-tickets/admission.test.mjs
+    - id: A4
+      description: Auth, not-found, wrong-show, unpaid and already-checked-in still refuse without writes in both modes.
+      command: node --test --test-name-pattern='regressions' contracts/checks/door-reject-test-tickets/admission.test.mjs
+    - id: A5
+      description: The reviewed launch constant remains false; this feature does not launch payments.
+      command: grep -qx 'const TICKETING_PAYMENTS_LIVE = false;' lib/ticketing-test-mode.ts
+    - id: A6
+      description: Project TypeScript check covers all touched TypeScript files and exhaustiveness of the extended refusal/audit mappings.
+      command: pnpm type-check
+    - id: A7
+      description: ESLint is clean on the specified implementation surface and new unit test; include any additional touched TypeScript files in the implementation review.
+      command: pnpm exec eslint lib/checkin-test-ticket-guard.ts lib/checkin.ts lib/checkout-reservation.ts lib/orders.ts lib/checkin-audit.ts lib/ticket-issuance-mode.ts lib/payments/sandbox-mode.ts lib/payments/ozow.ts lib/payments/payfast.ts app/api/tickets/checkout/route.ts app/api/admin/checkin/route.ts types/index.ts components/admin/DoorResultBanner.tsx components/admin/DoorScannerClient.tsx contracts/checks/door-reject-test-tickets/admission.test.mjs
+    - id: A8
+      description: Run the complete new offline unit test file using Node's installed test runner; package.json has no unit-test script to invoke.
+      command: node --test contracts/checks/door-reject-test-tickets/admission.test.mjs
+    - id: A9
+      description: Stamp matrix and real-order guarantee. A document is stamped issuedInTestMode true if ANY of the launch constant, OZOW_SANDBOX_MODE, PAYFAST_SANDBOX_MODE or the admin toggle adminSettings/ozowSandboxTestMode (as read at checkout; a missing value counts as on) says test, so an R0.01 order is never admitted live and the toggle cannot switch issuance to live while a constant says sandbox. Comps carry no toggle term. Every creation path stamps true unless the launch constant and the sandbox-only flag are both live. Documents issued after a full go-live carry literal false and are admitted live; sandbox-issued ones are refused. Fails on the PR head (no lib/ticket-issuance-mode.ts).
+      command: node --test --test-name-pattern='stamp matrix|real order guarantee|admin toggle' contracts/checks/door-reject-test-tickets/legacy-and-stamp.test.mjs
+    - id: A10
+      description: Legacy rows. Prod-shaped untagged, null, string, zero and explicit-true tickets are refused live with no write and unchanged in test mode; genuine literal false is admitted.
+      command: node --test --test-name-pattern='legacy rows' contracts/checks/door-reject-test-tickets/legacy-and-stamp.test.mjs
+    - id: A11
+      description: Mutation proof. Mutants (truthy guard rule, guard never rejects, stamp ignores or drops an adapter flag or the admin toggle term, checkout builders drop the toggle, toggle fails open, stamp always false, settlement rewrites a marker, comp path bypasses the helper) are each killed and the unmutated control passes.
+      command: node contracts/checks/door-reject-test-tickets/mutation.mjs
+    - id: A12
+      description: Adapter coupling. lib/payments/sandbox-mode.ts is import-free and holds both literal flags; the stamp is exactly OZOW_SANDBOX_MODE || PAYFAST_SANDBOX_MODE (no hand-set flag); Ozow IsTest is String(OZOW_SANDBOX_MODE) and neither adapter redefines its flag; PayFast initiate starts with the fail-closed not-configured branch before any sandbox form; an Ozow flag that says live cannot coexist with OZOW_SANDBOX_* credentials. The flags stay true; this feature does not launch payments.
+      command: bash contracts/checks/door-reject-test-tickets/gateway-coupling.sh
+    - id: A13
+      description: Branch contains current main (merged, not rebased).
+      command: git merge-base --is-ancestor origin/main HEAD
+    - id: A14
+      description: The only lib/payments change relative to main is the new sandbox-mode.ts leaf (two exports, both true), the flag import and read in each adapter (Ozow IsTest from the flag, PayFast fail-closed branch) and the old OZOW_IS_TEST removal. Comments aside, any other added or removed line, or any other file, fails.
+      command: node contracts/checks/door-reject-test-tickets/adapter-guard.mjs diff
+    - id: A15
+      description: Production build succeeds.
+      command: pnpm build
+    - id: A16
+      description: Codex adversarial review of the whole diff, run in the worktree.
+      type: codex_qa
+      target: contracts/golden/door-reject-test-tickets/codex-qa-prompt.md
+      timeout_seconds: 1300
+      required: true
+    - id: A17
+      description: BrowserAgent against the deployed site (optional - the door scanner is admin-only; the deployed check runs after rollout, and the offline route and banner test A3 covers rendering)
+      type: browser_deployed_check
+      target: .agent/memory/scratch/door-reject-test-tickets-browser-manifest.json
+      required: false
+    - id: A18
+      description: gws inbox check (not applicable - no email is sent or changed)
+      type: gws_inbox_check
+      target: .agent/memory/scratch/door-reject-test-tickets-gws-manifest.json
+      required: false
+    - id: A19
+      description: Adapter mutation proof. Each of these is rejected, a checkout route that passes a literal, drops the field or adds a second Firestore read of the toggle, a stamp that drops or fails open on the toggle term, an adapter flag false while it still sends sandbox (Ozow credentials, IsTest decoupled or hard-coded, PayFast form with the fail-closed branch removed, inverted or placed after the form), a leaf that imports or reads env, a redefined flag, a hand-set or truncated stamp, client-chain imports of an adapter, the payments index, a Node built-in or a dynamic import, and ten synthetic bad lib/payments diffs. The unmutated controls pass.
+      command: node contracts/checks/door-reject-test-tickets/adapter-mutation.mjs
+    - id: A20
+      description: lib/ticket-issuance-mode.ts is client-safe. It imports nothing from lib/payments except sandbox-mode, no adapter, payments index or Node built-in module, so no client chain can reach an adapter.
+      command: node contracts/checks/door-reject-test-tickets/adapter-guard.mjs client-safe .
+    - id: A21
+      description: The checkout route has exactly one isOzowSandboxTestModeEnabled() read (no extra call relative to main). Its identifier is the same value that feeds resolveExpectedGatewayAmount in the reserveTicket input and the ozowSandboxTestMode field of that input; reserveTicket hands input.ozowSandboxTestMode to buildMultiReservationDocs. No literal or other identifier reaches the override or the stamp. The R0.01 override behaviour is untouched.
+      command: node contracts/checks/door-reject-test-tickets/adapter-guard.mjs checkout .
+    - id: A22
+      description: The launch checklist states the single go-live commit that flips the launch constant and both adapter constants, and that the ozowSandboxTestMode toggle is turned off at the same deploy.
+      command: grep -q 'ozowSandboxTestMode' docs/launch-checklist.md && grep -q 'OZOW_SANDBOX_MODE' docs/launch-checklist.md && grep -q 'PAYFAST_SANDBOX_MODE' docs/launch-checklist.md

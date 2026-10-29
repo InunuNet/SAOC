@@ -396,6 +396,9 @@ interface ReservationInput {
    *  sandbox-test-mode flag read that also feeds resolveOzowInitiateAmount below. See
    *  README §3b. */
   expectedGatewayAmount: number | null;
+  /** SEC-06 (F4) — the same adminSettings/ozowSandboxTestMode read, handed to the builders so an
+   *  R0.01 order is stamped as a test ticket. No second Firestore read. */
+  ozowSandboxTestMode: boolean;
   /** F4 (conference-workshop-tickets, M2) — the TRUE per-day cap check's own
    *  requested/pool/capacity maps, built pre-transaction from live Sanity reads exactly
    *  like capacityByType/poolConfigByType above. Empty objects when the cart has no
@@ -920,6 +923,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       recoveryTokenSecret,
       gateway: providerId,
       expectedGatewayAmount: resolveExpectedGatewayAmount(providerId, ozowSandboxTestModeEnabled),
+      ozowSandboxTestMode: ozowSandboxTestModeEnabled,
       dayCapRequestedQtyByType,
       dayCapPoolConfigByType,
       dayCapCapacityByType,
@@ -1241,6 +1245,7 @@ async function reserveTicket(input: ReservationInput): Promise<ReservationOutcom
         reference,
         showId: input.showId,
         lineItems: lineItemPlans,
+        ozowSandboxTestMode: input.ozowSandboxTestMode,
         idempotencyKey: input.idempotencyKey,
         expiresAt,
         recoveryToken: minted.token,

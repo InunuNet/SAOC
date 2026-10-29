@@ -27,10 +27,10 @@ Brad P0). That gate is never traded for bytes: `check-hero-bytes.mts viewports` 
 ## Quality
 
 The loader keeps the `-q88` file name for the hero set, so call sites that pass `quality={88}` are unchanged. The files
-at or below 2048 px are encoded at WebP q88. The files above 2048 px keep the name but are encoded at WebP q78
+at or below 2048 px are encoded at WebP q72 (`HERO_WEBP_QUALITY`; the `-q88` name is the hero set's key, not its encoding quality). The files above 2048 px keep the name but are encoded at WebP q78
 (`HERO_LARGE_WEBP_QUALITY` in the generator): a q88 encoding of the grainy purple photograph weighed 4.7 MB at its native
-width and was larger than its JPEG source. q78 sits inside NOS Design's q75-82 band. The generator never encodes below
-q75, and `bloom-crops.mts` keeps an 800x800 1:1 crop at 2056@2 of every hero under
+width and was larger than its JPEG source. q78 sits inside NOS Design's q75-82 band. The hero WebP up to 2048 px is q72 per goldens/lcp-measure.md call 3.
+`bloom-crops.mts` keeps an 800x800 1:1 crop at 2056@2 of every hero under
 `.agent/memory/project/specs/audit-fixes-2026-10-25/artifacts/bloom-crops/` for a banding and blocking review.
 
 ## Regenerating

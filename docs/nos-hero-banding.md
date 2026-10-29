@@ -19,7 +19,7 @@ The hero slide `<Image>` alone passes `quality={88}` (`components/home/Hero.tsx`
 The same three source files (violet, pink, dark) feed ten other surfaces through the same variant names, so re-encoding them in place at q88 would move every other image off 75. Instead:
 
 - `lib/image-loader.ts` adds a `-q<quality>` suffix to the variant name when a quality other than `DEFAULT_QUALITY` (75) is requested. Requests without a quality prop map to the same file as before, byte-identical.
-- `scripts/generate-image-variants.mjs` writes an extra `-q88` set for `HERO_SOURCES` (the fallback's three files) with `{ quality: 88, smartSubsample: true }`. Every other variant stays `{ quality: 75 }`.
+- `scripts/generate-image-variants.mjs` writes an extra `-q88` set for `HERO_SOURCES` (the fallback's three files) with `{ quality: 72, smartSubsample: true }` (q78 above 2048 px; the `-q88` name is the set's key, not its quality). Every other variant stays `{ quality: 75 }`.
 - No 2560 hero variant was added. It was optional in the ruling, and widths stay capped at 2048 by `lib/image-widths.json`.
 
 ### Yellow out of the fallback

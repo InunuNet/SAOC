@@ -129,7 +129,7 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
   const salesClosedMessage = pageData?.salesClosedMessage ?? FALLBACK_SALES_CLOSED;
 
   const soldOutBySlug = salesOpen
-    ? await getAdmissionSoldOutBySlug([ticketType], activeShowId)
+    ? await getAdmissionSoldOutBySlug([ticketType], activeShowId, { live: true })
     : {};
 
   const effectivePrice =
