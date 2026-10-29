@@ -270,8 +270,10 @@ def check_xff_trusted_hop() -> None:
                 fail(f"{rel}:{number}: the leftmost x-forwarded-for entry is client-supplied and must never be used")
 
 
+# App Check specific shapes only. "recaptcha/enterprise.js" is NOT a marker: firebase/auth's own
+# bundle (admin login chunk) legitimately carries recaptchaEnterpriseScript with that URL.
 FLAG_OFF_BUNDLE_MARKERS = (
-    "recaptcha/enterprise.js", "firebaseappcheck.googleapis.com", "getLimitedUseToken",
+    "firebaseappcheck.googleapis.com", "getLimitedUseToken",
     "ReCaptchaEnterpriseProvider", "exchangeRecaptchaEnterpriseToken",
 )
 
@@ -307,6 +309,63 @@ def check_retired_slugs() -> None:
                 fail(f"{rel}:{number}: retired ticket slug {pattern.search(line).group(1)!r} (live phantom holds, SAOC H7 2026-10-29); pick another slug or capacityPool")
 
 
+SITE_KEY_ENV = "NEXT_PUBLIC_APP_CHECK_RECAPTCHA_SITE_KEY"
+NEWSLETTER_ROUTES = {
+    "app/api/newsletter/subscribe/route.ts": "newsletter-subscribe",
+    "app/api/newsletter/unsubscribe/route.ts": "newsletter-unsubscribe",
+}
+# QA inputs edited by @dev (rate limiting moved out of the handler) and reviewed by @architect
+# 2026-10-29: kept because they still prove the handler's behaviour and the limiting proof now lives
+# in check_newsletter_limited(). Any further edit changes the hash and fails the gate.
+REVIEWED_QA_INPUT_EDITS = {
+    ".agent/memory/project/specs/footer-newsletter-subscribe/checks/check-subscribe-handler.mjs":
+        "1d005c9a7470b71ed9d9618598e74338834e4ccae12fc6ea4b3d4eaa4729b892",
+    ".agent/memory/project/specs/footer-newsletter-subscribe/checks/check-unsubscribe-handler.mjs":
+        "c1af8f6ab912cc9c62ed91dca47998a0fd1e434312521b087c0204fdc2263459",
+}
+
+
+def check_flag_off_inlining() -> None:
+    config = read("next.config.ts")
+    if not re.search(r"env\s*:\s*\{[^}]*%s\s*:\s*process\.env\.%s\s*\?\?\s*''" % (SITE_KEY_ENV, SITE_KEY_ENV), config, re.S):
+        fail(f"next.config.ts must inline {SITE_KEY_ENV} as `process.env.{SITE_KEY_ENV} ?? ''` so the flag-off ternary folds")
+    allowed = re.compile(r"^\+\s*($|//|env\s*:\s*\{|\},?$|%s)" % SITE_KEY_ENV)
+    for line in git("diff", "-U0", "origin/main", "--", "next.config.ts").splitlines():
+        if line.startswith("+") and not line.startswith("+++") and not allowed.match(line):
+            fail(f"next.config.ts: change beyond the App Check env inlining: {line.strip()[:100]}")
+    cart = read("components/tickets/useTicketCart.ts")
+    if not re.search(r"process\.env\.%s\s*\?\s*\(\)\s*=>\s*import\('@/lib/app-check-client'\)\s*:\s*undefined" % SITE_KEY_ENV, cart):
+        fail("useTicketCart must gate `import('@/lib/app-check-client')` behind the build-time site key ternary")
+    for path in source_files():
+        text = path.read_text(encoding="utf-8", errors="replace")
+        if re.search(r"""^\s*import\b[^;\n]*['"]@/lib/app-check-client['"]""", text, re.M):
+            fail(f"{path.relative_to(ROOT)}: lib/app-check-client may only be loaded with a dynamic import() behind the build-time key")
+
+
+def check_newsletter_limited() -> None:
+    for rel, scope in NEWSLETTER_ROUTES.items():
+        text = read(rel)
+        call = first(text, "consumeAbuseLimit(", rel)
+        for later in ("request.json()", "initAdmin()", "runTransaction"):
+            if later in text and call > text.index(later):
+                fail(f"{rel}: consumeAbuseLimit must run before {later}")
+        first(text, f"scope: '{scope}'", rel)
+        first(text, "clientActorKey(request.headers.get('x-forwarded-for'))", rel)
+        first(text, "NEWSLETTER_RATE_LIMIT_WINDOW_MS", rel)
+        if "MAX_ATTEMPTS" not in text[call:call + 600]:
+            fail(f"{rel}: the limiter call must use the existing NEWSLETTER_*_RATE_LIMIT_MAX_ATTEMPTS constant")
+        for needle in ("429", "NEWSLETTER_COPY.rateLimited", "'Retry-After'", "AbuseLimiterUnavailableError"):
+            first(text, needle, rel)
+
+
+def check_newsletter_checks_reviewed() -> None:
+    import hashlib
+    for rel, digest in REVIEWED_QA_INPUT_EDITS.items():
+        actual = hashlib.sha256(read(rel).encode("utf-8")).hexdigest()
+        if actual != digest:
+            fail(f"{rel}: QA input changed after architect review (sha256 {actual[:12]}...); only @architect may edit it")
+
+
 CHECKS = {
     "checkout-order": check_checkout_order,
     "no-memory-limiter": check_no_memory_limiter,
@@ -322,6 +381,9 @@ CHECKS = {
     "xff-trusted-hop": check_xff_trusted_hop,
     "bundle-flag-off": check_bundle_flag_off,
     "retired-slugs": check_retired_slugs,
+    "flag-off-inlining": check_flag_off_inlining,
+    "newsletter-limited": check_newsletter_limited,
+    "newsletter-checks-reviewed": check_newsletter_checks_reviewed,
 }
 
 if __name__ == "__main__":

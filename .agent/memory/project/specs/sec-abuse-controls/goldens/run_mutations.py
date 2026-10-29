@@ -60,9 +60,13 @@ MUTATIONS = [
     ("M25", "lib/tickets-notification.ts", "append", None, "", "\n// requireCheckoutAppCheck\n", wiring("appcheck-scope")),
     ("M26", "lib/abuse-limiter.ts", "append", None, "", "\nconst leftmost = headers.get('x-forwarded-for')?.split(',')[0];\n", wiring("xff-trusted-hop")),
     ("M27", "components/tickets/useTicketCart.ts", "append", None, "", "\nimport 'firebase/app-check';\n", wiring("client-gated")),
-    ("M28", ".next/static/chunks/zz-mutation.js", "create", None, "", "recaptcha/enterprise.js", wiring("bundle-flag-off")),
+    ("M28", ".next/static/chunks/zz-mutation.js", "create", None, "", "firebaseappcheck.googleapis.com", wiring("bundle-flag-off")),
     ("M29", "lib/provisional-figures.ts", "append", None, "", "\nconst reuse = { slug: 'adult' };\n", wiring("retired-slugs")),
     ("M30", "app/ticket-fixtures/buy/page.tsx", "append", None, "", "\nconst pool = { capacityPool: \"exhibitor\" };\n", wiring("retired-slugs")),
+    ("M31", "next.config.ts", "first", None, "process.env.NEXT_PUBLIC_APP_CHECK_RECAPTCHA_SITE_KEY ?? ''", "process.env.NEXT_PUBLIC_APP_CHECK_RECAPTCHA_SITE_KEY", wiring("flag-off-inlining")),
+    ("M32", "components/tickets/useTicketCart.ts", "append", None, "", "\nimport { getCheckoutAppCheckToken } from '@/lib/app-check-client';\n", wiring("flag-off-inlining")),
+    ("M33", "app/api/newsletter/subscribe/route.ts", "first", None, "consumeAbuseLimit(", "consumeAbuseLimitX(", wiring("newsletter-limited")),
+    ("M34", ".agent/memory/project/specs/footer-newsletter-subscribe/checks/check-subscribe-handler.mjs", "append", None, "", "\n// edit\n", wiring("newsletter-checks-reviewed")),
     ("M18", "app/api/contact/route.ts", "append", None, "", "\nimport { createAttemptStore } from '@/lib/newsletter-rate-store';\n", wiring("no-memory-limiter")),
 ]
 

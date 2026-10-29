@@ -1,3 +1,12 @@
+# Gate environment (read before running `contract.py gate`):
+#   - NEXT_PUBLIC_APP_CHECK_RECAPTCHA_SITE_KEY and APP_CHECK_ENFORCE_CHECKOUT must be UNSET. A14
+#     builds the flag-off bundle with `env -u`; A25 scans it. The Auth SDK's own recaptcha script
+#     URL in the admin-login chunk is expected and is not an App Check marker.
+#   - Run `pnpm install` first (A21 imports the real ITN handlers; the pdf/qr packages must exist).
+#   - Triad (A28, A29) uses the real defaults from docs/verification-triad-gate.md:
+#     BROWSER_CHECK_MAX_AGE_SECONDS=14400, GWS_CHECK_MAX_AGE_SECONDS=14400, GWS_CHECK_LIVE_RECHECK=1,
+#     BROWSER_CHECK_DEPLOYED_ORIGIN=https://beta.saoc.co.za. Both are required:false and expected to
+#     skip until a post-deploy manifest exists; no email path is added by F3 so there is no inbox to check.
 schema: athanor.contract/v1
 slug: sec-abuse-controls
 goal: Checkout, the public forms and the payment webhooks are protected by a durable cross-instance limiter, bounded seat holds and a capped webhook body, without breaking any legitimate purchase or notification.
@@ -68,7 +77,7 @@ assertions:
       command: env -u NEXT_PUBLIC_APP_CHECK_RECAPTCHA_SITE_KEY pnpm build
       timeout_seconds: 900
     - id: A15
-      description: mutation proof - 30 mutations across limiter, budget, webhook cap, actor stamp, App Check, client gate, forwarded-header trust and wiring are each killed by a check above, files restored byte for byte
+      description: mutation proof - 34 mutations across limiter, budget, webhook cap, actor stamp, App Check, client gate, forwarded-header trust and wiring are each killed by a check above, files restored byte for byte
       command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/run_mutations.py
       timeout_seconds: 900
     - id: A16
@@ -109,3 +118,22 @@ assertions:
       type: codex_qa
       target: .agent/memory/project/specs/sec-abuse-controls/codex-qa-prompt.md
       timeout_seconds: 1500
+    - id: A28
+      description: Triad browser check is post-deploy only (sandbox purchase with the App Check flag on, tokenless POST refused); declared non-required, expected to skip until a manifest exists
+      type: browser_deployed_check
+      target: .agent/memory/scratch/sec-abuse-controls-browser-manifest.json
+      required: false
+    - id: A29
+      description: Triad gws inbox check is not applicable (F3 adds no email path); declared non-required for the coverage linter, expected to skip
+      type: gws_inbox_check
+      target: .agent/memory/scratch/sec-abuse-controls-gws-manifest.json
+      required: false
+    - id: A30
+      description: flag-off inlining - next.config.ts inlines the site key as ?? '' with no other change, useTicketCart gates its dynamic import of lib/app-check-client behind the same build-time key, no static import of it anywhere
+      command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py flag-off-inlining
+    - id: A31
+      description: newsletter subscribe and unsubscribe are still rate limited, now by the durable limiter before any body read or store access, with the existing constants and 429 copy (replaces the proof removed from the handler checks)
+      command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py newsletter-limited
+    - id: A32
+      description: the two footer-newsletter handler checks the dev edited are frozen at the architect-reviewed hashes
+      command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py newsletter-checks-reviewed
