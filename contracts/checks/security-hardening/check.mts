@@ -229,7 +229,7 @@ const modes: Record<string, () => Promise<void> | void> = {
   eventswiring() {
     const route = code('app/api/events/submit/route.ts');
     mustMatch('revocation check', route, /verifyIdToken\(\s*token\s*,\s*true\s*\)/);
-    mustMatch('email verified gate', route, /isVerifiedSubmitter\(/);
+    mustMatch('admin gate', route, /isAdminToken\(/);
     mustMatch('society lookup', route, /hostSocietyExists\(/);
     mustMatch('parameterised groq', route, /_id\s*==\s*\$id/);
     mustMatch('groq params', route, /\{\s*id\b/);

@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
-import { cookies } from 'next/headers';
 import Link from 'next/link';
 
 import { SubmitEventPageBody } from '@/components/events/SubmitEventPageBody';
 import { RouteHero } from '@/components/ui/RouteHero';
+import { getAdminSession } from '@/lib/admin-auth';
 import { buildPageMetadata } from '@/lib/seo';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { societyListQuery } from '@/sanity/queries';
@@ -18,21 +18,6 @@ export const metadata: Metadata = buildPageMetadata({
 interface SanitySocietyRow {
   _id: string;
   name: string;
-}
-
-async function isAuthenticated(): Promise<boolean> {
-  try {
-    const session = (await cookies()).get('session')?.value;
-    if (!session) return false;
-
-    const { initAdmin } = await import('@/lib/firebase-admin');
-    const { getAuth } = await import('firebase-admin/auth');
-    initAdmin();
-    await getAuth().verifySessionCookie(session, true);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 function LoginPrompt() {
@@ -54,9 +39,9 @@ function LoginPrompt() {
 }
 
 export default async function SubmitEventPage() {
-  const authed = await isAuthenticated();
+  const session = await getAdminSession();
 
-  if (!authed) {
+  if (!session.ok) {
     return <LoginPrompt />;
   }
 
