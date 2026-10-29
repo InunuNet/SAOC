@@ -143,11 +143,9 @@ MUTATIONS = [
     ("B01", "scripts/backfill-stand-orders.ts", "create", None, "", "export const backfill = true;\n", wiring("no-backfill")),
     ("B02", "lib/extra-stand-helper.ts", "create", None, "", "export const extra = 1;\n", wiring("hunk-list")),
     ("B03", "components/admin/VendorPaymentLinkControl.tsx", "append", None, "", "\n// extra\n", wiring("hunk-list")),
-    # --- cache-header probe entries for the two bearer-token URLs (spec D9)
+    # --- cache-header probe entry for the vendor stand-payment token URL (spec D9)
     ("K01", CACHE, "first", None, '{"host": "nos", "path": "/vendors/payment?token=bogus", "status": 200},\n', "", wiring("cache-probe-entries")),
-    ("K02", CACHE, "first", None, '"path": "/tickets/recover?token=bogus", "status": 404', '"path": "/tickets/recover?token=bogus", "status": 200', wiring("cache-probe-entries")),
     ("K03", CACHE, "first", None, '"path": "/vendors/payment?token=bogus"', '"path": "/vendors/payment"', wiring("cache-probe-entries")),
-    ("K04", CACHE, "first", None, '{"host": "nos", "path": "/tickets/recover?token=bogus", "status": 404}', '{"host": "saoc", "path": "/tickets/recover?token=bogus", "status": 404}', wiring("cache-probe-entries")),
     ("U01", "lib/ticket-issuance-mode.ts", "append", None, "", "\n// touched\n", wiring("unchanged")),
     ("U02", "lib/payments/sandbox-mode.ts", "append", None, "", "\n// touched\n", wiring("unchanged")),
     ("U03", "app/api/admin/vendors/[id]/payment/route.ts", "append", None, "", "\n// touched\n", wiring("unchanged")),

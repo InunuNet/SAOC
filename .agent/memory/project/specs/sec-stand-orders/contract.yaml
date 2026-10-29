@@ -86,7 +86,7 @@ assertions:
       description: eslint on the touched trees
       command: pnpm exec eslint lib/vendor-stand-order-paid.ts lib/vendor-stand-payment-link.ts lib/vendor-stand-payment-token.ts lib/vendor-stand-payment-notification.ts lib/vendor-stand-payment-labels.ts app/api/vendors/stand-payment app/api/admin/vendors components/admin app/admin 'app/(nos)/national-show/vendors/payment' types/index.ts
     - id: A18
-      description: mutation proof - 93 mutations across the rule, link record, token cap, stamp, settlement, initiate order, link writers, revoke gate, views, copy, scope and frozen files are each killed by a check above, files restored byte for byte
+      description: mutation proof - 91 mutations across the rule, link record, token cap, stamp, settlement, initiate order, link writers, revoke gate, views, copy, scope and frozen files are each killed by a check above, files restored byte for byte
       command: python3 .agent/memory/project/specs/sec-stand-orders/goldens/run_mutations.py
       timeout_seconds: 900
     - id: A19
@@ -97,10 +97,10 @@ assertions:
       description: no check this feature ships can write to production
       command: python3 contracts/checks/live-write-guard/verify_no_ungated_writers.py
     - id: A24
-      description: cache-header probe golden lists the vendor stand-payment token page and the ticket recovery URL as per-request routes on the nos host with their observed statuses (200 and 404), never isr or static
+      description: cache-header probe golden lists the vendor stand-payment token page as a per-request route on the nos host with its observed status (200), never isr or static
       command: python3 .agent/memory/project/specs/sec-stand-orders/goldens/check_wiring.py cache-probe-entries
     - id: A25
-      description: the cache-header probe runs the whole expectations file against a local launched production build with Sanity stubbed, including both token URLs (GET only). Needs the stubbed build first - node scripts/checks/sanity-request-count.mjs --build. The helper builds NODE_OPTIONS unquoted, so it cannot run from a checkout whose path contains a space (CI paths have none)
+      description: the cache-header probe runs the whole expectations file against a local launched production build with Sanity stubbed, including the stand-payment token URL (GET only). Needs the stubbed build first - node scripts/checks/sanity-request-count.mjs --build. The helper builds NODE_OPTIONS unquoted, so it cannot run from a checkout whose path contains a space (CI paths have none)
       command: node scripts/checks/cache-headers-probe.mjs --spawn
       timeout_seconds: 600
     - id: A21

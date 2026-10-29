@@ -344,9 +344,9 @@ def check_cache_probe_entries() -> None:
 
     data = json.loads(read(CACHE_EXPECTATIONS))
     dynamic = data["routes"]["dynamic"]
-    # Observed on a local production build in launched mode (2026-10-29): both token URLs are
-    # per-request (no-store). The recover page does not exist (404), see spec.md D9.
-    for path, status in (("/vendors/payment?token=bogus", 200), ("/tickets/recover?token=bogus", 404)):
+    # Observed on a local production build in launched mode (2026-10-29): the token URL is
+    # per-request (no-store). The /tickets/recover entry belongs to nos-order-recovery, see spec.md D9.
+    for path, status in (("/vendors/payment?token=bogus", 200),):
         hits = [r for r in dynamic if r.get("host") == "nos" and r.get("path") == path]
         need(len(hits) == 1, f"routes.dynamic needs exactly one nos entry for {path}")
         need(hits[0].get("status") == status, f"{path} must record the observed status {status}")
