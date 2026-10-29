@@ -18,6 +18,8 @@ goldens:
   - .agent/memory/project/specs/nos-security-tiered-access/sec-03/goldens/route-auth-matrix.golden.json
   - .agent/memory/project/specs/nos-security-tiered-access/sec-03/goldens/config-open.json
   - .agent/memory/project/specs/nos-security-tiered-access/sec-03/goldens/config-closed.json
+  - .agent/memory/project/specs/nos-security-tiered-access/sec-03/goldens/codex-qa-prompt.md
+  - .agent/memory/project/specs/nos-security-tiered-access/sec-03/goldens/deployed-verification.golden.md
 assertions:
   phase: 4
   checks:
@@ -63,3 +65,33 @@ assertions:
     - id: A14
       description: LIVE, READ-ONLY (GET only, no write). Reads back saoc-webapp signup-disabled state and exits 0 only if true. Stays RED until the operator runs --apply.
       command: pnpm exec tsx scripts/auth-disable-signup.ts --verify
+    - id: A15
+      description: DEPLOYED. POST with no token is refused 401 on beta (empty body, nothing written). RED until deployed.
+      command: >-
+        sh -c 'test "$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "content-type: application/json" -H "content-length: 2" -d "{}" https://beta.saoc.co.za/api/events/submit)" = 401'
+    - id: A16
+      description: DEPLOYED. POST with a garbage bearer token is refused 401 on beta.
+      command: >-
+        sh -c 'test "$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "authorization: Bearer not-a-jwt" -H "content-type: application/json" -H "content-length: 2" -d "{}" https://beta.saoc.co.za/api/events/submit)" = 401'
+    - id: A17
+      description: DEPLOYED. Unauthenticated /events/submit on beta does not render the form.
+      command: sh -c '! curl -s https://beta.saoc.co.za/events/submit | grep -q "name=\"kind\""'
+    - id: A18
+      description: DEPLOYED. Unauthenticated /events/submit on nos does not render the form.
+      command: sh -c '! curl -s https://nos.saoc.co.za/events/submit | grep -q "name=\"kind\""'
+    - id: A19
+      description: Codex adversarial review of the whole diff
+      type: codex_qa
+      target: .agent/memory/project/specs/nos-security-tiered-access/sec-03/goldens/codex-qa-prompt.md
+      timeout_seconds: 1300
+      required: true
+    - id: A20
+      description: BrowserAgent on beta confirms the unauthenticated page shows no form, and the refusal probes (see deployed-verification.golden.md)
+      type: browser_deployed_check
+      target: .agent/memory/scratch/sec-03-browser-manifest.json
+      required: true
+    - id: A21
+      description: gws inbox check cannot prove an email was NOT sent; declared non-required only to satisfy the triad coverage linter, the absence check is done by the orchestrator and recorded in the QA report
+      type: gws_inbox_check
+      target: .agent/memory/scratch/sec-03-gws-manifest.json
+      required: false
