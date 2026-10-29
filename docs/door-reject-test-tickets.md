@@ -100,8 +100,11 @@ The adapter guard (`adapter-guard.mjs`) fails if an adapter flag is `false` whil
 sandbox behaviour (sandbox URL, credentials, `IsTest`). The Ozow R0.01 admin toggle (`adminSettings/ozowSandboxTestMode`) is a third term:
 `isIssuanceTestMode({ ozowSandboxTestMode })` stamps test unless the value is literally `false`.
 Checkout passes the value it already read for the amount override (no second read); comps are never
-gateway-paid and pass an explicit `false`. Note that `isOzowSandboxTestModeEnabled()` maps a missing
-document or failed read to `false`, so an unreadable toggle does not stamp test.
+gateway-paid and pass an explicit `false`. The route reads the toggle once and uses that same value for the R0.01 amount
+override and for the stamp. `isOzowSandboxTestModeEnabled()` maps a missing document or failed read
+to `false`, which means no override: the buyer is charged the full price, so a live stamp is correct
+for that order. The reader is deliberately unchanged, because changing it would alter the override's
+fail-closed semantics.
 The door itself keeps
 `liveMode: !isTicketingTestMode()`, so committee testing is unchanged.
 
