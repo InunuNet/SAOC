@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { CircleAlert } from 'lucide-react';
 
 import { OzowSandboxTestModeBanner } from '@/components/tickets/OzowSandboxTestModeBanner';
 import { PayfastRedirectForm } from '@/components/tickets/PayfastRedirectForm';
@@ -107,6 +108,7 @@ export function VendorStandPaymentForm({ token, businessName }: VendorStandPayme
               value={size}
               checked={boothSize === size}
               onChange={() => setBoothSize(size)}
+              className="outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
             />
             <span>{VENDOR_STAND_BOOTH_SIZE_LABELS[size]}</span>
           </label>
@@ -122,8 +124,12 @@ export function VendorStandPaymentForm({ token, businessName }: VendorStandPayme
       </div>
 
       {error && (
-        <p className="font-sans text-[14px] text-ink" role="alert">
-          {error}
+        <p
+          className="flex items-start gap-2 rounded-sm border-2 border-[var(--status-error)] px-4 py-3 font-sans text-[14px] font-medium text-[var(--status-error)]"
+          role="alert"
+        >
+          <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+          <span>{error}</span>
         </p>
       )}
 
@@ -132,7 +138,7 @@ export function VendorStandPaymentForm({ token, businessName }: VendorStandPayme
       <button
         type="submit"
         disabled={submitting}
-        className="rounded-sm border border-rule bg-ivory px-4 py-2 font-sans text-[14px] font-medium text-ink transition-colors hover:bg-parchment disabled:cursor-not-allowed disabled:opacity-50"
+        className="rounded-sm border border-rule bg-ivory px-4 py-2 font-sans text-[14px] font-medium text-ink transition-colors hover:bg-parchment disabled:cursor-not-allowed disabled:opacity-50 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
       >
         {submitting ? 'Starting payment…' : 'Pay Now'}
       </button>

@@ -1,0 +1,70 @@
+{
+  "note": "F1a: every role=\"alert\" (and role={...'alert'...}, aria-live=\"assertive\") under app/ and components/, NOS chrome (components/nos-chrome/) excluded, is class (a) unless listed here. (a) = error summary or page-level error: border-2 border-[var(--status-error)], aria-hidden icon, status-error text, no background tint. (b) = field-level alert of a named allowed kind. (c) = not an error (a status notice). Each entry names a file and a substring that must appear in the alert's opening tag or the 300 characters before it; an entry matching no alert FAILS the check (stale). New alerts default to (a). An entry with requireIconAndToken true must also have an aria-hidden icon and text-[var(--status-error)] in the alert.",
+  "classes": [
+    {
+      "class": "b",
+      "file": "components/tickets/TicketFormField.tsx",
+      "key": "role=\"alert\"",
+      "reason": "TicketFieldAlert: the left-border-only field alert (border-l-2 border-error, bg-transparent, aria-hidden warning sign, error text). Golden-compliant for field errors."
+    },
+    {
+      "class": "b",
+      "file": "components/newsletter/NewsletterSignup.tsx",
+      "key": "topicsErrorId",
+      "reason": "Footer newsletter topics field error, INTERIM ruled treatment (lead, no-invention): NEWSLETTER_COPY.genericError is unsourced placeholder copy and is withheld by default, so the topic error is the sr-only role=alert (announced) plus a 1px --status-error-on-dark outline on the invalid checkbox, which carries aria-invalid and aria-describedby the alert; no visible summary, no fill. SWITCH-OVER: once sourced copy exists it becomes a visible left-border-only field alert (border-l-2, bg-transparent) with the aria-hidden icon in --status-error-on-dark. Gate: check-newsletter-error.mjs (topic case)."
+    },
+    {
+      "class": "b",
+      "file": "components/newsletter/NewsletterSignup.tsx",
+      "key": "errorWithheld",
+      "srOnly": true,
+      "reason": "Footer newsletter request-failure error (rejected fetch, no error field, server-supplied genericError), INTERIM ruled treatment (status-tokens.md 'FOOTER NEWSLETTER genericError ON EVERY PATH'): NEWSLETTER_COPY.genericError is unsourced placeholder copy, withheld under no-invention, so the error is the sr-only role=alert (announced, 1px box) with no visible summary and no fill. Must keep the sr-only class. SWITCH-OVER: once sourced copy exists it becomes the ruled visible summary. Gate: check-newsletter-error.mjs request-failure cases."
+    },
+    {
+      "class": "b",
+      "file": "components/admin/PaymentSettingsPanel.tsx",
+      "key": "ErrorText",
+      "reason": "Admin settings inline field-level error with an aria-hidden icon and the error text colour; not a page-level summary."
+    },
+    {
+      "class": "b",
+      "file": "components/admin/DoorResultBanner.tsx",
+      "key": "role={kind",
+      "reason": "Door scan result panel: a full-panel scan outcome for door staff (role status when valid, alert when refused), not a form error summary. Its result colours belong to the door-scanner design; restyling is out of F1a's scope."
+    },
+    {
+      "class": "b",
+      "file": "components/vendors/VendorMarketingUploadField.tsx",
+      "key": "role=\"alert\"",
+      "requireIconAndToken": true,
+      "reason": "Field-level upload error. Allowed only with an aria-hidden icon beside status-error text, never colour alone."
+    }
+  ],
+  "errorTextNote": "F1a: every use of a local ErrorText component (<ErrorText, <*ErrorText) under app/ and components/ is classified PER CALL SITE: file plus a key substring that must appear in the 200 characters from the opening tag. class field = an inline error beside one input (left-border-only ErrorText is the golden). class panel = an error about a whole panel or the page (a load failure, an unset-configuration notice): it must NOT use ErrorText; it uses the FormErrorAlert shape (border-2 border-[var(--status-error)], aria-hidden icon, status-error text), which is an (a) alert and is already enforced by the alert scan. So a panel entry here means the call site is still on ErrorText and FAILS. A new or reclassified ErrorText use fails until classified; a stale entry fails. FIELD STYLING: every file with a field-class ErrorText site must define that component with the field-error treatment (the TicketFieldAlert golden): a left border only (border-l-2), a border colour token (border-error, border-[var(--status-error)] or border-[var(--status-error-on-dark)]), no fill (bg-transparent), an aria-hidden icon, and a text colour token (text-error or text-[var(--status-error)]). A classification alone does not pass a site whose styling is wrong.",
+  "errorTextSites": [
+    {
+      "file": "components/admin/PaymentSettingsPanel.tsx",
+      "key": "No gateway is set",
+      "class": "panel",
+      "reason": "Panel-level: the whole checkout is refusing purchases until a gateway is chosen."
+    },
+    {
+      "file": "components/admin/PaymentSettingsPanel.tsx",
+      "key": "{gatewayError}",
+      "class": "field",
+      "reason": "Inline error beside the gateway selector."
+    },
+    {
+      "file": "components/admin/PaymentSettingsPanel.tsx",
+      "key": "{testAmountError}",
+      "class": "field",
+      "reason": "Inline error beside the test-amount input."
+    },
+    {
+      "file": "components/admin/PaymentSettingsPanel.tsx",
+      "key": "Recent changes could not be loaded",
+      "class": "panel",
+      "reason": "Panel-level: the change-history list failed to load."
+    }
+  ]
+}
