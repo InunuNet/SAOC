@@ -1,0 +1,11 @@
+{
+  "_note": "Prod-shaped stand orders as counted by SAOC on 2026-10-29 (SEC-06 audit read): 2 documents, status paid, sandbox payments through payfast and ozow, no issuedInTestMode / testMode field. Ids and amounts are placeholders; only the shape matters. Synthetic, never read from or written to prod.",
+  "orders": [
+    { "id": "prod-shaped-payfast", "status": "paid", "gateway": "payfast", "attemptId": "0123456789abcdef", "amount": 1000, "boothSize": 1 },
+    { "id": "prod-shaped-ozow", "status": "paid", "gateway": "ozow", "amount": 1000, "expectedGatewayAmount": 0.01, "boothSize": 1 }
+  ],
+  "submissionsWithGatewaySetFlag": [
+    { "id": "prod-shaped-payfast", "paymentReceived": true },
+    { "id": "prod-shaped-ozow", "paymentReceived": true }
+  ]
+}

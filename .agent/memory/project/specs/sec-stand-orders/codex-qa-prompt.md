@@ -1,0 +1,23 @@
+# Adversarial review: sec-stand-orders (mission nos-security-tiered-access, F5)
+
+You are reviewing an implementation diff against a frozen design. Read these in the repo you are run in (the PR worktree; do not read any other checkout):
+- `.agent/memory/project/specs/sec-stand-orders/spec.md` (decisions D1-D8, Specification, Hunk list, DECISION NEEDED)
+- the goldens in `.agent/memory/project/specs/sec-stand-orders/goldens/`
+- `git diff origin/main...HEAD`
+
+Try to break it. For each item, answer PASS or FAIL with file:line evidence. Output line 1 exactly `PASS` or `FAIL`, then findings.
+
+1. Fail closed: after the launch constant is live, is there any reader that still treats an untagged, null, string, array or `true`-stamped stand order as paid (`status === 'paid'` compared directly, a cast, a spread of the stored status, a default of `false` applied to a missing stamp)? Check every file that references `vendorStandOrders` / `VENDOR_STAND_ORDERS_COLLECTION`, plus anything that reads `submission.paymentReceived`. Does any code path write `issuedInTestMode` other than the one `isIssuanceTestMode()` call at initiate (settlement, admin routes, scripts)?
+2. Settlement: with `liveMode: true` and an untagged order, is `status: 'paid'` still written (money moved) while `paymentReceived`, the admin notice and the vendor receipt are all suppressed? Can the office flag ever be written `false` and overwrite an office-recorded `true`? Is `confirmNotification` still called once, outside the transaction, and are all four amount guards intact? Does a replayed notification or a Firestore transaction retry change the outcome?
+3. Re-pay: in live mode can the vendor behind an untagged paid order pay again, and does the overwrite carry a live stamp? Can a **counted** paid order (stamp literal `false`) ever be overwritten by initiate, by the transaction re-read, or by a race between the early read and the transaction?
+4. Stamp integrity: is the stamp derived from the same single `isOzowSandboxTestModeEnabled()` read that feeds `resolveExpectedGatewayAmount`? Can the request body, a header or the token influence it? Is it ever `undefined` in the written document?
+5. Link gate: can a superseded, revoked, expired or malformed link reach the stand-order read, the limiter, or the gateway hand-off? Is the legacy (no record) carve-out the only path that skips the nonce check, and does a present-but-garbage record fail closed? Is the same gate applied on the public payment page? Does an old token still work after a resend or a revoke (try the order: approve, resend, revoke, resend)?
+6. Rate limiting: does the per-actor limit run before the body is parsed and does the per-submission limit run only after the link gate, so a leaked or superseded link cannot burn the vendor's budget? Does a limiter outage refuse the request (5xx), never allow it? Is the actor derived only from the trusted forwarded hop (`clientActorKey`)? Is the 429 copy the existing checkout string verbatim with `Retry-After`?
+7. In-flight window: can an attacker holding a valid link still supersede a payment that is open at the gateway (inside 30 minutes, with or without a gateway Pending report)? Can a bad `createdAt` (missing, string, far future) lock a legitimate vendor out? Do `failed` and `cancelled` orders retry freely?
+8. Revoke route: is `POST` the only method, is the session check then the capability check before any Firestore access, are 401 and 403 distinguished as in the resend route, does it send nothing, and does it kill a legacy link (record-less submission)? Are the resend and approval routes still gated, and is resend still copy-only (#150: no email on resend)?
+9. Admin views: does the list and detail page show `test-paid` for the prod-shaped documents in live mode and `paid` in test mode? Is the "Office payment" value fail closed for a gateway-set flag, while an office-recorded receipt (`paymentConfirmedBy`) is still trusted? Is the payment-link control still shown for a vendor whose paid order does not count?
+10. Scope and copy: is every touched file on the cleared hunk list? Is there any new user-facing string other than the marked `Test paid` stopgap? Any script, backfill or prod write added? Is booth allocation, listing publication, the ITN routes and the payment adapters untouched?
+11. Token: does `mint` still produce tokens `verify` accepts, is the TTL capped, and did the payload shape stay `{ s, e, n }` so the three token domains stay separated?
+12. Tests: run the two goldens and `python3 .agent/memory/project/specs/sec-stand-orders/goldens/run_mutations.py`. Are all mutations killed, and are the files restored byte for byte afterwards?
+
+Report anything that fails, with the smallest input that shows it.

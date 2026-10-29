@@ -599,6 +599,18 @@
    "match": "const original = Object\\.fromEntries\\(files\\.map\\(\\(file\\) => \\[file, readFileSync",
    "note": "MUT hits are the local in-memory mutate callbacks that rewrite source text strings; the script only reads four repository files and calls pure check functions, writes nothing and makes no request",
    "target": "source text only"
+  },
+  ".agent/memory/project/specs/sec-stand-orders/goldens/check_wiring.py": {
+   "class": "STATIC_FP",
+   "match": "def check_revoke_route",
+   "note": "write tokens are string literals the checker searches for in source text (an update( or set( needle); it reads files and git diff only and writes nothing",
+   "target": "local worktree source text only"
+  },
+  ".agent/memory/project/specs/sec-stand-orders/goldens/run_mutations.py": {
+   "class": "STATIC_FP",
+   "match": "def mutate\\(text: str, mode: str",
+   "note": "mutates local source files inside the worktree and restores them byte for byte; the checks it spawns are pure goldens and static wiring checks; MUT hits are the script's own function and table names",
+   "target": "local worktree source text only"
   }
  }
 }

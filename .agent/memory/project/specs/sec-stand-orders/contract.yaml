@@ -1,0 +1,110 @@
+# Gate environment (read before running `contract.py gate`):
+#   - Dependency: F3 (fix/sec-abuse-controls) must be merged first. A1 fails until lib/abuse-limiter.ts
+#     exports consumeAbuseLimit, clientActorKey and AbuseLimiterUnavailableError. @dev starts only after that.
+#   - Run `pnpm install` first. A3, A4 and A18 need the repo's tsx; A15 needs the full dependency set.
+#   - Build (A15) needs the same environment as the door-reject-test-tickets contract: NEXT_PUBLIC_SANITY_PROJECT_ID,
+#     NEXT_PUBLIC_SANITY_DATASET, the three site URLs from apphosting.yaml, SANITY_FIXTURE_MODE=replay and
+#     SANITY_FIXTURE_DIR=$PWD/.agent/memory/project/specs/nos-content-standard/fixtures/sanity (unset K_SERVICE).
+#   - Wiring checks diff against `git merge-base HEAD origin/main`; run `git fetch origin main` first.
+#     WIRING_BASE=<sha> overrides it for reproducible reruns.
+#   - Triad (A19, A20) uses the defaults in docs/verification-triad-gate.md (BROWSER_CHECK_DEPLOYED_ORIGIN=
+#     https://beta.saoc.co.za). Both are required:false and expected to skip until a post-deploy manifest exists.
+#   - No assertion here writes to production: the goldens are pure, the wiring checks read text and git diff.
+schema: athanor.contract/v1
+slug: sec-stand-orders
+goal: A vendor stand order counts as paid only when it was issued live (untagged means test, so the two sandbox-paid prod orders stop counting), and a stand-payment link can be revoked, is superseded on resend, is bounded in time, and cannot be used to knock over a vendor's in-flight payment.
+created_at: '2026-10-29'
+autonomy: high
+
+features:
+  - id: F5
+    name: stand orders - SEC-06 issuance stamp and fail-closed paid reads, SEC-22 revocable and rate-limited payment links
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/sec-stand-orders/goldens/stand-order-paid.golden.ts
+  - .agent/memory/project/specs/sec-stand-orders/goldens/stand-payment-link.golden.ts
+  - .agent/memory/project/specs/sec-stand-orders/goldens/fixtures/prod-stand-orders.json
+  - .agent/memory/project/specs/sec-stand-orders/goldens/check_wiring.py
+  - .agent/memory/project/specs/sec-stand-orders/goldens/run_mutations.py
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: dependency - F3's durable limiter and trusted-hop actor key are on the base this feature builds on
+      command: python3 .agent/memory/project/specs/sec-stand-orders/goldens/check_wiring.py dependency-f3
+    - id: A2
+      description: the 2 prod-shaped stand orders (paid, sandbox, no stamp) are test once live and paid today; only a literal false stamp counts live; settlement, status, and office-flag derivations fail closed
+      command: pnpm exec tsx .agent/memory/project/specs/sec-stand-orders/goldens/stand-order-paid.golden.ts
+    - id: A3
+      description: payment link record (nonce, supersede on resend, revoke including legacy links, expiry), TTL cap, 30 minute in-flight window, gateway-pending hold, re-pay of a test-paid order, and the named limiter numbers
+      command: pnpm exec tsx .agent/memory/project/specs/sec-stand-orders/goldens/stand-payment-link.golden.ts
+    - id: A4
+      description: initiate stamps issuedInTestMode from isIssuanceTestMode with the one Ozow toggle read, never from the request, and the type declares it optional
+      command: python3 .agent/memory/project/specs/sec-stand-orders/goldens/check_wiring.py stamp-at-initiate
+    - id: A5
+      description: no literal issuedInTestMode value is written for stand orders anywhere (no backfill to false, no relabel)
+      command: python3 .agent/memory/project/specs/sec-stand-orders/goldens/check_wiring.py no-literal-stamp
+    - id: A6
+      description: settlement keeps writing status paid, writes the office paymentReceived flag and sends the admin notice and vendor receipt only when the order counts as paid, never writes provenance, keeps confirm once and every amount guard
+      command: python3 .agent/memory/project/specs/sec-stand-orders/goldens/check_wiring.py settlement
+    - id: A7
+      description: the settlement handler's deps keep db and add an injectable liveMode
+      command: python3 .agent/memory/project/specs/sec-stand-orders/goldens/check_wiring.py settlement-deps
+    - id: A8
+      description: initiate order - actor limit before the body, then verify, submission read, link gate, per-submission limit, stand order read, decision before and inside the transaction; limiter outage fails closed; 429 and 409 reuse existing copy
+      command: python3 .agent/memory/project/specs/sec-stand-orders/goldens/check_wiring.py initiate-order
+    - id: A9
+      description: approval and resend record the link they mint before it is returned or emailed, resend stays copy-only (#150), the token module caps its TTL
+      command: python3 .agent/memory/project/specs/sec-stand-orders/goldens/check_wiring.py link-writers
+    - id: A10
+      description: the revoke route is POST only, admin session then review-vendor-applications capability before any Firestore access, sends nothing, kills legacy links with a fresh random nonce
+      command: python3 .agent/memory/project/specs/sec-stand-orders/goldens/check_wiring.py revoke-route
+    - id: A11
+      description: admin list and detail, the vendor payment page, its status page and the resend route read stand payment through the counts-as-paid rule with liveMode from !isTicketingTestMode(); no raw status paid comparison on a stand order remains; the test-paid label is a marked stopgap
+      command: python3 .agent/memory/project/specs/sec-stand-orders/goldens/check_wiring.py views-fail-closed
+    - id: A12
+      description: no new user-facing copy beyond the one marked stopgap label (docs/rules/no-invention.md)
+      command: python3 .agent/memory/project/specs/sec-stand-orders/goldens/check_wiring.py no-new-copy
+    - id: A13
+      description: no script, no backfill - NOS Site writes no prod data; the 2 untagged prod orders are handled by reads alone
+      command: python3 .agent/memory/project/specs/sec-stand-orders/goldens/check_wiring.py no-backfill
+    - id: A14
+      description: the diff touches only the SAOC-cleared hunk list
+      command: python3 .agent/memory/project/specs/sec-stand-orders/goldens/check_wiring.py hunk-list
+    - id: A15
+      description: ticket stamping, payment adapters, check-in, amount guard, booth allocation, listing publication, rules, indexes, apphosting, admin auth, the limiter and the launch constant are unchanged
+      command: python3 .agent/memory/project/specs/sec-stand-orders/goldens/check_wiring.py unchanged
+    - id: A16
+      description: typecheck
+      command: pnpm exec tsc --noEmit
+    - id: A17
+      description: eslint on the touched trees
+      command: pnpm exec eslint lib/vendor-stand-order-paid.ts lib/vendor-stand-payment-link.ts lib/vendor-stand-payment-token.ts lib/vendor-stand-payment-notification.ts lib/vendor-stand-payment-labels.ts app/api/vendors/stand-payment app/api/admin/vendors components/admin app/admin 'app/(nos)/national-show/vendors/payment' types/index.ts
+    - id: A18
+      description: mutation proof - 89 mutations across the rule, link record, token cap, stamp, settlement, initiate order, link writers, revoke gate, views, copy, scope and frozen files are each killed by a check above, files restored byte for byte
+      command: python3 .agent/memory/project/specs/sec-stand-orders/goldens/run_mutations.py
+      timeout_seconds: 900
+    - id: A19
+      description: production build
+      command: pnpm build
+      timeout_seconds: 900
+    - id: A20
+      description: no check this feature ships can write to production
+      command: python3 contracts/checks/live-write-guard/verify_no_ungated_writers.py
+    - id: A21
+      description: cross-model adversarial review of the diff
+      type: codex_qa
+      target: .agent/memory/project/specs/sec-stand-orders/codex-qa-prompt.md
+      timeout_seconds: 1500
+    - id: A22
+      description: Triad browser check is post-deploy only (live-mode payment page for a revoked link shows the existing fallback; admin list shows the test-paid label for the 2 prod stand orders); declared non-required, expected to skip until a manifest exists
+      type: browser_deployed_check
+      target: .agent/memory/scratch/sec-stand-orders-browser-manifest.json
+      required: false
+    - id: A23
+      description: Triad gws inbox check is post-deploy only (an approval still emails the payment link, a resend sends nothing); declared non-required, expected to skip until a manifest exists
+      type: gws_inbox_check
+      target: .agent/memory/scratch/sec-stand-orders-gws-manifest.json
+      required: false
