@@ -31,7 +31,14 @@ const UPDATE_MASK = 'client.permissions.disabledUserSignup';
 const EXIT_FAILED = 1;
 const EXIT_API_REJECTED = 3;
 
-class ApiRejectedError extends Error {}
+class ApiRejectedError extends Error {
+  constructor(
+    message: string,
+    readonly isWrite: boolean,
+  ) {
+    super(message);
+  }
+}
 
 interface ParsedArgs {
   apply: boolean;
@@ -100,16 +107,24 @@ function authHeaders(token: string): Record<string, string> {
 }
 
 /** Throws ApiRejectedError carrying the HTTP status only, never the response body. */
-async function expectOk(res: Response, operation: string): Promise<unknown> {
+async function expectOk(res: Response, operation: string, isWrite: boolean): Promise<unknown> {
   if (!res.ok) {
-    throw new ApiRejectedError(`${operation} rejected by API: HTTP ${res.status} ${res.statusText}`);
+    throw new ApiRejectedError(
+      `${operation} rejected by API: HTTP ${res.status} ${res.statusText}`,
+      isWrite,
+    );
   }
-  return res.json();
+  try {
+    return await res.json();
+  } catch {
+    // A JSON SyntaxError quotes part of the body, which holds hashConfig.signerKey.
+    throw new Error(`${operation} returned a body that is not valid JSON (body not shown).`);
+  }
 }
 
 async function readLive(token: string): Promise<boolean> {
   const res = await fetch(CONFIG_URL, { headers: authHeaders(token) });
-  return projectSignupDisabled(await expectOk(res, 'GET config'));
+  return projectSignupDisabled(await expectOk(res, 'GET config', false));
 }
 
 async function patchLive(token: string, target: boolean): Promise<void> {
@@ -118,7 +133,7 @@ async function patchLive(token: string, target: boolean): Promise<void> {
     headers: authHeaders(token),
     body: JSON.stringify({ client: { permissions: { disabledUserSignup: target } } }),
   });
-  await expectOk(res, 'PATCH config');
+  await expectOk(res, 'PATCH config', true);
 }
 
 function reportDryRun(current: boolean, target: boolean): void {
@@ -145,9 +160,18 @@ async function runApply(token: string, target: boolean): Promise<number> {
   return 0;
 }
 
+function readFixture(path: string): boolean {
+  try {
+    return projectSignupDisabled(JSON.parse(readFileSync(path, 'utf8')));
+  } catch {
+    // A JSON SyntaxError quotes part of the file, so a fixed message is printed instead.
+    throw new Error('--config-fixture could not be read as JSON (content not shown).');
+  }
+}
+
 async function run(args: ParsedArgs): Promise<number> {
   if (args.fixture) {
-    reportDryRun(projectSignupDisabled(JSON.parse(readFileSync(args.fixture, 'utf8'))), args.target);
+    reportDryRun(readFixture(args.fixture), args.target);
     return 0;
   }
   const token = getAccessToken();
@@ -166,11 +190,12 @@ async function main(): Promise<void> {
     process.exitCode = await run(parseArgs(process.argv.slice(2)));
   } catch (err: unknown) {
     if (err instanceof ApiRejectedError) {
-      console.error(
-        `auth-disable-signup: ${err.message}. If this is the PATCH, the project may need the ` +
-          'Identity Platform upgrade; do not upgrade without Brad. The events/submit route gate ' +
-          'still closes SEC-03 on its own.',
-      );
+      const advice = err.isWrite
+        ? 'The project may need the Identity Platform upgrade; do not upgrade without Brad. The ' +
+          'events/submit route gate still closes SEC-03 on its own.'
+        : 'Reading the config failed: check `gcloud auth login` and that the account may read ' +
+          `the ${PROJECT_ID} Identity Toolkit config. Nothing was changed.`;
+      console.error(`auth-disable-signup: ${err.message}. ${advice}`);
       process.exitCode = EXIT_API_REJECTED;
       return;
     }
