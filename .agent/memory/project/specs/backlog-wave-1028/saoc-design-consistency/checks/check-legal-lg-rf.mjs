@@ -2,13 +2,13 @@
 //  - no eyebrow in the hero and no max-w-[720px] anywhere in main (LegalHero forwards no eyebrow);
 //  - the draft notice, where the page has one, has no box (border 0 on the top, left and right, transparent fill);
 //  - the draft notice on /refunds and /members (one shared DraftNotice) is 15px with a 1px solid rule below;
-//  - index = h2: the section index links are exactly the page's h2s, in order, and the counts are 11 (/privacy), 19 (/terms), 9 (/refunds);
+//  - index = h2 (every h2 in .doc-prose, nested in a section or not): the section index links are exactly the page's h2s, in order, and the counts are 11 (/privacy), 19 (/terms), 9 (/refunds);
 //  - h2 gaps 56: every h2 that follows running prose sits 56px (+-1) below the previous sibling, and every h2 has margin-top 56 (the SAOC host measures 56 at the first h2 too; the first-h2-0 rule is NOS-host only).
 // /judging, /members and /404 keep their eyebrows (out of scope here); /members is visited only for its draft notice.
 import { withSite, openPage, check, finish } from './lib.mjs';
 const COUNTS = { '/privacy': 11, '/terms': 19, '/refunds': 9 };
 const PROBE = `() => { const main = document.querySelector('main'); const px = (v) => parseFloat(v);
-  const prose = main.querySelector('.doc-prose'); const h2s = prose ? [...prose.querySelectorAll(':scope > h2')] : [];
+  const prose = main.querySelector('.doc-prose'); const h2s = prose ? [...prose.querySelectorAll('h2')] : [];
   const links = [...main.querySelectorAll('[data-doc-index-link]')];
   const notice = main.querySelector('p[data-placeholder="true"]') || (prose && prose.firstElementChild && prose.firstElementChild.matches('p') && prose.firstElementChild.firstElementChild && prose.firstElementChild.firstElementChild.matches('strong') && /draft|not yet available/i.test(prose.firstElementChild.textContent) ? prose.firstElementChild : null);
   let n = null; if (notice) { const c = getComputedStyle(notice); n = { top: px(c.borderTopWidth), left: px(c.borderLeftWidth), right: px(c.borderRightWidth), bottom: px(c.borderBottomWidth), bottomStyle: c.borderBottomStyle, bg: c.backgroundColor, size: px(c.fontSize) }; }

@@ -1,5 +1,6 @@
 // F1d (SA-9): (1) the hero's AVIF and WebP candidates nearest 1200w are each <=180 KB as SERVED; (2) AVIF and WebP offer the
 // SAME width set; (3) sharpness: the chosen candidate is >= box x DPR (390@3 and 2056@2), capped at the largest candidate.
+// Selection honesty: in this AVIF-capable browser the SELECTED candidate (img.currentSrc) must be one of the AVIF <source>'s candidates, and no <source> may carry a media query that does not match here (a source the browser never picks proves nothing).
 // Format honesty: the WebP is a real <source type="image/webp"> (the <img> srcset is not accepted in its place) and separate from the AVIF <source>; EVERY candidate of each source and of the <img> fallback
 // is served with the matching content-type AND decodes (sharp metadata: format and the declared width), so a 200 that carries the wrong format or garbage bytes fails.
 import { withSite, openPage, check, finish } from './lib.mjs';
@@ -14,11 +15,13 @@ await withSite(async ({ base, browser, ctxOpts, deployed }) => {
   for (const path of paths) {
     const { page, ctx } = await openPage(browser, ctxOpts, base, path, 1440, 900);
     const sets = await page.evaluate(() => { const i = document.querySelector('[data-home-hero-media] img, [data-page-hero-media] img'); const p = i && i.closest('picture');
-      return { avif: p?.querySelector('source[type="image/avif"]')?.getAttribute('srcset') ?? '', webp: p?.querySelector('source[type="image/webp"]')?.getAttribute('srcset') ?? '', img: i?.getAttribute('srcset') ?? '', imgSrc: i?.getAttribute('src') ?? '' }; });
+      return { avif: p?.querySelector('source[type="image/avif"]')?.getAttribute('srcset') ?? '', webp: p?.querySelector('source[type="image/webp"]')?.getAttribute('srcset') ?? '', img: i?.getAttribute('srcset') ?? '', imgSrc: i?.getAttribute('src') ?? '', current: i?.currentSrc ?? '', unmatched: [...(p?.querySelectorAll('source[media]') ?? [])].filter((x) => !matchMedia(x.getAttribute('media')).matches).map((x) => x.getAttribute('media')) }; });
     check(!!sets.avif, `${path}: no AVIF srcset to measure`);
     check(!!sets.webp, `${path}: no <source type="image/webp"> (the <img> srcset is not accepted as the WebP source)`);
     check(!!sets.avif && sets.avif !== sets.webp, `${path}: the AVIF and WebP <source> srcsets are the same string, want separate sources`);
+    check(sets.unmatched.length === 0, `${path}: <source> carries a media query that does not match here (${sets.unmatched.join(', ')}), so the browser never picks it`);
     const cands = (set) => set.split(',').map((x) => x.trim().split(/\s+/)).filter((x) => x[0]).map((x) => ({ url: x[0], w: Number((x[1] ?? '').replace('w', '')) || null }));
+    if (sets.avif) check(cands(sets.avif).some((c) => new URL(c.url, base).href === sets.current), `${path}: the selected candidate (img.currentSrc ${sets.current.split('/').pop() || 'empty'}) is not from the AVIF <source>, so AVIF is not what this browser is served`);
     for (const [name, mime, fmt, list] of [['avif', 'image/avif', 'heif', cands(sets.avif)], ['webp', 'image/webp', 'webp', cands(sets.webp)], ['img fallback', 'image/webp', 'webp', [...cands(sets.img), ...(sets.imgSrc ? [{ url: sets.imgSrc, w: null }] : [])]]]) {
       check(list.length > 0, `${path}: ${name} has no candidates`);
       for (const c of list) {

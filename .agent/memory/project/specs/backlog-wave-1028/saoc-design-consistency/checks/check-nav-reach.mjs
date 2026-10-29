@@ -1,19 +1,22 @@
 // F1b: every destination stays reachable at 1280 and 1366. Whatever is not inline sits in the Menu drawer, and Search is
 // reachable (inline or in the drawer). The 7 destinations: About, Societies, Judging & Awards, Events, National Show, Sponsors, Contact.
 // Each inline item must be a real destination, not just visible text: an <a> with a non-empty, non-# href that resolves (same-origin: responds 200; a cross-origin href such as the NOS Show site is
-// fetched only on a deployed run, locally it must still parse as an absolute http(s) URL), visible, and neither aria-hidden nor inert (itself or any ancestor).
+// fetched only on a deployed run, locally it must still parse as an absolute http(s) URL), visible, neither aria-hidden nor inert (itself or any ancestor), and clickable: computed pointer-events is not none and elementFromPoint at its centre is the link or one of its descendants (no overlay, no pointer-events:none).
 import { withSite, openPage, check, finish } from './lib.mjs';
 const ALL = ['About', 'Societies', 'Judging & Awards', 'Events', 'National Show', 'Sponsors', 'Contact'];
 await withSite(async ({ base, browser, ctxOpts, live }) => {
   for (const width of [1280, 1366, 1383]) {
     const { page, ctx } = await openPage(browser, ctxOpts, base, '/about', width, 900);
     const items = await page.evaluate(() => [...document.querySelectorAll('[data-hd=nav] [data-hd=item]')].filter((e) => e.getBoundingClientRect().width > 0).map((e) => ({ label: e.textContent.trim(), tag: e.tagName, href: e.getAttribute('href'),
-      visible: e.checkVisibility({ checkVisibilityCSS: true }), hidden: Boolean(e.closest('[aria-hidden=true],[inert]')) })));
+      visible: e.checkVisibility({ checkVisibilityCSS: true }), hidden: Boolean(e.closest('[aria-hidden=true],[inert]')), pe: getComputedStyle(e).pointerEvents,
+      hit: (() => { const r = e.getBoundingClientRect(); const t = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return Boolean(t) && (t === e || e.contains(t)); })() })));
     const inline = items.map((i) => i.label);
     for (const it of items) {
       const w = `@${width}: inline nav item "${it.label}"`;
       check(it.tag === 'A', `${w} is a <${it.tag.toLowerCase()}>, want an <a>`);
       check(it.visible && !it.hidden, `${w} is not visible and actionable (visible ${it.visible}, aria-hidden/inert ancestor ${it.hidden})`);
+      check(it.pe !== 'none', `${w} has pointer-events: none`);
+      check(it.hit, `${w}: elementFromPoint at its centre is not the link or a descendant (covered or unclickable)`);
       let url = null; try { url = it.href && !/^(#|javascript:)/i.test(it.href.trim()) ? new URL(it.href, base) : null; } catch { url = null; }
       check(url !== null && /^https?:$/.test(url.protocol), `${w} has no resolvable href (${JSON.stringify(it.href)})`);
       if (url && (url.origin === new URL(base).origin || live)) { const res = await ctx.request.get(url.href); check(res.status() === 200, `${w} href ${it.href} responds ${res.status()}, want 200`); }

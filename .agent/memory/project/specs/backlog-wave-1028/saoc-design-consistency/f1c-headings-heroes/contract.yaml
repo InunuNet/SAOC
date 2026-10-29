@@ -18,6 +18,9 @@ goldens:
 assertions:
   phase: 4
   checks:
+    - id: A0
+      description: "Check integrity (runs first): every check script and lib under checks/ matches its pinned sha256 in goldens/checks.sha256, so a check cannot be edited to exit 0 while the gate stays green. Any other assertion's result is void when this is red"
+      command: "shasum -a 256 -c .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/checks.sha256"
     - id: A1
       description: "Every main h2 is the H2 role (serif 300, clamp(32,29+0.762vw,44), lh 1.15) or the Title role (serif 400, 20-22) at 390, 1440, 2056 (fails on main, 150 violations)"
       command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-h2-roles.mjs"
