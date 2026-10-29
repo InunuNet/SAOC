@@ -226,8 +226,8 @@ Phase D2 (Stripe SA payment gateway) and D4 (ticket buy flow) are implemented bu
    launch, re-issue any legitimate pre-launch tickets (for example comps), since older tickets
    are refused at the door in live mode. Verify one sandbox ticket is refused at the door. See
    [docs/door-reject-test-tickets.md](door-reject-test-tickets.md).
-   In the same reviewed commit, flip `PAYMENT_GATEWAYS_SANDBOX_ONLY` (`lib/ticket-issuance-mode.ts`)
-   with the payment adapters and credentials; until then new tickets stay stamped as test. Do not
+   In the same reviewed commit, move each adapter off the sandbox and flip its flag in
+   `lib/payments/sandbox-mode.ts`; until both are false new tickets stay stamped as test. Do not
    backfill `issuedInTestMode` on existing documents. Before launch, cancel the 31 expired
    `reserved` orders and void or purge the 17 sandbox-paid orders and their tickets. After
    deploy, make one real-money minimum purchase, confirm the ticket document has

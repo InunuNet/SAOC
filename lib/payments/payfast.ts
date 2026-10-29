@@ -9,6 +9,7 @@ import {
   PAYFAST_SANDBOX_PROCESS_URL,
   PAYFAST_SANDBOX_VALIDATE_URL,
 } from '@/lib/payfast';
+import { PAYFAST_SANDBOX_MODE } from '@/lib/payments/sandbox-mode';
 import { constantTimeStringEqual } from '@/lib/recovery-token';
 
 import type {
@@ -199,6 +200,10 @@ export function createPayfastProvider(deps?: PayfastProviderDeps): PaymentProvid
     },
 
     async initiate(input: InitiateInput): Promise<InitiateResult> {
+      // This adapter only knows PayFast's sandbox. If its flag is ever flipped without a live path
+      // being written, refuse rather than post sandbox forms as live.
+      if (!PAYFAST_SANDBOX_MODE) return { ok: false, reason: 'not-configured' };
+
       const env = readEnv();
       const merchantId = env.PAYFAST_SANDBOX_MERCHANT_ID;
       const merchantKey = env.PAYFAST_SANDBOX_MERCHANT_KEY;

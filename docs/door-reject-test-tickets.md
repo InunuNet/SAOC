@@ -88,14 +88,17 @@ or refuses real ones.
 
 ## Gateway coupling
 
-The stamp is no longer derived from `isTicketingTestMode()` alone. `isIssuanceTestMode()` returns
-`isTicketingTestMode() || PAYMENT_GATEWAYS_SANDBOX_ONLY`, so a new order or ticket is stamped
-`false` only when both the launch constant and the sandbox-only flag are flipped. Flipping the
-launch constant alone is safe: tickets stay stamped as test and the door refuses them.
-`PAYMENT_GATEWAYS_SANDBOX_ONLY` is flipped in the go-live commit together with the payment
-adapters, and `contracts/checks/door-reject-test-tickets/gateway-coupling.sh` fails if it is
-`false` while `lib/payments/ozow.ts` or `payfast.ts` still show a sandbox marker. The door itself
-keeps `liveMode: !isTicketingTestMode()`, so committee testing is unchanged.
+The stamp is not derived from `isTicketingTestMode()` alone. `isIssuanceTestMode()` returns
+`isTicketingTestMode() || PAYMENT_GATEWAYS_SANDBOX_ONLY`, and `PAYMENT_GATEWAYS_SANDBOX_ONLY` is
+`OZOW_SANDBOX_MODE || PAYFAST_SANDBOX_MODE`, flags in `lib/payments/sandbox-mode.ts`, a
+client-safe leaf module the adapters themselves read (Ozow's `IsTest` comes from its flag; PayFast's
+`initiate` refuses if its flag is false). There
+is no separate hand-flipped flag to disagree with adapter state, so a new order or ticket is
+stamped `false` only when the launch constant is live and every adapter has left the sandbox.
+Flipping the launch constant alone is safe: tickets stay stamped as test and the door refuses them.
+The adapter guard (`adapter-guard.mjs`) fails if an adapter flag is `false` while that adapter still carries
+sandbox behaviour (sandbox URL, credentials, `IsTest`). The door itself keeps
+`liveMode: !isTicketingTestMode()`, so committee testing is unchanged.
 
 ## Consequences
 
@@ -116,6 +119,8 @@ keeps `liveMode: !isTicketingTestMode()`, so committee testing is unchanged.
 - `lib/checkin-audit.ts`: `test_ticket` audit outcome
 - `app/api/admin/checkin/route.ts`: refusal-to-outcome mapping, `code` in refusal responses
 - `lib/ticket-issuance-mode.ts` (new): `isIssuanceTestMode()`, `PAYMENT_GATEWAYS_SANDBOX_ONLY`
+- `lib/payments/sandbox-mode.ts` (new): `OZOW_SANDBOX_MODE`, `PAYFAST_SANDBOX_MODE`
+- `lib/payments/ozow.ts`, `lib/payments/payfast.ts`: read their own flag
 - `lib/checkout-reservation.ts`: provenance on order and positions
 - `lib/orders.ts`: provenance in `createOrderWithPosition()`, replay keeps the original record
 - `types/index.ts`: optional `issuedInTestMode` on `Order` and `Ticket`
