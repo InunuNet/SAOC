@@ -2,6 +2,7 @@ import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
 import { initAdmin } from '@/lib/firebase-admin';
 import { PENDING_PAYMENT_HOLD_MINUTES } from '@/lib/payments/pending-hold';
+import type { OrderRecoveryRecord } from '@/lib/recovery-access';
 import { generateBookingRefQrDataUri } from '@/lib/qr';
 import { isIssuanceTestMode } from '@/lib/ticket-issuance-mode';
 import type { Order, OrderStatus, Ticket, TicketStatus, TicketType } from '@/types/index';
@@ -69,6 +70,7 @@ export interface CreateOrderPositionResult {
 
 export interface OrdersDocRefLike {
   id: string;
+  get?(): Promise<OrdersDocSnapshotLike>;
 }
 
 export interface OrdersCollectionLike {
@@ -723,4 +725,31 @@ export async function getConfirmedOrderForDisplay(
   }
 
   return { reference, positions: confirmedPositions };
+}
+
+// ---------------------------------------------------------------------------------------------
+// nos-order-recovery — read-only lookup behind /tickets/recover. Reads the order by the id the
+// signed recovery token carries (never a query on the token) and returns just what the access
+// decision in lib/recovery-access.ts needs.
+// ---------------------------------------------------------------------------------------------
+
+export async function getOrderRecoveryRecord(
+  orderId: string,
+  deps: { db?: OrdersFirestoreRwLike } = {}
+): Promise<OrderRecoveryRecord | null> {
+  const db: OrdersFirestoreRwLike = deps.db ?? (getFirestore(initAdmin()) as unknown as OrdersFirestoreRwLike);
+  const orderRef = db.collection(ORDERS_COLLECTION).doc(orderId);
+  if (!orderRef.get) {
+    throw new Error('orders doc reference does not support get()');
+  }
+  const snapshot = await orderRef.get();
+  if (!snapshot.exists) {
+    return null;
+  }
+  const order = snapshot.data() as Partial<Order> | undefined;
+  return {
+    reference: order?.m_payment_id ?? '',
+    recoveryToken: order?.recoveryToken ?? null,
+    status: order?.status ?? '',
+  };
 }
