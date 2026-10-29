@@ -6,8 +6,8 @@ is meant to kill it, and requires that check to FAIL. Files are restored byte fo
 A baseline run of the killing check must pass first. Local files only: no network, no Firestore.
 Modes: anchor (the line after `// anchor: <name>`), first / last (str.replace), append, create.
 Run: python3 .agent/memory/project/specs/nos-order-recovery/goldens/run_mutations.py [--heavy] [ID ...]
-`--heavy` adds the mutations that need a production build + a space-free checkout path (they run
-check-recover-live.mts); without it they are listed as SKIPPED, never counted as killed.
+`--heavy` adds the mutations that need a production build (each one rebuilds, about two minutes, and runs
+check-recover-live.mts; the gate env of contract.yaml must be exported); without it they are listed as SKIPPED, never counted as killed.
 """
 import subprocess
 import sys
@@ -38,7 +38,17 @@ ACCESS_G = golden("recovery-access")
 BIND_G = golden("confirmed-order-binding")
 HEADERS_G = golden("recover-headers")
 PROXY_G = golden("proxy-routing")
-LIVE = ["pnpm", "exec", "tsx", f"{SPEC}/check-recover-live.mts"]
+BUILD = "node scripts/checks/sanity-request-count.mjs --build"
+# The live check runs the BUILT server, so a source mutation only counts after a rebuild. The server must not
+# run in fixture-replay mode (the stub in the preload answers Sanity), hence env -u on the run, not the build.
+# The build is its own step: a mutant that does not compile is a mutant bug (BUILD BROKE), never a kill.
+LIVE_BUILD = ["bash", "-c", f"{BUILD} > /dev/null 2>&1"]
+LIVE_RUN = ["bash", "-c", f"env -u SANITY_FIXTURE_MODE -u SANITY_FIXTURE_DIR pnpm exec tsx {SPEC}/check-recover-live.mts"]
+LIVE = ["@live"]
+
+
+class BuildBroke(Exception):
+    pass
 HEAVY = {"L01", "L02"}
 
 # (id, file, mode, anchor, old, new, killing check)
@@ -119,8 +129,11 @@ MUTATIONS = [
     ("X02", PROXY, "first", None, "const SHOW_PREFIXES = [NOS_INTERNAL_PREFIX, '/tickets', '/vsp'];", "const SHOW_PREFIXES = [NOS_INTERNAL_PREFIX, '/vsp'];", PROXY_G),
     ("X03", PROXY, "first", None, "if (isUnderAny(pathname, SHOW_PREFIXES)) return redirectTo(nosUrl(`${pathname}${search}`));", "if (isUnderAny(pathname, SHOW_PREFIXES)) return redirectTo(nosUrl(`${pathname}`));", PROXY_G),
     # --- live server (needs a build): the page must not let any token class diverge
-    ("L01", PAGE, "anchor", "recover-denied", "if (!access.ok)", "if (!access.ok && String(token) !== 'abc')", LIVE),
-    ("L02", ACCESS, "anchor", "ra-verify-denied", "!verified.ok ||", "false ||", LIVE),
+    # Both mutants compile under strict TS and each leaks one class: L01 answers the token 'abc' with an empty 200
+    # page instead of the 404; L02 lets an expired (valid-signature) token verify, so it reaches the order
+    # lookup (no Firestore in the live check: a 500 instead of the 404).
+    ("L01", PAGE, "first", None, "  if (!access.ok) {\n    notFound();\n  }", "  if (!access.ok) {\n    if (String(token) !== 'abc') notFound();\n    else return null;\n  }", LIVE),
+    ("L02", ACCESS, "anchor", "ra-verify", "now: input.now", "now: new Date(0)", LIVE),
     # --- frozen files
     ("U01", "lib/recovery-token.ts", "append", None, "", "\n// touched\n", wiring("unchanged")),
     ("U02", "lib/recovery-url.ts", "append", None, "", "\n// touched\n", wiring("unchanged")),
@@ -130,6 +143,15 @@ MUTATIONS = [
 
 
 def passes(command: list[str]) -> bool:
+    if command == LIVE:
+        if subprocess.run(LIVE_BUILD, cwd=ROOT).returncode != 0:
+            raise BuildBroke()
+        done = subprocess.run(LIVE_RUN, cwd=ROOT, capture_output=True, text=True)
+        if done.returncode != 0:
+            lines = [l for l in done.stderr.splitlines() if l.startswith("check-recover-live: FAIL")]
+            message = lines[0] if lines else (done.stderr.strip().splitlines() or ["(no output)"])[-1]
+            print("   A17 said:", message[:300])
+        return done.returncode == 0
     return subprocess.run(command, cwd=ROOT, capture_output=True, text=True).returncode == 0
 
 
@@ -206,10 +228,16 @@ def main() -> int:
             else:
                 killed += 1
                 print(f"{mutation_id}: killed")
+        except BuildBroke:
+            failures.append(f"{mutation_id}: BUILD BROKE (the baseline or the mutant does not compile; this is not a kill, fix the mutant)")
         finally:
             path.write_bytes(original)
             if path.read_bytes() != backup.read_bytes():
                 failures.append(f"{mutation_id}: RESTORE FAILED for {rel}")
+    if heavy and any(m[0] in HEAVY for m in MUTATIONS if not wanted or m[0] in wanted):
+        # leave .next built from the restored sources, not from the last mutant
+        if subprocess.run(LIVE_BUILD, cwd=ROOT).returncode != 0:
+            failures.append("FINAL REBUILD BROKE: the restored sources do not build")
     for leftover in SANDBOX.glob("*.bak"):
         leftover.unlink()
     if skipped:

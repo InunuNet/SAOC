@@ -1,8 +1,8 @@
 // Live-server golden for /tickets/recover (mission nos-order-recovery). Frozen by @architect.
 // Run: pnpm exec tsx .agent/memory/project/specs/nos-order-recovery/goldens/check-recover-live.mts
-// Needs `node scripts/checks/sanity-request-count.mjs --build` first (the stubbed production build) and a
-// checkout path WITHOUT spaces (scripts/checks/lib/local-next-server.mjs puts a path in NODE_OPTIONS
-// unquoted; SAOC is fixing that in #160). GET only. Sanity is stubbed and Firebase credentials are blanked
+// Needs `node scripts/checks/sanity-request-count.mjs --build` first (the stubbed production build), and the
+// server must run WITHOUT SANITY_FIXTURE_MODE/SANITY_FIXTURE_DIR (the contract command unsets them). Paths with
+// a space work since #160. Ports 3231 must be free. GET only. Sanity is stubbed and Firebase credentials are blanked
 // by the helper, so no live system is touched and no Firestore read can succeed: every case below must be
 // answered WITHOUT reaching Firestore, which is itself part of what is proved (a token that fails
 // verification must not cost a database read).
@@ -14,9 +14,9 @@
 import assert from 'node:assert/strict';
 import http from 'node:http';
 
-import { mintRecoveryToken } from '../../../../../lib/recovery-token.ts';
+import { mintRecoveryToken } from '../../../../../../lib/recovery-token.ts';
 // @ts-expect-error the helper is plain JS
-import { startServer } from '../../../../../scripts/checks/lib/local-next-server.mjs';
+import { SANDBOX_DIR, startServer } from '../../../../../../scripts/checks/lib/local-next-server.mjs';
 
 const PORT = 3231;
 const SECRET = `live-golden-${'q'.repeat(48)}`; // not a credential
@@ -47,7 +47,7 @@ const redact = (body: string, query: string) =>
   [query, encodeURIComponent(query), query.replace(/\./g, '%2E')].reduce((acc, q) => (q ? acc.split(q).join('<QUERY>') : acc), body);
 
 async function main() {
-  const live = await startServer({ port: PORT, countLog: '.tmp/sandbox/nos-order-recovery-live/count.log', launched: true });
+  const live = await startServer({ port: PORT, countLog: `${SANDBOX_DIR}/recover-live.log`, launched: true });
   try {
     const host = live.hostFor('nos');
     const valid = mintRecoveryToken({ orderId: 'order-live-A', secret: SECRET, now: NOW }).token;
@@ -94,6 +94,15 @@ async function main() {
     };
     const stripFlight = (html: string) => html.replace(/<script[^>]*>[^<]*__next_f[\s\S]*?<\/script>/g, '');
 
+    // The first request a fresh `next start` serves for a route is streamed with different RSC chunking from every
+    // later one (observed: request 1 of a run differs from requests 2-6 of the SAME token class; requests 2-6 are
+    // identical across all four classes). That is server warm-up, not a token class, so it is discarded: two
+    // throwaway requests per distinct URL length before anything is compared. It does not loosen the comparison,
+    // which is still strict across every class once the server is warm.
+    const warmSameLength = `?token=${'b'.repeat(fullLength - '?token='.length)}`; // same length as the compared URLs, never itself compared
+    for (const warm of [warmSameLength, warmSameLength, '?token=warm', '?token=warm']) {
+      await fetchOnce(host, `/tickets/recover${warm}`);
+    }
     const tier1 = await fetchAll(equalLength);
     const tier2 = [...tier1, ...(await fetchAll(anyLength))];
     const results = tier2;
