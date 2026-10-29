@@ -1,0 +1,193 @@
+{
+ "note": "Machine-readable form of the council correction sheets updated 2026-10-27 (analyst change list .tmp/sandbox/council-sheet-1028/change-list.md, rows W1,W2,W3,W5,F8,F19,R4,R5,R7,R9). Only the strings below change. Sanity items are already applied and are out of scope.",
+ "entries": [
+  {
+   "id": "C01",
+   "file": "lib/data/faq-sections.ts",
+   "before": "Thicket types and prices are on the website.",
+   "after": "Ticket types and prices are on the website.",
+   "count": 1,
+   "routes": [
+    {
+     "host": "nos",
+     "path": "/faq"
+    }
+   ],
+   "sheet": "NOS FAQ, section 2 intro, Spelling: Ticket (remove the h)"
+  },
+  {
+   "id": "C02",
+   "file": "app/(nos)/national-show/exhibitors/page.tsx",
+   "before": "members who’s subscriptions are valid",
+   "after": "members whose subscriptions are valid",
+   "count": 1,
+   "routes": [
+    {
+     "host": "nos",
+     "path": "/exhibitors",
+     "alsoMetaDescription": true
+    }
+   ],
+   "sheet": "NOS FAQ Q26 who's to whose; same sentence is this page's STANDFIRST and meta description"
+  },
+  {
+   "id": "C02b",
+   "file": "app/(nos)/national-show/page.tsx",
+   "before": "members who’s subscriptions are valid",
+   "after": "members whose subscriptions are valid",
+   "count": 1,
+   "routes": [
+    {
+     "host": "nos",
+     "path": "/"
+    }
+   ],
+   "sheet": "Same sentence as C02, constant EXHIBIT_LEAD rendered on the NOS home; ARCHITECT ADDITION beyond the lead's list, flagged"
+  },
+  {
+   "id": "C03",
+   "file": "app/(nos)/national-show/what-to-expect/page.tsx",
+   "before": "event that takes please every three years",
+   "after": "event that takes place every three years",
+   "count": 1,
+   "routes": [
+    {
+     "host": "nos",
+     "path": "/what-to-expect"
+    }
+   ],
+   "sheet": "NOS What to expect, S1 para 1 line 1"
+  },
+  {
+   "id": "C04",
+   "file": "app/(nos)/national-show/what-to-expect/page.tsx",
+   "before": "attendees or the public please ensure",
+   "after": "attendees or the public, please ensure",
+   "count": 1,
+   "routes": [
+    {
+     "host": "nos",
+     "path": "/what-to-expect"
+    }
+   ],
+   "sheet": "NOS What to expect, Photography para 1 line 2"
+  },
+  {
+   "id": "C05",
+   "file": "app/(nos)/national-show/what-to-expect/page.tsx",
+   "before": "There are two stairways: one may be suitable for visitors using crutches",
+   "after": "There are two stairways, one of which may be suitable for visitors using crutches",
+   "count": 1,
+   "routes": [
+    {
+     "host": "nos",
+     "path": "/what-to-expect"
+    }
+   ],
+   "sheet": "NOS What to expect, Accessibility 2nd para (reviewer text is cut off after the crutches clause; existing tail kept)"
+  },
+  {
+   "id": "C06",
+   "file": "app/(nos)/national-show/what-to-expect/page.tsx",
+   "before": "meet orchid societies from across the country",
+   "after": "meet members of the orchid societies from across the country",
+   "count": 2,
+   "routes": [
+    {
+     "host": "nos",
+     "path": "/what-to-expect"
+    }
+   ],
+   "sheet": "NOS What to expect, S3 para 5; the sentence exists twice in this file (S3 array and the THEME_LEAD constant), both change; 'from across the country' tail kept"
+  },
+  {
+   "id": "C07",
+   "file": "components/vendors/VendorBoothFieldset.tsx",
+   "before": "All vehicles and trailers needs to be removed",
+   "after": "All vehicles and trailers need to be removed",
+   "count": 1,
+   "render": "vendor-form",
+   "sheet": "NOS Registration, Vehicles Delivery and Loading, last paragraph"
+  },
+  {
+   "id": "C08",
+   "file": "components/vendors/VendorWasteFieldset.tsx",
+   "before": "Waste, cleaning and enviromental impacts",
+   "after": "Waste, cleaning and environmental impacts",
+   "count": 1,
+   "render": "vendor-form",
+   "sheet": "NOS Registration, Waste heading spelling; also SAOC Home sheet row S5"
+  },
+  {
+   "id": "C09",
+   "file": "components/vendors/VendorWasteFieldset.tsx",
+   "before": "maintaining a clean and safe booths",
+   "after": "maintaining clean and safe booths",
+   "count": 1,
+   "render": "vendor-form",
+   "sheet": "NOS Registration, Waste last paragraph"
+  },
+  {
+   "id": "C10",
+   "file": "components/vendors/VendorStorageFieldset.tsx",
+   "before": "Security will be provided on the premises. However, the organizers of the event cannot be held liable",
+   "after": "Security will be provided on the premises. PLEASE NOTE: the organisers of the event cannot be held liable",
+   "count": 1,
+   "render": "vendor-form",
+   "sheet": "NOS Registration, Storage and Security 2nd line: reviewer wrote PLEASE NOTE: the organisers of the event... ; reading used: it replaces 'However, the'. FLAGGED ambiguity"
+  }
+ ],
+ "pinSubs": [
+  {
+   "from": "takes please",
+   "to": "takes place"
+  },
+  {
+   "from": "who’s subscriptions",
+   "to": "whose subscriptions"
+  }
+ ],
+ "sourceFiles": [
+  "app/(nos)/national-show/exhibitors/page.tsx",
+  "app/(nos)/national-show/page.tsx",
+  "app/(nos)/national-show/what-to-expect/page.tsx",
+  "components/vendors/VendorBoothFieldset.tsx",
+  "components/vendors/VendorStorageFieldset.tsx",
+  "components/vendors/VendorWasteFieldset.tsx",
+  "lib/data/faq-sections.ts"
+ ],
+ "pinFiles": [
+  ".agent/memory/project/specs/nos-critique-r12/goldens/f6-baseline.json",
+  ".agent/memory/project/specs/launch-weekend/goldens/f18/longform-copy.json",
+  ".agent/memory/project/specs/nos-content-standard/goldens/route-table.json",
+  ".agent/memory/project/specs/vendor-form-copy-20261007/checks/check-f1-structural.sh"
+ ],
+ "looseFiles": [
+  ".agent/memory/project/specs/nos-content-standard/goldens/spec.md",
+  ".agent/memory/project/specs/nos-content-standard/goldens/council-overrides.json",
+  ".agent/memory/project/specs/vendor-form-copy-20261007/goldens/f1-vendor-form-copy-update.md",
+  ".agent/memory/project/specs/vendor-form-copy-20261007/contract-f1.yaml",
+  ".agent/memory/project/specs/audit-fixes-2026-10-25/goldens/biennial.golden.md"
+ ],
+ "frozenHistorical": [
+  "content/drive-source/",
+  "content/drive-recovered/",
+  "docs/leeann-source/",
+  "docs/handover/",
+  ".agent/memory/project/specs/nos-content-standard/goldens/sources/",
+  ".agent/memory/project/specs/nos-content-standard/fixtures/",
+  ".agent/memory/project/specs/leeann-content-build/",
+  ".agent/memory/project/specs/nos-wosa-attribution-removal/triad/",
+  ".agent/memory/project/specs/vendor-form-copy-20261007/goldens/",
+  ".agent/memory/project/specs/audit-fixes-2026-10-25/goldens/",
+  ".agent/memory/project/specs/council-1028/",
+  "scripts/seed-show-faq.ts",
+  "docs/vendor-form-copy-20261007.md"
+ ],
+ "frozenNote": "Lee-Ann's Drive copies, their frozen mirrors (sha256-pinned in route-table.json), Sanity fixtures and the Sanity seed script keep her original wording. The site corrects it; the gates apply goldens/council-overrides.json to the frozen text at READ time, so no frozen byte changes.",
+ "plumbingFiles": [
+  ".agent/memory/project/specs/nos-content-standard/checks/_lib.mjs",
+  ".agent/memory/project/specs/nos-content-standard/checks/gate-standard.mjs",
+  ".agent/memory/project/specs/nos-content-standard/checks/gate-verbatim.mjs"
+ ]
+}

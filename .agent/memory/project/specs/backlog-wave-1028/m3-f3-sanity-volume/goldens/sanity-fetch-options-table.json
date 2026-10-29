@@ -1,0 +1,17 @@
+{
+  "_comment": "Table for scripts/checks/sanity-fetch-options.mts. buildSanityFetchOptions() is a PURE exported function in sanity/lib/fetch.ts (no next/* imports) so tsx can call it. SANITY_REVALIDATE_SECONDS is an exported constant, value 60 (equals every page's `export const revalidate = 60`; do not raise it without Brad, see spec.md section Needs Brad).",
+  "constant": {"SANITY_REVALIDATE_SECONDS": 60},
+  "cases": [
+    {"input": {"isDraft": false, "live": false, "tags": null}, "expect": {"useCdn": true, "perspective": "published", "next": {"revalidate": 60, "tags": ["sanity"]}}},
+    {"input": {"isDraft": false, "live": false, "tags": ["ticketType", "sanity"]}, "expect": {"useCdn": true, "perspective": "published", "next": {"revalidate": 60, "tags": ["ticketType", "sanity"]}}},
+    {"input": {"isDraft": true, "live": false, "tags": ["homePage"]}, "expect": {"useCdn": false, "perspective": "previewDrafts", "cache": "no-store", "next": {"tags": ["homePage"]}}},
+    {"input": {"isDraft": true, "live": true, "tags": null}, "expect": {"useCdn": false, "perspective": "previewDrafts", "cache": "no-store", "next": {"tags": ["sanity"]}}},
+    {"input": {"isDraft": false, "live": true, "tags": ["ticketType", "sanity"]}, "expect": {"useCdn": true, "perspective": "published", "cache": "no-store", "next": {"tags": ["ticketType", "sanity"]}}}
+  ],
+  "invariants": [
+    "a draft read never carries next.revalidate and always carries cache:'no-store'",
+    "a live read never carries next.revalidate and always carries cache:'no-store'",
+    "a normal published read always carries next.revalidate === SANITY_REVALIDATE_SECONDS",
+    "tags default to ['sanity'] exactly as today so app/api/revalidate keeps matching"
+  ]
+}

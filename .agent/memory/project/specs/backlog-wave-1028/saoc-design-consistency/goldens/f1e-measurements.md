@@ -28,3 +28,26 @@ Run-to-run spread is about 500 ms locally. Local numbers are more pessimistic th
 
 ## Hero
 - F1d hero 750w AVIF = 17,738 bytes (/about, orchid-violet-about). Bound 25,000.
+
+## Accepted limitations of the F1e checks (Codex A15 findings)
+Fixed in the checks: (a) check-font-fallback-walk.mjs now also walks every visible input/textarea placeholder, resolved through its ::placeholder style; (b) check-fonts-network.mjs detects duplicate fonts by FILE (sha256 of the response body), not by URL, and counts distinct files the same way.
+Accepted, not closed:
+- (c) check-preload-order.mjs proves the ORDER OF TAGS in the server HTML head, not the order of network requests. Reason: a browser's request order is a scheduling outcome that headless fixtures cannot reproduce faithfully. The outcome check is the phase-5 LCP gate (A11, median of 3 runs, LCP <= 2.5s on beta).
+- (d) check-favicon.mjs's mean difference <= 20/255 shows LIKENESS to the supplied emblem, not derivation. Reason: pixel comparison cannot prove how a file was made. Provenance is held by goldens/favicon-source.json (path + sha256, CONFIRMED app/icon.png) and the build path that derives every icon from app/icon.png; the crop and opacity rules are asserted separately by check-favicon-crop.mjs.
+Arrow guard A29: the ruled back arrow (svg[data-direction="back"], "All societies") on the society page is classified separately from the F1d baseline links, expected on /societies/[first] only (>=1, label "All societies", never wraps), unexpected anywhere else; its pixel position has no F1d baseline (it was a text glyph outside the baseline), so only its structure is asserted.
+
+## Accepted limitation (e): fetch() plus CSS duplicate download
+
+The font walk and the network dedupe cannot see a woff2 fetched twice by script and by CSS. No SAOC code fetch()es a woff2, proved by this grep (must print nothing): `grep -rnE "fetch\([^)]*woff" app components lib`. Fonts load only through next/font @font-face rules, so the CSS request is the only request.
+
+## CSS-generated text (::before / ::after content)
+
+check-font-fallback-walk.mjs also walks every visible element's quoted pseudo-element content in the face the pseudo resolves to. Real case: app/(marketing)/sponsors/page.tsx:133 `before:content-['—']` (U+2014) resolves to Manrope, whose served woff2 cmap has U+2014 (verified with lib-woff2.mjs on wt-sdc-f1e d5057e0f). No product finding. The walk passes on d5057e0f.
+
+## Evidence: font FILE count per route is measured, not read from declared faces (wt-sdc-f1e 9dccfbe5, DC_PROD, `DC_DEBUG=1 node checks/check-fonts-network.mjs`)
+
+Codex A15 claimed Home uses five distinct font files (Crimson Pro normal and italic, Manrope, JetBrains Mono, Lora). That is a static union of declared faces. The network measurement, cold cache, requests to network idle, distinct by sha256:
+- `/` at 390 and at 1440: 4 requests, 4 distinct files: CrimsonPro_latin_normal, JetBrainsMono_latin_normal, Manrope_latin_normal, CrimsonPro_latin_italic. Lora is NOT fetched on Home.
+- Why: SaocLockup's Lora face (`preload: false`, weight 500) loads only when a text wordmark variant renders. Home's footer lockup renders the raster emblem variant, so no Lora text exists and the browser never requests the file.
+- Lora is fetched on /judging, /members and /contact at both widths and on /societies at 1440; none of those exceed 4 (no Crimson italic there).
+- Every other route: 3 files (Crimson normal, Manrope, JetBrains Mono), or 4 with Lora. No route exceeds 4 and none fetches a file twice. PASS fonts-network.

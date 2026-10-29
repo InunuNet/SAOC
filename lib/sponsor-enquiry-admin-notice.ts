@@ -16,6 +16,9 @@ import { sponsorLevelLabel, type SponsorEnquiryDoc } from '@/lib/sponsor-enquiry
  */
 
 const SITE_LABELS = { saoc: 'SAOC', nos: 'National Orchid Show' } as const;
+// No site label exists for an enquiry stored with `source: null`; a non-prose fallback only.
+const UNKNOWN_SITE_LABEL = 'unknown';
+const SUBJECT_STEM = 'New sponsorship enquiry';
 
 export interface SponsorEnquiryAdminNoticeInput {
   enquiryId: string;
@@ -44,9 +47,10 @@ export async function sendSponsorEnquiryAdminNotice(
   }
 
   const { doc } = input;
+  const siteLabel = doc.source ? SITE_LABELS[doc.source] : UNKNOWN_SITE_LABEL;
   const react = React.createElement(SponsorEnquiryAdminNotice, {
     enquiryId: input.enquiryId,
-    siteLabel: SITE_LABELS[doc.source],
+    siteLabel,
     contactName: doc.contactName,
     organisation: doc.organisation,
     email: doc.email,
@@ -60,7 +64,7 @@ export async function sendSponsorEnquiryAdminNotice(
     recipients.map((to) =>
       mailer.send({
         to,
-        subject: 'New sponsorship enquiry — SAOC',
+        subject: `${SUBJECT_STEM} — ${siteLabel}`,
         react,
         from: FORMS_FROM_ADDRESS,
       }),

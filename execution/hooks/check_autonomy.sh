@@ -168,25 +168,64 @@ find_roots_inside() {
   done
   return 0
 }
+# mask_quoted_metachars <cmd>: a copy of the command where a shell metacharacter
+# sitting inside a quoted string is replaced by `_`, so the syntax screens below
+# do not mistake `grep -h 'a|b' glob` for a pipeline. Single quotes hide every
+# metachar (| ; & < > ( ) $ ` \ newline); double quotes hide only | ; & < > ( ),
+# because `$`, backtick and backslash still act inside them and must stay visible.
+# Letters and quote characters are never changed, so a quoted `'cd'` is still cd.
+# A backslash outside single quotes escapes the next character (both copied as-is,
+# left visible for the backslash screen). Returned unchanged when the quotes are
+# unbalanced, or when the command holds a `#` (sh ignores quotes inside a comment)
+# or a `$'` (ANSI-C quoting, where \' does not close the string): this simple
+# scanner does not model either, so it must not hide a separator sh would honour.
+# Only for syntax screens -- never for extracting or judging a path.
+mask_quoted_metachars() {
+  local s="$1" out="" c q="" i
+  for ((i = 0; i < ${#s}; i++)); do
+    c="${s:i:1}"
+    if [ -z "$q" ]; then
+      case "$c" in
+        \\) out+="$c${s:i+1:1}"; i=$((i + 1)); continue ;;
+        \'|\") q="$c" ;;
+      esac
+    elif [ "$c" = "$q" ]; then
+      q=""
+    elif [ "$q" = "'" ]; then
+      case "$c" in [\|\;\&\<\>\(\)\$\`\\$'\n']) c="_" ;; esac
+    elif [ "$c" = '\' ]; then
+      out+="$c${s:i+1:1}"; i=$((i + 1)); continue
+    else
+      case "$c" in [\|\;\&\<\>\(\)]) c="_" ;; esac
+    fi
+    out+="$c"
+  done
+  if [ -n "$q" ] || [[ "$s" == *'#'* ]] || [[ "$s" == *"\$'"* ]]; then
+    printf '%s' "$1"
+  else
+    printf '%s' "$out"
+  fi
+}
 TR_CWD_KNOWN=0
 if [ "$TOOL" = "Bash" ]; then
   _session_cwd=$(echo "$INPUT" | jq -r '.cwd // ""' 2>/dev/null || echo "")
+  _mcmd=$(mask_quoted_metachars "$COMMAND")
   _nl=$'\n'
   # A bare `.` is the source builtin only in command position: first word, first
   # word after | ( { !, after builtin/command/time, or after an assignment word.
   # Elsewhere it is an operand (`find .`, `git diff -- .`).
   _src_dot='(^|[|({!]|(^|[[:space:]])(builtin|command|time)|[[:alnum:]_]=[^[:space:]]*)[[:space:]]*\.([[:space:]]|$)'
   if { [ -z "$_session_cwd" ] || [ "$_session_cwd" -ef "$(pwd)" ]; } \
-     && { [[ "$COMMAND" != *[\;\&\|\`]* ]] || ro_pipeline "$COMMAND" || ro_sequence "$COMMAND"; } && [[ "$COMMAND" != *"$_nl"* ]] \
-     && [[ "$COMMAND" != *'$('* ]] && [[ "$COMMAND" != *'<('* ]] && [[ "$COMMAND" != *'>('* ]] \
-     && ! [[ "$COMMAND" =~ (^|[^[:alnum:]_.-])(cd|pushd|popd|eval|exec|source)([[:space:]\)]|$) ]] \
-     && ! [[ "$COMMAND" =~ $_src_dot ]] && [[ "$COMMAND" != *'\'* ]] && [[ "$COMMAND" != *'$'* ]] && find_roots_inside "$COMMAND" \
-     && find_words_ro "$COMMAND" \
+     && { [[ "$_mcmd" != *[\;\&\|\`]* ]] || ro_pipeline "$_mcmd" || ro_sequence "$_mcmd"; } && [[ "$_mcmd" != *"$_nl"* ]] \
+     && [[ "$_mcmd" != *'$('* ]] && [[ "$_mcmd" != *'<('* ]] && [[ "$_mcmd" != *'>('* ]] \
+     && ! [[ "$_mcmd" =~ (^|[^[:alnum:]_.-])(cd|pushd|popd|eval|exec|source)([[:space:]\)]|$) ]] \
+     && ! [[ "$_mcmd" =~ $_src_dot ]] && [[ "$_mcmd" != *'\'* ]] && [[ "$_mcmd" != *'$'* ]] && find_roots_inside "$COMMAND" \
+     && find_words_ro "$_mcmd" \
      && ! [[ "$COMMAND" =~ (^|[[:space:]])(-C|--chdir|--directory|--cwd|--work-tree|--git-dir)([[:space:]=]|$) ]] \
-     && { [[ "$COMMAND" == *"|"* ]] || ! [[ "$COMMAND" =~ (^|[[:space:]])-[ce]([[:space:]=]|$) ]]; }; then
+     && { [[ "$_mcmd" == *"|"* ]] || ! [[ "$COMMAND" =~ (^|[[:space:]])-[ce]([[:space:]=]|$) ]]; }; then
     TR_CWD_KNOWN=1
   fi
-  unset _session_cwd _nl _src_dot
+  unset _session_cwd _mcmd _nl _src_dot
 fi
 # TR_DOTGLOB: 0 only when nothing in the command can make a wildcard match a
 # hidden name -- no dotglob/GLOB_DOTS, no zsh setopt, no glob library call.

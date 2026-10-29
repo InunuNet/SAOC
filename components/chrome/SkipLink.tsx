@@ -10,7 +10,7 @@ export function SkipLink() {
   return (
     <a
       href="#main-content"
-      className="fixed left-4 top-4 z-[100] inline-flex min-h-11 min-w-11 -translate-y-[300%] items-center bg-primary px-6 font-sans text-[14px] font-medium text-ivory focus:translate-y-0"
+      className="fixed left-4 top-4 z-[100] inline-flex min-h-11 min-w-11 -translate-y-[300%] items-center bg-primary px-6 font-sans text-[14px] font-medium text-ivory focus:translate-y-0 focus:outline-2 focus:outline-solid focus:outline-primary focus:outline-offset-[3px]"
     >
       Skip to main content
     </a>

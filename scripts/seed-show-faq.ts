@@ -278,7 +278,7 @@ const QUESTIONS: readonly FaqSeed[] = [
     section: 'orchid-displays-judging-and-awards',
     question: 'Will the orchids be judged?',
     answer: [
-      'Yes. Judging and awards form part of the National Orchid Show, recognising outstanding orchids and exhibitors.',
+      'Yes. Judging and awards form part of the National Orchid Show, recognising outstanding orchids.',
     ],
   },
   {
@@ -300,9 +300,9 @@ const QUESTIONS: readonly FaqSeed[] = [
   {
     number: 28,
     section: 'orchid-displays-judging-and-awards',
-    question: 'When can exhibitors set up their displays?',
+    question: 'When can Display Exhibitors set up their displays?',
     answer: [
-      'The venue access period currently planned for the organisers is 21 September 2027 at 09:00 to 27 September 2027 at 16:00. The specific exhibitor setup, judging, public opening and dismantling times are published in the programme and will also be sent via email.',
+      'The venue access period currently planned for the organisers is 21 September 2027 at 09:00 to 27 September 2027 at 16:00. The specific Display Exhibitor setup, judging, public opening and dismantling times are published in the programme and will also be sent via email.',
     ],
   },
   {

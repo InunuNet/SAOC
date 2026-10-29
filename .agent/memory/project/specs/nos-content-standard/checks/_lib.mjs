@@ -4,11 +4,12 @@ import { execFileSync, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import net from 'node:net';
 import { createRequire } from 'node:module';
-import { appendFileSync, existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 const SPEC = '.agent/memory/project/specs/nos-content-standard';
 export const STD = JSON.parse(readFileSync(`${SPEC}/goldens/standard.json`, 'utf8'));
+const COUNCIL = JSON.parse(readFileSync(`${SPEC}/goldens/council-overrides.json`, 'utf8'));
 const TABLE = JSON.parse(readFileSync(`${SPEC}/goldens/route-table.json`, 'utf8'));
 const ALL_ROUTES = TABLE.routes;
 export const RETIRED = TABLE.retired ?? [];
@@ -41,6 +42,27 @@ export function fixtureEnv(port) {
 }
 let activeFixtureLog = null;
 
+/** Council corrections (2026-10-27) applied to Lee-Ann's frozen text AFTER the sha256 freeze check, so the frozen bytes never change. */
+// A substitution may list `exceptRoutes`: routes whose answers are Sanity-held, where the frozen fixture still carries her original wording.
+// `sanityExceptions` are rows already applied in Sanity: they only hold once the replayed fixture was captured on/after appliesFromFixtureCapturedAt
+// (the oldest capturedAt in the fixture dir decides), or in live mode. Today's older fixture keeps them dormant.
+function sanityExceptionsActive() {
+  const gate = COUNCIL.sanityExceptions?.appliesFromFixtureCapturedAt;
+  if (!gate) return false;
+  if (process.env.NOS_STD_FIXTURE === 'live') return true;
+  const dir = path.resolve(`${SPEC}/fixtures/sanity`);
+  if (!existsSync(dir)) return false;
+  const stamps = readdirSync(dir).filter((f) => f.endsWith('.json') && !f.startsWith('_'))
+    .map((f) => Date.parse(JSON.parse(readFileSync(`${dir}/${f}`, 'utf8')).capturedAt));
+  return stamps.length > 0 && Math.min(...stamps) >= Date.parse(gate);
+}
+const EXCEPTIONS_ACTIVE = sanityExceptionsActive();
+export const applyCouncil = (text, route = null) => [
+  ...COUNCIL.substitutions.filter((s) => !(route && (s.exceptRoutes ?? []).includes(route))),
+  ...(EXCEPTIONS_ACTIVE ? COUNCIL.sanityExceptions.substitutions : []),
+].reduce((acc, s) => acc.split(s.from).join(s.to), text);
+/** Reads a frozen Drive-source mirror in its council-corrected form. */
+export const readSource = (file) => applyCouncil(readFileSync(file, 'utf8'));
 export const normalise = (t) => t.replace(/[ \s]+/g, ' ').trim();
 
 /** The Drive source state of a route, read from the frozen copy: ok, or why not. A route with no source is a GAP (listed); a corrupt, edited or
@@ -49,7 +71,7 @@ export function driveState(route) {
   if (!route.drive) return { state: route.verifiedBySaoc ? 'verified-by-saoc' : 'gap', text: '' };
   if (!existsSync(route.drive.path)) return { state: 'missing', text: '' };
   const buf = readFileSync(route.drive.path);
-  const text = buf.toString('utf8');
+  const text = applyCouncil(buf.toString('utf8'), route.nos);
   if (createHash('sha256').update(buf).digest('hex') !== route.drive.sha256) return { state: 'edited-after-freeze', text };
   if (text.trim() === '' || /^\[ERROR\]/.test(text.trim())) return { state: 'corrupt', text };
   return { state: 'ok', text };

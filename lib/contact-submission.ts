@@ -27,6 +27,7 @@ export interface ContactSubmissionDoc {
   submittedAt: Date;
   status: 'new';
   site: Site;
+  emailDelivery: { visitor: null; admin: null };
 }
 
 /** Trimmed fields, lowercased email, and no `undefined` own property. */
@@ -43,6 +44,7 @@ export function buildContactSubmissionDoc(
     submittedAt,
     status: 'new',
     site,
+    emailDelivery: { visitor: null, admin: null },
   };
 }
 

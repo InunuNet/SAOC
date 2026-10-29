@@ -14,6 +14,7 @@
 import { useState } from 'react';
 
 import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
+import { FormErrorAlert } from '@/components/ui/FormErrorAlert';
 import { useHydrated } from '@/lib/hooks/useHydrated';
 
 type Status = 'idle' | 'submitting' | 'success' | 'error';
@@ -116,7 +117,7 @@ export function SuggestionForm() {
   }
 
   const inputClass =
-    'w-full rounded-sm border border-muted bg-ivory px-3.5 py-2.5 font-sans text-[16px] text-ink placeholder:text-muted outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-2 transition-colors disabled:opacity-60 aria-invalid:border-error';
+    'w-full rounded-sm border border-muted bg-ivory px-3.5 py-2.5 font-sans text-[16px] text-ink placeholder:text-muted outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] transition-colors disabled:opacity-60 aria-invalid:border-error';
   const labelClass = 'font-mono text-[11px] tracking-[0.16em] text-muted';
 
   return (
@@ -222,13 +223,13 @@ export function SuggestionForm() {
 
       {/* Inline error */}
       {status === 'error' && errorMessage ? (
-        <TicketFieldAlert id={FORM_ERROR_ID}>{errorMessage}</TicketFieldAlert>
+        <FormErrorAlert id={FORM_ERROR_ID}>{errorMessage}</FormErrorAlert>
       ) : null}
 
       <button
         type="submit"
         disabled={status === 'submitting' || !hydrated}
-        className="inline-flex min-h-11 items-center rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ink hover:bg-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:opacity-60 disabled:cursor-not-allowed"
+        className="inline-flex min-h-11 items-center rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ink hover:bg-accent-soft transition-colors focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {status === 'submitting' ? 'Sending…' : 'Send suggestion'}
       </button>

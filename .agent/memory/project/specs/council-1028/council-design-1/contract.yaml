@@ -1,0 +1,175 @@
+schema: athanor.contract/v1
+slug: council-design-1
+goal: SAOC side of NOS Design ruling COUNCIL-1 - footer lockup image (C1), one capitals button style (C3), Crimson Pro and Manrope only with JetBrains Mono and Lora retired (C4), leading icons on society links (C5) - without moving the header, the NOS site, or the LCP gate.
+created_at: '2026-10-28'
+autonomy: high
+
+features:
+  - id: F1
+    name: COUNCIL-1 SAOC build (C1 footer lockup, C3 button caps, C4 two families, C5 society link icons), on top of main after the saoc-design-consistency wave
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/council-1028/council-design-1/goldens/ruling-council-1.md
+  - .agent/memory/project/specs/council-1028/council-design-1/goldens/spec.md
+  - .agent/memory/project/specs/council-1028/council-design-1/goldens/type-roles.json
+  - .agent/memory/project/specs/council-1028/council-design-1/goldens/c1-footer-lockup.json
+  - .agent/memory/project/specs/council-1028/council-design-1/goldens/footer-reg-line.json
+  - .agent/memory/project/specs/council-1028/council-design-1/goldens/c5-society-icons.json
+  - .agent/memory/project/specs/council-1028/council-design-1/goldens/c5-icons/facebook.svg
+  - .agent/memory/project/specs/council-1028/council-design-1/goldens/c5-icons/instagram.svg
+  - .agent/memory/project/specs/council-1028/council-design-1/goldens/button-allowlist.json
+  - .agent/memory/project/specs/council-1028/council-design-1/goldens/superseded-checks.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: "C4 static: zero font-mono in app/ and components/, no JetBrains or mono token, the Mono font file deleted, layout declares exactly Crimson Pro normal+italic and Manrope, Footer no longer renders SaocLockup. Fails on the post-wave main (144 font-mono lines)"
+      command: "node .agent/memory/project/specs/council-1028/council-design-1/checks/check-c4-static.mjs"
+    - id: A2
+      description: "C4 rendered: on the ten routes plus /refunds /memorandum-of-incorporation /media-kit, a society page and the 404, at 390 and 1440, the FIRST family of every rendered text node and visible form control is Crimson Pro or Manrope; loaded faces and fetched font files are only those two families"
+      command: "DC_PROD=1 node .agent/memory/project/specs/council-1028/council-design-1/checks/check-c4-families.mjs"
+      timeout_seconds: 1800
+    - id: A3
+      description: "C4 roles: .btn-caps .t-label .t-crumb .t-num .t-field defined once in globals.css with the ruled values; every role element computes its spec; no uppercase text outside t-label/btn-caps (catches a residual 11px mono-era label); breadcrumbs 14/500 sentence case; no text under 12px; vendor form label uses t-field"
+      command: "DC_PROD=1 node .agent/memory/project/specs/council-1028/council-design-1/checks/check-c4-roles.mjs"
+      timeout_seconds: 1800
+    - id: A4
+      description: "C4 file budget (F1e A2 edited in place, cap 4 -> 3): no font file fetched twice, <=3 distinct files per route at 390 and 1440, each <=40 KB, every loaded face used"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-fonts-network.mjs"
+      timeout_seconds: 1800
+    - id: A5
+      description: "F1e supersession is recorded: check-fonts-network asserts <=3 with a COUNCIL-1 note, F1e contract A2 and A19 say <=3 and cite COUNCIL-1, docs/saoc-design-consistency.md records the change"
+      command: "node .agent/memory/project/specs/council-1028/council-design-1/checks/check-f1e-supersession.mjs"
+    - id: A6
+      description: "C1: footer lockup is the supplied vertical colour-on-dark file via a byte-identical copy in public/images/saoc/lockup; rendered HEIGHT = the old lockup's baseline height +-4 at 1440 and 390 (NOS Design amendment: by height, max-width 100%, height auto); no horizontal overflow at 390/768/1023; served natural width >= rendered width x DPR at DPR 1/2/3; alt = SaocLockup's exported ACCESSIBLE_LABEL imported verbatim (not duplicated, not re-exported); footer reg line Manrope 13/500 tabular-nums, no transform/tracking, each item nowrap; aspect equals the source (not cropped, trimmed or recoloured); accessible name unchanged (equals ACCESSIBLE_LABEL); no Lora/JetBrains in the footer; Header and MobileMenu still use the horizontal raster"
+      command: "DC_PROD=1 node .agent/memory/project/specs/council-1028/council-design-1/checks/check-c1-footer.mjs"
+      timeout_seconds: 1800
+    - id: A7
+      description: "C3: every button-looking control on the walked SAOC routes (390, 1440, the open mobile drawer, labelled MENU at 1100) carries btn-caps and computes Manrope 13/700 uppercase 1.56px lh 13px, >=44 high, one line; allowlist <=12 with pill/toggle/tab/card/icon-only reasons; btn-caps is inert inside .nos-theme on five NOS routes"
+      command: "DC_PROD=1 node .agent/memory/project/specs/council-1028/council-design-1/checks/check-c3-buttons.mjs"
+      timeout_seconds: 1800
+    - id: A8
+      description: "C5: on all 21 society pages at 1440 and 390 each external link has exactly 1 aria-hidden 20x20 currentColor svg leading the verbatim label, 8px gap, 24px between links, hit >=44, no underline on the icon, 0 U+2192 in the section; globe outline stroke 1.75; Facebook and Instagram path data equal the Simple Icons golden"
+      command: "DC_PROD=1 node .agent/memory/project/specs/council-1028/council-design-1/checks/check-c5-societies.mjs"
+      timeout_seconds: 1800
+    - id: A9
+      description: "Header height and F1b nav widths hold: against goldens/baseline-post-wave.json header and bar heights equal at 390/768/1100/1280/1366/1440, brand/nav/cta/search widths within 1px, the labelled Menu within +12px (accepted ceiling, MENU only); one row, no overlap, MENU-to-CTA gap >= baseline, also at 1383. Fails until @dev step 0 commits the baseline (which now also records footer lockup height)"
+      command: "DC_PROD=1 node .agent/memory/project/specs/council-1028/council-design-1/checks/baseline.mjs header"
+      timeout_seconds: 1800
+    - id: A37
+      description: "NOS Design ruling 2: chips, toggles and tabs on /events and /societies are t-label and their selected state differs from an unselected sibling by fill, border, underline, shadow or colour, never by weight alone"
+      command: "DC_PROD=1 node .agent/memory/project/specs/council-1028/council-design-1/checks/check-selected-state.mjs"
+      timeout_seconds: 900
+    - id: A10
+      description: "NOS is untouched: every NOS element that carried font-mono/mono-label on the post-wave main computes the same family-first, size, weight, tracking, transform and line-height after the SAOC rename (nine NOS routes, footer excluded: NOS Site owns C2/TYPE-11). The baseline is captured on the main that already holds nos-type-tokens (NR-8 Label tuple, the :is() size variant, label.font-mono) and C2; the rename must reproduce those computed values"
+      command: "DC_PROD=1 node .agent/memory/project/specs/council-1028/council-design-1/checks/baseline.mjs nos"
+      timeout_seconds: 1800
+    - id: A11
+      description: "Every executable check that still names font-mono, JetBrains, --mono, mono-label, SaocLockup or Lora is classified in superseded-checks.json (update/retire/keep) and carries a COUNCIL-1 marker; none left 'unreviewed'"
+      command: "node .agent/memory/project/specs/council-1028/council-design-1/checks/check-superseded.mjs"
+    - id: A12
+      description: "F1b guard: logo + nav + CTA on ONE row at 1100/1279/1280/1366/1383/1384/1440, 5 inline items 1280-1383, 7 from 1384"
+      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-nav-one-row.mjs"
+      timeout_seconds: 900
+    - id: A13
+      description: "F1b guard: every section reachable from the nav and the drawer"
+      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-nav-reach.mjs"
+      timeout_seconds: 900
+    - id: A14
+      description: "F1b guard: nav spacing and an icon-only Menu at narrow widths"
+      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-nav-spacing.mjs"
+      timeout_seconds: 900
+    - id: A15
+      description: "F1e guard: each font file named once in app/layout.tsx"
+      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-fonts-static.mjs"
+    - id: A16
+      description: "F1e guard: glyph coverage of the SHIPPED subset files (no Mono file left to cover)"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-font-glyphs.mjs"
+      timeout_seconds: 900
+    - id: A17
+      description: "F1e guard: every visible text node is set in a shipped face that contains every character in it"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-font-fallback-walk.mjs"
+      timeout_seconds: 900
+    - id: A18
+      description: "F1e guard: CLS < 0.02 across the font swap on / and /about"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-cls-font-swap.mjs"
+      timeout_seconds: 900
+    - id: A19
+      description: "F1e guard: every shipped @font-face is swap and Crimson Pro keeps its metric-matched fallback"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-font-swap-css.mjs"
+      timeout_seconds: 900
+    - id: A20
+      description: "F1e guard: hero image preload before the first stylesheet and exactly ONE font preload (the h1/hero face)"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-preload-order.mjs"
+      timeout_seconds: 900
+    - id: A21
+      description: "F1e guard: glyph SVG rules (mirrored back arrow on a society page, currentColor, aria-hidden) still hold after the society link row changed"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-glyph-svg.mjs"
+      timeout_seconds: 900
+    - id: A22
+      description: "F1e guard: arrow swap moves nothing; goldens/arrow-links-f1d-7ee06e9a.json loses its SocietyAbout rows because C5 removed that row's arrow (updated in this feature)"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-arrow-links-delta.mjs"
+      timeout_seconds: 900
+    - id: A23
+      description: "Typecheck is clean"
+      command: "pnpm exec tsc --noEmit"
+      timeout_seconds: 900
+    - id: A24
+      description: "Lint is clean"
+      command: "pnpm exec eslint app components lib e2e"
+      timeout_seconds: 900
+    - id: A25
+      description: "docs/council-design-1.md records C1, C3, C4, C5, the role classes, the asset path, the Simple Icons source and COUNCIL-1"
+      command: "node .agent/memory/project/specs/council-1028/council-design-1/checks/check-doc.mjs"
+    - id: A26
+      description: "Local production-build LCP and the /about LCP-FCP gap, REPORT ONLY (the gate is the phase 5 beta run A27)"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-lcp-gap.mjs --report-only"
+      timeout_seconds: 1500
+    - id: A27
+      phase: 5
+      description: "RUN AFTER MERGE, on beta: the F1e LCP gate re-runs (Lighthouse mobile Slow 4G, MEDIAN OF 3, LCP <=2500 ms on / and /about) with the Mono file gone and the footer lockup an image"
+      command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-lcp-gap.mjs"
+      timeout_seconds: 1500
+    - id: A28
+      phase: 5
+      description: "RUN AFTER DEPLOY: deployed fonts, <=3 distinct files each <=40 KB, one preload"
+      command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-fonts-network.mjs"
+    - id: A29
+      phase: 5
+      description: "RUN AFTER DEPLOY: deployed first-family walk"
+      command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/council-1028/council-design-1/checks/check-c4-families.mjs"
+    - id: A30
+      phase: 5
+      description: "RUN AFTER DEPLOY: deployed footer lockup, DPR 1/2/3"
+      command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/council-1028/council-design-1/checks/check-c1-footer.mjs"
+    - id: A31
+      phase: 5
+      description: "RUN AFTER DEPLOY: deployed button style and the NOS-inert proof"
+      command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/council-1028/council-design-1/checks/check-c3-buttons.mjs"
+    - id: A32
+      phase: 5
+      description: "RUN AFTER DEPLOY: deployed society links on the 21 pages"
+      command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/council-1028/council-design-1/checks/check-c5-societies.mjs"
+    - id: A33
+      description: "REPORT ONLY (by eye): footer, society link row at 1440 and 390 for NOS Design, written to .tmp/sandbox/council-1028/shots"
+      command: "DC_PROD=1 node .agent/memory/project/specs/council-1028/council-design-1/checks/shoot-footer.mjs"
+      timeout_seconds: 900
+    - id: A34
+      description: "Codex adversarial QA of the whole diff against the goldens and the verbatim ruling"
+      type: codex_qa
+      target: "Adversarially review git diff origin/main...HEAD against .agent/memory/project/specs/council-1028/council-design-1/goldens/ (ruling-council-1.md is final, spec.md is the design). Try to pass the font, button and icon gates while: a mono or Lora face still loads on a route the walk misses (admin, error states, print, :hover/:focus pseudo styles, pseudo-element content); a button-looking control is hidden behind the allowlist or detected away; btn-caps changes text through source strings instead of CSS text-transform; the footer lockup is recoloured, cropped or served below box x DPR; a society icon is not aria-hidden, uses a brand colour, or the arrow survives in one of the 21 pages; the NOS reskin of font-mono moved; the header or nav widths moved; an existing check was weakened instead of updated (superseded-checks.json dispositions). OUT OF SCOPE: NOS C2/TYPE-11/NR-8 (NOS Site), button radii (P3, not ruled), the by-eye judgement of the footer artwork position."
+      required: true
+    - id: A35
+      phase: 5
+      description: "PHASE 5 (manifest written by the post-deploy BrowserAgent run). browser_deployed_check on beta /about and a society page, declared for the triad linter, non-required"
+      type: browser_deployed_check
+      target: .agent/memory/scratch/council-design-1-browser-manifest.json
+      required: false
+    - id: A36
+      phase: 5
+      description: "PHASE 5. gws inbox check; the newsletter button is restyled but no email path changes. Declared non-required for the triad linter, expected to skip"
+      type: gws_inbox_check
+      target: .agent/memory/scratch/council-design-1-gws-manifest.json
+      required: false

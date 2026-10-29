@@ -1,0 +1,16 @@
+schema: athanor.contract/v1
+slug: triad-fixture
+goal: fixture
+created_at: '2026-10-29'
+autonomy: high
+features:
+  - id: F1
+    name: fixture
+    status: pending
+goldens: []
+phases:
+  "4":
+    - id: A1
+      description: phases-dict shape carries the URL
+      kind: shell
+      cmd: curl -sf https://nos.saoc.co.za/faq

@@ -6,8 +6,9 @@
 // lockup, primary nav, search, the "Join a society" CTA and, below the full breakpoint, a labelled
 // MENU button. Contact is the last nav item. Becomes elevated (shadow) on scroll > 4px; the 1px
 // bottom rule is permanent.
-// Shared breakpoints (components/nos-chrome/nos-chrome.css uses the same two): inline nav and
-// search from 1384px, lockup + CTA + MENU from 780px, lockup on its own row below that.
+// Breakpoints: inline nav from 1280px (five items; Sponsors and Contact sit in the drawer until
+// 1384px, with an icon-only MENU button), the full nav, search and no MENU from 1384px, lockup +
+// CTA + MENU from 780px, lockup on its own row below that.
 // The data-hd attributes are the hooks both headers share so one script can measure either.
 // =============================================================
 
@@ -20,6 +21,11 @@ import { MobileMenu, MOBILE_MENU_ID } from './MobileMenu';
 import { SearchOverlay } from './SearchOverlay';
 import { navAriaCurrent } from '@/lib/nav-current';
 import { CONTACT_LINK, NAV } from './nav-config';
+
+// Sponsors and Contact leave the inline nav between 1280 and 1383px (five items fit beside the
+// logo, CTA and icon-only Menu button there); both stay in the Menu drawer at every width.
+const DEMOTED_IDS: readonly string[] = ['sponsors'];
+const DEMOTED_CLASS = 'min-[1280px]:max-[1384px]:hidden';
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
@@ -91,7 +97,7 @@ export function Header() {
             href="/"
             data-hd="brand"
             aria-current={navAriaCurrent(pathname, '/')}
-            className="mr-3 flex aspect-[405/70] w-[min(100%,405px)] shrink-0 items-center rounded-sm max-[780px]:mr-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+            className="mr-3 flex aspect-[405/70] w-[min(100%,405px)] shrink-0 items-center rounded-sm max-[780px]:mr-0 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
             aria-label="South African Orchid Council — Making a difference since 1968"
           >
             {/* Eager, default fetch priority, and no preload: the hero is the one prioritised image. React
@@ -102,15 +108,15 @@ export function Header() {
                 alt=""
                 width={3757}
                 height={493}
-                sizes="(min-width: 780px) 405px, calc(100vw - 32px)"
+                sizes="(min-width: 780px) 405px, min(405px, calc(100vw - 32px))"
                 loading="eager"
                 className="h-auto w-full"
               />
             </picture>
           </Link>
 
-          {/* Zone 2 — primary nav, inline from 1384px */}
-          <nav data-hd="nav" aria-label="Primary" className="ml-auto hidden min-[1384px]:block">
+          {/* Zone 2 — primary nav, inline from 1280px */}
+          <nav data-hd="nav" aria-label="Primary" className="ml-auto hidden min-[1280px]:block">
             <ul className="flex items-center gap-0.5 whitespace-nowrap">
               {NAV.map((n) => {
                 if (n.disabled) {
@@ -131,7 +137,7 @@ export function Header() {
                 // National Show leaves this site for the NOS one: a plain anchor, same tab, no arrow.
                 const NavLink = n.crossSite ? 'a' : Link;
                 return (
-                  <li key={n.id}>
+                  <li key={n.id} className={DEMOTED_IDS.includes(n.id) ? DEMOTED_CLASS : undefined}>
                     <NavLink
                       href={n.href}
                       data-hd="item"
@@ -151,7 +157,7 @@ export function Header() {
                   </li>
                 );
               })}
-              <li>
+              <li className={DEMOTED_CLASS}>
                 <Link
                   href={CONTACT_LINK.href}
                   data-hd="item"
@@ -175,7 +181,7 @@ export function Header() {
             data-hd="search"
             type="button"
             aria-label="Open search"
-            className="hidden size-11 items-center justify-center rounded-sm text-ink transition-colors duration-150 hover:text-primary min-[1384px]:inline-flex focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+            className="hidden size-11 items-center justify-center rounded-sm text-ink transition-colors duration-150 hover:text-primary min-[1384px]:inline-flex outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
             onClick={() => setSearchOpen(true)}
           >
             <Search size={18} strokeWidth={1.5} />
@@ -184,7 +190,7 @@ export function Header() {
           <Link
             href="/societies"
             data-hd="cta"
-            className="ml-auto inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[10px] bg-accent max-[780px]:hidden px-6 py-[10px] font-sans text-[13px] font-bold uppercase leading-none tracking-[0.12em] text-ink transition-colors duration-150 hover:bg-accent-soft min-[1384px]:ml-0 focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4 forced-colors:border forced-colors:border-[color:ButtonText] forced-colors:focus-visible:decoration-[color:Highlight]"
+            className="ml-auto inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[10px] bg-accent max-[780px]:hidden px-6 py-[10px] font-sans text-[13px] font-bold uppercase leading-none tracking-[0.12em] text-ink transition-colors duration-150 hover:bg-accent-soft min-[1280px]:ml-0 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] forced-colors:border forced-colors:border-[color:ButtonText]"
           >
             Join a society
           </Link>
@@ -193,14 +199,14 @@ export function Header() {
             ref={hamburgerRef}
             data-hd="menu"
             type="button"
-            aria-label="Open menu"
+            aria-label="Menu"
             aria-expanded={mobileOpen}
             aria-controls={MOBILE_MENU_ID}
-            className="inline-flex min-h-11 min-w-[104px] items-center justify-center gap-2 max-[480px]:min-w-11 max-[480px]:px-0 rounded-[10px] border-[1.5px] border-[color:var(--nh-control-border)] px-3 font-sans text-[13px] font-bold uppercase leading-none tracking-[0.12em] text-ink transition-colors duration-150 hover:text-primary max-[780px]:justify-self-end min-[1384px]:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+            className="inline-flex min-h-11 min-w-[104px] items-center justify-center gap-2 min-[1280px]:min-w-11 min-[1280px]:px-0 max-[480px]:min-w-11 max-[480px]:px-0 rounded-[10px] border-[1.5px] border-[color:var(--nh-control-border)] px-3 font-sans text-[13px] font-bold uppercase leading-none tracking-[0.12em] text-ink transition-colors duration-150 hover:text-primary max-[780px]:justify-self-end min-[1384px]:hidden outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
             onClick={() => setMobileOpen(true)}
           >
             <Menu size={20} strokeWidth={1.75} aria-hidden="true" />
-            <span className="max-[480px]:sr-only">Menu</span>
+            <span className="min-[1280px]:sr-only max-[480px]:sr-only">Menu</span>
           </button>
         </div>
       </header>

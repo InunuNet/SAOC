@@ -66,7 +66,7 @@ export const ROUTE_CROPS: Readonly<Record<string, NosCropCode>> = {
   '/national-show/conferences': 'S2a',
   '/national-show/sa-exhibitors': 'PK1',
   '/national-show/international-guests': 'Y1',
-  '/national-show/exhibitors': 'D1',
+  '/national-show/award-entries': 'D1',
   '/national-show/vendors': 'S1b',
   '/national-show/sponsors': 'PK3',
   '/national-show/archive': 'S3a',

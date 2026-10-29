@@ -31,3 +31,20 @@ export function validateAttendees(
   }
   return errors;
 }
+
+// The errors in `next` that were already flagged in `flagged`: a corrected field drops out and an
+// unflagged field never gains an error.
+export function keepFlagged(
+  flagged: AttendeeFieldErrors,
+  next: AttendeeFieldErrors
+): AttendeeFieldErrors {
+  const kept: AttendeeFieldErrors = {};
+  for (const [key, was] of Object.entries(flagged)) {
+    const now = next[key] ?? {};
+    const rowErrors: { name?: string; email?: string } = {};
+    if (was.name && now.name) rowErrors.name = now.name;
+    if (was.email && now.email) rowErrors.email = now.email;
+    if (rowErrors.name || rowErrors.email) kept[key] = rowErrors;
+  }
+  return kept;
+}

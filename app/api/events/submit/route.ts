@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isBodyWithinLimit } from '@/lib/request-guards';
 import { getAuth } from 'firebase-admin/auth';
 import { createClient } from '@sanity/client';
 
@@ -48,7 +49,13 @@ function tooManyAttempts(retryAfterSeconds: number): NextResponse {
   );
 }
 
+// Cap on the request body, checked against Content-Length before the body is buffered.
+const MAX_BODY_BYTES = 32768;
+
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  if (!isBodyWithinLimit(req.headers.get('content-length'), MAX_BODY_BYTES)) {
+    return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
+  }
   // 1. Extract bearer token
   const authz = req.headers.get('authorization') ?? '';
   const token = authz.startsWith('Bearer ') ? authz.slice(7) : null;

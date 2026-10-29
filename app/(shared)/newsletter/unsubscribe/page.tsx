@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { CircleAlert } from 'lucide-react';
 
 import { NEWSLETTER_COPY } from '@/components/chrome/newsletter-copy';
 import { NosHero } from '@/components/nos/NosHero';
@@ -44,8 +45,12 @@ export default async function NewsletterUnsubscribePage({
           {valid ? (
             <UnsubscribeConfirm token={token} />
           ) : (
-            <p role="alert" className="font-sans text-[16px] leading-[1.55] text-ink">
-              {NEWSLETTER_COPY.unsubscribeInvalid}
+            <p
+              role="alert"
+              className="flex items-start gap-2 rounded-sm border-2 border-[var(--status-error)] px-4 py-3 font-sans text-[16px] leading-[1.55] font-medium text-[var(--status-error)]"
+            >
+              <CircleAlert aria-hidden="true" className="mt-1 size-4 shrink-0" />
+              <span>{NEWSLETTER_COPY.unsubscribeInvalid}</span>
             </p>
           )}
         </div>
