@@ -6,6 +6,7 @@
 // =============================================================
 
 import type { SanitySociety } from './SocietyCard';
+import { ArrowIcon } from '@/components/ui/ArrowIcon';
 
 export interface SocietyAboutProps {
   society: SanitySociety;
@@ -32,7 +33,7 @@ export function SocietyAbout({ society }: SocietyAboutProps) {
               rel="noopener noreferrer"
               className="inline-flex min-h-11 items-center text-ink underline underline-offset-2 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
             >
-              Visit society website →
+              Visit society website<ArrowIcon />
             </a>
           ) : null}
           {society.facebookUrl ? (
@@ -42,7 +43,7 @@ export function SocietyAbout({ society }: SocietyAboutProps) {
               rel="noopener noreferrer"
               className="inline-flex min-h-11 items-center text-ink underline underline-offset-2 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
             >
-              Facebook page →
+              Facebook page<ArrowIcon />
             </a>
           ) : null}
           {society.instagramUrl ? (
@@ -52,7 +53,7 @@ export function SocietyAbout({ society }: SocietyAboutProps) {
               rel="noopener noreferrer"
               className="inline-flex min-h-11 items-center text-ink underline underline-offset-2 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
             >
-              Instagram page →
+              Instagram page<ArrowIcon />
             </a>
           ) : null}
         </div>

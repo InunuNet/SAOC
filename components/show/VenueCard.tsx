@@ -11,6 +11,7 @@
 
 import Image from 'next/image';
 
+import { ExternalArrow } from '@/components/chrome/ExternalArrow';
 import { Button } from '@/components/nos/Button';
 import { urlFor } from '@/sanity/lib/image';
 import type { ConfirmationStatus, ShowVenue } from '@/types';
@@ -107,9 +108,10 @@ export function VenueCard({
           href={venue.mapsUrl}
           target="_blank"
           rel="noreferrer noopener"
-          className={`mt-5 inline-flex min-h-[44px] items-center font-sans text-[12px] tracking-[0.16em] text-ink underline underline-offset-4 hover:text-accent${linkSuffix}`}
+          className={`mt-5 inline-flex min-h-[44px] items-center gap-1 font-sans text-[12px] tracking-[0.16em] text-ink underline underline-offset-4 hover:text-accent${linkSuffix}`}
         >
-          Open in a map ↗
+          Open in a map
+          <ExternalArrow />
         </a>
       ) : null}
     </section>
