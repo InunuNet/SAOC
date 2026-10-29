@@ -1,0 +1,17 @@
+{
+  "route": "POST /api/events/submit",
+  "gate": "lib/admin-auth.ts isAdminToken() after verifyIdToken(token, true)",
+  "refusalBodies": ["Unauthorized", "Forbidden"],
+  "cases": [
+    { "id": "no-token", "setup": "no Authorization header", "status": 401, "error": "Unauthorized" },
+    { "id": "garbage-token", "setup": "Authorization: Bearer not-a-jwt", "status": 401, "error": "Unauthorized" },
+    { "id": "unverified-no-claim", "setup": "live user, email_verified=false, no claims", "status": 403, "error": "Forbidden" },
+    { "id": "verified-non-admin", "setup": "live user, email_verified=true, no claims (the SEC-03 attacker: Google sign-in)", "status": 403, "error": "Forbidden" },
+    { "id": "claim-unverified", "setup": "live user, admin=true, email_verified=false, allowlisted", "status": 403, "error": "Forbidden" },
+    { "id": "claim-verified-not-allowlisted", "setup": "live user, admin=true, email_verified=true, NOT on ADMIN_EMAIL_ALLOWLIST", "status": 403, "error": "Forbidden" },
+    { "id": "deleted-user", "setup": "token minted for a verified admin-claim allowlisted user, user then deleted via Admin SDK", "status": 401, "error": "Unauthorized" },
+    { "id": "disabled-user", "setup": "token minted for a verified admin-claim allowlisted user, user then disabled", "status": 401, "error": "Unauthorized" },
+    { "id": "revoked-token", "setup": "token minted for a verified admin-claim allowlisted user, revokeRefreshTokens() then called", "status": 401, "error": "Unauthorized" },
+    { "id": "admin-passes-gate", "setup": "live user, admin=true, email_verified=true, allowlisted; body {} (invalid on purpose so nothing is written to Sanity)", "status": 400, "note": "400 proves the gate passed and body validation, not auth, refused. Never send a valid body in a check." }
+  ]
+}
