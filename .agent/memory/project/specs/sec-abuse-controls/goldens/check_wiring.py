@@ -183,7 +183,7 @@ def check_sandbox_independent() -> None:
 # legacy PayFast-era tickets with showId "nationalShow", ticketType "adult" x4 and "exhibitor" x7.
 # A new active product (or capacityPool) reusing one of these slugs would inherit those phantom
 # holds. Empty this tuple once SAOC confirms the purge of those documents.
-RETIRED_TICKET_SLUGS = ("adult", "exhibitor")
+RETIRED_SLUGS_WITH_LEGACY_HOLDS = ("adult", "exhibitor")
 # Files that declare active ticket types, pools or fixtures. OLD_PLACEHOLDER_SLUGS lines (the
 # cleanup list that names the retired slugs on purpose) are skipped.
 TICKET_DECLARATION_FILES = [
@@ -295,7 +295,7 @@ def check_retired_slugs() -> None:
         base = ROOT / directory
         if base.is_dir():
             files.extend(p for p in base.rglob("*") if p.suffix in (".ts", ".tsx", ".json"))
-    pattern = re.compile(r"""['"](%s)['"]""" % "|".join(re.escape(s) for s in RETIRED_TICKET_SLUGS)) if RETIRED_TICKET_SLUGS else None
+    pattern = re.compile(r"""['"](%s)['"]""" % "|".join(re.escape(s) for s in RETIRED_SLUGS_WITH_LEGACY_HOLDS)) if RETIRED_SLUGS_WITH_LEGACY_HOLDS else None
     for path in files:
         if pattern is None or not path.is_file():
             continue
