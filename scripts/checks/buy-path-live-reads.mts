@@ -223,11 +223,12 @@ function judgeFetchCall(call: ts.CallExpression, allowedQueries: Set<string>): s
   if (!argument || !ts.isObjectLiteralExpression(argument)) {
     return 'options argument is not an object literal';
   }
+  // Checked before the allowlist: a spread or computed key can replace an allowlisted `query` at
+  // runtime (`...opts`, `["qu" + "ery"]: other`), so an unreadable object is never exempt.
   const unreadable = unreadableOptionsReason(argument);
-  const query = queryIdentifier(argument);
-  // Only a repeated `query` key can forge the allowlisted identifier, so it is never exempt.
-  if (query && allowedQueries.has(query) && !unreadable?.includes('query key')) return null;
   if (unreadable) return unreadable;
+  const query = queryIdentifier(argument);
+  if (query && allowedQueries.has(query)) return null;
   const live = findProperty(argument, 'live');
   if (!live) return 'no live property';
   return passesLive(live) ? null : 'live is not true';

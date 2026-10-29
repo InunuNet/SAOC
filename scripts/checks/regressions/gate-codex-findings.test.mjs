@@ -1,5 +1,5 @@
 // Regression tests for the Codex post-merge findings on PR #154 (m3-f4-gate-hardening).
-//   node --test scripts/checks/regressions/
+//   node --test 'scripts/checks/regressions/*.test.mjs'
 // Covers buy-path-live-reads.mts (P1), the --live-reads positive control (P2) and the
 // Cache-Control classifier (P2). The triad linter (P2) has its own test_triad_classifier.py.
 // BUY_PATH_CHECKER overrides the checker under test (used to show a pre-fix copy fails).
@@ -92,9 +92,37 @@ describe('buy-path-live-reads options objects (P1)', () => {
     assert.equal(result.status, EXIT_CLEAN, result.stdout + result.stderr);
   });
 
-  test('allowlisted query may spread', () => {
-    const result = runChecker('allowed-spread', '{ query: q, ...opts }', { allow: ['q'] });
+  test('allowlisted query passes without live', () => {
+    const result = runChecker('allowed', '{ query: q, tags: [] }', { allow: ['q'] });
     assert.equal(result.status, EXIT_CLEAN, result.stdout + result.stderr);
+  });
+});
+
+// PR #160 re-review: an allowlisted `query` was exempt even when a spread or computed key could
+// replace it at runtime with a non-allowlisted query.
+describe('buy-path-live-reads allowlist cannot be forged (PR 160 P1)', () => {
+  test('spread after an allowlisted query is a violation', () => {
+    const result = runChecker('allowed-spread', '{ query: q, ...opts }', { allow: ['q'] });
+    assert.equal(result.status, EXIT_VIOLATION, result.stdout + result.stderr);
+    assert.match(result.stdout, /spreads an unknown value/);
+  });
+
+  test('spread before an allowlisted query is a violation', () => {
+    const result = runChecker('allowed-spread-first', '{ ...opts, query: q }', { allow: ['q'] });
+    assert.equal(result.status, EXIT_VIOLATION, result.stdout + result.stderr);
+  });
+
+  test('computed key that overwrites an allowlisted query is a violation', () => {
+    const result = runChecker('allowed-computed', '{ query: q, ["qu" + "ery"]: other }', { allow: ['q'] });
+    assert.equal(result.status, EXIT_VIOLATION, result.stdout + result.stderr);
+    assert.match(result.stdout, /computed property key/);
+  });
+
+  test('accessor beside an allowlisted query is a violation', () => {
+    const result = runChecker('allowed-accessor', '{ query: q, get query() { return other; } }', {
+      allow: ['q'],
+    });
+    assert.equal(result.status, EXIT_VIOLATION, result.stdout + result.stderr);
   });
 });
 

@@ -1,13 +1,16 @@
 """Regression tests for execution/verify_triad_coverage.py deployed-site URL classification
-(Codex finding on PR #154). Run: python3 -m unittest discover -s scripts/checks/regressions
-The classifier decides by the parsed hostname, never by a pattern over the raw text."""
+(Codex findings on PR #154 and PR #160). Run: python3 -m unittest discover -s scripts/checks/regressions
+The classifier decides by the parsed hostname, never by a pattern over the raw text.
+TRIAD_CLASSIFIER_DIR overrides the directory the linter is imported from (used to show a pre-fix
+copy fails)."""
+import os
 import subprocess
 import sys
 import unittest
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(REPO / "execution"))
+sys.path.insert(0, os.environ.get("TRIAD_CLASSIFIER_DIR", str(REPO / "execution")))
 
 from verify_triad_coverage import is_deployed_site_url  # noqa: E402
 
@@ -46,6 +49,36 @@ class DeployedSiteUrl(unittest.TestCase):
     def test_shell_terminators_end_the_host(self):
         for tail in (";", "|", "&&", "`", "]", ",", ">", "}", "'", '"', ")"):
             self.assertTrue(is_deployed_site_url(f"curl https://saoc.co.za{tail} x"), tail)
+
+    # PR #160 re-review. A browser (WHATWG) treats `\` as `/` in an http(s) URL; curl does not.
+    # Either may run an assertion's URL, so the deployed site is whichever host EITHER would reach.
+    def test_backslash_before_userinfo_reaches_saoc_in_a_browser(self):
+        # WHATWG host saoc.co.za (the `\` ends the authority); curl host evil.com.
+        self.assertTrue(is_deployed_site_url("open https://saoc.co.za\\@evil.com/"))
+        self.assertTrue(is_deployed_site_url("open https://beta.saoc.co.za\\x@evil.com/"))
+
+    def test_backslash_userinfo_before_saoc_reaches_saoc_with_curl(self):
+        # WHATWG host evil.com; curl sends it to saoc.co.za with userinfo `evil.com\`.
+        self.assertTrue(is_deployed_site_url("curl https://evil.com\\@saoc.co.za/x"))
+
+    def test_whatwg_only_authority_forms_are_deployed(self):
+        for url in (
+            "https:\\\\saoc.co.za/x",
+            "HTTPS:/\\Beta.SAOC.co.za/x",
+            "https:saoc.co.za/",
+            "https:///saoc.co.za/",
+            "https://saoc%2Eco.za/",
+            "https://saoc。co.za/",
+        ):
+            self.assertTrue(is_deployed_site_url(f"open {url}"), url)
+
+    def test_backslash_decoys_on_neither_reading_are_not_deployed(self):
+        for url in (
+            "https://evil.com\\saoc.co.za/",
+            "https:\\\\evil.com\\@x/saoc.co.za",
+            "https://saoc.co.za%2Eevil.com/",
+        ):
+            self.assertFalse(is_deployed_site_url(f"open {url}"), url)
 
     def test_missing_file_still_exits_two(self):
         result = subprocess.run(

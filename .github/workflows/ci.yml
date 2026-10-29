@@ -78,7 +78,7 @@ jobs:
 
       - name: Gate regression tests (Codex findings on PR 154)
         run: |
-          node --test scripts/checks/regressions/
+          node --test 'scripts/checks/regressions/*.test.mjs'
           python3 -B -m unittest discover -s scripts/checks/regressions
 
       - name: Build
