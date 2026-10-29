@@ -144,7 +144,7 @@ MUTATIONS = [
     ("B02", "lib/extra-stand-helper.ts", "create", None, "", "export const extra = 1;\n", wiring("hunk-list")),
     ("B03", "components/admin/VendorPaymentLinkControl.tsx", "append", None, "", "\n// extra\n", wiring("hunk-list")),
     # --- cache-header probe entry for the vendor stand-payment token URL (spec D9)
-    ("K01", CACHE, "first", None, '{"host": "nos", "path": "/vendors/payment?token=bogus", "status": 200},\n', "", wiring("cache-probe-entries")),
+    ("K01", CACHE, "first", None, '{"host": "nos", "path": "/vendors/payment?token=bogus", "status": 200}', '{"host": "nos", "path": "/tickets", "status": 200}', wiring("cache-probe-entries")),
     ("K03", CACHE, "first", None, '"path": "/vendors/payment?token=bogus"', '"path": "/vendors/payment"', wiring("cache-probe-entries")),
     ("U01", "lib/ticket-issuance-mode.ts", "append", None, "", "\n// touched\n", wiring("unchanged")),
     ("U02", "lib/payments/sandbox-mode.ts", "append", None, "", "\n// touched\n", wiring("unchanged")),
