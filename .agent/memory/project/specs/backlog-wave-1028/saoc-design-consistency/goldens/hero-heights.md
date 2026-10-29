@@ -57,5 +57,5 @@ dd is nowrap on the centred variant only. A9 asserts the 768/1024/1280 rows of t
   Measured locally (prod build): typographic 1024 /members 308, /privacy 289; 1440 /members 371; photographic 480 at every width. Typographic h1.left equals the breadcrumb left (25.6 at 1024, 52.5 at 1440); photographic h1.left is the 52% copy axis (524.7 at 1024).
 - HM-5: scrim ramp 0@34 .06@38 .16@42 .32@45 .52@48 .70@50.5 .80@52, none below 768, left 0-39% alpha <=.1 (A9); copy-hidden worst-pixel contrast >=4.5 (>=3 for text boxes >=30px) (A15).
 - Event facts (A12): dropping overflow-wrap anywhere, min-width 0 and the >=1024 nowrap is ratified; /events/[slug] facts stay START-aligned (HM-7), not centred by default. Product check: with data-facts-align=start the global rules give justify-content flex-start, flex-wrap wrap, cell text-align left, dt.left = dd.left = cell.left = h1.left at 1024/1280/1440/2056 (measured on /about with the attribute switched), dd white-space normal.
-- Open (unspecified in the repo): the ruling's "LG-RF (no eyebrow, index = h2, h2 56)" has no source here, so it is not asserted. /judging (photographic) and /members and /404 (typographic) render an eyebrow today.
+- LG-RF (legal pages only, A16): see comms.md 2026-10-25/26/27. /judging, /members and /404 keep their eyebrows, correctly.
 

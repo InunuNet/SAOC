@@ -33,6 +33,7 @@ f50b53ece8358a6a8a8ba34db89f88a3bdb970632ce7f52c556272b46550d7d0  .agent/memory/
 ef4ab11d81d871e1a15e085cf36b8bbac833e6dd3114bdd986eaf77c24526175  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-scrim-contrast.mjs
 f9c6c73d0b51266f2cc6f95077ebd7cf6f24373184221d9fd9f3f47a881ff2f3  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-lcp-gap.mjs
 a5e25ca57147f06615827cb2b48f0ae7d776fc8ad0e796e763f70e2db87adee1  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-lcp.mjs
+4cb7af354e9be573daaf3a4c2096454746d82970c3934cd16cd3090fbf6c5a3d  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-legal-lg-rf.mjs
 36695ad257374b0fd4f2b800f490c31438d4be589dad61f2bf0472237e0dd8f2  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-nav-drawer-current.mjs
 43e060ee1fa0595fa1e4a85d7dc78afdefdacacfe75d487393bb1a0f10badc7f  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-nav-one-row.mjs
 70b53a48b12175a2c6a7be55b682f90bc550d3dbca09bd921f3fb5486c815904  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-nav-reach.mjs
