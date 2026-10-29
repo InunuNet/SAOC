@@ -1,7 +1,5 @@
 **Section 1 - What to expect**
 
-~~What the show looks like from a visitor's side of the bench: when the doors open, what it costs to come in, and the practical details that decide whether you bring a camera, a coat or a cool box.~~
-
 The National Orchid Show is a prestigious event that takes please every three years. The Show moves between provinces on this cycle which allows the local societies the opportunity to host the delegates, judges and the public.
 
 **Section 2**
@@ -12,7 +10,9 @@ The National Orchid Show is a prestigious event that takes please every three ye
 
 **Opening hours**
 
-Thursday VIP Ticket Holders – 14.00 to 19.00
+Thursday VIP Ticket Holders – 16.00 to 18.00
+
+Sunset Cocktails 18.30 to 21.00
 
 Friday & Saturday – 9.00 to 17.00
 
@@ -22,47 +22,27 @@ Sunday – 9.00 to 16.00
 
 VIP Ticket, R350
 
-Sunset Cocktails (Single), R350
+Sunset Cocktails (Single), R400
 
-Weekend Pass (Early Bird), R360
+Weekend Pass (Early Bird), R350
 
 Early-Bird Exhibition Ticket, R120
+
+Day Pass Ticket, R150
 
 See ticket prices and book →
 
 Food and refreshments
 
-~~Catering arrangements have not been confirmed. Details of what will be available on site, and whether visitors may bring their own refreshments, will be published once the committee confirms the venue.~~
-
-There is a restaurant on site as well as food vendors will be available.
+There will be several options for food and beverages.
 
 **Photography**
-
-**~~※~~**
-
-**~~To be confirmed by the show committee~~**
-
-**~~The photography policy has not been confirmed. Personal photography is normally welcome at SAOC shows; tripods, flash near the benches, and any commercial or press photography usually need prior arrangement. Confirmed rules will be published here.~~**
 
 Photography of all plants and exhibition stands are allowed. Should you take photographs of attendees or the public please ensure that you get their express permission should you wish to publish these on or in any public content.
 
 All rights are reserved by the management committee to use photographs of the event that are publicly available.
 
-**~~Cloakroom and plant holding~~**
-
-**~~※~~**
-
-**~~To be confirmed by the show committee~~**
-
-**~~Cloakroom and plant-holding arrangements have not been confirmed. If you buy plants at the show, we expect a holding area will be available so you need not carry them for the rest of your visit — this will be confirmed.~~**
-
 **Accessibility**
-
-**~~※~~**
-
-**~~To be confirmed by the show committee~~**
-
-**~~Accessibility details have not been confirmed.~~**
 
 The ground floor of the Hangar is accessible to all visitors, including people with disabilities and mobility challenges.
 
@@ -84,6 +64,6 @@ The National Show Symposium will feature an outstanding programme of presentatio
 
 Visitors can further develop their knowledge through practical workshops, meet orchid societies from across the country, engage with researchers and conservationists, and discover how every aspect of the National Show reflects this year's theme - ***“From Wild Origins to Cultivated Excellence: The Future of Orchids.”***
 
-The 2027 National Show is made possible through the generous support of our headline sponsors, donors and partners, whose commitment to horticulture, conservation, education and scientific advancement enables the South African Orchid Council to present a truly world-class event.
+The National Orchid Show - Western Cape 2027 is made possible through the generous support of our headline sponsors, donors and partners, whose commitment to horticulture, conservation, education and scientific advancement enables the South African Orchid Council to present a truly world-class event.
 
-Whether your passion lies in conservation, scientific discovery, judging, growing or simply enjoying the extraordinary beauty of orchids, the National Orchid Show – Western Cape 2027 offers an unforgettable experience that celebrates the complete journey of orchids and the people dedicated to their future.
+Whether your passion lies in conservation, scientific discovery, judging, growing or simply enjoying the extraordinary beauty of orchids, the National Orchid Show offers an unforgettable experience that celebrates the complete journey of orchids and the people dedicated to their future.

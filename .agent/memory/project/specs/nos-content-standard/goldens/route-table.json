@@ -74,16 +74,16 @@
    "aside": "we",
    "drive": {
     "path": ".agent/memory/project/specs/nos-content-standard/goldens/sources/what-to-expect.md",
-    "version": "v1.0",
-    "sha256": "aeadd29ec3ef6f332d0e89e7cb2f4d26b69acbbef47bfc969ad9233e488c6bfe",
-    "driveStorePath": "content/drive-source/National Show/3. What to expect/What to Expect/v1.0/content.md",
+    "version": "v1.2",
+    "sha256": "b98a46b76ecb92d0fb465509e048a5d95cebe1d924b4b64b010caf14a28a9850",
+    "driveStorePath": "content/drive-source/National Show/3. What to expect/What to Expect/v1.2/content.md",
     "mode": "listed",
     "mustPresent": [
-     "The National Orchid Show is a prestigious event that takes place every three years. The Show moves between provinces on this cycle which allows the local societies the opportunity to host the delegates, judges and the public.",
+     "The National Orchid Show is a prestigious event that takes please every three years. The Show moves between provinces on this cycle which allows the local societies the opportunity to host the delegates, judges and the public.",
      "Show dates – for public entrance"
     ],
     "strikeAbsence": "none",
-    "strikeNote": "The struck cloakroom block and expectIntro are Sanity content: listed under Sanity edits in research.md; no assertion requires the Sanity change. Opening hours stay as Sanity has them (SAOC)."
+    "strikeNote": "v1.2 (re-frozen 2026-10-29, mission content-what-to-expect-v11) has no struck lines: the cloakroom block and the builder holding statements are gone from her document. The cloakroom field in Sanity showVisitorInfo is untouched."
    },
    "photo": "PK1",
    "keyFacts": null,
@@ -105,8 +105,8 @@
      "Venue"
     ],
     "sourceFile": "what-to-expect.md",
-    "hoursRows": 3,
-    "admissionRows": "1-4 (a row is omitted when its record is missing or inactive; never shown without a price)",
+    "hoursRows": 4,
+    "admissionRows": "1-5 (a row is omitted when its record is missing or inactive; never shown without a price)",
     "section3Paragraphs": 7,
     "stand": {
      "minPx": 0
@@ -122,20 +122,22 @@
      "What the show looks like from a visitor",
      "R350"
     ],
-    "keepTypo": "takes place",
+    "keepTypo": "takes please",
     "hooks": "builder-facing hooks asserted by weChecks: [data-we-stand] (Section 1 paragraph), [data-we-card] (the sticky card), [data-we-hours] and [data-we-admission] (dl lists; each row a dt+dd pair), [data-we-rest] (Food, Photography, Accessibility blocks, each an h2 + paragraphs in a wrapper), [data-we-s3] (Section 3 paragraphs). Prices are read from /tickets [data-ticket-price] by name, never typed. Each [data-we-admission] row also carries data-ticket-id=<_id>; /tickets cards are matched by their quantity input id ticket-type-qty-<slug>, slug from the explicit we.admissionSlugs map (SAOC-confirmed).",
     "ownerItems": "gggg (time format: her doc writes 14.00 / 9.00 with dots, her answers doc writes 9am to 5pm; this page asserts her What to Expect doc verbatim), eeee (first aid: not in this doc, so nothing is asserted and no copy is invented), her typo 'takes place' kept; her doc's admission figures (R350 etc.) are superseded by the ticket records (SAOC, 2026-10-25): the page shows record prices (R300/R800) and the gate bans 'R350'",
     "admissionIds": [
      "ticketType-vip",
      "ticketType-sunset-cocktails-single",
      "ticketType-weekend-pass-early-bird",
-     "ticketType-early-bird"
+     "ticketType-early-bird",
+     "ticketType-day-visitor"
     ],
     "admissionSlugs": {
      "ticketType-vip": "vip",
      "ticketType-sunset-cocktails-single": "sunset-cocktails-single",
      "ticketType-weekend-pass-early-bird": "weekend-pass-early-bird",
-     "ticketType-early-bird": "early-bird"
+     "ticketType-early-bird": "early-bird",
+     "ticketType-day-visitor": "day-visitor"
     }
    },
    "facts": {
@@ -628,7 +630,7 @@
      {
       "wd": "Thursday",
       "d": "23",
-      "hours": "VIP Ticket Holders – 14.00 to 19.00"
+      "hours": "VIP Ticket Holders – 16.00 to 18.00"
      },
      {
       "wd": "Friday",

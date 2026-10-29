@@ -2,7 +2,7 @@ e20201b7bd352ea165e0f3b63247cfb6c3a7188025010463a2958b2f81f0c9b8  .agent/memory/
 3718b4fbe7a7d8002a1521bc124ab2d0c3e00262a82b3c111c5b4e4794a107bb  .agent/memory/project/specs/nos-content-standard/checks/build.sh
 9182204a5275ef192573e33c74b1039e06cefc998420899c11632dd8c74df7b3  .agent/memory/project/specs/nos-content-standard/checks/check-diff-scope.mjs
 54cb4f80433b581272a0056ae3fc7dea3adf77487cc5a036d75a6ef4cf05bc25  .agent/memory/project/specs/nos-content-standard/checks/check-static.mjs
-728b56332858de71f5fd436825913f3fa2ab94d1f524baf4e98a0bef54b77a5c  .agent/memory/project/specs/nos-content-standard/checks/gate-standard.mjs
+0e33ba6c6e9a733d27bf8e821e826c79ad15cf9effa663a93923b3c76df527d3  .agent/memory/project/specs/nos-content-standard/checks/gate-standard.mjs
 e553babdf6ff2b75981e86a9432fdd86254c2d421be1f64d60360e55e46235cc  .agent/memory/project/specs/nos-content-standard/checks/gate-verbatim.mjs
 f52ecfacaf7deda8fc1e562972088479b0ee52dc3e362e4dca6a1b568028e5d0  .agent/memory/project/specs/nos-content-standard/checks/gate-faq.mjs
 b7854171ada581b7420c3d9478868b954a499c7f66cf893630ccfdc2862773b5  .agent/memory/project/specs/nos-content-standard/checks/block-sanity-net.cjs
@@ -15,8 +15,8 @@ dc92c4417940547a83430d015f143737d07f520b47f039323587570156c233df  .agent/memory/
 3c920c4851e1b3ff725c1040fdb85eecb8055d09665acfbc08f34d9ebfc34d08  .agent/memory/project/specs/nos-content-standard/checks/gate-e2e.mjs
 79937a9fd42bb5a619c5b3d8a550324e5e5397af485928a6fcd2c446a2dcac28  .agent/memory/project/specs/nos-content-standard/checks/record-e2e-misses.mjs
 d04cf9270c5a952834efd28bda298739c8eae98f1b18f14150cc2d19bacfdfb6  .agent/memory/project/specs/nos-content-standard/goldens/standard.json
-a497f02e621ffc0812eac7091dde1afaa3e2ca0af1348c70484290a6bebe96fd  .agent/memory/project/specs/nos-content-standard/goldens/route-table.json
-fd5eafb91edb413a79ef6746020f80661c35b02539a8305025efcca86709b474  .agent/memory/project/specs/nos-content-standard/goldens/spec.md
+07d119f775b9c2381fba024d408b87aabe54b82e3df4a7d7543cf0a8c9a23365  .agent/memory/project/specs/nos-content-standard/goldens/route-table.json
+6dab96435e59357f37944277923bb2384db8ac952aaeab971e833c27fa7ddd6c  .agent/memory/project/specs/nos-content-standard/goldens/spec.md
 4e48c95856ce47f314eb542e51f6c91ff48cab69025562b63edf3a85e41e715d  .agent/memory/project/specs/nos-content-standard/goldens/codex-qa-prompt.md
 979ff52251999ef22d9a9818089294a025fca7730245f1b56bdcea3f3e1514cf  .agent/memory/project/specs/nos-content-standard/goldens/crops/crop-proposals.json
 e9899deca0f51d4200c50ba7daa5651221fe3bbbc49f1d35d6d08447f3daec72  .agent/memory/project/specs/nos-content-standard/goldens/crops/make-contact-sheet.py
@@ -33,4 +33,4 @@ a35ca3ad1779cb22bc8eb14355abfeb61c41ad485dde786fbe0e98c916f1f4b5  .agent/memory/
 49dfa05546909299eafacb7cd6deb1f1e6896664c6b552c7cf7925db5215076b  .agent/memory/project/specs/nos-content-standard/goldens/sources/plan-your-visit.md
 bd5020ac5e40ff767879d13d9c3fb87d6fc0c727a302886e23e31b7463a4707d  .agent/memory/project/specs/nos-content-standard/goldens/sources/sa-exhibitors.md
 aac673ee2eb9fa7feb1b5af0f8f77d029b2d392d4ddcf4d10913612ce30e80cc  .agent/memory/project/specs/nos-content-standard/goldens/sources/symposium-theme.md
-aeadd29ec3ef6f332d0e89e7cb2f4d26b69acbbef47bfc969ad9233e488c6bfe  .agent/memory/project/specs/nos-content-standard/goldens/sources/what-to-expect.md
+b98a46b76ecb92d0fb465509e048a5d95cebe1d924b4b64b010caf14a28a9850  .agent/memory/project/specs/nos-content-standard/goldens/sources/what-to-expect.md

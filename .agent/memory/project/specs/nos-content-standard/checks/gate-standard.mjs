@@ -651,7 +651,7 @@ async function weChecks(page, route, vp, c, tag, server) {
   const at = (h) => live.findIndex((l) => strip(l) === h);
   const between = (from, to) => { const i = at(from); const k = to ? at(to) : live.length; return i < 0 ? [] : live.slice(i + 1, k < 0 ? live.length : k); };
   const stand = live.find((l) => !l.startsWith('**'));
-  const hours = between('Opening hours', 'Admission').map((l) => { const [a, ...b] = strip(l).split(' – '); return { label: a, value: b.join(' – ') }; });
+  const hours = between('Opening hours', 'Admission').map((l) => { const [a, ...b] = strip(l).split(' – '); if (b.length) return { label: a, value: b.join(' – ') }; const t = a.match(/^(.+?) (\d{1,2}\.\d{2} to \d{1,2}\.\d{2})$/); return t ? { label: t[1], value: t[2] } : { label: a, value: '' }; }); // v1.1 'Sunset Cocktails 18.30 to 21.00' has no dash: label/time boundary split (lead ruling 2026-10-29)
   const adm = between('Admission', null).filter((l) => /, R\d/.test(l)).slice(0, W.admissionIds.length).map((l) => { const x = strip(l).match(/^(.*), (R\d[\d ,.]*)$/); return { name: x[1], doc: x[2] }; });
   const cta = live.find((l) => strip(l) === 'See ticket prices and book →') ? 'See ticket prices and book →' : null;
   const food = between('Food and refreshments', 'Photography').map(strip);
@@ -827,13 +827,13 @@ async function homeChecks(page, vp, c, tag) {
   const wteSentence = (starts) => { for (const p of s3) { const hit = sentences(p).find((x) => x.startsWith(starts)); if (hit) return hit; } return ''; };
   const about = live('about.md').map(spUnmd); const aboutBody = about.slice(2);
   const iH = wte.findIndex((l) => spUnmd(l) === 'Opening hours'); const iA = wte.findIndex((l) => spUnmd(l) === 'Admission');
-  const hours = wte.slice(iH + 1, iA).map((l) => { const [a, ...b] = spUnmd(l).split(' – '); return { label: a, value: b.join(' – ') }; });
+  const hours = wte.slice(iH + 1, iA).map((l) => { const [a, ...b] = spUnmd(l).split(' – '); if (b.length) return { label: a, value: b.join(' – ') }; const x = a.match(/^(.+?) (\d{1,2}\.\d{2} to \d{1,2}\.\d{2})$/); return x ? { label: x[1], value: x[2] } : { label: a, value: '' }; }); // v1.1 dashless Sunset line: label/time boundary split
   const dateLabel = 'Show dates – for public entrance'; const dateLine = spUnmd(wte[wte.findIndex((l) => spUnmd(l) === dateLabel) + 1] ?? '');
   const lede = sentences(s3[0])[0]; const closing = s3[s3.length - 1];
   const f26 = spQa(H.exhibitLead); const f27 = spQa(H.exhibitBody);
   const prog = H.programmeRows.map((r) => ({ ...r, text: r.from === 'wte-sentence' ? wteSentence(r.starts) : (sentences(spQa(r.faq).a[0])[0] ?? '') }));
   const corpus = norm([...about, ...wte.map(spUnmd), ...readSource(`${SPDIR}faq.md`).split('\n').map(spUnmd)].join(' '));
-  c.check(`${tag} HM-G1 sources are real: the lede, About paragraphs 1 and 3, the dates line, ${H.programmeRows.length} programme sentences, FAQ ${H.exhibitLead}/${H.exhibitBody} and the closing paragraph were found in the frozen copies`, Boolean(lede) && aboutBody.length >= 3 && Boolean(dateLine) && hours.length === 3 && prog.every((p) => p.text.length > 30) && Boolean(f26?.a.length) && Boolean(f27?.a.length) && closing.startsWith('Whether your passion lies'));
+  c.check(`${tag} HM-G1 sources are real: the lede, About paragraphs 1 and 3, the dates line, ${H.programmeRows.length} programme sentences, FAQ ${H.exhibitLead}/${H.exhibitBody} and the closing paragraph were found in the frozen copies`, Boolean(lede) && aboutBody.length >= 3 && Boolean(dateLine) && hours.length === 4 && prog.every((p) => p.text.length > 30) && Boolean(f26?.a.length) && Boolean(f27?.a.length) && closing.startsWith('Whether your passion lies'));
   const m = await page.evaluate((H) => {
     const txt = (e) => e.textContent.replace(/\s+/g, ' ').trim(); const fam = (e) => getComputedStyle(e).fontFamily.split(',')[0].replace(/["']/g, '').toLowerCase();
     const sec = (k) => document.querySelector(`[data-hm-section="${k}"]`); const main = document.querySelector('main') ?? document.body;

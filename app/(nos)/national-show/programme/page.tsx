@@ -19,7 +19,7 @@ import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 
 // NOS Design golden PG-G1 (comms.md, 2026-10-25): hero, one timetable board of the four show days
-// (her opening hours, What to Expect v1.0), the bookable sessions placed on their day, a ruled row
+// (her opening hours, What to Expect v1.2), the bookable sessions placed on their day, a ruled row
 // for sessions with no date yet, then the existing ticket grid under "Tickets". No holding
 // statement and no placeholder copy: every string is hers or the ticket product's own.
 export const revalidate = 60;
@@ -31,7 +31,7 @@ export const metadata: Metadata = buildPageMetadata({
   path: '/national-show/programme',
 });
 
-// The timetable board. Heading, date line and opening hours are What to Expect v1.0, Section 2
+// The timetable board. Heading, date line and opening hours are What to Expect v1.2, Section 2
 // ("Show dates – for public entrance"), word for word (Drive: Docs for Brad / National Show / What to
 // Expect). Sessions are not written here: they are placed on their day from each ticket product's own
 // date (lib/data/ticket-presentation.ts).
@@ -41,6 +41,8 @@ interface ShowDay {
   month: string;
   /** Her opening-hours text for the day. */
   hours: string;
+  /** Further hours lines for the day, each its own span. */
+  extraHours?: readonly string[];
 }
 
 const TIMETABLE_HEADING = 'Show dates – for public entrance';
@@ -53,7 +55,8 @@ const SHOW_DAYS: readonly ShowDay[] = [
     weekday: 'Thursday',
     day: '23',
     month: 'September',
-    hours: 'VIP Ticket Holders – 14.00 to 19.00',
+    hours: 'VIP Ticket Holders – 16.00 to 18.00',
+    extraHours: ['Sunset Cocktails 18.30 to 21.00'],
   },
   { weekday: 'Friday', day: '24', month: 'September', hours: '9.00 to 17.00' },
   { weekday: 'Saturday', day: '25', month: 'September', hours: '9.00 to 17.00' },
@@ -169,6 +172,11 @@ export default async function ProgrammePage() {
                   <div className="nos-pg-hours">
                     <span className="k">{OPENING_HOURS_LABEL}</span>{' '}
                     <span className="v">{d.hours}</span>
+                    {d.extraHours?.map((line) => (
+                      <span key={line} className="v">
+                        {line}
+                      </span>
+                    ))}
                   </div>
                   {sessionsOn(d.weekday, d.day).map((session) => (
                     <Link key={session.id} href={session.href} className="nos-pg-session">

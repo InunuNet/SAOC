@@ -89,13 +89,13 @@ const ABOUT_LEAD = "The National Orchid Show - Western Cape 2027 is the South Af
 const ABOUT_BODY = "The National Orchid Show will showcase a spectacular display of all the orchids that are submitted for judging and display. There will be specialist plant sales by local and international vendors, educational exhibits, a comprehensive symposium and conference, practical workshops and opportunities to engage with local and international experts.";
 const DATES_LABEL = "Show dates – for public entrance";
 const DATES_LINE = "Thursday 23 to Sunday 26 September 2027";
-const HOURS = [["Thursday VIP Ticket Holders", "14.00 to 19.00"], ["Friday & Saturday", "9.00 to 17.00"], ["Sunday", "9.00 to 16.00"]] as const;
+const HOURS = [["Thursday VIP Ticket Holders", "16.00 to 18.00"], ["Sunset Cocktails", "18.30 to 21.00"], ["Friday & Saturday", "9.00 to 17.00"], ["Sunday", "9.00 to 16.00"]] as const;
 const SYMPOSIUM_LINE = "The National Show Symposium will feature an outstanding programme of presentations by respected local and international speakers covering orchid cultivation, breeding, conservation, taxonomy, judging, sustainability and emerging scientific research.";
 const WOSA_LINE = "A Conference held by Wild Orchids Southern Africa (WOSA) will highlight the ecology and conservation of indigenous orchids, illustrating how research undertaken in natural habitats continues to influence cultivation practices, breeding programmes and the long-term future of orchids.";
 const WORKSHOPS_LINE = "Workshops are planned as part of the wider event programme.";
 const EXHIBIT_LEAD = "All South African Orchid Council members whose subscriptions are valid may enter orchids for judging. If you are unsure, please check with your society.";
 const EXHIBIT_BODY = "All submitted orchids will be placed in the Show display. Regional Societies may also have their own displays by booking a stand. They will also be able to sell society plants on behalf of their members.";
-const CLOSING = "Whether your passion lies in conservation, scientific discovery, judging, growing or simply enjoying the extraordinary beauty of orchids, the National Orchid Show – Western Cape 2027 offers an unforgettable experience that celebrates the complete journey of orchids and the people dedicated to their future.";
+const CLOSING = "Whether your passion lies in conservation, scientific discovery, judging, growing or simply enjoying the extraordinary beauty of orchids, the National Orchid Show offers an unforgettable experience that celebrates the complete journey of orchids and the people dedicated to their future.";
 
 // HM-G1 (NOS Design, comms.md): the home keeps its approved rhythm and takes Lee-Ann's words. Every
 // sentence below is verbatim from About v1.2, What to Expect v1.0 or FAQ v1.0 (docs/rules/no-invention.md):
