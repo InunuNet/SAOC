@@ -79,7 +79,7 @@ How it is built in `components/chrome/Header.tsx`:
 
 Gates at 1280 and 1383: one row, `logo.right + 24 <= nav.left`, at least 12px between nav, Join and Menu, `scrollWidth == clientWidth`, logo stays 405px (`check-nav-one-row.mjs`, `check-nav-spacing.mjs`, `check-nav-reach.mjs`).
 
-Merge note: F1a and F1b both edit the Join CTA and Menu class strings in `Header.tsx`. On F1b alone those controls still use the old underline and `ring-2`; the merged result must carry F1b's width classes and F1a's ring.
+Merge note: F1a and F1b both edit the Join CTA and Menu class strings in `Header.tsx`. The merged result carries F1b's width classes (`min-[1280px]:ml-0`, `min-[1280px]:min-w-11 min-[1280px]:px-0`) and F1a's one ring (outline 2px solid, offset 3px, `outline-primary`).
 
 ## F1c: h2 role, Title role, hero heights and facts
 
@@ -159,7 +159,7 @@ F1d alone does not reach 2.5 s on a local production build: `/about` LCP 4362 ms
 
 ### The 404 page
 
-The SAOC 404 (`app/not-found.tsx`) renders outside `SaocFrame`. It has no hero image, but it must still ship exactly one Crimson font preload for its h1, and `check-preload-order.mjs` now requests a nonexistent path alongside `/about` (and `/` when deployed). Its section and metadata live in `components/site-chrome/SaocNotFound.tsx`, a module of its own, so `app/(marketing)/not-found.tsx` can import them without pulling `app/not-found.tsx`'s NOS branch, and the NOS stylesheets Next would then preload on every SAOC route, into the marketing segment. The 404's footer gap is F1c's A13. The 404's own hero preload leaking into other pages is the F1d trap that made `HeroPicture` a client component.
+The SAOC 404 (`app/not-found.tsx`) renders outside `SaocFrame`. It has no hero image, but it must still ship exactly one Crimson font preload for its h1, and `check-preload-order.mjs` now requests a nonexistent path alongside `/about` (and `/` when deployed). Its section and metadata live in `components/site-chrome/SaocNotFound.tsx`, a module of its own, so `app/(marketing)/not-found.tsx` and `app/(shared)/not-found.tsx` import them without importing `app/not-found.tsx`. `app/not-found.tsx` is host-neutral (main's ruling: reading the request host there made every route dynamic), so it always renders the SAOC 404; NOS unmatched paths reach the NOS 404 through the NOS catch-all. The 404's footer gap is F1c's A13. The 404's own hero preload leaking into other pages is the F1d trap that made `HeroPicture` a client component.
 
 ### Font cap and per-route evidence
 
@@ -262,5 +262,5 @@ These need a deployed beta (`DC_BASE_URL=https://beta.saoc.co.za`, credentials r
 - Home and `/events` cannot render under fixture replay, so they are proven only by the phase 5 deployed checks.
 - Mobile hero anatomy below 768 is not equalised (content-driven; equalising would mean inventing copy or imagery).
 - The hero-facts row at 1440 and up (gap 40, 26ch) and the 769-1023 interior are not asserted by A9; A14 covers rows, breaks, overflow and height there.
-- F1a and F1b both edit the Join CTA and Menu class strings in `components/chrome/Header.tsx`, so merging them needs hand resolution (F1b alone keeps the old underline and `ring-2`). The error-summary wrapper in `VendorApplyForm` also differs between the F1a and F1e branches until they are merged.
+- F1a and F1b both edit `components/chrome/Header.tsx`; they were merged by hand on `feat/sdc-f1b-nav` (F1b width classes plus F1a ring). The error-summary wrapper in `VendorApplyForm` still differs between the F1a and F1e branches until they are merged.
 - The accepted F1e check limits (c), (d) and (e) above are limits of the checks, not findings against the product.

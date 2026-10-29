@@ -2,6 +2,7 @@ import Image from 'next/image';
 import type { SanityImageSource } from '@sanity/image-url';
 
 import { urlFor } from '@/sanity/lib/image';
+import { ArrowIcon } from '@/components/ui/ArrowIcon';
 
 export interface SanityVendorSocialLink {
   platform: string | null;
@@ -98,7 +99,7 @@ export function VendorGrid({ nurseries }: VendorGridProps) {
               rel="noopener noreferrer"
               className="mt-auto pt-3 inline-block font-sans text-[13px] text-ink underline underline-offset-2 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
             >
-              Visit website →
+              Visit website<ArrowIcon />
             </a>
           ) : null}
           {nursery.socialMedia && nursery.socialMedia.length > 0 ? (

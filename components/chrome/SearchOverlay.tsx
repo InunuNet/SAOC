@@ -12,8 +12,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { nosUrl } from '@/lib/site-hosts';
+import { ArrowIcon } from '@/components/ui/ArrowIcon';
 
 interface SearchOverlayProps {
   open: boolean;
@@ -159,10 +160,13 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
                       <SuggestionLink
                         href={s.href}
                         onClick={onClose}
+                        data-variant="corner"
                         className="flex items-center justify-between px-3 py-2 rounded-sm hover:bg-bone text-ink focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
                       >
-                        <span>{s.label}</span>
-                        <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" className="shrink-0 text-muted" />
+                        <span data-corner-title>{s.label}</span>
+                        <span aria-hidden className="text-muted">
+                          <ArrowIcon variant="corner" />
+                        </span>
                       </SuggestionLink>
                     </li>
                   );
@@ -189,15 +193,18 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
                     <Link
                       href={r.href}
                       onClick={onClose}
+                      data-variant="corner"
                       className="flex items-center justify-between px-3 py-2 rounded-sm hover:bg-bone text-ink focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
                     >
                       <span>
-                        <span className="block">{r.item.name}</span>
+                        <span data-corner-title className="block">{r.item.name}</span>
                         <span className="block font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
                           {[r.item.province, r.item.region].filter(Boolean).join(' · ')}
                         </span>
                       </span>
-                      <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" className="shrink-0 text-muted" />
+                      <span aria-hidden className="text-muted">
+                        <ArrowIcon variant="corner" />
+                      </span>
                     </Link>
                   </li>
                 ))}
