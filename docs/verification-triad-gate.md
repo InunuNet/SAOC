@@ -175,9 +175,10 @@ its own infrastructure error (`RESIDUE_SCAN_ERROR_EXIT_CODE`), because it depend
 network call to Sanity shared across every concurrent gate, and transient blips there are
 routine noise not worth blocking unrelated work over.
 
-The triad preflight fails **closed** instead. `verify_triad_coverage.py` is pure local file read
-plus regex — no subprocess of its own, no network — so if it's missing, or exits any code
-outside its documented 0/1/2 contract, that's a real code regression, not noise. This project's
+The triad preflight fails **closed** instead. `verify_triad_coverage.py` is a local file read plus
+one local `node` call (WHATWG URL parsing, PR #160) — no network — so if it's missing, or exits
+any code outside its documented 0/1/2 contract, that's a real code regression, not noise. A
+missing or failing `node` makes the linter exit 2, which the gate also treats as an error (exit 7). This project's
 own headline defect for this mission (`browser_deployed_check.sh` returning PASS when `curl` was
 missing, caught during F1) is exactly a check silently degrading to "proceed" when its tool was
 unavailable — failing open here would let that same defect recur one layer up, in the mechanism
@@ -253,8 +254,10 @@ Per this project's standing rule (name the limitation, don't paper over it):
 - **The classifier is a string heuristic, with a URL rule since the F4c fix.**
   `is_ui_workflow_contract()` classifies a contract as UI/workflow when an assertion's
   command/cmd/target text (including nested `verify.cmd`/`verify.target`) contains the substring
-  `app/` OR a literal deployed-site URL: `https?://` followed by `saoc.co.za` or any subdomain of
-  it, host-boundary matched and case-insensitive. So `curl -sf https://saoc.co.za/national-show
+  `app/` OR a literal deployed-site URL whose host is `saoc.co.za` or any subdomain of it. The
+  host is read twice and either reading counts: as curl reads it (RFC 3986), and as a browser
+  reads it (Node's `new URL()`, so `\`, sub-delims in userinfo, percent-encoding and IDNA are
+  handled as a browser handles them). So `curl -sf https://saoc.co.za/national-show
   | grep -q "National Show"` now requires the triad; `https://saoc.co.za.evil.example`,
   `https://notsaoc.co.za`, a `user@saoc.co.za` email and a URL only in `description` still do
   not. The linter looks only at which kinds are declared, so `required: false` triad assertions

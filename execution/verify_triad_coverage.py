@@ -45,30 +45,39 @@ the primary enforcement mechanism.
 """
 from __future__ import annotations
 
+import json
 import re
+import shutil
+import subprocess
 import sys
 from pathlib import Path
-from urllib.parse import unquote, urlsplit
+from urllib.parse import urlsplit
 
 APP_PATH_PATTERN = re.compile(r"\bapp/")
-# A URL candidate: the scheme plus the authority (everything up to a path/query/fragment or a
-# character that ends a URL in shell text). The authority is then parsed, never pattern-matched,
-# so userinfo such as `saoc.co.za:443@evil.com` cannot masquerade as the host.
 # Two parsers read the same text differently, and an assertion may hand it to either, so a URL is
 # the deployed site when EITHER reading names a SAOC host (the linter fails closed):
 #   - RFC 3986, as curl reads it: only `//` opens the authority and `\` is an ordinary byte, so
-#     curl sends `https://evil.com\@saoc.co.za/x` to saoc.co.za (userinfo `evil.com\`).
-#   - WHATWG, as a browser reads it: for http(s) any run of `/` or `\`, even none, opens the
-#     authority, `\` ends it like `/`, and the host is percent-decoded and IDNA-mapped, so
-#     `https:\\saoc.co.za`, `https:saoc.co.za` and `https://saoc%2Eco.za` all reach saoc.co.za.
-#     A browser also deletes every ASCII tab, LF and CR anywhere in the URL before parsing
-#     (`https://saoc.<TAB>co.za/x` reaches saoc.co.za), so the WHATWG reading runs on the raw text
-#     AND on the text with those deleted. Its leading/trailing C0-and-space trim needs no step:
-#     the search starts at the scheme and whitespace already ends the authority.
+#     curl sends `https://evil.com\@saoc.co.za/x` to saoc.co.za (userinfo `evil.com\`). The
+#     authority (up to a path/query/fragment or a character that ends a URL in shell text) is
+#     parsed, never pattern-matched, so `saoc.co.za:443@evil.com` cannot masquerade as the host.
+#   - WHATWG, as a browser reads it: not re-implemented here. Every URL-shaped candidate is handed
+#     to Node's own `new URL()` (one batched call per contract), which applies the backslash,
+#     slash-run, userinfo (`user;@host`), tab/LF/CR deletion, percent-decoding and IDNA rules.
+#     The shell decides where an argument ends, so each candidate is cut at every character that
+#     can end it (a quote, `;`, `|`, ...) as well as at whitespace, and the text with ASCII
+#     tab/LF/CR deleted is scanned too; any one cut that reaches SAOC is enough.
 _URL_STOP = r"\s?#'\"`;|&,<>\]})("
 CURL_AUTHORITY_PATTERN = re.compile(rf"https?://([^/{_URL_STOP}]*)", re.IGNORECASE)
-WHATWG_AUTHORITY_PATTERN = re.compile(rf"https?:[/\\]*([^/\\{_URL_STOP}]*)", re.IGNORECASE)
+WHATWG_SCHEME_PATTERN = re.compile(r"https?:", re.IGNORECASE)
+WHATWG_RUN_END = re.compile(r"\s")
+WHATWG_CUT_CHARS = frozenset("'\"`;|&,<>(){}[]")
 WHATWG_DELETED_CHARS = re.compile(r"[\t\n\r]")
+WHATWG_RESOLVER = (
+    "const input = JSON.parse(require('fs').readFileSync(0, 'utf8'));"
+    "process.stdout.write(JSON.stringify(input.map((c) => {"
+    " try { return new URL(c).hostname; } catch { return null; } })));"
+)
+NODE_TIMEOUT_SECONDS = 30
 DEPLOYED_DOMAIN = "saoc.co.za"
 TRIAD_KINDS = ("codex_qa", "browser_deployed_check", "gws_inbox_check")
 
@@ -260,51 +269,83 @@ def assertion_kind(assertion: dict, shape: str = SHAPE_LIST) -> str:
     return "shell"
 
 
-def authority_host(authority: str, whatwg: bool) -> str | None:
-    """The lowercased host of one authority (what follows the last `@`, port dropped, trailing
-    dot removed), or None when it does not parse. The WHATWG reading also percent-decodes the
-    host and applies IDNA mapping (`。` is a dot), as a browser does."""
-    try:
-        host = urlsplit(f"//{authority}").hostname
-    except ValueError:
-        return None
+class WhatwgUnavailable(RuntimeError):
+    """Node could not resolve the WHATWG reading; the linter must not guess."""
+
+
+def is_deployed_host(host: str | None) -> bool:
     if not host:
-        return None
-    if whatwg:
-        host = unquote(host)
+        return False
+    host = host.lower().rstrip(".")
+    return host == DEPLOYED_DOMAIN or host.endswith("." + DEPLOYED_DOMAIN)
+
+
+def curl_reaches_deployed(text: str) -> bool:
+    """The RFC 3986 reading: the host after the last `@` of a `//` authority."""
+    for match in CURL_AUTHORITY_PATTERN.finditer(text):
         try:
-            host = host.encode("idna").decode("ascii")
-        except UnicodeError:
-            pass
-    return host.lower().rstrip(".")
+            host = urlsplit(f"//{match.group(1)}").hostname
+        except ValueError:
+            continue
+        if is_deployed_host(host):
+            return True
+    return False
+
+
+def whatwg_candidates(text: str) -> set[str]:
+    """Every string a shell could hand a browser from `text`: from each `http(s):` up to each
+    character that can end a shell word, and up to the next whitespace."""
+    candidates = set()
+    for reading in (text, WHATWG_DELETED_CHARS.sub("", text)):
+        for match in WHATWG_SCHEME_PATTERN.finditer(reading):
+            start = match.start()
+            run_end = WHATWG_RUN_END.search(reading, start)
+            stop = run_end.start() if run_end else len(reading)
+            cuts = [index for index in range(match.end(), stop) if reading[index] in WHATWG_CUT_CHARS]
+            candidates.update(reading[start:index] for index in cuts + [stop])
+    return candidates
+
+
+def whatwg_hosts(candidates: list[str]) -> list[str | None]:
+    """Node's `new URL(c).hostname` for each candidate (None where it does not parse)."""
+    node = shutil.which("node")
+    if node is None:
+        raise WhatwgUnavailable("node is not on PATH; the WHATWG URL reading needs it")
+    try:
+        result = subprocess.run(
+            [node, "-e", WHATWG_RESOLVER], input=json.dumps(candidates),
+            capture_output=True, text=True, timeout=NODE_TIMEOUT_SECONDS, check=True,
+        )
+        hosts = json.loads(result.stdout)
+    except (subprocess.SubprocessError, OSError, ValueError) as exc:
+        raise WhatwgUnavailable(f"node URL resolution failed: {type(exc).__name__}") from exc
+    if not isinstance(hosts, list) or len(hosts) != len(candidates):
+        raise WhatwgUnavailable("node URL resolution returned a malformed result")
+    return hosts
+
+
+def any_deployed_site_url(texts: list[str]) -> bool:
+    """True when any text holds a URL that curl or a browser would send to saoc.co.za or a
+    subdomain of it. The curl reading runs first; Node is called once for all the rest."""
+    if any(curl_reaches_deployed(text) for text in texts):
+        return True
+    candidates = sorted(set().union(*(whatwg_candidates(text) for text in texts)))
+    return bool(candidates) and any(is_deployed_host(host) for host in whatwg_hosts(candidates))
 
 
 def is_deployed_site_url(text: str) -> bool:
-    """True when `text` holds a URL that curl or a browser would send to saoc.co.za or a subdomain
-    of it. Userinfo is ignored (the host is what follows the last `@`); a trailing dot is a rooted
-    host; an unparseable authority is not the deployed site."""
-    stripped = WHATWG_DELETED_CHARS.sub("", text)
-    readings = (
-        (CURL_AUTHORITY_PATTERN, text, False),
-        (WHATWG_AUTHORITY_PATTERN, text, True),
-        (WHATWG_AUTHORITY_PATTERN, stripped, True),
-    )
-    for pattern, reading, whatwg in readings:
-        for match in pattern.finditer(reading):
-            host = authority_host(match.group(1), whatwg)
-            if host and (host == DEPLOYED_DOMAIN or host.endswith("." + DEPLOYED_DOMAIN)):
-                return True
-    return False
+    return any_deployed_site_url([text])
 
 
 def is_ui_workflow_contract(contract: dict) -> bool:
+    texts = []
     for assertion in iter_assertions(contract):
         if not isinstance(assertion, dict):
             continue
-        for text in assertion_text_fields(assertion):
-            if APP_PATH_PATTERN.search(text) or is_deployed_site_url(text):
-                return True
-    return False
+        texts.extend(assertion_text_fields(assertion))
+    if any(APP_PATH_PATTERN.search(text) for text in texts):
+        return True
+    return any_deployed_site_url(texts)
 
 
 def declared_kinds(contract: dict) -> set:
@@ -323,7 +364,11 @@ def main() -> int:
     if err is not None:
         return usage_error(err)
 
-    if not is_ui_workflow_contract(contract):
+    try:
+        ui_workflow = is_ui_workflow_contract(contract)
+    except WhatwgUnavailable as exc:
+        return usage_error(f"cannot classify {sys.argv[1]}: {exc}")
+    if not ui_workflow:
         print(f"EXEMPT: {sys.argv[1]} does not reference an app/ path or a deployed-site URL -- non-UI, no triad required")
         return 0
 

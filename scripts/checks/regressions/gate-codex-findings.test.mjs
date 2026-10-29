@@ -210,6 +210,41 @@ describe('buy-path-live-reads allowlist resolves the binding (PR 160 round 2 P1)
   });
 });
 
+// PR #160 third re-review: the import check matched a suffix, so a barrel at
+// `@/evil/sanity/queries` could re-export any query under an allowlisted name.
+describe('buy-path-live-reads allowlist resolves the module path (PR 160 round 3 P1)', () => {
+  const runWith = (name, specifier) =>
+    runChecker(name, null, {
+      allow: ALLOWED,
+      source:
+        `import { ticketsPageQuery } from '${specifier}';\n` +
+        `export const load = () => sanityFetch({ query: ticketsPageQuery });\n`,
+    });
+
+  for (const [name, specifier] of [
+    ['barrel-alias', '@/evil/sanity/queries'],
+    ['barrel-relative', './sanity/queries'],
+    ['barrel-package', 'sanity/queries'],
+    ['barrel-directory', '@/sanity/queries/'],
+  ]) {
+    test(`an import from ${specifier} is a violation`, () => {
+      const result = runWith(name, specifier);
+      assert.equal(result.status, EXIT_VIOLATION, result.stdout + result.stderr);
+      assert.match(result.stdout, /not bound only by its sanity\/queries import/);
+    });
+  }
+
+  for (const [name, specifier] of [
+    ['relative-real', '../sanity/queries'],
+    ['relative-real-ts', '../sanity/queries.ts'],
+  ]) {
+    test(`an import from ${specifier} (the real module) passes`, () => {
+      const result = runWith(name, specifier);
+      assert.equal(result.status, EXIT_CLEAN, result.stdout + result.stderr);
+    });
+  }
+});
+
 describe('sanity-request-count positive control (P2)', () => {
   test('present then absent passes', () => {
     assert.deepEqual(judgeCachedControl('ticketsPageQuery', 1, 0), []);

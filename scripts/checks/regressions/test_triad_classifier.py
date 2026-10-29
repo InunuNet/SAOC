@@ -93,6 +93,45 @@ class DeployedSiteUrl(unittest.TestCase):
     def test_tab_decoy_that_reaches_saoc_on_no_reading_is_not_deployed(self):
         self.assertFalse(is_deployed_site_url("open https://evil.com\t.saoc/x"))
 
+    # PR #160 third re-review: the hand-rolled WHATWG reading cut the authority at `;`, but a
+    # browser keeps `;` (and other sub-delims) in userinfo. The reading is now Node's new URL().
+    def test_sub_delims_in_userinfo_before_saoc_are_deployed(self):
+        for url in (
+            "'https://user;@saoc.co.za/x'",
+            "\"https://a,b@saoc.co.za/\"",
+            "'https://u|x@beta.saoc.co.za/'",
+            "'https://u&v=1@saoc.co.za/'",
+            "'https://(u)@saoc.co.za/'",
+            "'https://u:p;w@saoc.co.za:443/x'",
+            "'https://evil.com;@saoc.co.za/'",
+        ):
+            self.assertTrue(is_deployed_site_url(f"curl {url}"), url)
+
+    def test_sub_delims_in_userinfo_before_another_host_are_not_deployed(self):
+        # `https://saoc.co.za;@evil.com` stays deployed on purpose: unquoted, the shell ends the
+        # word at `;` and curl fetches https://saoc.co.za. The linter cannot see quoting.
+        for url in (
+            "'https://user;@evil.com/saoc.co.za'",
+            "'https://u,v@evil.com/x?saoc.co.za'",
+            "'https://a(b)@evil.com/'",
+        ):
+            self.assertFalse(is_deployed_site_url(f"curl {url}"), url)
+
+    def test_no_node_is_a_usage_error_not_a_classification(self):
+        sandbox = REPO / ".tmp" / "sandbox" / "triad-no-node"
+        sandbox.mkdir(parents=True, exist_ok=True)
+        contract = sandbox / "contract.yaml"
+        contract.write_text("assertions:\n  - id: A1\n    command: curl 'https://user;@example.org/'\n")
+        try:
+            result = subprocess.run(
+                [sys.executable, str(REPO / "execution" / "verify_triad_coverage.py"), str(contract)],
+                capture_output=True, text=True, timeout=30, env={"PATH": str(sandbox)},
+            )
+        finally:
+            subprocess.run([sys.executable, "execution/safe_delete.py", str(sandbox)], cwd=REPO, check=True)
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn("node is not on PATH", result.stderr)
+
     def test_missing_file_still_exits_two(self):
         result = subprocess.run(
             [sys.executable, str(REPO / "execution" / "verify_triad_coverage.py"), "no-such.yaml"],

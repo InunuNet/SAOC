@@ -18,7 +18,9 @@ const EXIT_SETUP = 2;
 const SANITY_FETCH = 'sanityFetch';
 const FETCH_MODULE_SUFFIX = 'sanity/lib/fetch';
 const CLIENT_MODULE_SUFFIX = 'sanity/lib/client';
-const QUERIES_MODULE_SUFFIX = 'sanity/queries';
+const QUERIES_MODULE = 'sanity/queries';
+const QUERIES_MODULE_EXTENSIONS = ['', '.ts', '.js'];
+const ROOT_ALIAS = '@/';
 const CREATE_CLIENT = 'createClient';
 
 interface AllowEntry {
@@ -238,10 +240,28 @@ function declarationsOf(source: ts.SourceFile, name: string): ts.Node[] {
   return found;
 }
 
+// True only when `specifier` resolves to <root>/sanity/queries itself: `@/` is the root (tsconfig
+// paths), a relative specifier resolves from the importing file. A suffix match would let a barrel
+// such as `@/evil/sanity/queries` re-export any query under an allowlisted name, so a bare package,
+// any other alias, or a directory form (trailing `/`, which resolves to an index) is rejected.
+function resolvesToQueriesModule(specifier: string, importer: string, root: string): boolean {
+  if (specifier.endsWith('/')) return false;
+  let target: string;
+  if (specifier.startsWith(ROOT_ALIAS)) {
+    target = resolve(root, specifier.slice(ROOT_ALIAS.length));
+  } else if (specifier.startsWith('./') || specifier.startsWith('../')) {
+    target = resolve(dirname(importer), specifier);
+  } else {
+    return false;
+  }
+  const queriesModule = resolve(root, QUERIES_MODULE);
+  return QUERIES_MODULE_EXTENSIONS.some((extension) => target === queriesModule + extension);
+}
+
 // An allowlist entry names the query exported by sanity/queries, not any identifier spelled the
 // same: the name must be bound exactly once in the file, by an unaliased value import from that
 // module. A parameter, local or alias of that name could hold any query, so it fails closed.
-function isQueriesImport(source: ts.SourceFile, name: string): boolean {
+function isQueriesImport(source: ts.SourceFile, name: string, root: string): boolean {
   const declarations = declarationsOf(source, name);
   if (declarations.length !== 1) return false;
   const [specifier] = declarations;
@@ -252,11 +272,16 @@ function isQueriesImport(source: ts.SourceFile, name: string): boolean {
   return (
     !clause.isTypeOnly &&
     ts.isStringLiteral(declaration.moduleSpecifier) &&
-    declaration.moduleSpecifier.text.endsWith(QUERIES_MODULE_SUFFIX)
+    resolvesToQueriesModule(declaration.moduleSpecifier.text, source.fileName, root)
   );
 }
 
-function judgeFetchCall(call: ts.CallExpression, allowedQueries: Set<string>, source: ts.SourceFile): string | null {
+function judgeFetchCall(
+  call: ts.CallExpression,
+  allowedQueries: Set<string>,
+  source: ts.SourceFile,
+  root: string,
+): string | null {
   const [argument] = call.arguments;
   if (!argument || !ts.isObjectLiteralExpression(argument)) {
     return 'options argument is not an object literal';
@@ -267,7 +292,7 @@ function judgeFetchCall(call: ts.CallExpression, allowedQueries: Set<string>, so
   if (unreadable) return unreadable;
   const query = queryIdentifier(argument);
   if (query && allowedQueries.has(query)) {
-    return isQueriesImport(source, query) ? null : `allowlisted ${query} is not bound only by its sanity/queries import`;
+    return isQueriesImport(source, query, root) ? null : `allowlisted ${query} is not bound only by its sanity/queries import`;
   }
   const live = findProperty(argument, 'live');
   if (!live) return 'no live property';
@@ -310,7 +335,7 @@ function checkFile(manifest: Manifest, root: string, relFile: string): { violati
       const callee = plainCalleeName(node);
       if (isSanityFetchCall(node, bindings)) {
         sites[SANITY_FETCH] = (sites[SANITY_FETCH] ?? 0) + 1;
-        const reason = judgeFetchCall(node, allowed, source);
+        const reason = judgeFetchCall(node, allowed, source, root);
         if (reason) report(node, SANITY_FETCH, reason);
       } else if (callee && callers.has(callee)) {
         sites[callee] = (sites[callee] ?? 0) + 1;
