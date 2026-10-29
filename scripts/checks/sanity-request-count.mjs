@@ -4,6 +4,7 @@
 //   --assert     BEFORE/AFTER table, compare with goldens/request-count-targets.json
 //   --ttl-check  cache expires after SANITY_REVALIDATE_SECONDS and then holds again
 //   --notfound   unmatched URL returns 404 with host-correct chrome on both hosts
+//   --live-reads /tickets/<slug> re-reads its live Sanity queries on the second request
 import { execFileSync, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -15,6 +16,7 @@ import {
   clearFetchCache,
   countLines,
   countedGet,
+  linesSince,
   resetCountLog,
   sleep,
   startServer,
@@ -28,6 +30,10 @@ const ISOLATED_PATH = resolve(
 const TARGETS_PATH = resolve(
   REPO_ROOT,
   '.agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/goldens/request-count-targets.json',
+);
+const LIVE_READS_PATH = resolve(
+  REPO_ROOT,
+  '.agent/memory/project/specs/backlog-wave-1028/m3-f4-gate-hardening/goldens/live-reads-behaviour.json',
 );
 const PORT = 3218;
 const COUNT_LOG = resolve(SANDBOX_DIR, 'run.log');
@@ -197,11 +203,45 @@ async function runNotFound() {
   }
 }
 
+// The null Sanity stub 404s /tickets/<slug> after its reads. The live reads must hit Sanity again on
+// the second request; the one non-live read (ticketsPage) must not, which proves the check can tell
+// a cached read from a live one. Needs a prior --build of this source revision.
+async function runLiveReads() {
+  const golden = JSON.parse(readFileSync(LIVE_READS_PATH, 'utf8'));
+  const builtFrom = existsSync(BUILD_STAMP) ? readFileSync(BUILD_STAMP, 'utf8') : null;
+  check(builtFrom === sourceRevision(), 'the .next build was made from this exact source revision (run --build first)');
+  const server = await startServer({ port: PORT, countLog: COUNT_LOG, launched: true });
+  try {
+    const host = server.hostFor(golden.host);
+    const first = await countedGet(PORT, COUNT_LOG, host, golden.path);
+    check(first.status === golden.expected_status, `${golden.host} ${golden.path} first request is ${golden.expected_status} (got ${first.status})`);
+    const before = countLines(COUNT_LOG);
+    const second = await countedGet(PORT, COUNT_LOG, host, golden.path);
+    check(second.status === golden.expected_status, `second request is ${golden.expected_status} (got ${second.status})`);
+    // The preload logs the URL-encoded query, where a space is `+`; compare on plain spaces.
+    const lines = linesSince(COUNT_LOG, before).map((line) => line.replace(/\+/g, ' ').replace(/\s+/g, ' '));
+    const occurrences = (fingerprint) => lines.filter((line) => line.includes(fingerprint)).length;
+    for (const read of golden.second_request_must_contain) {
+      const count = occurrences(read.fingerprint);
+      console.log(`second request ${read.name}: ${count} request(s)`);
+      check(count >= 1, `second request re-reads ${read.name} live`);
+    }
+    for (const read of golden.second_request_must_not_contain) {
+      const count = occurrences(read.fingerprint);
+      console.log(`second request ${read.name}: ${count} request(s)`);
+      check(count === 0, `second request serves ${read.name} from cache`);
+    }
+  } finally {
+    server.stop();
+  }
+}
+
 const MODES = {
   '--build': runBuild,
   '--assert': runAssert,
   '--ttl-check': runTtlCheck,
   '--notfound': runNotFound,
+  '--live-reads': runLiveReads,
 };
 
 const mode = process.argv.slice(2).find((arg) => arg in MODES);

@@ -20,7 +20,7 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
       <div className="saoc-container flex items-center flex-wrap gap-0 py-3">
         <Link
           href="/"
-          className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted hover:text-primary transition-colors duration-150"
+          className="inline-flex min-h-6 min-w-6 items-center font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted hover:text-primary transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
         >
           Home
         </Link>
@@ -30,7 +30,7 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
             {item.href ? (
               <Link
                 href={item.href}
-                className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted hover:text-primary transition-colors duration-150"
+                className="inline-flex min-h-6 min-w-6 items-center font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted hover:text-primary transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
               >
                 {item.label}
               </Link>

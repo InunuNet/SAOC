@@ -69,6 +69,13 @@ jobs:
       - name: Type check
         run: pnpm type-check
 
+      # ADDED 2026-10-29 (mission backlog-wave-2026-10-28 M3/F4). Static: needs only checkout and install.
+      - name: Buy-path live reads (AST)
+        run: pnpm exec tsx scripts/checks/buy-path-live-reads.mts
+
+      - name: Cache-header probe selftest
+        run: node scripts/checks/cache-headers-probe.mjs --selftest
+
       - name: Build
         # The two site origins, as in apphosting.yaml: lib/site-hosts.ts throws in production without them.
         env:
@@ -118,6 +125,20 @@ jobs:
       # separate feature with its own contract, not a silent scope-creep of this one.
       - name: Contract-check inventory ratchet (missing scripts + unparseable contracts)
         run: node contracts/checks/_shared/run_contract_suite.mjs --check-ratchet contracts/checks/_shared/missing-baseline.json
+
+      # ADDED 2026-10-29 (mission backlog-wave-2026-10-28 M3/F4). These two cannot reuse the CI
+      # `.next`: the harness stubs Sanity and sets localhost site origins at build time, and the
+      # CI build bakes in beta.saoc.co.za / nos.saoc.co.za (measured: nos.localhost routing 308s,
+      # the build stamp mismatches). So they get their own stubbed build, run last because it
+      # overwrites `.next` that the e2e step above needs. No live Sanity or Firebase is touched.
+      - name: Stubbed build for the request-count harness
+        run: node scripts/checks/sanity-request-count.mjs --build
+
+      - name: Buy-path live reads (behavioural)
+        run: node scripts/checks/sanity-request-count.mjs --live-reads
+
+      - name: Cache-header probe (local spawn, both hosts)
+        run: node scripts/checks/cache-headers-probe.mjs --spawn
 
   dataset-residue-guard:
     runs-on: ubuntu-latest

@@ -74,7 +74,7 @@ export function SocietyFacts({ society }: SocietyFactsProps) {
               {fact.href ? (
                 <a
                   href={fact.href}
-                  className="inline-flex min-h-11 items-center break-all underline underline-offset-2"
+                  className="inline-flex min-h-11 items-center break-all underline underline-offset-2 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
                 >
                   {fact.value}
                 </a>

@@ -5,7 +5,10 @@
 //   fields  : labels Karla 500 14px ink, no tracking, no caps; inputs 1px --rule border, radius 8, min-height 48; 2px violet focus ring
 //   submit  : the NOS primary Button look (bg --primary, text --ivory, Karla 700 14px uppercase, min-height 50, --radius-button)
 //   heading : NOS doc-h2 role (the section is rendered inDocument)
-//   anchor  : scroll-margin-top 121px at >=700, 68px below 700 (sticky chrome + 24)
+//   anchor  : NOS Design anchor ruling (2026-10-28, final): the NOS host zeroes the root scroll-padding THROUGH THE VARIABLE (--scroll-padding-top: 0 on html
+//             when the NOS chrome is present, at every width), declared in nos-structure.css only (globals.css is mid-flight elsewhere), so every NOS scroll-margin assumes zero; the card's scroll-margin-top is 121px at >=768, 24px at <=767 (the header is pinned from 768, measured live).
+//             No header-height token exists in the repo (only the --doc-* ones), so 121 is the declared literal; a token is preferred if one appears.
+//   SAOC    : the SAOC root scroll-padding (globals.css, --scroll-padding-top 6.5rem consumed by html) is unchanged
 // The live scroll position and computed styles are proved by check-deployed-render.mjs (post-deploy); this half is the declared values.
 // Method: a tiny flat-CSS reader (no nesting) evaluates the cascade at 390, 699, 700, 767, 768 and 1440 wide, last declaration wins
 // (specificity is not modelled: rules must be unlayered so they beat the layered Tailwind utilities, which is asserted).
@@ -166,11 +169,28 @@ for (const w of [390, 1440]) {
   const cl = eff(['consent'], w);
   expect(/karla/.test(cl.get('font-family') ?? '') && cl.get('font-weight') === '450' && px(cl.get('font-size'), 16) && ['1.5', '24px'].includes(cl.get('line-height') ?? ''), `RED consent label is Karla 450 16px / 1.5 at ${w}px (got ${cl.get('font-family')} ${cl.get('font-weight')} ${cl.get('font-size')} ${cl.get('line-height')})`);
 }
-// anchor
-for (const [w, want] of [[390, 68], [699, 68], [700, 121], [1440, 121]] as const) {
+// anchor: the card margin is declared for a root whose scroll-padding is zero (NOS Design anchor ruling)
+for (const [w, want] of [[390, 24], [767, 24], [768, 121], [1024, 121], [1440, 121], [2056, 121]] as const) {
   const a = eff(['card', 'anchor'], w);
   expect(px(a.get('scroll-margin-top'), want), `RED #enquire scroll-margin-top is ${want}px at ${w}px (got ${a.get('scroll-margin-top')})`);
 }
+// NOS root scroll-padding is zeroed through the variable, at every width, only when the NOS chrome (#nh) or the NOS theme is present
+const rootDecl = (w: number, prop: string): string | undefined => {
+  let v: string | undefined;
+  for (const r of rules) {
+    if (!/^html\b/.test(r.selector) || !/#nh|nos/.test(r.selector)) continue;
+    if (r.media.length && !mediaMatches(r.media, w)) continue;
+    const d = r.decls.get(prop); if (d !== undefined) v = d.toLowerCase();
+  }
+  return v;
+};
+for (const w of [390, 767, 768, 1024, 1440, 2056]) {
+  expect(['0', '0px'].includes(rootDecl(w, '--scroll-padding-top') ?? ''), `RED the NOS host sets --scroll-padding-top to 0 on html at ${w}px (got ${rootDecl(w, '--scroll-padding-top')}); declared in app/(nos)/national-show/nos-structure.css (not globals.css, not nos-chrome.css), e.g. html:has(#nh) { --scroll-padding-top: 0px }, not limited to a max-width media query`);
+}
+expect(rules.filter((r) => /^html\b/.test(r.selector) && r.decls.has('--scroll-padding-top')).every((r) => /#nh|nos/.test(r.selector)), 'every html --scroll-padding-top override is scoped to the NOS host (#nh or nos), never bare html');
+// SAOC guard: the SAOC root scroll-padding stays as it is
+const globals = readFileSync('app/globals.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+expect(/--scroll-padding-top\s*:\s*6\.5rem\s*;/.test(globals) && /(^|[\s;{])scroll-padding-top\s*:\s*var\(--scroll-padding-top\)\s*;/.test(globals), 'PIN SAOC root scroll-padding unchanged: app/globals.css still declares --scroll-padding-top: 6.5rem and html scroll-padding-top: var(--scroll-padding-top)');
 // heading: NOS doc-h2 role, so the page renders the section inDocument
 const page = readFileSync(`${DIR}/sponsors/page.tsx`, 'utf8');
 expect(/<SponsorEnquirySection\b[^>]*\bsite="nos"[^>]*\binDocument\b/.test(page.replace(/\s+/g, ' ')), 'RED the NOS page renders <SponsorEnquirySection site="nos" inDocument />');

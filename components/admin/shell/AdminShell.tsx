@@ -47,7 +47,7 @@ export function AdminShell({
     <div className="min-h-dvh bg-bone">
       <a
         href="#admin-main"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-[60] focus:bg-parchment focus:px-4 focus:py-3 focus:font-sans focus:text-[14px] focus:font-semibold focus:text-ink"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-[60] focus:bg-parchment focus:px-4 focus:py-3 focus:font-sans focus:text-[14px] focus:font-semibold focus:text-ink focus:outline-2 focus:outline-solid focus:outline-primary focus:outline-offset-[3px]"
       >
         Skip to content
       </a>
