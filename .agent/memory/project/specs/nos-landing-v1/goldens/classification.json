@@ -1,0 +1,773 @@
+{
+ "schema": "nos-landing-v1.classification/v1",
+ "source": "goldens/sources/content.md",
+ "counts": {
+  "copy": 73,
+  "instruction": 24,
+  "ambiguous": 7
+ },
+ "nonBlankLines": 104,
+ "lines": [
+  {
+   "line": 1,
+   "class": "instruction",
+   "note": "document title",
+   "units": []
+  },
+  {
+   "line": 3,
+   "class": "instruction",
+   "note": "says which page this document is about",
+   "units": []
+  },
+  {
+   "line": 5,
+   "class": "instruction",
+   "note": "masthead naming the event; the same name is in the header lockup (L25 'Correct'), no new text",
+   "units": []
+  },
+  {
+   "line": 7,
+   "class": "instruction",
+   "note": "masthead theme; duplicates L35, which is the line that says where the theme goes",
+   "units": []
+  },
+  {
+   "line": 9,
+   "class": "instruction",
+   "note": "label for the rules",
+   "units": []
+  },
+  {
+   "line": 11,
+   "class": "instruction",
+   "note": "naming rule (follow-up sweep, not rendered)",
+   "units": []
+  },
+  {
+   "line": 13,
+   "class": "instruction",
+   "note": "naming rule, the form to use (follow-up sweep, not rendered)",
+   "units": []
+  },
+  {
+   "line": 15,
+   "class": "instruction",
+   "note": "font rule, with NOS Design; not acted on here",
+   "units": []
+  },
+  {
+   "line": 17,
+   "class": "instruction",
+   "note": "section label",
+   "units": []
+  },
+  {
+   "line": 19,
+   "class": "instruction",
+   "note": "describes the page's purpose, not copy for it",
+   "units": []
+  },
+  {
+   "line": 21,
+   "class": "instruction",
+   "note": "label",
+   "units": []
+  },
+  {
+   "line": 23,
+   "class": "instruction",
+   "note": "label",
+   "units": []
+  },
+  {
+   "line": 24,
+   "class": "instruction",
+   "note": "header checks marked 'Correct': no change requested",
+   "units": []
+  },
+  {
+   "line": 25,
+   "class": "instruction",
+   "note": "header checks marked 'Correct': no change requested",
+   "units": []
+  },
+  {
+   "line": 26,
+   "class": "instruction",
+   "note": "header checks marked 'Correct': no change requested",
+   "units": []
+  },
+  {
+   "line": 27,
+   "class": "instruction",
+   "note": "section label",
+   "units": []
+  },
+  {
+   "line": 29,
+   "class": "copy",
+   "note": "hero heading text",
+   "units": [
+    "hero-h1"
+   ]
+  },
+  {
+   "line": 31,
+   "class": "instruction",
+   "note": "tells us to replace the quoted current wording; the old string must not render",
+   "units": []
+  },
+  {
+   "line": 33,
+   "class": "copy",
+   "note": "'To:' is her instruction; the copy is everything after it",
+   "units": [
+    "hero-lede"
+   ]
+  },
+  {
+   "line": 35,
+   "class": "copy",
+   "note": "'Add the theme below the wording above:' is her instruction; the copy is everything after it",
+   "units": [
+    "hero-theme"
+   ]
+  },
+  {
+   "line": 37,
+   "class": "instruction",
+   "note": "status notes (Tickets works; Plan your visit copy is in Drive; rest of hero unchanged)",
+   "units": []
+  },
+  {
+   "line": 38,
+   "class": "instruction",
+   "note": "status notes (Tickets works; Plan your visit copy is in Drive; rest of hero unchanged)",
+   "units": []
+  },
+  {
+   "line": 39,
+   "class": "instruction",
+   "note": "status notes (Tickets works; Plan your visit copy is in Drive; rest of hero unchanged)",
+   "units": []
+  },
+  {
+   "line": 40,
+   "class": "instruction",
+   "note": "section label",
+   "units": []
+  },
+  {
+   "line": 41,
+   "class": "copy",
+   "note": "the quoted tag line is the copy; the question around it is her instruction",
+   "units": [
+    "about-tagline"
+   ]
+  },
+  {
+   "line": 42,
+   "class": "copy",
+   "note": "Section 2 paragraph",
+   "units": [
+    "about-lead"
+   ]
+  },
+  {
+   "line": 44,
+   "class": "ambiguous",
+   "note": "'The blow needs to be added to this page.' reads as an editorial note ('blow' for 'blurb'): the judging paragraph on the next line is the blurb she means. Classified instruction, not rendered, the string is forbidden",
+   "units": []
+  },
+  {
+   "line": 46,
+   "class": "copy",
+   "note": "Section 2 judging paragraph, typos kept ('can be judges')",
+   "units": [
+    "about-judging"
+   ]
+  },
+  {
+   "line": 47,
+   "class": "copy",
+   "note": "stat",
+   "units": [
+    "stat-1",
+    "stat-2",
+    "stat-3"
+   ]
+  },
+  {
+   "line": 48,
+   "class": "copy",
+   "note": "stat",
+   "units": [
+    "stat-1",
+    "stat-2",
+    "stat-3"
+   ]
+  },
+  {
+   "line": 49,
+   "class": "copy",
+   "note": "stat",
+   "units": [
+    "stat-1",
+    "stat-2",
+    "stat-3"
+   ]
+  },
+  {
+   "line": 50,
+   "class": "instruction",
+   "note": "section label",
+   "units": []
+  },
+  {
+   "line": 52,
+   "class": "ambiguous",
+   "note": "bold line with no body: section heading for the cards, or a label? Classified copy (heading) because the four cards sit under it and her labels use 'Section N' wording, not this",
+   "units": [
+    "visit-h2"
+   ]
+  },
+  {
+   "line": 54,
+   "class": "copy",
+   "note": "card title",
+   "units": [
+    "card-about-title"
+   ]
+  },
+  {
+   "line": 56,
+   "class": "copy",
+   "note": "card blurb; the ' – Copy needs to be provided...' tail is her instruction",
+   "units": [
+    "card-about-blurb"
+   ]
+  },
+  {
+   "line": 58,
+   "class": "copy",
+   "note": "card title",
+   "units": [
+    "card-pyv-title"
+   ]
+  },
+  {
+   "line": 60,
+   "class": "copy",
+   "note": "card blurb; the ' – Copy needs to be provided...' tail is her instruction",
+   "units": [
+    "card-pyv-blurb"
+   ]
+  },
+  {
+   "line": 62,
+   "class": "copy",
+   "note": "card title",
+   "units": [
+    "card-wte-title"
+   ]
+  },
+  {
+   "line": 64,
+   "class": "ambiguous",
+   "note": "card blurb with her strikethrough on 'cloakroom': rendered without the struck word",
+   "units": [
+    "card-wte-blurb"
+   ]
+  },
+  {
+   "line": 66,
+   "class": "copy",
+   "note": "card title",
+   "units": [
+    "card-faq-title"
+   ]
+  },
+  {
+   "line": 68,
+   "class": "copy",
+   "note": "card blurb; the ' – Copy needs to be provided...' tail is her instruction",
+   "units": [
+    "card-faq-blurb"
+   ]
+  },
+  {
+   "line": 70,
+   "class": "ambiguous",
+   "note": "card titles with no blurb and no route that can be public yet (archive answers 404 while no past show is public)",
+   "units": [
+    "card-past-title"
+   ]
+  },
+  {
+   "line": 72,
+   "class": "ambiguous",
+   "note": "card titles with no blurb and no route that can be public yet (archive answers 404 while no past show is public)",
+   "units": [
+    "card-prev-title"
+   ]
+  },
+  {
+   "line": 74,
+   "class": "copy",
+   "note": "heading kept verbatim although it says 'Ten' over 13 groups (queried by SAOC)",
+   "units": [
+    "judging-h2"
+   ]
+  },
+  {
+   "line": 76,
+   "class": "copy",
+   "note": "Group 1 heading",
+   "units": [
+    "group-1-label",
+    "group-1-name"
+   ]
+  },
+  {
+   "line": 77,
+   "class": "copy",
+   "note": "Group 1 description (italics are her formatting)",
+   "units": [
+    "group-1-desc"
+   ]
+  },
+  {
+   "line": 78,
+   "class": "copy",
+   "note": "Group 2 heading",
+   "units": [
+    "group-2-label",
+    "group-2-name"
+   ]
+  },
+  {
+   "line": 79,
+   "class": "copy",
+   "note": "Group 2 description (italics are her formatting)",
+   "units": [
+    "group-2-desc"
+   ]
+  },
+  {
+   "line": 80,
+   "class": "copy",
+   "note": "Group 3 heading",
+   "units": [
+    "group-3-label",
+    "group-3-name"
+   ]
+  },
+  {
+   "line": 81,
+   "class": "copy",
+   "note": "Group 3 description (italics are her formatting)",
+   "units": [
+    "group-3-desc"
+   ]
+  },
+  {
+   "line": 82,
+   "class": "copy",
+   "note": "Group 4 heading",
+   "units": [
+    "group-4-label",
+    "group-4-name"
+   ]
+  },
+  {
+   "line": 83,
+   "class": "copy",
+   "note": "Group 4 description (italics are her formatting)",
+   "units": [
+    "group-4-desc"
+   ]
+  },
+  {
+   "line": 84,
+   "class": "copy",
+   "note": "Group 5 heading",
+   "units": [
+    "group-5-label",
+    "group-5-name"
+   ]
+  },
+  {
+   "line": 85,
+   "class": "copy",
+   "note": "Group 5 description (italics are her formatting)",
+   "units": [
+    "group-5-desc"
+   ]
+  },
+  {
+   "line": 86,
+   "class": "copy",
+   "note": "Group 6 heading",
+   "units": [
+    "group-6-label",
+    "group-6-name"
+   ]
+  },
+  {
+   "line": 87,
+   "class": "copy",
+   "note": "Group 6 description (italics are her formatting)",
+   "units": [
+    "group-6-desc"
+   ]
+  },
+  {
+   "line": 88,
+   "class": "copy",
+   "note": "Group 7 heading",
+   "units": [
+    "group-7-label",
+    "group-7-name"
+   ]
+  },
+  {
+   "line": 89,
+   "class": "copy",
+   "note": "Group 7 description (italics are her formatting)",
+   "units": [
+    "group-7-desc"
+   ]
+  },
+  {
+   "line": 90,
+   "class": "copy",
+   "note": "Group 8 heading",
+   "units": [
+    "group-8-label",
+    "group-8-name"
+   ]
+  },
+  {
+   "line": 91,
+   "class": "copy",
+   "note": "Group 8 description (italics are her formatting)",
+   "units": [
+    "group-8-desc"
+   ]
+  },
+  {
+   "line": 92,
+   "class": "copy",
+   "note": "Group 9 heading",
+   "units": [
+    "group-9-label",
+    "group-9-name"
+   ]
+  },
+  {
+   "line": 93,
+   "class": "copy",
+   "note": "Group 9 description (italics are her formatting)",
+   "units": [
+    "group-9-desc"
+   ]
+  },
+  {
+   "line": 94,
+   "class": "copy",
+   "note": "Group 10 heading",
+   "units": [
+    "group-10-label",
+    "group-10-name"
+   ]
+  },
+  {
+   "line": 95,
+   "class": "copy",
+   "note": "Group 10 description (italics are her formatting)",
+   "units": [
+    "group-10-desc"
+   ]
+  },
+  {
+   "line": 96,
+   "class": "copy",
+   "note": "Group 11 heading",
+   "units": [
+    "group-11-label",
+    "group-11-name"
+   ]
+  },
+  {
+   "line": 97,
+   "class": "copy",
+   "note": "Group 12 heading",
+   "units": [
+    "group-12-label",
+    "group-12-name"
+   ]
+  },
+  {
+   "line": 98,
+   "class": "copy",
+   "note": "Group 13 heading",
+   "units": [
+    "group-13-label",
+    "group-13-name"
+   ]
+  },
+  {
+   "line": 99,
+   "class": "instruction",
+   "note": "section label",
+   "units": []
+  },
+  {
+   "line": 101,
+   "class": "copy",
+   "note": "section heading",
+   "units": [
+    "entry-h2"
+   ]
+  },
+  {
+   "line": 103,
+   "class": "copy",
+   "note": "stage label",
+   "units": [
+    "stage-1-label"
+   ]
+  },
+  {
+   "line": 105,
+   "class": "copy",
+   "note": "stage title",
+   "units": [
+    "stage-1-title"
+   ]
+  },
+  {
+   "line": 107,
+   "class": "copy",
+   "note": "stage description",
+   "units": [
+    "stage-1-desc"
+   ]
+  },
+  {
+   "line": 109,
+   "class": "copy",
+   "note": "stage label",
+   "units": [
+    "stage-2-label"
+   ]
+  },
+  {
+   "line": 111,
+   "class": "copy",
+   "note": "stage title",
+   "units": [
+    "stage-2-title"
+   ]
+  },
+  {
+   "line": 113,
+   "class": "copy",
+   "note": "stage description",
+   "units": [
+    "stage-2-desc"
+   ]
+  },
+  {
+   "line": 115,
+   "class": "copy",
+   "note": "stage label",
+   "units": [
+    "stage-3-label"
+   ]
+  },
+  {
+   "line": 117,
+   "class": "copy",
+   "note": "stage title",
+   "units": [
+    "stage-3-title"
+   ]
+  },
+  {
+   "line": 119,
+   "class": "copy",
+   "note": "stage description",
+   "units": [
+    "stage-3-desc"
+   ]
+  },
+  {
+   "line": 121,
+   "class": "copy",
+   "note": "stage label",
+   "units": [
+    "stage-4-label"
+   ]
+  },
+  {
+   "line": 123,
+   "class": "copy",
+   "note": "stage title",
+   "units": [
+    "stage-4-title"
+   ]
+  },
+  {
+   "line": 125,
+   "class": "copy",
+   "note": "stage description",
+   "units": [
+    "stage-4-desc"
+   ]
+  },
+  {
+   "line": 127,
+   "class": "copy",
+   "note": "call to action line",
+   "units": [
+    "entry-cta"
+   ]
+  },
+  {
+   "line": 129,
+   "class": "ambiguous",
+   "note": "'Register Here' is a button label; the rest says the form does not exist yet. A control with no destination would be invented: no control rendered (D4)",
+   "units": []
+  },
+  {
+   "line": 131,
+   "class": "copy",
+   "note": "closing line",
+   "units": [
+    "closing-text"
+   ]
+  },
+  {
+   "line": 133,
+   "class": "copy",
+   "note": "link labels already on the page; ' – ...' tail is her instruction",
+   "units": []
+  },
+  {
+   "line": 135,
+   "class": "copy",
+   "note": "link labels already on the page; ' – ...' tail is her instruction",
+   "units": []
+  },
+  {
+   "line": 137,
+   "class": "instruction",
+   "note": "section label (she numbers it 4 again)",
+   "units": []
+  },
+  {
+   "line": 139,
+   "class": "ambiguous",
+   "note": "'Logo to be confirmed for SAOC': a request about a logo, no logo supplied. Instruction, nothing rendered; visual gap for NOS Design",
+   "units": []
+  },
+  {
+   "line": 141,
+   "class": "copy",
+   "note": "footer copy (shared chrome, deferred D7)",
+   "units": []
+  },
+  {
+   "line": 143,
+   "class": "copy",
+   "note": "footer copy (shared chrome, deferred D7)",
+   "units": []
+  },
+  {
+   "line": 145,
+   "class": "copy",
+   "note": "footer copy (shared chrome, deferred D7)",
+   "units": []
+  },
+  {
+   "line": 146,
+   "class": "copy",
+   "note": "footer copy (shared chrome, deferred D7)",
+   "units": []
+  },
+  {
+   "line": 148,
+   "class": "copy",
+   "note": "footer copy (shared chrome, deferred D7)",
+   "units": []
+  },
+  {
+   "line": 150,
+   "class": "copy",
+   "note": "Explore link label; the status after the dash is her instruction (see spec section 8)",
+   "units": []
+  },
+  {
+   "line": 151,
+   "class": "copy",
+   "note": "Explore link label; the status after the dash is her instruction (see spec section 8)",
+   "units": []
+  },
+  {
+   "line": 152,
+   "class": "copy",
+   "note": "Explore link label; the status after the dash is her instruction (see spec section 8)",
+   "units": []
+  },
+  {
+   "line": 153,
+   "class": "copy",
+   "note": "Explore link label; the status after the dash is her instruction (see spec section 8)",
+   "units": []
+  },
+  {
+   "line": 154,
+   "class": "copy",
+   "note": "Explore link label; the status after the dash is her instruction (see spec section 8)",
+   "units": []
+  },
+  {
+   "line": 155,
+   "class": "copy",
+   "note": "Explore link label; the status after the dash is her instruction (see spec section 8)",
+   "units": []
+  },
+  {
+   "line": 156,
+   "class": "copy",
+   "note": "Explore link label; the status after the dash is her instruction (see spec section 8)",
+   "units": []
+  },
+  {
+   "line": 157,
+   "class": "copy",
+   "note": "Explore link label; the status after the dash is her instruction (see spec section 8)",
+   "units": []
+  },
+  {
+   "line": 158,
+   "class": "copy",
+   "note": "Explore link label; the status after the dash is her instruction (see spec section 8)",
+   "units": []
+  },
+  {
+   "line": 159,
+   "class": "copy",
+   "note": "Explore link label; the status after the dash is her instruction (see spec section 8)",
+   "units": []
+  },
+  {
+   "line": 160,
+   "class": "copy",
+   "note": "Explore link label; the status after the dash is her instruction (see spec section 8)",
+   "units": []
+  }
+ ]
+}

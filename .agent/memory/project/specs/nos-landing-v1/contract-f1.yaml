@@ -1,0 +1,80 @@
+# nos-landing-v1: Lee-Ann's National Orchid Show landing-page document rendered verbatim on the NOS hub.
+# Authority: goldens/sources/content.md (frozen, md5 fc0c7351...). Decisions D1-D10 in goldens/spec.md are the lead's to rule BEFORE dev dispatch;
+# the golden bakes in each recommendation. The dev starts after SAOC's What to Expect v1.2 PR merges (it edits page.tsx HOURS and CLOSING).
+# Run every command from the repo root of the dev's worktree. A7 needs a production build made by the nos-content-standard build.sh (Sanity fixture replay);
+# it starts next start twice on NOS_STD_PORT+1/+2 and kills those exact PIDs. Nothing here writes Sanity, Firestore, Drive or any deployed host.
+schema: athanor.contract/v1
+slug: nos-landing-v1
+goal: The NOS hub renders Lee-Ann's landing-page document word for word (typos and her queried oddities included), her inline notes never render, the registration form and past-shows copy stay marked gaps, and nothing outside the feature's file list changes.
+created_at: '2026-10-29'
+autonomy: high
+exclusions:
+  - item: 'Footer lines L141-160 (Stay in touch, topic labels, Explore, Constitution) and any change to shared chrome'
+    reason: 'Shared with the SAOC site and under concurrent edit (newsletter-topics-unsub); deferred to SAOC as D7. check-static S1 forbids touching it.'
+  - item: 'The naming-rule sweep beyond the landing page'
+    reason: 'Listed in goldens/naming-sweep-followup.md for a separate mission; the SHOW_TITLE constants are untouched.'
+  - item: 'Any Sanity or Firestore write, Drive sync, deploy or push by the dev'
+    reason: 'NOS Site never writes Sanity or Firestore; the lead syncs Drive and deploys.'
+features:
+  - id: F1
+    name: NOS hub landing page v1 (hero, Section 2, Section 3 cards and 13 judging groups, Section 4 plant entry, closing) from Lee-Ann's document, verbatim
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-landing-v1/goldens/spec.md
+  - .agent/memory/project/specs/nos-landing-v1/goldens/copy.json
+  - .agent/memory/project/specs/nos-landing-v1/goldens/classification.json
+  - .agent/memory/project/specs/nos-landing-v1/goldens/sources/content.md
+  - .agent/memory/project/specs/nos-landing-v1/goldens/sources/PROVENANCE.md
+  - .agent/memory/project/specs/nos-landing-v1/goldens/naming-sweep-followup.md
+  - .agent/memory/project/specs/nos-landing-v1/goldens/codex-qa-prompt.md
+  - .agent/memory/project/specs/nos-landing-v1/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: frozen goldens and check scripts are unmodified since the architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-landing-v1/goldens/checks.sha256
+    - id: A2
+      description: every one of the 104 source lines is classified copy/instruction/ambiguous, every rendered string is a verbatim substring of its source line, and the source is byte-identical to its recorded sha256
+      command: node .agent/memory/project/specs/nos-landing-v1/checks/check-source.mjs
+    - id: A3
+      description: check-source has effect - eight deliberate breakages of the goldens or source (typo fixed, text corrected, line dropped, italics changed, Ten heading changed) are each rejected
+      command: node .agent/memory/project/specs/nos-landing-v1/checks/source-mutation.mjs
+    - id: A4
+      description: the page verifier has effect - 43 wrong implementations that keep or fake the same text (corrected typo, hidden copy, copy in a script or attribute, wrong section, wrong order, dropped italics, empty card, invented Register Here link or form, instruction text rendered, old lede in meta, extra h1) are each rejected, and 5 harmless variants still pass
+      command: node .agent/memory/project/specs/nos-landing-v1/checks/mutation-suite.mjs
+    - id: A5
+      description: dev diff stays inside the feature (no shared chrome, footer, nav, title constants, Sanity), retired strings gone from the hub source, retained strings kept, no colour/font/write/TODO in added lines
+      command: node .agent/memory/project/specs/nos-landing-v1/checks/check-static.mjs
+    - id: A6
+      description: typescript compiles
+      command: pnpm exec tsc --noEmit
+    - id: A7
+      description: production build with the Sanity fixture, then the served hub (beta preview on and off) passes the verifier - every unit exact, visible, in its section and order, nothing retired or invented
+      command: bash .agent/memory/project/specs/nos-content-standard/checks/build.sh && node .agent/memory/project/specs/nos-landing-v1/checks/check-live.mjs
+      timeout_seconds: 900
+    - id: A8
+      description: lint is clean on the touched files
+      command: pnpm exec eslint "app/(nos)/national-show/page.tsx" components/nos/JudgingGroupCard.tsx components/nos/ExhibitorStageCard.tsx
+    - id: A9
+      description: feature doc written
+      command: test -f docs/nos-landing-v1.md
+    - id: A10
+      description: live-write-guard reports no ungated writers across all contracts including this one
+      command: python3 contracts/checks/live-write-guard/verify_no_ungated_writers.py
+    - id: A11
+      description: Codex adversarial review of the whole diff against the frozen goldens
+      type: codex_qa
+      target: .agent/memory/project/specs/nos-landing-v1/goldens/codex-qa-prompt.md
+      timeout_seconds: 1300
+      required: true
+    - id: A12
+      description: BrowserAgent on the deployed beta confirms the hub renders her copy and both a phone and a desktop screenshot exist (post-deploy; the lead pushes)
+      type: browser_deployed_check
+      target: .agent/memory/scratch/nos-landing-v1-browser-manifest.json
+      required: false
+    - id: A13
+      description: gws inbox check is not applicable (no email is sent); declared non-required only to satisfy the triad coverage linter
+      type: gws_inbox_check
+      target: .agent/memory/scratch/nos-landing-v1-gws-manifest.json
+      required: false

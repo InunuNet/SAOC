@@ -19,6 +19,12 @@
    "note": "write tokens are DOM mutate callbacks or a guard regex asserting absence",
    "target": "source text only"
   },
+  ".agent/memory/project/specs/nos-landing-v1/checks/check-static.mjs": {
+   "class": "STATIC_FP",
+   "match": "createOrReplace\\|\\\\\\.patch",
+   "note": "write tokens appear only inside a guard regex asserting their absence from the dev's added lines; the script only runs git and reads files",
+   "target": "source text only"
+  },
   ".agent/memory/project/specs/order-reconciliation/goldens/check-live-detect-and-mark.mjs": {
    "class": "REAL_FIRESTORE",
    "note": "file header says this is the one script allowed to write live Firestore (lines 20-24); .set at 327/341",

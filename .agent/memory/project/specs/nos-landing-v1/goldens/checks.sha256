@@ -1,0 +1,17 @@
+e60735ba2419d7e75d2bdd3ee7b69fe1d4f1b2e34a6a907dd7d424361912bf38  .agent/memory/project/specs/nos-landing-v1/goldens/spec.md
+ab1576050fb9b8f2df6e704f7215952bd45e491b486f943e712db153ea68c286  .agent/memory/project/specs/nos-landing-v1/goldens/copy.json
+da02cf4828257272d80535f0225ed5c9fcabb7bab4b55ab3f8ba17a4465293c7  .agent/memory/project/specs/nos-landing-v1/goldens/classification.json
+fa7a6767c936a6a29864bcfa3590c8c35b82e4b0b7cd742970c1f86e16e97456  .agent/memory/project/specs/nos-landing-v1/goldens/naming-sweep-followup.md
+346766136ccf581b065f1a2d01fc026d11bf6a643bab03dc778066fc6fdb636b  .agent/memory/project/specs/nos-landing-v1/goldens/codex-qa-prompt.md
+e365b992ec012da2ac3614afb22afd8beefc057e8d2d2292e933a0d29087ea3a  .agent/memory/project/specs/nos-landing-v1/goldens/sources/content.md
+e80cfb18a910f423b05ab7b7229c6665ba64c97db3647329207049487d3859a6  .agent/memory/project/specs/nos-landing-v1/goldens/sources/PROVENANCE.md
+8a51a26083812ba7ba7f4f0c334a387b458a355053bae3cd88e4b9194f3618a4  .agent/memory/project/specs/nos-landing-v1/goldens/sources/manifest.json
+b73aa493f3996b82faf63cea2e6ebf0ce2a4ae093aed4e8f8409306b94ade3bd  .agent/memory/project/specs/nos-landing-v1/checks/baseline.mjs
+49636f1500c5fdfac700df6fcf1b54bc6a750d48e395f18e5c0bcc581a08008c  .agent/memory/project/specs/nos-landing-v1/checks/check-live.mjs
+d0d7b94617e5f0ef140ff5b6a14b3ef97a1f9b843de0fb198be0f85e3399a7f4  .agent/memory/project/specs/nos-landing-v1/checks/check-source.mjs
+7924393b49029148217b53ce329ea0fc2f05eae7ba6e81500b7e7759ecb31755  .agent/memory/project/specs/nos-landing-v1/checks/check-static.mjs
+c131c9953e8f88155161691c8af0b4f9a56d7ecc31087e36106b016b7e955f9e  .agent/memory/project/specs/nos-landing-v1/checks/html.mjs
+494c91afb476c616c3f3c4bf15b64435e57bc471b7805fd051c46c9a99126a3b  .agent/memory/project/specs/nos-landing-v1/checks/mutation-suite.mjs
+9e272e63fb3b2e1a79cd814be81639457593262c910698783b748fe351fb12e2  .agent/memory/project/specs/nos-landing-v1/checks/source-mutation.mjs
+ec284a0d103c89f02823190a961308b2720dd797b2a8451d3a4e245a119c2f8f  .agent/memory/project/specs/nos-landing-v1/checks/verify-landing.mjs
+ca5378a5dacb7587f4fc043dea192b051281b7c7498d698a6d76519282cc9778  .agent/memory/project/specs/nos-landing-v1/checks/gen-goldens.py
