@@ -3,7 +3,7 @@
 **Spec:** `contracts/golden/door-reject-test-tickets/README.md` (golden input:
 `contracts/golden/door-reject-test-tickets/truth-table.json`).
 **Check:** `contracts/checks/door-reject-test-tickets/admission.test.mjs`.
-**Contract:** `contracts/door-reject-test-tickets.yaml` (8 assertions).
+**Contract:** `contracts/door-reject-test-tickets.yaml` (16 assertions).
 
 This document covers the door check-in change that refuses test-mode tickets once payments go
 live. It assumes familiarity with the check-in flow in `app/api/admin/checkin/route.ts` and the
@@ -23,7 +23,7 @@ feature makes the door refuse any ticket that was not explicitly issued in live 
 ### Provenance on every new order and ticket
 
 Every order and every ticket (position) created by the ticketing code now carries an
-`issuedInTestMode` boolean. It is set from `isTicketingTestMode()` at creation time:
+`issuedInTestMode` boolean. It is set from `isIssuanceTestMode()` (`lib/ticket-issuance-mode.ts`) at creation time:
 
 - `lib/checkout-reservation.ts`: `buildReservationDocs()` and `buildMultiReservationDocs()`. Each
   captures one value per creation operation, so every item in a multi-item cart shares it.
@@ -73,6 +73,30 @@ unchanged.
 In test mode the guard always allows. Every existing check-in rule behaves as before. No launch
 constant, banner, payment adapter or environment setting is changed by this feature.
 
+## Legacy documents
+
+Production holds orders and tickets created before this change (48 orders, 64 tickets at the
+2026-10-29 audit) with no `issuedInTestMode` marker. The 17 paid orders among them were settled
+through the Ozow sandbox. The door admits only the literal boolean `false` once live, so an
+untagged document means test and is refused. Missing, `null`, `0`, `"false"`, `{}` and `[]` all
+refuse. The prod-shaped goldens are in `contracts/golden/door-reject-test-tickets/legacy-untagged.json`.
+
+Do not backfill. Absent is the safe state: the guard never reads a default, so the only way to be
+admitted is for the server to have written `false` at creation. A go-live cutoff timestamp was
+considered and rejected: it needs a hand-set date, and a wrong date either admits sandbox tickets
+or refuses real ones.
+
+## Gateway coupling
+
+The stamp is no longer derived from `isTicketingTestMode()` alone. `isIssuanceTestMode()` returns
+`isTicketingTestMode() || PAYMENT_GATEWAYS_SANDBOX_ONLY`, so a new order or ticket is stamped
+`false` only when both the launch constant and the sandbox-only flag are flipped. Flipping the
+launch constant alone is safe: tickets stay stamped as test and the door refuses them.
+`PAYMENT_GATEWAYS_SANDBOX_ONLY` is flipped in the go-live commit together with the payment
+adapters, and `contracts/checks/door-reject-test-tickets/gateway-coupling.sh` fails if it is
+`false` while `lib/payments/ozow.ts` or `payfast.ts` still show a sandbox marker. The door itself
+keeps `liveMode: !isTicketingTestMode()`, so committee testing is unchanged.
+
 ## Consequences
 
 - **Flipping the launch switch refuses every older ticket.** When `TICKETING_PAYMENTS_LIVE` is
@@ -91,6 +115,7 @@ constant, banner, payment adapter or environment setting is changed by this feat
 - `lib/checkin.ts`: guard call in `admit()`, `test_ticket` refusal entry
 - `lib/checkin-audit.ts`: `test_ticket` audit outcome
 - `app/api/admin/checkin/route.ts`: refusal-to-outcome mapping, `code` in refusal responses
+- `lib/ticket-issuance-mode.ts` (new): `isIssuanceTestMode()`, `PAYMENT_GATEWAYS_SANDBOX_ONLY`
 - `lib/checkout-reservation.ts`: provenance on order and positions
 - `lib/orders.ts`: provenance in `createOrderWithPosition()`, replay keeps the original record
 - `types/index.ts`: optional `issuedInTestMode` on `Order` and `Ticket`

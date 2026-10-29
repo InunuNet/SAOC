@@ -3,7 +3,7 @@ import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { initAdmin } from '@/lib/firebase-admin';
 import { PENDING_PAYMENT_HOLD_MINUTES } from '@/lib/payments/pending-hold';
 import { generateBookingRefQrDataUri } from '@/lib/qr';
-import { isTicketingTestMode } from '@/lib/ticketing-test-mode';
+import { isIssuanceTestMode } from '@/lib/ticket-issuance-mode';
 import type { Order, OrderStatus, Ticket, TicketStatus, TicketType } from '@/types/index';
 
 /**
@@ -115,7 +115,7 @@ export async function createOrderWithPosition(
   input: CreateOrderPositionInput,
   deps: { db?: OrdersFirestoreLike } = {}
 ): Promise<CreateOrderPositionResult> {
-  const issuedInTestMode = isTicketingTestMode();
+  const issuedInTestMode = isIssuanceTestMode();
   const db: OrdersFirestoreLike = deps.db ?? getFirestore(initAdmin());
   const orders = db.collection(ORDERS_COLLECTION);
   const tickets = db.collection(TICKETS_COLLECTION);

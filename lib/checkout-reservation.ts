@@ -1,6 +1,6 @@
 import type { Timestamp } from 'firebase-admin/firestore';
 
-import { isTicketingTestMode } from '@/lib/ticketing-test-mode';
+import { isIssuanceTestMode } from '@/lib/ticket-issuance-mode';
 import type { Order, Ticket, TicketType } from '@/types/index';
 
 /**
@@ -10,7 +10,8 @@ import type { Order, Ticket, TicketType } from '@/types/index';
  * including why this is a NEW sibling module rather than an extension of lib/orders.ts.
  *
  * Builders perform no I/O or clock reads. Time is always the caller-supplied `now`;
- * issuance mode comes from the server's ticketing mode flag.
+ * issuance mode comes from isIssuanceTestMode() (lib/ticket-issuance-mode.ts), which also
+ * requires the payment gateways to be live.
  */
 
 export interface BuildReservationDocsInput {
@@ -47,7 +48,7 @@ export interface ReservationDocs {
  * attendeeName/attendeeEmail, for now").
  */
 export function buildReservationDocs(input: BuildReservationDocsInput): ReservationDocs {
-  const issuedInTestMode = isTicketingTestMode();
+  const issuedInTestMode = isIssuanceTestMode();
   const order: Omit<Order, 'id'> = {
     issuedInTestMode,
     showId: input.showId,
@@ -263,7 +264,7 @@ export interface MultiReservationDocs {
 export function buildMultiReservationDocs(
   input: BuildMultiReservationDocsInput
 ): MultiReservationDocs {
-  const issuedInTestMode = isTicketingTestMode();
+  const issuedInTestMode = isIssuanceTestMode();
   const firstLineItem = input.lineItems[0];
   const totalAmount = input.lineItems.reduce((sum, lineItem) => sum + lineItem.amount, 0);
 
