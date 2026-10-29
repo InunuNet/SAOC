@@ -68,15 +68,38 @@ const CHECKOUT = 'app/api/tickets/checkout/route.ts';
 // The admin toggle (adminSettings/ozowSandboxTestMode) is read once by the checkout route (R0.01 override). The stamp
 // must reuse that value: the builder call passes `ozowSandboxTestMode: <identifier>` (never a literal), and the number
 // of isOzowSandboxTestModeEnabled() calls in the route equals baselineReads (the count on main), so no new Firestore read.
+// Slice of `text` from the opening brace at `open` to its matching close brace (strings and comments are not special-cased;
+// the call blocks inspected here contain neither braces nor quotes in values).
+function braceBlock(text, open) {
+  let depth = 0;
+  for (let i = open; i < text.length; i += 1) {
+    if (text[i] === '{') depth += 1;
+    else if (text[i] === '}' && (depth -= 1) === 0) return text.slice(open, i + 1);
+  }
+  return '';
+}
+
 export function checkCheckout(read, baselineReads) {
   const errors = [];
   const route = read(CHECKOUT);
   const reads = (route.match(/isOzowSandboxTestModeEnabled\(\)/g) ?? []).length;
   if (reads !== baselineReads) errors.push(`${CHECKOUT}: isOzowSandboxTestModeEnabled() is called ${reads} time(s), main has ${baselineReads}; the stamp must reuse the existing read`);
+  // The single read: its identifier is the only value allowed to reach the override or the stamp.
+  const decls = [...route.matchAll(/^\s*const ([A-Za-z_$][\w$]*) = await isOzowSandboxTestModeEnabled\(\);$/gm)];
+  if (decls.length !== 1) { errors.push(`${CHECKOUT}: expected exactly one "const <id> = await isOzowSandboxTestModeEnabled();"`); return errors; }
+  const id = decls[0][1];
+  // ReservationInput handed to reserveTicket: the override argument and the stamp field are that same identifier.
+  const reserveCall = route.indexOf('await reserveTicket({');
+  const reserveBlock = reserveCall < 0 ? '' : braceBlock(route, route.indexOf('{', reserveCall));
+  if (!reserveBlock) errors.push(`${CHECKOUT}: reserveTicket({...}) call not found`);
+  else {
+    if (!new RegExp(`\\bexpectedGatewayAmount:\\s*resolveExpectedGatewayAmount\\(\\s*[A-Za-z_$][\\w$]*\\s*,\\s*${id.replace(/\$/g, '\\$')}\\s*\\),`).test(reserveBlock)) errors.push(`${CHECKOUT}: the resolveExpectedGatewayAmount(...) override argument must be ${id}, the value of the single toggle read`);
+    if (!new RegExp(`\\bozowSandboxTestMode:\\s*${id.replace(/\$/g, '\\$')},`).test(reserveBlock) || (reserveBlock.match(/\bozowSandboxTestMode:/g) ?? []).length !== 1) errors.push(`${CHECKOUT}: reserveTicket's ozowSandboxTestMode must be ${id} (once), the same identifier that feeds the override`);
+  }
+  // reserveTicket hands its input field to the builder unchanged.
   const start = route.indexOf('buildMultiReservationDocs({');
-  const end = start < 0 ? -1 : route.indexOf('})', start);
-  const block = start < 0 || end < 0 ? '' : route.slice(start, end);
-  if (!/\bozowSandboxTestMode:\s*[A-Za-z_$][\w$.]*\s*[,}\n]/.test(block + '\n') || /\bozowSandboxTestMode:\s*(true|false)\b/.test(block)) errors.push(`${CHECKOUT}: buildMultiReservationDocs({...}) must pass ozowSandboxTestMode: <the value the route already read>, not a literal`);
+  const builderBlock = start < 0 ? '' : braceBlock(route, route.indexOf('{', start));
+  if (!/\bozowSandboxTestMode:\s*input\.ozowSandboxTestMode,/.test(builderBlock) || (builderBlock.match(/\bozowSandboxTestMode:/g) ?? []).length !== 1) errors.push(`${CHECKOUT}: buildMultiReservationDocs({...}) must pass ozowSandboxTestMode: input.ozowSandboxTestMode exactly once`);
   return errors;
 }
 

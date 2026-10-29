@@ -112,7 +112,7 @@ assertions:
       description: lib/ticket-issuance-mode.ts is client-safe. It imports nothing from lib/payments except sandbox-mode, no adapter, payments index or Node built-in module, so no client chain can reach an adapter.
       command: node contracts/checks/door-reject-test-tickets/adapter-guard.mjs client-safe .
     - id: A21
-      description: The checkout route hands the admin toggle value it already read to buildMultiReservationDocs as ozowSandboxTestMode (never a literal) and adds no second isOzowSandboxTestModeEnabled() call relative to main. The R0.01 override behaviour is untouched.
+      description: The checkout route has exactly one isOzowSandboxTestModeEnabled() read (no extra call relative to main). Its identifier is the same value that feeds resolveExpectedGatewayAmount in the reserveTicket input and the ozowSandboxTestMode field of that input; reserveTicket hands input.ozowSandboxTestMode to buildMultiReservationDocs. No literal or other identifier reaches the override or the stamp. The R0.01 override behaviour is untouched.
       command: node contracts/checks/door-reject-test-tickets/adapter-guard.mjs checkout .
     - id: A22
       description: The launch checklist states the single go-live commit that flips the launch constant and both adapter constants, and that the ozowSandboxTestMode toggle is turned off at the same deploy.

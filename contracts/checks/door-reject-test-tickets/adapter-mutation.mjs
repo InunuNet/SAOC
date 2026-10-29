@@ -49,6 +49,13 @@ const checkoutMutants = [
   ['checkout-control', (t) => t, false],
   ['checkout-literal-false', sub('app/api/tickets/checkout/route.ts', /(buildMultiReservationDocs\(\{[\s\S]*?)ozowSandboxTestMode:\s*[\w$.]+/, '$1ozowSandboxTestMode: false'), true],
   ['checkout-literal-true', sub('app/api/tickets/checkout/route.ts', /(buildMultiReservationDocs\(\{[\s\S]*?)ozowSandboxTestMode:\s*[\w$.]+/, '$1ozowSandboxTestMode: true'), true],
+  ['checkout-reserve-input-literal-false', sub('app/api/tickets/checkout/route.ts', /(await reserveTicket\(\{[\s\S]*?)ozowSandboxTestMode: [\w$]+,/, '$1ozowSandboxTestMode: false,'), true],
+  ['checkout-reserve-input-literal-true', sub('app/api/tickets/checkout/route.ts', /(await reserveTicket\(\{[\s\S]*?)ozowSandboxTestMode: [\w$]+,/, '$1ozowSandboxTestMode: true,'), true],
+  ['checkout-reserve-input-field-dropped', sub('app/api/tickets/checkout/route.ts', /(await reserveTicket\(\{[\s\S]*?)\n[ \t]*ozowSandboxTestMode: [\w$]+,/, '$1'), true],
+  ['checkout-override-arg-swapped', sub('app/api/tickets/checkout/route.ts', /resolveExpectedGatewayAmount\(providerId, [\w$]+\)/, 'resolveExpectedGatewayAmount(providerId, otherToggle)'), true],
+  ['checkout-override-arg-literal', sub('app/api/tickets/checkout/route.ts', /resolveExpectedGatewayAmount\(providerId, [\w$]+\)/, 'resolveExpectedGatewayAmount(providerId, true)'), true],
+  ['checkout-read-replaced-by-literal', sub('app/api/tickets/checkout/route.ts', /await isOzowSandboxTestModeEnabled\(\);/, 'false;'), true],
+  ['checkout-stamp-uses-other-identifier', sub('app/api/tickets/checkout/route.ts', /(await reserveTicket\(\{[\s\S]*?ozowSandboxTestMode: )[\w$]+,/, '$1providerId,'), true],
   ['checkout-field-dropped', sub('app/api/tickets/checkout/route.ts', /(buildMultiReservationDocs\(\{[\s\S]*?)ozowSandboxTestMode:\s*[\w$.]+,?/, '$1'), true],
   ['checkout-second-firestore-read', sub('app/api/tickets/checkout/route.ts', /buildMultiReservationDocs\(\{/, 'buildMultiReservationDocs({ _read: await isOzowSandboxTestModeEnabled(),'), true],
 ];
