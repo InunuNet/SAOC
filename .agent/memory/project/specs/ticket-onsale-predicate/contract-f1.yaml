@@ -47,7 +47,7 @@ assertions:
       timeout_seconds: 30
     - id: A7
       description: the prerendered /national-show page does not reach firebase-admin
-      command: '! python3 contracts/golden/build-without-secrets/check_no_prerendered_admin_routes.py . 2>&1 | sed -n ''/VIOLATIONS/,$p'' | grep -q "national-show/page.tsx"'
+      command: python3 contracts/checks/onsale-followups/check-national-show-not-prerendered-admin.py .
       timeout_seconds: 60
     - id: A8
       description: checkout route consumes the shared predicate

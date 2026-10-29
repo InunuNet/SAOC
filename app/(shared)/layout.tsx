@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
 
-import { NosFrame } from '@/components/site-chrome/NosFrame';
 import { SaocFrame } from '@/components/site-chrome/SaocFrame';
-import { NosThemeScope } from '@/components/nos/NosThemeScope';
 import { requestSite } from '@/lib/request-site';
 import { SHOW_TITLE } from '@/lib/show-title';
 import { nosOrigin, saocOrigin } from '@/lib/site-hosts';
@@ -22,11 +20,9 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function SharedLayout({ children }: { children: React.ReactNode }) {
   const site = await requestSite();
   if (site === 'nos') {
-    return (
-      <NosFrame>
-        <NosThemeScope>{children}</NosThemeScope>
-      </NosFrame>
-    );
+    // Dynamic import: a static one ships the NOS faces and stylesheets to every SAOC route (F1e).
+    const { NosThemedFrame } = await import('@/components/site-chrome/NosThemedFrame');
+    return <NosThemedFrame>{children}</NosThemedFrame>;
   }
   return <SaocFrame>{children}</SaocFrame>;
 }

@@ -15,6 +15,8 @@ goldens:
   - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/lcp-bounds.json
   - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/favicon-source.json
   - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/status-mark.md
+  - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/arrow-glyph.md
+  - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/arrow-literals.json
   - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/arrow-links-f1d-7ee06e9a.json
   - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/favicon-renders/favicon-review-sheet.png
   - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/proof-on-main.md
@@ -46,7 +48,7 @@ assertions:
       command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-font-swap-css.mjs"
       timeout_seconds: 900
     - id: A7
-      description: "Lever 2 and the preload-order check: server-HTML head has the hero image preload BEFORE the first stylesheet, and exactly ONE font preload that is the h1/hero face. Fails on main: 0 font preloads (the hero-before-CSS half already passes on main)"
+      description: "Lever 2 and the preload-order check: server-HTML head has the hero image preload BEFORE the first stylesheet, and exactly ONE font preload that is the h1/hero face. Fails on main: 0 font preloads (the hero-before-CSS half already passes on main). AMENDED (main-merge drift): the 404 leg no longer wants 1 preload. Main's host-neutral 404 (catch-all notFound()) is Next's __next_error__ shell with no head links, h1 or chrome in server HTML, so the leg asserts status 404 + __next_error__ + ZERO font preloads (no stray/duplicate); the 1-preload/h1-face rules stay on / and /about"
       command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-preload-order.mjs"
       timeout_seconds: 900
     - id: A8
@@ -81,7 +83,7 @@ assertions:
     - id: A15
       description: "Codex adversarial QA of the whole diff against the goldens and proof-on-main"
       type: codex_qa
-      target: "Adversarially review git diff origin/main...HEAD against the goldens in .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/. Try to pass the font, preload and favicon checks while a glyph still falls back, a font is fetched twice, the hero is queued behind CSS, or the favicon is redrawn."
+      target: "Adversarially review git diff origin/main...HEAD against ONLY these goldens: .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/f1e-measurements.md, .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/lcp-queue.md, .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/lcp-bounds.json, .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/favicon-source.json, .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/status-mark.md, .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/arrow-glyph.md, .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/arrow-links-f1d-7ee06e9a.json, and the F1e section of proof-on-main.md (the other features' goldens are out of scope: focus rings and status tokens belong to F1a, nav to F1b, heroes and headings to F1c). Arrow glyphs belong to F1e: check every SAOC-reachable component for a literal arrow, including components/show/ files a SAOC route renders (the import-graph rule). Try to pass the font, preload and favicon checks while a glyph still falls back, a font is fetched twice, the hero is queued behind CSS, or the favicon is redrawn. OUT OF SCOPE, ACCEPTED CHECK LIMITS (goldens/f1e-measurements.md, judge the product code against the rulings, do not fail on these): (1) preload tag order versus network request order, with the A11 LCP measurement as the outcome gate; (2) favicon likeness versus derivation, provenance is goldens/favicon-source.json plus the build path; (3) font FILE count per route is decided by A2's network measurement (requests to network idle, by hash), not by static reading of declared faces (Home measures 4, see goldens/f1e-measurements.md); the font checks see font-classified requests only, so a woff2 fetched by script is not visible (no SAOC code fetch()es a woff2, grep in the golden)."
       required: true
     - id: A16
       phase: 5
@@ -96,7 +98,7 @@ assertions:
       target: .agent/memory/scratch/saoc-dc-f1e-gws-manifest.json
       required: false
     - id: A18
-      description: "Local production build LCP and the /about LCP-FCP gap, REPORT ONLY (prints, always exits 0; the gate is A11 on beta). Needs DC_PROD=1."
+      description: "Local production build LCP and the /about LCP-FCP gap, REPORT ONLY (prints, always exits 0; the gate is A11 on beta). Needs DC_PROD=1. Chrome: lib-lcp-lighthouse.mjs defaults CHROME_PATH to Playwright's chromium (chromium.executablePath()) because chrome-launcher finds no system Chrome; an explicit CHROME_PATH wins. Thresholds unchanged."
       command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-lcp-gap.mjs --report-only"
       timeout_seconds: 1500
     - id: A19
@@ -115,7 +117,7 @@ assertions:
       description: "The 16/32/48/180 review renders in goldens/favicon-renders obey the same crop and opaque-ground rules (static, derived by checks/make-favicon-renders.mjs from the confirmed source app/icon.png)"
       command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-favicon-crop.mjs --goldens"
     - id: A23
-      description: "Glyph ruling: U+2192 and U+203B never render from a system face. Any svg[data-glyph] is aria-hidden and currentColor; the ARROW svg (NOS Design ruling) is 1.25em wide +-0.5px and sits 0.5em + the label's letter-spacing after the label text (no literal space) +-0.5px, EXCEPT inside an element marked data-variant=corner (21 society cards, Home WOSA link) where it is 1em wide +-0.5px with no margin and no gap assertion (cap-midline measured on the title's first line); has its [data-part=shaft] centre at baseline - T ascent/2 +-0.5px and a [data-part=head] open 45-degree chevron with 0.4em arms, stroke ~0.1em, round caps and joins, fill none, currentColor, and must exist on /societies, /judging and Home; the status-mark svg is NOT 1em (its size is gated by A27). Home must show a status badge at 390 and 1440 and every badge leads with the status-mark SVG (or a text mark only if a shipped face has U+203B). Source rule: when no shipped face has U+203B, components/show/_shared/StatusMarker.tsx must hold an aria-hidden currentColor svg[data-glyph=status-mark] and no text mark (checked in source and in the SAOC Home DOM, where PlaceholderMarker, NavCards and ShowBand render it). Fails on main (no shipped face has U+203B, StatusMarker renders it as text)"
+      description: "Mirrored back arrow (scaleX(-1), gap AFTER via margin-inline-end 0.5em) on a society detail route is asserted, and the A15 font walks include that route. Glyph ruling: U+2192 and U+203B never render from a system face. Any svg[data-glyph] is aria-hidden and currentColor; the ARROW svg (NOS Design ruling) is 1.25em wide +-0.5px and sits 0.5em + the label's letter-spacing after the label text (no literal space) +-0.5px, EXCEPT inside an element marked data-variant=corner (21 society cards, Home WOSA link) where it is 1em wide +-0.5px with no margin and no gap assertion (cap-midline measured on the title's first line); has its [data-part=shaft] centre at baseline - T ascent/2 +-0.5px and a [data-part=head] open 45-degree chevron with 0.4em arms, stroke ~0.1em, round caps and joins, fill none, currentColor, and must exist on /societies, /judging and Home; the status-mark svg is NOT 1em (its size is gated by A27). Home must show a status badge at 390 and 1440 and every badge leads with the status-mark SVG (or a text mark only if a shipped face has U+203B). Source rule: when no shipped face has U+203B, components/show/_shared/StatusMarker.tsx must hold an aria-hidden currentColor svg[data-glyph=status-mark] and no text mark (checked in source and in the SAOC Home DOM, where PlaceholderMarker, NavCards and ShowBand render it). Fails on main (no shipped face has U+203B, StatusMarker renders it as text)"
       command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-glyph-svg.mjs"
       timeout_seconds: 900
     - id: A24
@@ -145,3 +147,6 @@ assertions:
       phase: 5
       description: "RUN AFTER DEPLOY (phase 5). The arrow-swap delta guard against the deployed site. Plain shell check, reads beta credentials inside the scripts, never printed."
       command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-arrow-links-delta.mjs"
+    - id: A31
+      description: "Static arrow scan (NOS Design arrow ruling): no literal arrow glyph (U+2190-21FF, U+27F0-27FF, U+2794-27BF, U+2900-297F) in any source a SAOC route can render, scoped by the import graph (components/show/ files a SAOC route renders, such as VenueCard on /contact and /events/[slug], are IN; NOS chrome and pages are OUT; admin surfaces are out of scope). The runtime walks cannot see links that fixtures do not render (VenueCard's map link needs venue.mapsUrl). Allowlist goldens/arrow-literals.json: VenueCard's mapAction='button' branch only, with an assertion that no SAOC file selects it. Fails on the F1e head c338adfb (VenueCard.tsx:108 'Open in a map')."
+      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-arrow-literals-static.mjs"

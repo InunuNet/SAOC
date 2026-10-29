@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 
 import { NEWSLETTER_COPY } from '@/components/chrome/newsletter-copy';
 import { FOOTER_HEADINGS } from '@/components/chrome/footer-data';
@@ -29,6 +29,7 @@ interface NewsletterSignupProps {
   buttonClassName?: string;
   statusClassName?: string;
   errorClassName?: string;
+  errorIcon?: ReactNode;
 }
 
 export function NewsletterSignup({
@@ -47,6 +48,7 @@ export function NewsletterSignup({
   buttonClassName,
   statusClassName,
   errorClassName,
+  errorIcon,
 }: NewsletterSignupProps) {
   const hydrated = useHydrated();
   const [email, setEmail] = useState('');
@@ -61,7 +63,10 @@ export function NewsletterSignup({
 
   const errorId = `${inputId}-error`;
   const topicsErrorId = `${inputId}-topics-error`;
-  const showError = status === 'error' && errorMessage !== '';
+  const hasError = status === 'error' && errorMessage !== '';
+  // genericError is unsourced copy: announce it to screen readers but render no visible summary.
+  const errorWithheld = hasError && errorMessage === NEWSLETTER_COPY.genericError;
+  const showError = hasError && !errorWithheld;
   const orderedTopics: NewsletterTopic[] = site === 'nos' ? ['nos', 'saoc'] : ['saoc', 'nos'];
 
   function toggleTopic(topic: NewsletterTopic, checked: boolean) {
@@ -74,6 +79,9 @@ export function NewsletterSignup({
     if (status === 'submitting') return;
 
     if (topics.length === 0) {
+      setStatus('idle');
+      setErrorMessage('');
+      setEmailInvalid(false);
       setTopicsInvalid(true);
       firstTopicRef.current?.focus();
       return;
@@ -131,7 +139,7 @@ export function NewsletterSignup({
           onChange={(e) => setEmail(e.target.value)}
           placeholder={placeholder}
           aria-invalid={emailInvalid ? 'true' : undefined}
-          aria-describedby={showError ? errorId : undefined}
+          aria-describedby={hasError ? errorId : undefined}
           className={inputClassName}
         />
         <fieldset className="mt-2 w-full basis-full">
@@ -148,7 +156,7 @@ export function NewsletterSignup({
                   onChange={(event) => toggleTopic(topic, event.target.checked)}
                   aria-invalid={topicsInvalid ? 'true' : undefined}
                   aria-describedby={topicsInvalid ? topicsErrorId : undefined}
-                  className="size-6 shrink-0 accent-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ivory"
+                  className={`size-6 shrink-0 accent-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-ivory${site === 'nos' ? '' : ' aria-invalid:not-focus:outline-1 aria-invalid:not-focus:outline-solid aria-invalid:not-focus:outline-[var(--status-error-on-dark)] aria-invalid:focus:outline-2 aria-invalid:focus:outline-solid aria-invalid:focus:outline-ivory aria-invalid:focus:outline-offset-[3px]'}`}
                   style={site === 'nos' ? { accentColor: 'var(--nc-gold)' } : undefined}
                 />
                 {topic === 'saoc' ? NEWSLETTER_COPY.topicLabelSaoc : NEWSLETTER_COPY.topicLabelNos}
@@ -157,8 +165,8 @@ export function NewsletterSignup({
           </div>
           {topicsInvalid ? (
             showCopyGap ? (
-              <p id={topicsErrorId} role="alert" className="mt-1.5 border-l-2 border-error px-4 font-sans text-[14px] text-ivory">
-                <span aria-hidden="true">⚠︎</span>{' '}
+              <p id={topicsErrorId} role="alert" className={`mt-1.5 border-l-2 px-4 font-sans text-[14px] text-ivory ${site === 'nos' ? 'border-error' : 'border-[var(--status-error-on-dark)]'}`}>
+                <span aria-hidden="true" className={site === 'nos' ? undefined : 'text-[var(--status-error-on-dark)]'}>⚠︎</span>{' '}
                 <span>COPY GAP — AI-generated placeholder: Select at least one newsletter topic.</span>
               </p>
             ) : (
@@ -196,6 +204,12 @@ export function NewsletterSignup({
         {status === 'success' ? NEWSLETTER_COPY.success : null}
         {showError ? (
           <p id={errorId} className={errorClassName}>
+            {errorIcon}
+            <span>{errorMessage}</span>
+          </p>
+        ) : null}
+        {errorWithheld ? (
+          <p id={errorId} role="alert" className="sr-only">
             {errorMessage}
           </p>
         ) : null}

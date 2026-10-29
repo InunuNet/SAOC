@@ -21,6 +21,7 @@
   --status-error: #8f2834;
   --status-success: #2f5d3a;
   --status-warning: #7a5a12;
+  --status-error-on-dark: #E8959D;
   --muted: #636660; /* captions, meta, taglines */
 
   --rule: #d9d7c9; /* hairlines, dividers */
@@ -574,7 +575,7 @@ h3.font-serif {
   transform: translateX(3px);
 }
 .petal-card:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--primary);
   outline-offset: 3px;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -629,11 +630,11 @@ h3.font-serif {
    properties only, so another site's theme supplies its own values.
    ============================================================ */
 
-/* Hero facts: dd above dt, centred, no divider, no box, no caps. DOM order stays dt then dd. */
+/* Hero facts: dd above dt, no divider, no box, no caps. DOM order stays dt then dd.
+   Alignment is per hero (PageHero `factsAlign`, rules after the media query below). */
 .hero-facts {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
   align-items: flex-start;
   gap: 20px 40px;
   margin: 32px 0 0;
@@ -642,8 +643,6 @@ h3.font-serif {
 .hero-facts > div {
   display: flex;
   flex-direction: column-reverse;
-  align-items: center;
-  text-align: center;
 }
 .hero-facts dd {
   margin: 0;
@@ -668,6 +667,14 @@ h3.font-serif {
   .hero-facts {
     gap: 24px 40px;
   }
+}
+/* Centred by default. */
+.hero-facts[data-facts-align='center'] {
+  justify-content: center;
+}
+.hero-facts[data-facts-align='center'] > div {
+  align-items: center;
+  text-align: center;
 }
 /* SAOC host only (the NOS hero reuses .hero-facts and keeps its own scale, so none of the rules below reach it).
    A fact never breaks inside a word: cells keep their longest word, the dd balances over at most 3 lines

@@ -4,38 +4,33 @@ import localFont from 'next/font/local';
 import { SITE_DESCRIPTION } from '@/lib/site-metadata';
 import './globals.css';
 
+// One declaration per file, with the weight range the variable file covers (F1e): a per-weight
+// list makes next/font emit one @font-face per entry and the browser then requests the same file
+// once per matching rule. No face uses next/font's own preload: Next delivers that as an HTTP Link
+// header (never in the HTML head) and would also preload the italic. The one preload, Crimson Pro
+// normal (the h1/hero face), is the <link> SaocFontPreload renders into the SAOC head.
 const crimsonPro = localFont({
   src: [
-    { path: './fonts/crimson-pro/CrimsonPro-latin-normal.woff2', weight: '300', style: 'normal' },
-    { path: './fonts/crimson-pro/CrimsonPro-latin-normal.woff2', weight: '400', style: 'normal' },
-    { path: './fonts/crimson-pro/CrimsonPro-latin-normal.woff2', weight: '500', style: 'normal' },
-    { path: './fonts/crimson-pro/CrimsonPro-latin-normal.woff2', weight: '600', style: 'normal' },
-    { path: './fonts/crimson-pro/CrimsonPro-latin-italic.woff2', weight: '300', style: 'italic' },
-    { path: './fonts/crimson-pro/CrimsonPro-latin-italic.woff2', weight: '400', style: 'italic' },
-    { path: './fonts/crimson-pro/CrimsonPro-latin-italic.woff2', weight: '500', style: 'italic' },
-    { path: './fonts/crimson-pro/CrimsonPro-latin-italic.woff2', weight: '600', style: 'italic' },
+    { path: './fonts/crimson-pro/CrimsonPro-latin-normal.woff2', weight: '300 600', style: 'normal' },
+    { path: './fonts/crimson-pro/CrimsonPro-latin-italic.woff2', weight: '300 600', style: 'italic' },
   ],
   variable: '--font-serif-loaded',
   display: 'swap',
+  preload: false,
   adjustFontFallback: 'Times New Roman',
 });
 
 const manrope = localFont({
-  src: [
-    { path: './fonts/manrope/Manrope-latin-normal.woff2', weight: '400', style: 'normal' },
-    { path: './fonts/manrope/Manrope-latin-normal.woff2', weight: '500', style: 'normal' },
-    { path: './fonts/manrope/Manrope-latin-normal.woff2', weight: '600', style: 'normal' },
-    { path: './fonts/manrope/Manrope-latin-normal.woff2', weight: '700', style: 'normal' },
-  ],
+  src: [{ path: './fonts/manrope/Manrope-latin-normal.woff2', weight: '400 700', style: 'normal' }],
   variable: '--font-sans-loaded',
   display: 'swap',
+  preload: false,
   adjustFontFallback: 'Arial',
 });
 
 const jetBrainsMono = localFont({
   src: [
-    { path: './fonts/jetbrains-mono/JetBrainsMono-latin-normal.woff2', weight: '400', style: 'normal' },
-    { path: './fonts/jetbrains-mono/JetBrainsMono-latin-normal.woff2', weight: '500', style: 'normal' },
+    { path: './fonts/jetbrains-mono/JetBrainsMono-latin-normal.woff2', weight: '400 500', style: 'normal' },
   ],
   variable: '--font-mono-loaded',
   display: 'swap',

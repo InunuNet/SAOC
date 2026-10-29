@@ -8,6 +8,8 @@ import { showLabelWithEdition } from '@/lib/show-identity';
 const TICK_MS = 1_000;
 
 export interface ShowCountdownProps {
+  // The caption above the value; it renders with the value, never alone.
+  label?: string;
   countdownDate?: string | null;
   /** Edition number from the nationalShow singleton — never hardcoded here. */
   edition?: number | null;
@@ -84,7 +86,7 @@ function createCountdownStore(targetMs: number) {
   return { subscribe, getSnapshot };
 }
 
-export function ShowCountdown({ countdownDate, edition, pendingLabel }: ShowCountdownProps) {
+export function ShowCountdown({ label, countdownDate, edition, pendingLabel }: ShowCountdownProps) {
   const targetMs = resolveTargetMs(countdownDate);
 
   // Lazy initializer: the store (and its interval) is created once per
@@ -96,9 +98,19 @@ export function ShowCountdown({ countdownDate, edition, pendingLabel }: ShowCoun
 
   const ariaLabel = `Countdown to the ${showLabelWithEdition(edition)}`;
 
+  const caption = label ? (
+    <p
+      data-nos-hero-text="countdown-opens-in"
+      className="mb-3 font-sans text-[12px] font-bold uppercase tracking-[0.14em] text-ivory/90"
+    >
+      {label}
+    </p>
+  ) : null;
+
   if (targetMs === null) {
     return (
       <div>
+        {caption}
         {/* Same photography-legibility reasoning as the ticking state below. */}
         <p
           data-nos-hero-text="countdown-tbc"
@@ -119,32 +131,35 @@ export function ShowCountdown({ countdownDate, edition, pendingLabel }: ShowCoun
   ];
 
   return (
-    <div className="flex gap-6" aria-label={ariaLabel}>
-      {units.map(({ label, value }) => (
-        <div key={label} className="text-center">
-          {/* This countdown's one call site (the national-show landing hero,
+    <div>
+      {caption}
+      <div className="flex gap-4 lg:gap-6" aria-label={ariaLabel}>
+        {units.map(({ label: unit, value }) => (
+          <div key={unit} className="text-center">
+            {/* This countdown's one call site (the national-show landing hero,
               app/(nos)/national-show/page.tsx) sits directly over full-
               bleed photography, not a flat ground. Brand-tint violet
               (text-accent-soft) and a 0.6-alpha label measured well under
               4.5:1 against orchid-yellow.jpg/orchid-pink.jpg's bright petals
               — over a photograph, legibility wins over brand tint (guardrail
               6), so both use solid pale gold instead. */}
-          {/* `data-nos-hero-text`: sampled by scripts/checks/nos-hero-contrast.mjs
+            {/* `data-nos-hero-text`: sampled by scripts/checks/nos-hero-contrast.mjs
               at that same one call site. */}
-          <div
-            data-nos-hero-text={`countdown-${label.toLowerCase()}-value`}
-            className="nos-figure font-serif tracking-[-0.015em] font-light text-[42px] leading-none text-ivory"
-          >
-            {String(value).padStart(2, '0')}
+            <div
+              data-nos-hero-text={`countdown-${unit.toLowerCase()}-value`}
+              className="nos-figure font-serif tracking-[-0.015em] font-light text-[42px] leading-none text-ivory"
+            >
+              {String(value).padStart(2, '0')}
+            </div>
+            <div
+              data-nos-hero-text={`countdown-${unit.toLowerCase()}-unit`}
+              className="mt-1 font-sans text-[12px] font-bold uppercase tracking-[0.14em] text-ivory/90"
+            >
+              {unit}
+            </div>
           </div>
-          <div
-            data-nos-hero-text={`countdown-${label.toLowerCase()}-unit`}
-            className="mt-1 font-sans text-[12px] font-bold uppercase tracking-[0.14em] text-ivory/90"
-          >
-            {label}
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }

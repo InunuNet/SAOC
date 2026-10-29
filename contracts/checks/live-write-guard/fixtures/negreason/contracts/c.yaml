@@ -1,0 +1,18 @@
+schema: athanor.contract/v1
+slug: fx-negreason
+goal: fixture with the live writer moved to manual_only
+created_at: '2026-10-28'
+autonomy: high
+features: [{id: F1, name: x, status: pending}]
+goldens: []
+assertions:
+  phase: 4
+  checks:
+    - id: A2
+      description: static
+      command: test -f scripts/w.mjs
+manual_only:
+  - id: A1
+    description: live write round trip
+    reason: live
+    command: node scripts/w.mjs

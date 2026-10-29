@@ -61,6 +61,8 @@ export async function withSite(fn) {
 
 export async function openPage(browser, ctxOpts, base, path, width, height = 1000, dpr = 1) {
   const ctx = await browser.newContext(ctxOpts({ width, height }, dpr)); const page = await ctx.newPage();
+  // Phase-5 authenticated runs only: DC_ADMIN_SESSION is a verified admin `session` cookie value (lib/admin-auth.ts), read from the environment and never printed. Unset, nothing changes.
+  if (process.env.DC_ADMIN_SESSION && process.env.DC_BASE_URL) await ctx.addCookies([{ name: 'session', value: process.env.DC_ADMIN_SESSION, url: base, httpOnly: true, secure: base.startsWith('https:') }]);
   const resp = await page.goto(base + path, { waitUntil: 'load', timeout: 120_000 }); await page.waitForSelector('header', { timeout: 60_000 }).catch(() => {}); await page.waitForTimeout(700);
   return { page, ctx, status: resp ? resp.status() : 0 };
 }
@@ -77,3 +79,8 @@ export const INNER_ROUTES = ['/about', '/judging', '/sponsors', '/members', '/me
 export const TEN_ROUTES = ['/', '/about', '/societies', '/judging', '/events', '/sponsors', '/members', '/contact', '/privacy', '/terms'];
 export const tenRoutes = ({ deployed, live }) => TEN_ROUTES.filter((r) => (r !== '/' || deployed) && (r !== '/events' || live));
 export const EXEMPT_ROUTES = ['/societies', '/contact'];
+
+// A society detail route (the first linked from /societies), so a walk covers a page whose back link carries the mirrored arrow. Returns null when /societies links none.
+export async function societyDetail(base) {
+  try { const html = await (await fetch(base + '/societies')).text(); const m = /href="(\/societies\/[a-z0-9][a-z0-9-]*)"/.exec(html); return m ? m[1] : null; } catch { return null; }
+}

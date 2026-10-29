@@ -4,10 +4,11 @@
 // label text (advance, trailing letter-spacing excluded) to the svg box is 0.5em plus the label's letter-spacing (+-0.5px), with no literal space before it; the shaft (`[data-part="shaft"]`) centre sits at
 // baseline - T ascent / 2 (+-0.5px). CORNER variant (svg inside an element marked data-variant="corner": the 21 society cards and the Home WOSA link): 1em wide (+-0.5px), no margin and no label-gap assertion; head, stroke and
 // cap-midline rules are the same, em is the arrow's own font size; the cap midline is measured against the first line of the title (the marked element's [data-corner-title] if present, else its first h1-h6, else its first text); the label-following rules apply only to arrows without it; the head (`[data-part="head"]`) is an open 45 degree chevron with 0.4em arms (path length 0.8em +-0.04em, bbox height = 2 x width +-10%); stroke 0.08-0.12em, round caps and joins, currentColor, fill none.
+// MIRRORED variant (NOS Design ruling (b), the "\u2190 All societies" back link on a society page): the same svg with transform scaleX(-1), 1.25em wide, 0.4em head, stem stroke, shaft on the cap midline; the 0.5em gap goes AFTER the arrow (margin-inline-end), no literal space.
 // The STATUS MARK is NOT 1em: its extent is the label's measured T cap height plus 4% overshoot (NOS Design ruling), gated by check-status-mark-geometry.mjs (A27).
 // Status badges ([data-exhibitor-marker], [data-confirmation-badge]) render on the SAOC host too (PlaceholderMarker, Home NavCards and ShowBand "To be confirmed"): Home at 390 and 1440 must show
 // at least one, and each must lead with the status-mark SVG (a text U+203B only if a shipped face has it), never nothing and never a system glyph.
-import { withSite, check, finish, tenRoutes } from './lib.mjs';
+import { withSite, check, finish, tenRoutes, societyDetail } from './lib.mjs';
 import { readFileSync } from 'node:fs';
 import { woff2Cmap } from './lib-woff2.mjs';
 const STATUS_MARKER = 'components/show/_shared/StatusMarker.tsx';
@@ -24,9 +25,10 @@ const PROBE = `() => {
       if (prev && prev.nodeType === 3) { spaced = /\\s$/.test(prev.textContent); const g = document.createRange(); g.setStart(prev, prev.textContent.length - 1); g.setEnd(prev, prev.textContent.length); endX = g.getBoundingClientRect().right - ls; }
       let baseY = null; if (tn) { const g = document.createRange(); g.selectNodeContents(tn); const rs = [...g.getClientRects()].filter((q) => q.width > 0); const rr = box ? rs[0] : rs[rs.length - 1]; if (rr) baseY = rr.top + k.measureText('H').fontBoundingBoxAscent; }
       const shaft = s.querySelector('[data-part="shaft"]'); const head = s.querySelector('[data-part="head"]'); const sr = shaft && shaft.getBoundingClientRect(); let hd = null;
-      if (head) { const hb = head.getBBox(); const hs = getComputedStyle(head); const len = head.getTotalLength ? head.getTotalLength() : 0; const sc = head.getScreenCTM().a; hd = { w: hb.width, h: hb.height, len: len * sc, sw: parseFloat(hs.strokeWidth) * sc, cap: hs.strokeLinecap, join: hs.strokeLinejoin, fill: hs.fill, stroke: hs.stroke }; }
-      let shs = null; if (shaft) { const q = getComputedStyle(shaft); shs = { sw: parseFloat(q.strokeWidth) * shaft.getScreenCTM().a, cap: q.strokeLinecap, stroke: q.stroke }; }
-      arrow = { corner: !!box, em: box ? parseFloat(cs.fontSize) : pf, pf, ls, asc, gap: endX === null ? null : r.left - endX, spaced, shaftY: sr ? sr.top + sr.height / 2 : null, baseY, head: hd, shaft: shs }; }
+      if (head) { const hb = head.getBBox(); const hs = getComputedStyle(head); const len = head.getTotalLength ? head.getTotalLength() : 0; const sc = Math.abs(head.getScreenCTM().a); hd = { w: hb.width, h: hb.height, len: len * sc, sw: parseFloat(hs.strokeWidth) * sc, cap: hs.strokeLinecap, join: hs.strokeLinejoin, fill: hs.fill, stroke: hs.stroke }; }
+      let shs = null; if (shaft) { const q = getComputedStyle(shaft); shs = { sw: parseFloat(q.strokeWidth) * Math.abs(shaft.getScreenCTM().a), cap: q.strokeLinecap, stroke: q.stroke }; }
+      const mirrored = s.getScreenCTM().a < 0; let nextX = null, nextSpaced = false; if (mirrored) { let nx = s.nextSibling; while (nx && nx.nodeType === 3 && !nx.textContent.length) nx = nx.nextSibling; if (nx && nx.nodeType === 3) { nextSpaced = /^\s/.test(nx.textContent); const i = nx.textContent.search(/\S/); const g = document.createRange(); g.setStart(nx, Math.max(i, 0)); g.setEnd(nx, Math.max(i, 0) + 1); nextX = g.getBoundingClientRect().left; } }
+      arrow = { mirrored, nextGap: nextX === null ? null : nextX - r.right, nextSpaced, corner: !!box, em: box ? parseFloat(cs.fontSize) : pf, pf, ls, asc, gap: endX === null ? null : r.left - endX, spaced, shaftY: sr ? sr.top + sr.height / 2 : null, baseY, head: hd, shaft: shs }; }
     return { arrow, kind: s.getAttribute('data-glyph'), hidden: s.getAttribute('aria-hidden'), w: r.width, h: r.height, fs, color: cs.color, paint, dBase: r.bottom - base, shown: r.width > 0 }; });
   const sites = [...document.querySelectorAll('[data-exhibitor-marker], [data-confirmation-badge]')].filter((e) => e.getBoundingClientRect().width > 0).map((e) => { const lead = e.firstElementChild; return { text: lead ? lead.textContent.trim() : '', hasSvg: !!(lead && lead.querySelector('svg[data-glyph="status-mark"]')) }; });
   return { svgs, sites };
@@ -45,15 +47,18 @@ await withSite(async (site) => {
     check(/aria-hidden/.test(tag), `${STATUS_MARKER}: status-mark svg must be aria-hidden`);
     check(/currentColor/.test(src), `${STATUS_MARKER}: status-mark svg must paint with currentColor`);
   }
-  for (const width of [390, 1440]) for (const path of tenRoutes(site)) {
+  const detail = await societyDetail(site.base); check(Boolean(detail), '/societies links no society detail route, so the mirrored back-arrow page is not walked');
+  for (const width of [390, 1440]) for (const path of [...tenRoutes(site), ...(detail ? [detail] : [])]) {
     const ctx = await browser.newContext(ctxOpts({ width, height: 900 })); const page = await ctx.newPage(); await page.goto(base + path, { waitUntil: 'networkidle', timeout: 120000 }); await page.waitForTimeout(400);
     const w = `${path}@${width}`; const { svgs, sites } = await page.evaluate(`(${PROBE})()`);
     if (['/societies', '/judging', '/'].includes(path)) check(svgs.filter((v) => v.shown && v.kind === 'arrow').length > 0, `${w}: no svg[data-glyph=arrow] on a route whose links carry arrows (still the text glyph?)`);
+    if (path === detail) check(svgs.some((v) => v.shown && v.kind === 'arrow' && v.arrow && v.arrow.mirrored), `${w}: no mirrored svg[data-glyph=arrow] (scaleX(-1)) for the "\u2190 All societies" back link (still the text glyph?)`);
     for (const s of svgs.filter((v) => v.shown)) {
       check(s.hidden === 'true', `${w}: svg[data-glyph=${s.kind}] lacks aria-hidden="true"`);
       if (s.kind === 'arrow') { const A = s.arrow; const t = `${w}: svg[data-glyph=arrow]`; const em = (v) => (v / A.em).toFixed(2) + 'em';
         const wantW = (A.corner ? 1 : 1.25) * A.em; check(Math.abs(s.w - wantW) <= 0.5, `${t}${A.corner ? ' (corner)' : ''} is ${s.w.toFixed(2)}px wide, want ${A.corner ? '1' : '1.25'}em (${wantW.toFixed(2)}px) +-0.5`);
-        if (!A.corner) check(A.gap !== null && !A.spaced && Math.abs(A.gap - (0.5 * A.pf + A.ls)) <= 0.5, `${t} gap from the label text is ${A.gap === null ? 'n/a (no text node before it)' : A.gap.toFixed(2) + 'px'}${A.spaced ? ' with a literal space before it' : ''}, want 0.5em + letter-spacing = ${(0.5 * A.pf + A.ls).toFixed(2)}px +-0.5`);
+        if (!A.corner && A.mirrored) check(A.nextGap !== null && !A.nextSpaced && Math.abs(A.nextGap - 0.5 * A.pf) <= 0.5, `${t} (mirrored) gap AFTER the arrow is ${A.nextGap === null ? 'n/a (no text node after it)' : A.nextGap.toFixed(2) + 'px'}${A.nextSpaced ? ' with a literal space after it' : ''}, want margin-inline-end 0.5em = ${(0.5 * A.pf).toFixed(2)}px +-0.5`);
+        if (!A.corner && !A.mirrored) check(A.gap !== null && !A.spaced && Math.abs(A.gap - (0.5 * A.pf + A.ls)) <= 0.5, `${t} gap from the label text is ${A.gap === null ? 'n/a (no text node before it)' : A.gap.toFixed(2) + 'px'}${A.spaced ? ' with a literal space before it' : ''}, want 0.5em + letter-spacing = ${(0.5 * A.pf + A.ls).toFixed(2)}px +-0.5`);
         check(A.shaftY !== null && A.baseY !== null && Math.abs(A.shaftY - (A.baseY - A.asc / 2)) <= 0.5, `${t} shaft y ${A.shaftY && A.shaftY.toFixed(2)} vs cap-height midline ${(A.baseY - A.asc / 2).toFixed(2)}, want +-0.5 (needs [data-part="shaft"])`);
         const H = A.head; check(!!H, `${t} has no [data-part="head"]`);
         if (H) { check(Math.abs(H.len - 0.8 * A.em) <= 0.04 * A.em, `${t} head path length ${em(H.len)}, want 0.8em (two 0.4em arms)`); check(H.w > 0 && Math.abs(H.h / H.w - 2) <= 0.2, `${t} head is not a 45 degree chevron (bbox ${H.w.toFixed(2)}x${H.h.toFixed(2)})`);

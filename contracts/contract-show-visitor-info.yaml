@@ -244,17 +244,6 @@ assertions:
       description: F1 - portable-text keys in seeded FAQ answers are deterministic, not random (a random key breaks idempotence)
       command: >-
         if grep -Eq "randomUUID|Math\.random|nanoid" scripts/seed-show-visitor-info.ts; then exit 1; fi
-    - id: A24
-      description: >-
-        F1 - re-running the seed changes no document revision, creates no duplicate, and does not revert
-        an editor's change (proven against the real dataset, with verified cleanup)
-      command: 'node contracts/checks/show-visitor-info/check-seed-idempotent.mjs'
-      # Measured 13s on 2026-08-12. Without this line contract.py applies its 60s
-      # default (execution/contract.py:254) and SIGKILLs the check mid-run.
-      # mutates nationalShow.venue + showVisitorInfo; short, but a mutating check must never be killed mid-window. Covers runtime + the 240s lock wait.
-      # Ceiling = lock wait + runtime (lock wait 420s + 13s measured); see LOCK_WAIT_TIMEOUT_MS in _mutation-guard.mjs.
-      timeout_seconds: 600
-
     # ================= F2/F3/F4 — page structure =================
     - id: A25
       description: F2/F3/F4 - the three pages and their route-level loading states exist
@@ -365,17 +354,6 @@ assertions:
       # Also takes the dataset READ lock (240s wait) so it cannot observe a dataset a
       # mutating check has deliberately invalidated mid-flight.
       timeout_seconds: 420
-    - id: A42
-      description: >-
-        THE VENUE-CHANGE TEST (causal half) - a write to the dataset provably reaches the rendered page
-        (two-sided: the new value appears AND the old one disappears), with verified restore of the
-        captured baseline. Exit code 2 means residue was left and must be treated as a live incident.
-      command: 'node contracts/checks/show-visitor-info/check-cms-round-trip.mjs'
-      # Measured 161s on 2026-08-12. Without this line contract.py applies its 60s
-      # default (execution/contract.py:254) and SIGKILLs the check mid-run.
-      # MUTATES + polls the CDN. Measured 161s: propagation 64-96s, then a polled cleanup verification. Worst case ~350s + the 240s lock wait.
-      # Ceiling = lock wait + runtime (lock wait 420s + 240s measured worst case); see LOCK_WAIT_TIMEOUT_MS in _mutation-guard.mjs.
-      timeout_seconds: 900
     - id: A43
       description: >-
         RENDERED - every pending block carries the dataset's pendingLabel and every research block
@@ -501,21 +479,6 @@ assertions:
     # for each is recorded in .agent/memory/scratch/visitor-brief-2.md.
 
     # ---- S2: the confirmation marker must fail closed ----
-    - id: A60
-      description: >-
-        S2 PERTURBATION - with showVisitorInfo.pendingLabel CLEARED in the live dataset, the
-        confirmation markers must all still be there. Counted structurally by
-        [data-confirmation-badge], an observable derived from neither the dataset nor the copy,
-        so no field an editor can empty can reduce the count silently. Also asserts the inverse
-        with the labels seeded: every rendered badge shows one of the two DATASET labels, which
-        is the "no hardcoded label copy" claim asserted where it is observable. @qa cleared this
-        one field and 23 markers vanished across four pages while every status was still pending.
-      command: 'node contracts/checks/show-visitor-info/check-marker-fail-closed.mjs'
-      # Measured 82s on 2026-08-12. Without this line contract.py applies its 60s
-      # default (execution/contract.py:254) and SIGKILLs the check mid-run.
-      # MUTATES + polls. Measured 82s. Worst case ~200s + the 240s lock wait.
-      # Ceiling = lock wait + runtime (lock wait 420s + 165s measured through contract.py); see LOCK_WAIT_TIMEOUT_MS in _mutation-guard.mjs.
-      timeout_seconds: 720
     - id: A62
       description: >-
         S2 - both confirmation label fields are required in the schema. Advisory only (Sanity
@@ -568,40 +531,6 @@ assertions:
       command: >-
         for f in contracts/checks/show-visitor-info/check-*.mjs; do case "$f" in *check-reachability*|*check-detects-absence*) continue;; esac; grep -q "restoreGuarded" "$f" && continue; grep -q "getSanityClient" "$f" || continue; grep -q "fetchOkPage\|chromium" "$f" || continue; grep -q "withDatasetLock" "$f" || { echo "$f reads the dataset and renders pages but takes no dataset lock"; exit 1; }; if grep -q "fetchOkPage(" "$f"; then echo "$f calls fetchOkPage() directly; dataset-sourced rendered checks must fetch through settlePage()"; exit 1; fi; done
       timeout_seconds: 60
-    - id: A61
-      description: >-
-        S1/S4/S6/S7/S8 THE VENUE-CHANGE TEST, SWEPT - the assertion this contract needed and did
-        not have. Swaps the WHOLE show identity in the dataset for values the check invents at
-        runtime (venue name/city/province/address, both dates, edition, host region) and unsets
-        countdownDate, then sweeps home, landing, contact, archive and the three visitor pages:
-        every surface must render the new values and NO surface may render any token of the old
-        one. Deliberately leaves the legacy nationalShow.location holding the old venue — any
-        surface that prefers it over venue.name is caught. Also proves S6: with countdownDate
-        unset, nothing may render a fabricated ticking countdown or a stale edition aria-label.
-        Restores under a revision guard and verifies the restore on the rendered page.
-        AMENDED 2026-08-12 (team-lead rulings, @architect):
-          (a) HISTORICAL CARVE-OUT. The landing page's "Past editions" list names each past
-              show's own venue, and the 2018 show was legitimately held in the current venue's
-              city — a constitutional record (show-identity-surfaces.golden.md row 5) that no
-              Studio edit may rewrite, so the city token could never be cleared there. The city
-              token is now exempted INSIDE THAT ONE <section> only, cut out structurally rather
-              than by phrase window. Venue name, year, ordinal and roman edition are still swept
-              across the whole page, and a stale CURRENT city anywhere outside that section
-              still fails. The check asserts the section was found and that the excision stays
-              under 40% of the page, so the carve-out cannot silently widen into a page-level
-              exemption.
-          (b) POLL, DO NOT SLEEP. The old fixed 2 x 20s warm window sometimes failed to outlast
-              the one stale copy a `revalidate = 60` route serves after a write, making the
-              mission's crux assertion pass or fail on timing. Each surface is now polled until
-              every NEW token it must render is present, and every assertion — negatives
-              included — is made against that proven-fresh response.
-        Depends on the same ruling's removal of the edition ordinal from nationalShow.title.
-      command: 'node contracts/checks/show-visitor-info/check-show-identity-sweep.mjs'
-      # Measured 184s on 2026-08-12. Without this line contract.py applies its 60s
-      # default (execution/contract.py:254) and SIGKILLs the check mid-run.
-      # MUTATES the whole show identity + polls the CDN twice (propagation gate, then cleanup) + settles seven surfaces + drives Playwright. Measured 184s; @qa measured propagation alone at 64s/72s/96s under load, so the realistic worst case is ~400s, plus the 240s lock wait.
-      # Ceiling = lock wait + runtime (lock wait 420s + 248s measured through contract.py, with room for CDN weather); see LOCK_WAIT_TIMEOUT_MS in _mutation-guard.mjs.
-      timeout_seconds: 1200
     - id: A64
       description: >-
         S6/S7 - no fabricated fallback date. A hardcoded ISO date in a countdown is an INVENTED
@@ -705,3 +634,79 @@ assertions:
     - id: A59
       description: production build succeeds
       command: 'pnpm build'
+
+manual_only:
+  - id: A24
+    reason: "check-seed-idempotent.mjs writes to the production Sanity dataset (project 26yfbug4): Sanity 26yfbug4/production showExhibitorInfo/showVisitorInfo/nationalShow docs (commitAndCaptureRev, seed run); sentinel residue once sat on the live site for 3 days; run by hand only, with the operator present"
+    description: >-
+      F1 - re-running the seed changes no document revision, creates no duplicate, and does not revert
+      an editor's change (proven against the real dataset, with verified cleanup)
+    command: 'node contracts/checks/show-visitor-info/check-seed-idempotent.mjs'
+    # Measured 13s on 2026-08-12. Without this line contract.py applies its 60s
+    # default (execution/contract.py:254) and SIGKILLs the check mid-run.
+    # mutates nationalShow.venue + showVisitorInfo; short, but a mutating check must never be killed mid-window. Covers runtime + the 240s lock wait.
+    # Ceiling = lock wait + runtime (lock wait 420s + 13s measured); see LOCK_WAIT_TIMEOUT_MS in _mutation-guard.mjs.
+    timeout_seconds: 600
+  - id: A42
+    reason: "check-cms-round-trip.mjs writes to the production Sanity dataset (project 26yfbug4): Sanity 26yfbug4/production showExhibitorInfo/showVisitorInfo/nationalShow docs (commitAndCaptureRev, seed run); sentinel residue once sat on the live site for 3 days; run by hand only, with the operator present"
+    description: >-
+      THE VENUE-CHANGE TEST (causal half) - a write to the dataset provably reaches the rendered page
+      (two-sided: the new value appears AND the old one disappears), with verified restore of the
+      captured baseline. Exit code 2 means residue was left and must be treated as a live incident.
+    command: 'node contracts/checks/show-visitor-info/check-cms-round-trip.mjs'
+    # Measured 161s on 2026-08-12. Without this line contract.py applies its 60s
+    # default (execution/contract.py:254) and SIGKILLs the check mid-run.
+    # MUTATES + polls the CDN. Measured 161s: propagation 64-96s, then a polled cleanup verification. Worst case ~350s + the 240s lock wait.
+    # Ceiling = lock wait + runtime (lock wait 420s + 240s measured worst case); see LOCK_WAIT_TIMEOUT_MS in _mutation-guard.mjs.
+    timeout_seconds: 900
+  - id: A60
+    reason: "check-marker-fail-closed.mjs writes to the production Sanity dataset (project 26yfbug4): Sanity 26yfbug4/production showExhibitorInfo/showVisitorInfo/nationalShow docs (commitAndCaptureRev, seed run); sentinel residue once sat on the live site for 3 days; run by hand only, with the operator present"
+    description: >-
+      S2 PERTURBATION - with showVisitorInfo.pendingLabel CLEARED in the live dataset, the
+      confirmation markers must all still be there. Counted structurally by
+      [data-confirmation-badge], an observable derived from neither the dataset nor the copy,
+      so no field an editor can empty can reduce the count silently. Also asserts the inverse
+      with the labels seeded: every rendered badge shows one of the two DATASET labels, which
+      is the "no hardcoded label copy" claim asserted where it is observable. @qa cleared this
+      one field and 23 markers vanished across four pages while every status was still pending.
+    command: 'node contracts/checks/show-visitor-info/check-marker-fail-closed.mjs'
+    # Measured 82s on 2026-08-12. Without this line contract.py applies its 60s
+    # default (execution/contract.py:254) and SIGKILLs the check mid-run.
+    # MUTATES + polls. Measured 82s. Worst case ~200s + the 240s lock wait.
+    # Ceiling = lock wait + runtime (lock wait 420s + 165s measured through contract.py); see LOCK_WAIT_TIMEOUT_MS in _mutation-guard.mjs.
+    timeout_seconds: 720
+  - id: A61
+    reason: "check-show-identity-sweep.mjs writes to the production Sanity dataset (project 26yfbug4): Sanity 26yfbug4/production showExhibitorInfo/showVisitorInfo/nationalShow docs (commitAndCaptureRev, seed run); sentinel residue once sat on the live site for 3 days; run by hand only, with the operator present"
+    description: >-
+      S1/S4/S6/S7/S8 THE VENUE-CHANGE TEST, SWEPT - the assertion this contract needed and did
+      not have. Swaps the WHOLE show identity in the dataset for values the check invents at
+      runtime (venue name/city/province/address, both dates, edition, host region) and unsets
+      countdownDate, then sweeps home, landing, contact, archive and the three visitor pages:
+      every surface must render the new values and NO surface may render any token of the old
+      one. Deliberately leaves the legacy nationalShow.location holding the old venue — any
+      surface that prefers it over venue.name is caught. Also proves S6: with countdownDate
+      unset, nothing may render a fabricated ticking countdown or a stale edition aria-label.
+      Restores under a revision guard and verifies the restore on the rendered page.
+      AMENDED 2026-08-12 (team-lead rulings, @architect):
+        (a) HISTORICAL CARVE-OUT. The landing page's "Past editions" list names each past
+            show's own venue, and the 2018 show was legitimately held in the current venue's
+            city — a constitutional record (show-identity-surfaces.golden.md row 5) that no
+            Studio edit may rewrite, so the city token could never be cleared there. The city
+            token is now exempted INSIDE THAT ONE <section> only, cut out structurally rather
+            than by phrase window. Venue name, year, ordinal and roman edition are still swept
+            across the whole page, and a stale CURRENT city anywhere outside that section
+            still fails. The check asserts the section was found and that the excision stays
+            under 40% of the page, so the carve-out cannot silently widen into a page-level
+            exemption.
+        (b) POLL, DO NOT SLEEP. The old fixed 2 x 20s warm window sometimes failed to outlast
+            the one stale copy a `revalidate = 60` route serves after a write, making the
+            mission's crux assertion pass or fail on timing. Each surface is now polled until
+            every NEW token it must render is present, and every assertion — negatives
+            included — is made against that proven-fresh response.
+      Depends on the same ruling's removal of the edition ordinal from nationalShow.title.
+    command: 'node contracts/checks/show-visitor-info/check-show-identity-sweep.mjs'
+    # Measured 184s on 2026-08-12. Without this line contract.py applies its 60s
+    # default (execution/contract.py:254) and SIGKILLs the check mid-run.
+    # MUTATES the whole show identity + polls the CDN twice (propagation gate, then cleanup) + settles seven surfaces + drives Playwright. Measured 184s; @qa measured propagation alone at 64s/72s/96s under load, so the realistic worst case is ~400s, plus the 240s lock wait.
+    # Ceiling = lock wait + runtime (lock wait 420s + 248s measured through contract.py, with room for CDN weather); see LOCK_WAIT_TIMEOUT_MS in _mutation-guard.mjs.
+    timeout_seconds: 1200

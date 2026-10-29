@@ -104,26 +104,7 @@ assertions:
       timeout_seconds: 240
 
     # ---------- negative control, runs first ----------
-    - id: A-NEGCTL-01
-      description: >-
-        Negative control. The probe-and-assert HTTP logic used throughout this contract
-        correctly reports FAILURE (200 + cookie issued) when pointed at a fixture server
-        that deliberately reproduces the pre-fix defect. Proves the checks below can
-        fail; does not touch the real dev server.
-      command: node contracts/checks/admin-auth-hardening/check-negative-control.mjs
-      timeout_seconds: 90  # measured 2026-08-14 vs local prod build (127.0.0.1:3400): 1.4s
-
     # ---------- F2: the core adversarial proof ----------
-    - id: A-PROBE-01
-      description: >-
-        F2 - a freshly self-registered probe account (real accounts:signUp with the
-        public web API key) is refused a session cookie (403, no Set-Cookie), then
-        refused at every admin surface with no cookie at all, then deleted and confirmed
-        gone. Reproduces the original attack end to end. Currently RED on the session
-        exchange (measured 2026-08-14: 200 + cookie issued).
-      command: node contracts/checks/admin-auth-hardening/check-probe-refused-everywhere.mjs
-      timeout_seconds: 120  # measured 2026-08-14 vs local prod build (127.0.0.1:3400): 3.2s
-
     # ---------- regression guards: the baseline-correct surfaces must stay correct ----------
     - id: A-REGRESS-01
       description: >-
@@ -144,34 +125,7 @@ assertions:
       timeout_seconds: 90  # measured 2026-08-14 vs local prod build (127.0.0.1:3400): 0.10s
 
     # ---------- the gate does not simply refuse everyone ----------
-    - id: A-ALLOW-01
-      description: >-
-        F1/F2 - a genuinely allowlisted, claim-bearing, email-verified identity still
-        succeeds everywhere: session mint (200 + cookie), /admin (200), /admin/door (200
-        + scanner markup), /api/admin/tickets (200), /api/admin/export-csv (200).
-        Regression guard against a gate that blocks all access. Requires the
-        ADMIN_EMAIL_ALLOWLIST precondition above.
-      command: node contracts/checks/admin-auth-hardening/check-allowlisted-identity-succeeds.mjs
-      timeout_seconds: 120  # measured 2026-08-14 vs local prod build (127.0.0.1:3400): 9.7s
-
     # ---------- fail-closed on every unenumerated state ----------
-    - id: A-STATE-01
-      description: >-
-        F1 - claim present but not allowlisted, malformed claim (string 'true', not
-        boolean), missing claim entirely, and claim present but email unverified are all
-        refused (403, no cookie), each isolated as the sole varying condition against an
-        otherwise-valid fixture identity.
-      command: node contracts/checks/admin-auth-hardening/check-fail-closed-states.mjs
-      timeout_seconds: 120  # measured 2026-08-14 vs local prod build (127.0.0.1:3400): 15.7s
-
-    - id: A-STATE-02
-      description: >-
-        F1 - a revoked session (revokeRefreshTokens) is refused immediately on its next
-        use, at /admin and /api/admin/tickets, proving verifySessionCookie's checkRevoked
-        argument is actually wired through and not just present as an unused parameter.
-      command: node contracts/checks/admin-auth-hardening/check-revoked-session-refused.mjs
-      timeout_seconds: 120  # measured 2026-08-14 vs local prod build (127.0.0.1:3400): 8.1s
-
     # ---------- structural: one home for the decision, supersedes D5-04 ----------
     - id: A-STRUCT-01
       description: >-
@@ -206,3 +160,51 @@ assertions:
         stop` by hand - said here as loudly as every other precondition in this file.
       command: bash contracts/checks/admin-auth-hardening/server-ctl.sh stop
       timeout_seconds: 30  # measured 2026-08-14: <1s
+
+manual_only:
+  - id: A-NEGCTL-01
+    reason: "check-negative-control.mjs writes to the production Firebase Auth project: Firebase Auth saoc-webapp via identitytoolkit signUp/delete and scripts/admin-grant.ts custom claims; run by hand only, with the operator present"
+    description: >-
+      Negative control. The probe-and-assert HTTP logic used throughout this contract
+      correctly reports FAILURE (200 + cookie issued) when pointed at a fixture server
+      that deliberately reproduces the pre-fix defect. Proves the checks below can
+      fail; does not touch the real dev server.
+    command: node contracts/checks/admin-auth-hardening/check-negative-control.mjs
+    timeout_seconds: 90  # measured 2026-08-14 vs local prod build (127.0.0.1:3400): 1.4s
+  - id: A-PROBE-01
+    reason: "check-probe-refused-everywhere.mjs writes to the production Firebase Auth project: Firebase Auth saoc-webapp via identitytoolkit signUp/delete and scripts/admin-grant.ts custom claims; run by hand only, with the operator present"
+    description: >-
+      F2 - a freshly self-registered probe account (real accounts:signUp with the
+      public web API key) is refused a session cookie (403, no Set-Cookie), then
+      refused at every admin surface with no cookie at all, then deleted and confirmed
+      gone. Reproduces the original attack end to end. Currently RED on the session
+      exchange (measured 2026-08-14: 200 + cookie issued).
+    command: node contracts/checks/admin-auth-hardening/check-probe-refused-everywhere.mjs
+    timeout_seconds: 120  # measured 2026-08-14 vs local prod build (127.0.0.1:3400): 3.2s
+  - id: A-ALLOW-01
+    reason: "check-allowlisted-identity-succeeds.mjs writes to the production Firebase Auth project: Firebase Auth saoc-webapp via identitytoolkit signUp/delete and scripts/admin-grant.ts custom claims; run by hand only, with the operator present"
+    description: >-
+      F1/F2 - a genuinely allowlisted, claim-bearing, email-verified identity still
+      succeeds everywhere: session mint (200 + cookie), /admin (200), /admin/door (200
+      + scanner markup), /api/admin/tickets (200), /api/admin/export-csv (200).
+      Regression guard against a gate that blocks all access. Requires the
+      ADMIN_EMAIL_ALLOWLIST precondition above.
+    command: node contracts/checks/admin-auth-hardening/check-allowlisted-identity-succeeds.mjs
+    timeout_seconds: 120  # measured 2026-08-14 vs local prod build (127.0.0.1:3400): 9.7s
+  - id: A-STATE-01
+    reason: "check-fail-closed-states.mjs writes to the production Firebase Auth project: Firebase Auth saoc-webapp via identitytoolkit signUp/delete and scripts/admin-grant.ts custom claims; run by hand only, with the operator present"
+    description: >-
+      F1 - claim present but not allowlisted, malformed claim (string 'true', not
+      boolean), missing claim entirely, and claim present but email unverified are all
+      refused (403, no cookie), each isolated as the sole varying condition against an
+      otherwise-valid fixture identity.
+    command: node contracts/checks/admin-auth-hardening/check-fail-closed-states.mjs
+    timeout_seconds: 120  # measured 2026-08-14 vs local prod build (127.0.0.1:3400): 15.7s
+  - id: A-STATE-02
+    reason: "check-revoked-session-refused.mjs writes to the production Firebase Auth project: Firebase Auth saoc-webapp via identitytoolkit signUp/delete and scripts/admin-grant.ts custom claims; run by hand only, with the operator present"
+    description: >-
+      F1 - a revoked session (revokeRefreshTokens) is refused immediately on its next
+      use, at /admin and /api/admin/tickets, proving verifySessionCookie's checkRevoked
+      argument is actually wired through and not just present as an unused parameter.
+    command: node contracts/checks/admin-auth-hardening/check-revoked-session-refused.mjs
+    timeout_seconds: 120  # measured 2026-08-14 vs local prod build (127.0.0.1:3400): 8.1s

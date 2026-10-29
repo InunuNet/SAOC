@@ -15,7 +15,7 @@ export function VendorEmptyState() {
       </p>
       <Link
         href="/contact"
-        className="mt-6 inline-block bg-ink px-6 py-3 font-sans text-[14px] font-medium text-ivory transition-colors duration-150 hover:bg-ink/85"
+        className="mt-6 inline-block bg-ink px-6 py-3 font-sans text-[14px] font-medium text-ivory transition-colors duration-150 hover:bg-ink/85 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
       >
         Get in Touch
       </Link>

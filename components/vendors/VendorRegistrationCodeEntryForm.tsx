@@ -82,7 +82,7 @@ export function VendorRegistrationCodeEntryForm({
       {status === 'error' && errorMessage ? (
         <p
           role="alert"
-          className="flex items-start gap-2 rounded-sm border-2 border-[var(--status-error)] bg-bone p-4 font-sans text-[15px] font-medium text-[var(--status-error)]"
+          className="flex items-start gap-2 rounded-sm border-2 border-[var(--status-error)] p-4 font-sans text-[15px] font-medium text-[var(--status-error)]"
         >
           <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
           <span>{errorMessage}</span>
@@ -116,7 +116,7 @@ export function VendorRegistrationCodeEntryForm({
           onChange={(e) => setCodeId(e.target.value.replace(/\D/g, '').slice(0, 4))}
           disabled={disabled}
           placeholder="0000"
-          className="w-full rounded-sm border border-rule bg-ivory px-3.5 py-2.5 font-sans text-[15px] tracking-[0.3em] text-ink placeholder:text-muted outline-none transition-colors focus:border-ink/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:opacity-60"
+          className="w-full rounded-sm border border-rule bg-ivory px-3.5 py-2.5 font-sans text-[15px] tracking-[0.3em] text-ink placeholder:text-muted outline-none transition-colors focus:border-ink/40 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] disabled:opacity-60"
         />
       </div>
 

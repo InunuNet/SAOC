@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 import { StatusPill } from '@/components/admin/StatusPill';
 import { CARD_CLASS } from '@/components/admin/tokens';
+import { FormErrorAlert } from '@/components/ui/FormErrorAlert';
 import { formatAdminDateTime } from '@/lib/admin-format';
 import { PAYMENT_MODES, SELECTABLE_PAYMENT_MODES, type PaymentMode } from '@/lib/payment-mode';
 import type { PaymentSettingsChange } from '@/lib/payment-settings-audit';
@@ -115,14 +116,16 @@ export function PaymentSettingsPanel({
                 checked={gateway === option}
                 disabled={saving}
                 onChange={() => void handleGatewayChange(option)}
-                className="h-4 w-4"
+                className="h-4 w-4 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
               />
               {GATEWAY_LABELS[option]}
             </label>
           ))}
         </div>
         {gateway === null ? (
-          <ErrorText>No gateway is set — checkout will refuse purchases until one is chosen.</ErrorText>
+          <div className="mt-3">
+            <FormErrorAlert>No gateway is set — checkout will refuse purchases until one is chosen.</FormErrorAlert>
+          </div>
         ) : null}
         {gatewayError ? <ErrorText>{gatewayError}</ErrorText> : null}
       </section>
@@ -145,7 +148,7 @@ export function PaymentSettingsPanel({
                   disabled={!selectable || saving}
                   readOnly
                   onChange={() => undefined}
-                  className="h-4 w-4"
+                  className="h-4 w-4 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
                 />
                 {MODE_LABELS[mode]}
               </label>
@@ -162,7 +165,7 @@ export function PaymentSettingsPanel({
             checked={testAmount}
             disabled={!testAmountAvailable || saving}
             onChange={(e) => void handleTestAmountChange(e.target.checked)}
-            className="mt-1 h-4 w-4"
+            className="mt-1 h-4 w-4 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
           />
           <span>
             <span className="block font-sans text-[15px] text-ink">
@@ -183,7 +186,9 @@ export function PaymentSettingsPanel({
       <section className={CARD_CLASS}>
         <h2 className="font-sans text-[15px] text-ink">Recent changes</h2>
         {recentLoadFailed ? (
-          <ErrorText>Recent changes could not be loaded.</ErrorText>
+          <div className="mt-3">
+            <FormErrorAlert>Recent changes could not be loaded.</FormErrorAlert>
+          </div>
         ) : recent.length === 0 ? (
           <p className="mt-2 font-sans text-[13px] text-muted">No changes recorded yet.</p>
         ) : (
@@ -218,10 +223,11 @@ function describeChange(change: PaymentSettingsChange): string {
   return `R0.01 amount: ${describeFlagValue(change.from.enabled)} → ${describeFlagValue(change.to.enabled)}`;
 }
 
-// An error is --color-error text with a ✕ icon, never colour alone, and is announced to assistive tech.
+// A field error is a left rule plus --status-error text with an aria-hidden icon, never colour
+// alone, and is announced to assistive tech.
 function ErrorText({ children }: { children: React.ReactNode }) {
   return (
-    <p role="alert" className="mt-3 flex items-start gap-2 font-sans text-[13px] font-medium text-error">
+    <p role="alert" className="mt-3 flex items-start gap-2 border-l-2 border-[var(--status-error)] bg-transparent px-4 font-sans text-[13px] font-medium text-[var(--status-error)]">
       <span aria-hidden="true">✕</span>
       <span>{children}</span>
     </p>

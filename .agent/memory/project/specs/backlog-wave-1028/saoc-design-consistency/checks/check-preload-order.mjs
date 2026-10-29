@@ -4,11 +4,14 @@ import { withSite, openPage, check, finish } from './lib.mjs';
 await withSite(async ({ base, browser, ctxOpts, deployed }) => {
   const user = process.env.BETA_BASIC_AUTH_USER; const pass = process.env.BETA_BASIC_AUTH_PASSWORD;
   const headers = process.env.DC_BASE_URL && user && pass ? { Authorization: 'Basic ' + Buffer.from(`${user}:${pass}`).toString('base64') } : {};
-  // The SAOC 404 (app/not-found.tsx) renders outside SaocFrame: it has no hero image, but it must still ship exactly one Crimson font preload for its h1.
+  // The 404 is host-neutral (the catch-all app/(marketing)/[...slug] calls notFound()) and its response is Next's `__next_error__` shell: the server HTML has no head <link>s, no h1 and no chrome until hydration.
+// So the 404 leg asserts what is deterministic there: status 404, the error shell, and ZERO font preloads (no stray or duplicate preload). The 1-preload / h1-face rules apply to the real pages (/, /about).
   const NOT_FOUND = '/this-page-does-not-exist-sdc';
   for (const path of deployed ? ['/', '/about', NOT_FOUND] : ['/about', NOT_FOUND]) {
     const isNotFound = path === NOT_FOUND;
-    const html = await (await fetch(base + path, { headers })).text(); const head = html.slice(0, html.indexOf('</head>') + 7);
+    const res = await fetch(base + path, { headers }); const html = await res.text();
+    if (isNotFound) { check(res.status === 404, `${path}: status ${res.status}, want 404`); check(html.includes('__next_error__'), `${path}: not the __next_error__ shell`); check(!/<link[^>]*rel="preload"[^>]*as="font"/i.test(html), `${path}: the 404 shell carries a font preload, want none`); continue; }
+    const head = html.slice(0, html.indexOf('</head>') + 7);
     const hero = head.search(/<link[^>]*rel="preload"[^>]*as="image"[^>]*imagesrcset/i); const css = head.search(/<link[^>]*rel="stylesheet"/i);
     if (!isNotFound) { check(hero >= 0, `${path}: no hero image preload (imagesrcset) in <head>`); check(css >= 0 && hero >= 0 && hero < css, `${path}: hero preload at ${hero} is not before the first stylesheet at ${css}`); }
     const fonts = [...head.matchAll(/<link[^>]*rel="preload"[^>]*as="font"[^>]*>/gi)].map((m) => m[0]); check(fonts.length === 1, `${path}: ${fonts.length} font preloads, want exactly 1 (the h1/hero face)`);
@@ -16,6 +19,7 @@ await withSite(async ({ base, browser, ctxOpts, deployed }) => {
     const h1src = await page.evaluate(() => { const h = document.querySelector('h1'); const c = getComputedStyle(h); const fam = c.fontFamily.split(',')[0].replace(/['"\s]/g, ''); const wt = Number(c.fontWeight);
       const rules = [...document.styleSheets].flatMap((s) => { try { return [...s.cssRules]; } catch { return []; } }).filter((r) => r.type === CSSRule.FONT_FACE_RULE && r.style.getPropertyValue('font-family').replace(/['"\s]/g, '') === fam && (r.style.getPropertyValue('font-style') || 'normal') === c.fontStyle);
       const r = rules.find((x) => { const [a, b] = (x.style.getPropertyValue('font-weight') || '400').trim().split(/\s+/).map(Number); return wt >= a && wt <= (b ?? a); }) ?? rules[0]; const m = r && r.style.getPropertyValue('src').match(/url\(["']?([^"')]+)/); return m ? new URL(m[1], r.parentStyleSheet.href || location.href).pathname : null; });
+    check(Boolean(h1src), `${path}: the h1 face resolves to no @font-face file, so the preloaded font cannot be shown to be the h1 face`);
     if (fonts[0] && h1src) check(fonts[0].includes(h1src.split('/').pop()) || fonts[0].includes(h1src), `${path}: the preloaded font is not the h1 face (${h1src.split('/').pop()}): ${fonts[0].slice(0, 120)}`);
     await ctx.close();
   }

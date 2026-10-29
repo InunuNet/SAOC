@@ -319,6 +319,42 @@ deploys the Next.js app. Verification is via the Firebase Auth + Functions emula
 see `contracts/golden/production-blockers-f5-self-signup-guard/README.md` for the full decision
 record and verification method.
 
+## Client-SDK signup config (`scripts/auth-disable-signup.ts`) and the events/submit gate
+
+Mission nos-security-tiered-access, SEC-03. Two controls, independent of each other.
+
+**1. Route gate.** `POST /api/events/submit` and the `/events/submit` page now use the shared admin
+gate (`isAdminToken()` after `verifyIdToken(token, true)`; `getAdminSession()` on the page). A
+Google or self-registered account with no `admin` claim, or one that is unverified or not
+allowlisted, gets 403 `Forbidden`; a missing, invalid, deleted, disabled or revoked token gets 401
+`Unauthorized`. The reason is logged server-side by `classifyRefusal()`, never sent to the
+browser. The `checkRevoked=true` argument is load-bearing: it is what rejects deleted and disabled
+users.
+
+**2. Config.** `scripts/auth-disable-signup.ts` sets Identity Toolkit Admin v2
+`client.permissions.disabledUserSignup` on `saoc-webapp`. This corrects the GCIP note above: the
+v2 config field is readable without the Identity Platform upgrade, but whether the API accepts the
+PATCH without it is unproven. If the API refuses, the script exits 3 and the route gate alone
+closes SEC-03. Do not upgrade to Identity Platform without Brad. The Admin SDK `createUser()` used
+by `scripts/admin-grant.ts` is not subject to this flag.
+
+The script is the operator's to run, not an agent's, because it changes production config:
+
+```
+pnpm exec tsx scripts/auth-disable-signup.ts              # dry-run, GET only
+pnpm exec tsx scripts/auth-disable-signup.ts --apply      # PATCH one leaf, read back
+pnpm exec tsx scripts/auth-disable-signup.ts --verify     # GET only, exit 0 iff disabled
+pnpm exec tsx scripts/auth-disable-signup.ts --apply --target false   # rollback
+```
+
+It authenticates with `gcloud auth print-access-token` (operator identity, not the service
+account key), masks the PATCH to `updateMask=client.permissions.disabledUserSignup` so
+`disabledUserDeletion` and the hash config are never written, and never prints the config body,
+which contains `signIn.hashConfig.signerKey`. `--config-fixture <file>` runs a dry-run offline and
+is refused with `--apply` or `--verify`. After applying, test with the real second admin that a
+first Google sign-in onto an Admin-created account still works; the rollback is `--target false`.
+`guardSelfSignup` stays deployed as defence in depth.
+
 ## Claim before allowlist
 
 **An email address must be granted via `scripts/admin-grant.ts` before it is ever added to `ADMIN_EMAIL_ALLOWLIST`.** This ordering rule is the core of F4's defence against the account linking hazard.

@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "node scripts/generate-image-variants.mjs && next dev --port 3002",
-    "build": "node scripts/generate-image-variants.mjs && next build",
+    "build": "node scripts/generate-image-variants.mjs && next build && node scripts/crimson-font-preload.mjs --verify",
     "start": "next start",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -59,6 +59,7 @@
     "@types/qrcode": "^1.5.6",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
+    "axe-core": "4.12.0",
     "eslint": "^9.39.4",
     "eslint-config-next": "16.4.3",
     "eslint-config-prettier": "^9.1.2",

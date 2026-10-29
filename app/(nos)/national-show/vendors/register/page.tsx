@@ -62,7 +62,7 @@ export default async function VendorRegisterPage({ searchParams }: VendorRegiste
   const initialCodeId =
     typeof resolvedSearchParams.code === 'string' ? resolvedSearchParams.code : '';
 
-  const usable = await isVendorRegistrationSessionUsable();
+  const session = await readVendorRegistrationSession();
 
   return (
     <>
@@ -79,8 +79,8 @@ export default async function VendorRegisterPage({ searchParams }: VendorRegiste
 
       <NosSection>
         <div className="max-w-2xl">
-          {usable ? (
-            <VendorRegisterForm />
+          {session.usable ? (
+            <VendorRegisterForm initialBusinessName={session.verifiedBusinessName} />
           ) : (
             <VendorRegistrationCodeEntryForm
               initialBusinessName={initialBusinessName}
@@ -98,21 +98,28 @@ export default async function VendorRegisterPage({ searchParams }: VendorRegiste
  * mid-fill without being locked out). Single-use consumption still happens once, atomically,
  * inside the POST /api/vendors/register handler on a successful write (F7, unchanged). Returns
  * false on ANY failure mode so the page always falls back to the same code-entry form, never a
- * distinguishing outcome.
+ * distinguishing outcome. On success it also returns the business name stored on the verified
+ * application (never the `?name=` param, which is attacker-editable) for the form to prefill.
  */
-async function isVendorRegistrationSessionUsable(): Promise<boolean> {
+type VendorRegistrationSession =
+  | { usable: false }
+  | { usable: true; verifiedBusinessName: string };
+
+const SESSION_UNUSABLE: VendorRegistrationSession = { usable: false };
+
+async function readVendorRegistrationSession(): Promise<VendorRegistrationSession> {
   const secret = process.env.VENDOR_REGISTRATION_TOKEN_SECRET;
   if (!secret) {
     console.error(
       '[vendors/register/page] VENDOR_REGISTRATION_TOKEN_SECRET is unset; refusing all registration sessions.'
     );
-    return false;
+    return SESSION_UNUSABLE;
   }
 
   const cookieStore = await cookies();
   const sessionToken = cookieStore.get(VENDOR_REGISTRATION_SESSION_COOKIE_NAME)?.value;
   if (!sessionToken) {
-    return false;
+    return SESSION_UNUSABLE;
   }
 
   const verification = verifyVendorRegistrationToken({
@@ -121,7 +128,7 @@ async function isVendorRegistrationSessionUsable(): Promise<boolean> {
     now: new Date(),
   });
   if (!verification.ok) {
-    return false;
+    return SESSION_UNUSABLE;
   }
 
   const db = getFirestore(initAdmin());
@@ -131,7 +138,7 @@ async function isVendorRegistrationSessionUsable(): Promise<boolean> {
     .get();
 
   if (!snapshot.exists) {
-    return false;
+    return SESSION_UNUSABLE;
   }
 
   // The session must still name the CURRENT registration-code generation. A reissue bumps it,
@@ -139,7 +146,7 @@ async function isVendorRegistrationSessionUsable(): Promise<boolean> {
   // as POST /api/vendors/register refuses it inside its claim transaction. A session with no
   // generation at all predates generation binding and is refused too -- fail closed.
   if (verification.generation === null) {
-    return false;
+    return SESSION_UNUSABLE;
   }
   const data = snapshot.data();
   const currentGeneration =
@@ -148,8 +155,14 @@ async function isVendorRegistrationSessionUsable(): Promise<boolean> {
       ? (data.registrationCodeGeneration as number)
       : 0;
   if (currentGeneration !== verification.generation) {
-    return false;
+    return SESSION_UNUSABLE;
   }
 
-  return data?.status === 'approved' && !data?.registrationTokenConsumedAt;
+  if (data?.status !== 'approved' || data?.registrationTokenConsumedAt) {
+    return SESSION_UNUSABLE;
+  }
+  return {
+    usable: true,
+    verifiedBusinessName: typeof data.businessName === 'string' ? data.businessName : '',
+  };
 }

@@ -70,7 +70,7 @@ export function KitCard({ item, ground, layout = 'lockup', title, alsoAs = [], e
             <a
               href={format.href}
               download
-              className="inline-flex min-h-[44px] items-center font-sans text-[14px] text-ink underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              className="inline-flex min-h-[44px] items-center font-sans text-[14px] text-ink underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-primary"
             >
               Download {format.format}
               <span className="sr-only"> — {heading}</span>

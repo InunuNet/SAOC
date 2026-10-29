@@ -10,6 +10,7 @@
 import { SkipLink, Header, Footer } from '@/components/chrome';
 import { AdminPill } from '@/components/admin/AdminPill';
 import { RouteFocus } from '@/components/site-chrome/RouteFocus';
+import { SaocFontPreload } from '@/components/site-chrome/SaocFontPreload';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { saocOrigin } from '@/lib/site-hosts';
 import { buildOrganizationJsonLd } from '@/lib/site-metadata';
@@ -22,6 +23,7 @@ export function SaocFrame({ children }: { children: React.ReactNode }) {
         // Developer-controlled static JSON (no user input) — safe to inline.
         dangerouslySetInnerHTML={{ __html: JSON.stringify(buildOrganizationJsonLd(saocOrigin())) }}
       />
+      <SaocFontPreload />
       <SkipLink />
       <Header />
       <main id="main-content" tabIndex={-1}>

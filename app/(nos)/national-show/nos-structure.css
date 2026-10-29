@@ -592,7 +592,9 @@
   scroll-margin-top: 112px;
 }
 
-/* Hash links land clear of the sticky header (nos-chrome.css zeroes html scroll-padding-top). */
+/* Hash links land clear of the sticky header. The NOS host zeroes the root scroll-padding at every
+   width (nos-chrome.css only does so below 768), so every NOS scroll-margin assumes zero padding. */
+html:has(#nh) { --scroll-padding-top: 0px; }
 .nos-theme [id] {
   scroll-margin-top: 112px;
 }
@@ -1138,6 +1140,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   }
   .nos-theme .nos-pr-head :is(h2, h3) {
     font-size: 1.875rem;
+    font-weight: 400;
   }
   .nos-theme .nos-pr-title {
     font-size: 15px;
@@ -1329,6 +1332,19 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 }
 .nos-theme .nk-btn:hover .nk-icon {
   transform: translateX(3px);
+}
+/* Archive back links: the keepsake arrow mirrored, leading the label. Gap matches .nk-visit text links. */
+.nos-theme [data-nos-backarrow] .nk-icon {
+  margin-inline-end: 8px;
+  transform: scaleX(-1);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nos-theme [data-nos-backarrow] .nk-icon {
+    transition: transform var(--dur-slow) var(--ease-nos);
+  }
+  .nos-theme [data-nos-backarrow]:hover .nk-icon {
+    transform: translateX(-3px) scaleX(-1);
+  }
 }
 .nos-theme .nk-chip {
   display: inline-flex;
@@ -1958,7 +1974,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 .nos-theme .nk-head h2 {
   margin: 0;
   font-family: var(--serif);
-  font-weight: 400;
+  font-weight: 300;
   font-size: clamp(2rem, 1.5rem + 1.6vw, 2.4375rem);
   line-height: 1.15;
   letter-spacing: -0.015em;
@@ -2051,6 +2067,29 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 }
 .nos-theme .nk-crumb .nk-sep {
   flex-shrink: 0;
+}
+/* TL-2a: below 768 the current-page crumb (a product name) stays on one line with an ellipsis; the
+   links never wrap. The full name stays in the DOM and the accessible name. */
+@media (max-width: 767px) {
+  .nos-theme .nk-crumbs {
+    flex-wrap: nowrap;
+  }
+  .nos-theme .nk-crumbs a {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .nos-theme .nk-crumbs > .nk-crumb:not(:last-child) {
+    flex-shrink: 0;
+  }
+  .nos-theme .nk-crumbs > .nk-crumb:last-child {
+    min-width: 0;
+  }
+  .nos-theme .nk-crumbs [aria-current='page'] {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 .nos-theme .nk-masthead h1 {
   margin: 0;
@@ -2607,6 +2646,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 .nos-theme .nk-attendees-title {
   font-family: var(--serif);
   font-size: 24px;
+  font-weight: 400;
   line-height: 1.2;
   color: var(--nk-ink);
   margin: 32px 0 16px;
@@ -4341,6 +4381,12 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   line-height: 1.15;
   margin: 0 0 clamp(20px, 3vw, 32px);
 }
+/* LT-1: the clamp reaches 32px at an 800px viewport (1.2rem + 1.6vw), where it takes the light weight. */
+@media (min-width: 800px) {
+  .nos-theme .nos-hm-h2 {
+    font-weight: 300;
+  }
+}
 .nos-theme .nos-hm-lead {
   font-family: var(--serif);
   font-weight: 300;
@@ -4559,4 +4605,84 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 
 .nos-theme [data-doc-aside] .nk-admit {
   font-style: normal;
+}
+
+/* ---- Sponsor enquiry card (sponsor-enquiry-both-hosts, NOS Design ruling 2026-10-28). The form is the
+   shared SAOC component, so the NOS look is CSS scoped to [data-sponsor-enquiry='nos']. Unlayered on
+   purpose: the form's Tailwind utilities are layered and an unlayered rule beats them. ---- */
+.nos-theme [data-sponsor-enquiry='nos'] {
+  scroll-margin-top: 24px; /* the header is not pinned below 768; overrides the section's Tailwind scroll-mt-36 */
+  background-color: var(--bone);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  padding: 24px;
+}
+@media (min-width: 768px) {
+  .nos-theme [data-sponsor-enquiry='nos'] {
+    scroll-margin-top: 121px; /* pinned header, bottom at 97px, plus 24 */
+  }
+}
+@media (min-width: 768px) {
+  .nos-theme [data-sponsor-enquiry='nos'] {
+    padding: 32px;
+  }
+}
+.nos-theme [data-sponsor-enquiry='nos'] form {
+  max-width: 640px;
+}
+.nos-theme [data-sponsor-enquiry='nos'] label:not([for='se-consent']) {
+  font-family: var(--font-nos-karla), 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+}
+.nos-theme [data-sponsor-enquiry='nos'] input:not([type='checkbox']),
+.nos-theme [data-sponsor-enquiry='nos'] select,
+.nos-theme [data-sponsor-enquiry='nos'] textarea {
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  min-height: 48px;
+}
+.nos-theme [data-sponsor-enquiry='nos'] input:focus-visible,
+.nos-theme [data-sponsor-enquiry='nos'] select:focus-visible,
+.nos-theme [data-sponsor-enquiry='nos'] textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+.nos-theme [data-sponsor-enquiry='nos'] button[type='submit'] {
+  background-color: var(--primary);
+  color: var(--ivory);
+  font-family: var(--font-nos-karla), 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  min-height: 50px;
+  border-radius: var(--radius-button);
+}
+.nos-theme [data-sponsor-enquiry='nos'] button[type='submit']:hover:not(:disabled) {
+  background-color: var(--primary-700);
+}
+.nos-theme [data-sponsor-enquiry='nos'] button[type='submit']:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+/* The consent label keeps body reading size; the checkbox sits on the first line. */
+.nos-theme [data-sponsor-enquiry='nos'] label[for='se-consent'] {
+  font-family: var(--font-nos-karla), 'Helvetica Neue', Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 450;
+  line-height: 1.5;
+}
+.nos-theme [data-sponsor-enquiry='nos'] label[for='se-consent'] input[type='checkbox'] {
+  margin-top: 0;
+}
+/* The success state sits straight on the card: no box in a box. */
+.nos-theme [data-sponsor-enquiry='nos'] [role='status'] {
+  background-color: transparent;
+  border: 0;
+  padding: 0;
 }

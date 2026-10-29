@@ -4,7 +4,10 @@
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { chromium } from 'playwright';
 
+// chrome-launcher finds no system Chrome on the dev machine: reuse Playwright's chromium (an explicit CHROME_PATH wins).
+process.env.CHROME_PATH ??= chromium.executablePath();
 const url = process.argv[2];
 if (!url) { console.error('usage: lib-lcp-lighthouse.mjs <url>'); process.exit(2); }
 // In-project scratch (sandbox rule): never the system temp dir.

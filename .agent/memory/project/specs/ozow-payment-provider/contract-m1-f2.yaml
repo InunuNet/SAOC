@@ -171,27 +171,6 @@ assertions:
         real call path) left unfixed while buildReservationDocs alone is patched.
       command: npx tsx contracts/checks/ozow-m1-f2/check-gateway-threading.mjs
 
-    - id: A4
-      description: >-
-        PAYFAST'S OBSERVABLE ITN BEHAVIOUR IS PROVABLY UNCHANGED — BEHAVIOURALLY, NOT BYTE-
-        IDENTICALLY (README §5 explains why a byte pin is the wrong instrument for a feature that
-        deliberately extracts the route's logic into a shared helper). Re-runs, UNMODIFIED, six
-        EXISTING suites that already exercise the real exported POST() through real signed bodies
-        and real Firestore writes: contracts/checks/payment-seam-f2/check-itn-behaviour-
-        unchanged.sh, check-reject-paths-behavioural.mts, and the four payfast-m1 ITN scripts
-        (check-itn-amount-tamper-rejected.mts, check-itn-atomic-idempotent-write.mts,
-        check-itn-server-confirm-and-status-gating.mts, check-itn-source-ip-validation.mts). None
-        of the six assert anything about the route FILE's shape — only what a real POST to the
-        real /api/tickets/itn path does — which is why they are reused rather than re-derived.
-        ⚠️ REQUIRES LIVE FIRESTORE CREDENTIALS AND NETWORK, same posture payment-seam-f2's own A6
-        already carried; not an offline gate. Deliberately does NOT re-assert
-        check-repin-ceremony.sh's sha256 pin or check-sequence-and-ownership.sh's IN-ROUTE landmark
-        ordering against app/api/tickets/itn/route.ts — both pin the PRE-refactor route's exact
-        file contents, which this feature intentionally changes; re-running them there would assert
-        the refactor didn't happen. FAILS ON: any of the six scripts exiting non-zero, which would
-        mean some observable PayFast behaviour actually changed.
-      command: bash contracts/checks/payment-seam-f2/check-itn-behaviour-unchanged.sh && npx tsx contracts/checks/payment-seam-f2/check-reject-paths-behavioural.mts && npx tsx contracts/checks/payfast-m1/check-itn-amount-tamper-rejected.mts && npx tsx contracts/checks/payfast-m1/check-itn-atomic-idempotent-write.mts && npx tsx contracts/checks/payfast-m1/check-itn-server-confirm-and-status-gating.mts && npx tsx contracts/checks/payfast-m1/check-itn-source-ip-validation.mts
-
     - id: A4b
       description: >-
         THE EXTRACTED HELPER'S INTERNAL STEP ORDER IS THE SAME 11-LANDMARK SEQUENCE payment-seam-f2
@@ -398,3 +377,26 @@ assertions:
         'order-gateway-mismatch'; a genuine same-provider settlement (either provider) being
         wrongly rejected.
       command: npx tsx contracts/checks/ozow-m1-f2/check-settlement-gateway-mismatch.mjs
+
+manual_only:
+  - id: A4
+    reason: "check-itn-amount-tamper-rejected.mts writes to the production Firestore (saoc-webapp): Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged; check-itn-atomic-idempotent-write.mts writes to the production Firestore (saoc-webapp): Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged; check-itn-server-confirm-and-status-gating.mts writes to the production Firestore (saoc-webapp): Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged; check-itn-source-ip-validation.mts writes to the production Firestore (saoc-webapp): Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged; run by hand only, with the operator present"
+    description: >-
+      PAYFAST'S OBSERVABLE ITN BEHAVIOUR IS PROVABLY UNCHANGED — BEHAVIOURALLY, NOT BYTE-
+      IDENTICALLY (README §5 explains why a byte pin is the wrong instrument for a feature that
+      deliberately extracts the route's logic into a shared helper). Re-runs, UNMODIFIED, six
+      EXISTING suites that already exercise the real exported POST() through real signed bodies
+      and real Firestore writes: contracts/checks/payment-seam-f2/check-itn-behaviour-
+      unchanged.sh, check-reject-paths-behavioural.mts, and the four payfast-m1 ITN scripts
+      (check-itn-amount-tamper-rejected.mts, check-itn-atomic-idempotent-write.mts,
+      check-itn-server-confirm-and-status-gating.mts, check-itn-source-ip-validation.mts). None
+      of the six assert anything about the route FILE's shape — only what a real POST to the
+      real /api/tickets/itn path does — which is why they are reused rather than re-derived.
+      ⚠️ REQUIRES LIVE FIRESTORE CREDENTIALS AND NETWORK, same posture payment-seam-f2's own A6
+      already carried; not an offline gate. Deliberately does NOT re-assert
+      check-repin-ceremony.sh's sha256 pin or check-sequence-and-ownership.sh's IN-ROUTE landmark
+      ordering against app/api/tickets/itn/route.ts — both pin the PRE-refactor route's exact
+      file contents, which this feature intentionally changes; re-running them there would assert
+      the refactor didn't happen. FAILS ON: any of the six scripts exiting non-zero, which would
+      mean some observable PayFast behaviour actually changed.
+    command: bash contracts/checks/payment-seam-f2/check-itn-behaviour-unchanged.sh && npx tsx contracts/checks/payment-seam-f2/check-reject-paths-behavioural.mts && npx tsx contracts/checks/payfast-m1/check-itn-amount-tamper-rejected.mts && npx tsx contracts/checks/payfast-m1/check-itn-atomic-idempotent-write.mts && npx tsx contracts/checks/payfast-m1/check-itn-server-confirm-and-status-gating.mts && npx tsx contracts/checks/payfast-m1/check-itn-source-ip-validation.mts

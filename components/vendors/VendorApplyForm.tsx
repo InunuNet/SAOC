@@ -8,6 +8,7 @@ import { VendorFormField } from './VendorFormField';
 import { VendorCheckboxGroupField } from './VendorCheckboxGroupField';
 import { VENDOR_APPLICATION_CATEGORIES } from '@/lib/vendor-applications';
 import {
+  humaniseVendorApplyError,
   validateVendorApplyFormClientSide,
   vendorApplyErrorsByField,
   type VendorApplyFieldKey,
@@ -167,7 +168,7 @@ export function VendorApplyForm() {
 
       setStatus('error');
       setErrorMessage(body?.error ?? 'Failed to submit your application. Please try again.');
-      setFieldErrors(body?.fieldErrors ?? []);
+      setFieldErrors([...new Set((body?.fieldErrors ?? []).map(humaniseVendorApplyError))]);
     } catch {
       setStatus('error');
       setErrorMessage('Failed to reach the server. Please try again.');
@@ -198,10 +199,10 @@ export function VendorApplyForm() {
       </p>
 
       {clientErrors.length > 0 ? (
-        <div ref={summaryRef} id={SUMMARY_ID} tabIndex={-1} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+        <div ref={summaryRef} id={SUMMARY_ID} tabIndex={-1} className="focus:outline-2 focus:outline-solid focus:outline-primary focus:outline-offset-[3px]">
           <div
             role="alert"
-            className="space-y-2 rounded-sm border-2 border-[var(--status-error)] bg-bone p-4"
+            className="space-y-2 rounded-sm border-2 border-[var(--status-error)] p-4"
           >
             <p className="flex items-start gap-2 font-sans text-[15px] font-medium text-[var(--status-error)]">
               <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
@@ -230,7 +231,7 @@ export function VendorApplyForm() {
       {status === 'error' && errorMessage ? (
         <div
           role="alert"
-          className="space-y-2 rounded-sm border-2 border-[var(--status-error)] bg-bone p-4"
+          className="space-y-2 rounded-sm border-2 border-[var(--status-error)] p-4"
         >
           <p className="flex items-start gap-2 font-sans text-[15px] font-medium text-[var(--status-error)]">
             <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />

@@ -95,7 +95,7 @@ export function VendorBoothFieldset({ state, onFieldChange, disabled }: VendorBo
       />
 
       <p className="font-sans text-[13px] leading-relaxed text-ink/70">
-        Please note that delivery and collection time slots will be allocated a week before the set-up day. All vehicles and trailers needs to be removed to the allocated parking area immediately after your delivery slot time lapses.
+        Please note that delivery and collection time slots will be allocated a week before the set-up day. All vehicles and trailers need to be removed to the allocated parking area immediately after your delivery slot time lapses.
       </p>
 
       <VendorFormField
