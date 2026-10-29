@@ -753,3 +753,72 @@ export async function getOrderRecoveryRecord(
     status: order?.status ?? '',
   };
 }
+
+/**
+ * The recovery page's display lookup, bound to the order the token authorised: reads
+ * `orders/{orderId}` by id (never `m_payment_id`, which Firestore does not keep unique, so a
+ * reference lookup could render another order's tickets), fails closed to null unless it is
+ * `paid`, and keeps only that order's confirmed positions with the same filters and QR as
+ * `getConfirmedOrderForDisplay`. The position loop is duplicated on purpose so the
+ * payment-return lookup above stays byte-identical.
+ */
+export async function getConfirmedOrderByOrderId(
+  orderId: string,
+  deps: {
+    db?: OrdersFirestoreRwLike;
+    generateQrDataUri?: (bookingRef: string) => Promise<string>;
+  } = {}
+): Promise<ConfirmedOrderDisplay | null> {
+  if (orderId.trim().length === 0) {
+    return null;
+  }
+
+  const db: OrdersFirestoreRwLike = deps.db ?? (getFirestore(initAdmin()) as unknown as OrdersFirestoreRwLike);
+  const generateQrDataUri = deps.generateQrDataUri ?? generateBookingRefQrDataUri;
+  const orders = db.collection(ORDERS_COLLECTION);
+  const tickets = db.collection(TICKETS_COLLECTION);
+
+  // anchor: co-lookup
+  const orderDoc = await orders.doc(orderId).get?.();
+  if (!orderDoc) {
+    throw new Error('orders doc reference does not support get()');
+  }
+  if (!orderDoc.exists) {
+    return null;
+  }
+  const order = orderDoc.data() as Partial<Order> | undefined;
+  // anchor: co-paid
+  if (order?.status !== 'paid') {
+    return null;
+  }
+
+  // anchor: co-positions
+  const positionSnapshot = await tickets.where('orderId', '==', orderId).get();
+  const confirmedPositions: ConfirmedTicketDisplay[] = [];
+  for (const doc of positionSnapshot.docs) {
+    const position = doc.data() as Partial<Ticket> | undefined;
+    const status = position?.status;
+    if (!status || !CONFIRMED_TICKET_STATUSES.has(status)) continue;
+
+    const attendeeName = position?.attendeeName;
+    const ticketType = position?.ticketType;
+    const amount = position?.amount;
+    if (!attendeeName || !ticketType || typeof amount !== 'number') continue;
+
+    const bookingRef = (position?.bookingRef as string | undefined) ?? doc.id;
+    confirmedPositions.push({
+      bookingRef,
+      attendeeName,
+      ticketType,
+      amount,
+      qrDataUri: await generateQrDataUri(bookingRef),
+      chosenDay: position?.chosenDay ?? null,
+    });
+  }
+
+  if (confirmedPositions.length === 0) {
+    return null;
+  }
+
+  return { reference: order.m_payment_id ?? '', positions: confirmedPositions };
+}

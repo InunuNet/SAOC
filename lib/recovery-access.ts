@@ -9,21 +9,26 @@ import { constantTimeStringEqual, verifyRecoveryToken } from './recovery-token';
  * equal to the presented one (what makes the credential revocable), and (d) status `paid`.
  *
  * Every refusal is the same `{ ok: false }` with no reason, so a caller cannot leak why. A
- * token that fails parse, length, signature or expiry costs zero order lookups. A missing
- * secret throws before the token is looked at, so every request gets the same server error.
+ * token that fails parse, length, signature or expiry costs zero order lookups. A token that
+ * cannot possibly be genuine (empty, over-long, or not `<base64url>.<64 hex>`) is denied before
+ * the secret is consulted; a well-formed token with no secret configured throws, so a
+ * misconfigured deploy is a loud server error, never a silent denial.
  */
 
 /** Upper bound on the presented token, checked before any HMAC work. */
 export const RECOVERY_TOKEN_MAX_LENGTH = 2048;
 
+/** Public shape of every minted token: `<base64url payload>.<64 lowercase hex HMAC>`. */
+export const RECOVERY_TOKEN_SHAPE = /^[A-Za-z0-9_-]+\.[0-9a-f]{64}$/;
+
 export interface OrderRecoveryRecord {
-  /** The order's `m_payment_id`, the key `getConfirmedOrderForDisplay` resolves by. */
+  /** The order's `m_payment_id`; an order without one is not entitled. */
   reference: string;
   recoveryToken: string | null;
   status: string;
 }
 
-export type RecoveryAccess = { ok: true; reference: string } | { ok: false };
+export type RecoveryAccess = { ok: true; orderId: string } | { ok: false };
 
 export interface ResolveRecoveryAccessInput {
   rawToken: string | string[] | undefined;
@@ -39,13 +44,17 @@ const denied = (): RecoveryAccess => ({ ok: false });
 export async function resolveRecoveryAccess(
   input: ResolveRecoveryAccessInput
 ): Promise<RecoveryAccess> {
-  // anchor: ra-secret
-  if (!input.secret) {
-    throw new Error('RECOVERY_TOKEN_SECRET is not configured');
-  }
   // anchor: ra-input
   if (typeof input.rawToken !== 'string' || input.rawToken.length === 0 || input.rawToken.length > RECOVERY_TOKEN_MAX_LENGTH) {
     return denied();
+  }
+  // anchor: ra-shape
+  if (!RECOVERY_TOKEN_SHAPE.test(input.rawToken)) {
+    return denied();
+  }
+  // anchor: ra-secret
+  if (!input.secret) {
+    throw new Error('RECOVERY_TOKEN_SECRET is not configured');
   }
 
   // anchor: ra-verify
@@ -70,5 +79,5 @@ export async function resolveRecoveryAccess(
   }
 
   // anchor: ra-success
-  return { ok: true, reference: record.reference };
+  return { ok: true, orderId: verified.orderId };
 }

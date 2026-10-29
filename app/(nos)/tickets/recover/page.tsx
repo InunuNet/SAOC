@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { NosHero } from '@/components/nos/NosHero';
 import { NosSection } from '@/components/nos/NosSection';
 import { ConfirmedTicketList } from '@/components/tickets/ConfirmedTicketList';
-import { getConfirmedOrderForDisplay, getOrderRecoveryRecord } from '@/lib/orders';
+import { getConfirmedOrderByOrderId, getOrderRecoveryRecord } from '@/lib/orders';
 import { resolveRecoveryAccess } from '@/lib/recovery-access';
 
 // The emailed recovery link carries a bearer token and the page reads live Firestore: never
@@ -37,7 +37,7 @@ export default async function RecoverTicketsPage({
   }
 
   // anchor: recover-order
-  const confirmed = await getConfirmedOrderForDisplay(access.reference);
+  const confirmed = await getConfirmedOrderByOrderId(access.orderId);
   // anchor: recover-order-missing
   if (!confirmed) {
     notFound();
