@@ -19,9 +19,20 @@ features:
       Preserve issuance provenance during payment updates; never backfill legacy tickets
       to false. Full implementation boundaries and acceptance rules are in the golden README.
     status: pending
+  - id: F4
+    name: >-
+      Mission nos-security-tiered-access F4 (SEC-06). Re-base on main, keep the literal-false
+      admit-list so untagged legacy documents are refused live, and stamp via the new
+      lib/ticket-issuance-mode.ts isIssuanceTestMode() (launch constant OR sandbox-only
+      gateway flag) in both builders and createOrderWithPosition. Spec:
+      .agent/memory/project/specs/door-reject-test-tickets/spec.md.
+    status: pending
 goldens:
   - contracts/golden/door-reject-test-tickets/README.md
   - contracts/golden/door-reject-test-tickets/truth-table.json
+  - contracts/golden/door-reject-test-tickets/legacy-untagged.json
+  - contracts/golden/door-reject-test-tickets/codex-qa-prompt.md
+  - .agent/memory/project/specs/door-reject-test-tickets/spec.md
 assertions:
   phase: 4
   checks:
@@ -45,7 +56,34 @@ assertions:
       command: pnpm type-check
     - id: A7
       description: ESLint is clean on the specified implementation surface and new unit test; include any additional touched TypeScript files in the implementation review.
-      command: pnpm exec eslint lib/checkin-test-ticket-guard.ts lib/checkin.ts lib/checkout-reservation.ts lib/orders.ts lib/checkin-audit.ts app/api/admin/checkin/route.ts types/index.ts components/admin/DoorResultBanner.tsx components/admin/DoorScannerClient.tsx contracts/checks/door-reject-test-tickets/admission.test.mjs
+      command: pnpm exec eslint lib/checkin-test-ticket-guard.ts lib/checkin.ts lib/checkout-reservation.ts lib/orders.ts lib/checkin-audit.ts lib/ticket-issuance-mode.ts app/api/admin/checkin/route.ts types/index.ts components/admin/DoorResultBanner.tsx components/admin/DoorScannerClient.tsx contracts/checks/door-reject-test-tickets/admission.test.mjs
     - id: A8
       description: Run the complete new offline unit test file using Node's installed test runner; package.json has no unit-test script to invoke.
       command: node --test contracts/checks/door-reject-test-tickets/admission.test.mjs
+    - id: A9
+      description: Stamp matrix and real-order guarantee. Every creation path stamps true unless the launch constant and the sandbox-only flag are both live. Documents issued after a full go-live carry literal false and are admitted live; sandbox-issued ones are refused. Fails on the PR head (no lib/ticket-issuance-mode.ts).
+      command: node --test --test-name-pattern='stamp matrix|real order guarantee' contracts/checks/door-reject-test-tickets/legacy-and-stamp.test.mjs
+    - id: A10
+      description: Legacy rows. Prod-shaped untagged, null, string, zero and explicit-true tickets are refused live with no write and unchanged in test mode; genuine literal false is admitted.
+      command: node --test --test-name-pattern='legacy rows' contracts/checks/door-reject-test-tickets/legacy-and-stamp.test.mjs
+    - id: A11
+      description: Mutation proof. Five mutants (truthy guard rule, guard never rejects, stamp ignores gateway flag, stamp always false, comp path bypasses the helper) are each killed and the unmutated control passes.
+      command: node contracts/checks/door-reject-test-tickets/mutation.mjs
+    - id: A12
+      description: Gateway coupling. The sandbox-only flag cannot be false while an adapter still carries a sandbox marker.
+      command: bash contracts/checks/door-reject-test-tickets/gateway-coupling.sh
+    - id: A13
+      description: Branch contains current main (merged, not rebased).
+      command: git merge-base --is-ancestor origin/main HEAD
+    - id: A14
+      description: No payment adapter, launch constant or backfill script is touched by this branch relative to main.
+      command: git diff --quiet origin/main -- lib/payments lib/ticketing-test-mode.ts scripts
+    - id: A15
+      description: Production build succeeds.
+      command: pnpm build
+    - id: A16
+      description: Codex adversarial review of the whole diff, run in the worktree.
+      type: codex_qa
+      target: contracts/golden/door-reject-test-tickets/codex-qa-prompt.md
+      timeout_seconds: 1300
+      required: true

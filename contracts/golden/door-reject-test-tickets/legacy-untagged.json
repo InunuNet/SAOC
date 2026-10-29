@@ -1,0 +1,21 @@
+{
+  "_doc": "F4 extension of truth-table.json (which is unchanged). Door-level rows: a stored ticket document shaped like the 17 sandbox-paid tickets in prod (no issuedInTestMode field) plus tampered or ambiguous markers. 'liveDoor' is the outcome when isTicketingTestMode() is false; 'testDoor' when it is true. Outcome names: admit, test_ticket, unpaid, already-checked-in.",
+  "rows": [
+    { "id": "legacy-paid-unmarked", "ticket": { "status": "paid" }, "liveDoor": "test_ticket", "testDoor": "admit" },
+    { "id": "legacy-paid-null-marker", "ticket": { "status": "paid", "issuedInTestMode": null }, "liveDoor": "test_ticket", "testDoor": "admit" },
+    { "id": "legacy-reserved-unmarked", "ticket": { "status": "reserved" }, "liveDoor": "test_ticket", "testDoor": "unpaid" },
+    { "id": "legacy-checked-in-unmarked", "ticket": { "status": "checked-in", "checkedInAt": "stamp" }, "liveDoor": "test_ticket", "testDoor": "already-checked-in" },
+    { "id": "legacy-comp-unmarked", "ticket": { "status": "paid", "compedBy": "admin@example.invalid" }, "liveDoor": "test_ticket", "testDoor": "admit" },
+    { "id": "legacy-string-false", "ticket": { "status": "paid", "issuedInTestMode": "false" }, "liveDoor": "test_ticket", "testDoor": "admit" },
+    { "id": "legacy-zero", "ticket": { "status": "paid", "issuedInTestMode": 0 }, "liveDoor": "test_ticket", "testDoor": "admit" },
+    { "id": "explicit-test-true", "ticket": { "status": "paid", "issuedInTestMode": true }, "liveDoor": "test_ticket", "testDoor": "admit" },
+    { "id": "genuine-live-false", "ticket": { "status": "paid", "issuedInTestMode": false }, "liveDoor": "admit", "testDoor": "admit" },
+    { "id": "genuine-live-false-unpaid", "ticket": { "status": "reserved", "issuedInTestMode": false }, "liveDoor": "unpaid", "testDoor": "unpaid" }
+  ],
+  "stampMatrix": [
+    { "id": "sandbox-adapters-ticketing-test", "ticketingTestMode": true, "gatewaySandboxOnly": true, "expectedStamp": true },
+    { "id": "sandbox-adapters-ticketing-live", "ticketingTestMode": false, "gatewaySandboxOnly": true, "expectedStamp": true },
+    { "id": "live-adapters-ticketing-test", "ticketingTestMode": true, "gatewaySandboxOnly": false, "expectedStamp": true },
+    { "id": "live-adapters-ticketing-live", "ticketingTestMode": false, "gatewaySandboxOnly": false, "expectedStamp": false }
+  ]
+}

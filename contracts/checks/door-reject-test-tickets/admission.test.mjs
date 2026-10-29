@@ -21,6 +21,7 @@ function loader({ testMode = true, db, session = { ok: true, decodedToken: { uid
     'firebase-admin/firestore': { getFirestore: () => db, Timestamp: { now: () => stamp } },
     '@/lib/firebase-admin': { initAdmin: () => ({}) },
     '@/lib/ticketing-test-mode': { isTicketingTestMode: () => testMode },
+    '@/lib/ticket-issuance-mode': { isIssuanceTestMode: () => testMode },
     '@/lib/admin-auth': { getAdminSession: async () => session },
     '@/lib/checkin-audit-store': { createFirestoreCheckinAttemptsStore: () => ({ addCheckinAttempt: async (record) => { audits.push(record); return { id: 'audit' }; } }) },
     '@/lib/qr': { generateBookingRefQrDataUri: () => { throw Error('QR generation outside test scope'); } },
