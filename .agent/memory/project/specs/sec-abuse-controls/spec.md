@@ -1,11 +1,11 @@
 # sec-abuse-controls (mission nos-security-tiered-access, M1/F3)
 
-Closes SEC-02 (P1), SEC-15 (P3) and SEC-17 (P3) from `specs/nos-security-tiered-access/audit/findings.md`.
+Closes SEC-02 (P1), SEC-15 (P3) and SEC-17 (P3) from `specs/nos-security-tiered-access/audit/findings.md`, and carries the code side of SEC-18 (now P1: the reconcile cron is not running; see "Expiry is self-enforcing").
 Every claim below was re-checked in the code at base `ada42c41`.
 
 ## Decision
 
-Add one durable, cross-instance limiter backed by Firestore (`lib/abuse-limiter.ts`), move the shared-lane call sites onto it, bound how many seats one actor can hold at once during checkout (a count read from the orders themselves, inside the reservation transaction), and cap the webhook body before it is buffered (`lib/webhook-body.ts`). No new infrastructure, no new vendor, no new secret, no change to the 30 minute hold, the 20 line item cart, the reconcile route, the order ledger or any gateway adapter.
+Add one durable, cross-instance limiter backed by Firestore (`lib/abuse-limiter.ts`), move the shared-lane call sites onto it, bound how many seats one actor can hold at once during checkout (a count read from the orders themselves, inside the reservation transaction), cap the webhook body before it is buffered (`lib/webhook-body.ts`), and move the seat-hold expiry rule into one pure module (`lib/seat-holds.ts`) shared by the capacity ledger and the new budget, so nothing depends on the reconcile job. No new infrastructure, no new vendor, no new secret, no change to the 30 minute hold, the 20 line item cart, the reconcile route, the order ledger or any gateway adapter.
 
 ## What the code does today (verified)
 
@@ -17,8 +17,29 @@ Add one durable, cross-instance limiter backed by Firestore (`lib/abuse-limiter.
 | A "Pending" gateway report extends a hold to 72 h | `lib/payments/pending-hold.ts:7` `PENDING_PAYMENT_HOLD_MINUTES = 4320`; `lib/orders.ts` `markOrderPaymentPendingByPaymentId` | new fact, see Interactions |
 | Limits are per instance | `lib/newsletter-rate-store.ts:3-4`; `apphosting.yaml:5-6` `maxInstances: 2`; 16 call sites listed under Hand-offs | holds |
 | ITN routes buffer the body before verifying | `lib/tickets-notification.ts:78` and `lib/vendor-stand-payment-notification.ts:98` (`await request.text()`), both ahead of `verifyNotification`; the four routes `tickets/itn`, `tickets/ozow-itn`, `vendors/stand-payment/payfast-itn`, `vendors/stand-payment/ozow-itn` all funnel into these two functions | holds, and only two call sites need the fix |
+| Availability depends on the reconcile job to release expired holds | `lib/data/tickets.ts:25-37` `stillHoldsSeat` drops a `reserved` position once `expiresAt <= now`; both ledger functions (`getSoldCountsByTicketType` `:55-80`, `getSoldCountsByTicketTypeAndDay` `:99-130`) apply it; every availability reader goes through them (`lib/data/pool-remaining.ts`, `lib/data/admission-availability.ts`, `app/(nos)/tickets/[slug]/page.tsx`, `app/(nos)/national-show/symposium/page.tsx`, the checkout transaction) | **No dependency.** Expiry is already self-enforcing at read time |
+| The reconcile job releases seats | `app/api/admin/reconcile-orders/route.ts:14-25`, `lib/reconciliation.ts`: it only queries `reserved` + `expiresAt < now`, emails a human and stamps `reconciliationAlertedAt`; it never writes `status` | Alert-only. Even when running it frees nothing |
 | `/api/revalidate` also buffers | `app/api/revalidate/route.ts:19` | NOT a finding: the secret is checked first (`:8-16`) |
 | The proxy gate exempts the ITN paths | `proxy.ts:38-45` (exact match set) | holds; the body cap is therefore the only pre-auth control on those routes |
+
+## Expiry is self-enforcing (live evidence 2026-10-29: 31 of 48 prod orders in `reserved`, Cloud Scheduler off)
+
+Verified in code, not assumed:
+
+1. A `reserved` position stops counting toward capacity the moment its `expiresAt` passes, inside the same read that computes availability. There is no scheduler, sweeper or reconcile dependency (`lib/data/tickets.ts:25-37` and the module comment at `:19-24`: "No sweeper, no cron, no status write"). So the 31 stranded orders are **not withholding inventory** as long as each has a Timestamp `expiresAt` in the past.
+2. Two classes of `reserved` document do keep holding seats, both by design: (a) `expiresAt` missing or not a Timestamp (the rule fails closed on purpose so a writer that forgets the field cannot silently release seats); (b) a hold a verified gateway "Pending" report extended to 72 hours (`lib/payments/pending-hold.ts:7`). Neither can be told apart from the stranded set by code alone: **H7 below is a read-only diagnostic** the lead can run to count class (a) among the 31 without any write.
+3. The expiry must never be turned into a write (flipping stale `reserved` to `cancelled`): the ledger comment records why, a payment that lands after expiry still wins its seat (`lib/orders.ts` Pending and paid transitions), and a cleanup that cancels would race it. So the fix is read-time and stays read-time.
+
+What F3 changes (no behaviour change to the ledger, a guard against drift):
+- New pure module `lib/seat-holds.ts`: `stillHoldsSeat(data, nowMs)` (the existing rule, byte-for-byte semantics, duck-typed on `toMillis()` so it needs no `firebase-admin`) and `tallySeatHolds(docs, nowMs)`. `lib/data/tickets.ts` imports it in place of its private copy; `lib/checkout-holds.ts` reuses the same predicate for the held-seat budget. The budget and the ledger therefore cannot disagree on what "held" means (A16, A17).
+- Stranded documents need no handling and no manual write: they are excluded by the rule itself. Documents created before this change carry no `clientKey`/`buyerKey`, so they never count against any actor's budget either.
+- Golden `seat-holds.golden.ts` fixes the scenario: 31 expired reservations hold nothing; a live cart, a 72 hour Pending hold and paid seats (including one paid after its hold lapsed) do hold; far in the future only paid seats remain; no clock, no reconcile import.
+
+Not changed, not in scope: the reconcile route and library (A11). SEC-18 is an operations gap, not a code gap: the job needs Cloud Scheduler enabled and `RECONCILIATION_CRON_SECRET` wired in `apphosting.yaml` (production config; hand-off H7). Until H7 lands the monitoring control stays off, but nothing in the buy path relies on it.
+
+Observation, flagged not fixed: `getSoldCountsByTicketType` counts only `reserved` and `paid`, so a position that moves to `checked-in` stops counting toward capacity (`lib/data/tickets.ts:19`). Worth a separate look before show weekend.
+
+Ledger read cost: every availability read and every checkout scans all `reserved`/`paid` positions for the show and filters expiry in memory, and expired `reserved` documents are never deleted. They accumulate, so read cost grows with abandoned holds. Today the set is tiny. With D3/D4 one actor adds at most about 40 positions per 30 minutes, so a patient attacker still adds work over days; the limits slow it, they do not remove it. Recommended follow-up (a separate feature, because it touches `lib/orders.ts` settlement): a purge field with a Firestore TTL for positions that are expired and unpaid, cleared on payment. Not done here because a purge that can race a late payment must be designed on its own.
 
 ## Threat model
 
@@ -93,22 +114,24 @@ New files
 - `lib/abuse-limiter.ts` exports `consumeAbuseLimit(input, deps?)`, `clientActorKey(header)`, `hashAbuseKey(secret, scope, key)`, `AbuseLimiterUnavailableError`, `AbuseLimitDecision`. Contract is the golden `abuse-limiter.golden.ts`: `input = {scope, key, maxAttempts, windowMs, weight?=1, now?}`, `deps = {db?, secret?}` (db injectable; defaults to `getFirestore(initAdmin())` loaded with a dynamic `import()`, never a top-level `firebase-admin` import; secret defaults to a domain-separated derivation from `RECOVERY_TOKEN_SECRET`). On deny it logs one JSON line `{event:'abuse-limit-denied', scope, keyId: <first 12 hex of the hash>}` with no raw identifier, so a log-based alert can be set (H5).
 - `lib/checkout-holds.ts` exports `CHECKOUT_LIMITS` (frozen, values in D3/D4), `summariseHeldSeats`, `evaluateHoldBudget` (reasons `actor-total`, `actor-type`, `buyer-total`, checked in that order, `limits` injectable). Contract is `checkout-holds.golden.ts`.
 - `lib/webhook-body.ts` exports `WEBHOOK_MAX_BODY_BYTES`, `readCappedBody`. Contract is `webhook-body.golden.ts`.
+- `lib/seat-holds.ts` exports `stillHoldsSeat(data, nowMs)` and `tallySeatHolds(docs, nowMs)`: pure, no `firebase-admin`, no reconciliation import. Contract is `seat-holds.golden.ts`. `summariseHeldSeats` in `lib/checkout-holds.ts` calls `stillHoldsSeat`.
 
 Changed files (all SHARED lanes)
 - `app/api/tickets/checkout/route.ts`: per-actor `consumeAbuseLimit` right after the body-size check; per-buyer after `parseLineItems`; both 429 with `Retry-After` and the D8 sentence; `AbuseLimiterUnavailableError` returns the route's existing 500 body. Pass `actor: {clientKey, buyerKey}` into `reserveTicket`; inside its transaction, after the replay branch and before the write, read the two held-seat queries and call `evaluateHoldBudget`; a refusal returns the same 429 (add an outcome kind `hold-budget-exceeded`). Stamp the keys on the new docs.
 - `lib/checkout-reservation.ts`: `BuildMultiReservationDocsInput.actor?`; `clientKey`/`buyerKey` on the order and every position, `?? null` (Firestore undefined-write rule). Add the two optional fields to `Order` and `Ticket` in `types/index.ts`.
-- `app/api/contact/route.ts`, `app/api/newsletter/subscribe/route.ts`, `app/api/newsletter/unsubscribe/route.ts`, `app/api/tickets/status/route.ts`, `app/api/tickets/pdf/route.ts`: replace the in-memory limiter with `consumeAbuseLimit`, keeping each route's existing key prefix, max and window, response bodies and `Retry-After`. `lib/newsletter-handler.ts`: remove the in-handler rate limit (the route now decides before the transaction), keep `NEWSLETTER_COPY.rateLimited` as the 429 body; update its tests. `lib/newsletter-rate-store.ts` and `lib/newsletter-rate-limit.ts` stay while SAOC-lane callers still import them (H1); add a one-line deprecation comment.
+- `app/api/contact/route.ts`, `app/api/newsletter/subscribe/route.ts`, `app/api/newsletter/unsubscribe/route.ts`, `app/api/tickets/status/route.ts`, `app/api/tickets/pdf/route.ts`: replace the in-memory limiter with `consumeAbuseLimit`, keeping each route's existing key prefix, max and window, response bodies and `Retry-After`. `lib/newsletter-handler.ts`: remove the in-handler rate limit (the route now decides before the transaction), keep `NEWSLETTER_COPY.rateLimited` as the 429 body; update its tests. `lib/data/tickets.ts`: delete the private `stillHoldsSeat`, import it from `lib/seat-holds`, call sites unchanged. `lib/newsletter-rate-store.ts` and `lib/newsletter-rate-limit.ts` stay while SAOC-lane callers still import them (H1); add a one-line deprecation comment.
 - `lib/tickets-notification.ts:78`, `lib/vendor-stand-payment-notification.ts:98`: `readCappedBody` before `verifyNotification`; `{ok:false}` returns 413.
 - `firestore.indexes.json`: `fieldOverrides` entry `{collectionGroup:"abuseLimits", fieldPath:"expireAt", ttl:true, indexes:[]}`. If the Firebase CLI rejects the `ttl` key, stop and report (H3 fallback is a documented `gcloud firestore fields ttls update`), do not drop the assertion.
 - `docs/abuse-controls.md` and the CLAUDE.md collection table: `abuseLimits`, plus the new `clientKey`/`buyerKey` fields (the retention of these keyed hashes is an input to SEC-19).
 
 Anchors (mutation proof). Put `// anchor: <id>` on the line directly above the decision line, and keep the quoted token on that line:
-`limiter-deny` ` > input.maxAttempts`; `limiter-window` `< input.windowMs`; `ipv6-prefix` `slice(0, 4)`; `limiter-hash` `createHmac('sha256', secret)`; `held-expired` `> nowMs`; `budget-actor-total` `> limits.actorMaxHeldSeats`; `budget-actor-type` `> limits.actorMaxHeldPerType`; `budget-buyer-total` `> limits.buyerMaxHeldSeats`; `webhook-declared` and `webhook-stream` `> maxBytes`; `reservation-actor-stamp` `?? null` on the order's `clientKey:` line.
+`limiter-deny` ` > input.maxAttempts`; `limiter-window` `< input.windowMs`; `ipv6-prefix` `slice(0, 4)`; `limiter-hash` `createHmac('sha256', secret)`; `held-expired` `> nowMs` (in `lib/seat-holds.ts`); `budget-actor-total` `> limits.actorMaxHeldSeats`; `budget-actor-type` `> limits.actorMaxHeldPerType`; `budget-buyer-total` `> limits.buyerMaxHeldSeats`; `webhook-declared` and `webhook-stream` `> maxBytes`; `reservation-actor-stamp` `?? null` on the order's `clientKey:` line.
 
 ## How each finding closes
 
 - **SEC-02:** per-actor and per-buyer request limits before any work; held seats per actor and per buyer bounded at 40 inside the reservation transaction; one actor can no longer drain a pool (table above). Residual distributed case is D7.
 - **SEC-15:** the shared-lane callers use the Firestore limiter (A6); `golden 3` proves two callers sharing only the database share one count. Full closure of the finding needs the SAOC-lane callers moved (H1); until then those routes keep today's per-instance limit, and this spec does not claim otherwise.
+- **SEC-18:** code side closed by verification and the shared rule (nothing relies on the job; A16, A17). The operations side (scheduler, secret) is H7.
 - **SEC-17:** both notification handlers cap the body at 16 KiB before reading it (A3, A7).
 
 ## Interactions and how "nothing breaks" is proven
@@ -117,6 +140,8 @@ Anchors (mutation proof). Put `// anchor: <id>` on the line directly above the d
 |---|---|---|
 | A legitimate purchase | A maximal 20 seat cart from a clean actor passes; a buyer holding one full abandoned cart can still start a second; refusal needs 12 requests in 15 min or more than 40 held seats | A2 (boundary cases), A5 (order), QA deployed purchase in the Ozow sandbox (H4) |
 | Idempotent replay of the same cart | Budget runs after the replay branch, so seats a replay already holds are never counted against it | A5 ordering |
+| Ozow sandbox test mode (live: on, 17 sandbox-paid orders, SEC-06 is a separate feature) | F3 adds no read, write or branch on `ozowSandboxTestMode` or the gateway environment; limits and budgets treat sandbox and live traffic identically, so sandbox QA purchases are limited like any other | A18 scans every added line and new file for the sandbox tokens; A11 keeps `lib/ozow.ts`, `lib/payments/**`, `apphosting.yaml` unchanged |
+| Availability for the 31 stranded reservations | Already excluded at read time; this change keeps the rule and makes it shared | A16, A17 |
 | Ozow / PayFast notification path | Body cap is 2.2x the largest documented body; verification, amount match and idempotency are untouched; `lib/payments/**` unchanged | A3, A7, A11 |
 | Pending hold (72 h) | Unchanged. Seats a gateway reports Pending still count against the buyer's budget, which is accurate, and they are never released early | A11 (`lib/orders.ts`, `pending-hold` unchanged) |
 | Reconcile path | `app/api/admin/reconcile-orders/route.ts` and `lib/orders.ts` unchanged; it queries `orders(status, expiresAt)`; the limiter writes only `abuseLimits` | A11 |
@@ -130,6 +155,8 @@ Anchors (mutation proof). Put `// anchor: <id>` on the line directly above the d
 - **H2.** After H1, delete `lib/newsletter-rate-store.ts`, `lib/vendor-*-rate-limit.ts` in-memory stores and the `public-form-rate-limit.ts` comment about per-instance counts.
 - **H3. Ops (operator step):** deploy the TTL policy (`firebase deploy --only firestore:indexes`, or `gcloud firestore fields ttls update expireAt --collection-group=abuseLimits --enable-ttl`). Production config; ask Brad's lead before running.
 - **H4. QA on the deployed backend:** (a) confirm the `X-Forwarded-For` hop assumption from a request with a forged leading hop; (b) one full Ozow sandbox purchase from a clean address; (c) time the added limiter latency; (d) 13th request in 15 minutes returns 429 with `Retry-After`.
+- **H7. Ops (production config, SAOC/operator; not in this scope):** enable Cloud Scheduler, add `RECONCILIATION_CRON_SECRET` to `apphosting.yaml` secrets and create the job that POSTs `/api/admin/reconcile-orders` with the bearer token (see `docs/order-reconciliation.md`); prove one authenticated run. Expect the first run to email one batch alert covering every stranded order (about 31 today, mostly abandoned carts and sandbox tests). Also run the read-only diagnostic: for the `reserved` orders, count those whose positions lack a Timestamp `expiresAt` (they still hold seats by design) and those whose `expiresAt` is more than 30 minutes ahead (Pending holds).
+- **H8. Data (SAOC lane, only if H7's diagnostic finds class (a) documents):** a one-off correction of those documents by the SAOC lane or an admin tool. NOS Site writes no production data and F3 does not.
 - **H5. Ops:** a Cloud Logging alert on `abuse-limit-denied` volume per scope.
 - **H6.** Privacy page copy for IP-derived keys held on orders: awaiting committee copy (no wording invented here).
 

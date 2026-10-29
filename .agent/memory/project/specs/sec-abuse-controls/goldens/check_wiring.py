@@ -31,9 +31,12 @@ SAOC_LANE_PREFIXES = [
 # Vendor-prefixed but a SHARED webhook file (SEC-17 scope), explicitly allowed.
 SAOC_LANE_ALLOW = {VENDOR_NOTIFY}
 UNCHANGED = [
-    "app/api/admin/reconcile-orders/route.ts", "lib/orders.ts", "lib/payments", "lib/payfast.ts",
-    "lib/ozow.ts", "proxy.ts", "lib/tickets-constants.ts", "lib/data/tickets.ts", "apphosting.yaml",
+    "app/api/admin/reconcile-orders/route.ts", "lib/reconciliation.ts", "lib/orders.ts",
+    "lib/payments", "lib/payfast.ts", "lib/ozow.ts", "proxy.ts", "lib/tickets-constants.ts",
+    "lib/data/pool-remaining.ts", "lib/data/admission-availability.ts", "apphosting.yaml",
 ]
+# Tokens that mean "reads or alters the Ozow sandbox test mode". F3 must neither depend on nor change it.
+SANDBOX_TOKENS = ("ozowSandboxTestMode", "isOzowSandboxTestModeEnabled", "OZOW_IS_TEST", "ozow-sandbox")
 
 
 def read(rel: str) -> str:
@@ -141,6 +144,37 @@ def check_unchanged() -> None:
         fail("must not change: " + ", ".join(changed.splitlines()))
 
 
+def check_seat_ledger() -> None:
+    holds = read("lib/seat-holds.ts")
+    if re.search(r"^import[^;]*from\s+['\"]firebase-admin", holds, re.M):
+        fail("lib/seat-holds.ts must be pure (no firebase-admin import)")
+    for banned in ("reconciliation", "Scheduler", "RECONCILIATION_CRON_SECRET"):
+        if banned in holds:
+            fail(f"lib/seat-holds.ts must not depend on the reconcile job ({banned})")
+    ledger = read("lib/data/tickets.ts")
+    if re.search(r"function\s+stillHoldsSeat", ledger):
+        fail("lib/data/tickets.ts must not keep a private copy of the expiry rule")
+    if not re.search(r"from\s+['\"]@/lib/seat-holds['\"]", ledger) or ledger.count("stillHoldsSeat(") < 2:
+        fail("both ledger functions in lib/data/tickets.ts must use stillHoldsSeat from lib/seat-holds")
+    budget = read("lib/checkout-holds.ts")
+    if not re.search(r"from\s+['\"](@/lib/|\./)seat-holds['\"]", budget):
+        fail("lib/checkout-holds.ts must reuse the seat-holds expiry rule, not re-implement it")
+
+
+def check_sandbox_independent() -> None:
+    added = []
+    for line in git("diff", "-U0", "origin/main", "--", ".", ":(exclude).agent", ":(exclude)docs", ":(exclude)CLAUDE.md").splitlines():
+        if line.startswith("+") and not line.startswith("+++"):
+            added.append(line)
+    for name in git("ls-files", "--others", "--exclude-standard").splitlines():
+        if name and name.endswith((".ts", ".tsx", ".json", ".yaml")) and not name.startswith((".agent/", "docs/")):
+            added.extend((ROOT / name).read_text(encoding="utf-8", errors="replace").splitlines())
+    for line in added:
+        for token in SANDBOX_TOKENS:
+            if token in line:
+                fail(f"F3 must not touch Ozow sandbox mode ({token}): {line.strip()[:120]}")
+
+
 CHECKS = {
     "checkout-order": check_checkout_order,
     "no-memory-limiter": check_no_memory_limiter,
@@ -149,6 +183,8 @@ CHECKS = {
     "ttl-policy": check_ttl_policy,
     "lanes": check_lanes,
     "unchanged": check_unchanged,
+    "seat-ledger": check_seat_ledger,
+    "sandbox-independent": check_sandbox_independent,
 }
 
 if __name__ == "__main__":

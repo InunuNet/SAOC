@@ -16,6 +16,7 @@ Try to break it. For each item, answer PASS or FAIL with file:line evidence. Out
 7. Firestore undefined-write rule: no `undefined` own-property reaches a write (builders, limiter doc).
 8. Lanes and copy: no SAOC-lane file touched except the allowed `lib/vendor-stand-payment-notification.ts`; no new customer-facing sentence invented (the 429 body must be the existing `Too many attempts. Please try again later.`).
 9. Goldens: do the frozen goldens actually test what the spec says, or can a wrong implementation pass them? Name any weak golden.
-10. Anything else that lets an unauthenticated caller hold seats, exhaust Firestore or Sanity, or read a body unbounded on a route this change touches.
+10. Expiry rule: `lib/seat-holds.ts` preserves the exact old `stillHoldsSeat` semantics (paid never expires; reserved with a past expiresAt does not hold; missing or non-timestamp expiresAt still holds). `lib/data/tickets.ts` has no private copy left and both ledger functions use it. Nothing writes to stale `reserved` documents. F3 does not read or change Ozow sandbox mode (`ozowSandboxTestMode`).
+11. Anything else that lets an unauthenticated caller hold seats, exhaust Firestore or Sanity, or read a body unbounded on a route this change touches.
 
 FAIL on any confirmed defect in items 1-8, or a golden weakness that lets a wrong implementation pass.

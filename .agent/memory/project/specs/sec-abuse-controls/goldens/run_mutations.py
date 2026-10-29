@@ -28,6 +28,7 @@ def wiring(name: str) -> list[str]:
 
 
 LIMITER, HOLDS, WEBHOOK = "lib/abuse-limiter.ts", "lib/checkout-holds.ts", "lib/webhook-body.ts"
+SEATS = "lib/seat-holds.ts"
 RESERVATION, CHECKOUT = "lib/checkout-reservation.ts", "app/api/tickets/checkout/route.ts"
 
 # (id, file, mode, anchor-or-None, old, new, check)
@@ -36,7 +37,7 @@ MUTATIONS = [
     ("M02", LIMITER, "anchor", "limiter-window", "< input.windowMs", "< input.windowMs * 1000", golden("abuse-limiter")),
     ("M03", LIMITER, "anchor", "ipv6-prefix", "slice(0, 4)", "slice(0, 8)", golden("abuse-limiter")),
     ("M04", LIMITER, "anchor", "limiter-hash", "createHmac('sha256', secret)", "createHmac('sha256', 'fixed')", golden("abuse-limiter")),
-    ("M05", HOLDS, "anchor", "held-expired", "> nowMs", ">= nowMs", golden("checkout-holds")),
+    ("M05", SEATS, "anchor", "held-expired", "> nowMs", ">= nowMs", golden("seat-holds")),
     ("M06", HOLDS, "anchor", "budget-actor-total", "> limits.actorMaxHeldSeats", "> limits.actorMaxHeldSeats + 1", golden("checkout-holds")),
     ("M07", HOLDS, "anchor", "budget-buyer-total", "> limits.buyerMaxHeldSeats", "> limits.buyerMaxHeldSeats + 1", golden("checkout-holds")),
     ("M08", HOLDS, "anchor", "budget-actor-type", "> limits.actorMaxHeldPerType", "> limits.actorMaxHeldPerType + 1", golden("checkout-holds")),
@@ -49,6 +50,8 @@ MUTATIONS = [
     ("M15", "lib/vendor-stand-payment-notification.ts", "first", None, "readCappedBody(", "readCappedBodyX(", wiring("webhook-order")),
     ("M16", "app/api/vendors/apply/route.ts", "append", None, "", "\n// mutation\n", wiring("lanes")),
     ("M17", "lib/orders.ts", "append", None, "", "\n// mutation\n", wiring("unchanged")),
+    ("M19", "lib/data/tickets.ts", "first", None, "from '@/lib/seat-holds'", "from '@/lib/seat-holdsX'", wiring("seat-ledger")),
+    ("M20", "lib/abuse-limiter.ts", "append", None, "", "\n// isOzowSandboxTestModeEnabled\n", wiring("sandbox-independent")),
     ("M18", "app/api/contact/route.ts", "append", None, "", "\nimport { createAttemptStore } from '@/lib/newsletter-rate-store';\n", wiring("no-memory-limiter")),
 ]
 

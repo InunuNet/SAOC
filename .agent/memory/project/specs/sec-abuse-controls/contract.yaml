@@ -11,6 +11,7 @@ features:
 
 goldens:
   - .agent/memory/project/specs/sec-abuse-controls/goldens/abuse-limiter.golden.ts
+  - .agent/memory/project/specs/sec-abuse-controls/goldens/seat-holds.golden.ts
   - .agent/memory/project/specs/sec-abuse-controls/goldens/checkout-holds.golden.ts
   - .agent/memory/project/specs/sec-abuse-controls/goldens/webhook-body.golden.ts
   - .agent/memory/project/specs/sec-abuse-controls/goldens/reservation-actor.golden.ts
@@ -51,7 +52,7 @@ assertions:
       description: the diff touches no SAOC-lane file (vendor, events, sponsors, admin, sanity are hand-offs)
       command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py lanes
     - id: A11
-      description: reconcile route, orders ledger, payment adapters, proxy, ticket constants (30 minute hold, 20 line items), tickets data and apphosting.yaml are unchanged
+      description: reconcile route and library, orders, payment adapters, proxy, ticket constants (30 minute hold, 20 line items), pool and admission availability readers and apphosting.yaml are unchanged
       command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py unchanged
     - id: A12
       description: typecheck
@@ -64,10 +65,19 @@ assertions:
       command: pnpm build
       timeout_seconds: 900
     - id: A15
-      description: mutation proof - 18 mutations across limiter, budget, webhook cap, actor stamp and wiring are each killed by a check above, files restored byte for byte
+      description: mutation proof - 20 mutations across limiter, budget, webhook cap, actor stamp and wiring are each killed by a check above, files restored byte for byte
       command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/run_mutations.py
       timeout_seconds: 900
     - id: A16
+      description: seat-hold expiry is self-enforcing at read time - 31 stranded expired reservations hold nothing, paid and gateway-Pending seats still hold, no scheduler involved
+      command: pnpm exec tsx .agent/memory/project/specs/sec-abuse-controls/goldens/seat-holds.golden.ts
+    - id: A17
+      description: the capacity ledger and the hold budget share one expiry rule (lib/seat-holds.ts), pure and independent of the reconcile job
+      command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py seat-ledger
+    - id: A18
+      description: F3 neither reads nor alters Ozow sandbox test mode
+      command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py sandbox-independent
+    - id: A19
       description: cross-model adversarial review of the diff
       type: codex_qa
       target: .agent/memory/project/specs/sec-abuse-controls/codex-qa-prompt.md
