@@ -40,13 +40,22 @@ const loadBuildSource = BUILD_SITE_KEY
     }
   : undefined;
 
-let defaultSource: Promise<AppCheckTokenSource> | null = null;
-
-function loadDefaultSource(): Promise<AppCheckTokenSource> {
-  if (!loadBuildSource) return Promise.reject(new Error('App Check is not built into this bundle'));
-  defaultSource ??= loadBuildSource();
-  return defaultSource;
+/** Caches a load only once it succeeds: a failed load (blocked script, offline) is retried next call. */
+export function memoizeSuccessfulLoad<T>(load: () => Promise<T>): () => Promise<T> {
+  let cached: Promise<T> | null = null;
+  return () => {
+    cached ??= load().catch((error: unknown) => {
+      // anchor: load-memo-clear
+      cached = null;
+      throw error;
+    });
+    return cached;
+  };
 }
+
+const loadDefaultSource: () => Promise<AppCheckTokenSource> = loadBuildSource
+  ? memoizeSuccessfulLoad(loadBuildSource)
+  : () => Promise.reject(new Error('App Check is not built into this bundle'));
 
 export async function getCheckoutAppCheckToken(deps: AppCheckClientDeps = {}): Promise<string | null> {
   const siteKey = (deps.siteKey ?? BUILD_SITE_KEY)?.trim();
