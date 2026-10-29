@@ -587,6 +587,24 @@
     "--verify"
    ],
    "target": "Identity Toolkit saoc-webapp config client.permissions.disabledUserSignup; --config-fixture and --verify never write"
+  },
+  ".agent/memory/project/specs/sec-abuse-controls/goldens/webhook-body.golden.ts": {
+   "class": "FAKE",
+   "match": "new Request\\('http://localhost/api/tickets/itn'",
+   "note": "POST is the method of an in-process Request around a ReadableStream; nothing is sent, no firebase-admin or network",
+   "target": "in-memory Request object only"
+  },
+  ".agent/memory/project/specs/sec-abuse-controls/goldens/itn-no-appcheck.golden.ts": {
+   "class": "FAKE",
+   "match": "verifyNotification: async \\(\\) =>",
+   "note": "drives the real notify handlers with a stub provider whose verification fails; both handlers return before any Firestore access (lib/vendor-stand-payment-notification.ts creates the db only after verification) and the golden sets no credentials",
+   "target": "in-process NextRequest to http://localhost, stub provider"
+  },
+  ".agent/memory/project/specs/sec-abuse-controls/goldens/run_mutations.py": {
+   "class": "STATIC_FP",
+   "match": "def mutate\\(text: str, mode: str",
+   "note": "mutates local source files inside the worktree and restores them byte for byte; the checks it spawns are local goldens and static wiring checks; MUT hits are the script's own function and table names",
+   "target": "local worktree source text only"
   }
  }
 }

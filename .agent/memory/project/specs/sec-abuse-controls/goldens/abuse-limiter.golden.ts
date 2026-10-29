@@ -238,6 +238,24 @@ async function main() {
     assert.equal(a, b, 'two addresses in one /64 are one actor');
     assert.equal(clientActorKey('2001:db8::1, 35.191.0.1'), 'ip6:2001:0db8:0000:0000');
     assert.notEqual(clientActorKey('2001:db8:1:3::1, 35.191.0.1'), a, 'a different /64 is a different actor');
+    // IPv4-mapped IPv6 in EVERY spelling is the IPv4 identity (Codex QA 2026-10-29: the hex form
+    // fell into one shared ip6 bucket, so distinct IPv4 clients exhausted each other's limit).
+    // 203.0.113.9 = cb00:7109, 203.0.113.10 = cb00:710a.
+    const platformHop = '35.191.0.1';
+    for (const spelling of [
+      '::ffff:cb00:7109', '::FFFF:CB00:7109', '::ffff:203.0.113.9', '::FFFF:203.0.113.9',
+      '0:0:0:0:0:ffff:cb00:7109', '0000:0000:0000:0000:0000:ffff:cb00:7109', '0:0:0:0:0:ffff:203.0.113.9',
+      '0000:0000:0000:0000:0000:FFFF:CB00:7109',
+    ]) {
+      assert.equal(clientActorKey(`1.1.1.1, ${spelling}, ${platformHop}`), 'ip4:203.0.113.9', `${spelling} is the IPv4 203.0.113.9`);
+    }
+    assert.equal(clientActorKey(`x, ::ffff:cb00:710a, ${platformHop}`), 'ip4:203.0.113.10');
+    assert.notEqual(clientActorKey(`x, ::ffff:cb00:7109, ${platformHop}`), clientActorKey(`x, ::ffff:cb00:710a, ${platformHop}`), 'two different hex-mapped clients are different actors');
+    assert.notEqual(clientActorKey(`x, ::ffff:cb00:7109, ${platformHop}`), 'ip6:0000:0000:0000:0000', 'a mapped client never lands in the shared ::/64 bucket');
+    // Near misses are NOT IPv4: a different embedded prefix stays an IPv6 /64 identity.
+    assert.equal(clientActorKey(`x, ::fffe:cb00:7109, ${platformHop}`), 'ip6:0000:0000:0000:0000');
+    assert.equal(clientActorKey(`x, 0:0:0:0:1:ffff:cb00:7109, ${platformHop}`), 'ip6:0000:0000:0000:0000');
+    assert.equal(clientActorKey(`x, 64:ff9b::cb00:7109, ${platformHop}`), 'ip6:0064:ff9b:0000:0000', 'NAT64 is not the mapped form');
     assert.equal(clientActorKey(null), 'unknown');
     assert.equal(clientActorKey(''), 'unknown');
     assert.equal(clientActorKey('a, not-an-ip, b'), 'unknown', 'a non-address hop never becomes a key');

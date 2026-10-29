@@ -83,6 +83,9 @@ MUTATIONS = [
     ("M47", "lib/orders.ts", "append", None, "", "\nimport { normalizeBuyerEmail } from './buyer-email';\n", wiring("buyer-normalised")),
     ("M48", LIMITER, "anchor", "stamp-hash", "hashAbuseKey(secret, scope, key)", "key", golden("abuse-limiter")),
     ("M49", LIMITER, "anchor", "limiter-doc-id", "${keyHash}", "${input.key}", golden("abuse-limiter")),
+    ("M50", LIMITER, "anchor", "ipv4-mapped", "'ffff'", "'fffe'", golden("abuse-limiter")),
+    ("M51", CHECKOUT, "first", None, ".where('clientKey', '==', input.actor.clientKey).where('status', '==', RESERVED_STATUS)", ".where('clientKey', '==', input.actor.clientKey).where('status', '==', 'paid')", wiring("hold-budget-status")),
+    ("M52", CHECKOUT, "first", None, ".where('buyerKey', '==', input.actor.buyerKey).where('status', '==', RESERVED_STATUS)", ".where('buyerKey', '==', input.actor.buyerKey).where('status', '==', 'paid')", wiring("hold-budget-status")),
     ("M18", "app/api/contact/route.ts", "append", None, "", "\nimport { createAttemptStore } from '@/lib/newsletter-rate-store';\n", wiring("no-memory-limiter")),
 ]
 

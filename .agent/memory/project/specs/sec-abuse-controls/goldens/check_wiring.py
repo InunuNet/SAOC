@@ -129,8 +129,13 @@ def git(*args: str) -> str:
     return subprocess.run(["git", *args], capture_output=True, text=True, cwd=ROOT, check=True).stdout
 
 
+def branch_base() -> str:
+    """Merge-base with origin/main, so main moving ahead never reads as a change on this branch."""
+    return git("merge-base", "origin/main", "HEAD").strip()
+
+
 def check_lanes() -> None:
-    names = [n for n in git("diff", "--name-only", "origin/main").splitlines() if n]
+    names = [n for n in git("diff", "--name-only", branch_base()).splitlines() if n]
     names += [n for n in git("ls-files", "--others", "--exclude-standard").splitlines() if n]
     spec = ".agent/memory/project/specs/sec-abuse-controls/"
     for name in names:
@@ -142,7 +147,7 @@ def check_lanes() -> None:
 
 
 def check_unchanged() -> None:
-    changed = git("diff", "--name-only", "origin/main", "--", *UNCHANGED).strip()
+    changed = git("diff", "--name-only", branch_base(), "--", *UNCHANGED).strip()
     if changed:
         fail("must not change: " + ", ".join(changed.splitlines()))
 
@@ -171,7 +176,7 @@ def check_seat_ledger() -> None:
 
 def check_sandbox_independent() -> None:
     added = []
-    for line in git("diff", "-U0", "origin/main", "--", ".", ":(exclude).agent", ":(exclude)docs", ":(exclude)CLAUDE.md").splitlines():
+    for line in git("diff", "-U0", branch_base(), "--", ".", ":(exclude).agent", ":(exclude)docs", ":(exclude)CLAUDE.md").splitlines():
         if line.startswith("+") and not line.startswith("+++"):
             added.append(line)
     for name in git("ls-files", "--others", "--exclude-standard").splitlines():
@@ -263,6 +268,16 @@ def check_client_gated() -> None:
         fail("the token must be fetched fresh before each checkout fetch")
     if not re.search(r"x-firebase-appcheck", cart, re.I):
         fail("useTicketCart must send the X-Firebase-AppCheck header")
+
+
+def check_hold_budget_status() -> None:
+    route = read("app/api/tickets/checkout/route.ts")
+    if not re.search(r"RESERVED_STATUS\s*=\s*'reserved'", route):
+        fail("RESERVED_STATUS in the checkout route must be 'reserved'")
+    for key, source in (("clientKey", "input.actor.clientKey"), ("buyerKey", "input.actor.buyerKey")):
+        pattern = rf"\.where\(\s*'{key}'\s*,\s*'=='\s*,\s*{re.escape(source)}\s*\)\s*\.where\(\s*'status'\s*,\s*'=='\s*,\s*RESERVED_STATUS\s*\)"
+        if len(re.findall(pattern, route)) != 1:
+            fail(f"the held-seat query by {key} must select status RESERVED_STATUS exactly once (a different status makes the budget count nothing)")
 
 
 def check_buyer_normalised() -> None:
@@ -373,7 +388,7 @@ def check_flag_off_inlining() -> None:
     if not re.search(r"env\s*:\s*\{[^}]*%s\s*:\s*process\.env\.%s\s*\?\?\s*''" % (SITE_KEY_ENV, SITE_KEY_ENV), config, re.S):
         fail(f"next.config.ts must inline {SITE_KEY_ENV} as `process.env.{SITE_KEY_ENV} ?? ''` so the flag-off ternary folds")
     allowed = re.compile(r"^\+\s*($|//|env\s*:\s*\{|\},?$|%s)" % SITE_KEY_ENV)
-    for line in git("diff", "-U0", "origin/main", "--", "next.config.ts").splitlines():
+    for line in git("diff", "-U0", branch_base(), "--", "next.config.ts").splitlines():
         if line.startswith("+") and not line.startswith("+++") and not allowed.match(line):
             fail(f"next.config.ts: change beyond the App Check env inlining: {line.strip()[:100]}")
     cart = read("components/tickets/useTicketCart.ts")
@@ -423,6 +438,7 @@ CHECKS = {
     "client-gated": check_client_gated,
     "xff-trusted-hop": check_xff_trusted_hop,
     "buyer-normalised": check_buyer_normalised,
+    "hold-budget-status": check_hold_budget_status,
     "client-ip-helper": check_client_ip_helper,
     "bundle-flag-off": check_bundle_flag_off,
     "retired-slugs": check_retired_slugs,
