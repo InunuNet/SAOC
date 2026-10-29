@@ -26,7 +26,7 @@ Closes the vendor-stand half of SEC-06 (sandbox-paid stand orders read as paid) 
 
 ## Decisions
 
-Each decision names its source. A value with no source in the repo, Brad's or Lee-Ann's material is NAMED and listed under DECISION NEEDED.
+Each decision names its source. A value with no source in the repo, Brad's or Lee-Ann's material was NAMED and is now recorded under "Decided by SAOC lead 2026-10-29".
 
 ### D1. Stamp and rule: reuse F4 exactly. Decided.
 - `issuedInTestMode = isIssuanceTestMode({ ozowSandboxTestMode: ozowSandboxTestModeEnabled })` computed once at initiate after the toggle read and before the transaction (`// anchor: stand-stamp`), written into the stand order document as a boolean own-property, never undefined (CLAUDE.md "Firestore builders" rule). The request body is never read for it. Source: `lib/ticket-issuance-mode.ts:17-19`, `docs/door-reject-test-tickets.md` "Gateway coupling".
@@ -43,7 +43,7 @@ Each decision names its source. A value with no source in the repo, Brad's or Le
 | Resend route | already-paid refusal uses the same rule |
 | Vendor payment page and status page | page fallback and "confirmed" use the same rule; the page also applies the link gate |
 | Admin list and detail | status shown is `effectiveStandPaymentStatus`: `paid` only when counted, otherwise `test-paid` (stopgap label, D8). The "Office payment" value is `vendorOfficePaymentReceived`: an office-recorded receipt (`paymentConfirmedBy` non-blank, written only by the admin payment route) is trusted as is; a gateway-set flag is trusted only through the stand order. The two prod submissions carry `paymentReceived: true` from sandbox settlements; they read "Not received" live with no write |
-| Booth allocation, listing publication | unchanged (DECISION NEEDED N2 records why) |
+| Booth allocation, listing publication | unchanged (N2, decided by SAOC, records why) |
 
 ### D3. Link record and supersede. Decided (shape), no new numbers.
 - `vendorSubmissions/{id}.standPaymentLink = { nonce, issuedAt, expiresAt, issuedBy, revokedAt, revokedBy }`, built by `buildStandPaymentLinkRecord` (no undefined, `revokedAt: null`). It lives on the submission, not the stand order, because a link exists before any stand order does (approval and resend precede initiate). No new collection, no index, no rules change.
