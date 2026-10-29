@@ -97,7 +97,13 @@ Both builders and `createOrderWithPosition` use `isIssuanceTestMode()`. The door
 `false` only in the reviewed go-live commit, with the adapters. `gateway-coupling.sh` fails the build if
 the flag is `false` while `lib/payments/ozow.ts` or `payfast.ts` still show a sandbox marker, so the flip
 cannot happen alone. Stamp matrix (golden): `false` only in the row where both switches are live.
-Do not edit `lib/payments/**`: the security-hardening contract keeps that diff comparison-only.
+AMENDMENT (orchestrator decision, security standing condition): the hand flag is deleted. Allowed `lib/payments`
+edits, and only these: `export const OZOW_SANDBOX_MODE = true;` and `const OZOW_IS_TEST = String(OZOW_SANDBOX_MODE);`
+in ozow.ts, and `export const PAYFAST_SANDBOX_MODE = true;` in payfast.ts (comments aside). `PAYMENT_GATEWAYS_SANDBOX_ONLY`
+= `OZOW_SANDBOX_MODE || PAYFAST_SANDBOX_MODE`. `adapter-guard.mjs diff` rejects any other change in `lib/payments`; `coupling` rejects
+a flag that says live next to sandbox URLs or credentials; `adapter-mutation.mjs` proves both bite. The launch
+constant stays true; this feature does not launch payments. At go-live the adapter flags are flipped together with
+the credentials and URLs they guard, in the reviewed go-live commit.
 
 A reservation is stamped at creation and never relabelled (settlement preserves it, #69 behaviour). A real
 paid order therefore carries `false` exactly when it was created after the full go-live. Ozow
@@ -120,7 +126,7 @@ should cancel them (hand-off 2).
 5. Docs: `docs/door-reject-test-tickets.md` gains "Legacy documents" and "Gateway coupling" sections;
    `docs/launch-checklist.md` item 6 gains: flip `PAYMENT_GATEWAYS_SANDBOX_ONLY` with the adapters; hand-off
    items from this spec.
-6. Do not run any backfill, do not touch the launch constant, do not edit `lib/payments/**`.
+6. Do not run any backfill, do not touch the launch constant, and edit `lib/payments/**` only as the amendment above allows.
 
 ### F3 coordination (lib/checkout-reservation.ts)
 

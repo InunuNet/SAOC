@@ -64,7 +64,7 @@ assertions:
       command: pnpm type-check
     - id: A7
       description: ESLint is clean on the specified implementation surface and new unit test; include any additional touched TypeScript files in the implementation review.
-      command: pnpm exec eslint lib/checkin-test-ticket-guard.ts lib/checkin.ts lib/checkout-reservation.ts lib/orders.ts lib/checkin-audit.ts lib/ticket-issuance-mode.ts app/api/admin/checkin/route.ts types/index.ts components/admin/DoorResultBanner.tsx components/admin/DoorScannerClient.tsx contracts/checks/door-reject-test-tickets/admission.test.mjs
+      command: pnpm exec eslint lib/checkin-test-ticket-guard.ts lib/checkin.ts lib/checkout-reservation.ts lib/orders.ts lib/checkin-audit.ts lib/ticket-issuance-mode.ts lib/payments/ozow.ts lib/payments/payfast.ts app/api/admin/checkin/route.ts types/index.ts components/admin/DoorResultBanner.tsx components/admin/DoorScannerClient.tsx contracts/checks/door-reject-test-tickets/admission.test.mjs
     - id: A8
       description: Run the complete new offline unit test file using Node's installed test runner; package.json has no unit-test script to invoke.
       command: node --test contracts/checks/door-reject-test-tickets/admission.test.mjs
@@ -75,17 +75,17 @@ assertions:
       description: Legacy rows. Prod-shaped untagged, null, string, zero and explicit-true tickets are refused live with no write and unchanged in test mode; genuine literal false is admitted.
       command: node --test --test-name-pattern='legacy rows' contracts/checks/door-reject-test-tickets/legacy-and-stamp.test.mjs
     - id: A11
-      description: Mutation proof. Five mutants (truthy guard rule, guard never rejects, stamp ignores gateway flag, stamp always false, comp path bypasses the helper) are each killed and the unmutated control passes.
+      description: Mutation proof. Mutants (truthy guard rule, guard never rejects, stamp ignores or drops an adapter flag, stamp always false, settlement rewrites a marker, comp path bypasses the helper) are each killed and the unmutated control passes.
       command: node contracts/checks/door-reject-test-tickets/mutation.mjs
     - id: A12
-      description: Gateway coupling. The sandbox-only flag cannot be false while an adapter still carries a sandbox marker.
+      description: Adapter coupling. The stamp is exactly OZOW_SANDBOX_MODE || PAYFAST_SANDBOX_MODE (no hand-set flag), Ozow IsTest is derived from OZOW_SANDBOX_MODE, and an adapter flag that says live cannot coexist with that adapter's sandbox URLs or credentials. The launch constant stays true in both adapters; this feature does not launch payments.
       command: bash contracts/checks/door-reject-test-tickets/gateway-coupling.sh
     - id: A13
       description: Branch contains current main (merged, not rebased).
       command: git merge-base --is-ancestor origin/main HEAD
     - id: A14
-      description: No payment adapter, launch constant or backfill script is touched by this branch relative to main.
-      command: git diff --quiet origin/main -- lib/payments lib/ticketing-test-mode.ts scripts
+      description: The only lib/payments change relative to main is the two exported adapter constants (both true) and Ozow's IsTest reading OZOW_SANDBOX_MODE; comments aside, any other added or removed line, or any other file, fails. The launch constant and scripts are untouched. (gateway-coupling.sh runs the same diff guard; this assertion names it on its own.)
+      command: node contracts/checks/door-reject-test-tickets/adapter-guard.mjs diff
     - id: A15
       description: Production build succeeds.
       command: pnpm build
@@ -105,3 +105,6 @@ assertions:
       type: gws_inbox_check
       target: .agent/memory/scratch/door-reject-test-tickets-gws-manifest.json
       required: false
+    - id: A19
+      description: Adapter mutation proof. Mutants that set an adapter flag false while it still sends sandbox (Ozow credentials, IsTest decoupled or hard-coded, PayFast sandbox URL), restore a hand-set stamp flag, or drop either adapter from the stamp are rejected; the unmutated control passes. Synthetic lib/payments diffs with an extra code line, a flag set false, another removal, another file, a decoupled IsTest or a missing export are rejected.
+      command: node contracts/checks/door-reject-test-tickets/adapter-mutation.mjs
