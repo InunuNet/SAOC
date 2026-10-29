@@ -1,0 +1,121 @@
+# Gate environment (read before running `contract.py gate`):
+#   - Run `pnpm install` first. The tsx goldens (A1-A3), eslint, tsc and the build need the repo's dependencies.
+#   - Wiring checks diff against `git merge-base HEAD origin/main`; run `git fetch origin main` first.
+#     WIRING_BASE=<sha> overrides it for reproducible reruns.
+#   - A12 and A17 need a built tree (`pnpm build`, A16) and A17 needs the Sanity-stubbed build too:
+#     `node scripts/checks/sanity-request-count.mjs --build`, plus the same build environment as the
+#     door-reject-test-tickets contract (NEXT_PUBLIC_SANITY_PROJECT_ID, NEXT_PUBLIC_SANITY_DATASET, the three
+#     site URLs from apphosting.yaml, SANITY_FIXTURE_MODE=replay, SANITY_FIXTURE_DIR=$PWD/.agent/memory/project/specs/nos-content-standard/fixtures/sanity, K_SERVICE unset).
+#   - A17 and A18 start `next start` through scripts/checks/lib/local-next-server.mjs, which puts a path in
+#     NODE_OPTIONS unquoted: they cannot run from a checkout whose path contains a space (SAOC is fixing it in #160;
+#     CI paths have none). A9 pins the probe entry statically meanwhile.
+#   - Triad (A21, A22) uses docs/verification-triad-gate.md defaults. Both are required:false and expected to skip
+#     until a post-deploy manifest exists.
+#   - No assertion here writes to production: the goldens are pure, the wiring checks read text and git diff, the
+#     live check is GET-only against a local server with Firebase credentials blanked.
+schema: athanor.contract/v1
+slug: nos-order-recovery
+goal: The recovery link in every ticket confirmation email opens the buyer's own tickets for a genuine unexpired token and gives every other token the identical 404, is never cached, indexed or leaked in a Referer, and adds no copy, email, form or write.
+created_at: '2026-10-29'
+autonomy: high
+
+features:
+  - id: F1
+    name: GET /tickets/recover - signed-token order recovery page (spec section 8.2 mechanism a, display only)
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/nos-order-recovery/goldens/recovery-access.golden.ts
+  - .agent/memory/project/specs/nos-order-recovery/goldens/recover-headers.golden.ts
+  - .agent/memory/project/specs/nos-order-recovery/goldens/proxy-routing.golden.ts
+  - .agent/memory/project/specs/nos-order-recovery/goldens/confirmed-order-binding.golden.ts
+  - .agent/memory/project/specs/nos-order-recovery/goldens/check-recover-live.mts
+  - .agent/memory/project/specs/nos-order-recovery/goldens/check_wiring.py
+  - .agent/memory/project/specs/nos-order-recovery/goldens/run_mutations.py
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: access decision - every missing, malformed, forged, tampered, expired, over-long, unknown-order, rotated-token, unpaid case resolves to exactly { ok:false }; a lookup happens only after a signature and expiry pass; the stored token is compared through the injected constant-time matcher; a missing secret fails the same loud way for every token; an outage propagates; nothing is logged
+      command: pnpm exec tsx .agent/memory/project/specs/nos-order-recovery/goldens/recovery-access.golden.ts
+    - id: A2
+      description: next.config headers, evaluated with Next's own matcher - /tickets/recover (and the slashed form) gets exactly one Referrer-Policy no-referrer, Cache-Control private no-store and noindex, keeps every other security header; no other path changes
+      command: pnpm exec tsx .agent/memory/project/specs/nos-order-recovery/goldens/recover-headers.golden.ts
+    - id: A24
+      description: display binding - with two orders sharing one m_payment_id, the order the token authorised is the order rendered (read by id, positions of that id only, null when it is unpaid or has no confirmed positions, never the other order's tickets)
+      command: pnpm exec tsx .agent/memory/project/specs/nos-order-recovery/goldens/confirmed-order-binding.golden.ts
+    - id: A3
+      description: proxy.ts is untouched and still passes /tickets/recover through on the NOS host (no rewrite onto /national-show) and 308s it from the SAOC host with the query intact
+      command: pnpm exec tsx .agent/memory/project/specs/nos-order-recovery/goldens/proxy-routing.golden.ts
+    - id: A4
+      description: the access module's anchored statements are exactly the pinned ones, imports ./recovery-token relatively, compares via constantTimeStringEqual
+      command: python3 .agent/memory/project/specs/nos-order-recovery/goldens/check_wiring.py access-anchors
+    - id: A5
+      description: the page is force-dynamic, noindex, no-referrer, resolves then denies then loads then denies then renders, never reads a failure reason, has no form, no cache primitive, reads RECOVERY_TOKEN_SECRET
+      command: python3 .agent/memory/project/specs/nos-order-recovery/goldens/check_wiring.py page-wiring
+    - id: A6
+      description: lib/orders.ts change is a pure addition - one read-only get by the signed order id, no query on the token, no write, no log
+      command: python3 .agent/memory/project/specs/nos-order-recovery/goldens/check_wiring.py orders-addition
+    - id: A7
+      description: no console.* in the three new files (a token never reaches a log, bad tokens do not flood one)
+      command: python3 .agent/memory/project/specs/nos-order-recovery/goldens/check_wiring.py no-logging
+    - id: A8
+      description: the ticket list was moved out of the confirmation page verbatim into ConfirmedTicketList and both pages render it
+      command: python3 .agent/memory/project/specs/nos-order-recovery/goldens/check_wiring.py extraction-verbatim
+    - id: A9
+      description: cache-header probe golden lists nos /tickets/recover?token=bogus once as a per-request route with status 404, never isr or static
+      command: python3 .agent/memory/project/specs/nos-order-recovery/goldens/check_wiring.py cache-probe-entries
+    - id: A10
+      description: no new user-facing copy (docs/rules/no-invention.md), no resend route or email, no Firestore outside lib/orders
+      command: python3 .agent/memory/project/specs/nos-order-recovery/goldens/check_wiring.py no-new-copy && python3 .agent/memory/project/specs/nos-order-recovery/goldens/check_wiring.py no-resend
+    - id: A11
+      description: the diff touches only the cleared hunk list; proxy, token, url, email, [slug], api, rules, indexes, apphosting are unchanged
+      command: python3 .agent/memory/project/specs/nos-order-recovery/goldens/check_wiring.py hunk-list && python3 .agent/memory/project/specs/nos-order-recovery/goldens/check_wiring.py unchanged && python3 .agent/memory/project/specs/nos-order-recovery/goldens/check_wiring.py config-shape
+    - id: A12
+      description: built routes-manifest lists /tickets/recover as a static route and /tickets/[slug] still dynamic, so the static segment wins (run after A16)
+      command: python3 .agent/memory/project/specs/nos-order-recovery/goldens/check_wiring.py routes-manifest
+    - id: A13
+      description: the F6 token primitive checks stay green
+      command: for f in contracts/checks/ticketing-f6-recovery-token/check-*.mjs; do node --import tsx/esm "$f" || exit 1; done
+      timeout_seconds: 300
+    - id: A14
+      description: typecheck
+      command: pnpm exec tsc --noEmit
+    - id: A15
+      description: eslint on the touched trees
+      command: pnpm exec eslint lib/recovery-access.ts lib/orders.ts components/tickets/ConfirmedTicketList.tsx 'app/(nos)/tickets/recover' 'app/(nos)/tickets/confirmation' next.config.ts
+    - id: A16
+      description: production build
+      command: pnpm build
+      timeout_seconds: 900
+    - id: A17
+      description: live server - nine token classes get the same 404 and headers; four equal-length ones (forged, tampered, expired with a valid signature, shape-denied) get the same body byte for byte, and all nine the same rendered HTML outside the RSC payload, with no Firestore read possible; response carries no-referrer, no-store and noindex. Needs the stubbed build and a space-free path
+      command: pnpm exec tsx .agent/memory/project/specs/nos-order-recovery/goldens/check-recover-live.mts
+      timeout_seconds: 600
+    - id: A18
+      description: the whole cache-header expectations file against a local launched build, including the recover entry (GET only)
+      command: node scripts/checks/cache-headers-probe.mjs --spawn
+      timeout_seconds: 600
+    - id: A19
+      description: mutation proof - 75 mutations (73 in the default pass, 2 more with --heavy) across the access rule, page wiring, orders addition, extraction, probe entry, next.config headers, proxy and frozen files are each killed by a check above (2 more with --heavy), files restored byte for byte
+      command: python3 .agent/memory/project/specs/nos-order-recovery/goldens/run_mutations.py
+      timeout_seconds: 900
+    - id: A20
+      description: no check this feature ships can write to production
+      command: python3 contracts/checks/live-write-guard/verify_no_ungated_writers.py
+    - id: A23
+      description: cross-model adversarial review of the diff
+      type: codex_qa
+      target: .agent/memory/project/specs/nos-order-recovery/codex-qa-prompt.md
+      timeout_seconds: 1500
+    - id: A21
+      description: Triad browser check is post-deploy only (a real test-order recovery link opens its tickets with QR and downloads; a bogus token shows the site 404); declared non-required, expected to skip until a manifest exists
+      type: browser_deployed_check
+      target: .agent/memory/scratch/nos-order-recovery-browser-manifest.json
+      required: false
+    - id: A22
+      description: Triad gws inbox check is post-deploy only (the confirmation email's Recover your tickets link is the nos origin URL with a token); declared non-required, expected to skip until a manifest exists
+      type: gws_inbox_check
+      target: .agent/memory/scratch/nos-order-recovery-gws-manifest.json
+      required: false
