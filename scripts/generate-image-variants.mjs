@@ -21,10 +21,10 @@ const HERO_WEBP_QUALITY = 72;
 const HERO_LARGE_WEBP_QUALITY = 78;
 const HERO_SOURCES = new Set(['orchid-violet.jpg', 'orchid-pink.jpg', 'orchid-dark.jpg', 'orchid-purple.jpg', 'orchid-yellow.jpg', 'nos-hero-S3a.jpg', 'nos-hero-S3b.jpg', 'nos-hero-S2a.jpg', 'nos-hero-S2c.jpg', 'nos-hero-S1b.jpg', 'nos-hero-H4a.jpg', 'nos-hero-H4b.jpg', 'nos-hero-D1.jpg', 'nos-hero-PK1.jpg', 'nos-hero-PK3.jpg', 'nos-hero-Y1.jpg'].map((name) => path.join(SOURCE_ROOT, name)));
 // Hero sources also get an AVIF set (same widths, same -q88 name, .avif extension), served first by
-// components/ui/HeroPicture.tsx with the WebP set as fallback. AVIF q55 is far smaller than WebP q88.
+// components/ui/HeroPicture.tsx with the WebP set as fallback. AVIF q55 is far smaller than the hero WebP.
 const HERO_AVIF_QUALITY = 55;
 // Every image keeps this cap (lib/image-loader.ts). Only the full-bleed hero photographs in
-// lib/hero-source-widths.json go above it, at q88, up to their own native width and never beyond.
+// lib/hero-source-widths.json go above it, under the -q88 name (encoded at q78), up to their own native width and never beyond.
 const STANDARD_MAX_WIDTH = 2048;
 
 const { deviceSizes, imageSizes } = JSON.parse(await readFile('lib/image-widths.json', 'utf8'));
