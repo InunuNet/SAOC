@@ -90,7 +90,7 @@ assertions:
       command: pnpm build
       timeout_seconds: 900
     - id: A17
-      description: live server - eight token classes (none, empty, malformed, forged, tampered, expired with a valid signature, repeated, oversize) get the same 404, headers and body, with no Firestore read possible; response carries no-referrer, no-store and noindex. Needs the stubbed build and a space-free path
+      description: live server - nine token classes get the same 404 and headers; four equal-length ones (forged, tampered, expired with a valid signature, shape-denied) get the same body byte for byte, and all nine the same rendered HTML outside the RSC payload, with no Firestore read possible; response carries no-referrer, no-store and noindex. Needs the stubbed build and a space-free path
       command: pnpm exec tsx .agent/memory/project/specs/nos-order-recovery/goldens/check-recover-live.mts
       timeout_seconds: 600
     - id: A18
@@ -98,7 +98,7 @@ assertions:
       command: node scripts/checks/cache-headers-probe.mjs --spawn
       timeout_seconds: 600
     - id: A19
-      description: mutation proof - 64 mutations across the access rule, page wiring, orders addition, extraction, probe entry, next.config headers, proxy and frozen files are each killed by a check above (2 more with --heavy), files restored byte for byte
+      description: mutation proof - 65 mutations (63 in the default pass, 2 more with --heavy) across the access rule, page wiring, orders addition, extraction, probe entry, next.config headers, proxy and frozen files are each killed by a check above (2 more with --heavy), files restored byte for byte
       command: python3 .agent/memory/project/specs/nos-order-recovery/goldens/run_mutations.py
       timeout_seconds: 900
     - id: A20
