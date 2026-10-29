@@ -100,15 +100,19 @@ export function Header() {
             className="mr-3 flex aspect-[405/70] w-[min(100%,405px)] shrink-0 items-center rounded-sm max-[780px]:mr-0 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
             aria-label="South African Orchid Council — Making a difference since 1968"
           >
-            <Image
-              src="/images/saoc-lockup-horizontal-full-name.png"
-              alt=""
-              width={3757}
-              height={493}
-              sizes="(min-width: 780px) 405px, min(405px, calc(100vw - 32px))"
-              priority
-              className="h-auto w-full"
-            />
+            {/* Eager, default fetch priority, and no preload: the hero is the one prioritised image. React
+                auto-preloads any non-lazy <img>, except one inside <picture>, hence the display:contents wrapper. */}
+            <picture className="contents">
+              <Image
+                src="/images/saoc-lockup-horizontal-full-name.png"
+                alt=""
+                width={3757}
+                height={493}
+                sizes="(min-width: 780px) 405px, min(405px, calc(100vw - 32px))"
+                loading="eager"
+                className="h-auto w-full"
+              />
+            </picture>
           </Link>
 
           {/* Zone 2 — primary nav, inline from 1280px */}

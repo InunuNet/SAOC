@@ -39,14 +39,39 @@ function snapWidth(requested: number, allowed: number[]): number {
   return allowed.find((w) => w >= requested) ?? allowed[allowed.length - 1];
 }
 
+export type HeroImageFormat = 'avif' | 'webp';
+
+/** Names the pre-generated variant file: scripts/generate-image-variants.mjs writes exactly these. */
+function variantUrl(path: string, width: number, quality: number | undefined, extension: string): string {
+  // The source extension stays in the name so a.jpg and a.png never share variants.
+  const name = path.slice(SOURCE_DIR.length).replace(/\.[^.]+$/, (ext) => ext.toLowerCase());
+  // A non-default quality has its own variant set (generate-image-variants.mjs: the hero sources at q88).
+  const suffix = quality && quality !== DEFAULT_QUALITY ? `-q${quality}` : '';
+  return `${VARIANT_DIR}/${name}-${snapWidth(width, allowedWidths(path, quality))}${suffix}.${extension}`;
+}
+
+/**
+ * The srcset of a hero source in one format, over every width it has variants at, or null when the source
+ * is not a hero source. AVIF is generated only for the hero sources (the q88 set). next/image cannot emit
+ * AVIF through this loader (it ignores images.formats), so HeroPicture builds its own <picture> from these.
+ */
+export function heroVariantSrcSet(src: string, format: HeroImageFormat): string | null {
+  const path = src.replace(QUERY_OR_HASH, '');
+  if (!path.startsWith(SOURCE_DIR) || !RASTER_EXTENSION.test(path) || NATIVE_WIDTHS[path] === undefined) return null;
+  return allowedWidths(path, HERO_QUALITY)
+    .map((w) => `${variantUrl(path, w, HERO_QUALITY, format)} ${w}w`)
+    .join(', ');
+}
+
+/** The hero variant URL at the first width at or above `width`, for the <img> src fallback. */
+export function heroVariantUrl(src: string, width: number, format: HeroImageFormat): string {
+  return variantUrl(src.replace(QUERY_OR_HASH, ''), width, HERO_QUALITY, format);
+}
+
 export default function imageLoader({ src, width, quality }: ImageLoaderProps): string {
   const path = src.replace(QUERY_OR_HASH, '');
   if (path.startsWith(SOURCE_DIR) && RASTER_EXTENSION.test(path)) {
-    // The source extension stays in the name so a.jpg and a.png never share variants.
-    const name = path.slice(SOURCE_DIR.length).replace(/\.[^.]+$/, (ext) => ext.toLowerCase());
-    // A non-default quality has its own variant set (generate-image-variants.mjs: the hero sources at q88).
-    const suffix = quality && quality !== DEFAULT_QUALITY ? `-q${quality}` : '';
-    return `${VARIANT_DIR}/${name}-${snapWidth(width, allowedWidths(path, quality))}${suffix}.webp`;
+    return variantUrl(path, width, quality, 'webp');
   }
   if (src.startsWith('https://')) {
     const url = new URL(src);
