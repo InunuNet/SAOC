@@ -73,6 +73,7 @@ export function hashAbuseKey(secret: string, scope: string, key: string): string
 function deriveSecret(): string {
   const base = process.env.RECOVERY_TOKEN_SECRET;
   if (!base) return '';
+  // anchor: limiter-derive
   return createHmac('sha256', base).update(SECRET_DOMAIN_LABEL).digest('hex');
 }
 
@@ -156,6 +157,7 @@ export async function consumeAbuseLimit(
         return { allowed: false, retryAfterSeconds: retryAfterSeconds(live, input, weight, nowMs) };
       }
       transaction.set(ref, {
+        // anchor: limiter-doc-scope
         scope: input.scope,
         entries: [...live, { t: nowMs, w: weight }],
         expireAt: new Date(nowMs + input.windowMs),
@@ -171,6 +173,7 @@ export async function consumeAbuseLimit(
     console.warn(
       JSON.stringify({
         event: 'abuse-limit-denied',
+        // anchor: limiter-log
         scope: input.scope,
         keyId: keyHash.slice(0, KEY_ID_LENGTH),
       }),

@@ -4,6 +4,8 @@
 // quantity, and (for a day product) one chosen day shared by every ticket in the order.
 import { useState } from 'react';
 
+import { appCheckHeaders } from '@/components/tickets/appCheckHeader';
+
 import type { CheckoutLineItemInput } from '@/app/api/tickets/checkout/route';
 import {
   buildLineItemsFromCart,
@@ -144,16 +146,14 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
     setErrorMessage('');
 
     try {
-      // A fresh limited-use token per submit; null (no site key built in) sends no header.
-      const appCheckToken = loadAppCheckClient
-        ? await (await loadAppCheckClient()).getCheckoutAppCheckToken()
-        : null;
+      // A fresh limited-use token per submit; a failed load or no site key sends no header.
+      const appCheckHeader = await appCheckHeaders(loadAppCheckClient);
       const res = await fetch('/api/tickets/checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Idempotency-Key': idempotencyKey,
-          ...(appCheckToken ? { 'X-Firebase-AppCheck': appCheckToken } : {}),
+          ...appCheckHeader,
         },
         body: JSON.stringify({ showId: NATIONAL_SHOW_ID, lineItems }),
       });
