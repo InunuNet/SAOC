@@ -167,9 +167,32 @@ function liveIsParameter(node: ts.Node): boolean {
   return false;
 }
 
+// The static name of a plain property, or null for a computed key or a non-property member.
 function propertyName(property: ts.ObjectLiteralElementLike): string | null {
   if (ts.isShorthandPropertyAssignment(property)) return property.name.text;
-  if (ts.isPropertyAssignment(property) && ts.isIdentifier(property.name)) return property.name.text;
+  if (!ts.isPropertyAssignment(property)) return null;
+  const name = property.name;
+  if (ts.isIdentifier(name) || ts.isStringLiteral(name)) return name.text;
+  return null;
+}
+
+// Options-object shapes whose runtime `live`/`query` value the checker cannot read off the syntax:
+// a spread, a method or accessor member, a computed key (`["li" + "ve"]: false` overwrites `live`),
+// or a repeated `live`/`query` key (the last one wins at runtime).
+function unreadableOptionsReason(object: ts.ObjectLiteralExpression): string | null {
+  const seen = new Map<string, number>();
+  for (const property of object.properties) {
+    if (ts.isSpreadAssignment(property)) return 'options object spreads an unknown value';
+    if (!ts.isPropertyAssignment(property) && !ts.isShorthandPropertyAssignment(property)) {
+      return 'options object has a method or accessor member';
+    }
+    if (ts.isComputedPropertyName(property.name)) return 'options object has a computed property key';
+    const name = propertyName(property);
+    if (name !== null) seen.set(name, (seen.get(name) ?? 0) + 1);
+  }
+  for (const guarded of ['live', 'query']) {
+    if ((seen.get(guarded) ?? 0) > 1) return `options object repeats the ${guarded} key`;
+  }
   return null;
 }
 
@@ -200,11 +223,11 @@ function judgeFetchCall(call: ts.CallExpression, allowedQueries: Set<string>): s
   if (!argument || !ts.isObjectLiteralExpression(argument)) {
     return 'options argument is not an object literal';
   }
-  if (argument.properties.some((property) => ts.isSpreadAssignment(property))) {
-    return 'options object spreads an unknown value';
-  }
+  const unreadable = unreadableOptionsReason(argument);
   const query = queryIdentifier(argument);
-  if (query && allowedQueries.has(query)) return null;
+  // Only a repeated `query` key can forge the allowlisted identifier, so it is never exempt.
+  if (query && allowedQueries.has(query) && !unreadable?.includes('query key')) return null;
+  if (unreadable) return unreadable;
   const live = findProperty(argument, 'live');
   if (!live) return 'no live property';
   return passesLive(live) ? null : 'live is not true';
@@ -213,6 +236,8 @@ function judgeFetchCall(call: ts.CallExpression, allowedQueries: Set<string>): s
 function judgeCallerCall(call: ts.CallExpression): string | null {
   const [argument] = call.arguments;
   if (!argument || !ts.isObjectLiteralExpression(argument)) return 'no options object, live: true not passed';
+  const unreadable = unreadableOptionsReason(argument);
+  if (unreadable) return unreadable;
   const live = findProperty(argument, 'live');
   if (!live || !ts.isPropertyAssignment(live) || live.initializer.kind !== ts.SyntaxKind.TrueKeyword) {
     return 'live: true not passed';

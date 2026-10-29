@@ -48,16 +48,14 @@ from __future__ import annotations
 import re
 import sys
 from pathlib import Path
+from urllib.parse import urlsplit
 
 APP_PATH_PATTERN = re.compile(r"\bapp/")
-# A literal URL on the deployed site. Optional userinfo is skipped, so `user@saoc.co.za` and
-# `evil.com@saoc.co.za` (whose real host is saoc.co.za) match; the lookahead then accepts a single
-# trailing dot (a rooted host) and any terminator that is not part of a hostname, so a shell
-# `; | & , ] } > )` or a backtick ends the host while `saoc.co.za.evil.example` and
-# `saoc.co.zaxyz` do not match. A `user@saoc.co.za` email has no scheme so never matches.
-DEPLOYED_SITE_URL_PATTERN = re.compile(
-    r"https?://(?:[^\s/@]+@)?(?:[a-z0-9-]+\.)*saoc\.co\.za(?=\.?(?:[^a-z0-9.@-]|$))", re.IGNORECASE
-)
+# A URL candidate: the scheme plus the authority (everything up to a path/query/fragment or a
+# character that ends a URL in shell text). The authority is then parsed, never pattern-matched,
+# so userinfo such as `saoc.co.za:443@evil.com` cannot masquerade as the host.
+URL_AUTHORITY_PATTERN = re.compile(r"https?://([^\s/?#'\"`;|&,<>\]})(]*)", re.IGNORECASE)
+DEPLOYED_DOMAIN = "saoc.co.za"
 TRIAD_KINDS = ("codex_qa", "browser_deployed_check", "gws_inbox_check")
 
 # Tri-state shape signal for iter_assertions_with_shape()/assertion_kind().
@@ -248,12 +246,29 @@ def assertion_kind(assertion: dict, shape: str = SHAPE_LIST) -> str:
     return "shell"
 
 
+def is_deployed_site_url(text: str) -> bool:
+    """True when `text` holds a URL whose parsed hostname is saoc.co.za or a subdomain of it.
+    Userinfo is ignored (the host is what follows the last `@`); a trailing dot is a rooted host;
+    an unparseable authority is not the deployed site."""
+    for match in URL_AUTHORITY_PATTERN.finditer(text):
+        try:
+            host = urlsplit(f"//{match.group(1)}").hostname
+        except ValueError:
+            continue
+        if not host:
+            continue
+        host = host.lower().rstrip(".")
+        if host == DEPLOYED_DOMAIN or host.endswith("." + DEPLOYED_DOMAIN):
+            return True
+    return False
+
+
 def is_ui_workflow_contract(contract: dict) -> bool:
     for assertion in iter_assertions(contract):
         if not isinstance(assertion, dict):
             continue
         for text in assertion_text_fields(assertion):
-            if APP_PATH_PATTERN.search(text) or DEPLOYED_SITE_URL_PATTERN.search(text):
+            if APP_PATH_PATTERN.search(text) or is_deployed_site_url(text):
                 return True
     return False
 

@@ -12,6 +12,7 @@ import {
   get,
   startServer,
 } from './lib/local-next-server.mjs';
+import { classify } from './lib/cache-classify.mjs';
 
 const EXPECTATIONS_PATH = resolve(
   REPO_ROOT,
@@ -25,13 +26,6 @@ const EXIT_SETUP = 2;
 const EXIT_SKIP = 77;
 
 const expectations = JSON.parse(readFileSync(EXPECTATIONS_PATH, 'utf8'));
-
-// A header value passes a class when it matches `must_match` and does not match `must_not_match`.
-// A missing header never passes.
-export function classify(rule, cacheControl) {
-  if (cacheControl === null || cacheControl === undefined) return false;
-  return new RegExp(rule.must_match).test(cacheControl) && !new RegExp(rule.must_not_match).test(cacheControl);
-}
 
 function ruleFor(mode, routeClass) {
   const rules = expectations.modes[mode];
