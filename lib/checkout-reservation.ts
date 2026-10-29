@@ -39,8 +39,8 @@ export interface ReservationDocs {
 }
 
 /**
- * Builds the order body and the position body for a fresh checkout reservation.
- * Construction only — the caller writes both via `writeReservationPair()` inside its own
+ * Builds the order body and the position body for a fresh checkout reservation. Pure
+ * construction only — the caller writes both via `writeReservationPair()` inside its own
  * already-open transaction.
  *
  * `buyerName`/`buyerEmail` are set to `attendeeName`/`attendeeEmail` — checkout's request
@@ -253,7 +253,7 @@ export interface MultiReservationDocs {
 
 /**
  * Builds the order body and every position body for a fresh multi-line-item checkout
- * reservation. Construction only — the caller writes all of them via
+ * reservation. Pure construction only — the caller writes all of them via
  * `writeMultiReservationPair()` inside its own already-open transaction.
  *
  * `order.amount` is the SUM of every line item's own amount, never a client-supplied total.

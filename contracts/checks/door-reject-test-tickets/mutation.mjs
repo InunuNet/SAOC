@@ -16,6 +16,8 @@ const mutants = [
   { name: 'guard-never-rejects', file: 'lib/checkin-test-ticket-guard.ts', from: /input\.liveMode && /, to: 'false && ' },
   { name: 'stamp-ignores-gateway', file: 'lib/ticket-issuance-mode.ts', from: /isTicketingTestMode\(\) \|\| PAYMENT_GATEWAYS_SANDBOX_ONLY/, to: 'isTicketingTestMode()' },
   { name: 'stamp-always-false', file: 'lib/ticket-issuance-mode.ts', from: /isTicketingTestMode\(\) \|\| PAYMENT_GATEWAYS_SANDBOX_ONLY/, to: 'false' },
+  { name: 'settlement-rewrites-order-marker', file: 'lib/orders.ts', from: /status: 'paid',\n      gatewayPaymentId: input\.gatewayPaymentId,/, to: "status: 'paid',\n      issuedInTestMode: false,\n      gatewayPaymentId: input.gatewayPaymentId," },
+  { name: 'settlement-rewrites-position-marker', file: 'lib/orders.ts', from: /status: 'paid',\n        purchasedAt: input\.now,/, to: "status: 'paid',\n        issuedInTestMode: false,\n        purchasedAt: input.now," },
   { name: 'orders-bypasses-helper', file: 'lib/orders.ts', from: /const issuedInTestMode = [^;]+;/, to: 'const issuedInTestMode = false;' },
 ];
 

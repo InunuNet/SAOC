@@ -115,3 +115,30 @@ test('real order guarantee: documents issued after a full go-live carry literal 
   const refused = await scan({ status: 'paid', issuedInTestMode: sandboxIssued[1].issuedInTestMode }, { testMode: false });
   assert.equal(outcome(refused.result), 'test_ticket');
 });
+
+test('settlement: marking an order paid never rewrites the issued test marker', async () => {
+  for (const marker of [true, false]) {
+    const patches = [];
+    const docs = {
+      order: { m_payment_id: 'ref', gateway: 'ozow', status: 'reserved', issuedInTestMode: marker, buyerEmail: 'b@example.invalid', buyerName: 'Buyer' },
+      t1: { bookingRef: 'ref-1', attendeeName: 'Guest', ticketType: 'day-visitor', issuedInTestMode: marker },
+    };
+    const db = {
+      collection: (name) => ({
+        doc: (id) => ({ id }),
+        where: () => ({ get: async () => ({ empty: false, docs: name === 'tickets' ? [{ id: 't1' }] : [{ id: 'order' }] }) }),
+      }),
+      runTransaction: async (fn) => fn({
+        get: async (ref) => ({ exists: true, data: () => docs[ref.id] }),
+        update: (ref, patch) => patches.push({ id: ref.id, patch }),
+      }),
+    };
+    const outcome = await loader({ testMode: true, db })('lib/orders.ts').markOrderAndPositionPaidByPaymentId(
+      { m_payment_id: 'ref', gatewayPaymentId: 'gw', now: stamp, orderId: 'order', expectedGateway: 'ozow' }, { db });
+    assert.equal(outcome.committed, true);
+    assert.equal(patches.length, 2, 'order and position are both updated');
+    for (const { id, patch } of patches) {
+      assert.equal(Object.hasOwn(patch, 'issuedInTestMode'), false, `${id} patch must not carry the marker`);
+    }
+  }
+});
