@@ -1,8 +1,8 @@
 // Live-server golden for /tickets/recover (mission nos-order-recovery). Frozen by @architect.
 // Run: pnpm exec tsx .agent/memory/project/specs/nos-order-recovery/goldens/check-recover-live.mts
-// Needs `node scripts/checks/sanity-request-count.mjs --build` first (the stubbed production build) and a
-// checkout path WITHOUT spaces (scripts/checks/lib/local-next-server.mjs puts a path in NODE_OPTIONS
-// unquoted; SAOC is fixing that in #160). GET only. Sanity is stubbed and Firebase credentials are blanked
+// Needs `node scripts/checks/sanity-request-count.mjs --build` first (the stubbed production build), and the
+// server must run WITHOUT SANITY_FIXTURE_MODE/SANITY_FIXTURE_DIR (the contract command unsets them). Paths with
+// a space work since #160. Ports 3231 must be free. GET only. Sanity is stubbed and Firebase credentials are blanked
 // by the helper, so no live system is touched and no Firestore read can succeed: every case below must be
 // answered WITHOUT reaching Firestore, which is itself part of what is proved (a token that fails
 // verification must not cost a database read).
@@ -99,7 +99,8 @@ async function main() {
     // identical across all four classes). That is server warm-up, not a token class, so it is discarded: two
     // throwaway requests per distinct URL length before anything is compared. It does not loosen the comparison,
     // which is still strict across every class once the server is warm.
-    for (const warm of [shapeDenied, shapeDenied, '?token=warm', '?token=warm']) {
+    const warmSameLength = `?token=${'b'.repeat(fullLength - '?token='.length)}`; // same length as the compared URLs, never itself compared
+    for (const warm of [warmSameLength, warmSameLength, '?token=warm', '?token=warm']) {
       await fetchOnce(host, `/tickets/recover${warm}`);
     }
     const tier1 = await fetchAll(equalLength);
