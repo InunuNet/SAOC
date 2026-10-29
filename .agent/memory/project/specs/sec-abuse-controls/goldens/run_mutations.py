@@ -86,6 +86,10 @@ MUTATIONS = [
     ("M50", LIMITER, "anchor", "ipv4-mapped", "'ffff'", "'fffe'", golden("abuse-limiter")),
     ("M51", CHECKOUT, "first", None, ".where('clientKey', '==', input.actor.clientKey).where('status', '==', RESERVED_STATUS)", ".where('clientKey', '==', input.actor.clientKey).where('status', '==', 'paid')", wiring("hold-budget-status")),
     ("M52", CHECKOUT, "first", None, ".where('buyerKey', '==', input.actor.buyerKey).where('status', '==', RESERVED_STATUS)", ".where('buyerKey', '==', input.actor.buyerKey).where('status', '==', 'paid')", wiring("hold-budget-status")),
+    ("M53", APPCHECK_CLIENT, "anchor", "load-memo-clear", "cached = null", "void 0", golden("app-check-client")),
+    ("M54", CHECKOUT, "first", None, "transaction.get(\n        tickets.where('clientKey', '==', input.actor.clientKey).where('status', '==', RESERVED_STATUS)\n      )", "tickets.where('clientKey', '==', input.actor.clientKey).where('status', '==', RESERVED_STATUS).get()", wiring("hold-budget-status")),
+    ("M55", CHECKOUT, "first", None, "transaction.get(\n        tickets.where('buyerKey', '==', input.actor.buyerKey).where('status', '==', RESERVED_STATUS)\n      )", "tickets.where('buyerKey', '==', input.actor.buyerKey).where('status', '==', RESERVED_STATUS).get()", wiring("hold-budget-status")),
+    ("M56", APPCHECK_CLIENT, "first", None, "memoizeSuccessfulLoad(loadBuildSource)", "(() => loadBuildSource())", wiring("client-load-recovery")),
     ("M18", "app/api/contact/route.ts", "append", None, "", "\nimport { createAttemptStore } from '@/lib/newsletter-rate-store';\n", wiring("no-memory-limiter")),
 ]
 

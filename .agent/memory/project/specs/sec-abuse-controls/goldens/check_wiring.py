@@ -278,6 +278,21 @@ def check_hold_budget_status() -> None:
         pattern = rf"\.where\(\s*'{key}'\s*,\s*'=='\s*,\s*{re.escape(source)}\s*\)\s*\.where\(\s*'status'\s*,\s*'=='\s*,\s*RESERVED_STATUS\s*\)"
         if len(re.findall(pattern, route)) != 1:
             fail(f"the held-seat query by {key} must select status RESERVED_STATUS exactly once (a different status makes the budget count nothing)")
+        in_transaction = rf"transaction\.get\(\s*\w+\s*{pattern}\s*\)"
+        if len(re.findall(in_transaction, route)) != 1:
+            fail(f"the held-seat query by {key} must be executed through transaction.get(...) inside the reservation transaction, never a plain .get() outside it")
+
+
+def check_client_load_recovery() -> None:
+    client = read("lib/app-check-client.ts")
+    if not re.search(r"export\s+function\s+memoizeSuccessfulLoad", client):
+        fail("lib/app-check-client.ts must export memoizeSuccessfulLoad")
+    if "// anchor: load-memo-clear" not in client:
+        fail("memoizeSuccessfulLoad must mark the rejection-clearing line with // anchor: load-memo-clear")
+    if not re.search(r"memoizeSuccessfulLoad\(\s*loadBuildSource\s*\)", client):
+        fail("the default loader must be wrapped: memoizeSuccessfulLoad(loadBuildSource)")
+    if re.search(r"defaultSource\s*\?\?=", client):
+        fail("the default SDK load must not be cached with a bare ??= (a rejected promise would stick)")
 
 
 def check_buyer_normalised() -> None:
@@ -439,6 +454,7 @@ CHECKS = {
     "xff-trusted-hop": check_xff_trusted_hop,
     "buyer-normalised": check_buyer_normalised,
     "hold-budget-status": check_hold_budget_status,
+    "client-load-recovery": check_client_load_recovery,
     "client-ip-helper": check_client_ip_helper,
     "bundle-flag-off": check_bundle_flag_off,
     "retired-slugs": check_retired_slugs,

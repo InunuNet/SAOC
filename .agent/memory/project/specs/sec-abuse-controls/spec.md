@@ -177,6 +177,22 @@ Anchors (mutation proof). Put `// anchor: <id>` on the line directly above the d
 5. **Concurrency (decided).** `abuse-limiter.golden.ts` section 3b races ten callers (limit 3) through a FakeDb with versioned reads and abort-and-retry commits; exactly three may win. Mark the transactional read `// anchor: limiter-tx-read` (`const snapshot = await transaction.get(ref);`; the mutant reads in a separate transaction with a yield before the write, which must fail the race).
 7. **IPv4-mapped IPv6 in every spelling (decided).** `clientActorKey` maps any address whose first five hextets are zero and sixth is `ffff` (dotted or hex tail, any case, expanded or compressed) to `ip4:<last 32 bits>`; `::ffff:cb00:7109` and `::ffff:203.0.113.9` are one actor. Anything else stays an `ip6:` /64. Put `// anchor: ipv4-mapped` above `if (hextets[5] === 'ffff' && hextets.slice(0, 5).every((hextet) => hextet === '0000')) {` (after `expandIpv6`). `abuse-limiter.golden.ts` section 7; mutant M50.
 8. **Held-seat queries pinned (decided).** Both in-transaction budget reads must be `.where('clientKey', '==', input.actor.clientKey).where('status', '==', RESERVED_STATUS)` and the same for `buyerKey`; `RESERVED_STATUS` is `'reserved'`. A36, mutants M51 and M52.
+9. **App Check SDK load recovers (decided).** `lib/app-check-client.ts` exports `memoizeSuccessfulLoad<T>(load): () => Promise<T>` and the default loader is `memoizeSuccessfulLoad(loadBuildSource)`: the first call starts the load, a success is cached, a rejection clears the cache before it propagates so the next call retries, concurrent callers share one in-flight load. Exactly:
+   ```
+   export function memoizeSuccessfulLoad<T>(load: () => Promise<T>): () => Promise<T> {
+     let cached: Promise<T> | null = null;
+     return () => {
+       cached ??= load().catch((error: unknown) => {
+         // anchor: load-memo-clear
+         cached = null;
+         throw error;
+       });
+       return cached;
+     };
+   }
+   ```
+   The `loadBuildSource` ternary and the flag-off guarantees (no key means no loader call and no fetch) are unchanged; `getCheckoutAppCheckToken` still returns null on any failure. `app-check-client.golden.ts` section 4, A37, mutants M53 and M56.
+10. **Held-seat reads are transactional (decided).** The two held-seat queries must be passed to `transaction.get(...)` (A36 now pins this; a plain `.get()` outside the transaction is a TOCTOU hole). Mutants M54 and M55.
 6. **Single-entry forwarded header (decided).** See D2. H4 QA must confirm on the deployed backend that real requests carry two or more hops; if the platform ever sends one, all callers share the strict `unknown` bucket (fail closed, limits bite everyone) rather than trusting a client-chosen address.
 
 ## Rulings after the dev run (8c6060eb)
