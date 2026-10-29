@@ -23,7 +23,6 @@ const KEY_ID_LENGTH = 12;
 const IPV6_HEXTETS = 8;
 const HEXTET_WIDTH = 4;
 const UNKNOWN_ACTOR = 'unknown';
-const IPV4_MAPPED_PREFIX = /^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/i;
 
 export class AbuseLimiterUnavailableError extends Error {
   constructor(message: string, options?: { cause?: unknown }) {
@@ -208,13 +207,17 @@ function expandIpv6(address: string): string[] | null {
 export function clientActorKey(header: string | null | undefined): string {
   const hop = trustedClientIpFromForwardedFor(header);
   if (hop === null) return UNKNOWN_ACTOR;
-  const mapped = hop.match(IPV4_MAPPED_PREFIX);
-  const address = mapped ? mapped[1] : hop;
-  const family = isIP(address);
-  if (family === 4) return `ip4:${address}`;
+  const family = isIP(hop);
+  if (family === 4) return `ip4:${hop}`;
   if (family === 6) {
-    const hextets = expandIpv6(address);
+    const hextets = expandIpv6(hop);
     if (hextets === null) return UNKNOWN_ACTOR;
+    // anchor: ipv4-mapped
+    if (hextets[5] === 'ffff' && hextets.slice(0, 5).every((hextet) => hextet === '0000')) {
+      const high = parseInt(hextets[6], 16);
+      const low = parseInt(hextets[7], 16);
+      return `ip4:${high >> 8}.${high & 255}.${low >> 8}.${low & 255}`;
+    }
     // anchor: ipv6-prefix
     return `ip6:${hextets.slice(0, 4).join(':')}`;
   }
