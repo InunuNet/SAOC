@@ -2,7 +2,8 @@
 // Pre-generates the WebP (and, for hero sources, AVIF) srcset candidates lib/image-loader.ts points at. Runs before
 // `next build` (see the build script); output lands in public/images/_opt (gitignored).
 // Fails the build on any error: a missing variant would 404 a hero image.
-import { mkdir, readFile, readdir, stat } from 'node:fs/promises';
+import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import sharp from 'sharp';
 
@@ -65,7 +66,29 @@ async function* walk(dir) {
   }
 }
 
-async function isFresh(output, sourceMtimeMs) {
+// An output is fresh only if it is newer than its source AND was written with the encode options in force now. The
+// options are recorded per output in this manifest: the -q88 name is a key, not a quality, so a quality change must
+// invalidate by options, never by the name or the mtime alone. A file with no manifest entry counts as stale.
+const OPTIONS_MANIFEST = path.join(OUTPUT_ROOT, '.encode-options.json');
+
+async function readOptionsManifest() {
+  try {
+    return JSON.parse(await readFile(OPTIONS_MANIFEST, 'utf8'));
+  } catch (error) {
+    if (error.code === 'ENOENT') return {};
+    throw error;
+  }
+}
+
+const previousOptions = await readOptionsManifest();
+const currentOptions = {};
+
+function optionsHash(format, options) {
+  return createHash('sha256').update(JSON.stringify([format, options])).digest('hex').slice(0, 16);
+}
+
+async function isFresh(output, sourceMtimeMs, hash) {
+  if (previousOptions[output] !== hash) return false;
   try {
     return (await stat(output)).mtimeMs >= sourceMtimeMs;
   } catch {
@@ -87,7 +110,9 @@ async function emitVariants(source, relative, isHero, mtimeMs, pipeline) {
       throw new Error(`image variant collision: ${source} and ${claimed.get(key)} -> ${output}`);
     }
     claimed.set(key, source);
-    if (await isFresh(output, mtimeMs)) {
+    const hash = optionsHash(format, options);
+    currentOptions[output] = hash;
+    if (await isFresh(output, mtimeMs, hash)) {
       skipped += 1;
       continue;
     }
@@ -132,4 +157,5 @@ for (const entry of DERIVED_SOURCES) {
     return sharp(cut.data, { raw: cut.info }).resize({ width: outputWidth, withoutEnlargement: true });
   });
 }
+await writeFile(OPTIONS_MANIFEST, `${JSON.stringify(currentOptions)}\n`);
 console.log(`image variants: ${generated} generated, ${skipped} up to date`);
