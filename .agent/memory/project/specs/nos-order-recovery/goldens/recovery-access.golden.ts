@@ -65,7 +65,7 @@ async function main() {
   // 1. The one success: exactly {ok:true, reference}, one lookup, the stored-token comparison made.
   {
     const { calls, matchCalls, result } = run(good, { 'order-A': PAID });
-    assert.deepStrictEqual(await result, { ok: true, reference: 'REF-A' });
+    assert.deepStrictEqual(await result, { ok: true, orderId: 'order-A' });
     assert.deepStrictEqual(calls, ['order-A']);
     assert.deepStrictEqual(matchCalls, [[good, good]], 'stored token compared through the injected tokensMatch');
   }
@@ -142,14 +142,14 @@ async function main() {
   assert.deepStrictEqual(await run(good, { 'order-A': PAID }, { tokensMatch: () => false }).result, { ok: false });
   assert.deepStrictEqual(
     await run(good, { 'order-A': { ...PAID, recoveryToken: 'different' } }, { tokensMatch: () => true }).result,
-    { ok: true, reference: 'REF-A' },
+    { ok: true, orderId: 'order-A' },
   );
 
   // 5. Defaults: with no injected matcher the real comparison is constant-time and exact.
   {
     const records = { 'order-A': PAID };
     const base = { rawToken: good, secret: SECRET, now: NOW, loadOrder: async (id: string) => records[id as 'order-A'] ?? null };
-    assert.deepStrictEqual(await resolveRecoveryAccess(base), { ok: true, reference: 'REF-A' });
+    assert.deepStrictEqual(await resolveRecoveryAccess(base), { ok: true, orderId: 'order-A' });
     const nearMiss = { 'order-A': { ...PAID, recoveryToken: `${good}x` } };
     assert.deepStrictEqual(
       await resolveRecoveryAccess({ ...base, loadOrder: async (id: string) => nearMiss[id as 'order-A'] ?? null }),

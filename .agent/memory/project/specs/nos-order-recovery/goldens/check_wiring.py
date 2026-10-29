@@ -112,7 +112,7 @@ def check_access_anchors() -> None:
         "ra-default-match": "input.tokensMatch ?? constantTimeStringEqual",
         "ra-stored-match": "!tokensMatch(record.recoveryToken, input.rawToken)",
         "ra-denied-helper": "({ ok: false })",
-        "ra-success": "{ ok: true, reference: record.reference }",
+        "ra-success": "{ ok: true, orderId: verified.orderId }",
     }
     for name, token in pinned.items():
         need(token in anchored(text, name), f"anchor {name}: next line must contain {token!r}")
@@ -140,7 +140,8 @@ def check_page_wiring() -> None:
     need("if (!access.ok)" in denied, "anchor recover-denied: if (!access.ok)")
     need("access.ok" not in denied.replace("!access.ok", ""), "recover-denied tests nothing but !access.ok")
     render = anchored(text, "recover-order")
-    need("getConfirmedOrderForDisplay(access.reference)" in render, "anchor recover-order: the order is loaded by access.reference only")
+    need("const confirmed = await getConfirmedOrderByOrderId(access.orderId);" in render, "anchor recover-order: the order is loaded by the VERIFIED order id only (Codex F1/F2)")
+    need("getConfirmedOrderForDisplay" not in code and "access.reference" not in code, "the recover page never loads by reference")
     miss = anchored(text, "recover-order-missing")
     need("if (!confirmed)" in miss, "anchor recover-order-missing: if (!confirmed)")
     # Both failure arms end in notFound(), and nothing renders before them.
@@ -161,14 +162,20 @@ def check_orders_addition() -> None:
     base = merge_base()
     diff = git("diff", "-U0", base, "--", ORDERS)
     removed = [l for l in diff.splitlines() if l.startswith("-") and not l.startswith("---")]
-    need(not removed, f"lib/orders.ts change must be a pure addition, removed: {removed[:3]}")
+    need(not removed, f"lib/orders.ts change must be a pure addition (the shared confirmation lookup stays byte-identical), removed: {removed[:3]}")
     added = "\n".join(l[1:] for l in diff.splitlines() if l.startswith("+") and not l.startswith("+++"))
     need("export async function getOrderRecoveryRecord(" in added, "adds export getOrderRecoveryRecord")
+    need("export async function getConfirmedOrderByOrderId(" in added, "adds export getConfirmedOrderByOrderId")
     for banned in (".set(", ".update(", ".delete(", ".add(", "runTransaction", ".batch(", "console."):
-        need(banned not in added, f"getOrderRecoveryRecord is read-only and silent: {banned}")
-    need(".doc(orderId)" in added, "reads the order by the signed id (a get by id, never a query on the token)")
-    need("recoveryToken" in added and "m_payment_id" in added and "status" in added, "returns reference (m_payment_id), recoveryToken and status")
-    need("where(" not in added, "no collection query")
+        need(banned not in added, f"the added lookups are read-only and silent: {banned}")
+    need("where('m_payment_id'" not in added and 'where("m_payment_id"' not in added, "no lookup by reference in the added code")
+    need(".doc(orderId)" in added, "reads the order by the signed id")
+    need("where('orderId', '==', orderId)" in added, "positions are read for the verified order id")
+    for name in ("co-lookup", "co-paid", "co-positions"):
+        need(f"// anchor: {name}" in added, f"anchor {name} present")
+    need(".doc(orderId)" in anchored(added, "co-lookup"), "anchor co-lookup: orders.doc(orderId)")
+    need("order?.status !== 'paid'" in anchored(added, "co-paid"), "anchor co-paid: order?.status !== 'paid'")
+    need("tickets.where('orderId', '==', orderId)" in anchored(added, "co-positions"), "anchor co-positions: tickets.where('orderId', '==', orderId)")
 
 
 def check_no_logging() -> None:

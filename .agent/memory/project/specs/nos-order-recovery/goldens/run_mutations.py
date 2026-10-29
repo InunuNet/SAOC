@@ -35,6 +35,7 @@ CONFIG = "next.config.ts"
 PROXY = "proxy.ts"
 CACHE = ".agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/goldens/cache-header-expectations.json"
 ACCESS_G = golden("recovery-access")
+BIND_G = golden("confirmed-order-binding")
 HEADERS_G = golden("recover-headers")
 PROXY_G = golden("proxy-routing")
 LIVE = ["pnpm", "exec", "tsx", f"{SPEC}/check-recover-live.mts"]
@@ -57,7 +58,8 @@ MUTATIONS = [
     ("A12", ACCESS, "anchor", "ra-stored-match", "!tokensMatch(record.recoveryToken, input.rawToken)", "false", ACCESS_G),
     ("A13", ACCESS, "anchor", "ra-stored-match", "(record.recoveryToken, input.rawToken)", "(input.rawToken, input.rawToken)", ACCESS_G),
     ("A14", ACCESS, "anchor", "ra-denied-helper", "({ ok: false })", "({ ok: false, reason: 'denied' } as { ok: false })", ACCESS_G),
-    ("A15", ACCESS, "anchor", "ra-success", "{ ok: true, reference: record.reference }", "{ ok: true, reference: record.reference, token: input.rawToken } as { ok: true; reference: string }", ACCESS_G),
+    ("A15", ACCESS, "anchor", "ra-success", "{ ok: true, orderId: verified.orderId }", "{ ok: true, orderId: verified.orderId, token: input.rawToken } as { ok: true; orderId: string }", ACCESS_G),
+    ("A24", ACCESS, "anchor", "ra-success", "orderId: verified.orderId", "orderId: record.reference", ACCESS_G),
     ("A16", ACCESS, "anchor", "ra-default-match", "input.tokensMatch ?? constantTimeStringEqual", "input.tokensMatch ?? ((a: string, b: string) => a === b)", wiring("access-anchors")),
     ("A17", ACCESS, "anchor", "ra-load", "input.loadOrder(verified.orderId)", "input.loadOrder(input.rawToken)", ACCESS_G),
     ("A20", ACCESS, "anchor", "ra-shape", "RECOVERY_TOKEN_SHAPE.test(input.rawToken)", "true", ACCESS_G),
@@ -71,7 +73,8 @@ MUTATIONS = [
     ("P02", PAGE, "first", None, "referrer: 'no-referrer'", "referrer: 'origin'", wiring("page-wiring")),
     ("P03", PAGE, "first", None, "index: false", "index: true", wiring("page-wiring")),
     ("P04", PAGE, "anchor", "recover-denied", "if (!access.ok)", "if (false)", wiring("page-wiring")),
-    ("P05", PAGE, "anchor", "recover-order", "getConfirmedOrderForDisplay(access.reference)", "getConfirmedOrderForDisplay(String(token))", wiring("page-wiring")),
+    ("P05", PAGE, "anchor", "recover-order", "getConfirmedOrderByOrderId(access.orderId)", "getConfirmedOrderForDisplay(String(token))", wiring("page-wiring")),
+    ("P15", PAGE, "anchor", "recover-order", "access.orderId", "String(token)", wiring("page-wiring")),
     ("P06", PAGE, "anchor", "recover-order-missing", "if (!confirmed)", "if (false)", wiring("page-wiring")),
     ("P07", PAGE, "append", None, "", "\nconsole.error(String(0));\n", wiring("no-logging")),
     ("P08", PAGE, "append", None, "", "\nconst why = (undefined as unknown as { reason: string }).reason;\n", wiring("page-wiring")),
@@ -84,6 +87,10 @@ MUTATIONS = [
     # --- lib/orders.ts, components, confirmation page
     ("O01", ORDERS, "append", None, "", "\nconst w = (r: { set: (x: unknown) => void }) => r.set(1);\n", wiring("orders-addition")),
     ("O02", ORDERS, "first", None, "status: 'paid',", "status: 'paid ',", wiring("orders-addition")),
+    ("C01", ORDERS, "anchor", "co-lookup", ".doc(orderId)", ".doc('order-B')", BIND_G),
+    ("C03", ORDERS, "anchor", "co-paid", "order?.status !== 'paid'", "false", BIND_G),
+    ("C04", ORDERS, "anchor", "co-positions", "'==', orderId)", "'==', 'order-B')", BIND_G),
+    ("C06", ORDERS, "first", None, "export async function getConfirmedOrderByOrderId(", "export async function getConfirmedOrderByOrderId_(", BIND_G),
     ("O03", LIST, "first", None, "Booking ref:", "Reference:", wiring("extraction-verbatim")),
     ("O04", CONFIRM, "first", None, "<ConfirmedTicketList", "<div", wiring("extraction-verbatim")),
     # --- cache probe entry

@@ -28,6 +28,7 @@ goldens:
   - .agent/memory/project/specs/nos-order-recovery/goldens/recovery-access.golden.ts
   - .agent/memory/project/specs/nos-order-recovery/goldens/recover-headers.golden.ts
   - .agent/memory/project/specs/nos-order-recovery/goldens/proxy-routing.golden.ts
+  - .agent/memory/project/specs/nos-order-recovery/goldens/confirmed-order-binding.golden.ts
   - .agent/memory/project/specs/nos-order-recovery/goldens/check-recover-live.mts
   - .agent/memory/project/specs/nos-order-recovery/goldens/check_wiring.py
   - .agent/memory/project/specs/nos-order-recovery/goldens/run_mutations.py
@@ -41,6 +42,9 @@ assertions:
     - id: A2
       description: next.config headers, evaluated with Next's own matcher - /tickets/recover (and the slashed form) gets exactly one Referrer-Policy no-referrer, Cache-Control private no-store and noindex, keeps every other security header; no other path changes
       command: pnpm exec tsx .agent/memory/project/specs/nos-order-recovery/goldens/recover-headers.golden.ts
+    - id: A24
+      description: display binding - with two orders sharing one m_payment_id, the order the token authorised is the order rendered (read by id, positions of that id only, null when it is unpaid or has no confirmed positions, never the other order's tickets)
+      command: pnpm exec tsx .agent/memory/project/specs/nos-order-recovery/goldens/confirmed-order-binding.golden.ts
     - id: A3
       description: proxy.ts is untouched and still passes /tickets/recover through on the NOS host (no rewrite onto /national-show) and 308s it from the SAOC host with the query intact
       command: pnpm exec tsx .agent/memory/project/specs/nos-order-recovery/goldens/proxy-routing.golden.ts
@@ -94,7 +98,7 @@ assertions:
       command: node scripts/checks/cache-headers-probe.mjs --spawn
       timeout_seconds: 600
     - id: A19
-      description: mutation proof - 56 mutations across the access rule, page wiring, orders addition, extraction, probe entry, next.config headers, proxy and frozen files are each killed by a check above (2 more with --heavy), files restored byte for byte
+      description: mutation proof - 64 mutations across the access rule, page wiring, orders addition, extraction, probe entry, next.config headers, proxy and frozen files are each killed by a check above (2 more with --heavy), files restored byte for byte
       command: python3 .agent/memory/project/specs/nos-order-recovery/goldens/run_mutations.py
       timeout_seconds: 900
     - id: A20
