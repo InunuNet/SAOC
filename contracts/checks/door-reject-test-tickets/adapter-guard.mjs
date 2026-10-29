@@ -1,6 +1,7 @@
 // F4 adapter guard (SEC-06). Static checks that tie the issuance stamp to what the payment adapters really do.
 //   node adapter-guard.mjs coupling [root]      sandbox-mode.ts, the stamp, Ozow IsTest and PayFast initiate agree
 //   node adapter-guard.mjs client-safe [root]   lib/ticket-issuance-mode.ts reaches lib/payments only through sandbox-mode
+//   node adapter-guard.mjs checkout [root]     the checkout route hands the toggle it already read to the builders; no second read
 //   node adapter-guard.mjs diff [diffFile]      the only lib/payments change is the leaf module, the flag reads and PayFast's fail-closed branch
 // Exit 0 pass, 1 fail with reasons on stderr. adapter-mutation.mjs proves each check bites.
 import { readFileSync } from 'node:fs';
@@ -36,6 +37,11 @@ export function checkCoupling(read) {
   if (!ozow.includes(ADDED[OZOW][1])) errors.push(`${OZOW}: OZOW_IS_TEST must be String(OZOW_SANDBOX_MODE)`);
   if (!/IsTest: OZOW_IS_TEST,/.test(ozow)) errors.push(`${OZOW}: the initiate payload must send IsTest: OZOW_IS_TEST`);
   if (!payfast.includes(ADDED[PAYFAST][0]) || /^(export )?const PAYFAST_SANDBOX_MODE\b/m.test(payfast)) errors.push(`${PAYFAST}: must import PAYFAST_SANDBOX_MODE from the leaf module and not redefine it`);
+  // The admin toggle is a third term. Checkout builders receive it, comps (never gateway-paid) pass an explicit false.
+  if (!/export function isIssuanceTestMode\(options: \{ ozowSandboxTestMode: boolean \}\): boolean \{\s*return isTicketingTestMode\(\) \|\| PAYMENT_GATEWAYS_SANDBOX_ONLY \|\| options\.ozowSandboxTestMode !== false;\s*\}/.test(issuance)) errors.push(`${ISSUANCE}: isIssuanceTestMode(options) must be isTicketingTestMode() || PAYMENT_GATEWAYS_SANDBOX_ONLY || options.ozowSandboxTestMode !== false`);
+  const builders = read('lib/checkout-reservation.ts');
+  if ((builders.match(/const issuedInTestMode = isIssuanceTestMode\(\{ ozowSandboxTestMode: input\.ozowSandboxTestMode \}\);/g) ?? []).length !== 2 || (builders.match(/ozowSandboxTestMode: boolean;/g) ?? []).length !== 2) errors.push('lib/checkout-reservation.ts: both builders must stamp isIssuanceTestMode({ ozowSandboxTestMode: input.ozowSandboxTestMode }) and both input types must declare ozowSandboxTestMode: boolean');
+  if (!/const issuedInTestMode = isIssuanceTestMode\(\{ ozowSandboxTestMode: false \}\);/.test(read('lib/orders.ts'))) errors.push('lib/orders.ts: createOrderWithPosition (comps) must stamp isIssuanceTestMode({ ozowSandboxTestMode: false })');
   // Fail closed: with the flag false PayFast must refuse before it builds any sandbox form.
   const initiate = payfast.indexOf('async initiate(');
   const guard = payfast.indexOf(PAYFAST_FAIL_CLOSED);
@@ -54,6 +60,23 @@ export function checkClientSafe(read) {
     if (/(^|\/)payments(\/|$)/.test(spec) && spec !== '@/lib/payments/sandbox-mode') errors.push(`${ISSUANCE}: imports ${spec}; only @/lib/payments/sandbox-mode is allowed`);
     if (/^node:/.test(spec) || /(^|\/)payfast$|(^|\/)ozow$/.test(spec)) errors.push(`${ISSUANCE}: imports ${spec}, which can reach an adapter or a Node built-in`);
   }
+  return errors;
+}
+
+const CHECKOUT = 'app/api/tickets/checkout/route.ts';
+
+// The admin toggle (adminSettings/ozowSandboxTestMode) is read once by the checkout route (R0.01 override). The stamp
+// must reuse that value: the builder call passes `ozowSandboxTestMode: <identifier>` (never a literal), and the number
+// of isOzowSandboxTestModeEnabled() calls in the route equals baselineReads (the count on main), so no new Firestore read.
+export function checkCheckout(read, baselineReads) {
+  const errors = [];
+  const route = read(CHECKOUT);
+  const reads = (route.match(/isOzowSandboxTestModeEnabled\(\)/g) ?? []).length;
+  if (reads !== baselineReads) errors.push(`${CHECKOUT}: isOzowSandboxTestModeEnabled() is called ${reads} time(s), main has ${baselineReads}; the stamp must reuse the existing read`);
+  const start = route.indexOf('buildMultiReservationDocs({');
+  const end = start < 0 ? -1 : route.indexOf('})', start);
+  const block = start < 0 || end < 0 ? '' : route.slice(start, end);
+  if (!/\bozowSandboxTestMode:\s*[A-Za-z_$][\w$.]*\s*[,}\n]/.test(block + '\n') || /\bozowSandboxTestMode:\s*(true|false)\b/.test(block)) errors.push(`${CHECKOUT}: buildMultiReservationDocs({...}) must pass ozowSandboxTestMode: <the value the route already read>, not a literal`);
   return errors;
 }
 
@@ -82,11 +105,14 @@ if (process.argv[1]?.endsWith('adapter-guard.mjs')) {
   const reader = () => { const root = path.resolve(arg ?? '.'); return (file) => readFileSync(path.join(root, file), 'utf8'); };
   let errors;
   if (mode === 'coupling') errors = checkCoupling(reader());
-  else if (mode === 'client-safe') errors = checkClientSafe(reader());
+  else if (mode === 'checkout') {
+    const baseline = spawnSync('git', ['show', `origin/main:${CHECKOUT}`], { encoding: 'utf8' }).stdout;
+    errors = checkCheckout(reader(), (baseline.match(/isOzowSandboxTestModeEnabled\(\)/g) ?? []).length);
+  } else if (mode === 'client-safe') errors = checkClientSafe(reader());
   else if (mode === 'diff') {
     const text = arg ? readFileSync(arg, 'utf8') : spawnSync('git', ['diff', '-U0', '--no-renames', 'origin/main', '--', 'lib/payments'], { encoding: 'utf8' }).stdout;
     errors = checkDiff(text);
-  } else { console.error('usage: adapter-guard.mjs coupling|client-safe [root] | diff [diffFile]'); process.exit(2); }
+  } else { console.error('usage: adapter-guard.mjs coupling|client-safe|checkout [root] | diff [diffFile]'); process.exit(2); }
   for (const error of errors) console.error(error);
   process.exit(errors.length ? 1 : 0);
 }

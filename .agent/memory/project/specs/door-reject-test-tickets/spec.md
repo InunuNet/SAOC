@@ -110,6 +110,26 @@ imports nothing from lib/payments but the leaf, no node: module, no dynamic impo
 lib/payments change). `adapter-mutation.mjs` proves each bites. The flags stay true; this feature does not launch
 payments. At go-live the flags are flipped together with the credentials and URLs they guard.
 
+AMENDMENT 3 (SAOC lead request): the admin toggle `adminSettings/ozowSandboxTestMode` joins the rule. A document is stamped
+`issuedInTestMode: true` if ANY of these says test or sandbox: the launch constant (`isTicketingTestMode()`),
+`OZOW_SANDBOX_MODE`, `PAYFAST_SANDBOX_MODE`, or the toggle as read at checkout. An R0.01-paid order is therefore never admitted
+live, and the toggle can never switch issuance to live while a constant says sandbox. A toggle value that is not literally
+`false` (missing, unread) counts as on. Comps are admin-issued, never gateway-paid, and carry no toggle term (explicit `false`).
+The R0.01 override (`resolveExpectedGatewayAmount` / `resolveOzowInitiateAmount`) is unchanged.
+
+Code delta for the dev, exact text (the guards pin it):
+1. `lib/ticket-issuance-mode.ts`:
+   `export function isIssuanceTestMode(options: { ozowSandboxTestMode: boolean }): boolean { return isTicketingTestMode() || PAYMENT_GATEWAYS_SANDBOX_ONLY || options.ozowSandboxTestMode !== false; }`
+2. `lib/checkout-reservation.ts`: `ozowSandboxTestMode: boolean;` (required) on `BuildReservationDocsInput` and
+   `BuildMultiReservationDocsInput`; both builders stamp `isIssuanceTestMode({ ozowSandboxTestMode: input.ozowSandboxTestMode })`.
+3. `lib/orders.ts` `createOrderWithPosition`: `isIssuanceTestMode({ ozowSandboxTestMode: false })`.
+4. `app/api/tickets/checkout/route.ts`: pass `ozowSandboxTestMode: <the value from the existing isOzowSandboxTestModeEnabled() read>` in the
+   `buildMultiReservationDocs({ ... })` call; thread it as a parameter if the call is outside that scope. No new Firestore read.
+5. `docs/launch-checklist.md` go-live note: the single go-live commit flips `TICKETING_PAYMENTS_LIVE`, `OZOW_SANDBOX_MODE` and
+   `PAYFAST_SANDBOX_MODE` (with credentials and URLs), and the `ozowSandboxTestMode` toggle is turned off at the same deploy.
+   (Backlog P1 is recorded.)
+F3 note: the two builder input types gain one required field. If F3 adds fields to them it must keep `ozowSandboxTestMode`.
+
 A reservation is stamped at creation and never relabelled (settlement preserves it, #69 behaviour). A real
 paid order therefore carries `false` exactly when it was created after the full go-live. Ozow
 `ozowSandboxTestMode` (adminSettings) is an amount toggle, not an environment marker, and is not used.

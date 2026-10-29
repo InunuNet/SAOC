@@ -1,5 +1,5 @@
 {
-  "_doc": "F4 extension of truth-table.json (which is unchanged). Door-level rows: a stored ticket document shaped like the 17 sandbox-paid tickets in prod (no issuedInTestMode field) plus tampered or ambiguous markers. 'liveDoor' is the outcome when isTicketingTestMode() is false; 'testDoor' when it is true. Outcome names: admit, test_ticket, unpaid, already-checked-in.",
+  "_doc": "F4 extension of truth-table.json (which is unchanged). Door-level rows: a stored ticket document shaped like the 17 sandbox-paid tickets in prod (no issuedInTestMode field) plus tampered or ambiguous markers. 'liveDoor' is the outcome when isTicketingTestMode() is false; 'testDoor' when it is true. Outcome names: admit, test_ticket, unpaid, already-checked-in. stampMatrix: ozowToggle is the adminSettings/ozowSandboxTestMode value read at checkout (true, false or 'missing'); expectedStamp applies to checkout-built docs, expectedCompStamp (default expectedStamp) to comp tickets, which are never gateway-paid and carry no toggle term.",
   "rows": [
     {
       "id": "legacy-paid-unmarked",
@@ -127,6 +127,40 @@
       "ticketingTestMode": false,
       "ozowSandbox": true,
       "payfastSandbox": false,
+      "expectedStamp": true
+    },
+    {
+      "id": "constants-live-toggle-on",
+      "ticketingTestMode": false,
+      "ozowSandbox": false,
+      "payfastSandbox": false,
+      "ozowToggle": true,
+      "expectedStamp": true,
+      "expectedCompStamp": false
+    },
+    {
+      "id": "constants-live-toggle-off",
+      "ticketingTestMode": false,
+      "ozowSandbox": false,
+      "payfastSandbox": false,
+      "ozowToggle": false,
+      "expectedStamp": false
+    },
+    {
+      "id": "constants-live-toggle-missing",
+      "ticketingTestMode": false,
+      "ozowSandbox": false,
+      "payfastSandbox": false,
+      "ozowToggle": "missing",
+      "expectedStamp": true,
+      "expectedCompStamp": false
+    },
+    {
+      "id": "constants-sandbox-toggle-off",
+      "ticketingTestMode": false,
+      "ozowSandbox": true,
+      "payfastSandbox": true,
+      "ozowToggle": false,
       "expectedStamp": true
     }
   ]

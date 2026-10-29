@@ -48,25 +48,28 @@ function loader({ testMode, gatewaySandboxOnly = true, ozowSandbox = gatewaySand
 
 const builderInput = { orderId: 'order', bookingRef: 'ref', reference: 'ref', showId: 'show', attendeeName: 'Guest', attendeeEmail: 'guest@example.invalid', buyerName: 'Buyer', buyerEmail: 'buyer@example.invalid', ticketType: 'day-visitor', amount: 100, idempotencyKey: 'key', expiresAt: stamp, recoveryToken: 'fixture', recoveryTokenExpiresAt: stamp, now: stamp, gateway: 'ozow', expectedGatewayAmount: null, orderStatus: 'paid', positionStatus: 'paid', purchasedAt: stamp, gatewayPaymentId: null, m_payment_id: 'ref', pf_payment_id: null };
 
-async function issue({ testMode, gatewaySandboxOnly, ozowSandbox, payfastSandbox }) {
+// ozowToggle is the adminSettings/ozowSandboxTestMode value the checkout route already read: true, false, or 'missing' (field omitted).
+async function issue({ testMode, gatewaySandboxOnly, ozowSandbox, payfastSandbox, ozowToggle = false }) {
   const writes = [];
   const db = { collection: (name) => ({ doc: (id = 'new-order') => ({ id, name }) }), runTransaction: async (fn) => fn({ set: (ref, doc) => writes.push(doc) }) };
   const load = loader({ testMode, gatewaySandboxOnly, ozowSandbox, payfastSandbox, db });
   const builders = load('lib/checkout-reservation.ts');
-  const single = builders.buildReservationDocs(builderInput);
-  const multi = builders.buildMultiReservationDocs({ ...builderInput, lineItems: [0, 1].map((i) => ({ ticketType: 'day-visitor', attendeeName: 'Guest', attendeeEmail: 'guest@example.invalid', amount: 100, bookingRef: `ref-${i}`, chosenDay: null })) });
+  const checkoutInput = ozowToggle === 'missing' ? builderInput : { ...builderInput, ozowSandboxTestMode: ozowToggle };
+  const single = builders.buildReservationDocs(checkoutInput);
+  const multi = builders.buildMultiReservationDocs({ ...checkoutInput, lineItems: [0, 1].map((i) => ({ ticketType: 'day-visitor', attendeeName: 'Guest', attendeeEmail: 'guest@example.invalid', amount: 100, bookingRef: `ref-${i}`, chosenDay: null })) });
   await load('lib/orders.ts').createOrderWithPosition(builderInput, { db });
   return [single.order, single.position, multi.order, ...multi.positions, ...writes];
 }
 
 test('stamp matrix: every creation path stamps test unless BOTH switches are live', async () => {
   for (const row of golden.stampMatrix) {
-    const docs = await issue({ testMode: row.ticketingTestMode, gatewaySandboxOnly: row.gatewaySandboxOnly, ozowSandbox: row.ozowSandbox, payfastSandbox: row.payfastSandbox });
+    const docs = await issue({ testMode: row.ticketingTestMode, gatewaySandboxOnly: row.gatewaySandboxOnly, ozowSandbox: row.ozowSandbox, payfastSandbox: row.payfastSandbox, ozowToggle: row.ozowToggle });
     assert.equal(docs.length, 7, row.id);
-    for (const doc of docs) {
+    // docs 0-4 come from the checkout builders (toggle applies); docs 5-6 are the comp primitive (never gateway-paid, no toggle term).
+    docs.forEach((doc, index) => {
       assert.ok(Object.hasOwn(doc, 'issuedInTestMode'), row.id);
-      assert.strictEqual(doc.issuedInTestMode, row.expectedStamp, row.id);
-    }
+      assert.strictEqual(doc.issuedInTestMode, index < 5 ? row.expectedStamp : (row.expectedCompStamp ?? row.expectedStamp), `${row.id} doc ${index}`);
+    });
   }
 });
 
@@ -138,4 +141,13 @@ test('settlement: marking an order paid never rewrites the issued test marker', 
       assert.equal(Object.hasOwn(patch, 'issuedInTestMode'), false, `${id} patch must not carry the marker`);
     }
   }
+});
+
+test('admin toggle: an R0.01 order is never admitted live, whatever the constants say', async () => {
+  const toggled = await issue({ testMode: false, gatewaySandboxOnly: false, ozowToggle: true });
+  for (const doc of toggled.slice(0, 5)) assert.strictEqual(doc.issuedInTestMode, true);
+  const refused = await scan({ status: 'paid', issuedInTestMode: toggled[1].issuedInTestMode }, { testMode: false, gatewaySandboxOnly: false });
+  assert.equal(outcome(refused.result), 'test_ticket');
+  const unread = await issue({ testMode: false, gatewaySandboxOnly: false, ozowToggle: 'missing' });
+  for (const doc of unread.slice(0, 5)) assert.strictEqual(doc.issuedInTestMode, true, 'a missing toggle value fails closed');
 });

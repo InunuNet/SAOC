@@ -64,18 +64,18 @@ assertions:
       command: pnpm type-check
     - id: A7
       description: ESLint is clean on the specified implementation surface and new unit test; include any additional touched TypeScript files in the implementation review.
-      command: pnpm exec eslint lib/checkin-test-ticket-guard.ts lib/checkin.ts lib/checkout-reservation.ts lib/orders.ts lib/checkin-audit.ts lib/ticket-issuance-mode.ts lib/payments/sandbox-mode.ts lib/payments/ozow.ts lib/payments/payfast.ts app/api/admin/checkin/route.ts types/index.ts components/admin/DoorResultBanner.tsx components/admin/DoorScannerClient.tsx contracts/checks/door-reject-test-tickets/admission.test.mjs
+      command: pnpm exec eslint lib/checkin-test-ticket-guard.ts lib/checkin.ts lib/checkout-reservation.ts lib/orders.ts lib/checkin-audit.ts lib/ticket-issuance-mode.ts lib/payments/sandbox-mode.ts lib/payments/ozow.ts lib/payments/payfast.ts app/api/tickets/checkout/route.ts app/api/admin/checkin/route.ts types/index.ts components/admin/DoorResultBanner.tsx components/admin/DoorScannerClient.tsx contracts/checks/door-reject-test-tickets/admission.test.mjs
     - id: A8
       description: Run the complete new offline unit test file using Node's installed test runner; package.json has no unit-test script to invoke.
       command: node --test contracts/checks/door-reject-test-tickets/admission.test.mjs
     - id: A9
-      description: Stamp matrix and real-order guarantee. Every creation path stamps true unless the launch constant and the sandbox-only flag are both live. Documents issued after a full go-live carry literal false and are admitted live; sandbox-issued ones are refused. Fails on the PR head (no lib/ticket-issuance-mode.ts).
-      command: node --test --test-name-pattern='stamp matrix|real order guarantee' contracts/checks/door-reject-test-tickets/legacy-and-stamp.test.mjs
+      description: Stamp matrix and real-order guarantee. A document is stamped issuedInTestMode true if ANY of the launch constant, OZOW_SANDBOX_MODE, PAYFAST_SANDBOX_MODE or the admin toggle adminSettings/ozowSandboxTestMode (as read at checkout; a missing value counts as on) says test, so an R0.01 order is never admitted live and the toggle cannot switch issuance to live while a constant says sandbox. Comps carry no toggle term. Every creation path stamps true unless the launch constant and the sandbox-only flag are both live. Documents issued after a full go-live carry literal false and are admitted live; sandbox-issued ones are refused. Fails on the PR head (no lib/ticket-issuance-mode.ts).
+      command: node --test --test-name-pattern='stamp matrix|real order guarantee|admin toggle' contracts/checks/door-reject-test-tickets/legacy-and-stamp.test.mjs
     - id: A10
       description: Legacy rows. Prod-shaped untagged, null, string, zero and explicit-true tickets are refused live with no write and unchanged in test mode; genuine literal false is admitted.
       command: node --test --test-name-pattern='legacy rows' contracts/checks/door-reject-test-tickets/legacy-and-stamp.test.mjs
     - id: A11
-      description: Mutation proof. Mutants (truthy guard rule, guard never rejects, stamp ignores or drops an adapter flag, stamp always false, settlement rewrites a marker, comp path bypasses the helper) are each killed and the unmutated control passes.
+      description: Mutation proof. Mutants (truthy guard rule, guard never rejects, stamp ignores or drops an adapter flag or the admin toggle term, checkout builders drop the toggle, toggle fails open, stamp always false, settlement rewrites a marker, comp path bypasses the helper) are each killed and the unmutated control passes.
       command: node contracts/checks/door-reject-test-tickets/mutation.mjs
     - id: A12
       description: Adapter coupling. lib/payments/sandbox-mode.ts is import-free and holds both literal flags; the stamp is exactly OZOW_SANDBOX_MODE || PAYFAST_SANDBOX_MODE (no hand-set flag); Ozow IsTest is String(OZOW_SANDBOX_MODE) and neither adapter redefines its flag; PayFast initiate starts with the fail-closed not-configured branch before any sandbox form; an Ozow flag that says live cannot coexist with OZOW_SANDBOX_* credentials. The flags stay true; this feature does not launch payments.
@@ -106,8 +106,14 @@ assertions:
       target: .agent/memory/scratch/door-reject-test-tickets-gws-manifest.json
       required: false
     - id: A19
-      description: Adapter mutation proof. Each of these is rejected, an adapter flag false while it still sends sandbox (Ozow credentials, IsTest decoupled or hard-coded, PayFast form with the fail-closed branch removed, inverted or placed after the form), a leaf that imports or reads env, a redefined flag, a hand-set or truncated stamp, client-chain imports of an adapter, the payments index, a Node built-in or a dynamic import, and ten synthetic bad lib/payments diffs. The unmutated controls pass.
+      description: Adapter mutation proof. Each of these is rejected, a checkout route that passes a literal, drops the field or adds a second Firestore read of the toggle, a stamp that drops or fails open on the toggle term, an adapter flag false while it still sends sandbox (Ozow credentials, IsTest decoupled or hard-coded, PayFast form with the fail-closed branch removed, inverted or placed after the form), a leaf that imports or reads env, a redefined flag, a hand-set or truncated stamp, client-chain imports of an adapter, the payments index, a Node built-in or a dynamic import, and ten synthetic bad lib/payments diffs. The unmutated controls pass.
       command: node contracts/checks/door-reject-test-tickets/adapter-mutation.mjs
     - id: A20
       description: lib/ticket-issuance-mode.ts is client-safe. It imports nothing from lib/payments except sandbox-mode, no adapter, payments index or Node built-in module, so no client chain can reach an adapter.
       command: node contracts/checks/door-reject-test-tickets/adapter-guard.mjs client-safe .
+    - id: A21
+      description: The checkout route hands the admin toggle value it already read to buildMultiReservationDocs as ozowSandboxTestMode (never a literal) and adds no second isOzowSandboxTestModeEnabled() call relative to main. The R0.01 override behaviour is untouched.
+      command: node contracts/checks/door-reject-test-tickets/adapter-guard.mjs checkout .
+    - id: A22
+      description: The launch checklist states the single go-live commit that flips the launch constant and both adapter constants, and that the ozowSandboxTestMode toggle is turned off at the same deploy.
+      command: grep -q 'ozowSandboxTestMode' docs/launch-checklist.md && grep -q 'OZOW_SANDBOX_MODE' docs/launch-checklist.md && grep -q 'PAYFAST_SANDBOX_MODE' docs/launch-checklist.md

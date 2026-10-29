@@ -21,6 +21,9 @@ const mutants = [
   { name: 'issuance-ignores-payfast-flag', file: 'lib/ticket-issuance-mode.ts', from: / \|\| PAYFAST_SANDBOX_MODE;/, to: ';' },
   { name: 'stamp-drops-payfast', file: 'lib/ticket-issuance-mode.ts', from: /OZOW_SANDBOX_MODE \|\| PAYFAST_SANDBOX_MODE/, to: 'OZOW_SANDBOX_MODE' },
   { name: 'stamp-drops-ozow', file: 'lib/ticket-issuance-mode.ts', from: /OZOW_SANDBOX_MODE \|\| PAYFAST_SANDBOX_MODE/, to: 'PAYFAST_SANDBOX_MODE' },
+  { name: 'toggle-term-dropped', file: 'lib/ticket-issuance-mode.ts', from: / \|\| options\.ozowSandboxTestMode !== false/, to: '' },
+  { name: 'toggle-fails-open', file: 'lib/ticket-issuance-mode.ts', from: /options\.ozowSandboxTestMode !== false/, to: 'options.ozowSandboxTestMode === true' },
+  { name: 'checkout-drops-toggle', file: 'lib/checkout-reservation.ts', from: /ozowSandboxTestMode: input\.ozowSandboxTestMode/g, to: 'ozowSandboxTestMode: false' },
   { name: 'orders-bypasses-helper', file: 'lib/orders.ts', from: /const issuedInTestMode = [^;]+;/, to: 'const issuedInTestMode = false;' },
 ];
 

@@ -4,10 +4,10 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { checkClientSafe, checkCoupling, checkDiff } from './adapter-guard.mjs';
+import { checkCheckout, checkClientSafe, checkCoupling, checkDiff } from './adapter-guard.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
-const files = ['lib/payments/ozow.ts', 'lib/payments/payfast.ts', 'lib/payments/sandbox-mode.ts', 'lib/ticket-issuance-mode.ts'];
+const files = ['app/api/tickets/checkout/route.ts', 'lib/payments/ozow.ts', 'lib/payments/payfast.ts', 'lib/payments/sandbox-mode.ts', 'lib/ticket-issuance-mode.ts', 'lib/checkout-reservation.ts', 'lib/orders.ts'];
 const original = Object.fromEntries(files.map((file) => [file, readFileSync(path.join(root, file), 'utf8')]));
 const sub = (file, from, to) => (text) => { const next = text[file].replace(from, to); if (next === text[file]) throw new Error(`pattern not found in ${file}: ${from}`); return { ...text, [file]: next }; };
 const chain = (...steps) => (text) => steps.reduce((acc, step) => step(acc), text);
@@ -26,6 +26,10 @@ const couplingMutants = [
   ['payfast-fail-closed-after-sandbox-form', chain(DROP_FAIL_CLOSED, sub('lib/payments/payfast.ts', /processUrl: PAYFAST_SANDBOX_PROCESS_URL/, "processUrl: PAYFAST_SANDBOX_PROCESS_URL,\n        // if (!PAYFAST_SANDBOX_MODE) return { ok: false, reason: 'not-configured' };\n        _x: 0")), true],
   ['leaf-imports-something', sub('lib/payments/sandbox-mode.ts', /export const OZOW_SANDBOX_MODE/, "import { x } from '@/lib/payments/payfast';\nexport const OZOW_SANDBOX_MODE"), true],
   ['leaf-flag-not-literal', sub('lib/payments/sandbox-mode.ts', /OZOW_SANDBOX_MODE = true;/, "OZOW_SANDBOX_MODE = process.env.X === '1';"), true],
+  ['stamp-toggle-term-dropped', sub('lib/ticket-issuance-mode.ts', / \|\| options\.ozowSandboxTestMode !== false/, ''), true],
+  ['stamp-toggle-fails-open', sub('lib/ticket-issuance-mode.ts', /options\.ozowSandboxTestMode !== false/, 'options.ozowSandboxTestMode === true'), true],
+  ['builders-ignore-toggle', sub('lib/checkout-reservation.ts', /const issuedInTestMode = isIssuanceTestMode\(\{ ozowSandboxTestMode: input\.ozowSandboxTestMode \}\);/, 'const issuedInTestMode = isIssuanceTestMode({ ozowSandboxTestMode: false });'), true],
+  ['comp-reads-toggle-from-nowhere', sub('lib/orders.ts', /const issuedInTestMode = isIssuanceTestMode\(\{ ozowSandboxTestMode: false \}\);/, 'const issuedInTestMode = isIssuanceTestMode({ ozowSandboxTestMode: undefined });'), true],
   ['stamp-hand-flag', sub('lib/ticket-issuance-mode.ts', /PAYMENT_GATEWAYS_SANDBOX_ONLY = [^;]+;/, 'PAYMENT_GATEWAYS_SANDBOX_ONLY = false;'), true],
   ['stamp-drops-payfast', sub('lib/ticket-issuance-mode.ts', /OZOW_SANDBOX_MODE \|\| PAYFAST_SANDBOX_MODE;/, 'OZOW_SANDBOX_MODE;'), true],
   ['stamp-drops-ozow', sub('lib/ticket-issuance-mode.ts', /OZOW_SANDBOX_MODE \|\| PAYFAST_SANDBOX_MODE;/, 'PAYFAST_SANDBOX_MODE;'), true],
@@ -38,6 +42,15 @@ const clientSafeMutants = [
   ['client-imports-payments-index', sub('lib/ticket-issuance-mode.ts', /import \{ isTicketingTestMode \}/, "import { getProvider } from '@/lib/payments';\nimport { isTicketingTestMode }"), true],
   ['client-imports-node-builtin', sub('lib/ticket-issuance-mode.ts', /import \{ isTicketingTestMode \}/, "import { promises } from 'node:dns';\nimport { isTicketingTestMode }"), true],
   ['client-dynamic-import-adapter', sub('lib/ticket-issuance-mode.ts', /export function/, "const lazy = () => import('@/lib/payments/payfast');\nexport function"), true],
+];
+
+const baselineReads = (original['app/api/tickets/checkout/route.ts'].match(/isOzowSandboxTestModeEnabled\(\)/g) ?? []).length;
+const checkoutMutants = [
+  ['checkout-control', (t) => t, false],
+  ['checkout-literal-false', sub('app/api/tickets/checkout/route.ts', /(buildMultiReservationDocs\(\{[\s\S]*?)ozowSandboxTestMode:\s*[\w$.]+/, '$1ozowSandboxTestMode: false'), true],
+  ['checkout-literal-true', sub('app/api/tickets/checkout/route.ts', /(buildMultiReservationDocs\(\{[\s\S]*?)ozowSandboxTestMode:\s*[\w$.]+/, '$1ozowSandboxTestMode: true'), true],
+  ['checkout-field-dropped', sub('app/api/tickets/checkout/route.ts', /(buildMultiReservationDocs\(\{[\s\S]*?)ozowSandboxTestMode:\s*[\w$.]+,?/, '$1'), true],
+  ['checkout-second-firestore-read', sub('app/api/tickets/checkout/route.ts', /buildMultiReservationDocs\(\{/, 'buildMultiReservationDocs({ _read: await isOzowSandboxTestModeEnabled(),'), true],
 ];
 
 const goodDiff = [
@@ -65,6 +78,7 @@ const diffMutants = [
 let failed = false;
 const report = (name, rejected, want) => { console.log(`${name}: ${rejected ? 'rejected' : 'accepted'} (want ${want ? 'rejected' : 'accepted'})`); if (rejected !== want) failed = true; };
 for (const [name, mutate, want] of couplingMutants) { const text = mutate({ ...original }); report(name, checkCoupling((file) => text[file]).length > 0, want); }
+for (const [name, mutate, want] of checkoutMutants) { const text = mutate({ ...original }); report(name, checkCheckout((file) => text[file], baselineReads).length > 0, want); }
 for (const [name, mutate, want] of clientSafeMutants) { const text = mutate({ ...original }); report(name, checkClientSafe((file) => text[file]).length > 0, want); }
 for (const [name, lines, want] of diffMutants) report(name, checkDiff(lines.join('\n')).length > 0, want);
 process.exit(failed ? 1 : 0);
