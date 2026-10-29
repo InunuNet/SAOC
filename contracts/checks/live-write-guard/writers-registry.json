@@ -1,6 +1,12 @@
 {
  "schema": "saoc.writer-registry/v1",
  "scripts": {
+  ".agent/memory/project/specs/nos-order-recovery/goldens/check-recover-live.mts": {
+   "class": "SANDBOX_SCRUBBED",
+   "match": "startServer\\(\\{ port: PORT",
+   "note": "GET only against a local next start; local-next-server.mjs blanks every Firebase credential and stubs Sanity, so no Firestore read can succeed and no write exists",
+   "target": "local 127.0.0.1 server with Firebase credentials scrubbed and Sanity stubbed"
+  },
   ".agent/memory/project/specs/nav-focus-underline/checks/compare-geometry.mjs": {
    "class": "STATIC_FP",
    "match": "const m = baseline\\(\\);\\s*mutate\\(m\\);\\s*const f = compare\\(m",

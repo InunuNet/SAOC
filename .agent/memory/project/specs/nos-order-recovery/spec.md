@@ -1,0 +1,75 @@
+# nos-order-recovery (F1) - make the emailed "Recover your tickets" link work
+
+Status: spec for @dev. Branch feat/nos-order-recovery from origin/main 98aa1da1. Governing text: docs/ticketing-system-foundation-spec.md section 8.2 (a), 8.4 (2), 8.5.
+
+## The defect
+`lib/confirmation-email.ts:180` puts `https://<nos origin>/tickets/recover?token=<signed>` in every confirmation email (`emails/OrderConfirmation.tsx:139`, "Lost this email? Recover your tickets"). No route serves it: `app/(nos)/tickets/[slug]/page.tsx` takes "recover" as an unknown ticket slug and 404s. Everything upstream exists and works: checkout mints the token and stores `orders.recoveryToken` + `recoveryTokenExpiresAt` (`app/api/tickets/checkout/route.ts:1237-1252`, `lib/checkout-reservation.ts:69-70`), the ITN path carries it to the email (`lib/orders.ts:445`), and `lib/recovery-token.ts` verifies it. Only the page is missing. Confirmed: the token resolves to a real order today (id in the signed payload, plain token stored on the order doc).
+
+## Decisions
+D1 Route: new static segment `app/(nos)/tickets/recover/page.tsx`. A static segment outranks sibling `[slug]` in Next's router; proven after build by `routes-manifest` (A12), not assumed. The path is `/tickets/recover` on the NOS host: `proxy.ts` already passes `/tickets/*` through un-rewritten (`NOS_TOP_LEVEL_PREFIXES`, proxy.ts:~190) and 308s the SAOC host to the NOS origin keeping the query (`SHOW_PREFIXES`). proxy.ts is NOT edited; A3 proves the behaviour and mutants X01-X03 prove a regression there would be caught. Source: proxy.ts, golden proxy-routing.
+D2 Authorisation (spec 8.2, 8.4(2), 8.5): token only. The page never imports `lib/admin-auth.ts`/`admin-roles.ts`, takes no cookie or header, no account. Access = (a) `verifyRecoveryToken` passes (HMAC, 64-hex shape, constant time, expiry via the existing 180-day TTL, `lib/recovery-token.ts`), (b) the signed order id loads an order, (c) that order's STORED `recoveryToken` equals the presented one (constant time; this is what makes the credential revocable/rotatable, 8.5 "time-limited or at minimum revocable"), (d) `status === 'paid'`. Anything else is denied identically.
+D3 Non-enumeration. Status: spec 8.2 is silent, so I chose **404 via `notFound()`**, rendering the site's existing `(nos)/not-found.tsx` ("NosPageNotFound"). Reasons: zero new copy (D7), identical to any unknown URL (`/tickets/no-such-ticket-f4` is already a probe entry with 404), conventional, and it cannot be mistaken by a CDN/scanner for a live page. `resolveRecoveryAccess` returns the type `{ ok:true, reference } | { ok:false }`: the failure carries no reason, so the page cannot leak one. A bad-token and a bogus-order response are the same code path.
+D4 Dynamic/no-store: `export const dynamic = 'force-dynamic'`, plus belt and braces in `next.config.ts` headers() so it does not depend on page code: `Cache-Control: private, no-store, max-age=0`, `X-Robots-Tag: noindex, nofollow`, and `Referrer-Policy: no-referrer` (the global rule is `strict-origin-when-cross-origin`, which still sends the FULL URL, token included, as Referer on same-origin requests, so `no-referrer` is needed). Implemented as two DISJOINT header rules (recover, and everything except recover) so there is no reliance on Next's duplicate-key merge order; A2 evaluates it with Next's own matcher. Page metadata adds `robots noindex` and `referrer: 'no-referrer'`.
+D5 Reuse of rendering: extract the ticket list JSX block (the `div.mt-8.space-y-10` block with QR, name, type/amount, booking ref, DownloadTicketButton) from `app/(nos)/tickets/confirmation/page.tsx` verbatim into `components/tickets/ConfirmedTicketList.tsx` and render it from both pages. The confirmation page keeps its hero, total line, note and back link; A8 proves lines moved verbatim. Data: reuse `getConfirmedOrderForDisplay(reference)` unchanged (it already enforces paid and builds QR data URIs). New read-only `getOrderRecoveryRecord(orderId)` in `lib/orders.ts` returns `{ reference: m_payment_id, recoveryToken, status }` by doc id (NOT a query on the token). Assumption flagged: `m_payment_id` is unique per order (the existing confirmation lookup already relies on `.limit(1)` by it). `OrdersDocRefLike` has no `get()`; @dev adds it additively to that Like type (or a narrow new one) without changing existing members.
+D6 Resend: **OUT of scope, both** (8.2 (a)'s "allows the buyer to re-send the full email" and (b) POST resend-my-tickets form). Reasons: the page is fully useful without them (QR inline + per-ticket download + the original email already has the PDF); resend needs the F3 abuse limiter (not merged), a form and email-send path (new visual element, new copy, outbound mail). `lib/resend-response.ts`/`resend-rate-limit.ts` stay untouched for the follow-up. This is a deliberate partial delivery of 8.2: flag to SAOC lead (DECISION NEEDED below).
+D7 Rate limiting: none added. 8.2 asks for a limiter only on the resend FORM (5 per email per hour). For GET, a guess needs a valid HMAC-SHA256 over a server secret (256-bit class, `RECOVERY_TOKEN_SECRET`), infeasible, same cost class as booking refs per 8.2; and the code is cheap on the bad path: every token failing parse/length/signature/expiry is rejected with zero Firestore reads (A1 and A17 prove it), so garbage cannot be used to burn quota. Only a genuinely signed, unexpired token costs two reads. Timing is not equalised between "fails before DB" and "reaches DB" - accepted: reaching the DB requires a valid signature, which only the server can mint.
+D8 Logging: the token is a bearer secret in a URL. The code logs nothing (A7). Not controllable from the app: Cloud Run/App Hosting request logs and any browser history record the full URL including the query. This is inherent to the query-string link form fixed by 8.2 and already in sent emails; mitigation is TTL + rotation (stored token), not code. Flagged for SAOC lead.
+D9 Missing `RECOVERY_TOKEN_SECRET`: `resolveRecoveryAccess` throws before looking at the token, so every request (good or garbage) gets the same 500; no oracle. `apphosting.yaml` already declares the secret at RUNTIME (line ~145).
+D10 Failure of the order lookup (Firestore outage) propagates as a 500, reachable only with a genuinely signed unexpired token; converting it to the 404 would tell a real buyer their link is invalid.
+D11 Cache-header probe: add `{"host":"nos","path":"/tickets/recover?token=bogus","status":404}` to `routes.dynamic` in `.agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/goldens/cache-header-expectations.json`. ALREADY DONE by the architect in this commit (a data file, in the hunk list); @dev must not alter it. Observed status is derived from the design (notFound renders 404 with no-store); the live probe (A18) confirms it in CI. This feature owns the entry; F5 drops its copy. Pinned statically because `--spawn` cannot run on a spaced path.
+
+## Specification (what @dev builds)
+1. `lib/recovery-access.ts` (new, pure; imports `./recovery-token` RELATIVELY). Exports `RECOVERY_TOKEN_MAX_LENGTH = 2048`, `OrderRecoveryRecord`, `RecoveryAccess`, `resolveRecoveryAccess(input)` with input `{ rawToken: string | string[] | undefined, secret: string | undefined, now: Date, loadOrder(orderId): Promise<OrderRecoveryRecord | null>, tokensMatch?(stored, presented): boolean }`. Contents are pinned by the anchor table below; everything else about the file is free.
+2. `lib/orders.ts`: append `getOrderRecoveryRecord(orderId, deps?)` (pure addition, read only, `.doc(orderId).get()`, returns `{ reference: m_payment_id ?? '', recoveryToken ?? null, status }`, null when the doc is missing).
+3. `components/tickets/ConfirmedTicketList.tsx` (new): the moved block. Props: the `ConfirmedOrderDisplay` (or `reference` + `positions`) and `downloadTicketButtonLabel`. The label stays a prop so the confirmation page keeps its Sanity-sourced label.
+4. `app/(nos)/tickets/confirmation/page.tsx`: replace the block with `<ConfirmedTicketList ...>`; remove the now-unused import. Nothing else changes.
+5. `app/(nos)/tickets/recover/page.tsx` (new, Server Component): `dynamic = 'force-dynamic'`; `metadata = { robots:{index:false,follow:false}, referrer:'no-referrer' }` (static, no generateMetadata); read `token` from `searchParams`; the four anchored statements below; on success `<NosHero route="/tickets/confirmation" title="Tickets" priority />` then `<NosSection>` containing `<ConfirmedTicketList>` with the download label default `'Download ticket'` (existing fallback string, see copy table). No Sanity fetch (no volume added), no form, no link.
+6. `next.config.ts` `headers()`: two disjoint rules. Reference shape (passes A2): `{ source: '/tickets/recover', headers: [...SECURITY_HEADERS with Referrer-Policy replaced by 'no-referrer', Cache-Control 'private, no-store, max-age=0', X-Robots-Tag 'noindex, nofollow'] }` and `{ source: '/:path((?!tickets/recover/?$).*)', headers: SECURITY_HEADERS }`.
+7. `docs/nos-order-recovery.md` (@docs), `contracts/checks/live-write-guard/writers-registry.json` (entry for check-recover-live.mts, already added).
+
+### Hunk list (nothing else may change; A11)
+| file | change |
+|---|---|
+| lib/recovery-access.ts | new |
+| lib/orders.ts | append only (+ additive `get()` on the Like type if needed - this is the one allowed non-append line, an interface member addition; keep it a pure addition) |
+| components/tickets/ConfirmedTicketList.tsx | new |
+| app/(nos)/tickets/confirmation/page.tsx | block replaced by component |
+| app/(nos)/tickets/recover/page.tsx | new |
+| next.config.ts | headers() only |
+| .agent/memory/.../cache-header-expectations.json | one entry (done) |
+| contracts/checks/live-write-guard/writers-registry.json | one entry (done) |
+| docs/nos-order-recovery.md | new |
+Frozen (byte-identical): proxy.ts, lib/recovery-token.ts, lib/recovery-url.ts, lib/confirmation-email.ts, lib/resend-*.ts, emails/, app/api/, app/(nos)/tickets/[slug]/, tickets page and layout, firestore rules/indexes, apphosting.yaml, package.json, the F6 checks, DownloadTicketButton.
+
+### Anchor table (verbatim next-line content; surrounding code is free)
+lib/recovery-access.ts - each preceded by `// anchor: <name>`:
+- ra-denied-helper: `const denied = (): RecoveryAccess => ({ ok: false });`
+- ra-secret: `if (!input.secret) {` (throws `new Error('RECOVERY_TOKEN_SECRET is not configured')`)
+- ra-input: `if (typeof input.rawToken !== 'string' || input.rawToken.length === 0 || input.rawToken.length > RECOVERY_TOKEN_MAX_LENGTH) {`
+- ra-verify: `const verified = verifyRecoveryToken({ token: input.rawToken, secret: input.secret, now: input.now });`
+- ra-verify-denied: `if (!verified.ok || verified.orderId.length === 0 || verified.orderId.includes('/')) {`
+- ra-load: `const record = await input.loadOrder(verified.orderId);`
+- ra-entitled: `if (record === null || record.status !== 'paid' || record.reference === '' || record.recoveryToken === null) {`
+- ra-default-match: `const tokensMatch = input.tokensMatch ?? constantTimeStringEqual;`
+- ra-stored-match: `if (!tokensMatch(record.recoveryToken, input.rawToken)) {`
+- ra-success: `return { ok: true, reference: record.reference };`
+recover/page.tsx: recover-resolve `const access = await resolveRecoveryAccess({ ... loadOrder: getOrderRecoveryRecord })` (multi-line ok, anchor line is the first); recover-denied `if (!access.ok) {` then `notFound();`; recover-order `const confirmed = await getConfirmedOrderForDisplay(access.reference);`; recover-order-missing `if (!confirmed) {` then `notFound();`.
+
+## Copy (every string and its source) - A10 enforces "nothing new"
+| string | where | source |
+|---|---|---|
+| `Tickets` (hero title) | recover page success | existing literal, `app/(nos)/tickets/confirmation/page.tsx` poller state (`title="Tickets"`) |
+| `Download ticket` | button label default | existing fallback, confirmation page (`downloadTicketButtonLabel ?? 'Download ticket'`) |
+| `N ticket(s) · Total R..`, `Booking ref:`, QR alt text, `Back to tickets` | confirmation list | existing, moved verbatim (the total line and back link stay on the confirmation page only; the recover page shows the list only) |
+| invalid/expired/unknown token | the existing NOS 404 page (`NosPageNotFound`) | existing site-wide copy, no new sentence |
+No hero lede on the recover page (the confirmation lede "Thank you - your payment is confirmed." would be wrong for a recovery). No Sanity copy field added.
+**Named copy gaps (awaiting committee copy, per no-invention.md; NOT filled by this feature):** (1) a recovery-specific heading/lede on the success page ("Your tickets" / "Recovered from your email link" wording); (2) a recovery-specific invalid/expired-link state with a way to ask for a new link - today the buyer meets the generic 404 and must use the site contact; (3) the "I lost my ticket / resend" form copy (feature D6 follow-up).
+**Visual gap for NOS Design:** none required for this release (existing hero, section, list, 404). If copy gap (2) is filled with a dedicated expired-link state, that is a new visual state for NOS Design.
+
+## DECISION NEEDED (SAOC lead, none blocking @dev)
+1. Resend. Recommendation: ship this display-only page now (the link stops 404ing before 1 Dec), and schedule `POST /tickets/resend-my-tickets` + the "I lost my ticket" form + the page's "re-send the email" action as a separate feature after F3's limiter merges (8.2 (b) mandates the rate limit). Alternative: block this feature on resend; costs the 1 Dec date for no safety gain.
+2. 404 vs 200 for the invalid state. Recommendation: 404 (as built). Alternative: a 200 branded "link not valid" page, which needs the new copy in gap (2).
+3. Token in access logs (D8): accept for launch (TTL 180 days is a placeholder per the F6 README; Council has not approved it), or later move to a POST-from-link or fragment flow. Recommendation: accept.
+
+## How the contract proves effect (and what it cannot)
+A1 drives the real module with injected lookup/matcher through every failure class and requires `deepStrictEqual({ok:false})` plus zero lookups before the signature passes. A2 evaluates the real config with Next's matcher. A3 drives the real proxy. A17 starts the real server and compares eight token classes byte-for-byte after redacting only the echoed query. A19 holds 52 mutants (2 more with --heavy: L01/L02 diverge one class and need the build). Cannot prove: the success render (needs Firestore; covered by the post-deploy triad A21/A22), timing equality (D7), and A16-A18 cannot run on a path with a space until SAOC's #160 lands. The goldens and mutants were validated (all green, 52 killed, files restored) against a throwaway reference implementation that was then removed; no product code is in this commit.
