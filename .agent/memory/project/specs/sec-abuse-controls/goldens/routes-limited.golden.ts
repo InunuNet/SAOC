@@ -60,6 +60,26 @@ async function main() {
       return handler(new NextRequest(route.url, { method: route.method, headers, body }));
     };
     const label = (text: string) => `${route.name}: ${text}`;
+    // The same call with every body accessor instrumented: a refused request must never have had its
+    // body read (a body read before the limiter lets a flood cost parsing work on every refusal).
+    const callSpied = (xff: string) => {
+      const headers: Record<string, string> = { 'x-forwarded-for': xff };
+      let body: string | undefined;
+      if (route.method === 'POST') {
+        body = '{}';
+        headers['content-type'] = 'application/json';
+        headers['content-length'] = String(body.length);
+      }
+      const request = new NextRequest(route.url, { method: route.method, headers, body });
+      const reads = { count: 0 };
+      const target = request as unknown as Record<string, unknown>;
+      for (const name of ['json', 'text', 'formData', 'arrayBuffer', 'blob', 'clone']) {
+        const original = (target[name] as (...args: unknown[]) => unknown).bind(request);
+        target[name] = (...args: unknown[]) => { reads.count += 1; return original(...args); };
+      }
+      Object.defineProperty(request, 'body', { get() { reads.count += 1; return null; } });
+      return { request, reads };
+    };
 
     db.clear();
     sanity.queries.length = 0;
@@ -76,9 +96,21 @@ async function main() {
     assert.equal(denied.status, route.refusalStatus, label(`request ${route.max + 1} is refused`));
     assert.match(denied.headers.get('retry-after') ?? '', /^[1-9]\d*$/, label('refusal carries Retry-After seconds'));
 
+    // Refused before the body is read: the exhausted client's next request is a 429 with ZERO body reads.
+    if (route.method === 'POST') {
+      const spied = callSpied(`10.9.9.9, 203.0.113.9, ${lb}`);
+      const refused = await handler(spied.request);
+      assert.equal(refused.status, route.refusalStatus, label('a spied request from the exhausted client is refused'));
+      assert.equal(spied.reads.count, 0, label('the body is not read before the limiter refuses the request'));
+    }
+
     // Another client has its own budget.
-    const other = await call(`10.0.0.1, 203.0.113.77, ${lb}`);
+    const otherXff = `10.0.0.1, 203.0.113.77, ${lb}`;
+    const otherSpied = route.method === 'POST' ? callSpied(otherXff) : null;
+    const other = otherSpied ? await handler(otherSpied.request) : await call(otherXff);
     assert.notEqual(other.status, route.refusalStatus, label('another client is untouched'));
+    // The spy is live: an allowed request does read its body, so a zero above means the limiter ran first.
+    if (otherSpied) assert.ok(otherSpied.reads.count > 0, label('the spy sees the body read of an allowed request'));
 
     // A lone forwarded entry is untrusted: it lands in the shared strict bucket, not in a bucket it chose.
     const stored = db.all('abuseLimits');

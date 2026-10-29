@@ -122,6 +122,9 @@ MUTATIONS = [
     ("M86", "lib/data/tickets.ts", "last", None, "stillHoldsSeat(data, Date.now())", "true", golden("ledger-counts")),
     ("M87", "firestore.indexes.json", "first", None, '"fieldPath": "expireAt"', '"fieldPath": "expiresAt"', wiring("ttl-policy")),
     ("M88", "firestore.indexes.json", "first", None, '"ttl": true', '"ttl": false', wiring("ttl-policy")),
+    ("M89", "app/api/contact/route.ts", "first", None, "limit = await consumeAbuseLimit({", "await request.text();\n    limit = await consumeAbuseLimit({", golden("routes-limited")),
+    ("M90", "app/api/newsletter/subscribe/route.ts", "first", None, "limit = await consumeAbuseLimit({", "await request.text();\n    limit = await consumeAbuseLimit({", golden("routes-limited")),
+    ("M91", "app/api/newsletter/unsubscribe/route.ts", "first", None, "limit = await consumeAbuseLimit({", "await request.text();\n    limit = await consumeAbuseLimit({", golden("routes-limited")),
     ("M18", "app/api/contact/route.ts", "append", None, "", "\nimport { createAttemptStore } from '@/lib/newsletter-rate-store';\n", wiring("no-memory-limiter")),
 ]
 
