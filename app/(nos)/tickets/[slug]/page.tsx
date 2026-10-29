@@ -105,8 +105,8 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
   const [ticketType, pageData, salesState, allShows] = await Promise.all([
     fetchTicketTypeBySlug(slug),
     sanityFetch<TicketsPageData>({ query: ticketsPageQuery, tags: ['ticketsPage', 'sanity'] }),
-    sanityFetch<SalesState>({ query: nationalShowSalesQuery, tags: ['nationalShow', 'sanity'] }),
-    sanityFetch<SanityShowActivation[]>({ query: activeShowWindowQuery, tags: ['show', 'sanity'] }),
+    sanityFetch<SalesState>({ query: nationalShowSalesQuery, tags: ['nationalShow', 'sanity'], live: true }),
+    sanityFetch<SanityShowActivation[]>({ query: activeShowWindowQuery, tags: ['show', 'sanity'], live: true }),
   ]);
 
   // Every product, admission or programme, buys through this one screen: the hub's Thursday
@@ -165,7 +165,7 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
   // loader; no other product has them. A failed load leaves `cards` empty, so no counts show.
   const dayCounts =
     purchasable && cardData.requiresDaySelection && productId === 'day'
-      ? ((await loadTicketCardViewModels()).cards.day?.days ?? null)
+      ? ((await loadTicketCardViewModels({ live: true })).cards.day?.days ?? null)
       : null;
   const showProvisional = !withholdPlaceholderProse();
   // A linked day that is sold out is ignored: the group starts unselected, as with no ?day.

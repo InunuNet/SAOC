@@ -6,7 +6,7 @@
 // workshopSession documents are council-confirmed yet.
 // Relative imports with explicit `.ts` extensions — see load-ticket-card.ts's own header
 // comment for why.
-import { client } from '../../sanity/lib/client.ts';
+import { sanityFetch } from '../../sanity/lib/fetch.ts';
 
 import { loadTicketCardViewModel } from './load-ticket-card.ts';
 import type { WorkshopSessionViewModel } from './ticket-card.ts';
@@ -32,8 +32,6 @@ const WORKSHOP_SESSIONS_QUERY = `
 `;
 
 export async function loadWorkshopSessionViewModels(): Promise<WorkshopSessionViewModel[]> {
-  if (!client) return [];
-
   // A30 (added 2026-10-07, Codex finding, relayed by team-lead, widening A29's
   // loadTicketCardViewModel fix to its sibling loaders): a Sanity failure here must never
   // throw past this boundary either — the workshops page has nothing to do with ticket
@@ -42,9 +40,14 @@ export async function loadWorkshopSessionViewModels(): Promise<WorkshopSessionVi
   // silent swallow with no log.
   let docs: SanityWorkshopSessionDoc[];
   try {
-    docs = ((await client.fetch(WORKSHOP_SESSIONS_QUERY)) ?? []) as SanityWorkshopSessionDoc[];
+    docs =
+      (await sanityFetch<SanityWorkshopSessionDoc[]>({
+        query: WORKSHOP_SESSIONS_QUERY,
+        tags: ['workshopSession', 'sanity'],
+        propagateErrors: true,
+      })) ?? [];
   } catch (error) {
-    console.error('[load-workshop-sessions] client.fetch failed:', error);
+    console.error('[load-workshop-sessions] sanityFetch failed:', error);
     return [];
   }
 
