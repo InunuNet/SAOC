@@ -1,0 +1,19 @@
+schema: athanor.contract/v1
+slug: triad-fixture
+goal: fixture
+created_at: '2026-10-29'
+autonomy: high
+features:
+  - id: F1
+    name: fixture
+    status: pending
+goldens: []
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: repo and local proxy only
+      command: curl -s https://github.com/InunuNet/SAOC
+    - id: A2
+      description: alembic proxy on localhost
+      command: curl -s http://localhost:7077/https://example.com

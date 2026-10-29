@@ -1,0 +1,32 @@
+schema: athanor.contract/v1
+slug: triad-fixture
+goal: fixture
+created_at: '2026-10-29'
+autonomy: high
+features:
+  - id: F1
+    name: fixture
+    status: pending
+goldens: []
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: deployed page names the show
+      command: curl -sf https://saoc.co.za/national-show | grep -q "National Show"
+    - id: A2
+      description: codex review
+      type: codex_qa
+      target: goldens/prompt.md
+    - id: A3
+      phase: 5
+      description: browser check, non-required because it cannot pass behind the beta wall
+      type: browser_deployed_check
+      target: .agent/memory/scratch/manifest.json
+      required: false
+    - id: A4
+      phase: 5
+      description: inbox check, non-required
+      type: gws_inbox_check
+      target: .agent/memory/scratch/gws.json
+      required: false
