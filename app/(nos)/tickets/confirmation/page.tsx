@@ -5,7 +5,7 @@ import { cache } from 'react';
 import { NosHero } from '@/components/nos/NosHero';
 import { NosSection } from '@/components/nos/NosSection';
 import { ConfirmationPoller } from '@/components/tickets/ConfirmationPoller';
-import { DownloadTicketButton } from '@/components/tickets/DownloadTicketButton';
+import { ConfirmedTicketList } from '@/components/tickets/ConfirmedTicketList';
 import { client } from '@/sanity/lib/client';
 import { ticketsPageQuery } from '@/sanity/queries';
 import { normalizeBookingRefParam } from '@/lib/booking-ref';
@@ -137,43 +137,10 @@ export default async function TicketConfirmationPage({
             {orderTotal.toFixed(2)}
           </p>
 
-          <div className="mt-8 space-y-10">
-            {positions.map((position) => (
-              <div
-                key={position.bookingRef}
-                className="border-t border-rule pt-8 first:border-t-0 first:pt-0"
-              >
-                <img
-                  src={position.qrDataUri}
-                  alt={`QR code for booking reference ${position.bookingRef} — scan at the door for check-in`}
-                  width={240}
-                  height={240}
-                  className="mx-auto"
-                />
-
-                <div className="mt-6 space-y-1">
-                  <p className="font-serif text-[18px] font-medium text-ink">
-                    {position.attendeeName}
-                  </p>
-                  <p className="font-sans text-[14px] text-ink/80">
-                    {position.ticketType} · R{position.amount.toFixed(2)}
-                  </p>
-                  <p className="font-sans text-[13px] text-muted">
-                    Booking ref: {position.bookingRef}
-                  </p>
-                </div>
-
-                <div className="mt-6">
-                  <DownloadTicketButton
-                    orderReference={confirmedOrder.reference}
-                    bookingRef={position.bookingRef}
-                    attendeeName={position.attendeeName}
-                    label={downloadTicketButtonLabel}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+          <ConfirmedTicketList
+            confirmedOrder={confirmedOrder}
+            downloadTicketButtonLabel={downloadTicketButtonLabel}
+          />
 
           {ticketIncludesNote ? (
             <p className="mt-6 border-t border-rule pt-6 font-sans text-[13px] leading-relaxed text-muted">
