@@ -20,7 +20,7 @@ fad1773588529cc9d42fbd10608312b4c5e69e653b6b5f3bed3f01a2b253f926  .agent/memory/
 ef7482894c081782f7ebc71187a131027d7cb1e6881b266f2405e7fba3b23c7c  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-glyph-svg.mjs
 e932cec4544cedf91638cbd8544cf6f3f511a972fef3108e817c140a6511618e  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-h2-roles.mjs
 61e0e4d416a3bb5670c40a0c6f85bb2755492d761df5f6ef62dad44344f1f3e1  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-750-avif.mjs
-1da66928a673fe4b5931c1a22c52a6f1090b68ed3260dab26fa4edc34a45d514  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-bytes-sharpness.mjs
+afcd0e0cbbeaf883cf6ec8d4fa54a56f45567392022803468ad3793b928912ab  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-bytes-sharpness.mjs
 6c2ef8271053f86d7eba4365fb505e9ee4637514283273ec5bab924a411ce30b  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-dd-weight.mjs
 c6983ff7c5edb817eb39aa9b84d3c5dc0bfa15854d51b87aee5904790e1130eb  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-facts-global.mjs
 016492c2945f27d5ef1f83cc688849e6418a3585139a7742559d43197b1e3e46  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-facts-row.mjs
@@ -36,11 +36,11 @@ a5e25ca57147f06615827cb2b48f0ae7d776fc8ad0e796e763f70e2db87adee1  .agent/memory/
 07def352f81cafc35f34844c2de2eab3fefc27c1ae58a28d128a875e8def993f  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-legal-lg-rf.mjs
 36695ad257374b0fd4f2b800f490c31438d4be589dad61f2bf0472237e0dd8f2  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-nav-drawer-current.mjs
 43e060ee1fa0595fa1e4a85d7dc78afdefdacacfe75d487393bb1a0f10badc7f  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-nav-one-row.mjs
-15e7f512eb68193e168767181564fcc21c94ae54ac37b27cf4ecf40825ec9a49  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-nav-reach.mjs
+cd4a6e721662f571ccd9e403b896cadf15eb3c06b2caea24876d28fa05a56fc8  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-nav-reach.mjs
 f5b380f46ebe5f33d500024f60c5da33c7670313034c93effd30ceced7c74ddc  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-nav-spacing.mjs
 b916977dd068041ecdb7e49441bd1b69fa28ec1d5d60a5cfa2cc8047baf3d9b5  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-newsletter-contrast.mjs
 8f7168705d6c401a26e590af3e87c1170647df88c74ce732c6116b18b49a1521  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-newsletter-error.mjs
-2dddf7b97d479265d1ab2dcfa187398343bf6b507a932b3f7b5cb298b0dcd41f  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-no-new-colours.mjs
+d5e9d77616994766afdf40a1916d6971e731573d5345abe7e45d63510149e1d0  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-no-new-colours.mjs
 58bb2e284d02d6186e2274709717861392e83b92b91372aa79b2e17750c0cf3e  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-preload-order.mjs
 410c5cb61730c82993f5cc0153b5328b3cf9326963a27f1799c5250ce0fffc1b  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-status-mark-geometry.mjs
 a04b81e57c4cf2c7a8bfe176deb586bb2c94f2b3e362e0565c701800e82929d5  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-status-tokens.mjs
@@ -53,4 +53,6 @@ a04b81e57c4cf2c7a8bfe176deb586bb2c94f2b3e362e0565c701800e82929d5  .agent/memory/
 3a708253f54e53e95ddc9ad9e105c69c6ac2587ece1f52a5ff30ce993513c56a  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/lib.mjs
 82d83ebad3b0fc9cf4f3f8a35027b88552e44cbb7fb534050b5da1c8c810d549  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/make-favicon-renders.mjs
 33823d60694c10322c17307b1e5069602bb6a89faf31aeccb4462931691a7e23  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/measure-arrow-links.mjs
+58d8187ea9db516c2cbe7e72aa65bdb7dc93054608d8636c8cd3e81814ab3b25  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/README.md
 aed889733c9a095ab0d39178839f1b726dfeeb6e14781413fac739959ce83f5f  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/scan-fixtures-u0149.mjs
+752ead8a3f7915727134b577373662545f76b8917194db5f700a7c439b3c63df  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/verify-pins.mjs

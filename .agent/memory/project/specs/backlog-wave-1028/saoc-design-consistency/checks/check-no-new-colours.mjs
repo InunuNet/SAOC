@@ -1,7 +1,8 @@
 // Scope guard (guards the dev diff): no colour literal is ADDED under app/, components/ or lib/ except the three ruled status values and the one ruled on-dark token.
 // No invented colours (docs/rules/no-invention.md): everything else must reuse an existing token. Every notation is scanned: hex, rgb()/rgba(), hsl()/hsla(), oklch()/oklab()/lab()/lch()/hwb()/color() and CSS named colours.
 // A functional rgb()/rgba() literal (alpha ignored) passes only when its colour already exists as a hex token in the base's app/globals.css (black and white resolve to #000000 and #ffffff); hsl()/oklch()/oklab()/lab()/lch()/hwb()/color()
-// and named colours cannot be matched to a token and fail. var(...) references are never colour literals.
+// and named colours cannot be matched to a token and fail. var(...) references are never colour literals, BUT custom-property DEFINITIONS are scanned: any added `--x:` (CSS) or '--x': (JS) whose value is a bare
+// colour triplet ("1 2 3" or "1, 2, 3": the rgb(var(--x)) trick), a hex, a functional colour or a named colour (rebeccapurple) must match an existing token colour, so a var() cannot launder a new colour.
 import { execFileSync } from 'node:child_process';
 import { check, finish } from './lib.mjs';
 const ALLOWED = new Set(['#8f2834', '#2f5d3a', '#7a5a12', '#e8959d']); // #e8959d: --status-error-on-dark, NOS Design ruling (6.62:1 on #22281f), measured on that ground only
@@ -27,6 +28,12 @@ for (const line of diff.split('\n')) {
     if (/var\(/.test(m[1])) continue;
     const nums = m[1].replace(/[\/,]/g, ' ').trim().split(/\s+/).slice(0, 3).map((x) => (/%$/.test(x) ? NaN : parseFloat(x)));
     check(!nums.some(Number.isNaN) && nums.length === 3 && isToken(nums), `added colour ${m[0]} is not an existing token colour: ${show}`);
+  }
+  for (const m of text.matchAll(/(--[\w-]+)['"]?\s{0,3}[:=]\s{0,3}['"]?([^;'"}{]{1,120})/g)) {
+    const value = m[2].replace(/var\([^)]{0,80}\)/g, ' ').trim(); if (!value) continue;
+    const trip = /^(\d{1,3})[\s,]+(\d{1,3})[\s,]+(\d{1,3})(?:\s{0,3}\/\s{0,3}[\d.]+%?)?$/.exec(value);
+    if (trip) check(trip.slice(1, 4).map(Number).every((v) => v <= 255) && isToken(trip.slice(1, 4).map(Number)), `added custom property ${m[1]}: ${value} is a colour triplet that is not an existing token colour: ${show}`);
+    for (const word of value.split(/[^a-zA-Z]+/)) if (NAMED.has(word.toLowerCase())) check(false, `added custom property ${m[1]} holds the named colour "${word}": ${show}`);
   }
   for (const m of text.matchAll(/\b(?:hsla?|oklch|oklab|lab|lch|hwb|color|color-mix)\(([^)]{0,80})\)/gi)) if (!/var\(/.test(m[1]) || /color-mix/i.test(m[0])) check(false, `added colour ${m[0]} uses a notation that cannot be matched to a token: ${show}`);
   for (const re of [PROP, TW]) for (const m of text.matchAll(re)) { const nm = m[1].toLowerCase(); if (NAMED.has(nm)) check(false, `added named colour "${nm}": ${show}`); }
