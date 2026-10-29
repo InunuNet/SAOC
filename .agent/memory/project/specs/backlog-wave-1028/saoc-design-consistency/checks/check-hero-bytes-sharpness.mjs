@@ -1,7 +1,10 @@
 // F1d (SA-9): (1) the hero's AVIF and WebP candidates nearest 1200w are each <=180 KB as SERVED; (2) AVIF and WebP offer the
 // SAME width set; (3) sharpness: the chosen candidate is >= box x DPR (390@3 and 2056@2), capped at the largest candidate.
+// Format honesty: the WebP is a real <source type="image/webp"> (the <img> srcset is not accepted in its place) and separate from the AVIF <source>; EVERY candidate of each source and of the <img> fallback
+// is served with the matching content-type AND decodes (sharp metadata: format and the declared width), so a 200 that carries the wrong format or garbage bytes fails.
 import { withSite, openPage, check, finish } from './lib.mjs';
 import { readFileSync } from 'node:fs';
+import sharp from 'sharp';
 const NATIVE = JSON.parse(readFileSync('lib/hero-source-widths.json', 'utf8'));
 const MAX_BYTES = 180 * 1024;
 const widths = (set) => set.split(',').map((s) => Number(s.trim().split(/\s+/)[1]?.replace('w', ''))).filter(Boolean);
@@ -11,8 +14,21 @@ await withSite(async ({ base, browser, ctxOpts, deployed }) => {
   for (const path of paths) {
     const { page, ctx } = await openPage(browser, ctxOpts, base, path, 1440, 900);
     const sets = await page.evaluate(() => { const i = document.querySelector('[data-home-hero-media] img, [data-page-hero-media] img'); const p = i && i.closest('picture');
-      return { avif: p?.querySelector('source[type="image/avif"]')?.getAttribute('srcset') ?? '', webp: p?.querySelector('source[type="image/webp"]')?.getAttribute('srcset') || i?.getAttribute('srcset') || '' }; });
+      return { avif: p?.querySelector('source[type="image/avif"]')?.getAttribute('srcset') ?? '', webp: p?.querySelector('source[type="image/webp"]')?.getAttribute('srcset') ?? '', img: i?.getAttribute('srcset') ?? '', imgSrc: i?.getAttribute('src') ?? '' }; });
     check(!!sets.avif, `${path}: no AVIF srcset to measure`);
+    check(!!sets.webp, `${path}: no <source type="image/webp"> (the <img> srcset is not accepted as the WebP source)`);
+    check(!!sets.avif && sets.avif !== sets.webp, `${path}: the AVIF and WebP <source> srcsets are the same string, want separate sources`);
+    const cands = (set) => set.split(',').map((x) => x.trim().split(/\s+/)).filter((x) => x[0]).map((x) => ({ url: x[0], w: Number((x[1] ?? '').replace('w', '')) || null }));
+    for (const [name, mime, fmt, list] of [['avif', 'image/avif', 'heif', cands(sets.avif)], ['webp', 'image/webp', 'webp', cands(sets.webp)], ['img fallback', 'image/webp', 'webp', [...cands(sets.img), ...(sets.imgSrc ? [{ url: sets.imgSrc, w: null }] : [])]]]) {
+      check(list.length > 0, `${path}: ${name} has no candidates`);
+      for (const c of list) {
+        const u = new URL(c.url, base).href; const res = await ctx.request.get(u); const ct = (res.headers()['content-type'] ?? '').split(';')[0].trim(); const w = `${path}: ${name} candidate ${c.url.split('/').pop()}`;
+        check(res.status() === 200, `${w} -> ${res.status()}`); check(ct === mime, `${w} content-type is "${ct}", want ${mime}`);
+        let meta = null; try { meta = await sharp(await res.body()).metadata(); } catch { meta = null; }
+        check(meta !== null && meta.format === fmt, `${w} does not decode as ${fmt} (${meta ? meta.format : 'sharp could not read it'})`);
+        if (meta && c.w) check(meta.width === c.w, `${w} decodes ${meta.width}px wide, srcset says ${c.w}w`);
+      }
+    }
     if (sets.avif && sets.webp) {
       check(JSON.stringify(widths(sets.avif)) === JSON.stringify(widths(sets.webp)), `${path}: AVIF and WebP width sets differ`);
       for (const [name, set] of [['avif', sets.avif], ['webp', sets.webp]]) {
