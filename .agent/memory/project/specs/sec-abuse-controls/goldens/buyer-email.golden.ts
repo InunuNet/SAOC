@@ -9,7 +9,7 @@ import path from 'node:path';
 const ROOT = path.resolve(__dirname, '../../../../../..');
 
 async function main() {
-  const { normalizeBuyerEmail } = await import(path.join(ROOT, 'lib/buyer-email.ts'));
+  const { normalizeBuyerEmail, buyerPairKey } = await import(path.join(ROOT, 'lib/buyer-email.ts'));
   const n = (value: string): string => normalizeBuyerEmail(value);
 
   assert.equal(n('  Person@Example.ORG '), 'person@example.org', 'trim and lowercase');
@@ -41,6 +41,19 @@ async function main() {
   for (const value of ['a+x@d.org', 'A.B+c@gmail.com', ' x@y.z ', '+x@d.org']) {
     assert.equal(n(n(value)), n(value), `idempotent for ${value}`);
   }
+
+  // The pair key (SAOC-approved 2026-10-29): the limiter and the held-seat stamp are scoped to
+  // (trusted-hop actor, normalised email), so knowing an email gives no lever over its owner from
+  // another address. It is only ever a hash INPUT, never a stored value.
+  const A = 'ip4:203.0.113.9';
+  const B = 'ip4:203.0.113.10';
+  assert.equal(buyerPairKey(A, 'Buyer@X.org'), buyerPairKey(A, ' buyer+tag@x.org '), 'same actor, plus/case variants: one pair');
+  assert.notEqual(buyerPairKey(A, 'buyer@x.org'), buyerPairKey(B, 'buyer@x.org'), 'same email from another actor is a different pair');
+  assert.notEqual(buyerPairKey(A, 'buyer@x.org'), buyerPairKey(A, 'other@x.org'), 'same actor, other email is a different pair');
+  assert.notEqual(buyerPairKey(A, 'buyer@x.org'), A, 'the pair key is not the actor key alone');
+  assert.notEqual(buyerPairKey(A, 'buyer@x.org'), 'buyer@x.org', 'the pair key is not the email alone (no global per-email key)');
+  assert.notEqual(buyerPairKey('a\u0000b', 'c@x.org'), buyerPairKey('a', 'b\u0000c@x.org'), 'no separator ambiguity between actor and email');
+  assert.equal(buyerPairKey('unknown', 'buyer@x.org'), buyerPairKey('unknown', 'BUYER+1@x.org'));
 
   console.log('buyer-email golden: PASS');
 }

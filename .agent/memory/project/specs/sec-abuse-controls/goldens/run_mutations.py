@@ -76,6 +76,13 @@ MUTATIONS = [
     ("M40", BUYER_EMAIL, "anchor", "buyer-gmail-dots", "'.'", "'\\u0001'", golden("buyer-email")),
     ("M41", CHECKOUT, "first", None, "normalizeBuyerEmail(", "normalizeBuyerEmailX(", wiring("buyer-normalised")),
     ("M42", LIMITER, "first", None, "trustedClientIpFromForwardedFor(", "clientIpFromForwardedFor(", wiring("client-ip-helper")),
+    ("M43", BUYER_EMAIL, "anchor", "buyer-pair-actor", "[actorKey, ", "['', ", golden("buyer-email")),
+    ("M44", BUYER_EMAIL, "anchor", "buyer-pair-actor", "[actorKey, ", "['', ", golden("abuse-limiter")),
+    ("M45", CHECKOUT, "first", None, "buyerPairKey(", "normalizeBuyerEmail(", wiring("buyer-normalised")),
+    ("M46", CHECKOUT, "append", None, "", "\nconst leaked = { email: buyerIdentity };\n", wiring("buyer-normalised")),
+    ("M47", "lib/orders.ts", "append", None, "", "\nimport { normalizeBuyerEmail } from './buyer-email';\n", wiring("buyer-normalised")),
+    ("M48", LIMITER, "anchor", "stamp-hash", "hashAbuseKey(secret, scope, key)", "key", golden("abuse-limiter")),
+    ("M49", LIMITER, "anchor", "limiter-doc-id", "${keyHash}", "${input.key}", golden("abuse-limiter")),
     ("M18", "app/api/contact/route.ts", "append", None, "", "\nimport { createAttemptStore } from '@/lib/newsletter-rate-store';\n", wiring("no-memory-limiter")),
 ]
 

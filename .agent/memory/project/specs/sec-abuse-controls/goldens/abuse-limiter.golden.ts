@@ -60,7 +60,8 @@ class FakeDb {
 
 async function main() {
   const limiter = await import(path.join(ROOT, 'lib/abuse-limiter.ts'));
-  const { consumeAbuseLimit, clientActorKey, AbuseLimiterUnavailableError } = limiter;
+  const { consumeAbuseLimit, clientActorKey, abuseKeyStamp, AbuseLimiterUnavailableError } = limiter;
+  const { buyerPairKey } = await import(path.join(ROOT, 'lib/buyer-email.ts'));
   const SECRET = 'golden-secret-a';
   const t0 = new Date('2027-01-01T10:00:00Z');
   const at = (ms: number) => new Date(t0.getTime() + ms);
@@ -107,6 +108,30 @@ async function main() {
     assert.equal((await instanceB(at(1))).allowed, true);
     assert.equal((await instanceA(at(2))).allowed, true);
     assert.equal((await instanceB(at(3))).allowed, false, 'the 4th attempt, from the other instance, must be denied');
+  }
+
+  // 3a. Pair scoping (SAOC-approved 2026-10-29): IP-A exhausts its own budget for buyer@x and the
+  //     owner of the address, buying from IP-B, is untouched. There is no global per-email key.
+  {
+    const db = new FakeDb();
+    const buyerLimit = { scope: 'checkout-buyer', maxAttempts: 6, windowMs: HOUR };
+    const pairA = buyerPairKey('ip4:203.0.113.9', 'buyer@x.org');
+    for (let i = 0; i < 6; i++) {
+      assert.equal((await consumeAbuseLimit({ ...buyerLimit, key: pairA, now: at(i) }, { db, secret: SECRET })).allowed, true);
+    }
+    assert.equal((await consumeAbuseLimit({ ...buyerLimit, key: pairA, now: at(7) }, { db, secret: SECRET })).allowed, false, 'IP-A is exhausted for buyer@x');
+    assert.equal((await consumeAbuseLimit({ ...buyerLimit, key: buyerPairKey('ip4:203.0.113.9', 'buyer+x@x.org'), now: at(8) }, { db, secret: SECRET })).allowed, false, 'a plus variant from IP-A shares the exhausted pair');
+    assert.equal((await consumeAbuseLimit({ ...buyerLimit, key: buyerPairKey('ip4:203.0.113.10', 'buyer@x.org'), now: at(9) }, { db, secret: SECRET })).allowed, true, 'the same email from IP-B still succeeds (no lockout lever)');
+    // POPIA: nothing stored for these pairs contains a raw email or address.
+    const stored = JSON.stringify([...db.docs.entries()]);
+    for (const raw of ['buyer@', 'x.org', '203.0.113']) assert.ok(!stored.includes(raw), `no raw ${raw} in limiter documents`);
+    // The held-seat stamp is the same keyed hash: opaque hex, pair-scoped, plus-variant stable.
+    process.env.RECOVERY_TOKEN_SECRET = 'golden-recovery-secret';
+    const stampA = abuseKeyStamp('checkout-buyer', pairA);
+    assert.match(stampA, /^[0-9a-f]{64}$/, 'stamp is a 64-char hex hash');
+    assert.ok(!stampA.includes('buyer') && !stampA.includes('203'), 'stamp carries no raw value');
+    assert.equal(stampA, abuseKeyStamp('checkout-buyer', buyerPairKey('ip4:203.0.113.9', 'Buyer+z@X.org')), 'plus/case variants stamp identically');
+    assert.notEqual(stampA, abuseKeyStamp('checkout-buyer', buyerPairKey('ip4:203.0.113.10', 'buyer@x.org')), 'a different actor stamps differently: the D4 budget is per pair');
   }
 
   // 3b. Truly concurrent: ten callers racing the same key at the same instant, limit 3. Exactly

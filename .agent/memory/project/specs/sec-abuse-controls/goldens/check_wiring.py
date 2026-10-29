@@ -267,13 +267,26 @@ def check_client_gated() -> None:
 
 def check_buyer_normalised() -> None:
     route = read("app/api/tickets/checkout/route.ts")
-    if "normalizeBuyerEmail(" not in route or not re.search(r"from\s+['\"](@/lib/|\.\./\.\./\.\./\.\./lib/)buyer-email['\"]", route):
-        fail("checkout route must derive the buyer identity with normalizeBuyerEmail from lib/buyer-email")
+    if not re.search(r"from\s+['\"][^'\"]*lib/buyer-email['\"]", route):
+        fail("checkout route must import buyerPairKey from lib/buyer-email")
+    if len(re.findall(r"buyerPairKey\(", route)) != 1:
+        fail("checkout route must build the buyer identity exactly once, with buyerPairKey(actorKey, <raw email>)")
+    if "normalizeBuyerEmail" in route:
+        fail("checkout route must not use the bare normalised email as a key: only the (actor, email) pair is allowed (no global per-email key)")
     if re.search(r"buyerEmail\s*=\s*[^;\n]*\.trim\(\)\.toLowerCase\(\)", route):
-        fail("checkout route must not build the buyer identity from a bare trim/lowercase")
-    uses = re.findall(r"abuseKeyStamp\('checkout-buyer',\s*(\w+)\)", route) + re.findall(r"key:\s*(buyerEmail|buyerKeySource|\w+),\s*\n\s*maxAttempts:\s*CHECKOUT_LIMITS\.buyerRequests", route)
-    if len(set(uses)) != 1:
-        fail(f"the request limit and the held-seat stamp must use one buyer identity variable, saw {sorted(set(uses))}")
+        fail("checkout route must not build a buyer identity from a bare trim/lowercase")
+    if len(re.findall(r"\bbuyerIdentity\b", route)) != 3:
+        fail("buyerIdentity must appear exactly three times: its definition, the request-limit key and the abuseKeyStamp('checkout-buyer', ...) stamp. It must never be stored or mailed")
+    if not re.search(r"key:\s*buyerIdentity\b", route) or not re.search(r"abuseKeyStamp\('checkout-buyer',\s*buyerIdentity\)", route):
+        fail("the request limit and the held-seat stamp must both use buyerIdentity")
+    for root in ("app", "lib", "components"):
+        for path in sorted((ROOT / root).rglob("*.ts*")):
+            rel = str(path.relative_to(ROOT))
+            if rel in ("lib/buyer-email.ts", "app/api/tickets/checkout/route.ts"):
+                continue
+            body = path.read_text(errors="ignore")
+            if "normalizeBuyerEmail" in body or "buyerPairKey" in body:
+                fail(f"{rel}: the normalised email is a limiter key only and must not be used anywhere else")
 
 
 def check_client_ip_helper() -> None:

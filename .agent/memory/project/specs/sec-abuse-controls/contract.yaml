@@ -78,7 +78,7 @@ assertions:
       command: env -u NEXT_PUBLIC_APP_CHECK_RECAPTCHA_SITE_KEY pnpm build
       timeout_seconds: 900
     - id: A15
-      description: mutation proof - 42 mutations across limiter, budget, webhook cap, actor stamp, App Check, client gate, forwarded-header trust and wiring are each killed by a check above, files restored byte for byte
+      description: mutation proof - 49 mutations across limiter, budget, webhook cap, actor stamp, App Check, client gate, forwarded-header trust and wiring are each killed by a check above, files restored byte for byte
       command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/run_mutations.py
       timeout_seconds: 900
     - id: A16
@@ -115,10 +115,10 @@ assertions:
       description: no active ticket type, capacity pool or fixture reuses a retired slug that still has live phantom holds (adult, exhibitor)
       command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py retired-slugs
     - id: A33
-      description: buyer identity is one canonical form - plus tags stripped, gmail dots and googlemail folded, other mailboxes distinct, idempotent, never throws
+      description: buyer identity is one canonical form (plus tags stripped, gmail dots and googlemail folded, idempotent) and the pair key is per actor with no separator ambiguity
       command: pnpm exec tsx .agent/memory/project/specs/sec-abuse-controls/goldens/buyer-email.golden.ts
     - id: A34
-      description: the checkout request limit and the held-seat buyerKey stamp both use normalizeBuyerEmail, one variable, no bare trim/lowercase
+      description: the checkout request limit and the held-seat buyerKey stamp both use one buyerIdentity built once by buyerPairKey (actor, normalised email), no global per-email key, and the normalised email is used nowhere else (never stored, never mailed)
       command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py buyer-normalised
     - id: A35
       description: clientActorKey uses the new two-hop-minimum helper while the shared clientIpFromForwardedFor is left unchanged for its other callers
