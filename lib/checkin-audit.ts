@@ -29,6 +29,7 @@ export type CheckinAttemptOutcome =
   | 'admit'
   | 'not-found'
   | 'wrong-show'
+  | 'test_ticket'
   | 'unpaid'
   | 'already-checked-in'
   | 'malformed'

@@ -1,5 +1,6 @@
 import type { Timestamp } from 'firebase-admin/firestore';
 
+import { isIssuanceTestMode } from '@/lib/ticket-issuance-mode';
 import type { Order, Ticket, TicketType } from '@/types/index';
 
 /**
@@ -8,9 +9,9 @@ import type { Order, Ticket, TicketType } from '@/types/index';
  * contracts/golden/ticketing-checkout-orders/README.md for the full decision record,
  * including why this is a NEW sibling module rather than an extension of lib/orders.ts.
  *
- * `buildReservationDocs` is pure — no Firestore import, no Date.now()/new Date() call
- * anywhere in this file. Time is always the caller-supplied `now`, exactly like
- * lib/recovery-token.ts's own pattern.
+ * Builders perform no I/O or clock reads. Time is always the caller-supplied `now`;
+ * issuance mode comes from isIssuanceTestMode() (lib/ticket-issuance-mode.ts), which also
+ * requires the payment gateways to be live.
  */
 
 export interface BuildReservationDocsInput {
@@ -30,6 +31,9 @@ export interface BuildReservationDocsInput {
    *  own gate), never re-derived and never defaulted here. Replaces the formerly hardcoded
    *  PAYFAST_GATEWAY constant — see contracts/golden/ozow-m1-f2/README.md §3. */
   gateway: string;
+  /** SEC-06 (F4) — the adminSettings/ozowSandboxTestMode value checkout already read; an R0.01
+   *  sandbox-amount order is stamped as a test ticket. Required: callers cannot forget it. */
+  ozowSandboxTestMode: boolean;
 }
 
 export interface ReservationDocs {
@@ -47,7 +51,9 @@ export interface ReservationDocs {
  * attendeeName/attendeeEmail, for now").
  */
 export function buildReservationDocs(input: BuildReservationDocsInput): ReservationDocs {
+  const issuedInTestMode = isIssuanceTestMode({ ozowSandboxTestMode: input.ozowSandboxTestMode });
   const order: Omit<Order, 'id'> = {
+    issuedInTestMode,
     showId: input.showId,
     buyerName: input.attendeeName,
     buyerEmail: input.attendeeEmail,
@@ -69,6 +75,7 @@ export function buildReservationDocs(input: BuildReservationDocsInput): Reservat
   };
 
   const position: Omit<Ticket, 'id'> & { idempotencyKey: string } = {
+    issuedInTestMode,
     bookingRef: input.bookingRef,
     showId: input.showId,
     attendeeName: input.attendeeName,
@@ -236,6 +243,9 @@ export interface BuildMultiReservationDocsInput {
    *  checkout/route.ts's reserveTicket() actually calls in production — fixing only the
    *  single-item sibling above would not have covered the live call path. */
   gateway: string;
+  /** SEC-06 (F4) — the adminSettings/ozowSandboxTestMode value checkout already read; an R0.01
+   *  sandbox-amount order is stamped as a test ticket. Required: callers cannot forget it. */
+  ozowSandboxTestMode: boolean;
   /** ozow-sandbox-toggle F1 — what we told the gateway to expect at initiate() time; `null`
    *  for PayFast or Ozow with the sandbox test-mode flag off. See
    *  contracts/golden/ozow-sandbox-toggle-f1/README.md §3b. */
@@ -263,10 +273,12 @@ export interface MultiReservationDocs {
 export function buildMultiReservationDocs(
   input: BuildMultiReservationDocsInput
 ): MultiReservationDocs {
+  const issuedInTestMode = isIssuanceTestMode({ ozowSandboxTestMode: input.ozowSandboxTestMode });
   const firstLineItem = input.lineItems[0];
   const totalAmount = input.lineItems.reduce((sum, lineItem) => sum + lineItem.amount, 0);
 
   const order: Omit<Order, 'id'> = {
+    issuedInTestMode,
     showId: input.showId,
     buyerName: firstLineItem.attendeeName,
     buyerEmail: firstLineItem.attendeeEmail,
@@ -289,6 +301,7 @@ export function buildMultiReservationDocs(
 
   const positions: (Omit<Ticket, 'id'> & { idempotencyKey: string })[] = input.lineItems.map(
     (lineItem) => ({
+      issuedInTestMode,
       bookingRef: lineItem.bookingRef,
       showId: input.showId,
       attendeeName: lineItem.attendeeName,

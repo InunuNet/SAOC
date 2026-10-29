@@ -7,6 +7,7 @@ import {
   OZOW_TRANSACTION_STATUS_URL,
 } from '@/lib/ozow';
 import { BOOKING_REF_PREFIX } from '@/lib/booking-ref';
+import { OZOW_SANDBOX_MODE } from '@/lib/payments/sandbox-mode';
 import { constantTimeStringEqual } from '@/lib/recovery-token';
 import { OZOW_FIELD_MAX_LENGTH, findFieldLengthViolations } from './gateway-field-limits';
 import {
@@ -84,7 +85,7 @@ const STATUS_ERROR = 'Error';
 /** Adapter-owned constants — sandbox-only throughout this mission, not caller input. */
 const OZOW_COUNTRY_CODE = 'ZA';
 const OZOW_CURRENCY_CODE = 'ZAR';
-const OZOW_IS_TEST = 'true';
+const OZOW_IS_TEST = String(OZOW_SANDBOX_MODE);
 
 /**
  * The environment keys each operation needs, per operation and NOT globally. Ozow reuses

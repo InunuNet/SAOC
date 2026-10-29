@@ -222,6 +222,22 @@ Phase D2 (Stripe SA payment gateway) and D4 (ticket buy flow) are implemented bu
 3. Add Stripe keys to Secret Manager: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
 4. Add `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` to `apphosting.yaml` env (safe to inline)
 5. Enable the buy-flow pages (currently behind a feature flag — ask InunuNet)
+6. Flipping `TICKETING_PAYMENTS_LIVE` also activates the door's test-ticket rejection. Before
+   launch, re-issue any legitimate pre-launch tickets (for example comps), since older tickets
+   are refused at the door in live mode. Verify one sandbox ticket is refused at the door. See
+   [docs/door-reject-test-tickets.md](door-reject-test-tickets.md).
+   In the same reviewed commit, move each adapter off the sandbox and flip its flag in
+   `lib/payments/sandbox-mode.ts`; until both are false new tickets stay stamped as test. Do not
+   backfill `issuedInTestMode` on existing documents. Before launch, cancel the 31 expired
+   `reserved` orders and void or purge the 17 sandbox-paid orders and their tickets. After
+   deploy, make one real-money minimum purchase, confirm the ticket document has
+   `issuedInTestMode: false`, and scan it at the door. Vendor stand orders are out of scope
+   (no door path).
+   The single go-live commit flips `TICKETING_PAYMENTS_LIVE` and both adapter constants
+   (`OZOW_SANDBOX_MODE` and `PAYFAST_SANDBOX_MODE` in `lib/payments/sandbox-mode.ts`). The admin
+   toggle `adminSettings/ozowSandboxTestMode` (R0.01 amount override) must be turned off at the
+   same deploy: while it is on, every new ticket is stamped as test and refused at the door, even
+   with all three constants live.
 
 ---
 
