@@ -578,6 +578,15 @@
    "match": "if \\(req === 'next-sanity'\\) return \\{[^\\n]*\\.\\.\\.fakeSanity \\};\\n[^\\n]*if \\(req === 'firebase-admin/app'\\) return \\{[^\\n]*getApps: \\(\\) => \\[\\{\\}\\] \\};\\n[^\\n]*if \\(req === 'firebase-admin/firestore'\\) return \\{[^\\n]*getFirestore: \\(\\) => fakeDb \\};[\\s\\S]{0,120}?globalThis\\.fetch = \\(async \\(input: unknown\\) => \\{ outbound\\.push\\(String\\(input\\)\\); throw new Error\\('unexpected outbound fetch'\\); \\}\\)",
    "note": "Module._load hook swaps next-sanity createClient, firebase-admin/app getApps and firebase-admin/firestore getFirestore for fakes; globalThis.fetch is a throwing spy",
    "target": "in-process checkout route handler with Sanity, Firestore and network mocked"
+  },
+  "scripts/auth-disable-signup.ts": {
+   "class": "MODAL",
+   "note": "default mode is dry-run GET; --apply PATCHes live Identity Toolkit config. Contract runs it only with --config-fixture (offline, refused with --apply/--verify) or --verify (GET only)",
+   "safe_args": [
+    "--config-fixture",
+    "--verify"
+   ],
+   "target": "Identity Toolkit saoc-webapp config client.permissions.disabledUserSignup; --config-fixture and --verify never write"
   }
  }
 }
