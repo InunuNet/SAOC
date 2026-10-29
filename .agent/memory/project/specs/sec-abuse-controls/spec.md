@@ -193,6 +193,26 @@ Anchors (mutation proof). Put `// anchor: <id>` on the line directly above the d
    ```
    The `loadBuildSource` ternary and the flag-off guarantees (no key means no loader call and no fetch) are unchanged; `getCheckoutAppCheckToken` still returns null on any failure. `app-check-client.golden.ts` section 4, A37, mutants M53 and M56.
 10. **Held-seat reads are transactional (decided).** The two held-seat queries must be passed to `transaction.get(...)` (A36 now pins this; a plain `.get()` outside the transaction is a TOCTOU hole). Mutants M54 and M55.
+11. **Hold budget proven by effect, not text (decided, round 4).** `checkout-route.golden.ts` (A38) drives the REAL route handler against the in-memory Firestore and Sanity fakes in `goldens/fakes.ts`: held-seat query results flow through `summariseHeldSeats` and `evaluateHoldBudget` to a 429 refusal, the cap is exact at 40 for actor and for the (actor, email) pair, expired, paid, cancelled and other-actor seats are excluded, a no-expiry or duck-typed-expiry reservation holds, a replay is never refused, and two racing 20-seat carts cannot both pass (a query run outside the transaction fails this). Mutants M63-M70.
+12. **Key derivation proven by exact bytes (decided, round 4).** `abuse-limiter.golden.ts` section 7b recomputes `HMAC-SHA256(RECOVERY_TOKEN_SECRET, 'abuse-limiter:v1')` and every stamp and document id with `node:crypto` and compares bytes (concatenation or a swapped key fails), asserts no log line or thrown error contains the secret, the derived key or the raw key, and that a missing secret throws `AbuseLimiterUnavailableError`. The in-memory store rejects any `undefined` value like the real SDK. Required anchors in `lib/abuse-limiter.ts`: `// anchor: limiter-derive` above the `return createHmac('sha256', base).update(SECRET_DOMAIN_LABEL)...` line in `deriveSecret`, `// anchor: limiter-log` above `scope: input.scope,` inside the `abuse-limit-denied` log object, `// anchor: limiter-doc-scope` above `scope: input.scope,` inside `transaction.set`. Mutants M57-M60.
+13. **A failed App Check import still sends the checkout (decided, round 4).** New pure module `components/tickets/appCheckHeader.ts` exports `appCheckHeaders(loadClient)`: no loader returns `{}`; otherwise it awaits `(await loadClient()).getCheckoutAppCheckToken()` and returns `{ 'X-Firebase-AppCheck': token }` for a truthy token, and `{}` for a null token or ANY failure (rejected import, synchronous loader throw, failed attestation), so the request is sent tokenless and the server decides. It receives the loader and never imports `lib/app-check-client` or the SDK, so the flag-off bundle guarantee holds. Exactly:
+   ```
+   export interface CheckoutAppCheckClient { getCheckoutAppCheckToken(): Promise<string | null> }
+   export async function appCheckHeaders(
+     loadClient: (() => Promise<CheckoutAppCheckClient>) | undefined,
+   ): Promise<Record<string, string>> {
+     if (!loadClient) return {};
+     try {
+       const token = await (await loadClient()).getCheckoutAppCheckToken();
+       return token ? { 'X-Firebase-AppCheck': token } : {};
+     } catch {
+       // anchor: appcheck-header-fallback
+       return {};
+     }
+   }
+   ```
+   In `components/tickets/useTicketCart.ts` the fetch headers become `{ 'Content-Type': ..., 'Idempotency-Key': idempotencyKey, ...(await appCheckHeaders(loadAppCheckClient)) }` and the direct `getCheckoutAppCheckToken` call and `appCheckToken` variable go (the outer `catch` stays for genuine network errors). The `loadAppCheckClient` build-time ternary is unchanged. `appcheck-header.golden.ts` (A42), `client-gated` (A23), mutants M61 and M62.
+14. **Every limited route and handler proven by effect (decided, round 4).** `routes-limited.golden.ts` (A39) drives the real contact, newsletter subscribe and unsubscribe, ticket status and ticket pdf handlers (existing limits 5/h, 5/h, 10/h, 120/min, 60/min), `webhook-handlers.golden.ts` (A40) drives both notification handlers and the four ITN routes, `ledger-counts.golden.ts` (A41) drives both ledger functions. Mutants M71-M86. These replace the text-only reading of A5-A7 and A17 as the proof; the text checks remain as cheap ordering pins.
 6. **Single-entry forwarded header (decided).** See D2. H4 QA must confirm on the deployed backend that real requests carry two or more hops; if the platform ever sends one, all callers share the strict `unknown` bucket (fail closed, limits bite everyone) rather than trusting a client-chosen address.
 
 ## Rulings after the dev run (8c6060eb)

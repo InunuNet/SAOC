@@ -617,6 +617,36 @@
    "match": "const original = Object\\.fromEntries\\(files\\.map\\(\\(file\\) => \\[file, readFileSync",
    "note": "MUT hits are the local in-memory mutate callbacks that rewrite source text strings; the script only reads four repository files and calls pure check functions, writes nothing and makes no request",
    "target": "source text only"
+  },
+  ".agent/memory/project/specs/sec-abuse-controls/goldens/checkout-route.golden.ts": {
+   "class": "FAKE",
+   "match": "FakeFirestore",
+   "note": "drives the real checkout route against the in-memory FakeFirestore and a Sanity fake; globalThis.fetch is replaced by a throwing spy; no credentials are set",
+   "target": "in-process route handler, in-memory Firestore, no network"
+  },
+  ".agent/memory/project/specs/sec-abuse-controls/goldens/routes-limited.golden.ts": {
+   "class": "FAKE",
+   "match": "FakeFirestore",
+   "note": "drives five real route handlers against the in-memory FakeFirestore; globalThis.fetch is a throwing spy",
+   "target": "in-process route handlers, in-memory Firestore, no network"
+  },
+  ".agent/memory/project/specs/sec-abuse-controls/goldens/webhook-handlers.golden.ts": {
+   "class": "FAKE",
+   "match": "verifyNotification: async \\(\\) =>",
+   "note": "stub provider fails verification so both handlers return before any Firestore access; the ITN route files are only sent over-cap bodies and return 413",
+   "target": "in-process NextRequest to http://localhost, stub provider"
+  },
+  ".agent/memory/project/specs/sec-abuse-controls/goldens/ledger-counts.golden.ts": {
+   "class": "FAKE",
+   "match": "FakeFirestore",
+   "note": "reads through the in-memory FakeFirestore only",
+   "target": "in-memory Firestore"
+  },
+  ".agent/memory/project/specs/sec-abuse-controls/goldens/fakes.ts": {
+   "class": "FAKE",
+   "match": "class FakeFirestore",
+   "note": "the in-memory Firestore and Sanity fakes themselves; patches firebase-admin exports in process memory only",
+   "target": "in-memory fakes"
   }
  }
 }

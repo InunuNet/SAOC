@@ -12,6 +12,13 @@ const HOUR = 3_600_000;
 // read set changed meanwhile is aborted and the callback re-run (as Firestore does), and each read
 // yields to the event loop so concurrent callers genuinely interleave. A read-modify-write that is
 // not protected by the transaction (a stale read, or a lost update) therefore over-allows here.
+function assertNoUndefined(value: unknown, where: string): void {
+  if (value === undefined) throw new Error(`Cannot use "undefined" as a Firestore value (${where})`);
+  if (Array.isArray(value)) value.forEach((entry, i) => assertNoUndefined(entry, `${where}[${i}]`));
+  else if (typeof value === 'object' && value !== null && Object.getPrototypeOf(value) === Object.prototype) {
+    for (const [key, entry] of Object.entries(value)) assertNoUndefined(entry, `${where}.${key}`);
+  }
+}
 const MAX_ATTEMPTS = 50; // the real SDK retries 5 times; the fake allows more so 10 racers can all settle
 class FakeDb {
   docs = new Map<string, Record<string, unknown>>();
@@ -41,6 +48,7 @@ class FakeDb {
           return { exists: data !== undefined, data: () => (data === undefined ? undefined : structuredClone(data)) };
         },
         set: (ref, data) => {
+          assertNoUndefined(data, ref.path);
           pending.set(ref.path, data);
         },
       });
@@ -259,6 +267,71 @@ async function main() {
     assert.equal(clientActorKey(null), 'unknown');
     assert.equal(clientActorKey(''), 'unknown');
     assert.equal(clientActorKey('a, not-an-ip, b'), 'unknown', 'a non-address hop never becomes a key');
+  }
+
+  // 7b. Key derivation (SAOC lead, prompt item 16): the limiter key is HMAC-SHA256(RECOVERY_TOKEN_SECRET,
+  //     "abuse-limiter:v1") and every stored id / stamp is HMAC-SHA256(that key, scope NUL key). Exact
+  //     bytes, computed here independently, so concatenating secret and label (or swapping them) fails.
+  {
+    const { createHmac } = await import('node:crypto');
+    const base = 'golden-base-secret-0123456789';
+    process.env.RECOVERY_TOKEN_SECRET = base;
+    const derived = createHmac('sha256', base).update('abuse-limiter:v1').digest('hex');
+    const expectedId = (scope: string, key: string) => createHmac('sha256', derived).update(`${scope}\0${key}`).digest('hex');
+    assert.equal(abuseKeyStamp('checkout-buyer', 'some-key'), expectedId('checkout-buyer', 'some-key'), 'stamp bytes are HMAC(derived key, scope NUL key)');
+    assert.notEqual(abuseKeyStamp('checkout-buyer', 'some-key'), createHmac('sha256', base).update('checkout-buyer\0some-key').digest('hex'), 'the raw secret is not the HMAC key');
+    const db = new FakeDb();
+    await consumeAbuseLimit({ scope: 's', key: 'k', maxAttempts: 1, windowMs: HOUR, now: at(0) }, { db });
+    assert.deepEqual([...db.docs.keys()], [`abuseLimits/s:${expectedId('s', 'k')}`], 'limiter document id uses the derived key');
+    // An explicit secret is used as the HMAC key directly (the test seam), and is never logged either.
+    const seamDb = new FakeDb();
+    await consumeAbuseLimit({ scope: 's', key: 'k', maxAttempts: 1, windowMs: HOUR, now: at(0) }, { db: seamDb, secret: 'seam-secret' });
+    assert.deepEqual([...seamDb.docs.keys()], [`abuseLimits/s:${createHmac('sha256', 'seam-secret').update('s\0k').digest('hex')}`]);
+
+    // Nothing the limiter logs or throws contains the secret, the derived key or the raw key.
+    const lines: string[] = [];
+    const originals = { log: console.log, info: console.info, warn: console.warn, error: console.error, debug: console.debug };
+    for (const level of Object.keys(originals) as Array<keyof typeof originals>) {
+      console[level] = (...args: unknown[]) => { lines.push(args.map((a) => (a instanceof Error ? `${a.name}:${a.message}:${String(a.cause)}` : typeof a === 'string' ? a : JSON.stringify(a))).join(' ')); };
+    }
+    const thrown: string[] = [];
+    try {
+      const logDb = new FakeDb();
+      const logBase = { scope: 'logs', key: 'raw-key-person@example.org', maxAttempts: 1, windowMs: HOUR };
+      await consumeAbuseLimit({ ...logBase, now: at(0) }, { db: logDb });
+      await consumeAbuseLimit({ ...logBase, now: at(1) }, { db: logDb }); // denied: logs
+      logDb.failing = true;
+      await consumeAbuseLimit({ ...logBase, now: at(2) }, { db: logDb }).catch((e: Error) => thrown.push(`${e.name}:${e.message}:${String(e.cause)}`));
+      delete process.env.RECOVERY_TOKEN_SECRET;
+      await consumeAbuseLimit({ ...logBase, now: at(3) }, { db: new FakeDb() }).catch((e: Error) => thrown.push(`${e.name}:${e.message}`));
+      assert.throws(() => abuseKeyStamp('s', 'k'), (e: Error) => { thrown.push(`${e.name}:${e.message}`); return e instanceof AbuseLimiterUnavailableError; }, 'a missing secret fails closed');
+    } finally {
+      Object.assign(console, originals);
+      process.env.RECOVERY_TOKEN_SECRET = base;
+    }
+    assert.ok(lines.length > 0, 'the denial was logged (keyed id only)');
+    for (const text of [...lines, ...thrown]) {
+      for (const secret of [base, derived, 'seam-secret', 'raw-key-person@example.org', 'example.org']) {
+        assert.ok(!text.includes(secret), `no secret, derived key or raw key in logs and errors: ${secret}`);
+      }
+    }
+    delete process.env.RECOVERY_TOKEN_SECRET;
+  }
+
+  // 7c. The two forwarded-header helpers. The trusted one needs two hops; the original keeps its
+  //     single-entry behaviour for its other (SAOC lane) callers.
+  {
+    const clientIp = await import(path.join(ROOT, 'lib/client-ip.ts'));
+    const trusted = clientIp.trustedClientIpFromForwardedFor as (header: string | null | undefined) => string | null;
+    assert.equal(trusted('203.0.113.9, 35.191.0.1'), '203.0.113.9');
+    assert.equal(trusted('1.1.1.1, 203.0.113.9, 35.191.0.1'), '203.0.113.9');
+    assert.equal(trusted(' 6.6.6.6 ,, 9.9.9.9 , 10.0.0.1 '), '9.9.9.9');
+    for (const header of [null, undefined, '', '   ', '203.0.113.9', ' 203.0.113.9 ', '203.0.113.9,', ' , 203.0.113.9', ',,']) {
+      assert.equal(trusted(header), null, `fewer than two hops is untrusted: ${JSON.stringify(header)}`);
+    }
+    assert.equal(clientIp.clientIpFromForwardedFor('203.0.113.9'), '203.0.113.9', 'the shared helper still returns a lone entry');
+    assert.equal(clientIp.clientIpFromForwardedFor('1.1.1.1, 203.0.113.9, 35.191.0.1'), '203.0.113.9');
+    assert.equal(clientIp.clientIpFromForwardedFor(''), null);
   }
 
   // 8. Importing the module must not load firebase-admin (the golden runs without it).

@@ -28,6 +28,12 @@ goldens:
   - .agent/memory/project/specs/sec-abuse-controls/goldens/webhook-body.golden.ts
   - .agent/memory/project/specs/sec-abuse-controls/goldens/reservation-actor.golden.ts
   - .agent/memory/project/specs/sec-abuse-controls/goldens/buyer-email.golden.ts
+  - .agent/memory/project/specs/sec-abuse-controls/goldens/fakes.ts
+  - .agent/memory/project/specs/sec-abuse-controls/goldens/checkout-route.golden.ts
+  - .agent/memory/project/specs/sec-abuse-controls/goldens/routes-limited.golden.ts
+  - .agent/memory/project/specs/sec-abuse-controls/goldens/webhook-handlers.golden.ts
+  - .agent/memory/project/specs/sec-abuse-controls/goldens/ledger-counts.golden.ts
+  - .agent/memory/project/specs/sec-abuse-controls/goldens/appcheck-header.golden.ts
   - .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py
   - .agent/memory/project/specs/sec-abuse-controls/goldens/run_mutations.py
 
@@ -78,7 +84,7 @@ assertions:
       command: env -u NEXT_PUBLIC_APP_CHECK_RECAPTCHA_SITE_KEY pnpm build
       timeout_seconds: 900
     - id: A15
-      description: mutation proof - 56 mutations across limiter, budget, webhook cap, actor stamp, App Check, client gate, forwarded-header trust and wiring are each killed by a check above, files restored byte for byte
+      description: mutation proof - 88 mutations across limiter, budget, webhook cap, actor stamp, App Check, client gate, forwarded-header trust and wiring are each killed by a check above, files restored byte for byte
       command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/run_mutations.py
       timeout_seconds: 900
     - id: A16
@@ -129,6 +135,21 @@ assertions:
     - id: A37
       description: a rejected App Check SDK load is not cached - the next checkout retries and gets a token, a successful load is cached, concurrent calls share one load, and the default loader is wrapped in memoizeSuccessfulLoad
       command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py client-load-recovery
+    - id: A38
+      description: the real checkout route against in-memory Firestore and Sanity - per-actor limit before the body is read, lone and forged forwarded entries, fail closed on store failure and missing secret, per-(actor,email) buyer limit with no lockout lever and no plus-address dodge, held-seat budget exact at 40 for actor and pair (expired, paid, cancelled and other actors excluded, no-expiry and duck-typed expiry hold, replay never refused, two racing carts cannot both pass), App Check after the limiter and before the body, nothing raw stored
+      command: pnpm exec tsx .agent/memory/project/specs/sec-abuse-controls/goldens/checkout-route.golden.ts
+    - id: A39
+      description: the real contact, newsletter subscribe, newsletter unsubscribe, ticket status and ticket pdf handlers - the Nth request passes and the N+1th gets 429 with Retry-After, a forged leading hop buys nothing, another client is untouched, store failure and missing secret refuse the request, no raw address stored
+      command: pnpm exec tsx .agent/memory/project/specs/sec-abuse-controls/goldens/routes-limited.golden.ts
+    - id: A40
+      description: the two shared notification handlers and the four ITN routes - over-cap declared, chunked and lying bodies get 413 without verification and cancel the stream, a body exactly at the cap verifies, no other body reader is used
+      command: pnpm exec tsx .agent/memory/project/specs/sec-abuse-controls/goldens/webhook-handlers.golden.ts
+    - id: A41
+      description: the capacity ledger counts - both functions, inside and outside a transaction, release only expired Timestamp reservations and keep paid, Pending, legacy and fail-closed holds
+      command: pnpm exec tsx .agent/memory/project/specs/sec-abuse-controls/goldens/ledger-counts.golden.ts
+    - id: A42
+      description: the cart hook's App Check header - a rejected SDK import, a failed attestation and a synchronous throw all send the checkout tokenless instead of skipping it, a fresh token per call, no loader means no header
+      command: pnpm exec tsx .agent/memory/project/specs/sec-abuse-controls/goldens/appcheck-header.golden.ts
     - id: A27
       description: cross-model adversarial review of the diff
       type: codex_qa

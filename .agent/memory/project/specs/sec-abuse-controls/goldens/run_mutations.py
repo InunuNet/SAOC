@@ -90,6 +90,38 @@ MUTATIONS = [
     ("M54", CHECKOUT, "first", None, "transaction.get(\n        tickets.where('clientKey', '==', input.actor.clientKey).where('status', '==', RESERVED_STATUS)\n      )", "tickets.where('clientKey', '==', input.actor.clientKey).where('status', '==', RESERVED_STATUS).get()", wiring("hold-budget-status")),
     ("M55", CHECKOUT, "first", None, "transaction.get(\n        tickets.where('buyerKey', '==', input.actor.buyerKey).where('status', '==', RESERVED_STATUS)\n      )", "tickets.where('buyerKey', '==', input.actor.buyerKey).where('status', '==', RESERVED_STATUS).get()", wiring("hold-budget-status")),
     ("M56", APPCHECK_CLIENT, "first", None, "memoizeSuccessfulLoad(loadBuildSource)", "(() => loadBuildSource())", wiring("client-load-recovery")),
+    ("M57", LIMITER, "anchor", "limiter-derive", "createHmac('sha256', base).update(SECRET_DOMAIN_LABEL)", "createHmac('sha256', '').update(base + SECRET_DOMAIN_LABEL)", golden("abuse-limiter")),
+    ("M58", LIMITER, "anchor", "limiter-derive", "createHmac('sha256', base).update(SECRET_DOMAIN_LABEL)", "createHmac('sha256', SECRET_DOMAIN_LABEL).update(base)", golden("abuse-limiter")),
+    ("M59", LIMITER, "anchor", "limiter-log", "scope: input.scope,", "scope: input.scope, secretLeak: deriveSecret(),", golden("abuse-limiter")),
+    ("M60", LIMITER, "anchor", "limiter-doc-scope", "scope: input.scope,", "scope: input.scope, note: undefined,", golden("abuse-limiter")),
+    ("M61", "components/tickets/appCheckHeader.ts", "anchor", "appcheck-header-fallback", "return {};", "throw new Error('skip the request');", golden("appcheck-header")),
+    ("M62", "components/tickets/useTicketCart.ts", "first", None, "appCheckHeaders(", "appCheckHeadersX(", wiring("client-gated")),
+    ("M63", CHECKOUT, "first", None, "heldByActorSnapshot.docs.map((doc) => doc.data())", "[]", golden("checkout-route")),
+    ("M64", CHECKOUT, "first", None, "heldByBuyerSnapshot.docs.map((doc) => doc.data())", "[]", golden("checkout-route")),
+    ("M65", CHECKOUT, "first", None, "if (!holdBudget.ok)", "if (false)", golden("checkout-route")),
+    ("M66", CHECKOUT, "first", None, "if (!actorLimit.allowed)", "if (false)", golden("checkout-route")),
+    ("M67", CHECKOUT, "first", None, "if (!buyerLimit.allowed)", "if (false)", golden("checkout-route")),
+    ("M68", CHECKOUT, "first", None, "return limiterUnavailable(error);", "actorLimit = { allowed: true };", golden("checkout-route")),
+    ("M69", CHECKOUT, "first", None, "if (!appCheck.ok) {", "if (false) {", golden("checkout-route")),
+    ("M70", CHECKOUT, "first", None, "transaction.get(\n        tickets.where('clientKey', '==', input.actor.clientKey).where('status', '==', RESERVED_STATUS)\n      )", "tickets.where('clientKey', '==', input.actor.clientKey).where('status', '==', RESERVED_STATUS).get()", golden("checkout-route")),
+    ("M71", "app/api/contact/route.ts", "first", None, "if (!limit.allowed)", "if (false)", golden("routes-limited")),
+    ("M72", "app/api/newsletter/subscribe/route.ts", "first", None, "if (!limit.allowed)", "if (false)", golden("routes-limited")),
+    ("M73", "app/api/newsletter/unsubscribe/route.ts", "first", None, "if (!limit.allowed)", "if (false)", golden("routes-limited")),
+    ("M74", "app/api/tickets/status/route.ts", "first", None, "if (!limit.allowed)", "if (false)", golden("routes-limited")),
+    ("M75", "app/api/tickets/pdf/route.ts", "first", None, "if (!limit.allowed)", "if (false)", golden("routes-limited")),
+    ("M76", "app/api/contact/route.ts", "first", None, "key: clientActorKey(request.headers.get('x-forwarded-for')),", "key: 'constant',", golden("routes-limited")),
+    ("M77", "app/api/newsletter/subscribe/route.ts", "first", None, "key: clientActorKey(request.headers.get('x-forwarded-for')),", "key: 'constant',", golden("routes-limited")),
+    ("M78", "app/api/newsletter/unsubscribe/route.ts", "first", None, "key: clientActorKey(request.headers.get('x-forwarded-for')),", "key: 'constant',", golden("routes-limited")),
+    ("M79", "app/api/tickets/status/route.ts", "first", None, "key: clientActorKey(request.headers.get('x-forwarded-for')),", "key: 'constant',", golden("routes-limited")),
+    ("M80", "app/api/tickets/pdf/route.ts", "first", None, "key: clientActorKey(request.headers.get('x-forwarded-for')),", "key: 'constant',", golden("routes-limited")),
+    ("M81", "lib/tickets-notification.ts", "first", None, "if (!capped.ok)", "if (false)", golden("webhook-handlers")),
+    ("M82", "lib/vendor-stand-payment-notification.ts", "first", None, "if (!capped.ok)", "if (false)", golden("webhook-handlers")),
+    ("M83", "lib/tickets-notification.ts", "first", None, "await readCappedBody(request)", "{ ok: true as const, text: await request.text() }", golden("webhook-handlers")),
+    ("M84", "lib/vendor-stand-payment-notification.ts", "first", None, "await readCappedBody(request)", "{ ok: true as const, text: await request.text() }", golden("webhook-handlers")),
+    ("M85", "lib/data/tickets.ts", "first", None, "stillHoldsSeat(data, Date.now())", "true", golden("ledger-counts")),
+    ("M86", "lib/data/tickets.ts", "last", None, "stillHoldsSeat(data, Date.now())", "true", golden("ledger-counts")),
+    ("M87", "firestore.indexes.json", "first", None, '"fieldPath": "expireAt"', '"fieldPath": "expiresAt"', wiring("ttl-policy")),
+    ("M88", "firestore.indexes.json", "first", None, '"ttl": true', '"ttl": false', wiring("ttl-policy")),
     ("M18", "app/api/contact/route.ts", "append", None, "", "\nimport { createAttemptStore } from '@/lib/newsletter-rate-store';\n", wiring("no-memory-limiter")),
 ]
 
@@ -103,6 +135,9 @@ def mutate(text: str, mode: str, anchor: str | None, old: str, new: str) -> str 
         return text + new
     if mode == "first":
         return text.replace(old, new, 1) if old in text else None
+    if mode == "last":
+        index = text.rfind(old)
+        return None if index < 0 else text[:index] + new + text[index + len(old):]
     lines = text.split("\n")
     for index, line in enumerate(lines[:-1]):
         if f"// anchor: {anchor}" in line:

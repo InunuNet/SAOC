@@ -118,11 +118,18 @@ def check_limiter_lazy() -> None:
 
 
 def check_ttl_policy() -> None:
-    text = read("firestore.indexes.json")
-    if not re.search(r'"collectionGroup"\s*:\s*"abuseLimits"', text) or '"ttl": true' not in text:
-        fail('firestore.indexes.json needs an abuseLimits fieldOverride with "ttl": true on expireAt')
-    if "expireAt" not in text:
-        fail("firestore.indexes.json: the TTL field must be expireAt")
+    import json
+    try:
+        config = json.loads(read("firestore.indexes.json"))
+    except json.JSONDecodeError as error:
+        fail(f"firestore.indexes.json is not valid JSON: {error}")
+    overrides = [o for o in config.get("fieldOverrides", []) if o.get("collectionGroup") == "abuseLimits"]
+    if not any(o.get("fieldPath") == "expireAt" and o.get("ttl") is True for o in overrides):
+        fail('firestore.indexes.json needs the abuseLimits fieldOverride on fieldPath "expireAt" with "ttl": true (the same entry, not just somewhere in the file)')
+    if any(o.get("fieldPath") != "expireAt" and o.get("ttl") is True for o in overrides):
+        fail("only abuseLimits.expireAt may carry a TTL policy")
+    if not any(i.get("collectionGroup") == "orders" for i in config.get("indexes", [])):
+        fail("the existing orders(status, expiresAt) composite index the reconcile route needs must be kept")
 
 
 def git(*args: str) -> str:
@@ -262,12 +269,23 @@ def check_client_gated() -> None:
         fail("the dynamic import must sit inside a BUILD_SITE_KEY ? ... : undefined ternary so a flag-off build drops it")
     if not re.search(r"if \(!siteKey\) return null;", text):
         fail("getCheckoutAppCheckToken must return null before any load when the site key is unset")
-    cart = read("components/tickets/useTicketCart.ts")
-    token = first(cart, "getCheckoutAppCheckToken(", "components/tickets/useTicketCart.ts")
-    if token > first(cart, "fetch('/api/tickets/checkout'", "components/tickets/useTicketCart.ts"):
-        fail("the token must be fetched fresh before each checkout fetch")
-    if not re.search(r"x-firebase-appcheck", cart, re.I):
-        fail("useTicketCart must send the X-Firebase-AppCheck header")
+    hook = "components/tickets/useTicketCart.ts"
+    cart = read(hook)
+    helper_rel = "components/tickets/appCheckHeader.ts"
+    helper = read(helper_rel)
+    if "getCheckoutAppCheckToken" in cart:
+        fail("useTicketCart must obtain the header through appCheckHeaders(), never call the token client directly (a failed import must not skip the request)")
+    call = first(cart, "appCheckHeaders(loadAppCheckClient)", hook)
+    if call > first(cart, "fetch('/api/tickets/checkout'", hook):
+        fail("the App Check header must be built fresh before each checkout fetch")
+    if not re.search(r"import\s*\{[^}]*appCheckHeaders[^}]*\}\s*from\s*['\"]@/components/tickets/appCheckHeader['\"]", cart):
+        fail("useTicketCart must import appCheckHeaders from components/tickets/appCheckHeader")
+    if re.search(r"""['"]@/lib/app-check|firebase/app-check""", helper):
+        fail("appCheckHeader.ts must receive the loader, never import the App Check client or SDK itself")
+    if not re.search(r"x-firebase-appcheck", helper, re.I):
+        fail("appCheckHeader.ts must send the X-Firebase-AppCheck header")
+    if "// anchor: appcheck-header-fallback" not in helper:
+        fail("appCheckHeader.ts must mark its tokenless fallback with // anchor: appcheck-header-fallback")
 
 
 def check_hold_budget_status() -> None:
