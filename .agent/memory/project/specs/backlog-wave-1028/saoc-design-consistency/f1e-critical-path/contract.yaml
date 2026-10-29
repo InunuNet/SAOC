@@ -48,7 +48,7 @@ assertions:
       command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-font-swap-css.mjs"
       timeout_seconds: 900
     - id: A7
-      description: "Lever 2 and the preload-order check: server-HTML head has the hero image preload BEFORE the first stylesheet, and exactly ONE font preload that is the h1/hero face. Fails on main: 0 font preloads (the hero-before-CSS half already passes on main)"
+      description: "Lever 2 and the preload-order check: server-HTML head has the hero image preload BEFORE the first stylesheet, and exactly ONE font preload that is the h1/hero face. Fails on main: 0 font preloads (the hero-before-CSS half already passes on main). AMENDED (main-merge drift): the 404 leg no longer wants 1 preload. Main's host-neutral 404 (catch-all notFound()) is Next's __next_error__ shell with no head links, h1 or chrome in server HTML, so the leg asserts status 404 + __next_error__ + ZERO font preloads (no stray/duplicate); the 1-preload/h1-face rules stay on / and /about"
       command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-preload-order.mjs"
       timeout_seconds: 900
     - id: A8
@@ -98,7 +98,7 @@ assertions:
       target: .agent/memory/scratch/saoc-dc-f1e-gws-manifest.json
       required: false
     - id: A18
-      description: "Local production build LCP and the /about LCP-FCP gap, REPORT ONLY (prints, always exits 0; the gate is A11 on beta). Needs DC_PROD=1."
+      description: "Local production build LCP and the /about LCP-FCP gap, REPORT ONLY (prints, always exits 0; the gate is A11 on beta). Needs DC_PROD=1. Chrome: lib-lcp-lighthouse.mjs defaults CHROME_PATH to Playwright's chromium (chromium.executablePath()) because chrome-launcher finds no system Chrome; an explicit CHROME_PATH wins. Thresholds unchanged."
       command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-lcp-gap.mjs --report-only"
       timeout_seconds: 1500
     - id: A19

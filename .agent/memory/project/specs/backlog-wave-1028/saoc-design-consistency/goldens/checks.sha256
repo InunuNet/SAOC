@@ -39,12 +39,12 @@ f5b380f46ebe5f33d500024f60c5da33c7670313034c93effd30ceced7c74ddc  .agent/memory/
 b916977dd068041ecdb7e49441bd1b69fa28ec1d5d60a5cfa2cc8047baf3d9b5  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-newsletter-contrast.mjs
 8f7168705d6c401a26e590af3e87c1170647df88c74ce732c6116b18b49a1521  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-newsletter-error.mjs
 d1b9967089a75e1853faaf8fc21583a34e51a39cedd05d17bb2c277ea27eec11  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-no-new-colours.mjs
-d11e696f5da4f92b74342a2106b19ef6d39e1071b01c50ab4e0253ea83581330  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-preload-order.mjs
+58bb2e284d02d6186e2274709717861392e83b92b91372aa79b2e17750c0cf3e  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-preload-order.mjs
 410c5cb61730c82993f5cc0153b5328b3cf9326963a27f1799c5250ce0fffc1b  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-status-mark-geometry.mjs
 a04b81e57c4cf2c7a8bfe176deb586bb2c94f2b3e362e0565c701800e82929d5  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-status-tokens.mjs
 1f6fcd96b186152bf509baf8fb993eda877c9261740ee7f7c822499dcb30fe2b  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/lib-arrow-links.mjs
 856a3114382eeca7cee4ee4fd0371a7f1413818deedbb8364bcab3bc88b374c4  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/lib-ico.mjs
-e457df6d9edbf40d32facfea559886507971e4b7304a9d8e89b6f89c45ddffd0  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/lib-lcp-lighthouse.mjs
+55cf0cfe3afc920958b867c02b2a1db0403a5dd3ad58116f8d234ea16ea646e6  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/lib-lcp-lighthouse.mjs
 9997d3ee55614583c970e03227f09776b111ea6dc5c57f745616340d848fcc53  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/lib-nos-graph.mjs
 5ca267d2c7d4003ac224d2c32e9f6a34eeb153278f9af41cf66b42eae9e1b05b  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/lib-woff2.mjs
 3a708253f54e53e95ddc9ad9e105c69c6ac2587ece1f52a5ff30ce993513c56a  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/lib.mjs

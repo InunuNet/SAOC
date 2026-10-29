@@ -159,7 +159,7 @@ F1d alone does not reach 2.5 s on a local production build: `/about` LCP 4362 ms
 
 ### The 404 page
 
-The SAOC 404 (`app/not-found.tsx`) renders outside `SaocFrame`. It has no hero image, but it must still ship exactly one Crimson font preload for its h1, and `check-preload-order.mjs` now requests a nonexistent path alongside `/about` (and `/` when deployed). Its section and metadata live in `components/site-chrome/SaocNotFound.tsx`, a module of its own, so `app/(marketing)/not-found.tsx` can import them without pulling `app/not-found.tsx`'s NOS branch, and the NOS stylesheets Next would then preload on every SAOC route, into the marketing segment. The 404's footer gap is F1c's A13. The 404's own hero preload leaking into other pages is the F1d trap that made `HeroPicture` a client component.
+The SAOC 404 (`app/not-found.tsx`) renders outside `SaocFrame`. It has no hero image, but it must still ship exactly one Crimson font preload for its h1, and `check-preload-order.mjs` now requests a nonexistent path alongside `/about` (and `/` when deployed). Its section and metadata live in `components/site-chrome/SaocNotFound.tsx`, a module of its own, so `app/(marketing)/not-found.tsx` and `app/(shared)/not-found.tsx` import them without importing `app/not-found.tsx`. `app/not-found.tsx` is host-neutral (main's ruling: reading the request host there made every route dynamic), so it always renders the SAOC 404; NOS unmatched paths reach the NOS 404 through the NOS catch-all. The 404's footer gap is F1c's A13. The 404's own hero preload leaking into other pages is the F1d trap that made `HeroPicture` a client component.
 
 ### Font cap and per-route evidence
 

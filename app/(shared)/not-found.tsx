@@ -4,7 +4,7 @@ import {
   NosPageNotFound,
   metadata as nosNotFoundMetadata,
 } from '@/app/(nos)/national-show/not-found';
-import { NotFoundSection, saocNotFoundMetadata } from '@/app/not-found';
+import { NotFoundSection, saocNotFoundMetadata } from '@/components/site-chrome/SaocNotFound';
 import { requestSite } from '@/lib/request-site';
 import { SHOW_TITLE } from '@/lib/show-title';
 
