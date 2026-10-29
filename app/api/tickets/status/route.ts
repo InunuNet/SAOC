@@ -1,21 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { clientIpFromForwardedFor } from '@/lib/client-ip';
-import { consumeRateLimit } from '@/lib/newsletter-rate-limit';
-import { createAttemptStore, scopeAttemptsToRequest } from '@/lib/newsletter-rate-store';
+import {
+  AbuseLimiterUnavailableError,
+  clientActorKey,
+  consumeAbuseLimit,
+  type AbuseLimitDecision,
+} from '@/lib/abuse-limiter';
 import { getTicketStatus } from '@/lib/ticket-status';
 
 // ConfirmationPoller makes up to 20 requests a minute per buyer; 120 covers six buyers on one
-// venue address. Above the attempt store's default per-key history, so it is sized explicitly.
+// venue address.
 const STATUS_RATE_LIMIT_MAX_ATTEMPTS = 120;
 const STATUS_RATE_LIMIT_WINDOW_MS = 60_000;
-const STATUS_RATE_LIMIT_HISTORY_PER_KEY = 200;
-
-const attempts = createAttemptStore(
-  STATUS_RATE_LIMIT_WINDOW_MS,
-  undefined,
-  STATUS_RATE_LIMIT_HISTORY_PER_KEY,
-);
 
 // F3 (ticketing-pages) — read-only status endpoint so /tickets/confirmation can poll
 // without claiming success or failure prematurely (the PayFast ITN race). Returns the
@@ -25,15 +21,23 @@ const attempts = createAttemptStore(
 // URL. Booking refs are 60 bits (lib/booking-ref.ts), so this is not enumerable; but
 // anyone holding a ref — a photo of a ticket — can see its check-in state, so "status
 // only" stays the load-bearing mitigation and must not be widened. Per-IP rate
-// limiting is per server instance (see lib/public-form-rate-limit.ts).
+// limiting is durable and shared across instances (lib/abuse-limiter.ts).
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  const ip = clientIpFromForwardedFor(request.headers.get('x-forwarded-for'));
-  const limit = consumeRateLimit(
-    { now: new Date(), ...scopeAttemptsToRequest(attempts) },
-    `ticket-status:${ip ?? 'unknown'}`,
-    STATUS_RATE_LIMIT_MAX_ATTEMPTS,
-    STATUS_RATE_LIMIT_WINDOW_MS,
-  );
+  let limit: AbuseLimitDecision;
+  try {
+    limit = await consumeAbuseLimit({
+      scope: 'ticket-status',
+      key: clientActorKey(request.headers.get('x-forwarded-for')),
+      maxAttempts: STATUS_RATE_LIMIT_MAX_ATTEMPTS,
+      windowMs: STATUS_RATE_LIMIT_WINDOW_MS,
+    });
+  } catch (error) {
+    if (!(error instanceof AbuseLimiterUnavailableError)) throw error;
+    console.error('[tickets/status] Abuse limiter unavailable:', error.name);
+    return NextResponse.json({ error: 'Unable to check status. Please try again.' }, {
+      status: 500,
+    });
+  }
   if (!limit.allowed) {
     return NextResponse.json(
       { error: 'Too many attempts. Please try again later.' },

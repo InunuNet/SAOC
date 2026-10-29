@@ -64,6 +64,12 @@ const SECURITY_HEADERS = [
 ];
 
 const nextConfig: NextConfig = {
+  // Inlined as '' when unset: Next only substitutes NEXT_PUBLIC_* variables that exist at build
+  // time, and an unsubstituted read would stop lib/app-check-client.ts's build-key ternary from
+  // folding, shipping the App Check SDK in a flag-off bundle (sec-abuse-controls D7).
+  env: {
+    NEXT_PUBLIC_APP_CHECK_RECAPTCHA_SITE_KEY: process.env.NEXT_PUBLIC_APP_CHECK_RECAPTCHA_SITE_KEY ?? '',
+  },
   outputFileTracingRoot: process.cwd(),
   outputFileTracingExcludes: {
     '/**': NEVER_SHIP,

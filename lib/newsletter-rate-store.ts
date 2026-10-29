@@ -1,5 +1,8 @@
 import type { RateLimitAttempt } from './newsletter-rate-limit';
 
+// DEPRECATED: per-instance only. Shared-lane routes use lib/abuse-limiter.ts (durable); delete
+// this once the remaining SAOC-lane callers move over (sec-abuse-controls hand-off H1/H2).
+
 // Per-instance in-memory attempt history for the newsletter routes. Same known limitation as
 // the vendor routes: each server instance counts on its own, and a restart clears it.
 

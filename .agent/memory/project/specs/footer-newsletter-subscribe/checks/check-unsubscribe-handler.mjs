@@ -24,10 +24,11 @@ check('doc unsubscribed', store.get(id).status === 'unsubscribed' && store.get(i
 const again = await unsub(doc.unsubscribeToken, deps, 'ip:5');
 check('repeat is idempotent 200 with no extra write', again.status === 200 && calls.mark === 1);
 
+// rate limiting moved to the route (durable Firestore limiter, lib/abuse-limiter.ts, SEC-15).
 const rl = makeDeps();
 let last;
 for (let i = 0; i < 12; i++) last = await unsub('Z'.repeat(43), rl.deps, 'ip:rl');
-check('unsubscribe is rate limited', last.status === 429);
+check('handler itself never rate limits', last.status === 400);
 
 if (failures.length) { console.error('FAIL', failures); process.exit(1); }
 console.log('unsubscribe handler checks pass');

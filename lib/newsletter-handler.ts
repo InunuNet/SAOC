@@ -13,16 +13,13 @@ import {
   type UnsubscribeOrigin,
 } from './newsletter';
 import { NEWSLETTER_COPY } from '../components/chrome/newsletter-copy';
-import {
-  consumeRateLimit,
-  type RateLimitDeps as AttemptDeps,
-} from './newsletter-rate-limit';
 
 /**
  * Pure, injectable orchestrators for the newsletter routes (mission footer-newsletter-subscribe,
  * M1/F1). No firebase-admin import: the routes supply the store adapters. Response shapes are
  * pinned by goldens/response-shapes.json. The rate-limit values are placeholders, not
- * committee-approved numbers.
+ * committee-approved numbers; the routes enforce them with the durable limiter
+ * (lib/abuse-limiter.ts) before the transaction, so the handlers hold no rate state.
  */
 
 export const NEWSLETTER_RATE_LIMIT_MAX_ATTEMPTS = 5;
@@ -33,61 +30,42 @@ const HTTP_OK = 200;
 const HTTP_BAD_REQUEST = 400;
 const HTTP_UNAUTHORIZED = 401;
 const HTTP_FORBIDDEN = 403;
-const HTTP_TOO_MANY_REQUESTS = 429;
 const HTTP_SERVER_ERROR = 500;
 
 
 export interface NewsletterHandlerResult {
   status: number;
   body: Record<string, unknown>;
-  retryAfterSeconds?: number;
 }
 
-interface RateLimitDeps extends AttemptDeps {
+interface HandlerDeps {
+  now: Date;
   logError(message: string, context: Record<string, string>): void;
 }
 
-export interface SubscribeDeps extends RateLimitDeps {
+export interface SubscribeDeps extends HandlerDeps {
   getSubscriber(id: string): Promise<NewsletterSubscriberDoc | null>;
   writeSubscriber(id: string, doc: NewsletterSubscriberDoc): Promise<void>;
   generateToken(): string;
 }
 
-export interface UnsubscribeDeps extends RateLimitDeps {
+export interface UnsubscribeDeps extends HandlerDeps {
   findByToken(token: string): Promise<{ id: string; status: 'subscribed' | 'unsubscribed' } | null>;
   markUnsubscribed(id: string, now: Date): Promise<void>;
 }
 
 interface HandlerInput {
   body: unknown;
-  rateLimitKey: string;
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
   return typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
 }
 
-function checkRateLimit(
-  deps: RateLimitDeps,
-  key: string,
-  maxAttempts: number,
-): NewsletterHandlerResult | null {
-  const outcome = consumeRateLimit(deps, key, maxAttempts, NEWSLETTER_RATE_LIMIT_WINDOW_MS);
-  if (outcome.allowed) return null;
-  return {
-    status: HTTP_TOO_MANY_REQUESTS,
-    body: { error: NEWSLETTER_COPY.rateLimited },
-    retryAfterSeconds: outcome.retryAfterSeconds,
-  };
-}
-
 export async function handleNewsletterSubscribe(
   input: HandlerInput,
   deps: SubscribeDeps,
 ): Promise<NewsletterHandlerResult> {
-  const limited = checkRateLimit(deps, input.rateLimitKey, NEWSLETTER_RATE_LIMIT_MAX_ATTEMPTS);
-  if (limited) return limited;
-
   const body = asRecord(input.body);
   const honeypot = body['_hp'];
   if (typeof honeypot === 'string' && honeypot !== '') {
@@ -133,13 +111,6 @@ export async function handleNewsletterUnsubscribe(
   input: HandlerInput,
   deps: UnsubscribeDeps,
 ): Promise<NewsletterHandlerResult> {
-  const limited = checkRateLimit(
-    deps,
-    input.rateLimitKey,
-    NEWSLETTER_UNSUBSCRIBE_RATE_LIMIT_MAX_ATTEMPTS,
-  );
-  if (limited) return limited;
-
   const invalid: NewsletterHandlerResult = {
     status: HTTP_BAD_REQUEST,
     body: { error: NEWSLETTER_COPY.unsubscribeInvalid },

@@ -10,6 +10,9 @@ import {
 import { deliverConfirmationEmailAfterCommit, sendConfirmationEmail } from '@/lib/confirmation-email';
 import { saocUrl } from '@/lib/site-hosts';
 import { sendTicketSaleAdminNotice } from '@/lib/ticket-sale-admin-notice';
+import { readCappedBody } from '@/lib/webhook-body';
+
+const HTTP_PAYLOAD_TOO_LARGE = 413;
 
 /**
  * Payment notification handler — SECURITY BOUNDARY, FAIL CLOSED.
@@ -75,7 +78,17 @@ export async function POST(
   paymentProvider: PaymentProvider,
   request: NextRequest
 ): Promise<NextResponse> {
-  const rawBody = await request.text();
+  // SEC-17: this route is exempt from the proxy gate and authenticates only after reading, so
+  // the body is capped before it is buffered. 413 stays visible to the gateway's retry/alerting.
+  const capped = await readCappedBody(request);
+  if (!capped.ok) {
+    console.error('[tickets/notification] Notification body over the cap', {
+      provider: paymentProvider.id,
+      bytesSeen: capped.bytesSeen,
+    });
+    return NextResponse.json({ error: 'Payload too large' }, { status: HTTP_PAYLOAD_TOO_LARGE });
+  }
+  const rawBody = capped.text;
 
   // 1-3. Verification. One call now covers what used to be three inline steps, in the same
   // order and with the same verdicts: the provider parses the posted body preserving posted

@@ -57,6 +57,12 @@ function pruneRowErrors(
   return kept;
 }
 
+// Build-time gate: with no site key the App Check client is not in the bundle at all (the env
+// value is inlined by next.config.ts, so the ternary folds and the dynamic import is dropped).
+const loadAppCheckClient = process.env.NEXT_PUBLIC_APP_CHECK_RECAPTCHA_SITE_KEY
+  ? () => import('@/lib/app-check-client')
+  : undefined;
+
 export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
   const [quantity, setQuantityState] = useState(init.quantity);
   const [day, setDay] = useState<string | null>(init.day);
@@ -138,9 +144,17 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
     setErrorMessage('');
 
     try {
+      // A fresh limited-use token per submit; null (no site key built in) sends no header.
+      const appCheckToken = loadAppCheckClient
+        ? await (await loadAppCheckClient()).getCheckoutAppCheckToken()
+        : null;
       const res = await fetch('/api/tickets/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': idempotencyKey,
+          ...(appCheckToken ? { 'X-Firebase-AppCheck': appCheckToken } : {}),
+        },
         body: JSON.stringify({ showId: NATIONAL_SHOW_ID, lineItems }),
       });
 

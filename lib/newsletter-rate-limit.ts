@@ -1,5 +1,8 @@
 import { decideRateLimit, type RateLimitAttempt } from './resend-rate-limit';
 
+// DEPRECATED: per-instance only. Shared-lane routes use lib/abuse-limiter.ts (durable); delete
+// this once the remaining SAOC-lane callers move over (sec-abuse-controls hand-off H1/H2).
+
 /**
  * Sliding-window check shared by the newsletter handlers. It lives apart from
  * lib/newsletter-handler.ts so the handler stays free of the shared module's historical file

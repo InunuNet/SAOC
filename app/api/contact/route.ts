@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
-import { clientIpFromForwardedFor } from '@/lib/client-ip';
+import {
+  AbuseLimiterUnavailableError,
+  clientActorKey,
+  consumeAbuseLimit,
+  type AbuseLimitDecision,
+} from '@/lib/abuse-limiter';
 import { validateContactInput } from '@/lib/contact-input';
 import { initAdmin } from '@/lib/firebase-admin';
-import { consumeRateLimit } from '@/lib/newsletter-rate-limit';
-import { createAttemptStore, scopeAttemptsToRequest } from '@/lib/newsletter-rate-store';
 import {
   PUBLIC_FORM_RATE_LIMIT_MAX_ATTEMPTS,
   PUBLIC_FORM_RATE_LIMIT_WINDOW_MS,
@@ -19,8 +22,7 @@ import { logFailureSafely } from '@/lib/safe-log';
 const HTTP_BAD_REQUEST = 400;
 const HTTP_CREATED = 201;
 const HTTP_TOO_MANY_REQUESTS = 429;
-
-const attempts = createAttemptStore(PUBLIC_FORM_RATE_LIMIT_WINDOW_MS);
+const HTTP_SERVER_ERROR = 500;
 
 // Cap on the request body, checked against Content-Length before the body is buffered.
 const MAX_BODY_BYTES = 32768;
@@ -29,13 +31,22 @@ export async function POST(request: NextRequest) {
   if (!isBodyWithinLimit(request.headers.get('content-length'), MAX_BODY_BYTES)) {
     return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
   }
-  const ip = clientIpFromForwardedFor(request.headers.get('x-forwarded-for'));
-  const limit = consumeRateLimit(
-    { now: new Date(), ...scopeAttemptsToRequest(attempts) },
-    `contact:${ip ?? 'unknown'}`,
-    PUBLIC_FORM_RATE_LIMIT_MAX_ATTEMPTS,
-    PUBLIC_FORM_RATE_LIMIT_WINDOW_MS,
-  );
+  let limit: AbuseLimitDecision;
+  try {
+    limit = await consumeAbuseLimit({
+      scope: 'contact',
+      key: clientActorKey(request.headers.get('x-forwarded-for')),
+      maxAttempts: PUBLIC_FORM_RATE_LIMIT_MAX_ATTEMPTS,
+      windowMs: PUBLIC_FORM_RATE_LIMIT_WINDOW_MS,
+    });
+  } catch (error) {
+    if (!(error instanceof AbuseLimiterUnavailableError)) throw error;
+    logFailureSafely('[contact/route] abuse limiter unavailable', error);
+    return NextResponse.json(
+      { error: 'Failed to submit. Please try again.' },
+      { status: HTTP_SERVER_ERROR },
+    );
+  }
   if (!limit.allowed) {
     return NextResponse.json(
       { error: 'Too many attempts. Please try again later.' },

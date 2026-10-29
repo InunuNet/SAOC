@@ -1,4 +1,4 @@
-import { getFirestore, Timestamp, type Transaction } from 'firebase-admin/firestore';
+import { getFirestore, type Transaction } from 'firebase-admin/firestore';
 
 // F6 (conference-workshop-tickets, M4) — changed from the `@/lib/firebase-admin` alias to
 // a relative, explicit-`.ts`-extension specifier (zero behaviour change; Next.js resolves
@@ -12,34 +12,22 @@ import { getFirestore, Timestamp, type Transaction } from 'firebase-admin/firest
 // real `import()`). Scoped to this one file/line, not the other 35 call sites still using
 // the alias elsewhere in the codebase.
 import { initAdmin } from '../firebase-admin.ts';
+import { stillHoldsSeat } from '@/lib/seat-holds';
 
 // F2 (ticketing-pages): server-only helper — imports firebase-admin, so it must only
 // ever be called from Server Components or Route Handlers, never from a 'use client'
 // file. Used by /tickets to compute per-type "sold out" state (page-states.golden.md).
 const RESERVED_OR_PAID = ['reserved', 'paid'] as const;
 
-const RESERVED_STATUS = 'reserved';
-
 /**
- * An abandoned checkout must not hold its seat forever (S1). Expiry is LAZY: a
- * reservation carries an `expiresAt` Timestamp written at creation, and it simply stops
- * counting the instant that time passes. No sweeper, no cron, no status write — a
- * background writer flipping `reserved -> cancelled` would race the ITN and is the
- * obvious way to cancel a seat somebody has paid for.
- *
- * `paid` is never filtered: a payment that lands after the reservation window still wins
- * its seat. A `reserved` document with no `expiresAt` still counts — fails closed, so a
- * writer that forgets the field cannot silently release seats (A24 catches that writer).
+ * An abandoned checkout must not hold its seat forever (S1). Expiry is LAZY and lives in one
+ * pure rule, lib/seat-holds.ts, shared with the checkout hold budget: a reservation carries an
+ * `expiresAt` Timestamp written at creation and simply stops counting the instant that time
+ * passes. No sweeper, no cron, no status write; see that module for why.
  *
  * Filtered in memory, not with `.where('expiresAt', '>', now)`: a range filter alongside
  * the two existing equality filters needs a composite index this project does not deploy.
  */
-function stillHoldsSeat(data: FirebaseFirestore.DocumentData): boolean {
-  if (data['status'] !== RESERVED_STATUS) return true;
-  const expiresAt = data['expiresAt'];
-  if (!(expiresAt instanceof Timestamp)) return true;
-  return expiresAt.toMillis() > Date.now();
-}
 
 /**
  * Count reserved + paid tickets for `showId`, grouped by ticket type slug. A ticket
@@ -72,7 +60,7 @@ export async function getSoldCountsByTicketType(
   for (const snapshot of snapshots) {
     for (const doc of snapshot.docs) {
       const data = doc.data();
-      if (!stillHoldsSeat(data)) continue;
+      if (!stillHoldsSeat(data, Date.now())) continue;
       const ticketType = data['ticketType'] as string;
       counts[ticketType] = (counts[ticketType] ?? 0) + 1;
     }
@@ -126,7 +114,7 @@ export async function getSoldCountsByTicketTypeAndDay(
   for (const snapshot of snapshots) {
     for (const doc of snapshot.docs) {
       const data = doc.data();
-      if (!stillHoldsSeat(data)) continue;
+      if (!stillHoldsSeat(data, Date.now())) continue;
       const ticketType = data['ticketType'] as string;
       const chosenDay = data['chosenDay'] as string | null | undefined;
       const key =

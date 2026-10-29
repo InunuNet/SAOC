@@ -240,6 +240,9 @@ export interface BuildMultiReservationDocsInput {
    *  for PayFast or Ozow with the sandbox test-mode flag off. See
    *  contracts/golden/ozow-sandbox-toggle-f1/README.md §3b. */
   expectedGatewayAmount: number | null;
+  /** sec-abuse-controls F3 -- opaque keyed hashes stamped on the order and every position so the
+   *  held-seat budget can count by actor and buyer. Absent for callers that have none. */
+  actor?: { clientKey: string; buyerKey: string };
 }
 
 export interface MultiReservationDocs {
@@ -279,6 +282,9 @@ export function buildMultiReservationDocs(
     recoveryToken: input.recoveryToken,
     recoveryTokenExpiresAt: input.recoveryTokenExpiresAt,
     expectedGatewayAmount: input.expectedGatewayAmount,
+    // anchor: reservation-actor-stamp
+    clientKey: input.actor?.clientKey ?? null,
+    buyerKey: input.actor?.buyerKey ?? null,
   };
 
   const positions: (Omit<Ticket, 'id'> & { idempotencyKey: string })[] = input.lineItems.map(
@@ -299,6 +305,8 @@ export function buildMultiReservationDocs(
       expiresAt: input.expiresAt,
       idempotencyKey: input.idempotencyKey,
       chosenDay: lineItem.chosenDay,
+      clientKey: input.actor?.clientKey ?? null,
+      buyerKey: input.actor?.buyerKey ?? null,
     })
   );
 

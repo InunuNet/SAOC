@@ -2,7 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isBodyWithinLimit } from '@/lib/request-guards';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
+import {
+  abuseKeyStamp,
+  AbuseLimiterUnavailableError,
+  clientActorKey,
+  consumeAbuseLimit,
+  type AbuseLimitDecision,
+} from '@/lib/abuse-limiter';
+import { requireCheckoutAppCheck } from '@/lib/app-check';
 import { generateBookingRef } from '@/lib/booking-ref';
+import {
+  CHECKOUT_LIMITS,
+  evaluateHoldBudget,
+  summariseHeldSeats,
+  type HoldBudgetDecision,
+} from '@/lib/checkout-holds';
 import { CONTACT_FIELD_MAX_LENGTHS } from '@/lib/contact-input';
 import {
   aggregateRequestedQuantities,
@@ -377,7 +391,9 @@ type ReservationOutcome =
   // F2 Codex GPT-5.5 review (2026-08-22): a replay whose request providerId disagrees with
   // the order's ALREADY-STORED `gateway` field must never silently hand the order off to the
   // new provider — see the guard in the reservation transaction below.
-  | { kind: 'key-provider-mismatch' };
+  | { kind: 'key-provider-mismatch' }
+  // sec-abuse-controls F3: one actor or buyer already holds the most seats the budget allows.
+  | { kind: 'hold-budget-exceeded'; reason: Exclude<HoldBudgetDecision, { ok: true }>['reason'] };
 
 interface ReservationInput {
   showId: string;
@@ -405,6 +421,9 @@ interface ReservationInput {
   dayCapRequestedQtyByType: Record<string, number>;
   dayCapPoolConfigByType: Record<string, CapacityPoolConfig>;
   dayCapCapacityByType: Record<string, number>;
+  /** sec-abuse-controls F3 — opaque keyed hashes of the request's actor (IP /64) and buyer
+   *  email: stamped on the new documents and used to count seats the same actor already holds. */
+  actor: { clientKey: string; buyerKey: string };
 }
 
 /** F2 (ozow-payment-provider) — each provider's own NotifyUrl path. Ozow's NotifyUrl is set by
@@ -435,10 +454,63 @@ async function fetchSoldOutMessage(): Promise<string> {
 // This cap is the effective ceiling for attendeeName, which parseLineItems() does not bound.
 const MAX_BODY_BYTES = 131072;
 
+const HTTP_FORBIDDEN = 403;
+const HTTP_TOO_MANY_REQUESTS = 429;
+const HTTP_SERVER_ERROR = 500;
+const HTTP_SERVICE_UNAVAILABLE = 503;
+const SECONDS_PER_MINUTE = 60;
+
+// Existing copy only (docs/rules/no-invention.md): the sentences below already ship on /contact
+// and in this route. Awaiting committee copy for a message that explains held seats.
+const TOO_MANY_ATTEMPTS_MESSAGE = 'Too many attempts. Please try again later.';
+const RESERVE_FAILED_MESSAGE = 'Failed to reserve ticket. Please try again.';
+
+function tooManyAttempts(retryAfterSeconds: number): NextResponse {
+  return NextResponse.json(
+    { error: TOO_MANY_ATTEMPTS_MESSAGE },
+    { status: HTTP_TOO_MANY_REQUESTS, headers: { 'Retry-After': String(retryAfterSeconds) } }
+  );
+}
+
+/** Fail closed: the limiter store being down refuses the request with the route's own copy. */
+function limiterUnavailable(error: unknown): NextResponse {
+  if (!(error instanceof AbuseLimiterUnavailableError)) throw error;
+  console.error('[tickets/checkout] Abuse limiter unavailable; refusing the request.', {
+    exceptionType: error.name,
+  });
+  return NextResponse.json({ error: RESERVE_FAILED_MESSAGE }, { status: HTTP_SERVER_ERROR });
+}
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!isBodyWithinLimit(request.headers.get('content-length'), MAX_BODY_BYTES)) {
     return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
   }
+
+  // SEC-02: per-actor request limit before anything is parsed or read, so junk costs one
+  // Firestore read. The actor is the trusted forwarded hop only (lib/abuse-limiter.ts).
+  const actorKey = clientActorKey(request.headers.get('x-forwarded-for'));
+  let actorLimit: AbuseLimitDecision;
+  try {
+    actorLimit = await consumeAbuseLimit({
+      scope: 'checkout-ip',
+      key: actorKey,
+      maxAttempts: CHECKOUT_LIMITS.ipRequests,
+      windowMs: CHECKOUT_LIMITS.ipWindowMs,
+    });
+  } catch (error) {
+    return limiterUnavailable(error);
+  }
+  if (!actorLimit.allowed) return tooManyAttempts(actorLimit.retryAfterSeconds);
+
+  // Server-side App Check (D7), flag-off by default. After the limiter so a flood cannot burn
+  // attestation quota, and before the body is read. Browser checkout only.
+  const appCheck = await requireCheckoutAppCheck(request.headers);
+  if (!appCheck.ok) {
+    return appCheck.reason === 'unavailable'
+      ? NextResponse.json({ error: RESERVE_FAILED_MESSAGE }, { status: HTTP_SERVICE_UNAVAILABLE })
+      : NextResponse.json({ error: TOO_MANY_ATTEMPTS_MESSAGE }, { status: HTTP_FORBIDDEN });
+  }
+
   // Before anything is read or written: without a well-formed key, duplicate protection
   // is opt-in, and therefore absent for exactly the callers that retry.
   const idempotencyKey = request.headers.get(IDEMPOTENCY_KEY_HEADER)?.trim() ?? '';
@@ -475,6 +547,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       { status: 400 }
     );
   }
+
+  // SEC-02: per-buyer request limit (first line item's email), before any Sanity read so a
+  // refused request costs no Sanity quota.
+  const buyerEmail = lineItems[0].attendeeEmail.trim().toLowerCase();
+  let buyerLimit: AbuseLimitDecision;
+  try {
+    buyerLimit = await consumeAbuseLimit({
+      scope: 'checkout-buyer',
+      key: buyerEmail,
+      maxAttempts: CHECKOUT_LIMITS.buyerRequests,
+      windowMs: CHECKOUT_LIMITS.buyerWindowMs,
+    });
+  } catch (error) {
+    return limiterUnavailable(error);
+  }
+  if (!buyerLimit.allowed) return tooManyAttempts(buyerLimit.retryAfterSeconds);
 
   // gateway-picker-admin-only F1: the gateway is resolved server-side from the admin-set
   // Firestore doc, never trusted from the client — validated BEFORE the client/CMS guard
@@ -923,13 +1011,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       dayCapRequestedQtyByType,
       dayCapPoolConfigByType,
       dayCapCapacityByType,
+      actor: {
+        clientKey: abuseKeyStamp('checkout-actor', actorKey),
+        buyerKey: abuseKeyStamp('checkout-buyer', buyerEmail),
+      },
     });
   } catch (error) {
     console.error('[tickets/checkout] Failed to reserve ticket:', error);
-    return NextResponse.json(
-      { error: 'Failed to reserve ticket. Please try again.' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: RESERVE_FAILED_MESSAGE }, { status: HTTP_SERVER_ERROR });
+  }
+
+  if (outcome.kind === 'hold-budget-exceeded') {
+    console.error('[tickets/checkout] held-seat budget exceeded:', outcome.reason);
+    return tooManyAttempts(RESERVATION_TTL_MINUTES * SECONDS_PER_MINUTE);
   }
 
   if (outcome.kind === 'over-capacity') {
@@ -1135,6 +1229,30 @@ async function reserveTicket(input: ReservationInput): Promise<ReservationOutcom
         };
       }
 
+      // SEC-02: bound how many seats one actor and one buyer hold at once. Read inside this
+      // transaction, after the replay branch (a replay must never be refused by seats it already
+      // holds) and before any write, from the orders' own positions through the ledger's expiry
+      // rule, so there is no second ledger to drift and no dependence on the reconcile job.
+      const heldByActorSnapshot = await transaction.get(
+        tickets.where('clientKey', '==', input.actor.clientKey).where('status', '==', RESERVED_STATUS)
+      );
+      const heldByBuyerSnapshot = await transaction.get(
+        tickets.where('buyerKey', '==', input.actor.buyerKey).where('status', '==', RESERVED_STATUS)
+      );
+      const budgetNowMs = Date.now();
+      const holdBudget = evaluateHoldBudget({
+        requestedByType: aggregateRequestedQuantities(input.lineItems),
+        heldByActor: summariseHeldSeats(
+          heldByActorSnapshot.docs.map((doc) => doc.data()),
+          budgetNowMs
+        ),
+        heldByBuyer: summariseHeldSeats(
+          heldByBuyerSnapshot.docs.map((doc) => doc.data()),
+          budgetNowMs
+        ),
+      });
+      if (!holdBudget.ok) return { kind: 'hold-budget-exceeded', reason: holdBudget.reason };
+
       // F4 (conference-workshop-tickets, M2): the day-qualified TRUE per-day cap check —
       // INDEPENDENT of, and run alongside, the unqualified shared-pool check below. Both
       // must pass; either failing refuses the whole reservation before any write. Reads
@@ -1248,6 +1366,7 @@ async function reserveTicket(input: ReservationInput): Promise<ReservationOutcom
         now: Timestamp.fromDate(now),
         gateway: input.gateway,
         expectedGatewayAmount: input.expectedGatewayAmount,
+        actor: input.actor,
       });
 
       writeMultiReservationPair(transaction, { orderRef, positionRefs }, docs);

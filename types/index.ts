@@ -169,6 +169,9 @@ export interface Ticket {
    *  "reconciliationAlertedAt on positions" for why. Nothing reads this field today; it is not
    *  dead code, it is a real per-position record that a human was alerted about that seat. */
   reconciliationAlertedAt?: Timestamp | null;
+  /** sec-abuse-controls F3 -- see Order.clientKey. Absent on older positions. */
+  clientKey?: string | null;
+  buyerKey?: string | null;
   // ticketing-position-expiry-write F1 — mirrors Order.expiresAt onto the position, because
   // capacity counting (lib/data/tickets.ts getSoldCountsByTicketType/stillHoldsSeat) reads the
   // `tickets` collection, not `orders`. Optional/nullable: pre-fix positions in Firestore, and
@@ -229,6 +232,10 @@ export interface Order {
    *  PendingInvestigation. Informational: the order stays 'reserved' and only a hash-verified,
    *  confirmed Complete ever makes it paid. */
   gatewayPending?: { rawStatus: string; at: Timestamp } | null;
+  /** sec-abuse-controls F3 -- opaque keyed hashes of the checkout actor (IP /64) and buyer email,
+   *  stamped at reservation so the held-seat budget can count by them. Absent on older orders. */
+  clientKey?: string | null;
+  buyerKey?: string | null;
 }
 
 // ---------------------------------------------------------------------------

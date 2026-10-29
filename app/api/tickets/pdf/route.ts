@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 
-import { clientIpFromForwardedFor } from '@/lib/client-ip';
-import { consumeRateLimit } from '@/lib/newsletter-rate-limit';
-import { createAttemptStore, scopeAttemptsToRequest } from '@/lib/newsletter-rate-store';
+import {
+  AbuseLimiterUnavailableError,
+  clientActorKey,
+  consumeAbuseLimit,
+  type AbuseLimitDecision,
+} from '@/lib/abuse-limiter';
 import { getConfirmedOrderForDisplay } from '@/lib/orders';
 import { buildTicketPdf } from '@/lib/ticket-pdf';
 import { authoriseTicketPdfRequest, refPrefix } from '@/lib/ticket-pdf-access';
@@ -16,16 +19,9 @@ const NOT_FOUND_BODY = 'Not found';
 
 // Each valid request runs a CPU-bound PDF render. An order holds at most MAX_LINE_ITEMS (20)
 // positions, each downloadable on its own, plus the whole-order PDF: 60 leaves headroom for
-// retries and a second buyer on the same address. Above the attempt store's default history.
+// retries and a second buyer on the same address.
 const PDF_RATE_LIMIT_MAX_ATTEMPTS = 60;
 const PDF_RATE_LIMIT_WINDOW_MS = 60_000;
-const PDF_RATE_LIMIT_HISTORY_PER_KEY = 200;
-
-const attempts = createAttemptStore(
-  PDF_RATE_LIMIT_WINDOW_MS,
-  undefined,
-  PDF_RATE_LIMIT_HISTORY_PER_KEY,
-);
 
 /** The one response for every access failure: same status, body and headers whatever the cause. */
 function notFound(): NextResponse {
@@ -41,13 +37,19 @@ function notFound(): NextResponse {
  * reference is required, and `position` can only select one of that order's own positions.
  */
 export async function GET(request: Request): Promise<NextResponse> {
-  const ip = clientIpFromForwardedFor(request.headers.get('x-forwarded-for'));
-  const limit = consumeRateLimit(
-    { now: new Date(), ...scopeAttemptsToRequest(attempts) },
-    `ticket-pdf:${ip ?? 'unknown'}`,
-    PDF_RATE_LIMIT_MAX_ATTEMPTS,
-    PDF_RATE_LIMIT_WINDOW_MS,
-  );
+  let limit: AbuseLimitDecision;
+  try {
+    limit = await consumeAbuseLimit({
+      scope: 'ticket-pdf',
+      key: clientActorKey(request.headers.get('x-forwarded-for')),
+      maxAttempts: PDF_RATE_LIMIT_MAX_ATTEMPTS,
+      windowMs: PDF_RATE_LIMIT_WINDOW_MS,
+    });
+  } catch (error) {
+    if (!(error instanceof AbuseLimiterUnavailableError)) throw error;
+    console.error('[tickets/pdf] Abuse limiter unavailable:', error.name);
+    return new NextResponse('Ticket PDF unavailable', { status: 500, headers: PRIVATE_HEADERS });
+  }
   if (!limit.allowed) {
     return new NextResponse('Too many attempts. Please try again later.', {
       status: 429,

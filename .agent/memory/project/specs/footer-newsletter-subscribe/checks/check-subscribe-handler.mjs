@@ -1,5 +1,5 @@
 // footer-newsletter-subscribe -- subscribe handler. Run: npx tsx <this file>
-import { handleNewsletterSubscribe, NEWSLETTER_RATE_LIMIT_MAX_ATTEMPTS } from '../../../../../../lib/newsletter-handler.ts';
+import { handleNewsletterSubscribe } from '../../../../../../lib/newsletter-handler.ts';
 import { makeDeps } from './_fakes.mjs';
 
 const failures = [];
@@ -56,18 +56,13 @@ const run = (b, d, key = 'ip:1') => handleNewsletterSubscribe({ body: b, rateLim
   check('honeypot writes nothing', calls.get === 0 && calls.write === 0);
 }
 
-// rate limit shields the write
+// rate limiting moved to the route (durable Firestore limiter, lib/abuse-limiter.ts, SEC-15):
+// the handler holds no rate state, so the same caller can submit repeatedly here.
 {
-  const { deps, calls } = makeDeps();
+  const { deps } = makeDeps();
   let last;
-  for (let i = 0; i < NEWSLETTER_RATE_LIMIT_MAX_ATTEMPTS; i++) last = await run(body(`u${i}@example.com`), deps, 'ip:r');
-  check('under limit ok', last.status === 200);
-  const writesBefore = calls.write;
-  const blocked = await run(body('over@example.com'), deps, 'ip:r');
-  check('over limit => 429', blocked.status === 429 && typeof blocked.retryAfterSeconds === 'number');
-  check('429 touches no store', calls.write === writesBefore && calls.get === NEWSLETTER_RATE_LIMIT_MAX_ATTEMPTS);
-  const other = await run(body('x@example.com'), deps, 'ip:other');
-  check('other key unaffected', other.status === 200);
+  for (let i = 0; i < 12; i++) last = await run(body(`u${i}@example.com`), deps, 'ip:r');
+  check('handler itself never rate limits', last.status === 200);
 }
 
 // write failure => 500, logs carry no raw email
