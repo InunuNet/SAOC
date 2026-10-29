@@ -74,7 +74,7 @@ MUTATIONS = [
     ("M38", CLIENT_IP, "anchor", "xff-min-hops", "< 2", "< 1", golden("abuse-limiter")),
     ("M39", BUYER_EMAIL, "anchor", "buyer-plus-strip", "indexOf('+')", "indexOf('\\u0001')", golden("buyer-email")),
     ("M40", BUYER_EMAIL, "anchor", "buyer-gmail-dots", "'.'", "'\\u0001'", golden("buyer-email")),
-    ("M41", CHECKOUT, "first", None, "normalizeBuyerEmail(", "normalizeBuyerEmailX(", wiring("buyer-normalised")),
+    ("M41", CHECKOUT, "first", None, "abuseKeyStamp('checkout-buyer', buyerIdentity)", "abuseKeyStamp('checkout-buyer', lineItems[0].attendeeEmail)", wiring("buyer-normalised")),
     ("M42", LIMITER, "first", None, "trustedClientIpFromForwardedFor(", "clientIpFromForwardedFor(", wiring("client-ip-helper")),
     ("M43", BUYER_EMAIL, "anchor", "buyer-pair-actor", "[actorKey, ", "['', ", golden("buyer-email")),
     ("M44", BUYER_EMAIL, "anchor", "buyer-pair-actor", "[actorKey, ", "['', ", golden("abuse-limiter")),
