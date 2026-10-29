@@ -115,7 +115,7 @@ export async function createOrderWithPosition(
   input: CreateOrderPositionInput,
   deps: { db?: OrdersFirestoreLike } = {}
 ): Promise<CreateOrderPositionResult> {
-  const issuedInTestMode = isIssuanceTestMode();
+  const issuedInTestMode = isIssuanceTestMode({ ozowSandboxTestMode: false });
   const db: OrdersFirestoreLike = deps.db ?? getFirestore(initAdmin());
   const orders = db.collection(ORDERS_COLLECTION);
   const tickets = db.collection(TICKETS_COLLECTION);

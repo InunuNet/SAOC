@@ -97,7 +97,12 @@ is no separate hand-flipped flag to disagree with adapter state, so a new order 
 stamped `false` only when the launch constant is live and every adapter has left the sandbox.
 Flipping the launch constant alone is safe: tickets stay stamped as test and the door refuses them.
 The adapter guard (`adapter-guard.mjs`) fails if an adapter flag is `false` while that adapter still carries
-sandbox behaviour (sandbox URL, credentials, `IsTest`). The door itself keeps
+sandbox behaviour (sandbox URL, credentials, `IsTest`). The Ozow R0.01 admin toggle (`adminSettings/ozowSandboxTestMode`) is a third term:
+`isIssuanceTestMode({ ozowSandboxTestMode })` stamps test unless the value is literally `false`.
+Checkout passes the value it already read for the amount override (no second read); comps are never
+gateway-paid and pass an explicit `false`. Note that `isOzowSandboxTestModeEnabled()` maps a missing
+document or failed read to `false`, so an unreadable toggle does not stamp test.
+The door itself keeps
 `liveMode: !isTicketingTestMode()`, so committee testing is unchanged.
 
 ## Consequences
