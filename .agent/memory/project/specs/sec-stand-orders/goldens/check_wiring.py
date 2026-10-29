@@ -31,6 +31,7 @@ PAY_PAGE = "app/(nos)/national-show/vendors/payment/page.tsx"
 STATUS_PAGE = "app/(nos)/national-show/vendors/payment/status/page.tsx"
 TABLE = "components/admin/VendorReviewTable.tsx"
 
+CACHE_EXPECTATIONS = ".agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/goldens/cache-header-expectations.json"
 SPEC_DIR = ".agent/memory/project/specs/sec-stand-orders/"
 
 # The hunk list cleared by SAOC (spec.md "Hunk list"). Anything else in the diff fails `hunk-list`.
@@ -38,7 +39,7 @@ ALLOWED_FILES = {
     PAID, LINK, TOKEN, NOTIFY, LABELS, "types/index.ts", INITIATE, RESEND, REVIEW, REVOKE,
     ADMIN_LIST, ADMIN_DETAIL, TABLE, "components/admin/VendorSubmissionDetail.tsx", PAY_PAGE, STATUS_PAGE,
     "docs/vendor-stand-payment-settlement.md", "docs/stand-order-test-mode.md",
-    "contracts/checks/live-write-guard/writers-registry.json",
+    "contracts/checks/live-write-guard/writers-registry.json", CACHE_EXPECTATIONS,
 }
 
 # Frozen: byte-identical to the merge base (F5 neither touches nor re-derives these).
@@ -338,6 +339,23 @@ def check_settlement_deps_shape() -> None:
     need("db?:" in block and "liveMode?: boolean" in block, "deps keeps db? and adds liveMode?: boolean")
 
 
+def check_cache_probe_entries() -> None:
+    import json
+
+    data = json.loads(read(CACHE_EXPECTATIONS))
+    dynamic = data["routes"]["dynamic"]
+    # Observed on a local production build in launched mode (2026-10-29): both token URLs are
+    # per-request (no-store). The recover page does not exist (404), see spec.md D9.
+    for path, status in (("/vendors/payment?token=bogus", 200), ("/tickets/recover?token=bogus", 404)):
+        hits = [r for r in dynamic if r.get("host") == "nos" and r.get("path") == path]
+        need(len(hits) == 1, f"routes.dynamic needs exactly one nos entry for {path}")
+        need(hits[0].get("status") == status, f"{path} must record the observed status {status}")
+    for route in data["routes"]["isr"] + data["routes"]["static"]:
+        need("token=" not in route.get("path", ""), "a token URL is never classed isr or static")
+    existing = [r for r in dynamic if r.get("path") == "/tickets/no-such-ticket-f4"]
+    need(len(existing) == 1 and existing[0].get("status") == 404, "the existing f4 entry is untouched")
+
+
 CHECKS = {
     "dependency-f3": check_dependency_f3,
     "stamp-at-initiate": check_stamp_at_initiate,
@@ -350,6 +368,7 @@ CHECKS = {
     "views-fail-closed": check_views_fail_closed,
     "no-new-copy": check_no_new_copy,
     "no-backfill": check_no_backfill,
+    "cache-probe-entries": check_cache_probe_entries,
     "hunk-list": check_hunk_list,
     "unchanged": check_unchanged,
 }

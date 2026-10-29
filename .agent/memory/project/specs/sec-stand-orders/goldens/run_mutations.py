@@ -8,7 +8,7 @@ Firestore, no credentials (the goldens are pure, the wiring checks read text and
 
 Modes: anchor (the line after `// anchor: <name>`), first / last (str.replace on the first or last
 occurrence), append (add text to the end of an existing file), create (add a new file).
-Run: python3 .agent/memory/project/specs/sec-stand-orders/goldens/run_mutations.py
+Run: python3 .agent/memory/project/specs/sec-stand-orders/goldens/run_mutations.py [ID ...]   (ids select a subset)
 """
 import subprocess
 import sys
@@ -43,6 +43,7 @@ LABELS = "lib/vendor-stand-payment-labels.ts"
 TABLE = "components/admin/VendorReviewTable.tsx"
 STAMP = "const leakedStamp = { issuedInTestMode: false };\n"
 
+CACHE = ".agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/goldens/cache-header-expectations.json"
 PAID_G = golden("stand-order-paid")
 LINK_G = golden("stand-payment-link")
 
@@ -142,6 +143,11 @@ MUTATIONS = [
     ("B01", "scripts/backfill-stand-orders.ts", "create", None, "", "export const backfill = true;\n", wiring("no-backfill")),
     ("B02", "lib/extra-stand-helper.ts", "create", None, "", "export const extra = 1;\n", wiring("hunk-list")),
     ("B03", "components/admin/VendorPaymentLinkControl.tsx", "append", None, "", "\n// extra\n", wiring("hunk-list")),
+    # --- cache-header probe entries for the two bearer-token URLs (spec D9)
+    ("K01", CACHE, "first", None, '{"host": "nos", "path": "/vendors/payment?token=bogus", "status": 200},\n', "", wiring("cache-probe-entries")),
+    ("K02", CACHE, "first", None, '"path": "/tickets/recover?token=bogus", "status": 404', '"path": "/tickets/recover?token=bogus", "status": 200', wiring("cache-probe-entries")),
+    ("K03", CACHE, "first", None, '"path": "/vendors/payment?token=bogus"', '"path": "/vendors/payment"', wiring("cache-probe-entries")),
+    ("K04", CACHE, "first", None, '{"host": "nos", "path": "/tickets/recover?token=bogus", "status": 404}', '{"host": "saoc", "path": "/tickets/recover?token=bogus", "status": 404}', wiring("cache-probe-entries")),
     ("U01", "lib/ticket-issuance-mode.ts", "append", None, "", "\n// touched\n", wiring("unchanged")),
     ("U02", "lib/payments/sandbox-mode.ts", "append", None, "", "\n// touched\n", wiring("unchanged")),
     ("U03", "app/api/admin/vendors/[id]/payment/route.ts", "append", None, "", "\n// touched\n", wiring("unchanged")),
@@ -175,7 +181,10 @@ def mutate(text: str, mode: str, anchor: str | None, old: str, new: str) -> str 
 def main() -> int:
     SANDBOX.mkdir(parents=True, exist_ok=True)
     failures: list[str] = []
+    wanted = set(sys.argv[1:])
     for mutation_id, rel, mode, anchor, old, new, check in MUTATIONS:
+        if wanted and mutation_id not in wanted:
+            continue
         path = ROOT / rel
         if mode == "create":
             if not passes(check):
@@ -219,7 +228,7 @@ def main() -> int:
     if failures:
         print("\n".join(failures), file=sys.stderr)
         return 1
-    print(f"all {len(MUTATIONS)} mutations killed")
+    print(f"all {len(MUTATIONS) if not wanted else len(wanted)} mutations killed")
     return 0
 
 

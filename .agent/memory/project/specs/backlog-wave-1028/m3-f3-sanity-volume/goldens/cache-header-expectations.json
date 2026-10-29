@@ -25,7 +25,9 @@
     "dynamic": [
       {"host": "nos", "path": "/what-to-expect"}, {"host": "nos", "path": "/tickets"}, {"host": "nos", "path": "/workshops"},
       {"host": "nos", "path": "/symposium"}, {"host": "nos", "path": "/conferences"}, {"host": "nos", "path": "/wosa-conference"},
-      {"host": "nos", "path": "/tickets/no-such-ticket-f4", "status": 404}
+      {"host": "nos", "path": "/tickets/no-such-ticket-f4", "status": 404},
+      {"host": "nos", "path": "/vendors/payment?token=bogus", "status": 200},
+      {"host": "nos", "path": "/tickets/recover?token=bogus", "status": 404}
     ],
     "static": [
       {"host": "saoc", "discover_from": "/", "ext": "css"}, {"host": "saoc", "discover_from": "/", "ext": "js"},

@@ -74,6 +74,16 @@ Each decision names its source. A value with no source in the repo, Brad's or Le
 ### D8. Copy. No new user-facing copy.
 Reused verbatim: `This payment link is no longer valid.` (superseded, revoked, expired, malformed: the existing generic 403), `This stand has already been paid for.`, the pending notice, the 429 and gateway-not-configured strings. One gap, named like F3's D8: the admin pill for a counted-out paid order needs a label. Stopgap `'test-paid': 'Test paid'` in `STAND_PAYMENT_LABELS`, marked `// awaiting committee copy`, tone `neutral` (existing). A12 allows exactly that string. Also awaiting copy: the revoke button label.
 
+### D9. Cache-header probe entries for the two bearer-token URLs (SAOC P3). Decided, observed not assumed.
+- Paths confirmed from the `app/` tree and the proxy rewrite (NOS-host `/vendors/...` is rewritten under `/national-show/...`): the vendor stand-payment token page is `app/(nos)/national-show/vendors/payment/page.tsx`, public URL `/vendors/payment?token=...` (built in `app/api/admin/vendors/[id]/resend-payment-link/route.ts` `buildVendorStandPaymentUrl` and the approval email). The order-recovery URL is `/tickets/recover?token=...` (`lib/recovery-url.ts:15`, used by `lib/confirmation-email.ts:180`).
+- Observed 2026-10-29 on a local production build of this base (`next build` with Sanity stubbed, `next start`, `SITE_PUBLIC_LAUNCH=true`, Host header, GET only), bogus token:
+  - `nos` `/vendors/payment?token=bogus` -> 200, `private, no-cache, no-store, max-age=0, must-revalidate` (the page's existing fallback; dynamic because it reads `searchParams`).
+  - `nos` `/tickets/recover?token=bogus` -> **404**, same no-store header.
+  - Controls: `nos` `/vendors/payment/status?a=bogus` -> 200 no-store; `nos` `/tickets/confirmation?ref=bogus` -> 500 no-store only because this probe blanks Firebase credentials (not recorded). On the `saoc` host `/vendors/payment` is a 404 with `s-maxage=31536000` (no such page on that host, no token page there) and `/tickets/recover` is a 308 to the nos host.
+- Both entries are added to `routes.dynamic` in `.../m3-f3-sanity-volume/goldens/cache-header-expectations.json` with host `nos` and the observed status. The probe's `dynamic` rule (`no-store`, not `s-maxage`) is unchanged and `/tickets/no-such-ticket-f4` is untouched. A24 pins the entries; A25 runs the whole probe.
+- **Finding for SAOC (not fixed here, out of F5 scope): the order-recovery deep link emailed to buyers 404s.** `lib/recovery-url.ts` builds `/tickets/recover?token=...` but no `app/` route handles `/tickets/recover`; `app/(nos)/tickets/[slug]/page.tsx` treats `recover` as an unknown ticket slug. The probe entry records today's real 404, so it will start failing when a recover page lands (the status becomes 200): whoever builds it must update this entry's status in the same change and keep the page dynamic and no-store.
+- Local-run limit: `scripts/checks/lib/local-next-server.mjs` puts the preload path in `NODE_OPTIONS` unquoted, so `cache-headers-probe.mjs --spawn` aborts with `ERR_UNSUPPORTED_DIR_IMPORT` when the repo path has a space (this machine). The observation above used a throwaway runner that quotes it. Not patched here; a script-level fix (quote the value) is a separate one-line change for SAOC.
+
 ## Specification
 
 ### New pure modules (client-safe, no Firestore)
@@ -121,6 +131,7 @@ All files are in the SAOC lane (vendor or admin) except where noted. Estimated s
 | `app/(nos)/national-show/vendors/payment/status/page.tsx` | "confirmed" only when counted | no false confirmation |
 | `docs/vendor-stand-payment-settlement.md`, `docs/stand-order-test-mode.md` (new) | docs | `CLAUDE.md` (floor-protected) is a SAOC follow-up |
 | `contracts/checks/live-write-guard/writers-registry.json` | 2 STATIC_FP entries (done in this commit) | A20 |
+| `.agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/goldens/cache-header-expectations.json` | two `routes.dynamic` entries (done in this commit): nos `/vendors/payment?token=bogus` 200, nos `/tickets/recover?token=bogus` 404 | SAOC P3: bearer-token URLs pinned per-request (D9) |
 
 Read and deliberately not touched: `app/api/admin/vendors/[id]/payment/route.ts` and `lib/vendor-payment.ts` (booth allocation), `lib/vendor-listing.ts` and `publish-listing` (listing), both `*-itn` routes, `lib/vendor-stand-order-amount.ts`, `lib/vendor-stand-orders.ts`, every `lib/payments/*`, `firestore.rules`, `firestore.indexes.json` (equality filters on automatic indexes; no new query), `apphosting.yaml`.
 
