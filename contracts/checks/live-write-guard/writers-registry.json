@@ -587,6 +587,18 @@
     "--verify"
    ],
    "target": "Identity Toolkit saoc-webapp config client.permissions.disabledUserSignup; --config-fixture and --verify never write"
+  },
+  "contracts/checks/door-reject-test-tickets/admission.test.mjs": {
+   "class": "FAKE",
+   "match": "'firebase-admin/firestore': \\{ getFirestore: \\(\\) => db",
+   "note": "real route, service and guard transpiled in memory; firebase-admin/firestore, firebase-admin init, admin-auth, audit store and next/server are stubbed, and the POST is a Request object handed straight to the handler (http://fixture.invalid is never fetched)",
+   "target": "in-memory db object with a write spy; no SDK, network or environment is loaded"
+  },
+  "contracts/checks/door-reject-test-tickets/adapter-mutation.mjs": {
+   "class": "STATIC_FP",
+   "match": "const original = Object\\.fromEntries\\(files\\.map\\(\\(file\\) => \\[file, readFileSync",
+   "note": "MUT hits are the local in-memory mutate callbacks that rewrite source text strings; the script only reads four repository files and calls pure check functions, writes nothing and makes no request",
+   "target": "source text only"
   }
  }
 }

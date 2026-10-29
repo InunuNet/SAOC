@@ -1,0 +1,144 @@
+[
+  {
+    "id": "test-true",
+    "input": {
+      "liveMode": false,
+      "issuedInTestMode": true
+    },
+    "expected": "allow"
+  },
+  {
+    "id": "test-false",
+    "input": {
+      "liveMode": false,
+      "issuedInTestMode": false
+    },
+    "expected": "allow"
+  },
+  {
+    "id": "test-missing",
+    "input": {
+      "liveMode": false
+    },
+    "expected": "allow"
+  },
+  {
+    "id": "test-null",
+    "input": {
+      "liveMode": false,
+      "issuedInTestMode": null
+    },
+    "expected": "allow"
+  },
+  {
+    "id": "test-string-true",
+    "input": {
+      "liveMode": false,
+      "issuedInTestMode": "true"
+    },
+    "expected": "allow"
+  },
+  {
+    "id": "test-string-false",
+    "input": {
+      "liveMode": false,
+      "issuedInTestMode": "false"
+    },
+    "expected": "allow"
+  },
+  {
+    "id": "test-zero",
+    "input": {
+      "liveMode": false,
+      "issuedInTestMode": 0
+    },
+    "expected": "allow"
+  },
+  {
+    "id": "test-object",
+    "input": {
+      "liveMode": false,
+      "issuedInTestMode": {}
+    },
+    "expected": "allow"
+  },
+  {
+    "id": "test-array",
+    "input": {
+      "liveMode": false,
+      "issuedInTestMode": []
+    },
+    "expected": "allow"
+  },
+  {
+    "id": "live-true",
+    "input": {
+      "liveMode": true,
+      "issuedInTestMode": true
+    },
+    "expected": "reject_test_ticket"
+  },
+  {
+    "id": "live-false",
+    "input": {
+      "liveMode": true,
+      "issuedInTestMode": false
+    },
+    "expected": "allow"
+  },
+  {
+    "id": "live-missing",
+    "input": {
+      "liveMode": true
+    },
+    "expected": "reject_test_ticket"
+  },
+  {
+    "id": "live-null",
+    "input": {
+      "liveMode": true,
+      "issuedInTestMode": null
+    },
+    "expected": "reject_test_ticket"
+  },
+  {
+    "id": "live-string-true",
+    "input": {
+      "liveMode": true,
+      "issuedInTestMode": "true"
+    },
+    "expected": "reject_test_ticket"
+  },
+  {
+    "id": "live-string-false",
+    "input": {
+      "liveMode": true,
+      "issuedInTestMode": "false"
+    },
+    "expected": "reject_test_ticket"
+  },
+  {
+    "id": "live-zero",
+    "input": {
+      "liveMode": true,
+      "issuedInTestMode": 0
+    },
+    "expected": "reject_test_ticket"
+  },
+  {
+    "id": "live-object",
+    "input": {
+      "liveMode": true,
+      "issuedInTestMode": {}
+    },
+    "expected": "reject_test_ticket"
+  },
+  {
+    "id": "live-array",
+    "input": {
+      "liveMode": true,
+      "issuedInTestMode": []
+    },
+    "expected": "reject_test_ticket"
+  }
+]
