@@ -178,6 +178,25 @@ def check_sandbox_independent() -> None:
                 fail(f"F3 must not touch Ozow sandbox mode ({token}): {line.strip()[:120]}")
 
 
+# Retired ticketType slugs that still have live `reserved` tickets with no expiresAt (they hold a
+# seat forever by design, lib/data/tickets.ts:29-31). Source: SAOC H7 count of 2026-10-29: 11
+# legacy PayFast-era tickets with showId "nationalShow", ticketType "adult" x4 and "exhibitor" x7.
+# A new active product (or capacityPool) reusing one of these slugs would inherit those phantom
+# holds. Empty this tuple once SAOC confirms the purge of those documents.
+RETIRED_TICKET_SLUGS = ("adult", "exhibitor")
+# Files that declare active ticket types, pools or fixtures. OLD_PLACEHOLDER_SLUGS lines (the
+# cleanup list that names the retired slugs on purpose) are skipped.
+TICKET_DECLARATION_FILES = [
+    "lib/provisional-figures.ts", "lib/demo-ticket-type-seed-plan.ts", "lib/fictional-test-show-seed-plan.ts",
+    "scripts/seed-ticketing.ts", "scripts/seed-qa-fixture-ticket-type.ts", "scripts/migrate-conference-workshop-tickets.ts",
+    "sanity/schemas/documents/ticketType.ts", "scripts/seed-door-test-tickets.ts",
+]
+TICKET_DECLARATION_DIRS = ["app/ticket-fixtures"]
+# Known existing use, tolerated until SAOC retargets the seeder (hand-off H12): the door QR test
+# seeder writes a `reserved` fixture ticket of type "exhibitor". Exact (file, line) text only.
+RETIRED_SLUG_EXEMPTIONS = {("scripts/seed-door-test-tickets.ts", "const TICKET_TYPE = 'exhibitor';")}
+
+
 APP_CHECK_ALLOWED_USERS = {
     CHECKOUT, "lib/app-check.ts", "lib/app-check-client.ts", "components/tickets/useTicketCart.ts",
 }
@@ -270,6 +289,24 @@ def check_bundle_flag_off() -> None:
                 fail(f"flag-off build ships App Check/reCAPTCHA client code ({marker} in {path.relative_to(ROOT)})")
 
 
+def check_retired_slugs() -> None:
+    files = [ROOT / rel for rel in TICKET_DECLARATION_FILES]
+    for directory in TICKET_DECLARATION_DIRS:
+        base = ROOT / directory
+        if base.is_dir():
+            files.extend(p for p in base.rglob("*") if p.suffix in (".ts", ".tsx", ".json"))
+    pattern = re.compile(r"""['"](%s)['"]""" % "|".join(re.escape(s) for s in RETIRED_TICKET_SLUGS)) if RETIRED_TICKET_SLUGS else None
+    for path in files:
+        if pattern is None or not path.is_file():
+            continue
+        rel = str(path.relative_to(ROOT))
+        for number, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+            if "OLD_PLACEHOLDER_SLUGS" in line or (rel, line.strip()) in RETIRED_SLUG_EXEMPTIONS:
+                continue
+            if pattern.search(line):
+                fail(f"{rel}:{number}: retired ticket slug {pattern.search(line).group(1)!r} (live phantom holds, SAOC H7 2026-10-29); pick another slug or capacityPool")
+
+
 CHECKS = {
     "checkout-order": check_checkout_order,
     "no-memory-limiter": check_no_memory_limiter,
@@ -284,6 +321,7 @@ CHECKS = {
     "client-gated": check_client_gated,
     "xff-trusted-hop": check_xff_trusted_hop,
     "bundle-flag-off": check_bundle_flag_off,
+    "retired-slugs": check_retired_slugs,
 }
 
 if __name__ == "__main__":

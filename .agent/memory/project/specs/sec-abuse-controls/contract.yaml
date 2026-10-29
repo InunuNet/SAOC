@@ -68,7 +68,7 @@ assertions:
       command: env -u NEXT_PUBLIC_APP_CHECK_RECAPTCHA_SITE_KEY pnpm build
       timeout_seconds: 900
     - id: A15
-      description: mutation proof - 28 mutations across limiter, budget, webhook cap, actor stamp, App Check, client gate, forwarded-header trust and wiring are each killed by a check above, files restored byte for byte
+      description: mutation proof - 30 mutations across limiter, budget, webhook cap, actor stamp, App Check, client gate, forwarded-header trust and wiring are each killed by a check above, files restored byte for byte
       command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/run_mutations.py
       timeout_seconds: 900
     - id: A16
@@ -102,6 +102,9 @@ assertions:
       description: the flag-off production build ships no reCAPTCHA or App Check client code
       command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py bundle-flag-off
     - id: A26
+      description: no active ticket type, capacity pool or fixture reuses a retired slug that still has live phantom holds (adult, exhibitor)
+      command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py retired-slugs
+    - id: A27
       description: cross-model adversarial review of the diff
       type: codex_qa
       target: .agent/memory/project/specs/sec-abuse-controls/codex-qa-prompt.md

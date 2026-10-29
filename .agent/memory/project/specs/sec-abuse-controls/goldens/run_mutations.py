@@ -61,6 +61,8 @@ MUTATIONS = [
     ("M26", "lib/abuse-limiter.ts", "append", None, "", "\nconst leftmost = headers.get('x-forwarded-for')?.split(',')[0];\n", wiring("xff-trusted-hop")),
     ("M27", "components/tickets/useTicketCart.ts", "append", None, "", "\nimport 'firebase/app-check';\n", wiring("client-gated")),
     ("M28", ".next/static/chunks/zz-mutation.js", "create", None, "", "recaptcha/enterprise.js", wiring("bundle-flag-off")),
+    ("M29", "lib/provisional-figures.ts", "append", None, "", "\nconst reuse = { slug: 'adult' };\n", wiring("retired-slugs")),
+    ("M30", "app/ticket-fixtures/buy/page.tsx", "append", None, "", "\nconst pool = { capacityPool: \"exhibitor\" };\n", wiring("retired-slugs")),
     ("M18", "app/api/contact/route.ts", "append", None, "", "\nimport { createAttemptStore } from '@/lib/newsletter-rate-store';\n", wiring("no-memory-limiter")),
 ]
 
