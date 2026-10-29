@@ -14,9 +14,9 @@
 import assert from 'node:assert/strict';
 import http from 'node:http';
 
-import { mintRecoveryToken } from '../../../../../lib/recovery-token.ts';
+import { mintRecoveryToken } from '../../../../../../lib/recovery-token.ts';
 // @ts-expect-error the helper is plain JS
-import { startServer } from '../../../../../scripts/checks/lib/local-next-server.mjs';
+import { SANDBOX_DIR, startServer } from '../../../../../../scripts/checks/lib/local-next-server.mjs';
 
 const PORT = 3231;
 const SECRET = `live-golden-${'q'.repeat(48)}`; // not a credential
@@ -47,7 +47,7 @@ const redact = (body: string, query: string) =>
   [query, encodeURIComponent(query), query.replace(/\./g, '%2E')].reduce((acc, q) => (q ? acc.split(q).join('<QUERY>') : acc), body);
 
 async function main() {
-  const live = await startServer({ port: PORT, countLog: '.tmp/sandbox/nos-order-recovery-live/count.log', launched: true });
+  const live = await startServer({ port: PORT, countLog: `${SANDBOX_DIR}/recover-live.log`, launched: true });
   try {
     const host = live.hostFor('nos');
     const valid = mintRecoveryToken({ orderId: 'order-live-A', secret: SECRET, now: NOW }).token;
@@ -94,6 +94,14 @@ async function main() {
     };
     const stripFlight = (html: string) => html.replace(/<script[^>]*>[^<]*__next_f[\s\S]*?<\/script>/g, '');
 
+    // The first request a fresh `next start` serves for a route is streamed with different RSC chunking from every
+    // later one (observed: request 1 of a run differs from requests 2-6 of the SAME token class; requests 2-6 are
+    // identical across all four classes). That is server warm-up, not a token class, so it is discarded: two
+    // throwaway requests per distinct URL length before anything is compared. It does not loosen the comparison,
+    // which is still strict across every class once the server is warm.
+    for (const warm of [shapeDenied, shapeDenied, '?token=warm', '?token=warm']) {
+      await fetchOnce(host, `/tickets/recover${warm}`);
+    }
     const tier1 = await fetchAll(equalLength);
     const tier2 = [...tier1, ...(await fetchAll(anyLength))];
     const results = tier2;

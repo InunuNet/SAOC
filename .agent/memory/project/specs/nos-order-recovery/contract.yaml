@@ -6,9 +6,9 @@
 #     `node scripts/checks/sanity-request-count.mjs --build`, plus the same build environment as the
 #     door-reject-test-tickets contract (NEXT_PUBLIC_SANITY_PROJECT_ID, NEXT_PUBLIC_SANITY_DATASET, the three
 #     site URLs from apphosting.yaml, SANITY_FIXTURE_MODE=replay, SANITY_FIXTURE_DIR=$PWD/.agent/memory/project/specs/nos-content-standard/fixtures/sanity, K_SERVICE unset).
-#   - A17 and A18 start `next start` through scripts/checks/lib/local-next-server.mjs, which puts a path in
-#     NODE_OPTIONS unquoted: they cannot run from a checkout whose path contains a space (SAOC is fixing it in #160;
-#     CI paths have none). A9 pins the probe entry statically meanwhile.
+#   - A17 and A18 start `next start` through scripts/checks/lib/local-next-server.mjs (Sanity stubbed by its preload, so the
+#     server must NOT run with SANITY_FIXTURE_MODE set: A17's command unsets it; the build in A16 still uses it). Ports 3231 (A17) and
+#     3219 (A18) must be free. The path-with-space limitation was fixed in #160.
 #   - Triad (A21, A22) uses docs/verification-triad-gate.md defaults. Both are required:false and expected to skip
 #     until a post-deploy manifest exists.
 #   - No assertion here writes to production: the goldens are pure, the wiring checks read text and git diff, the
@@ -91,7 +91,7 @@ assertions:
       timeout_seconds: 900
     - id: A17
       description: live server - nine token classes get the same 404 and headers; four equal-length ones (forged, tampered, expired with a valid signature, shape-denied) get the same body byte for byte, and all nine the same rendered HTML outside the RSC payload, with no Firestore read possible; response carries no-referrer, no-store and noindex. Needs the stubbed build and a space-free path
-      command: pnpm exec tsx .agent/memory/project/specs/nos-order-recovery/goldens/check-recover-live.mts
+      command: env -u SANITY_FIXTURE_MODE -u SANITY_FIXTURE_DIR pnpm exec tsx .agent/memory/project/specs/nos-order-recovery/goldens/check-recover-live.mts
       timeout_seconds: 600
     - id: A18
       description: the whole cache-header expectations file against a local launched build, including the recover entry (GET only)

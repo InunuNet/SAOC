@@ -6,8 +6,8 @@ is meant to kill it, and requires that check to FAIL. Files are restored byte fo
 A baseline run of the killing check must pass first. Local files only: no network, no Firestore.
 Modes: anchor (the line after `// anchor: <name>`), first / last (str.replace), append, create.
 Run: python3 .agent/memory/project/specs/nos-order-recovery/goldens/run_mutations.py [--heavy] [ID ...]
-`--heavy` adds the mutations that need a production build + a space-free checkout path (they run
-check-recover-live.mts); without it they are listed as SKIPPED, never counted as killed.
+`--heavy` adds the mutations that need a production build (each one rebuilds, about two minutes, and runs
+check-recover-live.mts; the gate env of contract.yaml must be exported); without it they are listed as SKIPPED, never counted as killed.
 """
 import subprocess
 import sys
@@ -38,7 +38,10 @@ ACCESS_G = golden("recovery-access")
 BIND_G = golden("confirmed-order-binding")
 HEADERS_G = golden("recover-headers")
 PROXY_G = golden("proxy-routing")
-LIVE = ["pnpm", "exec", "tsx", f"{SPEC}/check-recover-live.mts"]
+BUILD = "node scripts/checks/sanity-request-count.mjs --build"
+# The live check runs the BUILT server, so a source mutation only counts after a rebuild. The server must not
+# run in fixture-replay mode (the stub in the preload answers Sanity), hence env -u on the run, not the build.
+LIVE = ["bash", "-c", f"{BUILD} > /dev/null 2>&1 && env -u SANITY_FIXTURE_MODE -u SANITY_FIXTURE_DIR pnpm exec tsx {SPEC}/check-recover-live.mts"]
 HEAVY = {"L01", "L02"}
 
 # (id, file, mode, anchor, old, new, killing check)
@@ -210,6 +213,9 @@ def main() -> int:
             path.write_bytes(original)
             if path.read_bytes() != backup.read_bytes():
                 failures.append(f"{mutation_id}: RESTORE FAILED for {rel}")
+    if heavy and any(m[0] in HEAVY for m in MUTATIONS if not wanted or m[0] in wanted):
+        # leave .next built from the restored sources, not from the last mutant
+        subprocess.run(["bash", "-c", f"{BUILD} > /dev/null 2>&1"], cwd=ROOT)
     for leftover in SANDBOX.glob("*.bak"):
         leftover.unlink()
     if skipped:
