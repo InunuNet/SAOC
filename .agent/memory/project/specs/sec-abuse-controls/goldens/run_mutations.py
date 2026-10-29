@@ -125,6 +125,12 @@ MUTATIONS = [
     ("M89", "app/api/contact/route.ts", "first", None, "limit = await consumeAbuseLimit({", "await request.text();\n    limit = await consumeAbuseLimit({", golden("routes-limited")),
     ("M90", "app/api/newsletter/subscribe/route.ts", "first", None, "limit = await consumeAbuseLimit({", "await request.text();\n    limit = await consumeAbuseLimit({", golden("routes-limited")),
     ("M91", "app/api/newsletter/unsubscribe/route.ts", "first", None, "limit = await consumeAbuseLimit({", "await request.text();\n    limit = await consumeAbuseLimit({", golden("routes-limited")),
+    ("M92", "lib/buyer-email.ts", "anchor", "buyer-idn", "domainToASCII(", "String(", golden("buyer-email")),
+    ("M93", "lib/buyer-email.ts", "anchor", "buyer-idn", "domainToASCII(", "String(", golden("checkout-route")),
+    ("M94", "app/api/tickets/checkout/route.ts", "anchor", "checkout-body-cap", "await readCappedBody(request, MAX_BODY_BYTES)", "{ ok: true as const, text: JSON.stringify(await request.json()) }", golden("checkout-route")),
+    ("M95", "app/api/tickets/checkout/route.ts", "anchor", "checkout-body-cap", "await readCappedBody(request, MAX_BODY_BYTES)", "await readCappedBody(request, Number.MAX_SAFE_INTEGER)", golden("checkout-route")),
+    ("M96", "app/api/tickets/checkout/route.ts", "anchor", "checkout-body-cap", "await readCappedBody(request, MAX_BODY_BYTES)", "await readCappedBody(request, MAX_BODY_BYTES * 1000)", golden("checkout-route")),
+    ("M97", "app/api/tickets/checkout/route.ts", "first", None, "const actorKey = clientActorKey(request.headers.get('x-forwarded-for'));", "await request.text().catch(() => '');\n  const actorKey = clientActorKey(request.headers.get('x-forwarded-for'));", golden("checkout-route")),
     ("M18", "app/api/contact/route.ts", "append", None, "", "\nimport { createAttemptStore } from '@/lib/newsletter-rate-store';\n", wiring("no-memory-limiter")),
 ]
 

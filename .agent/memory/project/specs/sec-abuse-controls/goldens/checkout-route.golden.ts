@@ -62,6 +62,14 @@ async function main() {
     if (opts.jsonSpy) {
       const original = request.json.bind(request);
       request.json = (async () => { opts.jsonSpy!.called = true; return original(); }) as typeof request.json;
+      // Any other body accessor counts as a read too (the body is read through the capped stream reader).
+      const target = request as unknown as Record<string, unknown>;
+      for (const name of ['text', 'formData', 'arrayBuffer', 'blob', 'clone']) {
+        const accessor = (target[name] as (...args: unknown[]) => unknown).bind(request);
+        target[name] = (...args: unknown[]) => { opts.jsonSpy!.called = true; return accessor(...args); };
+      }
+      const realBody = request.body;
+      Object.defineProperty(request, 'body', { get() { opts.jsonSpy!.called = true; return realBody; } });
     }
     const response = await POST(request);
     let parsed: { error?: string } = {};
@@ -176,6 +184,16 @@ async function main() {
     assert.equal(db.all('abuseLimits').length, 5, 'actor A, actor B, pair A+buyer, pair B+buyer, pair A+other: no global per-email document');
     const limiterDocs = JSON.stringify(db.all('abuseLimits'));
     for (const raw of ['203.0.113', 'buyer@', 'other@', 'example.org']) assert.ok(!limiterDocs.includes(raw), `no raw ${raw} stored`);
+    // 5b. An internationalised domain and its punycode form are one buyer: no per-buyer budget doubling.
+    resetState();
+    for (let i = 0; i < 6; i++) assert.equal((await post({ email: 'b@b\u00fccher.de' })).status, 201, `IDN purchase ${i + 1} of 6`);
+    expectRefusal(await post({ email: 'B@xn--bcher-kva.de' }), 'the punycode form of the same domain shares the buyer budget');
+    expectRefusal(await post({ email: 'b@B\u00dcCHER.DE' }), 'upper-case Unicode shares it too');
+    // A domain the URL parser rejects is not a free new identity: every such email shares one per-actor bucket.
+    resetState();
+    for (let i = 0; i < 6; i++) await post({ email: `r${i}@exa%mple.com` });
+    expectRefusal(await post({ email: 'zz@exa%mple.com' }), 'a rejected domain falls in one strict per-actor bucket (fail closed)');
+    resetState();
   }
 
   // 6. Held-seat budget: 40 per actor, 40 per buyer pair, decided inside the reservation transaction.
@@ -211,6 +229,8 @@ async function main() {
     // 6c. The buyer budget is per (actor, email) pair.
     resetState(); seedHeld(40, { clientKey: actorStamp('203.0.113.201'), buyerKey: buyer });
     expectRefusal(await post({ seats: 1 }), '40 held under this buyer pair');
+    resetState(); seedHeld(40, { clientKey: actorStamp('203.0.113.201'), buyerKey: buyerStamp('203.0.113.9', 'b@xn--bcher-kva.de') });
+    expectRefusal(await post({ seats: 1, email: 'B@b\u00fccher.de' }), 'held seats stamped with the punycode form count against the Unicode form');
     assert.equal((await post({ seats: 1, ip: '203.0.113.10' })).status, 201, 'the same email from another address has its own held-seat budget');
     assert.equal((await post({ seats: 1, email: 'other@example.org' })).status, 201, 'another buyer on this address is untouched');
     // 6d. A replay of an already-held reservation is never refused by the seats it holds.
@@ -251,6 +271,67 @@ async function main() {
     for (let i = 0; i < 11; i++) assert.equal((await post({})).status, 403);
     expectRefusal(await post({ jsonSpy: spy }), 'the actor limit fires before App Check is consulted');
     delete process.env.APP_CHECK_ENFORCE_CHECKOUT;
+  }
+
+  // 8. The body read is bounded by the ACTUAL stream, not the declared Content-Length: a request that
+  // declares 100 bytes and streams without end is refused 413 after about the cap, never buffered whole.
+  {
+    const MAX_BODY = 131072;
+    const CHUNK = 65536;
+    const streamed = (declaredLength: string, pulled: { bytes: number; cancelled: boolean }, ip: string) => {
+      const chunk = new Uint8Array(CHUNK).fill(0x20);
+      let sent = 0;
+      const stream = new ReadableStream<Uint8Array>({
+        pull(controller) {
+          if (sent >= 200) { controller.close(); return; } // safety stop: 200 chunks = 12.5 MiB
+          sent += 1;
+          pulled.bytes += CHUNK;
+          controller.enqueue(chunk);
+        },
+        cancel() { pulled.cancelled = true; },
+      }, { highWaterMark: 0 });
+      return new NextRequest('http://localhost/api/tickets/checkout', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'content-length': declaredLength,
+          'Idempotency-Key': freshKey(),
+          'x-forwarded-for': hop(ip),
+        },
+        body: stream,
+        duplex: 'half',
+      } as ConstructorParameters<typeof NextRequest>[1]);
+    };
+
+    resetState();
+    const pulled = { bytes: 0, cancelled: false };
+    const over = await POST(streamed('100', pulled, '203.0.113.9'));
+    assert.equal(over.status, 413, 'a stream over the cap is refused 413 despite a small declared Content-Length');
+    assert.ok(pulled.bytes <= MAX_BODY + 3 * CHUNK, `the stream is cut off near the cap (pulled ${pulled.bytes} bytes), not buffered whole`);
+    assert.ok(pulled.bytes > 0, 'the stream was actually read (the cap is enforced on the stream)');
+    assert.equal(pulled.cancelled, true, 'the over-cap stream is cancelled');
+    assert.equal(sanity.queries.length, 0, 'nothing is looked up for an oversized body');
+    assert.equal(ticketCount(), 0, 'nothing is reserved for an oversized body');
+
+    // Invalid JSON inside the cap is still the 400 it always was.
+    resetState();
+    const junk = '{not json';
+    const junkRequest = new NextRequest('http://localhost/api/tickets/checkout', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'content-length': String(junk.length), 'Idempotency-Key': freshKey(), 'x-forwarded-for': hop('203.0.113.11') },
+      body: junk,
+    });
+    const junkResponse = await POST(junkRequest);
+    assert.equal(junkResponse.status, 400, 'invalid JSON within the cap stays a 400');
+    assert.equal((await junkResponse.json()).error, 'Invalid request body.');
+
+    // Limiter before body: an exhausted actor's oversize stream is refused 429 with ZERO bytes pulled.
+    resetState();
+    for (let i = 0; i < 12; i++) await post({ ip: '203.0.113.50' });
+    const untouched = { bytes: 0, cancelled: false };
+    const limited = await POST(streamed('100', untouched, '203.0.113.50'));
+    assert.equal(limited.status, 429, 'the exhausted actor is refused before the body');
+    assert.equal(untouched.bytes, 0, 'no body bytes are pulled before the limiter refuses');
   }
 
   assert.equal(outbound.length, 0, 'no network use anywhere in this golden');

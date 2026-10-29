@@ -37,6 +37,23 @@ async function main() {
   assert.equal(n('a+b@c@d.org'), 'a+b@c@d.org', 'more than one @ is returned as trimmed lowercase');
   assert.equal(n(''), '');
 
+  // Internationalised domains: the Unicode and punycode forms are one mailbox (node:url domainToASCII,
+  // no dependency), so neither form buys a second per-buyer budget or a second held-seat budget.
+  assert.equal(n('Buyer@b\u00fccher.de'), 'buyer@xn--bcher-kva.de', 'Unicode domain folds to punycode');
+  assert.equal(n('buyer@B\u00dcCHER.DE'), n('buyer@xn--bcher-kva.de'), 'upper-case Unicode and punycode are one buyer');
+  assert.equal(n('buyer+tag@b\u00fccher.de'), n('buyer@xn--bcher-kva.de'), 'plus-tag and IDN combine');
+  assert.equal(n('a@d.org'), 'a@d.org', 'plain ASCII domains are unchanged');
+  assert.equal(buyerPairKey('ip4:1.2.3.4', 'x@b\u00fccher.de'), buyerPairKey('ip4:1.2.3.4', 'x@xn--bcher-kva.de'), 'one pair key');
+  // A domain the URL parser rejects normalises to the empty string (invalid): it never passes as a
+  // distinct new identity, and the pair key stays a deterministic per-actor value.
+  for (const rejected of ['a@exa%mple.com', 'a@b c.com', 'a+x@exa%mple.com']) {
+    assert.equal(n(rejected), '', `${rejected}: a rejected domain normalises to empty`);
+  }
+  assert.equal(buyerPairKey('ip4:1.2.3.4', 'p@exa%mple.com'), buyerPairKey('ip4:1.2.3.4', 'q@bad domain.com'), 'rejected domains share one per-actor bucket');
+  assert.notEqual(buyerPairKey('ip4:1.2.3.4', 'p@exa%mple.com'), buyerPairKey('ip4:1.2.3.5', 'p@exa%mple.com'), 'and that bucket is still per actor');
+  assert.equal(n(n('x@b\u00fccher.de')), n('x@b\u00fccher.de'), 'idempotent on IDN');
+  assert.equal(n(''), '');
+
   // Idempotent.
   for (const value of ['a+x@d.org', 'A.B+c@gmail.com', ' x@y.z ', '+x@d.org']) {
     assert.equal(n(n(value)), n(value), `idempotent for ${value}`);
