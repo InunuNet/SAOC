@@ -4,9 +4,13 @@
  *
  * Trims and lowercases; strips everything from the first `+` in the local part (unless that would
  * empty it); for exactly gmail.com and googlemail.com removes local-part dots and folds
- * googlemail.com to gmail.com. Malformed input (no `@`, or more than one) is only trimmed and
+ * googlemail.com to gmail.com. The domain is first converted to its ASCII (punycode) form, so
+ * unicode and xn-- spellings of one domain are one buyer; an unconvertible domain yields ''.
+ * Malformed input (no `@`, or more than one) is only trimmed and
  * lowercased: validation lives elsewhere. Idempotent.
  */
+
+import { domainToASCII } from 'node:url';
 
 const GMAIL_DOMAIN = 'gmail.com';
 const GOOGLEMAIL_DOMAIN = 'googlemail.com';
@@ -16,7 +20,9 @@ export function normalizeBuyerEmail(raw: string): string {
   const parts = email.split('@');
   if (parts.length !== 2) return email;
   let local = parts[0];
-  let domain = parts[1];
+  // anchor: buyer-idn
+  let domain = domainToASCII(parts[1]);
+  if (domain === '') return '';
 
   // anchor: buyer-plus-strip
   const plus = local.indexOf('+');

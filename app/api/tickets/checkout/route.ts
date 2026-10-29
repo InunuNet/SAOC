@@ -47,6 +47,7 @@ import {
 } from '@/lib/ozow-sandbox-test-mode';
 import { mintRecoveryToken } from '@/lib/recovery-token';
 import { buildShowWindow, isValidChosenDay } from '@/lib/show-window-lookup';
+import { readCappedBody } from '@/lib/webhook-body';
 import { client } from '@/sanity/lib/client';
 import {
   activeShowWindowQuery,
@@ -530,7 +531,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   let body: CheckoutRequestBody;
   try {
-    body = (await request.json()) as CheckoutRequestBody;
+    // anchor: checkout-body-cap
+    const capped = await readCappedBody(request, MAX_BODY_BYTES);
+    if (!capped.ok) return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
+    body = JSON.parse(capped.text) as CheckoutRequestBody;
   } catch (error) {
     console.error('[tickets/checkout] Failed to parse request body:', error);
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
