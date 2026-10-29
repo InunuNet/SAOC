@@ -109,5 +109,5 @@ assertions:
       description: Adapter mutation proof. Each of these is rejected, an adapter flag false while it still sends sandbox (Ozow credentials, IsTest decoupled or hard-coded, PayFast form with the fail-closed branch removed, inverted or placed after the form), a leaf that imports or reads env, a redefined flag, a hand-set or truncated stamp, client-chain imports of an adapter, the payments index, a Node built-in or a dynamic import, and ten synthetic bad lib/payments diffs. The unmutated controls pass.
       command: node contracts/checks/door-reject-test-tickets/adapter-mutation.mjs
     - id: A20
-      description: lib/ticket-issuance-mode.ts is client-safe. It imports nothing from lib/payments except sandbox-mode, no adapter, payments index or node: module, so no client chain can reach an adapter.
+      description: lib/ticket-issuance-mode.ts is client-safe. It imports nothing from lib/payments except sandbox-mode, no adapter, payments index or Node built-in module, so no client chain can reach an adapter.
       command: node contracts/checks/door-reject-test-tickets/adapter-guard.mjs client-safe .
