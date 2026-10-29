@@ -166,8 +166,8 @@ def check_orders_addition() -> None:
     added = "\n".join(l[1:] for l in diff.splitlines() if l.startswith("+") and not l.startswith("+++"))
     need("export async function getOrderRecoveryRecord(" in added, "adds export getOrderRecoveryRecord")
     need("export async function getConfirmedOrderByOrderId(" in added, "adds export getConfirmedOrderByOrderId")
-    for banned in (".set(", ".update(", ".delete(", ".add(", "runTransaction", ".batch(", "console."):
-        need(banned not in added, f"the added lookups are read-only and silent: {banned}")
+    for banned in (".set(", ".update(", ".delete(", ".add(", "runTransaction", ".batch("):
+        need(banned not in added, f"the added lookups are read-only: {banned}")
     need("where('m_payment_id'" not in added and 'where("m_payment_id"' not in added, "no lookup by reference in the added code")
     need(".doc(orderId)" in added, "reads the order by the signed id")
     need("where('orderId', '==', orderId)" in added, "positions are read for the verified order id")
@@ -178,9 +178,19 @@ def check_orders_addition() -> None:
     need("tickets.where('orderId', '==', orderId)" in anchored(added, "co-positions"), "anchor co-positions: tickets.where('orderId', '==', orderId)")
 
 
+LOG_SINKS = re.compile(r"\bconsole\b|process\s*\.\s*(?:stdout|stderr)|\b(?:logger|pino|winston|bunyan|debugger)\b|\bglobalThis\s*\.\s*console\b")
+
+
 def check_no_logging() -> None:
+    # Any reference to the console object in ANY form (console.x, console['x'], const c = console, destructuring),
+    # a stdout/stderr write, or a logger library. A token must never reach a log, and bad tokens must not flood one.
     for rel in NEW_FILES:
-        need("console." not in code_only(read(rel)), f"{rel}: no console.* (a token must never reach a log, and bad tokens must not flood one)")
+        hit = LOG_SINKS.search(code_only(read(rel)))
+        need(hit is None, f"{rel}: log sink {hit.group(0) if hit else ''!r} (the token is a bearer secret)")
+    diff = git("diff", "-U0", merge_base(), "--", ORDERS)
+    added = "\n".join(l[1:] for l in diff.splitlines() if l.startswith("+") and not l.startswith("+++"))
+    hit = LOG_SINKS.search(code_only(added))
+    need(hit is None, f"lib/orders.ts additions: log sink {hit.group(0) if hit else ''!r}")
 
 
 def check_extraction_verbatim() -> None:

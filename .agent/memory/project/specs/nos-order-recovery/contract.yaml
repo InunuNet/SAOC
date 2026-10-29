@@ -98,7 +98,7 @@ assertions:
       command: node scripts/checks/cache-headers-probe.mjs --spawn
       timeout_seconds: 600
     - id: A19
-      description: mutation proof - 69 mutations (67 in the default pass, 2 more with --heavy) across the access rule, page wiring, orders addition, extraction, probe entry, next.config headers, proxy and frozen files are each killed by a check above (2 more with --heavy), files restored byte for byte
+      description: mutation proof - 75 mutations (73 in the default pass, 2 more with --heavy) across the access rule, page wiring, orders addition, extraction, probe entry, next.config headers, proxy and frozen files are each killed by a check above (2 more with --heavy), files restored byte for byte
       command: python3 .agent/memory/project/specs/nos-order-recovery/goldens/run_mutations.py
       timeout_seconds: 900
     - id: A20

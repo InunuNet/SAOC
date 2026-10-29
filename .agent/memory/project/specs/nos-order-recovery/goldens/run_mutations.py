@@ -66,6 +66,12 @@ MUTATIONS = [
     ("A21", ACCESS, "anchor", "ra-shape", "!RECOVERY_TOKEN_SHAPE.test(input.rawToken)", "RECOVERY_TOKEN_SHAPE.test(input.rawToken)", ACCESS_G),
     ("A22", ACCESS, "first", None, "[0-9a-f]{64}$/", "[0-9a-f]{1,64}$/", wiring("access-anchors")),
     ("A23", ACCESS, "first", None, "RECOVERY_TOKEN_SHAPE = /^[A-Za-z0-9_-]+\\.", "RECOVERY_TOKEN_SHAPE = /^[A-Za-z0-9_-]*\\.", ACCESS_G),
+    ("A25", ACCESS, "append", None, "", "\nconsole['error'](String(0));\n", wiring("no-logging")),
+    ("A26", ACCESS, "append", None, "", "\nconst c = globalThis.console;\n", wiring("no-logging")),
+    ("P19", PAGE, "append", None, "", "\nconsole[\"warn\"](String(0));\n", wiring("no-logging")),
+    ("P20", PAGE, "append", None, "", "\nprocess.stderr.write(String(0));\n", wiring("no-logging")),
+    ("O06", ORDERS, "append", None, "", "\nconst leak = (t: string) => console['error'](t);\n", wiring("no-logging")),
+    ("O07", LIST, "append", None, "", "\nconst { log } = console;\n", wiring("no-logging")),
     ("A18", ACCESS, "append", None, "", "\nconsole.error('bad token');\n", wiring("no-logging")),
     ("A19", ACCESS, "first", None, "from './recovery-token'", "from '@/lib/recovery-token'", wiring("access-anchors")),
     # --- app/(nos)/tickets/recover/page.tsx (check_wiring page-wiring and friends)
