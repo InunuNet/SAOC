@@ -2,7 +2,7 @@
 // Pre-generates the WebP (and, for hero sources, AVIF) srcset candidates lib/image-loader.ts points at. Runs before
 // `next build` (see the build script); output lands in public/images/_opt (gitignored).
 // Fails the build on any error: a missing variant would 404 a hero image.
-import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises';
+import { mkdir, open, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import sharp from 'sharp';
@@ -69,7 +69,14 @@ async function* walk(dir) {
 // An output is fresh only if it is newer than its source AND was written with the encode options in force now. The
 // options are recorded per output in this manifest: the -q88 name is a key, not a quality, so a quality change must
 // invalidate by options, never by the name or the mtime alone. A file with no manifest entry counts as stale.
+// Invariant, across a crash at any point: an entry is present only if its file holds exactly what that hash encodes
+// (an entry may be missing, never wrong). So a stale output's entry is dropped on disk BEFORE its file is replaced, a
+// file is written to a temp name and renamed into place, and its entry is added only after the rename.
 const OPTIONS_MANIFEST = path.join(OUTPUT_ROOT, '.encode-options.json');
+const LOCK_FILE = path.join(OUTPUT_ROOT, '.generate.lock');
+const LOCK_STALE_MS = 30 * 60 * 1000;
+const MANIFEST_FLUSH_EVERY = 100;
+const GENERATED_EXTENSION = /\.(webp|avif)$/;
 
 async function readOptionsManifest() {
   try {
@@ -80,28 +87,59 @@ async function readOptionsManifest() {
   }
 }
 
-const previousOptions = await readOptionsManifest();
-const currentOptions = {};
+/** Replaces the manifest atomically: a reader (or a crash) sees the old file or the new one, never half of it. */
+async function writeOptionsManifest(entries) {
+  const temp = `${OPTIONS_MANIFEST}.tmp-${process.pid}`;
+  await writeFile(temp, `${JSON.stringify(entries)}\n`);
+  await rename(temp, OPTIONS_MANIFEST);
+}
 
 function optionsHash(format, options) {
   return createHash('sha256').update(JSON.stringify([format, options])).digest('hex').slice(0, 16);
 }
 
-async function isFresh(output, sourceMtimeMs, hash) {
-  if (previousOptions[output] !== hash) return false;
+function processIsAlive(pid) {
   try {
-    return (await stat(output)).mtimeMs >= sourceMtimeMs;
-  } catch {
-    return false;
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error.code === 'EPERM';
   }
 }
 
-const claimed = new Map();
-let generated = 0;
-let skipped = 0;
+async function lockIsStale() {
+  try {
+    const { pid, startedAt } = JSON.parse(await readFile(LOCK_FILE, 'utf8'));
+    return !processIsAlive(pid) || Date.now() - startedAt > LOCK_STALE_MS;
+  } catch (error) {
+    if (error.code === 'ENOENT') return false;
+    return true; // unreadable or half-written lock: its writer is gone
+  }
+}
 
-/** Writes (or skips as fresh) every variant of one image; `pipeline(width)` returns the sharp pipeline sized to that width. */
-async function emitVariants(source, relative, isHero, mtimeMs, pipeline) {
+/** One generator at a time per _opt: two runs with different options would leave a hash beside the wrong file. */
+async function acquireLock() {
+  await mkdir(OUTPUT_ROOT, { recursive: true });
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const handle = await open(LOCK_FILE, 'wx');
+      await handle.writeFile(JSON.stringify({ pid: process.pid, startedAt: Date.now() }));
+      await handle.close();
+      return;
+    } catch (error) {
+      if (error.code !== 'EEXIST') throw error;
+      if (!(await lockIsStale())) throw new Error(`image variant generation already running (lock ${LOCK_FILE})`);
+      await rm(LOCK_FILE, { force: true });
+    }
+  }
+  throw new Error(`could not take the image variant lock ${LOCK_FILE}`);
+}
+
+const claimed = new Map();
+const jobs = [];
+
+/** Queues every variant of one image; `pipeline(width)` returns the sharp pipeline sized to that width. */
+async function collectVariants(source, relative, isHero, mtimeMs, pipeline) {
   await mkdir(path.dirname(path.join(OUTPUT_ROOT, relative)), { recursive: true });
   for (const [width, isLarge] of widthsFor(source)) for (const [suffix, format, options] of encodingsFor(isHero, isLarge)) {
     const output = path.join(OUTPUT_ROOT, `${relative}-${width}${suffix}.${format}`);
@@ -110,25 +148,29 @@ async function emitVariants(source, relative, isHero, mtimeMs, pipeline) {
       throw new Error(`image variant collision: ${source} and ${claimed.get(key)} -> ${output}`);
     }
     claimed.set(key, source);
-    const hash = optionsHash(format, options);
-    currentOptions[output] = hash;
-    if (await isFresh(output, mtimeMs, hash)) {
-      skipped += 1;
-      continue;
-    }
-    await (await pipeline(width))[format](options).toFile(output);
-    generated += 1;
+    jobs.push({ output, format, options, width, mtimeMs, pipeline, hash: optionsHash(format, options) });
   }
 }
 
-for await (const source of walk(SOURCE_ROOT)) {
-  // Source extension stays in the output name so a.jpg and a.png never collide.
-  const relative = path
-    .relative(SOURCE_ROOT, source)
-    .replace(/\.[^.]+$/, (ext) => ext.toLowerCase());
-  const { mtimeMs } = await stat(source);
-  await emitVariants(source, relative, HERO_SOURCES.has(source), mtimeMs, (width) =>
-    sharp(source).resize({ width, withoutEnlargement: true }));
+async function isFresh(job, entries) {
+  if (entries[job.output] !== job.hash) return false;
+  try {
+    return (await stat(job.output)).mtimeMs >= job.mtimeMs;
+  } catch {
+    return false;
+  }
+}
+
+async function collectSources() {
+  for await (const source of walk(SOURCE_ROOT)) {
+    // Source extension stays in the output name so a.jpg and a.png never collide.
+    const relative = path
+      .relative(SOURCE_ROOT, source)
+      .replace(/\.[^.]+$/, (ext) => ext.toLowerCase());
+    const { mtimeMs } = await stat(source);
+    await collectVariants(source, relative, HERO_SOURCES.has(source), mtimeMs, (width) =>
+      sharp(source).resize({ width, withoutEnlargement: true }));
+  }
 }
 
 /** The rect (and flip) of one manifest entry as raw pixels, decoded once and resized per width. */
@@ -143,19 +185,72 @@ async function cutOf(entry) {
   return cut.raw().toBuffer({ resolveWithObject: true });
 }
 
-const manifestMtimeMs = (await stat(DERIVED_MANIFEST)).mtimeMs;
-for (const entry of DERIVED_SOURCES) {
-  const relative = `${entry.name}.jpg`;
-  const width = entry.rect.x1 - entry.rect.x0;
-  if (NATIVE_WIDTHS[`/images/${relative}`] !== width) {
-    throw new Error(`${entry.name}: lib/hero-source-widths.json must list /images/${relative} at ${width}`);
+async function collectDerivedSources() {
+  const manifestMtimeMs = (await stat(DERIVED_MANIFEST)).mtimeMs;
+  for (const entry of DERIVED_SOURCES) {
+    const relative = `${entry.name}.jpg`;
+    const width = entry.rect.x1 - entry.rect.x0;
+    if (NATIVE_WIDTHS[`/images/${relative}`] !== width) {
+      throw new Error(`${entry.name}: lib/hero-source-widths.json must list /images/${relative} at ${width}`);
+    }
+    const mtimeMs = Math.max(manifestMtimeMs, (await stat(entry.from)).mtimeMs);
+    let cut = null;
+    await collectVariants(path.join(SOURCE_ROOT, relative), relative, true, mtimeMs, async (outputWidth) => {
+      cut ??= await cutOf(entry);
+      return sharp(cut.data, { raw: cut.info }).resize({ width: outputWidth, withoutEnlargement: true });
+    });
   }
-  const mtimeMs = Math.max(manifestMtimeMs, (await stat(entry.from)).mtimeMs);
-  let cut = null;
-  await emitVariants(path.join(SOURCE_ROOT, relative), relative, true, mtimeMs, async (outputWidth) => {
-    cut ??= await cutOf(entry);
-    return sharp(cut.data, { raw: cut.info }).resize({ width: outputWidth, withoutEnlargement: true });
-  });
 }
-await writeFile(OPTIONS_MANIFEST, `${JSON.stringify(currentOptions)}\n`);
-console.log(`image variants: ${generated} generated, ${skipped} up to date`);
+
+/** Every file under _opt that no current source and options produce (a deleted source, a removed derived name, a temp). */
+async function orphanFiles(dir = OUTPUT_ROOT) {
+  const orphans = [];
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) orphans.push(...await orphanFiles(full));
+    else if (!claimed.has(full.toLowerCase()) && (GENERATED_EXTENSION.test(entry.name) || entry.name.includes('.tmp-'))) {
+      orphans.push(full);
+    }
+  }
+  return orphans;
+}
+
+async function generate() {
+  await collectSources();
+  await collectDerivedSources();
+  const entries = await readOptionsManifest();
+  const stale = [];
+  for (const job of jobs) if (!(await isFresh(job, entries))) stale.push(job);
+  // Invalidate before overwriting: from here a crash can only leave a stale file with no entry.
+  for (const job of stale) delete entries[job.output];
+  if (stale.length > 0) await writeOptionsManifest(entries);
+  let sinceFlush = 0;
+  for (const job of stale) {
+    const temp = `${job.output}.tmp-${process.pid}.${job.format}`;
+    await (await job.pipeline(job.width))[job.format](job.options).toFile(temp);
+    await rename(temp, job.output);
+    entries[job.output] = job.hash;
+    sinceFlush += 1;
+    if (sinceFlush >= MANIFEST_FLUSH_EVERY) {
+      await writeOptionsManifest(entries);
+      sinceFlush = 0;
+    }
+  }
+  const orphans = await orphanFiles();
+  for (const orphan of orphans) {
+    if (!path.resolve(orphan).startsWith(`${path.resolve(OUTPUT_ROOT)}${path.sep}`)) {
+      throw new Error(`refusing to prune outside ${OUTPUT_ROOT}: ${orphan}`);
+    }
+    await rm(orphan);
+  }
+  const kept = Object.fromEntries(jobs.map((job) => [job.output, entries[job.output]]));
+  await writeOptionsManifest(kept);
+  console.log(`image variants: ${stale.length} generated, ${jobs.length - stale.length} up to date, ${orphans.length} orphans pruned`);
+}
+
+await acquireLock();
+try {
+  await generate();
+} finally {
+  await rm(LOCK_FILE, { force: true });
+}
