@@ -1,8 +1,8 @@
-e20201b7bd352ea165e0f3b63247cfb6c3a7188025010463a2958b2f81f0c9b8  .agent/memory/project/specs/nos-content-standard/checks/_lib.mjs
+74e61222d395baf43f141dc9cda11bbc8fcb9b9eec9799688ea325dc29b7cccb  .agent/memory/project/specs/nos-content-standard/checks/_lib.mjs
 3718b4fbe7a7d8002a1521bc124ab2d0c3e00262a82b3c111c5b4e4794a107bb  .agent/memory/project/specs/nos-content-standard/checks/build.sh
 9182204a5275ef192573e33c74b1039e06cefc998420899c11632dd8c74df7b3  .agent/memory/project/specs/nos-content-standard/checks/check-diff-scope.mjs
 54cb4f80433b581272a0056ae3fc7dea3adf77487cc5a036d75a6ef4cf05bc25  .agent/memory/project/specs/nos-content-standard/checks/check-static.mjs
-0e33ba6c6e9a733d27bf8e821e826c79ad15cf9effa663a93923b3c76df527d3  .agent/memory/project/specs/nos-content-standard/checks/gate-standard.mjs
+d314a45d63493fab848efe75de4da8f6a714c8e2f6399d536b6118949520ac61  .agent/memory/project/specs/nos-content-standard/checks/gate-standard.mjs
 e553babdf6ff2b75981e86a9432fdd86254c2d421be1f64d60360e55e46235cc  .agent/memory/project/specs/nos-content-standard/checks/gate-verbatim.mjs
 f52ecfacaf7deda8fc1e562972088479b0ee52dc3e362e4dca6a1b568028e5d0  .agent/memory/project/specs/nos-content-standard/checks/gate-faq.mjs
 b7854171ada581b7420c3d9478868b954a499c7f66cf893630ccfdc2862773b5  .agent/memory/project/specs/nos-content-standard/checks/block-sanity-net.cjs

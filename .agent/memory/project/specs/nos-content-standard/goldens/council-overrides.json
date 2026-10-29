@@ -21,27 +21,32 @@
     },
     {
       "id": "C03",
+      "retired": "Retired 2026-10-29 by Brad ruling: Lee-Ann copy renders verbatim, typos included; we leave Drive comments instead of correcting. Provenance was a Council correction sheet row (council-1028, 'NOS What to expect, S1 para 1 line 1'), not a Lee-Ann-quoted instruction. Kept as the audit record; _lib.mjs skips retired entries.",
       "from": "event that takes please every three years",
       "to": "event that takes place every three years"
     },
     {
       "id": "C04",
+      "retired": "Retired 2026-10-29 by Brad ruling: Lee-Ann copy renders verbatim, typos included; we leave Drive comments instead of correcting. Provenance was a Council correction sheet row (council-1028, 'NOS What to expect, Photography para 1 line 2'), not a Lee-Ann-quoted instruction. Kept as the audit record; _lib.mjs skips retired entries.",
       "exceptRoutes": ["/faq"],
       "from": "attendees or the public please ensure",
       "to": "attendees or the public, please ensure"
     },
     {
       "id": "C05",
+      "retired": "Retired 2026-10-29 by Brad ruling: Lee-Ann copy renders verbatim, typos included; we leave Drive comments instead of correcting. Provenance was a Council correction sheet row (council-1028, 'NOS What to expect, Accessibility 2nd para'), not a Lee-Ann-quoted instruction. Kept as the audit record; _lib.mjs skips retired entries.",
       "from": "There are two stairways: one may be suitable for visitors using crutches",
       "to": "There are two stairways, one of which may be suitable for visitors using crutches"
     },
     {
       "id": "C06",
+      "retired": "Retired 2026-10-29 by Brad ruling: Lee-Ann copy renders verbatim, typos included; we leave Drive comments instead of correcting. Provenance was a Council correction sheet row (council-1028, 'NOS What to expect, S3 para 5'), not a Lee-Ann-quoted instruction. Kept as the audit record; _lib.mjs skips retired entries.",
       "from": "meet orchid societies from across the country",
       "to": "meet members of the orchid societies from across the country"
     },
     {
       "id": "pin-takes-please",
+      "retired": "Retired 2026-10-29 by Brad ruling: Lee-Ann copy renders verbatim, typos included; we leave Drive comments instead of correcting. Provenance was a Council correction sheet row (council-1028, 'pin of C03 in the gates'), not a Lee-Ann-quoted instruction. Kept as the audit record; _lib.mjs skips retired entries.",
       "from": "takes please",
       "to": "takes place"
     },

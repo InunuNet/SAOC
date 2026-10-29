@@ -58,7 +58,7 @@ function sanityExceptionsActive() {
 }
 const EXCEPTIONS_ACTIVE = sanityExceptionsActive();
 export const applyCouncil = (text, route = null) => [
-  ...COUNCIL.substitutions.filter((s) => !(route && (s.exceptRoutes ?? []).includes(route))),
+  ...COUNCIL.substitutions.filter((s) => !s.retired && !(route && (s.exceptRoutes ?? []).includes(route))),
   ...(EXCEPTIONS_ACTIVE ? COUNCIL.sanityExceptions.substitutions : []),
 ].reduce((acc, s) => acc.split(s.from).join(s.to), text);
 /** Reads a frozen Drive-source mirror in its council-corrected form. */
