@@ -65,6 +65,9 @@ def check_checkout_order() -> None:
         fail("per-IP consumeAbuseLimit must run before request.json()")
     if limit1 > first(text, "resolveActiveGateway(", CHECKOUT):
         fail("per-IP consumeAbuseLimit must run before any Sanity/gateway work")
+    appcheck = first(text, "requireCheckoutAppCheck(", CHECKOUT)
+    if not (limit1 < appcheck < first(text, "request.json()", CHECKOUT)):
+        fail("requireCheckoutAppCheck must run after the per-IP limit and before request.json()")
     parse = first(text, "parseLineItems(body.lineItems)", CHECKOUT)
     limit2 = first(text, "consumeAbuseLimit(", CHECKOUT, limit1 + 1)
     if not (parse < limit2 < first(text, "resolveActiveGateway(", CHECKOUT)):
@@ -175,6 +178,98 @@ def check_sandbox_independent() -> None:
                 fail(f"F3 must not touch Ozow sandbox mode ({token}): {line.strip()[:120]}")
 
 
+APP_CHECK_ALLOWED_USERS = {
+    CHECKOUT, "lib/app-check.ts", "lib/app-check-client.ts", "components/tickets/useTicketCart.ts",
+}
+# Every path the proxy exempts (proxy.ts EXEMPT_PATHS) plus the notification libraries behind them.
+NEVER_APP_CHECK = [
+    "proxy.ts", TICKETS_NOTIFY, VENDOR_NOTIFY,
+    "app/api/tickets/itn/route.ts", "app/api/tickets/ozow-itn/route.ts",
+    "app/api/vendors/stand-payment/payfast-itn/route.ts", "app/api/vendors/stand-payment/ozow-itn/route.ts",
+    "app/api/revalidate/route.ts", "app/api/admin/reconcile-orders/route.ts", "lib/reconciliation.ts",
+]
+APP_CHECK_TOKENS = re.compile(r"app-check|appcheck", re.I)
+SOURCE_ROOTS = ["app", "lib", "components", "sanity", "proxy.ts"]
+
+
+def source_files():
+    for root in SOURCE_ROOTS:
+        base = ROOT / root
+        if base.is_file():
+            yield base
+        elif base.is_dir():
+            for path in base.rglob("*"):
+                if path.suffix in (".ts", ".tsx") and "node_modules" not in path.parts:
+                    yield path
+
+
+def check_appcheck_scope() -> None:
+    for rel in NEVER_APP_CHECK:
+        if APP_CHECK_TOKENS.search(read(rel)):
+            fail(f"{rel}: server-to-server and exempt routes must never reference App Check")
+    for path in source_files():
+        rel = str(path.relative_to(ROOT))
+        if rel in APP_CHECK_ALLOWED_USERS:
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        if "requireCheckoutAppCheck" in text or "@/lib/app-check" in text:
+            fail(f"{rel}: App Check is for the checkout POST only")
+    server = read("lib/app-check.ts")
+    for needle in ("consume: true", "getAppCheck", "import('firebase-admin/app-check')"):
+        first(server, needle, "lib/app-check.ts")
+    if re.search(r"^import[^;]*from\s+['\"]firebase-admin", server, re.M):
+        fail("lib/app-check.ts must import firebase-admin lazily")
+
+
+def check_client_gated() -> None:
+    for path in source_files():
+        text = path.read_text(encoding="utf-8", errors="replace")
+        if re.search(r"""^\s*import\b[^;\n]*['"]firebase/app-check['"]""", text, re.M) or re.search(r"""require\(['"]firebase/app-check""", text):
+            fail(f"{path.relative_to(ROOT)}: firebase/app-check may only be loaded with a dynamic import() behind the site-key gate")
+    rel = "lib/app-check-client.ts"
+    text = read(rel)
+    first(text, "process.env.NEXT_PUBLIC_APP_CHECK_RECAPTCHA_SITE_KEY", rel)
+    if not re.search(r"BUILD_SITE_KEY\s*\?[^;]*import\('firebase/app-check'\)", text, re.S):
+        fail("the dynamic import must sit inside a BUILD_SITE_KEY ? ... : undefined ternary so a flag-off build drops it")
+    if not re.search(r"if \(!siteKey\) return null;", text):
+        fail("getCheckoutAppCheckToken must return null before any load when the site key is unset")
+    cart = read("components/tickets/useTicketCart.ts")
+    token = first(cart, "getCheckoutAppCheckToken(", "components/tickets/useTicketCart.ts")
+    if token > first(cart, "fetch('/api/tickets/checkout'", "components/tickets/useTicketCart.ts"):
+        fail("the token must be fetched fresh before each checkout fetch")
+    if not re.search(r"x-firebase-appcheck", cart, re.I):
+        fail("useTicketCart must send the X-Firebase-AppCheck header")
+
+
+def check_xff_trusted_hop() -> None:
+    files = set(OUR_SCOPE_CALLERS) | {"lib/abuse-limiter.ts", "lib/app-check.ts"}
+    for rel in sorted(files):
+        for number, line in enumerate(read(rel).splitlines(), 1):
+            if re.search(r"x-forwarded-for", line, re.I) and "clientActorKey(" not in line and "clientIpFromForwardedFor(" not in line:
+                fail(f"{rel}:{number}: x-forwarded-for may only be read through clientActorKey()")
+            if re.search(r"forwarded[^\n]*split\(\s*['\"],['\"]\s*\)\s*\[\s*0\s*\]", line, re.I):
+                fail(f"{rel}:{number}: the leftmost x-forwarded-for entry is client-supplied and must never be used")
+
+
+FLAG_OFF_BUNDLE_MARKERS = (
+    "recaptcha/enterprise.js", "firebaseappcheck.googleapis.com", "getLimitedUseToken",
+    "ReCaptchaEnterpriseProvider", "exchangeRecaptchaEnterpriseToken",
+)
+
+
+def check_bundle_flag_off() -> None:
+    static = ROOT / ".next" / "static"
+    if not static.is_dir():
+        fail("no .next/static - run `pnpm build` (with NEXT_PUBLIC_APP_CHECK_RECAPTCHA_SITE_KEY unset) first")
+    for path in static.rglob("*"):
+        if path.suffix not in (".js", ".css", ".html", ".json") or not path.is_file():
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        for marker in FLAG_OFF_BUNDLE_MARKERS:
+            if marker in text:
+                fail(f"flag-off build ships App Check/reCAPTCHA client code ({marker} in {path.relative_to(ROOT)})")
+
+
 CHECKS = {
     "checkout-order": check_checkout_order,
     "no-memory-limiter": check_no_memory_limiter,
@@ -185,6 +280,10 @@ CHECKS = {
     "unchanged": check_unchanged,
     "seat-ledger": check_seat_ledger,
     "sandbox-independent": check_sandbox_independent,
+    "appcheck-scope": check_appcheck_scope,
+    "client-gated": check_client_gated,
+    "xff-trusted-hop": check_xff_trusted_hop,
+    "bundle-flag-off": check_bundle_flag_off,
 }
 
 if __name__ == "__main__":

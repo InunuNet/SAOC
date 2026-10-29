@@ -17,6 +17,8 @@ Try to break it. For each item, answer PASS or FAIL with file:line evidence. Out
 8. Lanes and copy: no SAOC-lane file touched except the allowed `lib/vendor-stand-payment-notification.ts`; no new customer-facing sentence invented (the 429 body must be the existing `Too many attempts. Please try again later.`).
 9. Goldens: do the frozen goldens actually test what the spec says, or can a wrong implementation pass them? Name any weak golden.
 10. Expiry rule: `lib/seat-holds.ts` preserves the exact old `stillHoldsSeat` semantics (paid never expires; reserved with a past expiresAt does not hold; missing or non-timestamp expiresAt still holds). `lib/data/tickets.ts` has no private copy left and both ledger functions use it. Nothing writes to stale `reserved` documents. F3 does not read or change Ozow sandbox mode (`ozowSandboxTestMode`).
-11. Anything else that lets an unauthenticated caller hold seats, exhaust Firestore or Sanity, or read a body unbounded on a route this change touches.
+11. App Check (D7): with the flag unset, nothing is verified, no token is consumed, no network call is made, and the client loads no Google script (check `lib/app-check-client.ts` for the build-time ternary and that no static `firebase/app-check` import exists). With any non-off flag value, a missing, invalid, expired, replayed or backend-failed token is refused (never passed). `verifyToken` is called with `consume: true`. The ITN handlers, reconcile, revalidate and proxy never reference App Check, and a tokenless notification still verifies. The token is fetched fresh per checkout attempt and an idempotent retry works.
+12. Forwarded header: no code path reads the leftmost X-Forwarded-For entry.
+13. Anything else that lets an unauthenticated caller hold seats, exhaust Firestore or Sanity, or read a body unbounded on a route this change touches.
 
 FAIL on any confirmed defect in items 1-8, or a golden weakness that lets a wrong implementation pass.

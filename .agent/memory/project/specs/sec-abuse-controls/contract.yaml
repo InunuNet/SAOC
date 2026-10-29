@@ -12,6 +12,9 @@ features:
 goldens:
   - .agent/memory/project/specs/sec-abuse-controls/goldens/abuse-limiter.golden.ts
   - .agent/memory/project/specs/sec-abuse-controls/goldens/seat-holds.golden.ts
+  - .agent/memory/project/specs/sec-abuse-controls/goldens/app-check.golden.ts
+  - .agent/memory/project/specs/sec-abuse-controls/goldens/app-check-client.golden.ts
+  - .agent/memory/project/specs/sec-abuse-controls/goldens/itn-no-appcheck.golden.ts
   - .agent/memory/project/specs/sec-abuse-controls/goldens/checkout-holds.golden.ts
   - .agent/memory/project/specs/sec-abuse-controls/goldens/webhook-body.golden.ts
   - .agent/memory/project/specs/sec-abuse-controls/goldens/reservation-actor.golden.ts
@@ -34,7 +37,7 @@ assertions:
       description: reservation docs carry clientKey and buyerKey on the order and every position, null (never undefined) when absent
       command: pnpm exec tsx .agent/memory/project/specs/sec-abuse-controls/goldens/reservation-actor.golden.ts
     - id: A5
-      description: checkout wiring - per-IP limit before request.json, per-buyer limit before any Sanity or gateway work, hold budget inside the reservation transaction after the replay branch, actor stamp passed to the builder
+      description: checkout wiring - per-IP limit, then App Check, both before request.json, per-buyer limit before any Sanity or gateway work, hold budget inside the reservation transaction after the replay branch, actor stamp passed to the builder
       command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py checkout-order
     - id: A6
       description: contact, newsletter, ticket status, ticket pdf and checkout no longer use the per-instance limiter and call the durable one
@@ -59,13 +62,13 @@ assertions:
       command: pnpm exec tsc --noEmit
     - id: A13
       description: eslint on the touched trees
-      command: pnpm exec eslint lib app/api/tickets app/api/contact app/api/newsletter
+      command: pnpm exec eslint lib components/tickets app/api/tickets app/api/contact app/api/newsletter
     - id: A14
       description: production build
-      command: pnpm build
+      command: env -u NEXT_PUBLIC_APP_CHECK_RECAPTCHA_SITE_KEY pnpm build
       timeout_seconds: 900
     - id: A15
-      description: mutation proof - 20 mutations across limiter, budget, webhook cap, actor stamp and wiring are each killed by a check above, files restored byte for byte
+      description: mutation proof - 28 mutations across limiter, budget, webhook cap, actor stamp, App Check, client gate, forwarded-header trust and wiring are each killed by a check above, files restored byte for byte
       command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/run_mutations.py
       timeout_seconds: 900
     - id: A16
@@ -78,6 +81,27 @@ assertions:
       description: F3 neither reads nor alters Ozow sandbox test mode
       command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py sandbox-independent
     - id: A19
+      description: App Check server logic - flag off is a no-op that never calls the verifier, flag on refuses missing, invalid, expired, replayed and backend-error cases, any set non-off value enforces
+      command: pnpm exec tsx .agent/memory/project/specs/sec-abuse-controls/goldens/app-check.golden.ts
+    - id: A20
+      description: App Check client - with no site key nothing is loaded and no network call is made, with a key a fresh limited-use token is fetched per call and every failure yields null
+      command: pnpm exec tsx .agent/memory/project/specs/sec-abuse-controls/goldens/app-check-client.golden.ts
+    - id: A21
+      description: with App Check enforced, a tokenless ticket and vendor-stand payment notification still reaches verification and is acknowledged
+      command: pnpm exec tsx .agent/memory/project/specs/sec-abuse-controls/goldens/itn-no-appcheck.golden.ts
+    - id: A22
+      description: App Check is referenced only by the checkout route, its two libs and the cart hook - never by the ITN handlers, reconcile, revalidate or proxy; the server verifier uses consume true and a lazy import
+      command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py appcheck-scope
+    - id: A23
+      description: client gate - firebase/app-check is only ever a dynamic import behind the site-key gate, the token is fetched fresh before each checkout fetch
+      command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py client-gated
+    - id: A24
+      description: client address comes only from the trusted forwarded hop through clientActorKey, never the leftmost entry
+      command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py xff-trusted-hop
+    - id: A25
+      description: the flag-off production build ships no reCAPTCHA or App Check client code
+      command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py bundle-flag-off
+    - id: A26
       description: cross-model adversarial review of the diff
       type: codex_qa
       target: .agent/memory/project/specs/sec-abuse-controls/codex-qa-prompt.md

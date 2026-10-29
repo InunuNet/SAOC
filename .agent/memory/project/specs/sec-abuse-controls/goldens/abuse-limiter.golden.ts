@@ -147,6 +147,19 @@ async function main() {
   // 7. Actor key from X-Forwarded-For: second-to-last hop, IPv6 grouped by /64.
   {
     assert.equal(clientActorKey('1.1.1.1, 203.0.113.9, 35.191.0.1'), 'ip4:203.0.113.9', 'attacker-prefixed hops are ignored');
+    // Spoofing: whatever the client puts LEFT of the two platform-appended hops never changes the key.
+    const trusted = '203.0.113.9, 35.191.0.1';
+    for (const forged of ['9.9.9.9', '1.1.1.1, 5.5.5.5', '::1', '10.0.0.1, 203.0.113.10', 'garbage', '2001:db8::7']) {
+      assert.equal(clientActorKey(`${forged}, ${trusted}`), 'ip4:203.0.113.9', `forged leftmost ${forged} must not change the actor`);
+    }
+    {
+      const db = new FakeDb();
+      const spoofBase = { scope: 'spoof', maxAttempts: 2, windowMs: HOUR };
+      const keyFor = (xff: string) => clientActorKey(xff);
+      assert.equal((await consumeAbuseLimit({ ...spoofBase, key: keyFor(`1.1.1.1, ${trusted}`), now: at(0) }, { db, secret: SECRET })).allowed, true);
+      assert.equal((await consumeAbuseLimit({ ...spoofBase, key: keyFor(`2.2.2.2, ${trusted}`), now: at(1) }, { db, secret: SECRET })).allowed, true);
+      assert.equal((await consumeAbuseLimit({ ...spoofBase, key: keyFor(`3.3.3.3, ${trusted}`), now: at(2) }, { db, secret: SECRET })).allowed, false, 'rotating the forged hop does not buy a fresh budget');
+    }
     assert.equal(clientActorKey('203.0.113.9'), 'ip4:203.0.113.9');
     assert.equal(clientActorKey('::ffff:203.0.113.9'), 'ip4:203.0.113.9', 'IPv4-mapped IPv6 is the IPv4 identity');
     const a = clientActorKey('x, 2001:db8:1:2:3:4:5:6, 35.191.0.1');

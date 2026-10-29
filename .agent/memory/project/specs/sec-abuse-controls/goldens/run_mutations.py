@@ -29,6 +29,7 @@ def wiring(name: str) -> list[str]:
 
 LIMITER, HOLDS, WEBHOOK = "lib/abuse-limiter.ts", "lib/checkout-holds.ts", "lib/webhook-body.ts"
 SEATS = "lib/seat-holds.ts"
+APPCHECK, APPCHECK_CLIENT = "lib/app-check.ts", "lib/app-check-client.ts"
 RESERVATION, CHECKOUT = "lib/checkout-reservation.ts", "app/api/tickets/checkout/route.ts"
 
 # (id, file, mode, anchor-or-None, old, new, check)
@@ -52,6 +53,14 @@ MUTATIONS = [
     ("M17", "lib/orders.ts", "append", None, "", "\n// mutation\n", wiring("unchanged")),
     ("M19", "lib/data/tickets.ts", "first", None, "from '@/lib/seat-holds'", "from '@/lib/seat-holdsX'", wiring("seat-ledger")),
     ("M20", "lib/abuse-limiter.ts", "append", None, "", "\n// isOzowSandboxTestModeEnabled\n", wiring("sandbox-independent")),
+    ("M21", APPCHECK, "anchor", "appcheck-flag", "!OFF_VALUES.has(", "OFF_VALUES.has(", golden("app-check")),
+    ("M22", APPCHECK, "anchor", "appcheck-replay", "alreadyConsumed", "alreadyConsumed && false", golden("app-check")),
+    ("M23", APPCHECK, "first", None, "consume: true", "consume: false", wiring("appcheck-scope")),
+    ("M24", APPCHECK_CLIENT, "anchor", "client-gate", "!siteKey", "false", golden("app-check-client")),
+    ("M25", "lib/tickets-notification.ts", "append", None, "", "\n// requireCheckoutAppCheck\n", wiring("appcheck-scope")),
+    ("M26", "lib/abuse-limiter.ts", "append", None, "", "\nconst leftmost = headers.get('x-forwarded-for')?.split(',')[0];\n", wiring("xff-trusted-hop")),
+    ("M27", "components/tickets/useTicketCart.ts", "append", None, "", "\nimport 'firebase/app-check';\n", wiring("client-gated")),
+    ("M28", ".next/static/chunks/zz-mutation.js", "create", None, "", "recaptcha/enterprise.js", wiring("bundle-flag-off")),
     ("M18", "app/api/contact/route.ts", "append", None, "", "\nimport { createAttemptStore } from '@/lib/newsletter-rate-store';\n", wiring("no-memory-limiter")),
 ]
 
@@ -81,6 +90,20 @@ def main() -> int:
     failures: list[str] = []
     for mutation_id, rel, mode, anchor, old, new, check in MUTATIONS:
         path = ROOT / rel
+        if mode == "create":
+            if passes(check):
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(new, encoding="utf-8")
+                try:
+                    if passes(check):
+                        failures.append(f"{mutation_id}: SURVIVED (created {rel})")
+                    else:
+                        print(f"{mutation_id}: killed")
+                finally:
+                    path.unlink(missing_ok=True)
+            else:
+                failures.append(f"{mutation_id}: baseline check already fails")
+            continue
         if not path.is_file():
             failures.append(f"{mutation_id}: {rel} missing")
             continue
