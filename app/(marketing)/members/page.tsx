@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 import { Breadcrumb } from '@/components/chrome/Breadcrumb';
 import { RouteHero } from '@/components/ui/RouteHero';
@@ -33,9 +34,9 @@ export default function MembersPage() {
         aside={
           <p className="font-sans text-[16px] leading-[1.55] text-ink/80">
             Have a question about the Members Portal, or how to become a paid-up member?{' '}
-            <a href="/contact" className="text-ink underline underline-offset-2">
+            <Link href="/contact" className="text-ink underline underline-offset-2">
               Contact SAOC
-            </a>
+            </Link>
             .
           </p>
         }

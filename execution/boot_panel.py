@@ -28,6 +28,7 @@ import datetime
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -35,6 +36,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import autonomy as autonomy_dialect  # noqa: E402  (path fixed up above)
+
+from pydeps import require  # noqa: E402  (path fixed up above)
+
+# Re-exec into the venv when it has yaml, but never exit: the panel is how a
+# missing module gets reported (essential "python-deps"), so it must still run.
+require("yaml", "jsonschema", fatal=False)
 
 try:  # copied-project-halt F14 — the ONE reader of the identity question.
     import identity_ambiguity  # noqa: E402  (path fixed up above)
@@ -47,6 +54,7 @@ except ImportError:  # a workspace that never received the probe; see below.
     hook_probe = None
 
 SCHEMA = "athanor.bootpanel/v1"
+PYTHON_DEPS = ("yaml", "jsonschema")
 
 MARKER_REL = ".agent/memory/scratch/.boot_panel.json"
 QUOTA_MIRROR_REL = ".agent/memory/scratch/.quota_status.json"
@@ -951,6 +959,42 @@ def _athanor_update(root, version):
     return "unknown", f"local {local}, latest stable v{latest}"
 
 
+def _python_deps_entry(root):
+    """Essential: the python3 on PATH can import the harness's third-party modules.
+
+    Probes shutil.which("python3"), not sys.executable -- the panel may itself
+    have re-exec'd into the venv, while every script launched as `python3 ...`
+    still runs on whatever PATH resolves.
+    """
+    python = shutil.which("python3")
+    entry = {"name": "python-deps", "kind": "tool", "blocking": False}
+    if not python:
+        entry.update(status="unknown", detail="python3 not on PATH",
+                     fix="install python3, then pip install pyyaml jsonschema")
+        return entry
+    probe = ("import sys\nmissing = []\n"
+             "for m in %r:\n"
+             "    try:\n        __import__(m)\n"
+             "    except ImportError:\n        missing.append(m)\n"
+             "print(' '.join(missing) + '|' + sys.version.split()[0])" % (PYTHON_DEPS,))
+    rc, out = _run([python, "-c", probe], cwd=root, timeout=NETWORK_TIMEOUT_SECONDS)
+    if rc != 0 or "|" not in (out or ""):
+        entry.update(status="fail", detail=f"{python} could not run the dependency probe",
+                     fix=f"{python} -m pip install pyyaml jsonschema")
+        return entry
+    missing_text, pyver = out.rsplit("|", 1)
+    missing = missing_text.split()
+    if not missing:
+        entry.update(status="ok", detail=f"{python} (Python {pyver}) imports {', '.join(PYTHON_DEPS)}")
+        return entry
+    entry.update(
+        status="fail",
+        detail=f"{python} (Python {pyver}) cannot import {', '.join(missing)}",
+        fix=(f"{python} -m pip install pyyaml jsonschema -- or rebuild ~/.athanor-env "
+             "(scripts re-exec into it automatically when it has them)"))
+    return entry
+
+
 def _collect_essential(root, version, checks):
     essential = []
     status, detail = _athanor_update(root, version)
@@ -973,6 +1017,8 @@ def _collect_essential(root, version, checks):
         "name": "gws", "kind": "tool", "status": "ok" if version else "unknown",
         "detail": version or "gws not on PATH (Google Workspace CLI)",
         "blocking": False, "fix": "install gws (github.com/googleworkspace/cli), then gws auth login"})
+
+    essential.append(_python_deps_entry(root))
 
     rc, _out = _run(["gh", "auth", "status"], cwd=root, timeout=NETWORK_TIMEOUT_SECONDS)
     essential.append({

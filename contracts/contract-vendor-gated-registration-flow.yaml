@@ -1619,7 +1619,7 @@ assertions:
         embedded token verifies at the (fixture) initiate route. POST
         /api/admin/vendors/[id]/resend-payment-link, called against an already-'approved'
         submission whose stand order (if any) is not 'paid', mints a FRESH token (not the same
-        token bytes as any prior mint) and sends the email again; called against a submission
+        token bytes as any prior mint), returns it as paymentUrl and sends no email; called against a submission
         that is NOT 'approved', or whose stand order IS 'paid', refuses (409).
         FAILS ON: approval failing/rolling back when the payment-token secret is unset, no
         second email sent when the secret is set, resend succeeding against a non-approved or

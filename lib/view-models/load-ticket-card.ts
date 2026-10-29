@@ -10,7 +10,7 @@
 // own documented convention (see lib/data/pool-remaining.ts's header comment): this
 // feature's contracts/checks/*.mjs scripts load this file via a bare tsx/esm/api
 // register() with no tsconfig option, so `@/` alias specifiers never resolve there.
-import { client } from '../../sanity/lib/client.ts';
+import { sanityFetch } from '../../sanity/lib/fetch.ts';
 import { ticketTypeBySlugQuery } from '../../sanity/queries.ts';
 import {
   computeEarlyBirdRemaining,
@@ -96,8 +96,12 @@ function buildScarcityLabel(remaining: number, total: number): string {
 // nullable SanityTicketTypeLike-wrapped-in-a-Promise type from the body's own as-cast
 // return.
 async function fetchTicketTypeFromSanity(slug: string) {
-  if (!client) return null;
-  return (await client.fetch(ticketTypeBySlugQuery, { slug })) as SanityTicketTypeLike | null;
+  return sanityFetch<SanityTicketTypeLike | null>({
+    query: ticketTypeBySlugQuery,
+    params: { slug },
+    tags: ['ticketType', 'sanity'],
+    live: true,
+  });
 }
 
 // Addendum 4 (architect, 2026-10-07, Codex finding ratification, relayed by team-lead):

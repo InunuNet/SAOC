@@ -18,7 +18,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-import yaml
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pydeps import require  # noqa: E402
+
+require("yaml")
+
+import yaml  # noqa: E402
 
 MANIFEST_PATH = Path(".agent/update-manifest.yaml")
 DEFAULT_OUTPUT = Path("execution/shipped_blobs.txt")

@@ -28,6 +28,14 @@ import tempfile
 import time
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+try:
+    from pydeps import require
+except ImportError:  # the updater can run before pydeps.py has been delivered
+    pass
+else:
+    require("yaml")
+
 
 # Baseline hash store for the HARNESS overwrite guard (GitHub issue #104).
 # Flat JSON map of manifest "path" string -> sha256 hex digest of the content
@@ -5964,6 +5972,13 @@ def main():
                             "to complete this update",
                             file=sys.stderr,
                         )
+                print(
+                    "UPDATE NOT FINISHED (exit 1 is expected here): this run "
+                    "replaced the updater itself but ran on the old copy, so "
+                    "the version was held. Run `make update-template` once "
+                    "more to complete it.",
+                    file=sys.stderr,
+                )
                 sys.exit(1)
             # --allow-skips acknowledges CONTENT the operator knowingly keeps;
             # it may not mute a compromised write path (F4c-2 C12).

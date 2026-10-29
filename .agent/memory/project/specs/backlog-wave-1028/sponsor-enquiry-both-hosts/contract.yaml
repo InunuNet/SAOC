@@ -32,15 +32,18 @@ assertions:
       description: Typecheck stays green with the shared form on the NOS page.
       command: pnpm exec tsc --noEmit
     - id: A6
-      description: Codex adversarial QA scoped to the actual diff.
+      description: Codex adversarial QA scoped to the anchor-fix diff (NOS Design anchor ruling 2026-10-28). The original F2 review shipped in #144; this follow-up judges only the anchor change.
       type: codex_qa
       target: >-
-        Review ONLY git diff origin/main...HEAD on feat/sponsor-enquiry-both-hosts. Judge, against
-        .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/goldens/spec.md: (1) does the NOS page reuse the existing
-        SponsorEnquirySection and /api/sponsors/enquire with no fork, with primary CTAs on #enquire; (2) is source stored as saoc, nos or
-        null, derived only from the Host and never from the request body; (3) does the admin notice subject name the site while recipients
-        stay the ADMIN_EMAIL_ALLOWLIST; (4) is any new visitor email or new unsourced copy string introduced, and does the acknowledgement now follow the submission host (SAOC sender and site for the SAOC host, NOS for the NOS host); (4b) are the NOS enquiry styles scoped to [data-sponsor-enquiry=nos] so SAOC is untouched, and is the shared form changed only in its success state; (5) would checks A1-A3 fail if
-        each of those changes were reverted. Pre-existing behaviour in unchanged files is out of scope.
+        Review ONLY git diff origin/main...HEAD on the branch under test (the sponsor card anchor fix). Judge, against
+        .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/goldens/spec.md (anchor bullets): (1) the NOS host sets
+        --scroll-padding-top to 0 on html at every width, in app/(nos)/national-show/nos-structure.css, through a selector scoped to the NOS
+        host (html:has(#nh)) and never bare html; (2) the sponsor card scroll-margin-top is 24px at 767px and below and 121px from 768px up;
+        (3) app/globals.css, app/(marketing) and the shared SponsorEnquirySection are unchanged, so the SAOC root scroll-padding (6.5rem) is
+        untouched; (4) no other NOS stylesheet changed, and the only nos-structure.css edits are that variable, the comment about it and the
+        card scroll-margin lines; (5) could the zeroing rule match any SAOC page (is #nh rendered only by the NOS header, and can any
+        non-NOS route or layout render it); (6) does zeroing the root scroll-padding on NOS pages change where any other NOS hash target
+        lands, in a way the diff should have accounted for. Pre-existing behaviour in unchanged files is out of scope.
       required: true
     - id: A7
       phase: 5
@@ -58,12 +61,20 @@ assertions:
       description: D2 (NOS Design P1) acknowledgement follows the submission host. RED on main - an SAOC-host submission is sent from the NOS sender with site nos and an SAOC subject; the NOS subject says SAOC; the email preview says "— SAOC" for both; a null or missing site must default to the SAOC identity; the route must pass site doc.source. PINs - one send to the submitted address, same body copy, nos keeps NOS_FORMS_FROM_ADDRESS.
       command: pnpm exec tsx .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/checks/check-confirmation-site.mts
     - id: A11
-      description: NOS Design ruling, declared values. RED on main - flat unlayered CSS scoped to [data-sponsor-enquiry="nos"] gives the card #F3F2D6, radius 16, shadow-sm, padding 32 (24 below 768), fields column max-width 640, Karla 500 14px ink labels, inputs 1px --rule border radius 8 min-height 48, 2px violet focus ring, NOS primary submit look, scroll-margin-top 121px at 700 and up and 68px below; the success box under the scope has no border, zero padding and a transparent background (NR-4); the field-label rule excludes the consent label, which takes its own rule Karla 450 16px / 1.5; the page renders the section inDocument (doc-h2 heading). PIN - no sponsor-enquiry selector without the nos scope, and app/globals.css, app/(marketing) and SponsorEnquirySection.tsx unchanged.
+      description: NOS Design ruling, declared values. RED on main - flat unlayered CSS scoped to [data-sponsor-enquiry="nos"] gives the card #F3F2D6, radius 16, shadow-sm, padding 32 (24 below 768), fields column max-width 640, Karla 500 14px ink labels, inputs 1px --rule border radius 8 min-height 48, 2px violet focus ring, NOS primary submit look, scroll-margin-top 121px at 768 and up and 24px at 767 and below (NOS Design anchor ruling 2026-10-28, with the root --scroll-padding-top zeroed on the NOS host at every width through the variable, e.g. html:has(#nh), so every NOS scroll-margin assumes zero); the success box under the scope has no border, zero padding and a transparent background (NR-4); the field-label rule excludes the consent label, which takes its own rule Karla 450 16px / 1.5; the page renders the section inDocument (doc-h2 heading). PIN - the SAOC root scroll-padding (--scroll-padding-top 6.5rem consumed by html) is unchanged, no NOS root override is bare html, no sponsor-enquiry selector without the nos scope, and app/globals.css, app/(marketing) and SponsorEnquirySection.tsx unchanged.
       command: pnpm exec tsx .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/checks/check-nos-style.mts
+    - id: A14
+      description: Anchor-fix scope guard, green on main by design (lead constraint 2026-10-28, F1a is mid-flight on globals.css). app/globals.css and app/(marketing) unchanged; the only NOS stylesheet that may change is app/(nos)/national-show/nos-structure.css, and only in the NOS-host --scroll-padding-top override, the comment about scroll-padding at the "Hash links land clear" rule, and the sponsor card scroll-margin-top lines with the min-width 768px media query (the old 700px line may only be removed). Reads the committed HEAD against the merge-base with origin/main.
+      command: node .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/checks/check-anchor-scope.mjs
     - id: A12
       phase: 5
-      description: RUN AFTER DEPLOY from the project root (needs .env.local), non-required. Real Chromium on the deployed NOS sponsors page at 1440 and 390 - hero CTA click lands the card 16..40px below the sticky chrome (NOS Design anchor gate), computed card/label/input/focus-ring/submit values match the ruling, and the SAOC /sponsors form labels are still the SAOC mono 11px. Also, per NOS Design, the consent label is Karla 450 16px / 1.5 with the checkbox on its first line, and with the API mocked in the browser (nothing reaches the server) the success state has 0 borders and 0 padding inside the card, keeps role=status with focus on the heading, and the card x and width do not move. Writes nothing. Exit 77 when credentials or the browser are missing.
+      description: RUN AFTER DEPLOY from the project root (needs .env.local), non-required. Real Chromium on the deployed NOS sponsors page at 390, 768, 1024, 1440 and 2056 - the CTA click lands the card top 16..40px below whatever is pinned to the top of the viewport (the sticky header's bottom), or below the viewport top when nothing is pinned (NOS Design anchor gate), and the NOS html scroll-padding-top computes to 0px, computed card/label/input/focus-ring/submit values match the ruling, and the SAOC /sponsors form labels are still the SAOC mono 12px with the SAOC html scroll-padding-top still 104px. Also, per NOS Design, the consent label is Karla 450 16px / 1.5 with the checkbox on its first line, and with the API mocked in the browser (nothing reaches the server) the success state has 0 borders and 0 padding inside the card, keeps role=status with focus on the heading, and the card x and width do not move. Writes nothing. Exit 77 when credentials or the browser are missing.
       command: node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/checks/check-deployed-render.mjs
+      required: false
+    - id: A13
+      phase: 5
+      description: REPORT-ONLY survey, RUN AFTER DEPLOY from the project root (needs .env.local), non-required and never failing (always exits 0). NOS Design asked for this list; the contract fixes only the sponsors card. Real Chromium opens every discovered NOS hash target (every same-origin #hash link on the NOS pages incl. header and footer, plus every presenters .pc-sec-top heading at presenters.css:57, scroll-margin-top 90px) at 390, 767, 768, 1024, 1440 and 2056 wide and prints the landing gap below whatever is pinned, marking rows outside 16..40 OUT; the minimum set faq, plan-your-visit, legal and presenters is always named, NOT FOUND when undiscoverable. Writes nothing. Run it AFTER the card fix so the list shows the post-fix landings.
+      command: node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/sponsor-enquiry-both-hosts/checks/check-nos-anchor-landings.mjs
       required: false
 
 # A9 writes live (POSTs to the deployed beta and NOS hosts, writes and deletes two sponsorEnquiries docs in the production-project

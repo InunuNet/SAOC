@@ -6,10 +6,12 @@
 //      forms.saoc.co.za unverified in Resend -- so this is the only reachable path tonight).
 //   2. That URL's token verifies against the REAL verifyVendorStandPaymentToken() and resolves
 //      to the correct vendorSubmissionId -- not a malformed string.
-//   3. The URL lands on the usable payment page path (/national-show/vendors/payment), the
-//      same path app/api/admin/vendors/[id]/review/route.ts's buildVendorStandPaymentUrl()
-//      already builds for the (currently broken) email path -- proving @dev reused it rather
-//      than inventing a second URL-building function.
+//   3. The URL lands on the NOS site's payment page: the NOS origin (lib/site-hosts nosOrigin(),
+//      never the SAOC origin) plus the host-relative path /vendors/payment. proxy.ts serves
+//      NOS paths without the internal /national-show prefix (routeNosHost redirects
+//      /national-show/* to the stripped path, and the SAOC host redirects show paths to the NOS
+//      origin), so /vendors/payment on the NOS host is the canonical, redirect-free URL, the same
+//      one buildVendorStandPaymentUrl() builds for the approval email.
 //   4. An unauthenticated/non-admin caller (FIXTURE_ADMIN_DENIED=1 -- see
 //      fixture-admin-auth.mjs) gets refused 401/403 by the SAME gate as every other admin
 //      route, and its response body contains no paymentUrl and no raw token string anywhere.
@@ -28,6 +30,7 @@ const { vendorSubmissions, vendorStandOrders, resetAllCollections } = require(
 const RESEND = '../../../app/api/admin/vendors/[id]/resend-payment-link/route.ts';
 const TOKEN = '../../../lib/vendor-stand-payment-token.ts';
 
+const SITE_HOSTS = new URL('../../../lib/site-hosts.ts', import.meta.url).href;
 const { POST: resendPost } = await import(RESEND);
 const { verifyVendorStandPaymentToken } = await import(TOKEN);
 
@@ -83,9 +86,14 @@ if (typeof adminResult.body?.paymentUrl === 'string') {
     failures.push(`paymentUrl "${adminResult.body.paymentUrl}" is not a well-formed URL.`);
   }
   if (parsedUrl) {
+    const { nosOrigin, saocOrigin } = await import(SITE_HOSTS);
     assert(
-      parsedUrl.pathname === '/national-show/vendors/payment',
-      `expected paymentUrl's path to be /national-show/vendors/payment (the real payment page, same as buildVendorStandPaymentUrl() already builds for the email path), got "${parsedUrl.pathname}".`,
+      parsedUrl.origin === nosOrigin() && parsedUrl.origin !== saocOrigin(),
+      `expected paymentUrl's origin to be the NOS origin ${nosOrigin()} (not the SAOC origin ${saocOrigin()}), got "${parsedUrl.origin}".`,
+    );
+    assert(
+      parsedUrl.pathname === '/vendors/payment',
+      `expected paymentUrl's path to be /vendors/payment (the NOS-host canonical payment page; /national-show/vendors/payment would be a redirect), got "${parsedUrl.pathname}".`,
     );
     const token = parsedUrl.searchParams.get('token');
     assert(!!token, 'expected a non-empty "token" query param on paymentUrl.');

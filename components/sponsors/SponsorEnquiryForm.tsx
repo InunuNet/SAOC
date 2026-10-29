@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 
 import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
@@ -327,12 +328,12 @@ export function SponsorEnquiryForm({ site }: SponsorEnquiryFormProps) {
             />
             <span>{ENQUIRY_CONSENT_LABEL}</span>
           </label>
-          <a
+          <Link
             href="/privacy"
             className="inline-flex min-h-11 items-center font-sans text-[15px] text-ink underline underline-offset-2"
           >
             {ENQUIRY_PRIVACY_LINK_TEXT}
-          </a>
+          </Link>
         </div>
         {fieldErrors.consent ? (
           <TicketFieldAlert id="se-consent-error">{fieldErrors.consent}</TicketFieldAlert>

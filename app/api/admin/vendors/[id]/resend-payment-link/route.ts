@@ -8,8 +8,6 @@ import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
 import { VENDOR_STAND_ORDERS_COLLECTION } from '@/lib/vendor-stand-orders';
 import { mintVendorStandPaymentToken } from '@/lib/vendor-stand-payment-token';
-import { sendVendorStandPaymentNoticeEmail } from '@/lib/vendor-stand-payment-notice';
-import { deliverConfirmationEmailAfterCommit } from '@/lib/confirmation-email';
 import { nosUrl } from '@/lib/site-hosts';
 
 /**
@@ -20,14 +18,12 @@ import { nosUrl } from '@/lib/site-hosts';
  * mint" for the full decision record.
  *
  * Same "reissue, not unlock" shape as F25 (M4)'s reissue-code route -- ALWAYS mints a fresh
- * token and re-sends, never a "view the existing link" mechanism. Callable any time the
+ * token and returns it (no email), never a "view the existing link" mechanism. Callable any time the
  * submission is currently 'approved' and its stand order (if any) is not yet 'paid'.
  *
- * Hotfix (contracts/golden/vendor-stand-payment-link-visibility, 2026-09-01) -- the only
- * existing delivery path was a broken email send (forms.saoc.co.za unverified in Resend), so
- * the minted link reached nobody. The response now always returns `paymentUrl` on success, and
- * the email send is non-fatal (same deliverConfirmationEmailAfterCommit pattern as the review
- * route) so a Resend failure never blocks the admin from getting the URL back.
+ * Reissue, no email (mission backlog-wave-2026-10-28, F2a): approval already emails the link
+ * and the admin control is copy-only, so this route sends nothing -- a click must not hand the
+ * vendor a duplicate email. The response always returns `paymentUrl` for the admin to copy.
  */
 function buildVendorStandPaymentUrl(token: string): string {
   return nosUrl(`/vendors/payment?token=${encodeURIComponent(token)}`);
@@ -92,25 +88,6 @@ export async function POST(
   // unlock" above.
   const { token } = mintVendorStandPaymentToken({ vendorSubmissionId: id, secret, now });
   const paymentUrl = buildVendorStandPaymentUrl(token);
-
-  // Email delivery is non-fatal -- a broken mailer must never block returning paymentUrl to
-  // the admin, since this route IS the recovery path when email delivery is the thing that's
-  // broken. See "Hotfix" note above.
-  await deliverConfirmationEmailAfterCommit(
-    () =>
-      sendVendorStandPaymentNoticeEmail({
-        businessName: data.businessName,
-        contactPersonName: data.contactPersonName,
-        contactEmail: data.contactEmail,
-        paymentUrl,
-      }),
-    (error) => {
-      console.error(
-        '[admin/vendors/resend-payment-link] Failed to send stand-payment link email:',
-        error instanceof Error ? error.message : 'unknown error',
-      );
-    },
-  );
 
   return NextResponse.json({ success: true, paymentUrl });
 }

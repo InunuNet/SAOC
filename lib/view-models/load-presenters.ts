@@ -12,7 +12,7 @@
 // Relative import with an explicit `.ts` extension — see load-ticket-card.ts's own header
 // comment for why (this feature's contracts/checks/*.mjs scripts load this file via a bare
 // tsx/esm/api register(), where `@/` alias specifiers never resolve).
-import { client } from '../../sanity/lib/client.ts';
+import { sanityFetch } from '../../sanity/lib/fetch.ts';
 
 import { PRESENTER_PHOTO_CROPS } from './presenter-photo.ts';
 
@@ -179,12 +179,20 @@ function profileOfNursery(doc: SanityNurseryDoc): GuestProfile {
 // throw past this boundary — the pages that call this have nothing to do with ticket purchasing and
 // must never 500 for unrendered presenter data. Logged, then an empty array, never a rethrow and
 // never a silent swallow with no log.
+const PRESENTER_TAGS = ['conferencePresenter', 'vendorNursery', 'sanity'];
+
 async function fetchDocs<T>(query: string, params: Record<string, string>): Promise<T[]> {
-  if (!client) return [];
   try {
-    return ((await client.fetch(query, params)) ?? []) as T[];
+    return (
+      (await sanityFetch<T[]>({
+        query,
+        params,
+        tags: PRESENTER_TAGS,
+        propagateErrors: true,
+      })) ?? []
+    );
   } catch (error) {
-    console.error('[load-presenters] client.fetch failed:', error);
+    console.error('[load-presenters] sanityFetch failed:', error);
     return [];
   }
 }

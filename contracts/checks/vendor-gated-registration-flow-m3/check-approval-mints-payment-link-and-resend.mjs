@@ -97,8 +97,8 @@ assert(resendNotApproved.status === 409, `expected resend against a non-approved
 sentStandPaymentEmails.length = 0;
 const resendFresh = await callResend('sub-with-secret');
 assert(resendFresh.status === 200, `expected resend to succeed against an approved, unpaid submission, got ${resendFresh.status}`);
-assert(sentStandPaymentEmails.length === 1, 'resend should send exactly one new email.');
-const resentToken = tokenFromLastEmail();
+assert(sentStandPaymentEmails.length === 0, 'resend must send no email; the admin copies the returned paymentUrl.');
+const resentToken = new URL(resendFresh.body.paymentUrl).searchParams.get('token');
 assert(
   resentToken !== mintedToken,
   'resend produced the SAME token bytes as the original approval mint -- it must always mint fresh, never re-read a cached value ("reissue, not unlock").',

@@ -1,0 +1,63 @@
+diff --git a/app/(nos)/national-show/conferences/page.tsx b/app/(nos)/national-show/conferences/page.tsx
+index 0c60b8e1..13dbfe24 100644
+--- a/app/(nos)/national-show/conferences/page.tsx
++++ b/app/(nos)/national-show/conferences/page.tsx
+@@ -1,5 +1,6 @@
+ import type { Metadata } from 'next';
+ import Link from 'next/link';
++import { connection } from 'next/server';
+ 
+ import { NosHero, heroFactsForEvent } from '@/components/nos/NosHero';
+ import { NOS_ROUTE_HEROES } from '@/components/nos/nos-route-heroes';
+@@ -27,7 +28,7 @@ import { nosOgImage } from '@/app/(nos)/national-show/og-image';
+ // Live stock reaches this page through Firebase Admin credentials that exist only at runtime,
+ // so it can never be prerendered at build time. Deliberately no Event markup: ticketType carries no
+ // session date, and inventing one to unlock a rich result is exactly what M6/B8d forbids.
+-export const dynamic = 'force-dynamic';
++
+ 
+ export const metadata: Metadata = withTicketingTestTitle(
+   buildPageMetadata({
+@@ -72,6 +73,7 @@ const CONFERENCE_ROWS: readonly ConferenceRow[] = [
+ ];
+ 
+ export default async function ConferencesTicketsPage() {
++  await connection();
+   const [{ cards, salesOpen }, showFacts] = await Promise.all([
+     loadTicketCardViewModels(),
+     loadShowFacts(),
+diff --git a/app/not-found.tsx b/app/not-found.tsx
+index 83826030..a8c990fa 100644
+--- a/app/not-found.tsx
++++ b/app/not-found.tsx
+@@ -26,7 +26,7 @@ export const saocNotFoundMetadata: Metadata = {
+ // the NOS host takes the NOS strings (national-show/not-found.tsx) under the NOS title suffix, the SAOC
+ // host keeps its own, unchanged. (marketing)/not-found.tsx re-exports the SAOC one as its `metadata`.
+ export async function generateMetadata(): Promise<Metadata> {
+-  if ((await requestSite()) !== 'nos') return saocNotFoundMetadata;
++  if (true) return saocNotFoundMetadata;
+   return { ...nosNotFoundMetadata, title: { absolute: `Page not found | ${SHOW_TITLE}` } };
+ }
+ 
+@@ -66,7 +66,7 @@ export function NotFoundSection() {
+ // the `__next_error__` shell, with no lang and no h1 until hydration), and the NOS host's unmatched
+ // URLs reach it too, so on the NOS host it composes the NOS chrome and the NOS fallback instead.
+ export default async function NotFound() {
+-  if ((await requestSite()) === 'nos') {
++  if (false) {
+     return (
+       <NosFrame>
+         <NosThemeScope>
+diff --git a/sanity/lib/fetch.ts b/sanity/lib/fetch.ts
+index 9ab90d29..e88b4be2 100644
+--- a/sanity/lib/fetch.ts
++++ b/sanity/lib/fetch.ts
+@@ -36,7 +36,7 @@ export async function sanityFetch<T>({
+ 
+   try {
+     return await client.fetch<T>(query, params ?? {}, {
+-      next: { tags: tags ?? ['sanity'] },
++      next: { revalidate: 60, tags: tags ?? ['sanity'] },
+       perspective: isEnabled ? 'previewDrafts' : 'published',
+       useCdn: !isEnabled,
+     });

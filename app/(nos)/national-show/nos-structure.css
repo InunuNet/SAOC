@@ -592,7 +592,9 @@
   scroll-margin-top: 112px;
 }
 
-/* Hash links land clear of the sticky header (nos-chrome.css zeroes html scroll-padding-top). */
+/* Hash links land clear of the sticky header. The NOS host zeroes the root scroll-padding at every
+   width (nos-chrome.css only does so below 768), so every NOS scroll-margin assumes zero padding. */
+html:has(#nh) { --scroll-padding-top: 0px; }
 .nos-theme [id] {
   scroll-margin-top: 112px;
 }
@@ -4609,15 +4611,15 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
    shared SAOC component, so the NOS look is CSS scoped to [data-sponsor-enquiry='nos']. Unlayered on
    purpose: the form's Tailwind utilities are layered and an unlayered rule beats them. ---- */
 .nos-theme [data-sponsor-enquiry='nos'] {
-  scroll-margin-top: 68px; /* sticky chrome + 24; overrides the section's Tailwind scroll-mt-36 */
+  scroll-margin-top: 24px; /* the header is not pinned below 768; overrides the section's Tailwind scroll-mt-36 */
   background-color: var(--bone);
   border-radius: 16px;
   box-shadow: var(--shadow-sm);
   padding: 24px;
 }
-@media (min-width: 700px) {
+@media (min-width: 768px) {
   .nos-theme [data-sponsor-enquiry='nos'] {
-    scroll-margin-top: 121px;
+    scroll-margin-top: 121px; /* pinned header, bottom at 97px, plus 24 */
   }
 }
 @media (min-width: 768px) {

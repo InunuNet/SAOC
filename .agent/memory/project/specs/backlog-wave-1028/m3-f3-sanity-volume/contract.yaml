@@ -1,0 +1,132 @@
+schema: athanor.contract/v1
+slug: m3-f3-sanity-volume
+goal: Cut Sanity request volume by at least 95 percent without weakening draft mode, tag revalidation, the CDN fallback or checkout price freshness, and ship a deterministic read-only cache-header probe for both hosts.
+created_at: '2026-10-29'
+autonomy: high
+
+features:
+  - id: F3a
+    name: Cache-header probe script (offline self-test, local spawn, live mode) plus launch-checklist item
+    status: pending
+  - id: F3b
+    name: Sanity request volume reduction (static root not-found, explicit fetch revalidate, direct readers routed through sanityFetch) with before/after count harness
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/goldens/baseline-measurement.md
+  - .agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/goldens/request-count-targets.json
+  - .agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/goldens/cache-header-expectations.json
+  - .agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/goldens/sanity-fetch-options-table.json
+  - .agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/goldens/poc-experiment.patch
+  - .agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/goldens/reference-measure.mjs
+  - .agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/goldens/reference-count-preload.mjs
+  - .agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/goldens/per-route-cold-isolated.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: F3a probe script exists in a project-owned path (execution/ is HARNESS-owned)
+      command: test -f scripts/checks/cache-headers-probe.mjs
+    - id: A2
+      description: F3a probe offline self-test passes good vectors and rejects every bad vector from the golden, no network
+      command: node scripts/checks/cache-headers-probe.mjs --selftest
+    - id: A3
+      description: Probe and harness are read-only, no mutating HTTP method anywhere in either script
+      command: >-
+        ! grep -nEi "method[\"']?: *[\"']?(POST|PUT|PATCH|DELETE)" scripts/checks/cache-headers-probe.mjs scripts/checks/sanity-request-count.mjs
+    - id: A4
+      description: launch checklist gains the probe item in the Performance block
+      command: grep -q "cache-headers-probe" docs/launch-checklist.md
+    - id: A5
+      description: P1 root not-found no longer reads request headers
+      command: >-
+        ! grep -nE "requestSite|next/headers" app/not-found.tsx
+    - id: A6
+      description: P2/P3 options table holds (published gets revalidate 60 and tags, draft and live get no-store and no revalidate)
+      command: pnpm exec tsx scripts/checks/sanity-fetch-options.mts
+    - id: A7
+      description: P3 direct readers now go through sanityFetch
+      command: >-
+        ! grep -n "client[.]fetch" lib/view-models/load-presenters.ts lib/view-models/load-workshop-sessions.ts lib/view-models/load-ticket-card.ts
+    - id: A8
+      description: Price-bearing single-type reads are marked live
+      command: grep -q "live:.true" lib/data/ticket-type-lookup.ts
+    - id: A9
+      description: Protected files are byte-identical to origin/main (webhook revalidation, draft mode, cdn-fallback, checkout, show window lookup)
+      command: git diff --quiet origin/main -- app/api/revalidate app/api/draft app/api/disable-draft sanity/lib/cdn-fallback.ts app/api/tickets/checkout lib/show-window-lookup.ts
+    - id: A10
+      description: Production build with Sanity stubbed locally (no live request, FIREBASE blanked)
+      command: node scripts/checks/sanity-request-count.mjs --build
+      timeout_seconds: 900
+    - id: A11
+      description: BEFORE/AFTER count with an isolated per-route cold positive control (goldens/per-route-cold-isolated.json, exact), warm total per pass at most 2, no route above 1, every ISR route 0 and answering s-maxage=60, at least 95 percent below the recorded 92 baseline
+      command: node scripts/checks/sanity-request-count.mjs --assert
+      timeout_seconds: 900
+    - id: A12
+      description: Freshness bound, cache expires after the revalidate window and holds again (about 70 s)
+      command: node scripts/checks/sanity-request-count.mjs --ttl-check
+      timeout_seconds: 300
+    - id: A13
+      description: "Host-correct 404 after P1. NOS host: /zz-x, /vsp/zz, /tickets/a/b, /newsletter/zz give 404 with the NOS title. SAOC host: /zz-x and /newsletter/zz give 404 with the SAOC title; /vsp/zz and /tickets/a/b give 308 to the NOS origin"
+      command: node scripts/checks/sanity-request-count.mjs --notfound
+      timeout_seconds: 300
+    - id: A14
+      description: F3a local spawn, both hosts via Host header, launched expectations (ISR s-maxage=60, per-request no-store)
+      command: node scripts/checks/cache-headers-probe.mjs --spawn
+      timeout_seconds: 300
+    - id: A15
+      description: Type check
+      command: pnpm type-check
+      timeout_seconds: 600
+    - id: A16
+      description: Lint the touched areas
+      command: pnpm exec eslint sanity lib/view-models lib/data/ticket-type-lookup.ts app/not-found.tsx scripts/checks
+      timeout_seconds: 300
+    - id: A17
+      phase: 5
+      description: RUN AFTER DEPLOY, non-required. Live probe of beta and nos in walled mode (Basic Auth read inside node, never printed). Exit 77 if credentials absent, so the gate needs --allow-skips. Use --mode launched after SITE_PUBLIC_LAUNCH flips.
+      command: node --env-file-if-exists=.env.local scripts/checks/cache-headers-probe.mjs --live --mode walled
+      required: false
+    - id: A18
+      description: Codex adversarial review of the whole diff
+      type: codex_qa
+      target: >-
+        Review git diff origin/main...HEAD on perf/sanity-request-volume against
+        .agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/spec.md. Try to break these: (1) a draft-mode read being
+        cached or served from the data cache, (2) a ticket price or sales-state read on the checkout path or single-type buy screen
+        becoming cached, (3) app/api/revalidate tags no longer matching the tags passed to sanityFetch, (4) the root not-found or its
+        catch-alls calling headers()/cookies() or breaking the 404 status code on either host, (5) the probe or harness making a
+        non-GET request, printing a credential, or touching a live Sanity project or Firestore, (6) the request-count assertion
+        passing for a reason other than caching (for example counting the wrong host pattern). Out of scope: Sanity plan limits,
+        cdn-fallback circuit breaker, raising the revalidate window.
+      timeout_seconds: 1300
+      required: true
+    - id: A19
+      phase: 5
+      description: browser_deployed_check on beta, declared for the triad linter, non-required. It cannot pass while the beta Basic Auth wall is up (live re-check sends no auth, backlog.md 2026-10-07 HARNESS defect). A17 is the real post-deploy proof.
+      type: browser_deployed_check
+      target: .agent/memory/scratch/m3-f3-browser-manifest.json
+      required: false
+    - id: A20
+      phase: 5
+      description: gws inbox check not applicable (no email path touched), declared non-required for the triad linter
+      type: gws_inbox_check
+      target: .agent/memory/scratch/m3-f3-gws-manifest.json
+      required: false
+    - id: A21
+      description: P1 catch-all pages and the shared not-found exist
+      command: >-
+        test -f "app/(marketing)/[...slug]/page.tsx" -a -f "app/(nos)/national-show/[...slug]/page.tsx" -a -f "app/(nos)/vsp/[...slug]/page.tsx" -a -f "app/(nos)/tickets/[slug]/[...rest]/page.tsx" -a -f "app/(shared)/newsletter/[...rest]/page.tsx" -a -f "app/(shared)/not-found.tsx"
+    - id: A22
+      description: Catch-all pages contain no header or cookie reads
+      command: >-
+        ! grep -lE "next/headers|requestSite" "app/(marketing)/[...slug]/page.tsx" "app/(nos)/national-show/[...slug]/page.tsx" "app/(nos)/vsp/[...slug]/page.tsx" "app/(nos)/tickets/[slug]/[...rest]/page.tsx" "app/(shared)/newsletter/[...rest]/page.tsx"
+    - id: A23
+      description: The two ratified catch-alls (and only those) carry force-dynamic
+      command: >-
+        test "$(grep -l "export const dynamic = 'force-dynamic'" "app/(nos)/tickets/[slug]/[...rest]/page.tsx" "app/(shared)/newsletter/[...rest]/page.tsx" | wc -l)" -eq 2
+    - id: A24
+      description: The other three catch-alls stay static (no dynamic export)
+      command: >-
+        test "$(grep -l "export const dynamic" "app/(marketing)/[...slug]/page.tsx" "app/(nos)/national-show/[...slug]/page.tsx" "app/(nos)/vsp/[...slug]/page.tsx" | wc -l)" -eq 0

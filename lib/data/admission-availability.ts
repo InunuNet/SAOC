@@ -156,9 +156,12 @@ async function readStock(): Promise<StockReading | null> {
  * Every ticket card of the keepsake hub, from real stock only (R7). One loader for the hub, the
  * conferences page and the workshops page, so the three never disagree. The sold-out verdict is
  * the same pooled-capacity check checkout runs. A failure is logged by error name and yields
- * cards with no stock numbers, never an exception and never a sample figure.
+ * cards with no stock numbers, never an exception and never a sample figure. `live` skips the Sanity
+ * data cache; the single-type buy screen sets it, the hub pages keep the 60 s cache.
  */
-export async function loadTicketCardViewModels(): Promise<TicketCardViewModelsResult> {
+export async function loadTicketCardViewModels(
+  { live = false }: { live?: boolean } = {},
+): Promise<TicketCardViewModelsResult> {
   try {
     const [byCategory, shows, salesState] = await Promise.all([
       Promise.all(
@@ -167,13 +170,15 @@ export async function loadTicketCardViewModels(): Promise<TicketCardViewModelsRe
             query: activeTicketTypesByCategoryQuery,
             params: { category },
             tags: ['ticketType', 'sanity'],
+            live,
           })
         )
       ),
-      sanityFetch<ShowActivation[]>({ query: activeShowWindowQuery, tags: ['show', 'sanity'] }),
+      sanityFetch<ShowActivation[]>({ query: activeShowWindowQuery, tags: ['show', 'sanity'], live }),
       sanityFetch<{ salesOpen?: boolean | null }>({
         query: nationalShowSalesQuery,
         tags: ['nationalShow', 'sanity'],
+        live,
       }),
     ]);
     const salesOpen = salesState?.salesOpen === true;

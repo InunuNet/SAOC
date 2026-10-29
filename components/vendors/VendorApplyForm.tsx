@@ -7,6 +7,7 @@ import { VendorFormField } from './VendorFormField';
 import { VendorCheckboxGroupField } from './VendorCheckboxGroupField';
 import { VENDOR_APPLICATION_CATEGORIES } from '@/lib/vendor-applications';
 import {
+  humaniseVendorApplyError,
   validateVendorApplyFormClientSide,
   vendorApplyErrorsByField,
   type VendorApplyFieldKey,
@@ -166,7 +167,7 @@ export function VendorApplyForm() {
 
       setStatus('error');
       setErrorMessage(body?.error ?? 'Failed to submit your application. Please try again.');
-      setFieldErrors(body?.fieldErrors ?? []);
+      setFieldErrors([...new Set((body?.fieldErrors ?? []).map(humaniseVendorApplyError))]);
     } catch {
       setStatus('error');
       setErrorMessage('Failed to reach the server. Please try again.');

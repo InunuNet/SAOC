@@ -2,6 +2,7 @@ import type {
   VendorRegisterFieldChangeHandler,
   VendorRegisterFormState,
 } from '@/lib/vendor-register-form-payload';
+import { VendorCheckboxField } from './VendorCheckboxField';
 import { VendorFormField } from './VendorFormField';
 import { VendorTermsFieldset } from './VendorTermsFieldset';
 
@@ -42,6 +43,15 @@ export function VendorDeclarationFieldset({
       </ol>
 
       <VendorTermsFieldset />
+
+      <VendorCheckboxField
+        fieldKey="termsAccepted"
+        label="I confirm I have read and agree to the Vendor Terms & Conditions of the 2027 SAOC National Show."
+        value={state.termsAccepted}
+        onChange={(v) => onFieldChange('termsAccepted', v)}
+        disabled={disabled}
+        required
+      />
 
       {/* Vendor / Authorised Representative signature block, per the source doc's own
           "Full Name / Position / Business Name / Signature / Date" fields. Position and

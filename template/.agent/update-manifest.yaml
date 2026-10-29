@@ -56,6 +56,9 @@ paths:
   path: .agent/profile.json
 - category: WORKSPACE
   path: .agent/no-update
+# Project-owned contract check kinds registry (read by execution/contract.py); never shipped.
+- category: WORKSPACE
+  path: .agent/contract_kinds.json
 - category: WORKSPACE
   path: WORKSPACE
 - category: DERIVED

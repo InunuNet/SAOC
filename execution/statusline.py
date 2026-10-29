@@ -66,6 +66,11 @@ HEAT_RED_PCT = 85
 HOURS_PER_DAY = 24
 # quota_auto_resume.py reads what this file writes under QUOTA_RESUME_DIR.
 QUOTA_RESUME_DIR = Path(".agent") / "memory" / "scratch" / "quota_resume"
+# compact.py reads the live context reading in this directory, one file per claude pid.
+CONTEXT_NOW_DIR = Path(".agent") / "memory" / "scratch" / "context_now"
+CONTEXT_NOW_NO_PID = "nopid"
+CONTEXT_NOW_PRUNE_SECONDS = 24 * 3600
+DECIDER_PATH = Path(__file__).resolve().parent / "hooks" / "lib" / "autocompact_decider.py"
 QUOTA_WINDOWS = ("five_hour", "seven_day")
 ISO_UTC_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 HEARTBEAT_REFRESH_SECONDS = 3600
@@ -814,11 +819,48 @@ def update_heartbeat(target: Path, session: str, fingerprint: str,
 
 def record_quota_state(payload: dict, root: Path) -> None:
     """Best-effort: a recording failure must never cost the operator the panel."""
-    for record in (record_exhaustion, record_heartbeat):
+    for record in (record_exhaustion, record_heartbeat, record_context_now):
         try:
             record(payload, root)
         except Exception:
             continue
+
+
+def claude_pid() -> str:
+    """Pid of the claude process hosting this render, so readings are per session."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("autocompact_decider", DECIDER_PATH)
+    if spec is None or spec.loader is None:
+        return CONTEXT_NOW_NO_PID
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return str(module.find_claude_ancestor_pid() or CONTEXT_NOW_NO_PID)
+
+
+def prune_context_now(folder: Path) -> None:
+    """Drop readings of sessions long gone."""
+    cutoff = time.time() - CONTEXT_NOW_PRUNE_SECONDS
+    for old in folder.glob("*.json"):
+        if old.stat().st_mtime < cutoff:
+            old.unlink(missing_ok=True)
+
+
+def record_context_now(payload: dict, root: Path) -> None:
+    """Mirror the live context reading for compact.py. Skipped when unknown."""
+    window = dig(payload, "context_window", "context_window_size")
+    used_pct = dig(payload, "context_window", "used_percentage")
+    if (isinstance(window, bool) or isinstance(used_pct, bool)
+            or not isinstance(window, (int, float)) or window <= 0
+            or not isinstance(used_pct, (int, float))):
+        return
+    session = payload.get("session_id")
+    folder = root / CONTEXT_NOW_DIR
+    write_json_atomic(folder / f"{claude_pid()}.json", {
+        "tokens": round(used_pct / 100 * window), "window_size": int(window),
+        "used_pct": float(used_pct), "captured_at": time.time(),
+        "session_id": session if isinstance(session, str) and session else None})
+    prune_context_now(folder)
 
 
 def auto_resume_running(root: Path) -> str:

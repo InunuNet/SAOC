@@ -1,0 +1,106 @@
+schema: athanor.contract/v1
+slug: backlog-wave-2026-10-28
+goal: Close the still-open vendor/admin backlog items - four small vendor-flow fixes (F2a) and a read-only full-registration detail page at /admin/vendors/[id] (F2b) - without touching the stand-size product question.
+created_at: '2026-10-29'
+autonomy: high
+
+features:
+  - id: F2a
+    name: Payment-link button copies only (route sends no email), /register prefills business name from the verified application, T&C checkbox moves below the Declaration text, server-side /apply errors show labels
+    status: pending
+  - id: F2b
+    name: Read-only /admin/vendors/[id] full registration view (every section, pre-M2 safe, serialised, double-gated)
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/backlog-wave-1028/m3-f2-vendor-admin/goldens/verification-table.md
+  - .agent/memory/project/specs/backlog-wave-1028/m3-f2-vendor-admin/goldens/f2a-small-fixes.md
+  - .agent/memory/project/specs/backlog-wave-1028/m3-f2-vendor-admin/goldens/f2b-detail-page.md
+  - .agent/memory/project/specs/backlog-wave-1028/m3-f2-vendor-admin/goldens/codex-qa-prompt.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: F2a resend-payment-link route no longer sends any email and keeps its admin gate, 409/404 guards, fresh mint and paymentUrl (fails on main)
+      command: python3 .agent/memory/project/specs/backlog-wave-1028/m3-f2-vendor-admin/checks/check_vendor_admin.py no-email
+    - id: A2
+      description: F2a the legacy M3 behavioural check was updated to assert zero emails on resend and read the token from paymentUrl (fails on main)
+      command: python3 .agent/memory/project/specs/backlog-wave-1028/m3-f2-vendor-admin/checks/check_vendor_admin.py legacy-check
+    - id: A3
+      description: F2a the updated legacy M3 behavioural check passes against the changed route (route-runner harness, fixtures only, no live Firestore, no email)
+      command: NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" pnpm exec tsx contracts/checks/vendor-gated-registration-flow-m3/check-approval-mints-payment-link-and-resend.mjs
+    - id: A4
+      description: F2a the payment-link-visibility legacy checks still pass (admin obtains URL without email, non-admin refused, review table wiring)
+      command: NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" pnpm exec tsx contracts/checks/vendor-stand-payment-link-visibility/check-admin-obtains-url-non-admin-refused.mjs
+    - id: A5
+      description: F2a review table still wires the payment-link control (regression guard)
+      command: node contracts/checks/vendor-stand-payment-link-visibility/check-review-table-wires-payment-link-control.mjs
+    - id: A6
+      description: F2a /register passes a business name from the verified application to the gated form, not the query-string variable (fails on main)
+      command: python3 .agent/memory/project/specs/backlog-wave-1028/m3-f2-vendor-admin/checks/check_vendor_admin.py prefill
+    - id: A7
+      description: F2a termsAccepted is gone from the payment fieldset and sits after the Terms prose and before the signature block in the declaration fieldset, label unchanged (fails on main)
+      command: python3 .agent/memory/project/specs/backlog-wave-1028/m3-f2-vendor-admin/checks/check_vendor_admin.py terms-order
+    - id: A8
+      description: F2a the apply form routes server fieldErrors through humaniseVendorApplyError (fails on main)
+      command: python3 .agent/memory/project/specs/backlog-wave-1028/m3-f2-vendor-admin/checks/check_vendor_admin.py apply-labels
+    - id: A9
+      description: F2a humaniseVendorApplyError turns every apply field's raw error into a label sentence, never a camelCase key or "must be a" wording, and falls back to the generic sentence (fails on main)
+      command: pnpm exec tsx .agent/memory/project/specs/backlog-wave-1028/m3-f2-vendor-admin/checks/check-apply-humanise.mts
+    - id: A10
+      description: F2b detail route and component exist, are server components, no dangerouslySetInnerHTML, review table links to it with "View full registration" (fails on main)
+      command: python3 .agent/memory/project/specs/backlog-wave-1028/m3-f2-vendor-admin/checks/check_vendor_admin.py detail-exists
+    - id: A11
+      description: F2b the detail page checks the admin session and the review-vendor-applications capability itself, on top of the subtree layout gate
+      command: python3 .agent/memory/project/specs/backlog-wave-1028/m3-f2-vendor-admin/checks/check_vendor_admin.py detail-gate
+    - id: A12
+      description: F2b the detail page serialises submission and application and reads the stand order, never spreading raw doc.data()
+      command: python3 .agent/memory/project/specs/backlog-wave-1028/m3-f2-vendor-admin/checks/check_vendor_admin.py detail-serialize
+    - id: A13
+      description: F2b the detail page and component perform no Firestore write
+      command: python3 .agent/memory/project/specs/backlog-wave-1028/m3-f2-vendor-admin/checks/check_vendor_admin.py detail-readonly
+    - id: A14
+      description: F2b every required section heading is a literal in the detail component
+      command: python3 .agent/memory/project/specs/backlog-wave-1028/m3-f2-vendor-admin/checks/check_vendor_admin.py detail-sections
+    - id: A15
+      description: F2b legacy pre-M2 fields and the booth label helper are handled in the component
+      command: python3 .agent/memory/project/specs/backlog-wave-1028/m3-f2-vendor-admin/checks/check_vendor_admin.py detail-legacy
+    - id: A16
+      description: F2b behavioural render of VendorSubmissionDetail for a pre-M2 doc, a minimal doc with hostile table shapes and an M2 doc with application and paid stand - all sections present, no undefined/null/[object Object]/raw enum slug, base-name-only upload paths, no throw
+      command: pnpm exec tsx .agent/memory/project/specs/backlog-wave-1028/m3-f2-vendor-admin/checks/check-detail-render.mts
+    - id: A17
+      description: Typecheck is clean across the project
+      command: pnpm exec tsc --noEmit
+    - id: A18
+      description: Lint is clean on every touched area
+      command: pnpm exec eslint "app/admin/(shell)/vendors" "app/(nos)/national-show/vendors" "app/api/admin/vendors" components/admin components/vendors lib/vendor-apply-form-validation.ts
+    - id: A19
+      description: docs updated - vendor-gated-registration-flow doc mentions the full-registration view and that resend-payment-link sends no email
+      command: grep -q "/admin/vendors/\[id\]" docs/vendor-gated-registration-flow.md
+    - id: A21
+      description: docs record that the admin payment-link button sends no email
+      command: grep -q "sends no email" docs/vendor-gated-registration-flow.md
+    - id: A22
+      phase: 5
+      description: browser_deployed_check on the deployed NOS /vendors/apply, declared for the triad linter, non-required. It cannot pass behind the beta Basic Auth wall (gate-hygiene A11), and the admin detail page sits behind Firebase Auth, so no browser manifest can show it signed-out beyond the redirect. A24 is the real post-deploy proof of what is provable unauthenticated.
+      type: browser_deployed_check
+      target: .agent/memory/scratch/backlog-wave-2026-10-28-m3-f2-browser-manifest.json
+      required: false
+    - id: A23
+      phase: 5
+      description: gws inbox check, declared non-required and MANUAL post-deploy. The email path is touched (Get payment link no longer sends one), so it applies - after an admin clicks "Get payment link" on an approved, unpaid vendor, the vendor inbox must show no second payment email from that click. The click needs a signed-in admin and a real vendor mailbox, so it cannot run pre-merge or in a gate.
+      type: gws_inbox_check
+      target: .agent/memory/scratch/backlog-wave-2026-10-28-m3-f2-gws-manifest.json
+      required: false
+    - id: A24
+      phase: 5
+      description: RUN AFTER DEPLOY from the project root (needs .env.local), non-required. Plain check with beta Basic Auth - /admin/vendors/[id] with no session redirects to /admin/login, NOS /vendors/register still shows the gate not the full form, /vendors/apply is served, NOS /vendors/payment is served and /national-show/vendors/payment redirects to it. Writes nothing. Exit 77 when credentials are missing.
+      command: node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/m3-f2-vendor-admin/checks/check-deployed-vendor.mjs
+      required: false
+    - id: A20
+      description: Codex adversarial review of the whole diff against the spec (cross-model; the Agent-tool @qa only if codex is not on PATH, and the verdict says so)
+      type: codex_qa
+      target: .agent/memory/project/specs/backlog-wave-1028/m3-f2-vendor-admin/goldens/codex-qa-prompt.md
+      timeout_seconds: 1300
+      command: execution/codex_qa.sh .agent/memory/project/specs/backlog-wave-1028/m3-f2-vendor-admin/goldens/codex-qa-prompt.md

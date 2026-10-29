@@ -95,6 +95,33 @@ function requireText(value: string, field: string, maxLength: number, errors: st
   return true;
 }
 
+// Labels as shown on the /apply form (components/vendors/VendorApplyForm.tsx).
+const VENDOR_APPLY_FIELD_LABELS: Record<VendorApplyFieldKey, string> = {
+  businessName: 'Business name',
+  tradingName: 'Trading name',
+  contactPersonName: 'Contact person name',
+  contactEmail: 'Contact email',
+  contactCellPhone: 'Contact cell phone',
+  vendorCategory: 'Vendor category & products',
+  indicativeBoothCount: 'Indicative number of stands',
+};
+
+const VENDOR_APPLY_GENERIC_ERROR = 'Please check the highlighted fields.';
+
+/**
+ * Turns one raw server-side validation message (e.g. "businessName is required and must be a
+ * non-empty string") into a label sentence for the apply form. An unknown leading key falls
+ * back to the generic instruction, so a camelCase key or schema wording never reaches a vendor.
+ */
+export function humaniseVendorApplyError(raw: string): string {
+  const key = VENDOR_APPLY_FIELD_ORDER.find((candidate) => raw.startsWith(`${candidate} `));
+  if (!key) {
+    return VENDOR_APPLY_GENERIC_ERROR;
+  }
+  const label = VENDOR_APPLY_FIELD_LABELS[key];
+  return raw.includes('is required') ? `${label} is required.` : `${label} is invalid.`;
+}
+
 /**
  * Groups raw validator messages into one humanised sentence per field (first message wins),
  * ordered as the fields appear on screen. Reuses humaniseFieldError() for every sentence.
