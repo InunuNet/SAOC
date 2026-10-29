@@ -18,11 +18,14 @@ goldens:
 assertions:
   phase: 4
   checks:
+    - id: A0
+      description: "Check integrity (runs first): every file under checks/ matches its pinned sha256 in goldens/checks.sha256 AND the set of files under checks/ equals the pinned set (an unpinned or a missing file fails; every relative import and checks/<file> reference must be pinned). So a check cannot be edited, added or removed while the gate stays green. Any other assertion's result is void when this is red"
+      command: "shasum -a 256 -c .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/checks.sha256 && node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/verify-pins.mjs"
     - id: A1
       description: "Every main h2 is the H2 role (serif 300, clamp(32,29+0.762vw,44), lh 1.15) or the Title role (serif 400, 20-22) at 390, 1440, 2056 (fails on main, 150 violations)"
       command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-h2-roles.mjs"
     - id: A2
-      description: "Inner PageHero locked at 480 +-4 at 1440 and 2056 and at 768 (all 8 routes, /about included), copy padding identical across routes (NOS Design confirmed; passes on main, a lock, not a red check; 1024 and 1280 moved to report-only A8)"
+      description: "Hero bands (NOS Design HM-8 ruling, final): at 768 all 8 routes 480 +-4 (unchanged, copy padding identical). At 1440 and 2056 the 480 +-4 lock applies ONLY to the photographic heroes (/about, /judging, /sponsors); typographic heroes (/members, /memorandum-of-incorporation, /privacy, /terms, /refunds, /events/submit, first /societies/[slug], /404) size to content: band = copy block + 2 x clamp(64px, 6vw, 96px) +-2. Also h1.left one axis (+-1) across photographic heroes, typographic h1 on the breadcrumb left (+-1)"
       command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-heights.mjs"
     - id: A3
       description: "Codex adversarial QA of the whole diff against the goldens and proof-on-main"
@@ -50,10 +53,10 @@ assertions:
       description: "Mobile (<768) anatomy: every photo band uses one aspect-ratio (2/1) and every route's copy block one padding (40px) at 390 and 600. Guard, passes on main (PageHero already uses aspect-[2/1] and py-10); there is no equal-height gate below 768"
       command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-mobile-anatomy.mjs"
     - id: A8
-      description: "LOCK (NOS Design, amended): all 8 non-exempt routes 480 +-4 at 1024 and 1280, /about included. 1024 accepted by eye with the 14ch facts band, so no CASE B and no allowance. Fails on main (/about 496 at 1024, 545 at 1280)"
+      description: "Same HM-8 hero-band gate as A2 at 1024 and 1280 (photographic 480 +-4, /about included; typographic = copy + 2 x clamp(64px, 6vw, 96px) +-2; h1/breadcrumb axes). 1024 accepted by eye with the 14ch facts band"
       command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-heights-report.mjs"
     - id: A9
-      description: "/about facts (NOS Design option b): dt max-width exactly 14ch at 1024-1279 ONLY, 18ch at 768 and from 1280, balanced wrap, <=3 lines; gap 24, dd nowrap and >=24px at 768/1024/1280; at 1024 and 1280 also one row (dd tops +-1) and no overflow; copy column stays 48% and scrim 44%/52%/0.8 (fails on main: facts wrap, gap 40, dt 26ch)"
+      description: "/about facts: dt max-width exactly 14ch at 1024-1279 ONLY, 18ch at 768 and from 1280, balanced wrap, <=3 lines; gap 24, dd nowrap and >=24px at 768/1024/1280; at 1024 and 1280 also one row (dd tops +-1) and no overflow; copy column stays 48%. Scrim (NOS Design HM-5 ruling, final): the copy scrim is the eased ramp alpha 0@34 .06@38 .16@42 .32@45 .52@48 .70@50.5 .80@52 (%), peak <=.8, left 0-39% alpha <=.1, and NO scrim below 768 (390 and 600 display none)"
       command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-facts-row.mjs"
     - id: A10
       description: "Weight band on every SAOC hero dd: serif 300 at >=32px, 400 at 24-31.99px, at 390/768/1024/1280/1440/2056 (fails on main: dd is 300 at every size, 24-29px at 390-1024)"
@@ -63,7 +66,7 @@ assertions:
       command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-facts-global.mjs"
     - id: A12
       phase: 5
-      description: "RUN AFTER DEPLOY (phase 5; events need live Sanity, so locally it FAILS: zero event facts rendered is never a pass). /events/[slug] facts (factsAlign=start) at 1024/1200/1280/1440/2056: no word breaks mid-word (1 client rect per word in every dd and dt), overflow-wrap normal, cell min-width min-content, dd balanced <=3 lines, no overflow, dt.left = dd.left +-1, a wrapped row starts at h1.left +-1, gap 24 below 1280, dd weight 400 below 32px. Route: the 19th national show event, else the first event. Fails on beta/main (Western Cape breaks Wester/n, overflow-wrap anywhere)"
+      description: "RUN AFTER DEPLOY (phase 5; events need live Sanity, so locally it FAILS: zero event facts rendered is never a pass). /events/[slug] facts (factsAlign=start, NOS Design ruling 3: START-aligned, not centred by default, HM-7) at 1024/1200/1280/1440/2056: every cell dt.left = dd.left +-1 and the first cell left = h1.left +-1; the row is flex-wrap and a wrapped row starts at h1.left +-1; wrap only at spaces (1 client rect per word in every dd and dt), dd white-space not nowrap (nowrap is the centred variant), overflow-wrap normal, cell min-width min-content, dd <=3 lines, no overflow, gap 24 below 1280, dd weight 300 at >=32px and 400 at 24-31.99px. Route: the 19th national show event, else the first event. Dropping overflow-wrap anywhere, min-width 0 and the >=1024 nowrap is ratified. Local gap: no fixture renders an event, so the start variant was proved on /about with data-facts-align switched to start (same rules)"
       command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-event-facts.mjs"
     - id: A13
       description: "SAOC /404: a parchment gap of at least 64px between the band's bottom and the footer's top at 390, 1440 and 2056 (fails on main: gap 0, the band runs into the dark footer)"
@@ -72,3 +75,13 @@ assertions:
     - id: A14
       description: "/about tablet band (NOS Design ruling (a), final), prod build with fixtures at 769/880/960/1023: /about facts take <=2 rows, no mid-word break, no overflow; /about hero <=520; the other 7 routes 480 +-4. The 480 +-4 lock at 768/1024/1280/1440/2056 stays with A2/A8. Measured on F1c dev 271aacfc: /about 480/488/504/516, others 480, 2 rows max"
       command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-about-tablet-band.mjs"
+
+    - id: A15
+      description: "Scrim contrast (NOS Design HM-5 ruling, final): with the copy hidden, the worst pixel under every hero text box on /about, /judging, /sponsors at 768/1024/1280/1440/2056 contrasts with the text colour >=4.5:1, or >=3:1 for text boxes >=30px tall. Text on its own fill (buttons, the eyebrow pill) is measured against that fill and skipped"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-scrim-contrast.mjs"
+      timeout_seconds: 1500
+
+    - id: A16
+      description: "LG-RF holds on the legal pages (NOS Design, comms.md 2026-10-25/26/27, ruling 2026-10-28), /privacy /terms /refunds at 390/1440/2056: no eyebrow, no max-w-[720px] in main, draft notice has no box border and a transparent fill; index = h2 (links are the h2 list in order, counts 11/19/9); every h2 margin-top 56 and 56 +-1 below the prose above. The draft notice on /refunds and /members is 15px with a 1px solid rule below (one shared DraftNotice). /judging, /members and /404 keep their eyebrows (not asserted)"
+      command: "DC_PROD=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-legal-lg-rf.mjs"
+      timeout_seconds: 1500

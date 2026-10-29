@@ -17,29 +17,32 @@ export const saocNotFoundMetadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+// The hero band stops 64px (mb-16) short of the dark footer, so the parchment page shows between them (F1c).
 export function NotFoundSection() {
   return (
-    <RouteHero
-      route="/404"
-      eyebrow="404 — Page not found"
-      heading="This orchid has left the bench."
-      lede="The page you’re looking for doesn’t exist or may have moved. Start from the home page or find a society near you."
-      actions={
-        <div className="mt-10 flex flex-wrap justify-center gap-4">
-          <Link
-            href="/"
-            className="font-sans text-[14px] font-medium bg-accent px-6 py-3 text-ink transition-colors duration-150 hover:bg-accent-soft outline-ivory focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]"
-          >
-            Go home
-          </Link>
-          <Link
-            href="/societies"
-            className="font-sans text-[14px] font-medium border border-ivory/40 px-6 py-3 text-ivory transition-colors duration-150 hover:bg-ivory/10 outline-ivory focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]"
-          >
-            Find a society
-          </Link>
-        </div>
-      }
-    />
+    <div className="mb-16">
+      <RouteHero
+        route="/404"
+        eyebrow="404 — Page not found"
+        heading="This orchid has left the bench."
+        lede="The page you’re looking for doesn’t exist or may have moved. Start from the home page or find a society near you."
+        actions={
+          <div className="mt-10 flex flex-wrap justify-center gap-4">
+            <Link
+              href="/"
+              className="font-sans text-[14px] font-medium bg-accent px-6 py-3 text-ink transition-colors duration-150 hover:bg-accent-soft outline-ivory focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]"
+            >
+              Go home
+            </Link>
+            <Link
+              href="/societies"
+              className="font-sans text-[14px] font-medium border border-ivory/40 px-6 py-3 text-ivory transition-colors duration-150 hover:bg-ivory/10 outline-ivory focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]"
+            >
+              Find a society
+            </Link>
+          </div>
+        }
+      />
+    </div>
   );
 }

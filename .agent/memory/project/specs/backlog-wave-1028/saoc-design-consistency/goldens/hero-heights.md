@@ -51,3 +51,11 @@ At 769-1023 only, /about may show two rows of facts and a hero up to 520px. Gate
 | >=1440 | 40 | 26ch |
 
 dd is nowrap on the centred variant only. A9 asserts the 768/1024/1280 rows of this table; the >=1440 row and the 769-1023 interior are documented here and covered by A14 only for rows, breaks, overflow and height.
+
+## NOS Design rulings (final, 2026-10-29): HM-8 bands, HM-5 scrim, event facts start-aligned
+- HM-8: the 480 +-4 lock applies ONLY to photographic heroes (/about, /judging, /sponsors, any route with a hero image). Typographic routes (/members, /memorandum-of-incorporation, /privacy, /terms, /refunds, /404, /events/submit, /societies/[slug]) size to content. Gate at 1024/1280/1440/2056: band = content + 2 x clamp(64px, 6vw, 96px) +-2; breadcrumb and h1 on one left axis +-1; /404 keeps its 64px parchment gap above the footer (A13). 768 and 390 unchanged.
+  Measured locally (prod build): typographic 1024 /members 308, /privacy 289; 1440 /members 371; photographic 480 at every width. Typographic h1.left equals the breadcrumb left (25.6 at 1024, 52.5 at 1440); photographic h1.left is the 52% copy axis (524.7 at 1024).
+- HM-5: scrim ramp 0@34 .06@38 .16@42 .32@45 .52@48 .70@50.5 .80@52, none below 768, left 0-39% alpha <=.1 (A9); copy-hidden worst-pixel contrast >=4.5 (>=3 for text boxes >=30px) (A15).
+- Event facts (A12): dropping overflow-wrap anywhere, min-width 0 and the >=1024 nowrap is ratified; /events/[slug] facts stay START-aligned (HM-7), not centred by default. Product check: with data-facts-align=start the global rules give justify-content flex-start, flex-wrap wrap, cell text-align left, dt.left = dd.left = cell.left = h1.left at 1024/1280/1440/2056 (measured on /about with the attribute switched), dd white-space normal.
+- LG-RF (legal pages only, A16): see comms.md 2026-10-25/26/27. /judging, /members and /404 keep their eyebrows, correctly.
+

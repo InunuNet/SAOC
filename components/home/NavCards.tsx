@@ -108,7 +108,7 @@ export function NavCards({ show, withhold = false }: NavCardsProps) {
           <div className="mb-3">
             <span className="eyebrow eyebrow--on-tint">Find your way in</span>
           </div>
-          <h2 className="font-serif font-light text-[clamp(34px,4.4vw,54px)] leading-[1.08] tracking-[-0.015em] text-primary">
+          <h2 className="font-serif font-light text-[length:var(--h2-role)] leading-[1.15] tracking-[-0.015em] text-primary">
             Four ways into SAOC
           </h2>
           {cards.some((card) => card.unsourced) && !withhold ? (

@@ -40,7 +40,7 @@ export function MissionBlock({ missionText, withhold = false }: MissionBlockProp
             <div className="mb-5">
               <span className="eyebrow">Our purpose</span>
             </div>
-            <h2 className="font-serif font-normal min-[942px]:font-light text-[clamp(28px,3.4vw,46px)] leading-[1.08] tracking-[-0.015em] text-primary">
+            <h2 className="font-serif font-light text-[length:var(--h2-role)] leading-[1.15] tracking-[-0.015em] text-primary">
               Where South African growers bring their finest blooms to the bench.
             </h2>
           </div>
