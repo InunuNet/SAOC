@@ -1,0 +1,15 @@
+546bcb99d6c3644bd8a476c913f7942e95512eb06376a22aa5856a617e06ee8c  .agent/memory/project/specs/nos-award-entries/goldens/source-council-thread.md
+af3e229902c19554616f4270cded54dc290a88ddfd8ac94a2cb7d381b2d20933  .agent/memory/project/specs/nos-award-entries/goldens/award-copy.json
+6357c9e2a42d50928be5fb43b8c39369b23b48c40a05c00dfcbd93eeb45fdfe9  .agent/memory/project/specs/nos-award-entries/goldens/exhibitor-audit.json
+b7ad22c68d08315fc5c6d4cec9bebf82b259910e13fefff3cf05aa38ac3d00e9  .agent/memory/project/specs/nos-award-entries/goldens/exhibitor-audit.md
+2fba8cc47382a2f90bed1f85c018ddd3f5cd92d98514d38c8ba9005f0c23656c  .agent/memory/project/specs/nos-award-entries/goldens/exhibitor-visible-list.json
+673508f0711b158313f26f3bdd732758511de650673f7d2274606824520d7ce0  .agent/memory/project/specs/nos-award-entries/goldens/exhibitor-visible-list.md
+3c317e812a716a47866c49c5d10824c6d4700cbe62815c7be3892756f9034177  .agent/memory/project/specs/nos-award-entries/goldens/sanity-for-saoc.md
+db0ff66156b959e4fb0da454ba3aaee89e059063612d1fa6c03faf9f3d0ef640  .agent/memory/project/specs/nos-award-entries/goldens/elbert-bio-diff.md
+c081ea5a20c8efad4c2196bbbb9a061322d5b41df783e22116a06977cb7c3968  .agent/memory/project/specs/nos-award-entries/goldens/codex-qa-prompt.md
+e94ed816f03565d9185d3205978d3e83e6e578220ab4f6d5ef2670e29a593cf3  .agent/memory/project/specs/nos-award-entries/checks/check-static.mjs
+beed69acd40351797e3ba4fa4c9bcb85d1dcd97a676e9bfc9bf5e19b7c5fb400  .agent/memory/project/specs/nos-award-entries/checks/check-diff-scope.mjs
+2f2ee57179c4436de5c58bab802c3179a8b610e993515a18ae1e284007a44083  .agent/memory/project/specs/nos-award-entries/checks/gate-render.mjs
+e57ff552e9bbff0d54d7f0d60aa70d129eef3f9639d67ffddb9fd144f85cb354  .agent/memory/project/specs/nos-award-entries/checks/build.sh
+a49fe71722e53b369ff1dca012a62af0cf7d1e41a8dfbb06c30220a186412060  .agent/memory/project/specs/nos-award-entries/checks/_lib.mjs
+52c986254a9adb2a2884621d25f52fa02386cad749aca501e01549f27fe46a32  .agent/memory/project/specs/nos-award-entries/checks/selftest.mjs

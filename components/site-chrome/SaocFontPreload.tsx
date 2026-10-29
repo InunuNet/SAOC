@@ -9,7 +9,12 @@
 // mapping fails the build. The same URL is the @font-face src, so the preload is the request the
 // stylesheet would make and the file is fetched once. next dev names the file differently, so it
 // renders nothing there and the face loads when first used.
+// A Client Component on purpose: rendered in a Server Component, React Flight also turns this <link>
+// into a preload hint, and the HTML then carries the preload twice (once from the hint, once from
+// the element). In a Client Component only the element reaches the head.
 // =============================================================
+
+'use client';
 
 import preload from './crimson-preload.json';
 

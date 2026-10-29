@@ -142,7 +142,7 @@ export const ticketType = defineType({
           // document using this value; the exhibitor purchase surface itself lives in
           // app/(nos)/national-show/**, out of scope for this mission. See
           // .agent/memory/project/specs/ticketing-complete/goldens/f2-README.md §10.
-          { title: 'Exhibitor Entry', value: 'exhibitor-entry' },
+          { title: 'Award Entry', value: 'exhibitor-entry' },
         ],
       },
       description: 'Which purchase page this ticket type is sold on.',

@@ -137,7 +137,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search societies, shows, classes, awards..."
-            className="flex-1 bg-transparent font-sans text-[16px] text-ink placeholder:text-muted outline-none"
+            className="flex-1 bg-transparent font-sans text-[16px] text-ink placeholder:text-muted outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
             aria-label="Search query"
           />
           <kbd className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted border border-rule rounded-sm px-1.5 py-0.5">
@@ -161,7 +161,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
                         href={s.href}
                         onClick={onClose}
                         data-variant="corner"
-                        className="flex items-center justify-between px-3 py-2 rounded-sm hover:bg-bone text-ink"
+                        className="flex items-center justify-between px-3 py-2 rounded-sm hover:bg-bone text-ink focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
                       >
                         <span data-corner-title>{s.label}</span>
                         <span aria-hidden className="text-muted">
@@ -194,7 +194,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
                       href={r.href}
                       onClick={onClose}
                       data-variant="corner"
-                      className="flex items-center justify-between px-3 py-2 rounded-sm hover:bg-bone text-ink"
+                      className="flex items-center justify-between px-3 py-2 rounded-sm hover:bg-bone text-ink focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
                     >
                       <span>
                         <span data-corner-title className="block">{r.item.name}</span>

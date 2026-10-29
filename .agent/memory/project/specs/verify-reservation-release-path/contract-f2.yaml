@@ -41,33 +41,39 @@ assertions:
       command: >-
         grep -q "lineItems: \[{ ticketType, attendeeName: name, attendeeEmail: email }\]"
         contracts/checks/ticketing-hardening/_shared.mjs
-    - id: A2
-      description: >-
-        BEHAVIOURAL. Representative plain-success call path. Pre-fix RED: every checkout
-        400s with "showId, lineItems (1-20 valid line items) are required." because
-        parseLineItems(undefined) fails the Array.isArray check. Post-fix: a real HTTP
-        POST through the corrected helper succeeds end to end.
-      command: node contracts/checks/ticketing-hardening/check-capacity-admits-when-free.mjs
-      timeout_seconds: 240
-    - id: A3
-      description: >-
-        BEHAVIOURAL. Representative idempotency-key call path — a distinct calling
-        pattern from A2 (asserts on the Idempotency-Key header round trip, not just
-        checkout success). Pre-fix RED for the same 400 reason.
-      command: node contracts/checks/ticketing-hardening/check-idempotency-key-required.mjs
-      timeout_seconds: 240
-    - id: A4
-      description: >-
-        BEHAVIOURAL. Representative multi-POST / high-volume call path (booking-ref
-        entropy requires many successful checkouts to sample ref randomness). Pre-fix RED
-        for the same 400 reason — proves the fix holds under repeated calls, not just a
-        single one.
-      command: node contracts/checks/ticketing-hardening/check-booking-ref-entropy.mjs
-      timeout_seconds: 240
-    - id: A5
-      description: >-
-        F1's own dependency on postCheckout is unblocked: its golden checkout call now
-        gets past the 400 and reaches real checkout logic. Runs F1's own check as a
-        regression guard that F2 actually unblocks F1, not just the wider suite.
-      command: npx tsx .agent/memory/project/specs/verify-reservation-release-path/goldens/check-lazy-release-frees-and-resells.mjs
-      timeout_seconds: 240
+
+manual_only:
+  - id: A2
+    reason: "check-capacity-admits-when-free.mjs writes to the production Firestore (saoc-webapp): Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged; run by hand only, with the operator present"
+    description: >-
+      BEHAVIOURAL. Representative plain-success call path. Pre-fix RED: every checkout
+      400s with "showId, lineItems (1-20 valid line items) are required." because
+      parseLineItems(undefined) fails the Array.isArray check. Post-fix: a real HTTP
+      POST through the corrected helper succeeds end to end.
+    command: node contracts/checks/ticketing-hardening/check-capacity-admits-when-free.mjs
+    timeout_seconds: 240
+  - id: A3
+    reason: "check-idempotency-key-required.mjs writes to the production Firestore (saoc-webapp): Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged; run by hand only, with the operator present"
+    description: >-
+      BEHAVIOURAL. Representative idempotency-key call path — a distinct calling
+      pattern from A2 (asserts on the Idempotency-Key header round trip, not just
+      checkout success). Pre-fix RED for the same 400 reason.
+    command: node contracts/checks/ticketing-hardening/check-idempotency-key-required.mjs
+    timeout_seconds: 240
+  - id: A4
+    reason: "check-booking-ref-entropy.mjs writes to the production Firestore (saoc-webapp): Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged; run by hand only, with the operator present"
+    description: >-
+      BEHAVIOURAL. Representative multi-POST / high-volume call path (booking-ref
+      entropy requires many successful checkouts to sample ref randomness). Pre-fix RED
+      for the same 400 reason — proves the fix holds under repeated calls, not just a
+      single one.
+    command: node contracts/checks/ticketing-hardening/check-booking-ref-entropy.mjs
+    timeout_seconds: 240
+  - id: A5
+    reason: "check-lazy-release-frees-and-resells.mjs writes to the production Firestore (saoc-webapp): Firestore saoc-webapp orders/tickets via withCleanup/sentinel helpers; run by hand only, with the operator present"
+    description: >-
+      F1's own dependency on postCheckout is unblocked: its golden checkout call now
+      gets past the 400 and reaches real checkout logic. Runs F1's own check as a
+      regression guard that F2 actually unblocks F1, not just the wider suite.
+    command: npx tsx .agent/memory/project/specs/verify-reservation-release-path/goldens/check-lazy-release-frees-and-resells.mjs
+    timeout_seconds: 240

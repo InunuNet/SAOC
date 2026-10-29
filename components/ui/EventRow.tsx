@@ -12,6 +12,7 @@ const ROW_CLASSES = [
   'flex items-stretch gap-0',
   'transition-[padding,background] duration-150',
   'hover:bg-bone/60 hover:pl-1',
+  'outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]',
 ].join(' ');
 
 export function EventRow({ event }: EventRowProps) {

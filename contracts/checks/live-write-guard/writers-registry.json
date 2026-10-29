@@ -1,0 +1,592 @@
+{
+ "schema": "saoc.writer-registry/v1",
+ "scripts": {
+  ".agent/memory/project/specs/nav-focus-underline/checks/compare-geometry.mjs": {
+   "class": "STATIC_FP",
+   "match": "const m = baseline\\(\\);\\s*mutate\\(m\\);\\s*const f = compare\\(m",
+   "note": "write tokens are DOM mutate callbacks or a guard regex asserting absence",
+   "target": "source text only"
+  },
+  ".agent/memory/project/specs/nos-faq-public-r57b/checks/static.mjs": {
+   "class": "STATIC_FP",
+   "match": "if \\(/\\\\\\.\\(create\\|createOrReplace\\|patch\\|delete\\|mutate\\|transaction\\)\\\\\\(\\|createClient/\\.test\\(code\\)\\) failures\\.push\\(`S5: a Sanity write or client in an added line",
+   "note": "write tokens are DOM mutate callbacks or a guard regex asserting absence",
+   "target": "source text only"
+  },
+  ".agent/memory/project/specs/nos-faq-r57/checks/static.mjs": {
+   "class": "STATIC_FP",
+   "match": "if \\(/\\\\\\.\\(create\\|createOrReplace\\|patch\\|delete\\|mutate\\|transaction\\)\\\\\\(\\|createClient/\\.test\\(code\\)\\) failures\\.push\\(`S6: \\$\\{rel\\}: a Sanity write or client in an added line",
+   "note": "write tokens are DOM mutate callbacks or a guard regex asserting absence",
+   "target": "source text only"
+  },
+  ".agent/memory/project/specs/order-reconciliation/goldens/check-live-detect-and-mark.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "file header says this is the one script allowed to write live Firestore (lines 20-24); .set at 327/341",
+   "target": "Firestore saoc-webapp orders/{id}.reconciliationAlertedAt on real stranded orders plus sentinel docs"
+  },
+  ".agent/memory/project/specs/order-reconciliation/goldens/check-route-auth-fails-closed.sh": {
+   "class": "SANDBOX_SCRUBBED",
+   "match": "FIREBASE_ADMIN_PRIVATE_KEY",
+   "note": "credentials are unset for the spawned server",
+   "target": "local 127.0.0.1 server with Firebase and Resend credentials scrubbed"
+  },
+  ".agent/memory/project/specs/order-reconciliation/goldens/verify_stranded_orders_live.py": {
+   "class": "READONLY_PROBE",
+   "match": "runQuery",
+   "note": "docstring lines 24-28: one POST to :runQuery, a query not a write",
+   "target": "Firestore saoc-webapp :runQuery (POST that is a read)"
+  },
+  ".agent/memory/project/specs/reconcile-response-accuracy/goldens/check-wrong-secret-rejected-with-real-secret-configured.sh": {
+   "class": "SANDBOX_SCRUBBED",
+   "match": "FIREBASE_ADMIN_PRIVATE_KEY",
+   "note": "credentials are unset for the spawned server",
+   "target": "local 127.0.0.1 server with Firebase and Resend credentials scrubbed"
+  },
+  ".agent/memory/project/specs/ticketing-capacity-reconciliation-hold/goldens/check-live-reconciliation-holds-seat.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "direct .set() of sentinel order+position (lines 72-93)",
+   "target": "Firestore saoc-webapp orders/tickets, sentinel-tagged expired reservations"
+  },
+  ".agent/memory/project/specs/ticketing-position-expiry-write/goldens/check-live-expired-position-releases.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "direct .set() of sentinel order+position (lines 72-93)",
+   "target": "Firestore saoc-webapp orders/tickets, sentinel-tagged expired reservations"
+  },
+  ".agent/memory/project/specs/verify-reservation-release-path/goldens/check-lazy-release-frees-and-resells.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel reservation written then swept",
+   "target": "Firestore saoc-webapp orders/tickets via withCleanup/sentinel helpers"
+  },
+  ".agent/memory/project/specs/verify-reservation-release-path/goldens/check-paid-order-not-released-by-expiry.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel reservation written then swept",
+   "target": "Firestore saoc-webapp orders/tickets via withCleanup/sentinel helpers"
+  },
+  "contracts/checks/admin-auth-f3-provisioning/check-grant-existing-explicit.mjs": {
+   "class": "REAL_AUTH",
+   "note": "creates probe accounts and grants/revokes claims in the production Auth project, then deletes",
+   "target": "Firebase Auth saoc-webapp via identitytoolkit signUp/delete and scripts/admin-grant.ts custom claims"
+  },
+  "contracts/checks/admin-auth-f3-provisioning/check-grant-existing-refused.mjs": {
+   "class": "REAL_AUTH",
+   "note": "creates probe accounts and grants/revokes claims in the production Auth project, then deletes",
+   "target": "Firebase Auth saoc-webapp via identitytoolkit signUp/delete and scripts/admin-grant.ts custom claims"
+  },
+  "contracts/checks/admin-auth-f3-provisioning/check-grant-fixture.mjs": {
+   "class": "REAL_AUTH",
+   "note": "creates probe accounts and grants/revokes claims in the production Auth project, then deletes",
+   "target": "Firebase Auth saoc-webapp via identitytoolkit signUp/delete and scripts/admin-grant.ts custom claims"
+  },
+  "contracts/checks/admin-auth-f3-provisioning/check-revoke-effective.mjs": {
+   "class": "REAL_AUTH",
+   "note": "creates probe accounts and grants/revokes claims in the production Auth project, then deletes",
+   "target": "Firebase Auth saoc-webapp via identitytoolkit signUp/delete and scripts/admin-grant.ts custom claims"
+  },
+  "contracts/checks/admin-auth-f3-provisioning/check-revoke-idempotent.mjs": {
+   "class": "REAL_AUTH",
+   "note": "creates probe accounts and grants/revokes claims in the production Auth project, then deletes",
+   "target": "Firebase Auth saoc-webapp via identitytoolkit signUp/delete and scripts/admin-grant.ts custom claims"
+  },
+  "contracts/checks/admin-auth-f4-google/check-grant-squatter-warning.mjs": {
+   "class": "REAL_AUTH",
+   "note": "creates probe accounts and grants/revokes claims in the production Auth project, then deletes",
+   "target": "Firebase Auth saoc-webapp via identitytoolkit signUp/delete and scripts/admin-grant.ts custom claims"
+  },
+  "contracts/checks/admin-auth-hardening/check-allowlisted-identity-succeeds.mjs": {
+   "class": "REAL_AUTH",
+   "note": "creates probe accounts and grants/revokes claims in the production Auth project, then deletes",
+   "target": "Firebase Auth saoc-webapp via identitytoolkit signUp/delete and scripts/admin-grant.ts custom claims"
+  },
+  "contracts/checks/admin-auth-hardening/check-fail-closed-states.mjs": {
+   "class": "REAL_AUTH",
+   "note": "creates probe accounts and grants/revokes claims in the production Auth project, then deletes",
+   "target": "Firebase Auth saoc-webapp via identitytoolkit signUp/delete and scripts/admin-grant.ts custom claims"
+  },
+  "contracts/checks/admin-auth-hardening/check-negative-control.mjs": {
+   "class": "REAL_AUTH",
+   "note": "creates probe accounts and grants/revokes claims in the production Auth project, then deletes",
+   "target": "Firebase Auth saoc-webapp via identitytoolkit signUp/delete and scripts/admin-grant.ts custom claims"
+  },
+  "contracts/checks/admin-auth-hardening/check-probe-refused-everywhere.mjs": {
+   "class": "REAL_AUTH",
+   "note": "creates probe accounts and grants/revokes claims in the production Auth project, then deletes",
+   "target": "Firebase Auth saoc-webapp via identitytoolkit signUp/delete and scripts/admin-grant.ts custom claims"
+  },
+  "contracts/checks/admin-auth-hardening/check-revoked-session-refused.mjs": {
+   "class": "REAL_AUTH",
+   "note": "creates probe accounts and grants/revokes claims in the production Auth project, then deletes",
+   "target": "Firebase Auth saoc-webapp via identitytoolkit signUp/delete and scripts/admin-grant.ts custom claims"
+  },
+  "contracts/checks/admin-session-refusal-log-enforcement-f1/check-eligible-no-leak.mjs": {
+   "class": "REAL_AUTH",
+   "note": "creates probe accounts in the production Auth project, then deletes",
+   "target": "Firebase Auth saoc-webapp probe accounts (identitytoolkit signUp/delete)"
+  },
+  "contracts/checks/admin-session-refusal-log-enforcement-f1/check-email-unverified.mjs": {
+   "class": "REAL_AUTH",
+   "note": "creates probe accounts in the production Auth project, then deletes",
+   "target": "Firebase Auth saoc-webapp probe accounts (identitytoolkit signUp/delete)"
+  },
+  "contracts/checks/admin-session-refusal-log-enforcement-f1/check-no-claim.mjs": {
+   "class": "REAL_AUTH",
+   "note": "creates probe accounts in the production Auth project, then deletes",
+   "target": "Firebase Auth saoc-webapp probe accounts (identitytoolkit signUp/delete)"
+  },
+  "contracts/checks/admin-session-refusal-log-enforcement-f1/check-not-allowlisted.mjs": {
+   "class": "REAL_AUTH",
+   "note": "creates probe accounts in the production Auth project, then deletes",
+   "target": "Firebase Auth saoc-webapp probe accounts (identitytoolkit signUp/delete)"
+  },
+  "contracts/checks/admin-settings-deploy-and-chrome-fix-f1/check-live-chrome.mjs": {
+   "class": "REAL_AUTH",
+   "note": "mints an admin custom token and a session against production; AMBIGUOUS whether anything persists",
+   "target": "Firebase Auth saoc-webapp custom token + /api/admin/session on the deployed host"
+  },
+  "contracts/checks/admin-signout-revocation/check-signout-clears-cookie-unconditionally.mjs": {
+   "class": "READONLY_PROBE",
+   "match": "deleteSession\\(null\\)",
+   "note": "no session means nothing to revoke",
+   "target": "local/deployed sign-out POST with no valid session; clears a cookie only"
+  },
+  "contracts/checks/admin-signout-revocation/check-signout-ignores-crafted-uid.mjs": {
+   "class": "REAL_AUTH",
+   "note": "revokeRefreshTokens on a production Auth user",
+   "target": "Firebase Auth saoc-webapp: signs in a probe account and revokes refresh tokens"
+  },
+  "contracts/checks/admin-signout-revocation/check-signout-replay-cannot-rerevoke.mjs": {
+   "class": "REAL_AUTH",
+   "note": "revokeRefreshTokens on a production Auth user",
+   "target": "Firebase Auth saoc-webapp: signs in a probe account and revokes refresh tokens"
+  },
+  "contracts/checks/admin-signout-revocation/check-signout-revokes-session.mjs": {
+   "class": "REAL_AUTH",
+   "note": "revokeRefreshTokens on a production Auth user",
+   "target": "Firebase Auth saoc-webapp: signs in a probe account and revokes refresh tokens"
+  },
+  "contracts/checks/cms-loop-f2-event-tags/check-studio-edit-reaches-site.mjs": {
+   "class": "REAL_SANITY",
+   "note": "live Studio edit round trip, sentinel text published to the production dataset and restored",
+   "target": "Sanity 26yfbug4/production via the deployed Studio (Playwright publish) then restore"
+  },
+  "contracts/checks/cms-loop-f3-national-show/check-fallback-cleanup-revision-guard.mjs": {
+   "class": "STATIC_FP",
+   "match": "function makeFakeSanityClient",
+   "note": "static source read plus restoreGuarded against a fake in-memory Sanity-shaped client (makeFakeSanityClient); imports only fs, url, path and _mutation-guard.mjs, no @sanity/client",
+   "target": "source text and an in-memory fake only"
+  },
+  "contracts/checks/cms-loop-f3-national-show/check-headline-round-trip.mjs": {
+   "class": "REAL_SANITY",
+   "note": "patch + restore of the live nationalShow document",
+   "target": "Sanity 26yfbug4/production nationalShow doc via client.patch().set().commit()"
+  },
+  "contracts/checks/cms-loop-f4-orphaned-types/check-award-order-reaches-site.mjs": {
+   "class": "REAL_SANITY",
+   "note": "live Studio edit round trip, sentinel text published to the production dataset and restored",
+   "target": "Sanity 26yfbug4/production via the deployed Studio (Playwright publish) then restore"
+  },
+  "contracts/checks/cms-loop-f4-orphaned-types/check-award-threshold-reaches-site.mjs": {
+   "class": "REAL_SANITY",
+   "note": "live Studio edit round trip, sentinel text published to the production dataset and restored",
+   "target": "Sanity 26yfbug4/production via the deployed Studio (Playwright publish) then restore"
+  },
+  "contracts/checks/cms-wiring-cleanup/check-about-title-round-trip.mjs": {
+   "class": "REAL_SANITY",
+   "note": "mutate dataset, poll rendered page, restore",
+   "target": "Sanity 26yfbug4/production via POST /data/mutate (_shared.mjs mutate())"
+  },
+  "contracts/checks/cms-wiring-cleanup/check-archive-year-round-trip.mjs": {
+   "class": "REAL_SANITY",
+   "note": "mutate dataset, poll rendered page, restore",
+   "target": "Sanity 26yfbug4/production via POST /data/mutate (_shared.mjs mutate())"
+  },
+  "contracts/checks/cms-wiring-cleanup/check-province-round-trip.mjs": {
+   "class": "REAL_SANITY",
+   "note": "mutate dataset, poll rendered page, restore",
+   "target": "Sanity 26yfbug4/production via POST /data/mutate (_shared.mjs mutate())"
+  },
+  "contracts/checks/conference-workshop-tickets-f3/check-deployed-thursday-rejected-friday-accepted.mjs": {
+   "class": "REAL_DEPLOYED",
+   "note": "POSTs a real checkout to the deployed site and cleans up after",
+   "target": "deployed host POST /api/tickets/checkout (Firestore reservation, Sanity read)"
+  },
+  "contracts/checks/conference-workshop-tickets-f3/check-payfast-sandbox-e2e-day-visitor.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "checkout -> signed ITN -> paid, sentinel-tagged; PayFast is not the active gateway",
+   "target": "Firestore saoc-webapp orders/tickets plus PayFast sandbox ITN signed locally"
+  },
+  "contracts/checks/conference-workshop-tickets-f4/check-payfast-sandbox-e2e-early-bird.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "checkout -> signed ITN -> paid, sentinel-tagged; PayFast is not the active gateway",
+   "target": "Firestore saoc-webapp orders/tickets plus PayFast sandbox ITN signed locally"
+  },
+  "contracts/checks/d6-door-checkin/check-admin-succeeds.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "paid ticket fixture written then deleted",
+   "target": "Firestore saoc-webapp tickets via createPaidTicketFixture (collection.add) plus Firebase Auth fixture users"
+  },
+  "contracts/checks/d6-door-checkin/check-noauth-refused.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "paid ticket fixture written then deleted",
+   "target": "Firestore saoc-webapp tickets via createPaidTicketFixture (collection.add) plus Firebase Auth fixture users"
+  },
+  "contracts/checks/d6-door-checkin/check-nonadmin-refused.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "paid ticket fixture written then deleted",
+   "target": "Firestore saoc-webapp tickets via createPaidTicketFixture (collection.add) plus Firebase Auth fixture users"
+  },
+  "contracts/checks/f1-hero-keys/check-seed-idempotent-keys.mjs": {
+   "class": "REAL_SANITY",
+   "note": "spawns the seed script for real (check header lines 11-17 say so)",
+   "target": "Sanity 26yfbug4/production homePage via a real run of scripts/seed-page-singletons.ts, twice"
+  },
+  "contracts/checks/f2-deploy-next16/positive-path-secret-resolution-deployed.mjs": {
+   "class": "REAL_DEPLOYED",
+   "note": "no dataset write; mutates the production cache; same class as the dropped cdn-purge A1",
+   "target": "deployed host POST /api/revalidate with the real SANITY_REVALIDATE_SECRET (ISR cache write)"
+  },
+  "contracts/checks/f6-prove-cms-loop/check-studio-edit-reaches-site.mjs": {
+   "class": "REAL_SANITY",
+   "note": "live Studio edit round trip, sentinel text published to the production dataset and restored",
+   "target": "Sanity 26yfbug4/production via the deployed Studio (Playwright publish) then restore"
+  },
+  "contracts/checks/launch-weekend/f30/check-d-static.mjs": {
+   "class": "STATIC_FP",
+   "match": "!/\\\\\\.\\(createOrReplace\\|createOrUpdate\\|patch\\|delete\\|mutate\\|transaction\\)\\\\s\\*\\\\\\(/\\.test\\(body\\)\\);\\s*\\}\\s*must\\('lib uses createIfNotExists', lib\\.includes\\('createIfNotExists'\\)\\);",
+   "note": "write tokens occur inside fixture strings, regexes or a local shell function",
+   "target": "source text and fixture strings only"
+  },
+  "contracts/checks/launch-weekend/f31/check-c-vendor-transitions.mts": {
+   "class": "FAKE",
+   "match": "FakeDb",
+   "note": "FakeDb class in _lib.mts",
+   "target": "in-memory FakeDb"
+  },
+  "contracts/checks/leeann-content/fd.mts": {
+   "class": "READONLY_PROBE",
+   "match": "delete env\\.SANITY_API_TOKEN",
+   "note": "fd.mts lines 73-80: delete env.SANITY_API_TOKEN, never --apply",
+   "target": "scripts/seed-show-faq.ts run as a dry run with SANITY_API_TOKEN deleted from the env"
+  },
+  "contracts/checks/live-write-guard/verify_no_ungated_writers.py": {
+   "class": "STATIC_FP",
+   "match": "MUT = re\\.compile\\(",
+   "note": "the write tokens at lines 48-51 are the scanner own detection regex strings; it only reads contract files and scripts",
+   "target": "source text only"
+  },
+  "contracts/checks/m2-next16-upgrade/check-routes.mjs": {
+   "class": "READONLY_PROBE",
+   "match": "POST",
+   "note": "writes only if the system under test regresses",
+   "target": "negative probe: invalid body or bogus signature expected to be refused, Firestore read before/after"
+  },
+  "contracts/checks/nos-own-brand-chrome/f3/check-f3-vendors.mjs": {
+   "class": "READONLY_PROBE",
+   "match": "POST",
+   "note": "writes only if the system under test regresses",
+   "target": "negative probe: invalid body or bogus signature expected to be refused, Firestore read before/after"
+  },
+  "contracts/checks/ozow-m1-f2/check-providerid-fail-closed.mjs": {
+   "class": "READONLY_PROBE",
+   "match": "POST",
+   "note": "writes only if the system under test regresses",
+   "target": "negative probe: invalid body or bogus signature expected to be refused, Firestore read before/after"
+  },
+  "contracts/checks/payfast-m1/check-itn-amount-tamper-rejected.mts": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel orders/positions written then swept (_shared.mjs header lines 1-3, withCleanup)",
+   "target": "Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged"
+  },
+  "contracts/checks/payfast-m1/check-itn-atomic-idempotent-write.mts": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel orders/positions written then swept (_shared.mjs header lines 1-3, withCleanup)",
+   "target": "Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged"
+  },
+  "contracts/checks/payfast-m1/check-itn-server-confirm-and-status-gating.mts": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel orders/positions written then swept (_shared.mjs header lines 1-3, withCleanup)",
+   "target": "Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged"
+  },
+  "contracts/checks/payfast-m1/check-itn-source-ip-validation.mts": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel orders/positions written then swept (_shared.mjs header lines 1-3, withCleanup)",
+   "target": "Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged"
+  },
+  "contracts/checks/payfast-m1/check-server-confirm-fetch-outside-transaction-scope.mjs": {
+   "class": "STATIC_FP",
+   "match": "const ORDERS_LIB_ESCAPES = \\[\\s*\\[\\s*'confirm fetch moved inside the transaction callback',\\s*`[^`]*fetch\\(PAYFAST_SANDBOX_VALIDATE_URL, \\{ method: 'POST' \\}\\)[^`]*`",
+   "note": "write tokens occur inside fixture strings, regexes or a local shell function",
+   "target": "source text and fixture strings only"
+  },
+  "contracts/checks/payment-seam-f2/check-reject-path-mutations.sh": {
+   "class": "STATIC_FP",
+   "match": "(?m)^mutate\\(\\) \\{\\n  local label=\\\"\\$1\\\"; shift\\n  total=\\$\\(\\(total \\+ 1\\)\\)",
+   "note": "write tokens occur inside fixture strings, regexes or a local shell function",
+   "target": "source text and fixture strings only"
+  },
+  "contracts/checks/sec-events-submit-ip-limit/check.mts": {
+   "class": "FAKE",
+   "match": "initAdmin: \\(\\) => undefined",
+   "note": "module stub exports initAdmin as a no-op",
+   "target": "route handler with initAdmin stubbed and firestore mocked"
+  },
+  "contracts/checks/show-exhibitor-info/check-cms-round-trip.mjs": {
+   "class": "REAL_SANITY",
+   "note": "patch/seed + restore under a dataset lock",
+   "target": "Sanity 26yfbug4/production showExhibitorInfo/showVisitorInfo/nationalShow docs (commitAndCaptureRev, seed run)"
+  },
+  "contracts/checks/show-exhibitor-info/check-marker-fallback.mjs": {
+   "class": "REAL_SANITY",
+   "note": "patch/seed + restore under a dataset lock",
+   "target": "Sanity 26yfbug4/production showExhibitorInfo/showVisitorInfo/nationalShow docs (commitAndCaptureRev, seed run)"
+  },
+  "contracts/checks/show-exhibitor-info/check-seed-idempotent.mjs": {
+   "class": "REAL_SANITY",
+   "note": "patch/seed + restore under a dataset lock",
+   "target": "Sanity 26yfbug4/production showExhibitorInfo/showVisitorInfo/nationalShow docs (commitAndCaptureRev, seed run)"
+  },
+  "contracts/checks/show-visitor-info/check-cms-round-trip.mjs": {
+   "class": "REAL_SANITY",
+   "note": "patch/seed + restore under a dataset lock",
+   "target": "Sanity 26yfbug4/production showExhibitorInfo/showVisitorInfo/nationalShow docs (commitAndCaptureRev, seed run)"
+  },
+  "contracts/checks/show-visitor-info/check-marker-fail-closed.mjs": {
+   "class": "REAL_SANITY",
+   "note": "patch/seed + restore under a dataset lock",
+   "target": "Sanity 26yfbug4/production showExhibitorInfo/showVisitorInfo/nationalShow docs (commitAndCaptureRev, seed run)"
+  },
+  "contracts/checks/show-visitor-info/check-seed-idempotent.mjs": {
+   "class": "REAL_SANITY",
+   "note": "patch/seed + restore under a dataset lock",
+   "target": "Sanity 26yfbug4/production showExhibitorInfo/showVisitorInfo/nationalShow docs (commitAndCaptureRev, seed run)"
+  },
+  "contracts/checks/show-visitor-info/check-show-identity-sweep.mjs": {
+   "class": "REAL_SANITY",
+   "note": "patch/seed + restore under a dataset lock",
+   "target": "Sanity 26yfbug4/production showExhibitorInfo/showVisitorInfo/nationalShow docs (commitAndCaptureRev, seed run)"
+  },
+  "contracts/checks/ticket-onsale-predicate/check-api-refuses.mts": {
+   "class": "READONLY_PROBE",
+   "match": "POST",
+   "note": "refusal-path probe: writes only if the system under test regresses",
+   "target": "route handler called in-process; a demo product is refused before any reservation write"
+  },
+  "contracts/checks/ticketing-f5-buyers/check-http-checkin-fails-closed.sh": {
+   "class": "SANDBOX_SCRUBBED",
+   "match": "FIREBASE_ADMIN_PRIVATE_KEY",
+   "note": "credentials are unset for the spawned server so no Firestore or Resend write can happen",
+   "target": "local 127.0.0.1 server with FIREBASE_ADMIN_*, NEXT_PUBLIC_FIREBASE_* and RESEND_API_KEY scrubbed"
+  },
+  "contracts/checks/ticketing-f8-comp-tickets/check-http-comp-fails-closed.sh": {
+   "class": "SANDBOX_SCRUBBED",
+   "match": "FIREBASE_ADMIN_PRIVATE_KEY",
+   "note": "credentials are unset for the spawned server so no Firestore or Resend write can happen",
+   "target": "local 127.0.0.1 server with FIREBASE_ADMIN_*, NEXT_PUBLIC_FIREBASE_* and RESEND_API_KEY scrubbed"
+  },
+  "contracts/checks/ticketing-hardening/check-booking-ref-entropy.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel orders/positions written then swept (_shared.mjs header lines 1-3, withCleanup)",
+   "target": "Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged"
+  },
+  "contracts/checks/ticketing-hardening/check-capacity-admits-when-free.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel orders/positions written then swept (_shared.mjs header lines 1-3, withCleanup)",
+   "target": "Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged"
+  },
+  "contracts/checks/ticketing-hardening/check-capacity-no-oversell.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel orders/positions written then swept (_shared.mjs header lines 1-3, withCleanup)",
+   "target": "Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged"
+  },
+  "contracts/checks/ticketing-hardening/check-checkin-admits-paid.mts": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel orders/positions written then swept (_shared.mjs header lines 1-3, withCleanup)",
+   "target": "Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged"
+  },
+  "contracts/checks/ticketing-hardening/check-checkin-double-scan.mts": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel orders/positions written then swept (_shared.mjs header lines 1-3, withCleanup)",
+   "target": "Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged"
+  },
+  "contracts/checks/ticketing-hardening/check-checkin-refuses-foreign-show.mts": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel orders/positions written then swept (_shared.mjs header lines 1-3, withCleanup)",
+   "target": "Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged"
+  },
+  "contracts/checks/ticketing-hardening/check-checkin-refuses-unpaid.mts": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel orders/positions written then swept (_shared.mjs header lines 1-3, withCleanup)",
+   "target": "Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged"
+  },
+  "contracts/checks/ticketing-hardening/check-checkin-requires-auth.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel orders/positions written then swept (_shared.mjs header lines 1-3, withCleanup)",
+   "target": "Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged"
+  },
+  "contracts/checks/ticketing-hardening/check-constant-idempotency-key-rejected.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel orders/positions written then swept (_shared.mjs header lines 1-3, withCleanup)",
+   "target": "Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged"
+  },
+  "contracts/checks/ticketing-hardening/check-distinct-keys-distinct-tickets.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel orders/positions written then swept (_shared.mjs header lines 1-3, withCleanup)",
+   "target": "Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged"
+  },
+  "contracts/checks/ticketing-hardening/check-expired-reservation-releases-seat.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel orders/positions written then swept (_shared.mjs header lines 1-3, withCleanup)",
+   "target": "Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged"
+  },
+  "contracts/checks/ticketing-hardening/check-expiry-never-touches-paid.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel orders/positions written then swept (_shared.mjs header lines 1-3, withCleanup)",
+   "target": "Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged"
+  },
+  "contracts/checks/ticketing-hardening/check-form-sends-idempotency-key.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "uses withCleanup/sentinelEmail helpers; confirm per script",
+   "target": "Firestore saoc-webapp via the ticketing-hardening shared helpers (sentinel-tagged)"
+  },
+  "contracts/checks/ticketing-hardening/check-idempotency-bound-to-buyer.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel orders/positions written then swept (_shared.mjs header lines 1-3, withCleanup)",
+   "target": "Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged"
+  },
+  "contracts/checks/ticketing-hardening/check-idempotency-bound-to-payload.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel orders/positions written then swept (_shared.mjs header lines 1-3, withCleanup)",
+   "target": "Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged"
+  },
+  "contracts/checks/ticketing-hardening/check-idempotency-key-required.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel orders/positions written then swept (_shared.mjs header lines 1-3, withCleanup)",
+   "target": "Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged"
+  },
+  "contracts/checks/ticketing-hardening/check-idempotency-replay-not-payable.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel orders/positions written then swept (_shared.mjs header lines 1-3, withCleanup)",
+   "target": "Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged"
+  },
+  "contracts/checks/ticketing-hardening/check-idempotent-duplicate-post.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel orders/positions written then swept (_shared.mjs header lines 1-3, withCleanup)",
+   "target": "Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged"
+  },
+  "contracts/checks/ticketing-hardening/check-itn-does-not-resurrect-checked-in.mts": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel orders/positions written then swept (_shared.mjs header lines 1-3, withCleanup)",
+   "target": "Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged"
+  },
+  "contracts/checks/ticketing-hardening/check-live-reservation-holds-seat.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel orders/positions written then swept (_shared.mjs header lines 1-3, withCleanup)",
+   "target": "Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged"
+  },
+  "contracts/checks/ticketing-hardening/check-missing-capacity-fails-closed.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel orders/positions written then swept (_shared.mjs header lines 1-3, withCleanup)",
+   "target": "Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged"
+  },
+  "contracts/checks/ticketing-hardening/check-missing-price-fails-closed.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel orders/positions written then swept (_shared.mjs header lines 1-3, withCleanup)",
+   "target": "Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged"
+  },
+  "contracts/checks/ticketing-hardening/check-notify-url-uses-site-url.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "uses withCleanup/sentinelEmail helpers; confirm per script",
+   "target": "Firestore saoc-webapp via the ticketing-hardening shared helpers (sentinel-tagged)"
+  },
+  "contracts/checks/ticketing-hardening/check-reservation-carries-expiry.mjs": {
+   "class": "REAL_FIRESTORE",
+   "note": "sentinel orders/positions written then swept (_shared.mjs header lines 1-3, withCleanup)",
+   "target": "Firestore saoc-webapp orders/tickets via the local dev server and firebase-admin with .env.local credentials; sentinel-tagged"
+  },
+  "contracts/checks/ticketing-hardening/check-withcleanup-ordering.mjs": {
+   "class": "STATIC_FP",
+   "match": "readFileSync\\(SHARED_PATH",
+   "note": "text-parses _shared.mjs withCleanup() for call order; imports only fs, path and url, never executes _shared.mjs",
+   "target": "source text only"
+  },
+  "contracts/checks/vendor-f5-register-route/check-http-rate-limit-per-ip.sh": {
+   "class": "SANDBOX_SCRUBBED",
+   "match": "FIREBASE_ADMIN_PRIVATE_KEY",
+   "note": "credentials are unset for the spawned server so no Firestore or Resend write can happen",
+   "target": "local 127.0.0.1 server with FIREBASE_ADMIN_*, NEXT_PUBLIC_FIREBASE_* and RESEND_API_KEY scrubbed"
+  },
+  "contracts/checks/vendor-f6-review-workflow/check-http-fails-closed.sh": {
+   "class": "SANDBOX_SCRUBBED",
+   "match": "FIREBASE_ADMIN_PRIVATE_KEY",
+   "note": "credentials are unset for the spawned server so no Firestore or Resend write can happen",
+   "target": "local 127.0.0.1 server with FIREBASE_ADMIN_*, NEXT_PUBLIC_FIREBASE_* and RESEND_API_KEY scrubbed"
+  },
+  "contracts/checks/vendor-flow-notifications/check-apply-route-wiring.mjs": {
+   "class": "STATIC_FP",
+   "match": "const KNOWN_UNWIRED_FIXTURE = `[^`]*initAdmin\\(\\);[^`]*\\.collection\\(VENDOR_APPLICATIONS_COLLECTION\\)\\.add\\(\\{[^`]*`;",
+   "note": "write tokens occur inside fixture strings, regexes or a local shell function",
+   "target": "source text and fixture strings only"
+  },
+  "contracts/checks/venue-never-changed-copy-fix-f1/check_live_doc.py": {
+   "class": "READONLY_PROBE",
+   "match": "urllib\\.request\\.Request\\(url, headers",
+   "note": "docstring: READ-ONLY, a single GET; Request has no data=",
+   "target": "Sanity Query API GET (urllib Request with only an Authorization header)"
+  },
+  "scripts/fix-show-dates-2027.ts": {
+   "class": "MODAL",
+   "note": "default mode patches live; contract runs it with --verify",
+   "safe_args": [
+    "--verify",
+    "--dry-run"
+   ],
+   "target": "Sanity 26yfbug4/production patch of show docs; --verify and --dry-run are read-only"
+  },
+  "scripts/fix-show-dates-23-26-sept-2027.ts": {
+   "class": "MODAL",
+   "note": "default mode patches live; contract runs it with --verify",
+   "safe_args": [
+    "--verify",
+    "--dry-run"
+   ],
+   "target": "Sanity 26yfbug4/production patch of show docs; --verify and --dry-run are read-only"
+  },
+  "scripts/migrate-conference-workshop-tickets.ts": {
+   "class": "MODAL",
+   "note": "contract runs it under env -u SANITY_API_TOKEN",
+   "safe_args": [
+    "env -u SANITY_API_TOKEN",
+    "--dry-run"
+   ],
+   "target": "Sanity ticketType docs; without SANITY_API_TOKEN it is a dry run"
+  },
+  "scripts/migrate-f2-ticket-taxonomy.ts": {
+   "class": "MODAL",
+   "note": "contract runs it under env -u SANITY_API_TOKEN",
+   "safe_args": [
+    "env -u SANITY_API_TOKEN",
+    "--dry-run"
+   ],
+   "target": "Sanity ticketType docs; without SANITY_API_TOKEN it is a dry run"
+  },
+  "scripts/seed-sanity.ts": {
+   "class": "REAL_SANITY",
+   "note": "contract-dotenv-supply-chain-f1 A6 runs it for real under timeout 15",
+   "target": "Sanity 26yfbug4/production, transaction().createOrReplace of every seeded doc (line 135)"
+  },
+  ".agent/memory/project/specs/backlog-wave-1028/gate-hygiene/checks/check-checkout-day-null.mts": {
+   "class": "FAKE",
+   "match": "if \\(req === 'next-sanity'\\) return \\{[^\\n]*\\.\\.\\.fakeSanity \\};\\n[^\\n]*if \\(req === 'firebase-admin/app'\\) return \\{[^\\n]*getApps: \\(\\) => \\[\\{\\}\\] \\};\\n[^\\n]*if \\(req === 'firebase-admin/firestore'\\) return \\{[^\\n]*getFirestore: \\(\\) => fakeDb \\};[\\s\\S]{0,120}?globalThis\\.fetch = \\(async \\(input: unknown\\) => \\{ outbound\\.push\\(String\\(input\\)\\); throw new Error\\('unexpected outbound fetch'\\); \\}\\)",
+   "note": "Module._load hook swaps next-sanity createClient, firebase-admin/app getApps and firebase-admin/firestore getFirestore for fakes; globalThis.fetch is a throwing spy",
+   "target": "in-process checkout route handler with Sanity, Firestore and network mocked"
+  },
+  "scripts/auth-disable-signup.ts": {
+   "class": "MODAL",
+   "note": "default mode is dry-run GET; --apply PATCHes live Identity Toolkit config. Contract runs it only with --config-fixture (offline, refused with --apply/--verify) or --verify (GET only)",
+   "safe_args": [
+    "--config-fixture",
+    "--verify"
+   ],
+   "target": "Identity Toolkit saoc-webapp config client.permissions.disabledUserSignup; --config-fixture and --verify never write"
+  }
+ }
+}

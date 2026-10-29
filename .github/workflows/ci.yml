@@ -69,6 +69,13 @@ jobs:
       - name: Type check
         run: pnpm type-check
 
+      # ADDED 2026-10-29 (mission backlog-wave-2026-10-28 M3/F4). Static: needs only checkout and install.
+      - name: Buy-path live reads (AST)
+        run: pnpm exec tsx scripts/checks/buy-path-live-reads.mts
+
+      - name: Cache-header probe selftest
+        run: node scripts/checks/cache-headers-probe.mjs --selftest
+
       - name: Build
         # The two site origins, as in apphosting.yaml: lib/site-hosts.ts throws in production without them.
         env:
@@ -87,6 +94,10 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: E2E tests
+        # The checkout-error-summary e2e renders the real form on /ticket-fixtures/buy, which 404s
+        # unless this flag is set. CI only: never in apphosting.yaml or an .env example.
+        env:
+          TICKET_FIXTURES: '1'
         run: bash scripts/ci-e2e.sh pnpm test:e2e
 
       # ADDED 2026-09-08 (mission ticketing-complete M1/F7, contract-f7.yaml A20/A25/
@@ -115,6 +126,20 @@ jobs:
       - name: Contract-check inventory ratchet (missing scripts + unparseable contracts)
         run: node contracts/checks/_shared/run_contract_suite.mjs --check-ratchet contracts/checks/_shared/missing-baseline.json
 
+      # ADDED 2026-10-29 (mission backlog-wave-2026-10-28 M3/F4). These two cannot reuse the CI
+      # `.next`: the harness stubs Sanity and sets localhost site origins at build time, and the
+      # CI build bakes in beta.saoc.co.za / nos.saoc.co.za (measured: nos.localhost routing 308s,
+      # the build stamp mismatches). So they get their own stubbed build, run last because it
+      # overwrites `.next` that the e2e step above needs. No live Sanity or Firebase is touched.
+      - name: Stubbed build for the request-count harness
+        run: node scripts/checks/sanity-request-count.mjs --build
+
+      - name: Buy-path live reads (behavioural)
+        run: node scripts/checks/sanity-request-count.mjs --live-reads
+
+      - name: Cache-header probe (local spawn, both hosts)
+        run: node scripts/checks/cache-headers-probe.mjs --spawn
+
   dataset-residue-guard:
     runs-on: ubuntu-latest
     steps:
@@ -131,6 +156,17 @@ jobs:
           NEXT_PUBLIC_SANITY_DATASET: production
           SANITY_API_TOKEN: ${{ secrets.SANITY_API_TOKEN }}
         run: pnpm exec tsx scripts/scan-dataset-residue.ts
+
+  live-write-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python3 -m pip install pyyaml
+      - name: No contract runs a live-production write in the default gate
+        run: python3 contracts/checks/live-write-guard/verify_no_ungated_writers.py
 
   firestore-residue-guard:
     runs-on: ubuntu-latest

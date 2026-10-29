@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isBodyWithinLimit } from '@/lib/request-guards';
 import { getAuth } from 'firebase-admin/auth';
 import { createClient } from '@sanity/client';
 
+import { classifyRefusal, isAdminToken } from '@/lib/admin-auth';
 import { clientIpFromForwardedFor } from '@/lib/client-ip';
 import { initAdmin } from '@/lib/firebase-admin';
 import {
   buildEventSlug,
   hostSocietyExists,
-  isVerifiedSubmitter,
   validateEventSubmission,
 } from '@/lib/event-submission-guard';
 import { consumeRateLimit } from '@/lib/newsletter-rate-limit';
@@ -48,19 +49,26 @@ function tooManyAttempts(retryAfterSeconds: number): NextResponse {
   );
 }
 
+// Cap on the request body, checked against Content-Length before the body is buffered.
+const MAX_BODY_BYTES = 32768;
+
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  if (!isBodyWithinLimit(req.headers.get('content-length'), MAX_BODY_BYTES)) {
+    return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
+  }
   // 1. Extract bearer token
   const authz = req.headers.get('authorization') ?? '';
   const token = authz.startsWith('Bearer ') ? authz.slice(7) : null;
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  // 2. Verify token (revocation checked) and require a verified email
+  // 2. Verify token (revocation checked) and require the shared admin gate
   let uid: string;
   try {
     initAdmin();
     const decoded = await getAuth().verifyIdToken(token, true);
-    if (!isVerifiedSubmitter(decoded)) {
-      return NextResponse.json({ error: 'Email not verified' }, { status: 403 });
+    if (!isAdminToken(decoded)) {
+      classifyRefusal(decoded);
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     uid = decoded.uid;
   } catch {

@@ -9,6 +9,7 @@
 // See contracts/golden/show-visitor-info/venue-single-source.golden.md.
 // =============================================================
 
+import { ArrowUpRight } from 'lucide-react';
 import Image from 'next/image';
 
 import { Button } from '@/components/nos/Button';
@@ -25,6 +26,8 @@ export interface VenueCardProps {
   researchLabel?: string | null;
   /** `link` (default) is the plain text link /contact uses; `button` is the ghost NOS Button. */
   mapAction?: 'link' | 'button';
+  /** Appended to the phone and map links when given; omitted, their class strings are unchanged. */
+  linkClassName?: string;
 }
 
 export function VenueCard({
@@ -34,10 +37,12 @@ export function VenueCard({
   pendingLabel,
   researchLabel,
   mapAction = 'link',
+  linkClassName,
 }: VenueCardProps) {
   if (!venue?.name) return null;
 
   const addressLines = venue.addressLines ?? [];
+  const linkSuffix = linkClassName ? ` ${linkClassName}` : '';
   const cityLine = [venue.city, venue.postalCode].filter(Boolean).join(', ');
 
   return (
@@ -61,7 +66,7 @@ export function VenueCard({
         {venue.phone ? (
           <a
             href={`tel:${venue.phone.replace(/\s+/g, '')}`}
-            className="mt-2 inline-block underline underline-offset-2 hover:text-accent"
+            className={`mt-2 inline-block underline underline-offset-2 hover:text-accent${linkSuffix}`}
           >
             {venue.phone}
           </a>
@@ -103,9 +108,10 @@ export function VenueCard({
           href={venue.mapsUrl}
           target="_blank"
           rel="noreferrer noopener"
-          className="mt-5 inline-flex min-h-[44px] items-center font-sans text-[12px] tracking-[0.16em] text-ink underline underline-offset-4 hover:text-accent"
+          className={`mt-5 inline-flex min-h-[44px] items-center font-sans text-[12px] tracking-[0.16em] text-ink underline underline-offset-4 hover:text-accent${linkSuffix}`}
         >
-          Open in a map ↗
+          Open in a map
+          <ArrowUpRight size={14} strokeWidth={1.5} aria-hidden="true" className="ms-1 shrink-0" />
         </a>
       ) : null}
     </section>

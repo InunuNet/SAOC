@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isBodyWithinLimit } from '@/lib/request-guards';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
 import { deliverConfirmationEmailAfterCommit } from '@/lib/confirmation-email';
@@ -53,13 +54,23 @@ async function notify(id: string, doc: SponsorEnquiryDoc): Promise<void> {
       onError('admin-notice'),
     ),
     deliverConfirmationEmailAfterCommit(
-      () => sendSponsorEnquiryConfirmationEmail({ contactName: doc.contactName, email: doc.email }),
+      () => sendSponsorEnquiryConfirmationEmail({
+          contactName: doc.contactName,
+          email: doc.email,
+          site: doc.source,
+        }),
       onError('acknowledgement'),
     ),
   ]);
 }
 
+// Cap on the request body, checked against Content-Length before the body is buffered.
+const MAX_BODY_BYTES = 32768;
+
 export async function POST(request: NextRequest) {
+  if (!isBodyWithinLimit(request.headers.get('content-length'), MAX_BODY_BYTES)) {
+    return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
+  }
   let body: unknown;
   let malformed = false;
   try {

@@ -27,6 +27,9 @@ Every route that keys a limiter on the client address uses `clientIpFromForwarde
 ## M3 events/submit
 
 Order: bearer token -> `getAuth().verifyIdToken(token, true)` (revocation checked) -> `isVerifiedSubmitter(decoded)` (true only when `decoded.email_verified === true`; otherwise 403 `{ error: 'Email not verified' }`; bad token stays 401) -> per-uid rate limit -> parse -> `validateEventSubmission` -> `hostSocietyExists`.
+
+> Superseded 2026-10-29 by sec-03: the route now gates on isAdminToken and refuses with 401 Unauthorized or 403 Forbidden; isVerifiedSubmitter is no longer in the route.
+
 New `lib/event-submission-guard.ts` exports:
 - `EVENT_FIELD_MAX_LENGTHS = { title: 150, venue: 150, location: 150, description: 5000, hostSocietyId: 64 }`.
 - `validateEventSubmission(raw: unknown, now: Date): { ok: true } | { ok: false; error: string; field: string }`: all fields typeof string (endDate/hostSocietyId optional), the existing rules (title required, kind in the allowed list, date a valid ISO future date, endDate not before date, venue/location required, description 20..5000), plus the caps. Same error strings as today for the existing rules.

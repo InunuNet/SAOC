@@ -11,6 +11,8 @@ features:
 
 goldens:
   - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/status-tokens.md
+  - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/alert-classes.json
+  - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/focus-classes.json
   - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/proof-on-main.md
 
 assertions:
@@ -38,8 +40,9 @@ assertions:
       description: "Codex adversarial QA of the whole diff against the goldens and proof-on-main"
       type: codex_qa
       target: >-
-        Adversarially review git diff origin/main...HEAD against the goldens in .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/. Find an input, width or route where the claimed fix does not hold and the checks still pass.
+        Adversarially review git diff origin/main...HEAD against ONLY these goldens: .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/status-tokens.md, .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/alert-classes.json, .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/focus-classes.json, and the F1a section of proof-on-main.md (the other features' goldens in that directory are out of scope). Arrow glyphs, fonts and the favicon belong to F1e; hero, h2 and heading roles to F1c; nav to F1b; LCP to F1d. Do not fail F1a on another feature's golden. Find an input, width or route where the claimed fix does not hold and the checks still pass.
       required: true
+      timeout_seconds: 900
     - id: A8
       phase: 5
       description: "PHASE 5 (manifest is written by the post-deploy BrowserAgent/gws run, so it cannot exist at the phase 4 gate). browser_deployed_check on beta /about, declared for the triad linter but non-required. It cannot pass while the beta Basic Auth wall is up (execution/browser_deployed_check.sh live re-check sends no auth, HARNESS defect, backlog.md 2026-10-07). The authenticated post-deploy shell assertion is the real proof."
@@ -60,3 +63,16 @@ assertions:
       phase: 5
       description: "RUN AFTER DEPLOY (phase 5, not part of the phase 4 gate). Focus ring on deployed Home and About. Plain shell check (not the browser_deployed_check kind, see above); reads BETA_BASIC_AUTH_USER/PASSWORD inside the scripts, never printed."
       command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-focus-ring.mjs"
+    - id: A12
+      description: "Footer newsletter error state on the dark footer (NOS Design ruling c): --status-error-on-dark #E8959D; summary is a 1px solid border plus aria-hidden icon in the token, ivory text >=4.5:1, border and icon >=3:1 on #22281f, NO fill, at 1440 and 390; the field in error has the same border, aria-invalid and aria-describedby, ivory focus ring. API stubbed, nothing written. Fails on main (no such summary)."
+      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-newsletter-error.mjs"
+      timeout_seconds: 600
+    - id: A13
+      phase: 5
+      description: "RUN AFTER DEPLOY (phase 5, authenticated, not part of the phase 4 gate). /media-kit is admin-gated, so the phase 4 probe prints a KNOWN GAP and the static SAOC-caller assertion on <ShowJumpChips> (A4) is the phase 4 gate. This measures the real chips on beta with a verified admin session: the 'On this page' chip link at 390, 700 and 1440 and the 390 summary take the golden SAOC ring (2px solid, offset 3px, >=3:1), and the first chip in the open 390 disclosure (an overflow-y-auto container) must have its ring box inside every clipping ancestor's padding box (Codex round 6: it was clipped on the left at 593d153e; fixed by px-2 in 99f8c8e1). DC_ADMIN_SESSION is a verified admin session cookie value read from .env.local inside the script, never printed; DC_REQUIRE_ADMIN=1 turns a login redirect into a FAIL instead of a KNOWN GAP."
+      command: "DC_BASE_URL=https://beta.saoc.co.za DC_REQUIRE_ADMIN=1 DC_FOCUS_ONLY=media-kit node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-focus-ring.mjs"
+      timeout_seconds: 600
+    - id: A14
+      description: "The ancestor-clip detector of check-focus-ring.mjs works (phase 4, no server, synthetic markup shaped like the /media-kit disclosure): a flush chip inside an overflow-y-auto container is reported clipped on the left, top and bottom; with 8px side padding only top and bottom; with the real container padding (pt-4 px-2 pb-3) clean. Needed because the real chips are admin-gated locally (KNOWN GAP) and only A13 measures them on beta. The focus-ring check itself (A-focus) also fails any probed target whose ring box leaves the padding box of ANY ancestor with overflow other than visible, not just the viewport."
+      command: "DC_SELFTEST=1 node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-focus-ring.mjs"
+      timeout_seconds: 120

@@ -37,7 +37,7 @@ export function VendorPhotoLinkControl({
           value={photoUrl}
           aria-label="Vendor photo upload link"
           onFocus={(event) => event.currentTarget.select()}
-          className="w-full rounded-[2px] border border-rule bg-bone px-2 py-1 font-mono text-[16px] leading-[17.05px] text-ink"
+          className="w-full rounded-[2px] border border-rule bg-bone px-2 py-1 font-mono text-[16px] leading-[17.05px] text-ink outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
         />
       )}
     </div>

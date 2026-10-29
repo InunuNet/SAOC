@@ -1,10 +1,11 @@
 // =============================================================
 // SAOC — components/ui/PageHero.tsx
 // Server Component — shared hero for interior pages (mission saoc-inner-heroes, NOS Design 2026-10-26).
-// From 768px up the photograph is full bleed with its bloom bottom-left (the left 44% is the bare
-// photograph) and the copy in a left-aligned column that starts at 52%, on a scrim local to that
-// column. Below 768px the hero stacks: a 2/1 photograph band, the copy under it on solid sage.
-// With no `image` the hero is typographic: the same copy on solid sage, no media and no scrim.
+// From 768px up the photograph is full bleed with its bloom bottom-left (the left 34% is the bare
+// photograph) and the copy in a left-aligned column that starts at 52%, on an eased scrim local to
+// that column. Below 768px the hero stacks: a 2/1 photograph band, the copy under it on solid sage.
+// With no `image` the hero is typographic: the same copy on solid sage, no media and no scrim; from
+// 1024px its band sizes to its content (HM-8), below that it keeps the 480px minimum.
 // =============================================================
 
 import type { ReactNode } from 'react';
@@ -22,6 +23,8 @@ interface PageHeroProps {
   lede?: string;
   /** The page's leading facts (2 to 4), rendered under the lede and above `actions`. */
   facts?: readonly HeroFact[];
+  /** How the facts sit: centred (the default) or left-aligned from the h1 edge (the event hero). */
+  factsAlign?: 'center' | 'start';
   /** Rendered under the lede, e.g. a call to action. */
   actions?: ReactNode;
   /** Marks the routes the PG-1 content-driven spacing exempts (the show band that follows stays flush). */
@@ -32,12 +35,23 @@ const HERO_MIN_HEIGHT_CLASS = 'md:min-h-[480px]';
 // The wide hero's box is at least this tall, so a source wider than the box x its height is height-driven.
 const HERO_BOX_HEIGHT = 480;
 const STACK_BELOW_QUERY = '(max-width: 767px)';
-// The copy zone: the scrim is clear through the bloom side (44%) and reaches its full strength by 52%,
-// where the copy column starts. Sage only (--primary-800), no wash over the bloom.
-const SCRIM_CLEAR_UNTIL = '44%';
-const SCRIM_FULL_FROM = '52%';
-const SCRIM_ALPHA = 0.8;
-const SCRIM_BACKGROUND = `linear-gradient(90deg, transparent 0, transparent ${SCRIM_CLEAR_UNTIL}, rgb(34 40 31 / ${SCRIM_ALPHA}) ${SCRIM_FULL_FROM})`;
+// The copy zone: the scrim is clear through the bloom side (34%), eases in over the stops below (alpha,
+// position in percent) and reaches its full strength by 52%, where the copy column starts (HM-5).
+// Sage only (--primary-800), no wash over the bloom.
+const SCRIM_STOPS: readonly (readonly [number, number])[] = [
+  [0, 34],
+  [0.06, 38],
+  [0.16, 42],
+  [0.32, 45],
+  [0.52, 48],
+  [0.7, 50.5],
+  [0.8, 52],
+];
+const SCRIM_BACKGROUND = `linear-gradient(90deg, transparent 0, ${SCRIM_STOPS.map(
+  ([alpha, at]) => `rgb(34 40 31 / ${alpha}) ${at}%`,
+).join(', ')})`;
+// HM-8: from 1024px the typographic band is its content plus this block padding, with no minimum height.
+const TYPE_BAND_PADDING_CLASS = 'lg:py-[clamp(64px,6vw,96px)] lg:min-h-0';
 
 export function PageHero({
   image,
@@ -46,6 +60,7 @@ export function PageHero({
   heading,
   lede,
   facts,
+  factsAlign = 'center',
   actions,
   exempt = false,
 }: PageHeroProps) {
@@ -63,7 +78,9 @@ export function PageHero({
       data-page-hero
       data-page-hero-variant={image ? undefined : 'type'}
       data-hero-exempt={exempt ? '' : undefined}
-      className={`relative isolate overflow-hidden bg-primary-800 md:flex md:items-center ${HERO_MIN_HEIGHT_CLASS}`}
+      className={`relative isolate overflow-hidden bg-primary-800 md:flex md:items-center ${HERO_MIN_HEIGHT_CLASS}${
+        image ? '' : ` ${TYPE_BAND_PADDING_CLASS}`
+      }`}
     >
       {image ? (
         <>
@@ -90,7 +107,7 @@ export function PageHero({
       <div
         data-page-hero-copy
         className={`relative z-10 flex w-full flex-col items-start px-[var(--container-pad)] py-10 text-left md:py-16 ${
-          image ? 'md:ml-[52%] md:w-[48%] md:pl-0' : 'saoc-container'
+          image ? 'md:ml-[52%] md:w-[48%] md:pl-0' : 'saoc-container lg:py-0'
         }`}
       >
         {eyebrow ? (
@@ -115,7 +132,12 @@ export function PageHero({
           </p>
         ) : null}
         {heroFacts ? (
-          <dl data-hero-facts data-fact-count={heroFacts.length} className="hero-facts">
+          <dl
+            data-hero-facts
+            data-fact-count={heroFacts.length}
+            data-facts-align={factsAlign}
+            className="hero-facts"
+          >
             {heroFacts.map((fact) => (
               <div key={fact.term} data-hero-fact>
                 <dt>{fact.term}</dt>

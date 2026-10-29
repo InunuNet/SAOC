@@ -33,7 +33,7 @@ export function BoardGrid({ members }: BoardGridProps) {
           {m.email ? (
             <a
               href={`mailto:${m.email}`}
-              className="mt-3 inline-block font-sans text-[13px] text-ink/70 underline-offset-2 hover:underline"
+              className="mt-3 inline-block font-sans text-[13px] text-ink/70 underline-offset-2 hover:underline outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
             >
               {m.email}
             </a>

@@ -12,6 +12,7 @@ features:
 goldens:
   - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/h2-roles.md
   - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/hero-heights.md
+  - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/event-facts-404.md
   - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/proof-on-main.md
 
 assertions:
@@ -27,7 +28,7 @@ assertions:
       description: "Codex adversarial QA of the whole diff against the goldens and proof-on-main"
       type: codex_qa
       target: >-
-        Adversarially review git diff origin/main...HEAD against the goldens in .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/. Find an input, width or route where the claimed fix does not hold and the checks still pass.
+        Adversarially review git diff origin/main...HEAD against ONLY these goldens: .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/h2-roles.md, .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/hero-heights.md, .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/event-facts-404.md, and the F1c section of proof-on-main.md (the other features' goldens in that directory are out of scope). Focus rings belong to F1a; nav to F1b; arrow glyphs and fonts to F1e. Do not fail F1c on another feature's golden. Find an input, width or route where the claimed fix does not hold and the checks still pass.
       required: true
     - id: A4
       phase: 5

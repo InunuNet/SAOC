@@ -250,20 +250,17 @@ guessed at:
 
 Per this project's standing rule (name the limitation, don't paper over it):
 
-- **The `app/`-substring classifier is trivially, silently dodgeable — this is the largest
-  remaining gap, and it applies even now that enforcement is wired in.**
-  `is_ui_workflow_contract()` keys purely on the literal substring `app/` appearing in an
-  assertion's command/cmd/target text. A contract whose only assertion is
-  `curl -sf https://saoc.co.za/national-show | grep -q "National Show"` — a genuine deployed-page
-  check, checking exactly the kind of thing this mission's headline incident needed caught —
-  contains no literal `app/` anywhere and classifies **EXEMPT**, skipping the triad requirement
-  entirely, with no warning. Confirmed independently by both `@qa` and Codex. This means "no
-  contract can reach a green gate without the triad" is true only for contracts written in one
-  particular style (naming a repo-relative file path); a contract written against a URL, a
-  Firestore collection name, or a component name instead slips through. Disclosed in the linter's
-  own docstring as a known limitation, not a silently-dropped requirement, but it is a real,
-  demonstrated gap in the mechanism this mission exists to build. Not fixed by F2; not yet
-  scheduled.
+- **The classifier is a string heuristic, with a URL rule since the F4c fix.**
+  `is_ui_workflow_contract()` classifies a contract as UI/workflow when an assertion's
+  command/cmd/target text (including nested `verify.cmd`/`verify.target`) contains the substring
+  `app/` OR a literal deployed-site URL: `https?://` followed by `saoc.co.za` or any subdomain of
+  it, host-boundary matched and case-insensitive. So `curl -sf https://saoc.co.za/national-show
+  | grep -q "National Show"` now requires the triad; `https://saoc.co.za.evil.example`,
+  `https://notsaoc.co.za`, a `user@saoc.co.za` email and a URL only in `description` still do
+  not. The linter looks only at which kinds are declared, so `required: false` triad assertions
+  still satisfy it. Still not detected: a URL built from a shell/env variable
+  (`"$SITE_URL/x"`), a `localhost` URL, a site reached through a helper script, and a contract
+  naming only a Firestore collection or component. Those slip through as EXEMPT with no warning.
 - **`template/execution/` carries a parallel copy of `contract.py` that does not inherit this
   preflight.** `template/` is this project's seed copy of the upstream Athanor harness, not a
   second production gate path for SAOC's own contracts — out of scope by deliberate decision, not

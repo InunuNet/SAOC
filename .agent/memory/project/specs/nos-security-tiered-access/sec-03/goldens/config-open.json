@@ -1,0 +1,9 @@
+{
+  "name": "projects/000000000000/config",
+  "client": { "apiKey": "FIXTURE-NOT-A-KEY", "permissions": {} },
+  "signIn": {
+    "email": { "enabled": true, "passwordRequired": true },
+    "hashConfig": { "algorithm": "SCRYPT", "signerKey": "FAKE_SIGNER_KEY_SENTINEL", "saltSeparator": "FAKE_SALT_SENTINEL" }
+  },
+  "blockingFunctions": {}
+}

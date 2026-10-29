@@ -49,7 +49,7 @@ export function EventsStrip({ events }: EventsStripProps) {
           </h2>
           <Link
             href="/events"
-            className="inline-flex min-h-11 items-center font-mono text-[11px] uppercase tracking-[0.18em] text-primary hover:text-primary-800 transition-colors duration-150 shrink-0"
+            className="inline-flex min-h-11 items-center font-mono text-[11px] uppercase tracking-[0.18em] text-primary hover:text-primary-800 transition-colors duration-150 shrink-0 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
           >
             <span>
               Full calendar<ArrowIcon />

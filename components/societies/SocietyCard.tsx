@@ -52,7 +52,7 @@ export function SocietyCard({ society }: SocietyCardProps) {
     <Link
       href={`/societies/${society.slug}`}
       data-variant="corner"
-      className="group relative flex flex-col border border-rule bg-parchment p-6 transition hover:bg-bone"
+      className="group relative flex flex-col border border-rule bg-parchment p-6 transition hover:bg-bone outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
     >
       {society.markBadge === true ? (
         <span className="absolute right-5 top-5 text-muted" aria-label="Awards mark society">

@@ -1,0 +1,21 @@
+/** Council corrections (2026-10-27) applied to Lee-Ann's frozen text AFTER the sha256 freeze check, so the frozen bytes never change. */
+// A substitution may list `exceptRoutes`: routes whose answers are Sanity-held, where the frozen fixture still carries her original wording.
+// `sanityExceptions` are rows already applied in Sanity: they only hold once the replayed fixture was captured on/after appliesFromFixtureCapturedAt
+// (the oldest capturedAt in the fixture dir decides), or in live mode. Today's older fixture keeps them dormant.
+function sanityExceptionsActive() {
+  const gate = COUNCIL.sanityExceptions?.appliesFromFixtureCapturedAt;
+  if (!gate) return false;
+  if (process.env.NOS_STD_FIXTURE === 'live') return true;
+  const dir = path.resolve(`${SPEC}/fixtures/sanity`);
+  if (!existsSync(dir)) return false;
+  const stamps = readdirSync(dir).filter((f) => f.endsWith('.json') && !f.startsWith('_'))
+    .map((f) => Date.parse(JSON.parse(readFileSync(`${dir}/${f}`, 'utf8')).capturedAt));
+  return stamps.length > 0 && Math.min(...stamps) >= Date.parse(gate);
+}
+const EXCEPTIONS_ACTIVE = sanityExceptionsActive();
+export const applyCouncil = (text, route = null) => [
+  ...COUNCIL.substitutions.filter((s) => !(route && (s.exceptRoutes ?? []).includes(route))),
+  ...(EXCEPTIONS_ACTIVE ? COUNCIL.sanityExceptions.substitutions : []),
+].reduce((acc, s) => acc.split(s.from).join(s.to), text);
+/** Reads a frozen Drive-source mirror in its council-corrected form. */
+export const readSource = (file) => applyCouncil(readFileSync(file, 'utf8'));

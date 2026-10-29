@@ -1,0 +1,19 @@
+schema: athanor.contract/v1
+slug: triad-fixture
+goal: fixture
+created_at: '2026-10-29'
+autonomy: high
+features:
+  - id: F1
+    name: fixture
+    status: pending
+goldens: []
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: suffix attack
+      command: curl -s https://saoc.co.za.evil.example/x
+    - id: A2
+      description: prefix attack
+      command: curl -s https://notsaoc.co.za/x

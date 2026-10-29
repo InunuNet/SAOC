@@ -1,0 +1,26 @@
+{
+  "_comment": "Expected isUpcoming(event, now) results, hand-derived from the documented rule (an event stays listed until its last SAST day ends; date-only values compare as the SAST calendar date; datetimes compare as instants against SAST start-of-day). SAST = UTC+2, no DST. 'now' is a UTC ISO instant. 'pinsCurrentBehaviour' rows record behaviour that is odd but must NOT change in this item.",
+  "rows": [
+    { "id": "same-day-date-only", "now": "2026-10-28T10:00:00Z", "event": { "date": "2026-10-28" }, "want": true },
+    { "id": "past-date-only", "now": "2026-10-28T10:00:00Z", "event": { "date": "2026-10-27" }, "want": false },
+    { "id": "future-date-only", "now": "2026-10-28T10:00:00Z", "event": { "date": "2026-10-29" }, "want": true },
+    { "id": "same-day-datetime-earlier-today", "now": "2026-10-28T10:00:00Z", "event": { "date": "2026-10-28T06:00:00Z" }, "want": true },
+    { "id": "past-datetime", "now": "2026-10-28T10:00:00Z", "event": { "date": "2026-10-27T10:00:00Z" }, "want": false },
+    { "id": "future-datetime", "now": "2026-10-28T10:00:00Z", "event": { "date": "2026-11-02T10:00:00Z" }, "want": true },
+    { "id": "enddate-wins-over-date-future", "now": "2026-10-28T10:00:00Z", "event": { "date": "2026-10-20", "endDate": "2026-10-30" }, "want": true },
+    { "id": "enddate-wins-over-date-past", "now": "2026-10-28T10:00:00Z", "event": { "date": "2026-10-30", "endDate": "2026-10-20" }, "want": false },
+    { "id": "enddate-null-falls-back-to-date", "now": "2026-10-28T10:00:00Z", "event": { "date": "2026-10-20", "endDate": null }, "want": false },
+    { "id": "invalid-string", "now": "2026-10-28T10:00:00Z", "event": { "date": "garbage" }, "want": false },
+    { "id": "invalid-empty", "now": "2026-10-28T10:00:00Z", "event": { "date": "" }, "want": false },
+    { "id": "invalid-datetime-month-13", "now": "2026-10-28T10:00:00Z", "event": { "date": "2026-13-45T00:00:00Z" }, "want": false },
+    { "id": "invalid-date-only-month-13", "now": "2026-10-28T10:00:00Z", "event": { "date": "2026-13-45" }, "want": true, "pinsCurrentBehaviour": "DATE_ONLY matches the shape and compares as a string; not validated as a real date. Preserve." },
+    { "id": "midnight-now-is-new-sast-day-date-only-yesterday", "now": "2026-10-27T22:00:00Z", "event": { "date": "2026-10-27" }, "want": false },
+    { "id": "midnight-now-is-new-sast-day-date-only-today", "now": "2026-10-27T22:00:00Z", "event": { "date": "2026-10-28" }, "want": true },
+    { "id": "one-second-before-midnight-date-only-same-sast-day", "now": "2026-10-27T21:59:59Z", "event": { "date": "2026-10-27" }, "want": true },
+    { "id": "midnight-instant-equal-to-start-of-day", "now": "2026-10-27T22:00:00Z", "event": { "date": "2026-10-27T22:00:00Z" }, "want": true },
+    { "id": "one-second-before-start-of-day", "now": "2026-10-27T22:00:00Z", "event": { "date": "2026-10-27T21:59:59Z" }, "want": false },
+    { "id": "offset-form-at-sast-midnight", "now": "2026-10-27T22:00:00Z", "event": { "date": "2026-10-28T00:00:00+02:00" }, "want": true },
+    { "id": "offset-form-one-second-before-sast-midnight", "now": "2026-10-27T22:00:00Z", "event": { "date": "2026-10-27T23:59:59+02:00" }, "want": false },
+    { "id": "utc-evening-already-next-sast-day", "now": "2026-10-27T23:30:00Z", "event": { "date": "2026-10-27" }, "want": false }
+  ]
+}

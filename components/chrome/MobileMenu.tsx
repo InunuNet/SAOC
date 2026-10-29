@@ -102,7 +102,7 @@ export function MobileMenu({ open, onClose, onSearch, nav, triggerRef }: MobileM
           <button
             type="button"
             aria-label="Close menu"
-            className="rounded-sm p-2 text-ink hover:text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+            className="rounded-sm p-2 text-ink hover:text-primary transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
             onClick={onClose}
           >
             <X size={22} strokeWidth={1.5} />
@@ -116,7 +116,7 @@ export function MobileMenu({ open, onClose, onSearch, nav, triggerRef }: MobileM
               <button
                 data-hd="drawer-search"
                 type="button"
-                className="flex min-h-11 w-full items-center gap-3 rounded-sm px-3 font-sans text-[15px] text-ink transition-colors duration-150 hover:bg-bone hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+                className="flex min-h-11 w-full items-center gap-3 rounded-sm px-3 font-sans text-[15px] text-ink transition-colors duration-150 hover:bg-bone hover:text-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
                 onClick={() => {
                   onClose();
                   onSearch();
@@ -181,7 +181,7 @@ export function MobileMenu({ open, onClose, onSearch, nav, triggerRef }: MobileM
         <Link
           href="/societies"
           onClick={onClose}
-          className="mt-6 inline-flex min-h-11 w-full items-center justify-center whitespace-nowrap rounded-[10px] bg-accent px-6 py-[10px] font-sans text-[13px] font-bold uppercase leading-none tracking-[0.12em] text-ink transition-colors duration-150 hover:bg-accent-soft min-[781px]:hidden focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4 forced-colors:border forced-colors:border-[color:ButtonText] forced-colors:focus-visible:decoration-[color:Highlight]"
+          className="mt-6 inline-flex min-h-11 w-full items-center justify-center whitespace-nowrap rounded-[10px] bg-accent px-6 py-[10px] font-sans text-[13px] font-bold uppercase leading-none tracking-[0.12em] text-ink transition-colors duration-150 hover:bg-accent-soft min-[781px]:hidden outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] forced-colors:border forced-colors:border-[color:ButtonText]"
         >
           Join a society
         </Link>
@@ -190,7 +190,7 @@ export function MobileMenu({ open, onClose, onSearch, nav, triggerRef }: MobileM
         <div className="mt-8 pt-6 border-t border-rule flex flex-col gap-1">
           <a
             href="mailto:info@saoc.co.za"
-            className="font-mono text-[12px] text-muted hover:text-primary transition-colors duration-150 focus-visible:text-primary focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4 forced-colors:focus-visible:decoration-[color:Highlight]"
+            className="font-mono text-[12px] text-muted hover:text-primary transition-colors duration-150 focus-visible:text-primary outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
           >
             info@saoc.co.za
           </a>

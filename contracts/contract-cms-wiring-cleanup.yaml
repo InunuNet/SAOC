@@ -142,26 +142,9 @@ assertions:
   phase: 4
   checks:
     # ---------- F2: archive/[year] ----------
-    - id: A1
-      description: >-
-        F2 POSITIVE PATH (mutating) — a `show` document created for a year with no existing show renders a real detail page at /national-show/archive/<year>.
-        Creates a temp doc for 1979, polls the page for its sentinel, deletes it, and
-        proves the sentinel is gone from both the detail page and the archive list.
-        Refuses to run if a real show already occupies that year. Confirmed live to
-        FAIL today (404) for the honest pre-implementation reason.
-      command: node contracts/checks/cms-wiring-cleanup/check-archive-year-round-trip.mjs
-
     # A2 (archive merge fidelity) RETIRED by launch-weekend F6: it asserted the invented static edition
     # (XVIII) and 1240 entries render. The static seed and the five Sanity docs are removed; honesty is
     # asserted by contracts/checks/launch-weekend/f6/ instead.
-
-    - id: A3
-      description: >-
-        F3 POSITIVE PATH (mutating) — renaming a `province` document changes what a
-        visitor sees on /societies. Patches Northern Cape's name to a sentinel, polls
-        the rendered page, restores the exact captured baseline, and proves the sentinel
-        is gone. This is the assertion that makes "wired" mean wired.
-      command: node contracts/checks/cms-wiring-cleanup/check-province-round-trip.mjs
 
     - id: A4
       description: >-
@@ -170,15 +153,6 @@ assertions:
         goldens/province-chip-order.golden.json (captured from the live page before any
         change), and guards that the synthesised "All" chip survives. Passes today.
       command: node contracts/checks/cms-wiring-cleanup/check-province-chip-order.mjs
-
-    - id: A5
-      description: >-
-        F4 POSITIVE PATH (mutating) — aboutPage.title must actually reach /about. Sets
-        it to a sentinel, polls the rendered page, restores it to unset (its live
-        baseline), and then asserts the page falls back to its existing hardcoded
-        heading — so "wire it" cannot be implemented as "delete the fallback and render
-        an empty heading". This is the project's canonical false-green field.
-      command: node contracts/checks/cms-wiring-cleanup/check-about-title-round-trip.mjs
 
     - id: A6
       description: >-
@@ -253,3 +227,31 @@ assertions:
     - id: A14
       description: production build succeeds
       command: pnpm build
+
+manual_only:
+  - id: A1
+    reason: "check-archive-year-round-trip.mjs writes to the production Sanity dataset (project 26yfbug4): Sanity 26yfbug4/production via POST /data/mutate (_shared.mjs mutate()); sentinel residue once sat on the live site for 3 days; run by hand only, with the operator present"
+    description: >-
+      F2 POSITIVE PATH (mutating) — a `show` document created for a year with no existing show renders a real detail page at /national-show/archive/<year>.
+      Creates a temp doc for 1979, polls the page for its sentinel, deletes it, and
+      proves the sentinel is gone from both the detail page and the archive list.
+      Refuses to run if a real show already occupies that year. Confirmed live to
+      FAIL today (404) for the honest pre-implementation reason.
+    command: node contracts/checks/cms-wiring-cleanup/check-archive-year-round-trip.mjs
+  - id: A3
+    reason: "check-province-round-trip.mjs writes to the production Sanity dataset (project 26yfbug4): Sanity 26yfbug4/production via POST /data/mutate (_shared.mjs mutate()); sentinel residue once sat on the live site for 3 days; run by hand only, with the operator present"
+    description: >-
+      F3 POSITIVE PATH (mutating) — renaming a `province` document changes what a
+      visitor sees on /societies. Patches Northern Cape's name to a sentinel, polls
+      the rendered page, restores the exact captured baseline, and proves the sentinel
+      is gone. This is the assertion that makes "wired" mean wired.
+    command: node contracts/checks/cms-wiring-cleanup/check-province-round-trip.mjs
+  - id: A5
+    reason: "check-about-title-round-trip.mjs writes to the production Sanity dataset (project 26yfbug4): Sanity 26yfbug4/production via POST /data/mutate (_shared.mjs mutate()); sentinel residue once sat on the live site for 3 days; run by hand only, with the operator present"
+    description: >-
+      F4 POSITIVE PATH (mutating) — aboutPage.title must actually reach /about. Sets
+      it to a sentinel, polls the rendered page, restores it to unset (its live
+      baseline), and then asserts the page falls back to its existing hardcoded
+      heading — so "wire it" cannot be implemented as "delete the fallback and render
+      an empty heading". This is the project's canonical false-green field.
+    command: node contracts/checks/cms-wiring-cleanup/check-about-title-round-trip.mjs

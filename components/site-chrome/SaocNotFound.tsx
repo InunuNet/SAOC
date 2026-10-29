@@ -1,8 +1,7 @@
 // =============================================================
 // components/site-chrome/SaocNotFound.tsx
 // The SAOC 404 section and its metadata, in a module of their own so (marketing)/not-found.tsx can
-// import them without pulling app/not-found.tsx's NOS branch (and the NOS stylesheets Next then
-// preloads on every SAOC route) into the marketing segment (F1e).
+// import them without importing app/not-found.tsx (F1e).
 // =============================================================
 
 import type { Metadata } from 'next';
@@ -29,13 +28,13 @@ export function NotFoundSection() {
         <div className="mt-10 flex flex-wrap justify-center gap-4">
           <Link
             href="/"
-            className="font-sans text-[14px] font-medium bg-accent px-6 py-3 text-ink transition-colors duration-150 hover:bg-accent-soft"
+            className="font-sans text-[14px] font-medium bg-accent px-6 py-3 text-ink transition-colors duration-150 hover:bg-accent-soft outline-ivory focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]"
           >
             Go home
           </Link>
           <Link
             href="/societies"
-            className="font-sans text-[14px] font-medium border border-ivory/40 px-6 py-3 text-ivory transition-colors duration-150 hover:bg-ivory/10"
+            className="font-sans text-[14px] font-medium border border-ivory/40 px-6 py-3 text-ivory transition-colors duration-150 hover:bg-ivory/10 outline-ivory focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]"
           >
             Find a society
           </Link>
