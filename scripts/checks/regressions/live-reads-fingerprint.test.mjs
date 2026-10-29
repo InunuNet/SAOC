@@ -56,9 +56,9 @@ describe('live-reads control identifies ticketsPageQuery exactly (PR 160 P3)', (
 
   test('an interpolated query cannot be identified and is a setup error', () => {
     mkdirSync(SANDBOX, { recursive: true });
-    const module = resolve(SANDBOX, 'queries.ts');
-    writeFileSync(module, 'const t = "ticketsPage";\nexport const ticketsPageQuery = defineQuery(`*[_type == "${t}"]`);\n');
-    assert.throws(() => exportedQueryText(module, 'ticketsPageQuery'), /not defineQuery\(\) of one plain string/);
+    const queriesModule = resolve(SANDBOX, 'queries.ts');
+    writeFileSync(queriesModule, 'const t = "ticketsPage";\nexport const ticketsPageQuery = defineQuery(`*[_type == "${t}"]`);\n');
+    assert.throws(() => exportedQueryText(queriesModule, 'ticketsPageQuery'), /not defineQuery\(\) of one plain string/);
   });
 
   test('a golden fingerprint that drifts from the source query is a setup error', () => {
