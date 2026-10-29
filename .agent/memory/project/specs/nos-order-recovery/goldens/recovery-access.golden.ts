@@ -163,23 +163,38 @@ async function main() {
     );
   }
 
-  // 6. Missing secret: every request, good or garbage, fails the same loud way (a 500 for all, so it
-  //    is no oracle), before any parsing or lookup. The message never carries the token.
+  // 6. Missing secret. A token that cannot possibly be genuine (not a string, empty, over the cap, not
+  //    <base64url>.<64 lowercase hex>) is denied exactly like any bad token, secret or no secret: that is
+  //    what keeps the 404 byte-identical on a deploy (or CI run) without RECOVERY_TOKEN_SECRET. A
+  //    well-formed token cannot be judged without the secret, so it fails loudly: a misconfigured
+  //    production deploy turns every real recovery link into a 500, never into a silent 404.
+  const impossible: unknown[] = [undefined, `.${signature}`, '', 'bogus', 'abc', [good], `${payloadSegment}.`, `${payloadSegment}.${signature.slice(0, 63)}`,
+    `${payloadSegment}.${signature.toUpperCase()}`, `${good}.junk`, ` ${good}`, 'a'.repeat(RECOVERY_TOKEN_MAX_LENGTH + 1), 12345];
+  const wellFormed: Array<[string, string]> = [
+    ['genuine', good],
+    ['forged with another secret', craft('order-A', minted.expiresAt.getTime(), OTHER_SECRET)],
+    ['expired, valid signature', craft('order-A', NOW.getTime() - 1)],
+    ['tampered payload', tamperedPayload],
+  ];
   for (const secret of [undefined, '']) {
-    for (const raw of [good, 'bogus', undefined]) {
+    for (const raw of impossible) {
+      const { calls, result } = run(raw, { 'order-A': PAID }, { secret });
+      assert.deepStrictEqual(await result, { ok: false }, `secret ${String(secret)}, ${String(raw).slice(0, 20)}: denied like any bad token`);
+      assert.deepStrictEqual(calls, []);
+    }
+    for (const [label, raw] of wellFormed) {
       const { calls, result } = run(raw, { 'order-A': PAID }, { secret });
       const failure = await result.then(() => null, (e: Error) => e);
-      assert.ok(failure instanceof Error, `secret ${String(secret)} with ${String(raw)}: rejects`);
-      assert.ok(!String(failure.message).includes(String(raw)) || raw === undefined, 'error message does not echo the token');
+      assert.ok(failure instanceof Error, `secret ${String(secret)}, ${label}: rejects loudly`);
+      assert.ok(!String(failure.message).includes(raw), 'error message does not echo the token');
       assert.deepStrictEqual(calls, []);
     }
   }
   const missingMessages = new Set<string>();
-  for (const raw of [good, 'bogus']) {
-    const failure = await run(raw, { 'order-A': PAID }, { secret: undefined }).result.then(() => '', (e: Error) => e.message);
-    missingMessages.add(failure);
+  for (const [, raw] of wellFormed) {
+    missingMessages.add(await run(raw, { 'order-A': PAID }, { secret: undefined }).result.then(() => '', (e: Error) => e.message));
   }
-  assert.equal(missingMessages.size, 1, 'the missing-secret failure is the same for every token');
+  assert.equal(missingMessages.size, 1, 'the missing-secret failure is the same for every well-formed token');
 
   // 7. A lookup outage propagates (a 500 reachable only with a genuinely signed, unexpired token);
   //    it is never converted into { ok: false }, which would tell a real buyer the link is invalid.

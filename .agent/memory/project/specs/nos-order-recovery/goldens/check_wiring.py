@@ -104,6 +104,7 @@ def check_access_anchors() -> None:
     pinned = {
         "ra-secret": "if (!input.secret)",
         "ra-input": "typeof input.rawToken !== 'string'",
+        "ra-shape": "RECOVERY_TOKEN_SHAPE.test(input.rawToken)",
         "ra-verify": "verifyRecoveryToken({ token: input.rawToken, secret: input.secret, now: input.now })",
         "ra-verify-denied": "if (!verified.ok || verified.orderId.length === 0 || verified.orderId.includes('/'))",
         "ra-load": "await input.loadOrder(verified.orderId)",
@@ -116,6 +117,8 @@ def check_access_anchors() -> None:
     for name, token in pinned.items():
         need(token in anchored(text, name), f"anchor {name}: next line must contain {token!r}")
     need("RECOVERY_TOKEN_MAX_LENGTH" in anchored(text, "ra-input"), "anchor ra-input enforces the length cap")
+    need("RECOVERY_TOKEN_SHAPE = /^[A-Za-z0-9_-]+\\.[0-9a-f]{64}$/" in text, "RECOVERY_TOKEN_SHAPE is exactly /^[A-Za-z0-9_-]+\\.[0-9a-f]{64}$/")
+    need(text.index("// anchor: ra-input") < text.index("// anchor: ra-shape") < text.index("// anchor: ra-secret") < text.index("// anchor: ra-verify"), "order: input, shape, secret, verify (garbage is denied before the secret is consulted)")
     need(text.count("constantTimeStringEqual") >= 2, "the stored-token comparison is lib/recovery-token's constantTimeStringEqual (import + use)")
     need(re.search(r"recoveryToken\s*[!=]==?\s*input\.rawToken", code_only(text)) is None, "no raw comparison of the stored token (compare via tokensMatch)")
 

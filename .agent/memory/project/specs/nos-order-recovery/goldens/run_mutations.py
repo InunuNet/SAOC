@@ -60,6 +60,10 @@ MUTATIONS = [
     ("A15", ACCESS, "anchor", "ra-success", "{ ok: true, reference: record.reference }", "{ ok: true, reference: record.reference, token: input.rawToken } as { ok: true; reference: string }", ACCESS_G),
     ("A16", ACCESS, "anchor", "ra-default-match", "input.tokensMatch ?? constantTimeStringEqual", "input.tokensMatch ?? ((a: string, b: string) => a === b)", wiring("access-anchors")),
     ("A17", ACCESS, "anchor", "ra-load", "input.loadOrder(verified.orderId)", "input.loadOrder(input.rawToken)", ACCESS_G),
+    ("A20", ACCESS, "anchor", "ra-shape", "RECOVERY_TOKEN_SHAPE.test(input.rawToken)", "true", ACCESS_G),
+    ("A21", ACCESS, "anchor", "ra-shape", "!RECOVERY_TOKEN_SHAPE.test(input.rawToken)", "RECOVERY_TOKEN_SHAPE.test(input.rawToken)", ACCESS_G),
+    ("A22", ACCESS, "first", None, "[0-9a-f]{64}$/", "[0-9a-f]{1,64}$/", wiring("access-anchors")),
+    ("A23", ACCESS, "first", None, "RECOVERY_TOKEN_SHAPE = /^[A-Za-z0-9_-]+\\.", "RECOVERY_TOKEN_SHAPE = /^[A-Za-z0-9_-]*\\.", ACCESS_G),
     ("A18", ACCESS, "append", None, "", "\nconsole.error('bad token');\n", wiring("no-logging")),
     ("A19", ACCESS, "first", None, "from './recovery-token'", "from '@/lib/recovery-token'", wiring("access-anchors")),
     # --- app/(nos)/tickets/recover/page.tsx (check_wiring page-wiring and friends)
