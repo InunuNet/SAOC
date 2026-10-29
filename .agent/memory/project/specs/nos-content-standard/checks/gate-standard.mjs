@@ -14,7 +14,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { fsRoute, fsTickets, fsTicketsFan, fsHome, fsContact, ndNavGate, fsAboutH1 } from './fs-checks.mjs';
-import { AUTH, BANNED, CROPS, RETIRED, gotoRoute, EXCLUDED, ROUTES, STD, driveState, launchChromium, newContext, withServer } from './_lib.mjs';
+import { AUTH, BANNED, CROPS, RETIRED, gotoRoute, EXCLUDED, ROUTES, STD, driveState, readSource, launchChromium, newContext, withServer } from './_lib.mjs';
 
 const HERO_IMG = 'section[data-nos-hero] [data-nos-hero-media] img';
 const wantGap = (w) => (w >= 1024 ? STD.gap.atOrAbove1024 : STD.gap.below1024);
@@ -135,9 +135,9 @@ async function factsGrammar(page, vp, c, tag) {
 /** SP-1 (NOS Design golden, root comms.md "/sponsors golden (SP-1)"): the /sponsors-only structure, copy sources and gates. */
 const SPDIR = '.agent/memory/project/specs/nos-content-standard/goldens/sources/';
 const spUnmd = (b) => b.replace(/\\([.\-_*#>()[\]!])/g, '$1').replace(/\*\*|__/g, '').replace(/(^|[^*])\*([^*\n]+)\*/g, '$1$2').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/\s+/g, ' ').trim();
-const spLine = (file, n) => spUnmd(readFileSync(SPDIR + file, 'utf8').split('\n')[n - 1] ?? '');
+const spLine = (file, n) => spUnmd(readSource(SPDIR + file).split('\n')[n - 1] ?? '');
 function spQa(q) {
-  const L = readFileSync(SPDIR + 'faq.md', 'utf8').split('\n'); const i = L.findIndex((l) => new RegExp(`^\\*\\*${q}\\. `).test(l));
+  const L = readSource(SPDIR + 'faq.md').split('\n'); const i = L.findIndex((l) => new RegExp(`^\\*\\*${q}\\. `).test(l));
   if (i < 0) return null; const ans = []; for (let k = i + 1; k < L.length && !/^\*\*\d+\. /.test(L[k]); k += 1) if (L[k].trim()) ans.push(spUnmd(L[k]));
   return { q: spUnmd(L[i]).replace(/^\d+\.\s*/, ''), a: ans };
 }
@@ -228,7 +228,7 @@ async function programmeChecks(page, route, vp, c, tag) {
   const P = route.pgSources;
   const WS = workshopsRowSource();
   c.check(`${tag} PG-G1 the workshops source strings were read from lib/data/ticket-presentation.ts (${JSON.stringify(WS)})`, Boolean(WS.when) && Boolean(WS.meta) && /\d/.test(WS.meta));
-  const wte = readFileSync(`${SPDIR}${P.file}`, 'utf8');
+  const wte = readSource(`${SPDIR}${P.file}`);
   c.check(`${tag} PG-G1 her heading and date line exist in What to Expect v1.0 (so they can never drift)`, wte.includes(P.h2) && wte.includes(P.line));
   for (const d of P.days) c.check(`${tag} PG-G1 her hours for ${d.wd} exist in her doc: "${d.hours}"`, wte.includes(d.hours));
   const m = await page.evaluate(() => {
@@ -395,7 +395,7 @@ async function noUpscaleChecks(page, vp, c, tag) {
 }
 
 /** Her wording for an event's hours, read from the frozen excerpt of her answers doc ("9am to 5pm"); never reformatted (her time-format question is open). */
-function hoursOf(label) { const l = readFileSync(`${SPDIR}leeann-answers-hours.md`, 'utf8').split('\n').find((x) => x.startsWith(label)); return l?.match(/\d{1,2}(?::\d{2})?(?:am|pm) to \d{1,2}(?::\d{2})?(?:am|pm)/)?.[0] ?? null; }
+function hoursOf(label) { const l = readSource(`${SPDIR}leeann-answers-hours.md`).split('\n').find((x) => x.startsWith(label)); return l?.match(/\d{1,2}(?::\d{2})?(?:am|pm) to \d{1,2}(?::\d{2})?(?:am|pm)/)?.[0] ?? null; }
 /** The event date as a "D Month YYYY" string from a FAQ answer ("24th September 2027" -> "24 September 2027"). */
 function faqDate(n) { const q = spQa(n); const m = q ? q.a.join(' ').match(/(\d{1,2})(?:st|nd|rd|th)? ([A-Z][a-z]+) (\d{4})/) : null; return m ? `${m[1]} ${m[2]} ${m[3]}` : null; }
 function dateTimeChecks(c, tag, sg, facts, S, hoursLabel, dateFaqN) {
@@ -492,7 +492,7 @@ async function ledePreloadScope(browser, server, c) {
 /** WO-G1 (NOS Design, root comms.md L3436): /wosa-conference. All copy is verbatim from her frozen documents. */
 async function woChecks(page, route, vp, c, tag, server) {
   const W = route.wo;
-  const para = (file, starts) => { const l = readFileSync(`${SPDIR}${file}`, 'utf8').split('\n').find((x) => x.includes(starts)); return l ? spUnmd(l.slice(l.indexOf(starts))) : ''; };
+  const para = (file, starts) => { const l = readSource(`${SPDIR}${file}`).split('\n').find((x) => x.includes(starts)); return l ? spUnmd(l.slice(l.indexOf(starts))) : ''; };
   const sentence = (file, starts) => para(file, starts).match(/^.*?[.!?](?=\s|$)/)?.[0] ?? '';
   const lede = para(W.ledeFrom.file, W.ledeFrom.startsWith); const standfirst = sentence(W.standfirst.file, W.standfirst.startsWith); const paragraph = para(W.paragraph.file, W.paragraph.startsWith);
   const qa = W.faqQuestions.map((n) => ({ n, ...spQa(n) }));
@@ -569,7 +569,7 @@ async function wkChecks(page, route, vp, c, tag) {
 /** CR-G1 (NOS Design, root comms.md L3989): /conferences, "Conference registration". Two rows, each with its own live ticket card; all copy is FAQ v1.0 verbatim. */
 async function crChecks(page, route, vp, c, tag) {
   const C = route.cr;
-  const introOf = (heading) => { const L = readFileSync(`${SPDIR}faq.md`, 'utf8').split('\n'); const i = L.findIndex((l) => spUnmd(l) === heading); if (i < 0) return ''; for (let k = i + 1; k < L.length; k += 1) if (L[k].trim()) return spUnmd(L[k]); return ''; };
+  const introOf = (heading) => { const L = readSource(`${SPDIR}faq.md`).split('\n'); const i = L.findIndex((l) => spUnmd(l) === heading); if (i < 0) return ''; for (let k = i + 1; k < L.length; k += 1) if (L[k].trim()) return spUnmd(L[k]); return ''; };
   const rowsSrc = C.rows.map((r) => ({ ...r, intro: introOf(r.introHeading), body: spQa(r.faqBody), date: faqDate(r.dateFaq), hours: hoursOf(r.hoursLine) }));
   c.check(`${tag} CR-G1 sources are real: both FAQ intros, FAQ ${C.rows.map((r) => r.faqBody).join('/')} answers, the dates and the hours were found in the frozen copies`, rowsSrc.every((r) => r.intro && r.body && r.body.a.length && r.date && r.hours), rowsSrc.map((r) => `${r.intro.slice(0, 20)}|${r.date}|${r.hours}`).join(' ; '));
   const m = await page.evaluate((C) => {
@@ -645,7 +645,7 @@ async function abChecks(page, route, vp, c, tag, server) {
 /** WE-G1 (NOS Design, root comms.md L4033): /what-to-expect. Every copy string is parsed from the frozen What to Expect v1.0 (struck-through lines dropped); admission prices are read from /tickets, never typed. */
 async function weChecks(page, route, vp, c, tag, server) {
   const W = route.we; const norm = (t) => t.replace(/\s+/g, ' ').trim(); const strip = (t) => norm(t.replace(/\*/g, ''));
-  const lines = readFileSync(`${SPDIR}${W.sourceFile}`, 'utf8').split('\n').map((l) => l.trim()).filter(Boolean);
+  const lines = readSource(`${SPDIR}${W.sourceFile}`).split('\n').map((l) => l.trim()).filter(Boolean);
   const struck = (l) => /^\**~~/.test(l);
   const live = lines.filter((l) => !struck(l));
   const at = (h) => live.findIndex((l) => strip(l) === h);
@@ -748,7 +748,7 @@ async function exChecks(page, route, vp, c, tag) {
 /** CT-G1 (NOS Design, root comms.md CT-G1): /contact. Committee, address, telephone and co-ordinator come from the frozen "2027 Show Contact information" v1.1; the form is unchanged against origin/main. */
 async function ctChecks(page, route, vp, c, tag) {
   const X = route.ct; const strip = (t) => spUnmd(t);
-  const lines = readFileSync(`${SPDIR}contact.md`, 'utf8').split('\n').map((l) => l.trim()).filter(Boolean);
+  const lines = readSource(`${SPDIR}contact.md`).split('\n').map((l) => l.trim()).filter(Boolean);
   const idx = (h) => lines.findIndex((l) => strip(l) === h);
   const iC = idx('Committee'); const iU = lines.findIndex((l) => /^https?:\/\//.test(l));
   const team = lines.slice(iC + 1, iU).filter((l) => !/Needs Surnames/i.test(l)).map((l) => { const k = l.indexOf(' - '); return { name: strip(l.slice(0, k)), role: strip(l.slice(k + 3)) }; });
@@ -820,7 +820,7 @@ async function homeChecks(page, vp, c, tag) {
   // Rev 44: the hub keeps its own scrim (not the DS-1 ramp); it is gated on the outcome, text hidden, p95 >= 4.5 (h1 >= 3) at 1440 and 2056. A failing cell reports its number; the stops are never retuned here.
   if (vp.width === 1440 || vp.width === 2056) await heroTextContrast(page, tag, c);
   const H = ROUTE_TABLE_META.home; const norm = (t) => t.replace(/\s+/g, ' ').trim();
-  const rd = (f) => readFileSync(`${SPDIR}${f}`, 'utf8').split('\n').map((l) => l.trim()).filter(Boolean);
+  const rd = (f) => readSource(`${SPDIR}${f}`).split('\n').map((l) => l.trim()).filter(Boolean);
   const live = (f) => rd(f).filter((l) => !/^\**~~/.test(l));
   const wte = live('what-to-expect.md'); const s3i = wte.findIndex((l) => spUnmd(l) === 'What to Expect'); const s3 = wte.slice(s3i + 1).map(spUnmd);
   const sentences = (p) => p.match(/[^.!?]+[.!?]+(?=\s|$)/g)?.map(norm) ?? [];
@@ -832,7 +832,7 @@ async function homeChecks(page, vp, c, tag) {
   const lede = sentences(s3[0])[0]; const closing = s3[s3.length - 1];
   const f26 = spQa(H.exhibitLead); const f27 = spQa(H.exhibitBody);
   const prog = H.programmeRows.map((r) => ({ ...r, text: r.from === 'wte-sentence' ? wteSentence(r.starts) : (sentences(spQa(r.faq).a[0])[0] ?? '') }));
-  const corpus = norm([...about, ...wte.map(spUnmd), ...readFileSync(`${SPDIR}faq.md`, 'utf8').split('\n').map(spUnmd)].join(' '));
+  const corpus = norm([...about, ...wte.map(spUnmd), ...readSource(`${SPDIR}faq.md`).split('\n').map(spUnmd)].join(' '));
   c.check(`${tag} HM-G1 sources are real: the lede, About paragraphs 1 and 3, the dates line, ${H.programmeRows.length} programme sentences, FAQ ${H.exhibitLead}/${H.exhibitBody} and the closing paragraph were found in the frozen copies`, Boolean(lede) && aboutBody.length >= 3 && Boolean(dateLine) && hours.length === 3 && prog.every((p) => p.text.length > 30) && Boolean(f26?.a.length) && Boolean(f27?.a.length) && closing.startsWith('Whether your passion lies'));
   const m = await page.evaluate((H) => {
     const txt = (e) => e.textContent.replace(/\s+/g, ' ').trim(); const fam = (e) => getComputedStyle(e).fontFamily.split(',')[0].replace(/["']/g, '').toLowerCase();
@@ -913,9 +913,9 @@ async function ticketLayoutChecks(page, vp, c, tag, perRow = false) {
 /** SY-G1 (NOS Design, root comms.md L3387): /symposium. Every copy string is read from a frozen source or the CMS; builder copy is flagged in spec.md. */
 async function syChecks(page, route, vp, c, tag, server) {
   const S = route.sy;
-  const themeLines = readFileSync(`${SPDIR}symposium-theme.md`, 'utf8').split('\n').map((l) => l.replace(/\*\*/g, '').trim()).filter(Boolean);
+  const themeLines = readSource(`${SPDIR}symposium-theme.md`).split('\n').map((l) => l.replace(/\*\*/g, '').trim()).filter(Boolean);
   const title = themeLines.find((l) => /^[“"].*[”"]$/.test(l)); const sentence = themeLines[themeLines.length - 1];
-  const wteLine = readFileSync(`${SPDIR}what-to-expect.md`, 'utf8').split('\n').find((l) => l.includes(S.wteStarts)) ?? '';
+  const wteLine = readSource(`${SPDIR}what-to-expect.md`).split('\n').find((l) => l.includes(S.wteStarts)) ?? '';
   const wteSentence = wteLine.slice(wteLine.indexOf(S.wteStarts)).match(/^.*?[.!?](?=\s|$)/)?.[0] ?? '';
   const norm = (t) => t.replace(/\s+/g, ' ').trim();
   c.check(`${tag} SY-G1 sources are real: the theme title, the theme sentence and the What to Expect first sentence were found in the frozen copies`, Boolean(title) && sentence.length > 40 && wteSentence.length > 40, `${title ?? 'no title'} | ${wteSentence.slice(0, 40)}`);
@@ -950,7 +950,7 @@ async function syChecks(page, route, vp, c, tag, server) {
 }
 
 async function sxChecks(page, route, vp, c, tag) {
-  const names = readFileSync(`${SPDIR}sa-exhibitors.md`, 'utf8').split('\n').filter((l) => /^\|/.test(l) && !/^\|\s*-/.test(l)).map((l) => spUnmd(l.replace(/\|/g, ' ')));
+  const names = readSource(`${SPDIR}sa-exhibitors.md`).split('\n').filter((l) => /^\|/.test(l) && !/^\|\s*-/.test(l)).map((l) => spUnmd(l.replace(/\|/g, ' ')));
   const m = await page.evaluate(() => { const t = (document.querySelector('main')?.textContent ?? '').replace(/\s+/g, ' '); const aside = document.querySelector('[data-doc-aside]'); const items = aside ? [...aside.querySelectorAll('li')].map((li) => ({ t: li.textContent.replace(/\s+/g, ' ').trim(), h: li.getBoundingClientRect().height })) : []; const btn = [...document.querySelectorAll('main a')].filter((a) => /vendor application/i.test(a.textContent)); const h2 = [...document.querySelectorAll('[data-doc-aside] h2')].map((h) => h.textContent.trim()); const wall = [...document.querySelectorAll('main h2')].map((h) => h.textContent.trim()); return { t, items, btn: btn.map((b) => ({ shown: b.getBoundingClientRect().height > 0, h: b.getBoundingClientRect().height, href: b.getAttribute('href') })), h2, wall, cta: document.querySelector('.sp-hero-cta, [data-hero-cta]') ? true : null }; });
   c.check(`${tag} SX-G1 the aside is ONE card with h2 "Available at the Show", her six items (each >= 44px) and a full-width Vendor application button`, m.h2.includes('Available at the Show') && m.items.length === 6 && m.items.every((i) => i.h >= 44) && m.btn.some((b) => b.shown && b.href));
   if (route.sx.directory === 'closed') {

@@ -1,8 +1,8 @@
 // Scope guard (vacuous on main, guards the dev diff): no hex colour literal is ADDED under app/, components/ or lib/ except the three
-// ruled status values. No invented colours (docs/rules/no-invention.md): everything else must reuse an existing token.
+// ruled status values and the one ruled on-dark token. No invented colours (docs/rules/no-invention.md): everything else must reuse an existing token.
 import { execFileSync } from 'node:child_process';
 import { check, finish } from './lib.mjs';
-const ALLOWED = new Set(['#8f2834', '#2f5d3a', '#7a5a12']);
+const ALLOWED = new Set(['#8f2834', '#2f5d3a', '#7a5a12', '#e8959d']); // #e8959d: --status-error-on-dark, NOS Design ruling (6.62:1 on #22281f), measured on that ground only
 const diff = execFileSync('git', ['diff', '-U0', 'origin/main', '--', 'app', 'components', 'lib'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
 for (const line of diff.split('\n')) {
   if (!line.startsWith('+') || line.startsWith('+++')) continue;

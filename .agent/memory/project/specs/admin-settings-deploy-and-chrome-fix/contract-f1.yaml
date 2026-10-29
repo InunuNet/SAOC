@@ -111,26 +111,29 @@ assertions:
         never push. FAILS ON: HEAD not present on origin/main; the backend's updateTime older
         than HEAD's commit time; the firebase CLI or jq unavailable.
       command: bash contracts/checks/admin-settings-deploy-and-chrome-fix-f1/check-deploy-freshness.sh
-    - id: A6
-      description: >-
-        Live BrowserAgent verification against https://beta.saoc.co.za/admin/settings, gated
-        behind A5 passing first. Two independent runs — desktop (1440px) and mobile (375px) —
-        each authenticated via a server-minted session cookie (see README "Authenticating the
-        BrowserAgent session against a live admin-gated route" — a real existing allowlisted
-        admin's uid, custom-token mint + Identity Toolkit exchange + POST to
-        /api/admin/session, never the login UI, never a new sentinel Firebase Auth user). Each
-        run writes a JSON artifact to .agent/memory/scratch/admin-settings-chrome-runs/
-        <viewport>-<ISO-timestamp>.json per the exact 7-check schema in the README's "The
-        BrowserAgent artifact schema" section (page-loads-200, utility-bar-present,
-        header-present, admin-nav-present, settings-link-in-nav, footer-present,
-        toggle-still-functions) — each check's pass/fail derived from a real Playwright DOM
-        locator assertion, NEVER from the agent's own visual/prose judgment of a screenshot
-        (screenshots are captured as supporting evidence alongside the JSON, not as the
-        pass/fail source). check-live-chrome.mjs re-derives the final verdict independently from
-        both artifacts' contents — never from the BrowserAgent's chat summary. FAILS ON: either
-        artifact missing; any of the 7 named checks absent or pass !== true in either artifact;
-        allChecksPassed !== true in either artifact; page-loads-200's detail showing a 404 or a
-        redirect to /admin/login (session cookie invalid/expired) or /admin (capability not
-        granted); settings-link-in-nav failing on mobile specifically (the link must be reachable
-        through the hamburger overlay, not just present in unrendered markup).
-      command: node contracts/checks/admin-settings-deploy-and-chrome-fix-f1/check-live-chrome.mjs
+
+manual_only:
+  - id: A6
+    reason: "check-live-chrome.mjs writes to the production Firebase Auth project: Firebase Auth saoc-webapp custom token + /api/admin/session on the deployed host; run by hand only, with the operator present"
+    description: >-
+      Live BrowserAgent verification against https://beta.saoc.co.za/admin/settings, gated
+      behind A5 passing first. Two independent runs — desktop (1440px) and mobile (375px) —
+      each authenticated via a server-minted session cookie (see README "Authenticating the
+      BrowserAgent session against a live admin-gated route" — a real existing allowlisted
+      admin's uid, custom-token mint + Identity Toolkit exchange + POST to
+      /api/admin/session, never the login UI, never a new sentinel Firebase Auth user). Each
+      run writes a JSON artifact to .agent/memory/scratch/admin-settings-chrome-runs/
+      <viewport>-<ISO-timestamp>.json per the exact 7-check schema in the README's "The
+      BrowserAgent artifact schema" section (page-loads-200, utility-bar-present,
+      header-present, admin-nav-present, settings-link-in-nav, footer-present,
+      toggle-still-functions) — each check's pass/fail derived from a real Playwright DOM
+      locator assertion, NEVER from the agent's own visual/prose judgment of a screenshot
+      (screenshots are captured as supporting evidence alongside the JSON, not as the
+      pass/fail source). check-live-chrome.mjs re-derives the final verdict independently from
+      both artifacts' contents — never from the BrowserAgent's chat summary. FAILS ON: either
+      artifact missing; any of the 7 named checks absent or pass !== true in either artifact;
+      allChecksPassed !== true in either artifact; page-loads-200's detail showing a 404 or a
+      redirect to /admin/login (session cookie invalid/expired) or /admin (capability not
+      granted); settings-link-in-nav failing on mobile specifically (the link must be reachable
+      through the hamburger overlay, not just present in unrendered markup).
+    command: node contracts/checks/admin-settings-deploy-and-chrome-fix-f1/check-live-chrome.mjs

@@ -1,0 +1,54 @@
+schema: athanor.contract/v1
+slug: checkout-error-summary
+goal: A failed ticket-checkout submit mounts a focused error summary, as the vendor application does, with linked entries that clear as fields are fixed.
+created_at: '2026-10-28'
+autonomy: high
+
+features:
+  - id: F1
+    name: checkout error summary with focus, linked entries, aria wiring and server-error path
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/checkout-error-summary/goldens/checkout-error-summary.spec.ts
+  - .agent/memory/project/specs/checkout-error-summary/goldens/copy-sources.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: e2e at 1280 - summary mounts and takes focus, links focus fields, entries clear, day joins once, server refusal, axe adds nothing
+      command: mkdir -p .tmp/sandbox/fx-empty/log && TICKET_FIXTURES=1 SANITY_FIXTURE_MODE=replay SANITY_FIXTURE_DIR=.tmp/sandbox/fx-empty SANITY_FIXTURE_LOGDIR=.tmp/sandbox/fx-empty/log NEXT_PUBLIC_SAOC_SITE_URL=http://localhost:3999 NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost:3999 SAOC_E2E_DYNAMIC_PORT=3999 pnpm exec playwright test e2e/checkout-error-summary.spec.ts --grep "at 1280" --reporter=line
+    - id: A2
+      description: same e2e at 390
+      command: mkdir -p .tmp/sandbox/fx-empty/log && TICKET_FIXTURES=1 SANITY_FIXTURE_MODE=replay SANITY_FIXTURE_DIR=.tmp/sandbox/fx-empty SANITY_FIXTURE_LOGDIR=.tmp/sandbox/fx-empty/log NEXT_PUBLIC_SAOC_SITE_URL=http://localhost:3999 NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost:3999 SAOC_E2E_DYNAMIC_PORT=3999 pnpm exec playwright test e2e/checkout-error-summary.spec.ts --grep "at 390" --reporter=line
+    - id: A3
+      description: guards - SAOC host 308-redirects tickets to NOS, zero-quantity buy hint keeps focus, lowering then raising quantity does not resurrect removed attendee errors
+      command: mkdir -p .tmp/sandbox/fx-empty/log && TICKET_FIXTURES=1 SANITY_FIXTURE_MODE=replay SANITY_FIXTURE_DIR=.tmp/sandbox/fx-empty SANITY_FIXTURE_LOGDIR=.tmp/sandbox/fx-empty/log NEXT_PUBLIC_SAOC_SITE_URL=http://localhost:3999 NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost:3999 SAOC_E2E_DYNAMIC_PORT=3999 pnpm exec playwright test e2e/checkout-error-summary.spec.ts --grep "SAOC host|buy hint|lowering then raising" --reporter=line
+    - id: A4
+      description: summary id defined in the purchase form
+      command: grep -q "checkout-error-summary" components/tickets/TicketPurchaseForm.tsx
+    - id: A5
+      description: heading reuses the sourced vendor sentence, no new copy
+      command: grep -q "Please check the highlighted fields." components/tickets/TicketPurchaseForm.tsx
+    - id: A6
+      description: field wires aria-describedby to its error
+      command: grep -q "aria-describedby=" components/tickets/TicketFormField.tsx
+    - id: A7
+      description: no hard-coded hex colour in the two touched ticket components
+      command: "! grep -nE '#[0-9a-fA-F]{6}' components/tickets/TicketPurchaseForm.tsx components/tickets/TicketFormField.tsx"
+    - id: A8
+      description: axe-core is a declared devDependency at the version already locked
+      command: "grep -q '4.12.0' package.json"
+    - id: A9
+      description: typecheck
+      command: pnpm exec tsc --noEmit
+    - id: A10
+      description: eslint on touched files
+      command: pnpm exec eslint components/tickets app/ticket-fixtures e2e/checkout-error-summary.spec.ts
+    - id: A11
+      description: production build
+      command: pnpm build
+    - id: A12
+      description: vendor application form unchanged in this diff (NOS Design - not migrated)
+      command: git diff --quiet origin/main -- components/vendors/VendorApplyForm.tsx

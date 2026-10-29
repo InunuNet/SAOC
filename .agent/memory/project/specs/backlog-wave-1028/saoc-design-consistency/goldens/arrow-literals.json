@@ -1,0 +1,10 @@
+{
+  "note": "F1e static arrow scan (check-arrow-literals-static.mjs). Each entry names a file, a `near` substring that must appear in the 300 characters before the literal arrow, and a reason. An entry matching no hit FAILS (stale).",
+  "allow": [
+    {
+      "file": "components/show/VenueCard.tsx",
+      "near": "variant=\"ghost\"",
+      "reason": "The mapAction='button' branch of VenueCard (a ghost Button). It renders only when a caller passes mapAction='button'; the default is 'link' and the SAOC callers (/contact, /events/[slug]) pass nothing, which the check asserts. Its literal arrow is NOS-side and stays out; the 'link' branch is in scope and must carry no literal."
+    }
+  ]
+}

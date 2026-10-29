@@ -10,7 +10,7 @@ import { MonthGroup } from './MonthGroup';
 const ALL = 'ALL';
 
 const FOCUS_CLASSES =
-  'focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-accent';
+  'focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[3px] focus-visible:outline-primary';
 const LABEL_CLASSES = 'font-mono text-[11px] uppercase tracking-[0.18em] text-muted';
 const CHIP_BASE = `inline-flex min-h-11 items-center rounded-full border px-4 font-sans text-[14px] transition-colors duration-150 ${FOCUS_CLASSES}`;
 const CHIP_ON = 'border-primary bg-primary text-ivory';

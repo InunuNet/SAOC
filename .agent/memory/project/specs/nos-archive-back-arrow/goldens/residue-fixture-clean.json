@@ -1,0 +1,25 @@
+[
+  {
+    "_id": "nationalShow",
+    "_type": "nationalShow",
+    "title": "SAOC National Show 2027",
+    "location": "The Hangar, Stellenbosch Flying Club",
+    "countdownDate": "2027-09-18T08:00:00.000Z",
+    "highlights": [
+      {
+        "_type": "block",
+        "_key": "a1",
+        "children": [
+          { "_type": "span", "_key": "a1s", "text": "Come celebrate orchids in cultivation." }
+        ]
+      }
+    ],
+    "sponsorTiers": { "gold": ["Kirstenbosch Nursery"], "silver": [] }
+  },
+  {
+    "_id": "aboutPage",
+    "_type": "aboutPage",
+    "boardIntroText": "The SAOC board has served affiliated societies since 1968.",
+    "meta": { "seoTitle": "About SAOC", "seoDescription": "Learn about the South African Orchid Council." }
+  }
+]

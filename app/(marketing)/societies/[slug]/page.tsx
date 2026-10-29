@@ -144,7 +144,7 @@ export default async function SocietyPage({
 
         <Link
           href="/societies"
-          className="flex min-h-6 items-center font-mono text-[12px] uppercase tracking-[0.18em] text-muted"
+          className="flex min-h-6 items-center font-mono text-[12px] uppercase tracking-[0.18em] text-muted outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
         >
           ← All societies
         </Link>

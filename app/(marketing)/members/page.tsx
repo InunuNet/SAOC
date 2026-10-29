@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 import { Breadcrumb } from '@/components/chrome/Breadcrumb';
 import { RouteHero } from '@/components/ui/RouteHero';
 import { buildPageMetadata } from '@/lib/seo';
 import { CTASection } from '@/components/ui/CTASection';
 import { DocumentLayout } from '@/components/ui/DocumentLayout';
+import { DraftNotice } from '@/components/ui/DraftNotice';
 import { SuggestionForm } from '@/components/members/SuggestionForm';
 
 const LEDE =
@@ -32,22 +34,19 @@ export default function MembersPage() {
         aside={
           <p className="font-sans text-[16px] leading-[1.55] text-ink/80">
             Have a question about the Members Portal, or how to become a paid-up member?{' '}
-            <a href="/contact" className="text-ink underline underline-offset-2">
+            <Link href="/contact" className="text-ink underline underline-offset-2">
               Contact SAOC
-            </a>
+            </Link>
             .
           </p>
         }
       >
         <section className="doc-section">
           <div className="doc-prose">
-            <div data-placeholder="true" className="border border-rule bg-bone px-6 py-5">
-              <p>
-                <strong className="font-medium text-ink">Not yet available.</strong> Member login
-                and the Members Portal itself have not been built for this site yet. This page will
-                be updated once they are.
-              </p>
-            </div>
+            <DraftNotice leadIn="Not yet available." placeholder>
+              Member login and the Members Portal itself have not been built for this site yet.
+              This page will be updated once they are.
+            </DraftNotice>
             <p>
               The Members Portal will be a restricted area for paid-up SAOC members, separate from
               the public-facing pages. It will provide member authentication and account

@@ -79,7 +79,7 @@
     "driveStorePath": "content/drive-source/National Show/3. What to expect/What to Expect/v1.0/content.md",
     "mode": "listed",
     "mustPresent": [
-     "The National Orchid Show is a prestigious event that takes please every three years. The Show moves between provinces on this cycle which allows the local societies the opportunity to host the delegates, judges and the public.",
+     "The National Orchid Show is a prestigious event that takes place every three years. The Show moves between provinces on this cycle which allows the local societies the opportunity to host the delegates, judges and the public.",
      "Show dates – for public entrance"
     ],
     "strikeAbsence": "none",
@@ -122,9 +122,9 @@
      "What the show looks like from a visitor",
      "R350"
     ],
-    "keepTypo": "takes please",
+    "keepTypo": "takes place",
     "hooks": "builder-facing hooks asserted by weChecks: [data-we-stand] (Section 1 paragraph), [data-we-card] (the sticky card), [data-we-hours] and [data-we-admission] (dl lists; each row a dt+dd pair), [data-we-rest] (Food, Photography, Accessibility blocks, each an h2 + paragraphs in a wrapper), [data-we-s3] (Section 3 paragraphs). Prices are read from /tickets [data-ticket-price] by name, never typed. Each [data-we-admission] row also carries data-ticket-id=<_id>; /tickets cards are matched by their quantity input id ticket-type-qty-<slug>, slug from the explicit we.admissionSlugs map (SAOC-confirmed).",
-    "ownerItems": "gggg (time format: her doc writes 14.00 / 9.00 with dots, her answers doc writes 9am to 5pm; this page asserts her What to Expect doc verbatim), eeee (first aid: not in this doc, so nothing is asserted and no copy is invented), her typo 'takes please' kept; her doc's admission figures (R350 etc.) are superseded by the ticket records (SAOC, 2026-10-25): the page shows record prices (R300/R800) and the gate bans 'R350'",
+    "ownerItems": "gggg (time format: her doc writes 14.00 / 9.00 with dots, her answers doc writes 9am to 5pm; this page asserts her What to Expect doc verbatim), eeee (first aid: not in this doc, so nothing is asserted and no copy is invented), her typo 'takes place' kept; her doc's admission figures (R350 etc.) are superseded by the ticket records (SAOC, 2026-10-25): the page shows record prices (R300/R800) and the gate bans 'R350'",
     "admissionIds": [
      "ticketType-vip",
      "ticketType-sunset-cocktails-single",
@@ -509,7 +509,7 @@
     "faqAbsent": [
      29
     ],
-    "keepTypo": "who’s subscriptions",
+    "keepTypo": "whose subscriptions",
     "ariaLabel": "More for exhibitors",
     "gateway": [
      "Programme",
@@ -532,7 +532,7 @@
      "PLACEHOLDER COPY"
     ],
     "maxRadius": 999,
-    "note": "Every copy string is FAQ v1.0 section 4 (frozen faq.md). Unsourced: the crumb prefix and the five gateway labels (nav labels). The question h2 is the question text without its number. owner items: iiii (her entry guide), 'who’s subscriptions' (her typo, kept)."
+    "note": "Every copy string is FAQ v1.0 section 4 (frozen faq.md). Unsourced: the crumb prefix and the five gateway labels (nav labels). The question h2 is the question text without its number. owner items: iiii (her entry guide), 'whose subscriptions' (her typo, kept)."
    },
    "facts": {
     "terms": [

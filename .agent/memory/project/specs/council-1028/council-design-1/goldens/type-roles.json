@@ -1,0 +1,90 @@
+{
+ "ruling": "COUNCIL-1 C3 + C4 (final)",
+ "families": {
+  "serif": "Crimson Pro",
+  "sans": "Manrope",
+  "allowedFirstFamily": [
+   "Crimson Pro",
+   "Manrope"
+  ],
+  "retired": [
+   "JetBrains Mono",
+   "Lora"
+  ]
+ },
+ "roles": {
+  "btn-caps": {
+   "covers": "every filled or outlined button and every link styled as a button: hero CTAs, form submits, newsletter Subscribe, ticket buy, MENU, header Join a society",
+   "family": "Manrope",
+   "size": "13px",
+   "weight": "700",
+   "textTransform": "uppercase",
+   "letterSpacing": "0.12em",
+   "lineHeight": "1",
+   "minHeightPx": 44,
+   "wrap": "never wraps at 390",
+   "scope": "SAOC host only; inert inside .nos-theme"
+  },
+  "t-label": {
+   "covers": "eyebrows, fact labels (Meets, Venue, Founded), pills, table heads",
+   "family": "Manrope",
+   "size": "13px",
+   "weight": "600",
+   "textTransform": "uppercase",
+   "letterSpacing": "0.12em"
+  },
+  "t-crumb": {
+   "covers": "breadcrumbs",
+   "family": "Manrope",
+   "size": "14px",
+   "weight": "500",
+   "textTransform": "none"
+  },
+  "t-num": {
+   "covers": "dates, times, prices, codes, /media-kit hex values",
+   "family": "Manrope",
+   "fontVariantNumeric": "tabular-nums",
+   "note": "size, weight and case follow the surrounding role; only the family and the numeric variant are set by this role"
+  },
+  "t-field": {
+   "covers": "vendor form labels",
+   "family": "Manrope",
+   "size": "14px",
+   "weight": "600",
+   "textTransform": "none"
+  }
+ },
+ "textLinksNavBreadcrumbs": "Text links, nav links, breadcrumbs and arrow links keep sentence case (C3).",
+ "pillsAndFilterChips": "Filter chips, toggles, tabs and other aria-pressed/role=tab controls are PILLS (t-label), not buttons (btn-caps). Open question to NOS Design if they disagree.",
+ "classNames": "t-label / t-crumb / t-num / t-field / btn-caps are the architect's names, defined once in app/globals.css (@layer components). @dev may not rename them; the checks key on them.",
+ "retired": {
+  "files": [
+   "app/fonts/jetbrains-mono/JetBrainsMono-latin-normal.woff2",
+   "app/fonts/jetbrains-mono/OFL.txt"
+  ],
+  "tokens": [
+   "--font-mono",
+   "--font-mono-loaded",
+   "--mono",
+   "--mono-md",
+   "--mono-sm",
+   "--mono-xs",
+   "--mono-tracking"
+  ],
+  "utilities": [
+   "font-mono",
+   "mono-label",
+   "the .font-mono:is([class*=text-[11px]]...) 12px floor rule"
+  ]
+ },
+ "fontFileBudget": {
+  "maxFilesPerRoute": 3,
+  "expected": [
+   "CrimsonPro_latin_normal",
+   "CrimsonPro_latin_italic",
+   "Manrope_latin_normal"
+  ],
+  "maxBytesPerFile": 40960,
+  "preloads": 1
+ }
+}

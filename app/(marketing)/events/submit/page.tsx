@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
+import Link from 'next/link';
 
 import { SubmitEventPageBody } from '@/components/events/SubmitEventPageBody';
 import { RouteHero } from '@/components/ui/RouteHero';
@@ -41,12 +42,12 @@ function LoginPrompt() {
       heading="Members only"
       lede="Event submission is available to SAOC members."
       actions={
-        <a
+        <Link
           href="/contact"
-          className="mt-8 inline-flex min-h-11 items-center bg-accent px-6 py-3 font-sans text-[14px] font-medium text-ink transition-colors duration-150 hover:bg-accent-soft"
+          className="mt-8 inline-flex min-h-11 items-center bg-accent px-6 py-3 font-sans text-[14px] font-medium text-ink transition-colors duration-150 hover:bg-accent-soft outline-ivory focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]"
         >
           Contact us about membership
-        </a>
+        </Link>
       }
     />
   );

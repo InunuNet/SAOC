@@ -21,7 +21,7 @@ export const FAQ_SECTIONS: readonly FaqSection[] = [
     id: 'tickets-and-entry',
     title: 'Tickets and entry',
     intro: [
-      'Thicket types and prices are on the website. There are early bird tickets, symposium and conference tickets as well as full weekend passes and daily entry tickets.',
+      'Ticket types and prices are on the website. There are early bird tickets, symposium and conference tickets as well as full weekend passes and daily entry tickets.',
     ],
   },
   {

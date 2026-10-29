@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { sendEmail, NOS_FORMS_FROM_ADDRESS } from '@/lib/email';
+import { sendEmail, FORMS_FROM_ADDRESS, NOS_FORMS_FROM_ADDRESS } from '@/lib/email';
 import type { Site } from '@/lib/site-hosts';
 import SponsorEnquiryConfirmation from '@/emails/SponsorEnquiryConfirmation';
 
@@ -16,7 +16,12 @@ import SponsorEnquiryConfirmation from '@/emails/SponsorEnquiryConfirmation';
 export interface SponsorEnquiryConfirmationInput {
   contactName: string;
   email: string;
+  /** The site the enquiry was submitted on; anything but 'nos' means the SAOC identity. */
+  site?: Site | null;
 }
+
+const SITE_LABELS = { saoc: 'SAOC', nos: 'National Orchid Show' } as const;
+const SUBJECT_STEM = 'We received your sponsorship enquiry';
 
 /** Deliberately narrow: matches what lib/email.ts's real `sendEmail` already satisfies. */
 export interface SponsorEnquiryConfirmationMailer {
@@ -33,11 +38,17 @@ export async function sendSponsorEnquiryConfirmationEmail(
 ): Promise<void> {
   const mailer = deps.mailer ?? { send: sendEmail };
 
+  const site: Site = input.site === 'nos' ? 'nos' : 'saoc';
+  const subject = `${SUBJECT_STEM} — ${SITE_LABELS[site]}`;
+
   await mailer.send({
     to: input.email,
-    subject: 'We received your sponsorship enquiry — SAOC',
-    react: React.createElement(SponsorEnquiryConfirmation, { name: input.contactName }),
-    from: NOS_FORMS_FROM_ADDRESS,
-    site: 'nos',
+    subject,
+    react: React.createElement(SponsorEnquiryConfirmation, {
+      name: input.contactName,
+      preview: subject,
+    }),
+    from: site === 'nos' ? NOS_FORMS_FROM_ADDRESS : FORMS_FROM_ADDRESS,
+    site,
   });
 }

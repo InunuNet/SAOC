@@ -26,7 +26,7 @@ export function VendorStorageFieldset({
 
       <VendorCheckboxField
         fieldKey="storageRiskAcknowledged"
-        label="All plants and products can be left in your booth overnight. Security will be provided on the premises. However, the organizers of the event cannot be held liable for any losses incurred."
+        label="All plants and products can be left in your booth overnight. Security will be provided on the premises. PLEASE NOTE: the organisers of the event cannot be held liable for any losses incurred."
         value={state.storageRiskAcknowledged}
         onChange={(v) => onFieldChange('storageRiskAcknowledged', v)}
         disabled={disabled}

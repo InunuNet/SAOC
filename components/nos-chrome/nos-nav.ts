@@ -129,8 +129,8 @@ export const NOS_NAV: readonly NavItem[] = [
           },
           {
             id: 'exhibitors',
-            label: 'Plant Entry/Registration',
-            href: showPath('/exhibitors'),
+            label: 'Award Entries',
+            href: showPath('/award-entries'),
           },
           {
             id: 'vendors',

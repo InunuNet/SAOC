@@ -6,9 +6,9 @@ export const ADMIN_PILL_DOT_CLASS = 'bg-accent-soft';
 export const STAT_TILE_PENDING_CLASS = 'bg-accent text-primary-800';
 export const STAT_TILE_CLASS = 'bg-bone text-primary';
 
-// Codi ruling: solid 2px primary-800 outline, 2px offset, keyboard focus only.
+// The one focus ring (saoc-design-consistency F1a): solid 2px --primary outline, 3px offset, keyboard focus only.
 export const FOCUS_RING =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-800';
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[3px] focus-visible:outline-primary';
 
 // Codi ruling: controls sitting on a dark surface draw the ring inset in accent-soft, so it stays on
 // that surface (about 7:1) instead of landing on the page behind it (1.4.11).

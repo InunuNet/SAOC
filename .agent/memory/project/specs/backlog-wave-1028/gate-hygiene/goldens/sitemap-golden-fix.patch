@@ -1,0 +1,12 @@
+diff --git a/contracts/golden/saoc-seo-polish/sitemap-expected.json b/contracts/golden/saoc-seo-polish/sitemap-expected.json
+index 94b84347..53b92fca 100644
+--- a/contracts/golden/saoc-seo-polish/sitemap-expected.json
++++ b/contracts/golden/saoc-seo-polish/sitemap-expected.json
+@@ -1,6 +1,6 @@
+ {
+   "_comment": "Golden for finding (a). SAOC host static routes in the sitemap, as paths ('' is the home page). Dynamic /societies/[slug] and /events/[slug] stay Sanity-driven in app/sitemap.ts and are not listed here.",
+-  "include": ["", "/about", "/societies", "/judging", "/events", "/contact", "/sponsors", "/constitution", "/privacy", "/terms", "/refunds"],
++  "include": ["", "/about", "/societies", "/judging", "/events", "/contact", "/sponsors", "/memorandum-of-incorporation", "/privacy", "/terms", "/refunds"],
+   "exclude": {
+     "/members": "The members area has no portal yet; the page says so. Listing it invites a crawl of an empty page.",
+     "/events/submit": "Members-only form. Its metadata is robots noindex, so listing it would send a sitemap-says-index, page-says-noindex contradiction, and a crawler fetching it is shown a sign-in wall.",

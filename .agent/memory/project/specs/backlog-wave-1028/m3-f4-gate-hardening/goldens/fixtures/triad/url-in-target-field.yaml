@@ -1,0 +1,17 @@
+schema: athanor.contract/v1
+slug: triad-fixture
+goal: fixture
+created_at: '2026-10-29'
+autonomy: high
+features:
+  - id: F1
+    name: fixture
+    status: pending
+goldens: []
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: target field carries the URL
+      command: test -f docs/launch-checklist.md
+      target: https://beta.saoc.co.za/about

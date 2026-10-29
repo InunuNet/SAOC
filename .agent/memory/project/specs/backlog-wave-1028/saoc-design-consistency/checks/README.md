@@ -4,7 +4,7 @@ Run every script from the project root (they read repo-relative paths): `node .a
 
 ## Where the site comes from
 1. `DC_BASE_URL` set: the checks use that origin. Beta credentials come from `BETA_BASIC_AUTH_USER`/`BETA_BASIC_AUTH_PASSWORD` in the environment and are never printed (`node --env-file-if-exists=.env.local`).
-2. `DC_PROD=1`, no `DC_BASE_URL`: lib.mjs runs `next build` (when `.next/BUILD_ID` is missing) and `next start` on a free port as `http://saoc.localhost:<port>` with the recipe below, then stops exactly that process.
+2. `DC_PROD=1`, no `DC_BASE_URL`: lib.mjs runs `node scripts/generate-image-variants.mjs` then `next build` (when `.next/BUILD_ID` is missing) and `next start` on a free port as `http://saoc.localhost:<port>` with the recipe below, then stops exactly that process.
 3. Neither: `next dev` on a free port, fixture replay, beta wall off (Home and /events do not render; Home-only checks are skipped, never faked).
 
 ## Recipe: Home (/) locally, production build
@@ -12,7 +12,7 @@ Run every script from the project root (they read repo-relative paths): `node .a
 SANITY_FIXTURE_MODE=replay SANITY_FIXTURE_DIR=.agent/memory/project/specs/nos-content-standard/fixtures/sanity \
 BETA_PASSWORD_WALL_OFF=true BETA_BASIC_AUTH_USER= BETA_BASIC_AUTH_PASSWORD= \
 NEXT_PUBLIC_SAOC_SITE_URL=http://localhost NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost \
-  node node_modules/next/dist/bin/next build   # then: ... next start --port <port>
+  node scripts/generate-image-variants.mjs && node node_modules/next/dist/bin/next build   # (or `pnpm build`; a bare next build leaves public/images/_opt empty and the hero 404s) then: ... next start --port <port>
 DC_BASE_URL=http://saoc.localhost:<port> node .../checks/<script>.mjs
 ```
 The two site origins MUST differ. An origin whose host is `saoc.localhost` is treated as a production build with Home enabled (`deployed` and `prod` in lib.mjs's callback). `/events` needs live Sanity and is deployed-only.

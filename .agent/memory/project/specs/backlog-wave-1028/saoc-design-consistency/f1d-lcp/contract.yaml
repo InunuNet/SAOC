@@ -29,15 +29,17 @@ assertions:
       description: "Codex adversarial QA of the whole diff against the goldens and proof-on-main"
       type: codex_qa
       target: >-
-        Adversarially review git diff origin/main...HEAD against the goldens in .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/. Find an input, width or route where the claimed fix does not hold and the checks still pass.
+        Adversarially review git diff origin/main...HEAD against ONLY these goldens: .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/lcp-measure.md, and the F1d section of proof-on-main.md (the other features' goldens in that directory are out of scope). Fonts, the favicon, arrow glyphs and the preload order belong to F1e. Do not fail F1d on another feature's golden. Find an input, width or route where the claimed fix does not hold and the checks still pass.
       required: true
     - id: A5
-      description: "browser_deployed_check on beta /, declared for the triad linter but non-required. It cannot pass while the beta Basic Auth wall is up (execution/browser_deployed_check.sh live re-check sends no auth, HARNESS defect, backlog.md 2026-10-07). The authenticated post-deploy shell assertion is the real proof."
+      phase: 5
+      description: "PHASE 5 (manifest is written by the post-deploy BrowserAgent/gws run, so it cannot exist at the phase 4 gate). browser_deployed_check on beta /, declared for the triad linter but non-required. It cannot pass while the beta Basic Auth wall is up (execution/browser_deployed_check.sh live re-check sends no auth, HARNESS defect, backlog.md 2026-10-07). The authenticated post-deploy shell assertion is the real proof."
       type: browser_deployed_check
       target: .agent/memory/scratch/saoc-dc-f1d-browser-manifest.json
       required: false
     - id: A6
-      description: "gws inbox check, no email path is touched; declared non-required to satisfy the triad coverage linter, expected to skip"
+      phase: 5
+      description: "PHASE 5 (manifest is written by the post-deploy BrowserAgent/gws run, so it cannot exist at the phase 4 gate). gws inbox check, no email path is touched; declared non-required to satisfy the triad coverage linter, expected to skip"
       type: gws_inbox_check
       target: .agent/memory/scratch/saoc-dc-f1d-gws-manifest.json
       required: false
