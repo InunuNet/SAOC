@@ -80,6 +80,19 @@ class DeployedSiteUrl(unittest.TestCase):
         ):
             self.assertFalse(is_deployed_site_url(f"open {url}"), url)
 
+    # PR #160 second re-review: a browser deletes ASCII tab, LF and CR anywhere in a URL first.
+    def test_tab_or_newline_inside_the_url_is_deleted_like_a_browser(self):
+        for url in (
+            "https://saoc.\tco.za/x",
+            "ht\ttps://saoc.co.za/",
+            "https://sa\noc.co.za/",
+            "https://beta.saoc.co.\r\nza/x",
+        ):
+            self.assertTrue(is_deployed_site_url(f"open {url}"), repr(url))
+
+    def test_tab_decoy_that_reaches_saoc_on_no_reading_is_not_deployed(self):
+        self.assertFalse(is_deployed_site_url("open https://evil.com\t.saoc/x"))
+
     def test_missing_file_still_exits_two(self):
         result = subprocess.run(
             [sys.executable, str(REPO / "execution" / "verify_triad_coverage.py"), "no-such.yaml"],

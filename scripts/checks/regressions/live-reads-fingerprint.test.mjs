@@ -50,6 +50,21 @@ describe('live-reads control identifies ticketsPageQuery exactly (PR 160 P3)', (
     assert.equal(countQuery([logLineFor(reindented)], fingerprint), 1);
   });
 
+  // PR #160 second re-review: the hash field was matched anywhere in the line, after the query
+  // text, so a query carrying `qh=<ticketsPageQuery hash>` in a GROQ comment counted as it.
+  test('query text that spells the hash field cannot spoof a hit', () => {
+    const spoof = `// qh=${fingerprint}\n*[_type == "sponsor"]`;
+    const lines = [logLineFor(spoof)];
+    assert.ok(lines[0].includes(`qh=${fingerprint}`), 'the spoof puts the control hash in the line');
+    assert.equal(countQuery(lines, fingerprint), 0);
+  });
+
+  test('the hash field sits before the query text', () => {
+    const [, , field, ...rest] = logLineFor(ticketsPage).split(' ');
+    assert.equal(field, `qh=${fingerprint}`);
+    assert.ok(rest.join(' ').startsWith('?query='));
+  });
+
   test('a renamed or removed control query is a setup error, not a vacuous pass', () => {
     assert.throws(() => exportedQueryText(QUERIES, 'ticketsPageQueryRenamed'), /no exported ticketsPageQueryRenamed/);
   });

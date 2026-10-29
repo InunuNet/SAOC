@@ -6,7 +6,7 @@ import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
 import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 export const SANDBOX_DIR = resolve(REPO_ROOT, '.tmp/sandbox/sanity-count');
@@ -35,7 +35,8 @@ export function stubbedEnv(port, countLog) {
   return {
     ...process.env,
     ...blanked,
-    NODE_OPTIONS: `--import ${PRELOAD_PATH}`,
+    // A file URL percent-encodes spaces; NODE_OPTIONS splits on bare spaces, so a raw path breaks.
+    NODE_OPTIONS: `--import ${pathToFileURL(PRELOAD_PATH).href}`,
     SANITY_COUNT_LOG: countLog,
     NEXT_PUBLIC_SANITY_PROJECT_ID: STUB_SANITY_PROJECT_ID,
     NEXT_PUBLIC_SAOC_SITE_URL: `http://saoc.localhost:${port}`,

@@ -18,6 +18,7 @@ const EXIT_SETUP = 2;
 const SANITY_FETCH = 'sanityFetch';
 const FETCH_MODULE_SUFFIX = 'sanity/lib/fetch';
 const CLIENT_MODULE_SUFFIX = 'sanity/lib/client';
+const QUERIES_MODULE_SUFFIX = 'sanity/queries';
 const CREATE_CLIENT = 'createClient';
 
 interface AllowEntry {
@@ -218,7 +219,44 @@ function queryIdentifier(object: ts.ObjectLiteralExpression): string | null {
   return null;
 }
 
-function judgeFetchCall(call: ts.CallExpression, allowedQueries: Set<string>): string | null {
+// Every declaration in the file that binds `name`: imports, parameters, variables (destructured
+// too), catch variables, and function, class, enum and namespace names.
+function declarationsOf(source: ts.SourceFile, name: string): ts.Node[] {
+  const found: ts.Node[] = [];
+  const visit = (node: ts.Node): void => {
+    const named =
+      ts.isImportSpecifier(node) || ts.isNamespaceImport(node) || ts.isImportEqualsDeclaration(node) ||
+      ts.isFunctionDeclaration(node) || ts.isFunctionExpression(node) || ts.isClassDeclaration(node) ||
+      ts.isClassExpression(node) || ts.isEnumDeclaration(node) || ts.isModuleDeclaration(node) ||
+      ts.isImportClause(node) || ts.isParameter(node) || ts.isVariableDeclaration(node) || ts.isBindingElement(node);
+    // Every kind matched above carries an optional `name`; the union has no common declared type.
+    const declared = named ? (node as { name?: ts.Node }).name : undefined;
+    if (declared && ts.isIdentifier(declared) && declared.text === name) found.push(node);
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return found;
+}
+
+// An allowlist entry names the query exported by sanity/queries, not any identifier spelled the
+// same: the name must be bound exactly once in the file, by an unaliased value import from that
+// module. A parameter, local or alias of that name could hold any query, so it fails closed.
+function isQueriesImport(source: ts.SourceFile, name: string): boolean {
+  const declarations = declarationsOf(source, name);
+  if (declarations.length !== 1) return false;
+  const [specifier] = declarations;
+  if (!ts.isImportSpecifier(specifier) || specifier.isTypeOnly) return false;
+  if ((specifier.propertyName ?? specifier.name).text !== name) return false;
+  const clause = specifier.parent.parent;
+  const declaration = clause.parent;
+  return (
+    !clause.isTypeOnly &&
+    ts.isStringLiteral(declaration.moduleSpecifier) &&
+    declaration.moduleSpecifier.text.endsWith(QUERIES_MODULE_SUFFIX)
+  );
+}
+
+function judgeFetchCall(call: ts.CallExpression, allowedQueries: Set<string>, source: ts.SourceFile): string | null {
   const [argument] = call.arguments;
   if (!argument || !ts.isObjectLiteralExpression(argument)) {
     return 'options argument is not an object literal';
@@ -228,7 +266,9 @@ function judgeFetchCall(call: ts.CallExpression, allowedQueries: Set<string>): s
   const unreadable = unreadableOptionsReason(argument);
   if (unreadable) return unreadable;
   const query = queryIdentifier(argument);
-  if (query && allowedQueries.has(query)) return null;
+  if (query && allowedQueries.has(query)) {
+    return isQueriesImport(source, query) ? null : `allowlisted ${query} is not bound only by its sanity/queries import`;
+  }
   const live = findProperty(argument, 'live');
   if (!live) return 'no live property';
   return passesLive(live) ? null : 'live is not true';
@@ -270,7 +310,7 @@ function checkFile(manifest: Manifest, root: string, relFile: string): { violati
       const callee = plainCalleeName(node);
       if (isSanityFetchCall(node, bindings)) {
         sites[SANITY_FETCH] = (sites[SANITY_FETCH] ?? 0) + 1;
-        const reason = judgeFetchCall(node, allowed);
+        const reason = judgeFetchCall(node, allowed, source);
         if (reason) report(node, SANITY_FETCH, reason);
       } else if (callee && callers.has(callee)) {
         sites[callee] = (sites[callee] ?? 0) + 1;

@@ -61,9 +61,14 @@ APP_PATH_PATTERN = re.compile(r"\bapp/")
 #   - WHATWG, as a browser reads it: for http(s) any run of `/` or `\`, even none, opens the
 #     authority, `\` ends it like `/`, and the host is percent-decoded and IDNA-mapped, so
 #     `https:\\saoc.co.za`, `https:saoc.co.za` and `https://saoc%2Eco.za` all reach saoc.co.za.
+#     A browser also deletes every ASCII tab, LF and CR anywhere in the URL before parsing
+#     (`https://saoc.<TAB>co.za/x` reaches saoc.co.za), so the WHATWG reading runs on the raw text
+#     AND on the text with those deleted. Its leading/trailing C0-and-space trim needs no step:
+#     the search starts at the scheme and whitespace already ends the authority.
 _URL_STOP = r"\s?#'\"`;|&,<>\]})("
 CURL_AUTHORITY_PATTERN = re.compile(rf"https?://([^/{_URL_STOP}]*)", re.IGNORECASE)
 WHATWG_AUTHORITY_PATTERN = re.compile(rf"https?:[/\\]*([^/\\{_URL_STOP}]*)", re.IGNORECASE)
+WHATWG_DELETED_CHARS = re.compile(r"[\t\n\r]")
 DEPLOYED_DOMAIN = "saoc.co.za"
 TRIAD_KINDS = ("codex_qa", "browser_deployed_check", "gws_inbox_check")
 
@@ -278,9 +283,14 @@ def is_deployed_site_url(text: str) -> bool:
     """True when `text` holds a URL that curl or a browser would send to saoc.co.za or a subdomain
     of it. Userinfo is ignored (the host is what follows the last `@`); a trailing dot is a rooted
     host; an unparseable authority is not the deployed site."""
-    readings = ((CURL_AUTHORITY_PATTERN, False), (WHATWG_AUTHORITY_PATTERN, True))
-    for pattern, whatwg in readings:
-        for match in pattern.finditer(text):
+    stripped = WHATWG_DELETED_CHARS.sub("", text)
+    readings = (
+        (CURL_AUTHORITY_PATTERN, text, False),
+        (WHATWG_AUTHORITY_PATTERN, text, True),
+        (WHATWG_AUTHORITY_PATTERN, stripped, True),
+    )
+    for pattern, reading, whatwg in readings:
+        for match in pattern.finditer(reading):
             host = authority_host(match.group(1), whatwg)
             if host and (host == DEPLOYED_DOMAIN or host.endswith("." + DEPLOYED_DOMAIN)):
                 return True
