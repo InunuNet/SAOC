@@ -233,6 +233,11 @@ Phase D2 (Stripe SA payment gateway) and D4 (ticket buy flow) are implemented bu
    deploy, make one real-money minimum purchase, confirm the ticket document has
    `issuedInTestMode: false`, and scan it at the door. Vendor stand orders are out of scope
    (no door path).
+   The single go-live commit flips `TICKETING_PAYMENTS_LIVE` and both adapter constants
+   (`OZOW_SANDBOX_MODE` and `PAYFAST_SANDBOX_MODE` in `lib/payments/sandbox-mode.ts`). The admin
+   toggle `adminSettings/ozowSandboxTestMode` (R0.01 amount override) must be turned off at the
+   same deploy: while it is on, every new ticket is stamped as test and refused at the door, even
+   with all three constants live.
 
 ---
 
