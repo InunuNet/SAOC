@@ -2,10 +2,11 @@
 // Frozen by @architect. @dev implements against this and never edits it.
 // Run: pnpm exec tsx .agent/memory/project/specs/sec-abuse-controls/goldens/checkout-holds.golden.ts
 import assert from 'node:assert/strict';
+import { Timestamp } from 'firebase-admin/firestore';
 import path from 'node:path';
 
 const ROOT = path.resolve(__dirname, '../../../../../..');
-const ts = (ms: number) => ({ toMillis: () => ms });
+const ts = (ms: number) => Timestamp.fromMillis(ms); // a real Firestore Timestamp: the production rule is `instanceof Timestamp`
 
 async function main() {
   const holds = await import(path.join(ROOT, 'lib/checkout-holds.ts'));

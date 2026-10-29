@@ -29,6 +29,7 @@ def wiring(name: str) -> list[str]:
 
 LIMITER, HOLDS, WEBHOOK = "lib/abuse-limiter.ts", "lib/checkout-holds.ts", "lib/webhook-body.ts"
 SEATS = "lib/seat-holds.ts"
+CLIENT_IP, BUYER_EMAIL = "lib/client-ip.ts", "lib/buyer-email.ts"
 APPCHECK, APPCHECK_CLIENT = "lib/app-check.ts", "lib/app-check-client.ts"
 RESERVATION, CHECKOUT = "lib/checkout-reservation.ts", "app/api/tickets/checkout/route.ts"
 
@@ -67,6 +68,14 @@ MUTATIONS = [
     ("M32", "components/tickets/useTicketCart.ts", "append", None, "", "\nimport { getCheckoutAppCheckToken } from '@/lib/app-check-client';\n", wiring("flag-off-inlining")),
     ("M33", "app/api/newsletter/subscribe/route.ts", "first", None, "consumeAbuseLimit(", "consumeAbuseLimitX(", wiring("newsletter-limited")),
     ("M34", ".agent/memory/project/specs/footer-newsletter-subscribe/checks/check-subscribe-handler.mjs", "append", None, "", "\n// edit\n", wiring("newsletter-checks-reviewed")),
+    ("M35", WEBHOOK, "anchor", "webhook-declared-cancel", "await request.body?.cancel();", "", golden("webhook-body")),
+    ("M36", SEATS, "anchor", "held-timestamp", "instanceof Timestamp", "instanceof Object", golden("seat-holds")),
+    ("M37", LIMITER, "anchor", "limiter-tx-read", "await transaction.get(ref)", "await db.runTransaction((other) => other.get(ref)).then(async (stale) => { await new Promise<void>((r) => setImmediate(r)); return stale; })", golden("abuse-limiter")),
+    ("M38", CLIENT_IP, "anchor", "xff-min-hops", "< 2", "< 1", golden("abuse-limiter")),
+    ("M39", BUYER_EMAIL, "anchor", "buyer-plus-strip", "indexOf('+')", "indexOf('\\u0001')", golden("buyer-email")),
+    ("M40", BUYER_EMAIL, "anchor", "buyer-gmail-dots", "'.'", "'\\u0001'", golden("buyer-email")),
+    ("M41", CHECKOUT, "first", None, "normalizeBuyerEmail(", "normalizeBuyerEmailX(", wiring("buyer-normalised")),
+    ("M42", LIMITER, "first", None, "trustedClientIpFromForwardedFor(", "clientIpFromForwardedFor(", wiring("client-ip-helper")),
     ("M18", "app/api/contact/route.ts", "append", None, "", "\nimport { createAttemptStore } from '@/lib/newsletter-rate-store';\n", wiring("no-memory-limiter")),
 ]
 

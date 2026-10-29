@@ -8,9 +8,14 @@ const ROOT = path.resolve(__dirname, '../../../../../..');
 const MIN = 60_000;
 const HOUR = 3_600_000;
 
-// Minimal in-memory Firestore: serial transactions, set applied after the callback returns.
+// Minimal in-memory Firestore with real transaction semantics: reads are versioned, a commit whose
+// read set changed meanwhile is aborted and the callback re-run (as Firestore does), and each read
+// yields to the event loop so concurrent callers genuinely interleave. A read-modify-write that is
+// not protected by the transaction (a stale read, or a lost update) therefore over-allows here.
+const MAX_ATTEMPTS = 50; // the real SDK retries 5 times; the fake allows more so 10 racers can all settle
 class FakeDb {
   docs = new Map<string, Record<string, unknown>>();
+  versions = new Map<string, number>();
   writes = 0;
   failing = false;
   collection(name: string) {
@@ -23,21 +28,33 @@ class FakeDb {
     }) => Promise<T>,
   ): Promise<T> {
     if (this.failing) throw new Error('firestore unavailable');
-    const pending = new Map<string, Record<string, unknown>>();
-    const result = await fn({
-      get: async (ref) => {
-        const data = this.docs.get(ref.path);
-        return { exists: data !== undefined, data: () => data };
-      },
-      set: (ref, data) => {
-        pending.set(ref.path, data);
-      },
-    });
-    for (const [key, value] of pending) {
-      this.docs.set(key, structuredClone(value));
-      this.writes += 1;
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      const reads = new Map<string, number>();
+      const pending = new Map<string, Record<string, unknown>>();
+      const result = await fn({
+        get: async (ref) => {
+          await new Promise<void>((resolve) => setImmediate(resolve));
+          const data = this.docs.get(ref.path);
+          reads.set(ref.path, this.versions.get(ref.path) ?? 0);
+          // Yield again AFTER the snapshot is taken, so every racer holds a stale view before any commits.
+          await new Promise<void>((resolve) => setImmediate(resolve));
+          return { exists: data !== undefined, data: () => (data === undefined ? undefined : structuredClone(data)) };
+        },
+        set: (ref, data) => {
+          pending.set(ref.path, data);
+        },
+      });
+      // Commit is synchronous: validate the read set, then apply, with no await in between.
+      const stale = [...reads].some(([key, version]) => (this.versions.get(key) ?? 0) !== version);
+      if (stale) continue;
+      for (const [key, value] of pending) {
+        this.docs.set(key, structuredClone(value));
+        this.versions.set(key, (this.versions.get(key) ?? 0) + 1);
+        this.writes += 1;
+      }
+      return result;
     }
-    return result;
+    throw new Error('transaction aborted: too much contention');
   }
 }
 
@@ -90,6 +107,21 @@ async function main() {
     assert.equal((await instanceB(at(1))).allowed, true);
     assert.equal((await instanceA(at(2))).allowed, true);
     assert.equal((await instanceB(at(3))).allowed, false, 'the 4th attempt, from the other instance, must be denied');
+  }
+
+  // 3b. Truly concurrent: ten callers racing the same key at the same instant, limit 3. Exactly
+  //     three may win, however the transactions interleave (a read-modify-write that is not
+  //     transactional loses updates and lets more through).
+  {
+    const db = new FakeDb();
+    const base = { scope: 'contact', key: 'ip4:192.0.2.77', maxAttempts: 3, windowMs: HOUR };
+    const decisions = await Promise.all(
+      Array.from({ length: 10 }, (_, i) => consumeAbuseLimit({ ...base, now: at(i) }, { db, secret: SECRET })),
+    );
+    assert.equal(decisions.filter((d: { allowed: boolean }) => d.allowed).length, 3, 'exactly 3 of 10 concurrent attempts are allowed');
+    assert.equal(decisions.filter((d: { allowed: boolean }) => !d.allowed).length, 7);
+    const stored = [...db.docs.values()][0] as { entries: unknown[] };
+    assert.equal(stored.entries.length, 3, 'the stored log holds exactly the three allowed attempts');
   }
 
   // 4. Weighted attempts and key/scope isolation.
@@ -160,14 +192,27 @@ async function main() {
       assert.equal((await consumeAbuseLimit({ ...spoofBase, key: keyFor(`2.2.2.2, ${trusted}`), now: at(1) }, { db, secret: SECRET })).allowed, true);
       assert.equal((await consumeAbuseLimit({ ...spoofBase, key: keyFor(`3.3.3.3, ${trusted}`), now: at(2) }, { db, secret: SECRET })).allowed, false, 'rotating the forged hop does not buy a fresh budget');
     }
-    assert.equal(clientActorKey('203.0.113.9'), 'ip4:203.0.113.9');
-    assert.equal(clientActorKey('::ffff:203.0.113.9'), 'ip4:203.0.113.9', 'IPv4-mapped IPv6 is the IPv4 identity');
+    // One entry means the platform appended nothing, so it is whatever the client sent: it is NEVER
+    // an actor identity (Codex QA 2026-10-29). It lands in the shared strict `unknown` bucket.
+    for (const single of ['203.0.113.9', '9.9.9.9', '2001:db8::7', '::ffff:203.0.113.9', ' 203.0.113.9 ']) {
+      assert.equal(clientActorKey(single), 'unknown', `single-entry header ${single} is untrusted`);
+    }
+    assert.equal(clientActorKey('203.0.113.9,'), 'unknown', 'empty trailing entries do not make a second hop');
+    assert.equal(clientActorKey(' , 203.0.113.9'), 'unknown', 'empty leading entries do not make a second hop');
+    assert.equal(clientActorKey('203.0.113.9, 35.191.0.1'), 'ip4:203.0.113.9', 'the minimal two-hop shape is trusted');
+    assert.equal(clientActorKey('::ffff:203.0.113.9, 35.191.0.1'), 'ip4:203.0.113.9', 'IPv4-mapped IPv6 is the IPv4 identity');
+    {
+      const db = new FakeDb();
+      const spoofBase = { scope: 'spoof-single', maxAttempts: 1, windowMs: HOUR };
+      assert.equal((await consumeAbuseLimit({ ...spoofBase, key: clientActorKey('1.1.1.1'), now: at(0) }, { db, secret: SECRET })).allowed, true);
+      assert.equal((await consumeAbuseLimit({ ...spoofBase, key: clientActorKey('2.2.2.2'), now: at(1) }, { db, secret: SECRET })).allowed, false, 'a chosen single-entry address buys no fresh budget');
+    }
     const a = clientActorKey('x, 2001:db8:1:2:3:4:5:6, 35.191.0.1');
     const b = clientActorKey('x, 2001:DB8:1:2::9, 35.191.0.1');
     assert.equal(a, 'ip6:2001:0db8:0001:0002');
     assert.equal(a, b, 'two addresses in one /64 are one actor');
-    assert.equal(clientActorKey('2001:db8::1'), 'ip6:2001:0db8:0000:0000');
-    assert.notEqual(clientActorKey('2001:db8:1:3::1'), a, 'a different /64 is a different actor');
+    assert.equal(clientActorKey('2001:db8::1, 35.191.0.1'), 'ip6:2001:0db8:0000:0000');
+    assert.notEqual(clientActorKey('2001:db8:1:3::1, 35.191.0.1'), a, 'a different /64 is a different actor');
     assert.equal(clientActorKey(null), 'unknown');
     assert.equal(clientActorKey(''), 'unknown');
     assert.equal(clientActorKey('a, not-an-ip, b'), 'unknown', 'a non-address hop never becomes a key');

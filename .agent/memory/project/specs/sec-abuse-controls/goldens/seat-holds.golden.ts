@@ -5,10 +5,11 @@
 // Frozen by @architect. @dev implements against this and never edits it.
 // Run: pnpm exec tsx .agent/memory/project/specs/sec-abuse-controls/goldens/seat-holds.golden.ts
 import assert from 'node:assert/strict';
+import { Timestamp } from 'firebase-admin/firestore';
 import path from 'node:path';
 
 const ROOT = path.resolve(__dirname, '../../../../../..');
-const ts = (ms: number) => ({ toMillis: () => ms });
+const ts = (ms: number) => Timestamp.fromMillis(ms); // a real Firestore Timestamp: the production rule is `instanceof Timestamp`
 const NOW = 1_800_000_000_000;
 const HOUR = 3_600_000;
 
@@ -24,6 +25,12 @@ async function main() {
   assert.equal(stillHoldsSeat({ status: 'reserved' }, NOW), true, 'no expiresAt: fails closed, still holds');
   assert.equal(stillHoldsSeat({ status: 'reserved', expiresAt: null }, NOW), true);
   assert.equal(stillHoldsSeat({ status: 'reserved', expiresAt: 'tomorrow' }, NOW), true, 'non-timestamp expiry fails closed');
+  // Duck-typed or foreign expiry values must NEVER release a seat (Codex QA 2026-10-29): only a
+  // real Firestore Timestamp may. A plain object with toMillis, a Date and a number all fail closed.
+  assert.equal(stillHoldsSeat({ status: 'reserved', expiresAt: { toMillis: () => NOW - HOUR } }, NOW), true, 'duck-typed toMillis in the past still holds');
+  assert.equal(stillHoldsSeat({ status: 'reserved', expiresAt: new Date(NOW - HOUR) }, NOW), true, 'a Date in the past still holds');
+  assert.equal(stillHoldsSeat({ status: 'reserved', expiresAt: NOW - HOUR }, NOW), true, 'a bare number in the past still holds');
+  assert.equal(stillHoldsSeat({ status: 'reserved', expiresAt: { seconds: 1, nanoseconds: 0, toMillis: () => 0 } }, NOW), true, 'a Timestamp-shaped literal still holds');
 
   // 2. Stranded reservations (expired, never settled, no reconcile run) hold nothing.
   {

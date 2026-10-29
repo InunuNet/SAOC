@@ -3,10 +3,11 @@
 // Frozen by @architect. @dev implements against this and never edits it.
 // Run: pnpm exec tsx .agent/memory/project/specs/sec-abuse-controls/goldens/reservation-actor.golden.ts
 import assert from 'node:assert/strict';
+import { Timestamp } from 'firebase-admin/firestore';
 import path from 'node:path';
 
 const ROOT = path.resolve(__dirname, '../../../../../..');
-const ts = (ms: number) => ({ toMillis: () => ms });
+const ts = (ms: number) => Timestamp.fromMillis(ms); // a real Firestore Timestamp: the production rule is `instanceof Timestamp`
 
 function baseInput(extra: Record<string, unknown>) {
   return {

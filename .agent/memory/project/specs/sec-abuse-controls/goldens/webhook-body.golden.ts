@@ -51,6 +51,7 @@ async function main() {
     const result = await readCappedBody(request);
     assert.equal(result.ok, false);
     assert.ok(probe.pulledBytes <= 8192, `must not consume the body, read ${probe.pulledBytes}`);
+    assert.equal(probe.cancelled, true, 'the refused request body stream must be cancelled, not left open');
   }
 
   // 2. No Content-Length (chunked): the stream is cut off at the cap and cancelled.

@@ -149,8 +149,13 @@ def check_unchanged() -> None:
 
 def check_seat_ledger() -> None:
     holds = read("lib/seat-holds.ts")
-    if re.search(r"^import[^;]*from\s+['\"]firebase-admin", holds, re.M):
-        fail("lib/seat-holds.ts must be pure (no firebase-admin import)")
+    for statement in re.findall(r"^import[^;]*from\s+['\"]firebase-admin[^'\"]*['\"]", holds, re.M):
+        if not re.fullmatch(r"import\s*\{\s*Timestamp\s*\}\s*from\s*['\"]firebase-admin/firestore['\"]", statement):
+            fail("lib/seat-holds.ts may import only the Timestamp class from firebase-admin/firestore (no init, no app)")
+    if not re.search(r"instanceof\s+Timestamp", holds):
+        fail("lib/seat-holds.ts must release a seat only for a real Firestore Timestamp (instanceof Timestamp), never a duck-typed toMillis")
+    if "toMillis" in holds and "instanceof" not in holds:
+        fail("lib/seat-holds.ts must not duck-type toMillis")
     for banned in ("reconciliation", "Scheduler", "RECONCILIATION_CRON_SECRET"):
         if banned in holds:
             fail(f"lib/seat-holds.ts must not depend on the reconcile job ({banned})")
@@ -258,6 +263,31 @@ def check_client_gated() -> None:
         fail("the token must be fetched fresh before each checkout fetch")
     if not re.search(r"x-firebase-appcheck", cart, re.I):
         fail("useTicketCart must send the X-Firebase-AppCheck header")
+
+
+def check_buyer_normalised() -> None:
+    route = read("app/api/tickets/checkout/route.ts")
+    if "normalizeBuyerEmail(" not in route or not re.search(r"from\s+['\"](@/lib/|\.\./\.\./\.\./\.\./lib/)buyer-email['\"]", route):
+        fail("checkout route must derive the buyer identity with normalizeBuyerEmail from lib/buyer-email")
+    if re.search(r"buyerEmail\s*=\s*[^;\n]*\.trim\(\)\.toLowerCase\(\)", route):
+        fail("checkout route must not build the buyer identity from a bare trim/lowercase")
+    uses = re.findall(r"abuseKeyStamp\('checkout-buyer',\s*(\w+)\)", route) + re.findall(r"key:\s*(buyerEmail|buyerKeySource|\w+),\s*\n\s*maxAttempts:\s*CHECKOUT_LIMITS\.buyerRequests", route)
+    if len(set(uses)) != 1:
+        fail(f"the request limit and the held-seat stamp must use one buyer identity variable, saw {sorted(set(uses))}")
+
+
+def check_client_ip_helper() -> None:
+    client_ip = read("lib/client-ip.ts")
+    if "export function trustedClientIpFromForwardedFor" not in client_ip:
+        fail("lib/client-ip.ts must export trustedClientIpFromForwardedFor (two or more hops required)")
+    if "// anchor: xff-min-hops" not in client_ip:
+        fail("lib/client-ip.ts must mark the minimum-hop guard with // anchor: xff-min-hops")
+    limiter = read("lib/abuse-limiter.ts")
+    if "trustedClientIpFromForwardedFor(" not in limiter or "clientIpFromForwardedFor(" in re.sub(r"trustedClientIpFromForwardedFor\(", "", limiter):
+        fail("clientActorKey must use trustedClientIpFromForwardedFor, not the single-entry-tolerant helper")
+    # The shared helper keeps its documented behaviour for every non-F3 caller.
+    if "if (hops.length === 1) return hops[0] ?? null;" not in client_ip:
+        fail("clientIpFromForwardedFor must be left unchanged for the existing SAOC-lane callers")
 
 
 def check_xff_trusted_hop() -> None:
@@ -379,6 +409,8 @@ CHECKS = {
     "appcheck-scope": check_appcheck_scope,
     "client-gated": check_client_gated,
     "xff-trusted-hop": check_xff_trusted_hop,
+    "buyer-normalised": check_buyer_normalised,
+    "client-ip-helper": check_client_ip_helper,
     "bundle-flag-off": check_bundle_flag_off,
     "retired-slugs": check_retired_slugs,
     "flag-off-inlining": check_flag_off_inlining,
