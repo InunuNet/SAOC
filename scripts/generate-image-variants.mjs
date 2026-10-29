@@ -11,17 +11,20 @@ const OUTPUT_ROOT = path.join(SOURCE_ROOT, '_opt');
 const RASTER_EXTENSION = /\.(jpe?g|png)$/i;
 const WEBP_QUALITY = 75;
 // The home hero's static fallback (lib/data/heroImages.ts) also gets a q88 set, which the loader serves for quality={88} (rHB).
-const HERO_WEBP_QUALITY = 88;
+const HERO_VARIANT_NAME_QUALITY = 88;
+// The hero WebP encoding quality (goldens/lcp-measure.md call 3: WebP 72 for the hero set). The files keep the -q88
+// name above: it is the hero set's key (the loader and the call sites ask for quality 88), not the encoding quality.
+const HERO_WEBP_QUALITY = 72;
 // Hero variants wider than STANDARD_MAX_WIDTH keep the q88 file name (the loader and the call sites ask for
 // quality 88) but are encoded at this lower quality: at 2.5k-7k px the q88 files weighed 1-5 MB. Dimensions are
 // untouched (a hero is never served narrower than box x device pixel ratio), only bytes drop.
 const HERO_LARGE_WEBP_QUALITY = 78;
 const HERO_SOURCES = new Set(['orchid-violet.jpg', 'orchid-pink.jpg', 'orchid-dark.jpg', 'orchid-purple.jpg', 'orchid-yellow.jpg', 'nos-hero-S3a.jpg', 'nos-hero-S3b.jpg', 'nos-hero-S2a.jpg', 'nos-hero-S2c.jpg', 'nos-hero-S1b.jpg', 'nos-hero-H4a.jpg', 'nos-hero-H4b.jpg', 'nos-hero-D1.jpg', 'nos-hero-PK1.jpg', 'nos-hero-PK3.jpg', 'nos-hero-Y1.jpg'].map((name) => path.join(SOURCE_ROOT, name)));
 // Hero sources also get an AVIF set (same widths, same -q88 name, .avif extension), served first by
-// components/ui/HeroPicture.tsx with the WebP set as fallback. AVIF q55 is far smaller than WebP q88.
+// components/ui/HeroPicture.tsx with the WebP set as fallback. AVIF q55 is far smaller than the hero WebP.
 const HERO_AVIF_QUALITY = 55;
 // Every image keeps this cap (lib/image-loader.ts). Only the full-bleed hero photographs in
-// lib/hero-source-widths.json go above it, at q88, up to their own native width and never beyond.
+// lib/hero-source-widths.json go above it, under the -q88 name (encoded at q78), up to their own native width and never beyond.
 const STANDARD_MAX_WIDTH = 2048;
 
 const { deviceSizes, imageSizes } = JSON.parse(await readFile('lib/image-widths.json', 'utf8'));
@@ -47,8 +50,8 @@ function encodingsFor(isHero, isLarge) {
   if (!isLarge) encodings.push(['', 'webp', { quality: WEBP_QUALITY }]);
   if (isHero) {
     const quality = isLarge ? HERO_LARGE_WEBP_QUALITY : HERO_WEBP_QUALITY;
-    encodings.push([`-q${HERO_WEBP_QUALITY}`, 'webp', { quality, smartSubsample: true }]);
-    encodings.push([`-q${HERO_WEBP_QUALITY}`, 'avif', { quality: HERO_AVIF_QUALITY }]);
+    encodings.push([`-q${HERO_VARIANT_NAME_QUALITY}`, 'webp', { quality, smartSubsample: true }]);
+    encodings.push([`-q${HERO_VARIANT_NAME_QUALITY}`, 'avif', { quality: HERO_AVIF_QUALITY }]);
   }
   return encodings;
 }
