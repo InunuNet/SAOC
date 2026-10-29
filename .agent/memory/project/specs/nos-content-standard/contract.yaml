@@ -1,0 +1,100 @@
+# nos-content-standard (supersedes nos-faq-redesign), revision 2 (2026-10-25). Authority: NOS Design rulings DS-1 r2, (a)/(b)/(c), PYV-1, FAQ-NAV, PG-1, D7, built FROM the
+# Brad-approved v4 golden; then Brad's directives (research.md section 1). PRECONDITION: the dev branches from the #76 tip (feat/nos-pagehero) and merges the SAOC shared API at
+# 823308f5 (components/ui/{DocumentLayout,DocumentIndex,PageHero}.tsx, lib/hero-facts.ts); NOS consumes components/ui/* and never edits it (A2 diffs it). Build order: layout (PYV
+# first, then FAQ, then the rest), type and Drive heading mapping, key facts, hero crops last (A10 gates the crops only).
+# SANITY FIXTURE (rev 43B, SAOC-approved): the gates exhausted the shared Sanity API CDN quota, so GROQ reads are captured ONCE through the API host (never the CDN) into
+# fixtures/sanity/<sha256(query+params)>.json and served by lib/sanity-fixture.ts, hooked in sanity/lib/client.ts (NOT fetch.ts, which SAOC owns for the CDN-fallback P0). The dev
+# starts the hook only after the P0 sha the lead pins. Capture order: NOS_STD_FIXTURE=record bash checks/build.sh, then each gate with NOS_STD_FIXTURE=record (incremental, deduped on
+# disk), then node checks/check-fixture-files.mjs --write-manifest <fixture-logs dir>. Fail-closed like lib/fixture-route-guard.ts (K_SERVICE): SANITY_FIXTURE_MODE other than off THROWS AT MODULE LOAD on the hosted runtime, and record also needs SANITY_FIXTURE_RECORD_CONFIRM=1 (A13, A16). The CDN returns 402, so the one capture reads through the API host (useCdn false, published, public dataset, no token) for that run only; the manifest records the live request count. lib/sanity-fixture.ts is generic (no NOS paths; the dir comes only from env) so SAOC's gates can reuse it; withFixture sits UNDER SAOC's CDN->API retry: client.ts = withCdnFallback(withFixture(createClient(...))) per P0 34d079c0 (A13 runs the real withCdnFallback over the fixture, A14 asserts the shape). Every client that bypasses `client` is inventoried in goldens/fixture-client-inventory.json (A14).
+# Run every command from the repo root of the dev's worktree. Browser gates start their own `next start` on NOS_STD_PORT (default 3091) + an offset and kill that exact child PID;
+# they refuse a busy port. They read the CAPTURED Sanity fixture (fixtures/sanity, rev 43B; NOS_STD_FIXTURE=live opts out and fails A15), never the Sanity API. None runs with BETA_PASSWORD_WALL_OFF set. A9 fails loudly with SEED PENDING until
+# SAOC runs the FAQ seed (a Sanity write, never the dev's).
+# CLIENT INVENTORY (A14 re-greps createClient( under app, lib, sanity, components on every run and fails on any file not listed): WRAPPED with withFixture - sanity/lib/client.ts. NEVER RUNS ON A GATED ROUTE - app/api/events/submit/route.ts (write-token POST), lib/vendor-listing-sanity.ts (only via lib/vendor-listing.ts <- admin publish-listing POST), lib/societies/drive-sync-store.ts (only scripts/sync-societies-from-drive.ts, a CLI). Studio-only: sanity/schemas/documents/{show,showPage}.ts. scripts/* are CLI. Source of truth: goldens/fixture-client-inventory.json; the network guard (A15) is the backstop.
+schema: athanor.contract/v1
+slug: nos-content-standard
+goal: Every NOS content page renders through the shared DocumentLayout (photo hero with hero key facts, a fixed sub-nav-to-content rhythm, a 7fr/5fr grid with a 60ch prose column and one sticky aside, a single heading scale, no chips), with the FAQ as its variant, all copy word for word from Lee-Ann's Drive documents.
+created_at: '2026-10-25'
+autonomy: high
+exclusions:
+  - item: 'SAOC-site routes (app/(marketing) Constitution, Privacy, Terms, About) and the SAOC PageHero'
+    reason: 'Out of scope by the lead; research.md section 6 records adopting the standard there as a follow-up.'
+  - item: 'Sanity and Firestore writes, and Drive syncs, by the dev'
+    reason: 'The lead runs the FAQ seed (research D5) and the drive_docx_sync.py refresh (blocker B1).'
+  - item: 'nos-critique-r4/r5 chip LAYOUT clauses, nos-pagehero A9 (FQ7 64/40 and split-panel geometry) and A8 (served-width table)'
+    reason: 'Describe the pill wall, the split panel and the 40px gap this mission replaces; the lead retires them (spec.md, last section).'
+  - item: 'routes with no Drive document (GAP list printed by A8) and routes with no crop (NEEDS PHOTO list printed by A7)'
+    reason: 'Listed, never passed silently and never invented; they close when the lead supplies the doc, Brad supplies photography, or NOS Design rules the width basis (research D2).'
+features:
+  - id: F1
+    name: Standard document layout on the shared DocumentLayout (Plan your visit first), hero facts, rhythm, grid and aside, heading scale incl. PYV-1 h4, no chips, craft-floor bans
+    status: pending
+  - id: F2
+    name: FAQ variant (12-category index aside first in the DOM, D7 scroller below 1024, one warm card per category, hairline rows, no chips, no legend)
+    status: pending
+  - id: F3
+    name: Migrate every NOS content route in goldens/route-table.json onto the standard, copy verbatim from its Drive source, the SAOC copy-fix list applied
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-content-standard/goldens/spec.md
+  - .agent/memory/project/specs/nos-content-standard/goldens/standard.json
+  - .agent/memory/project/specs/nos-content-standard/goldens/route-table.json
+  - .agent/memory/project/specs/nos-content-standard/goldens/crops/crop-proposals.json
+  - .agent/memory/project/specs/nos-content-standard/goldens/codex-qa-prompt.md
+  - .agent/memory/project/specs/nos-content-standard/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: frozen goldens and check scripts are unmodified since the architect wrote them (the route table's drive versions and photo/keyFacts entries are edited by the lead only, with this step re-run)
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-content-standard/goldens/checks.sha256
+    - id: A2
+      description: static checks (incl. RB-1 exactly one --radius-button definition in the NOS CSS, at 10px, and HR-1 the exact hero ramp in the NOS CSS) - components/ui/** and lib/hero-facts.ts are the pinned shared API (unchanged from 823308f5) and no NosDocument fork exists, NosHero renders dl[data-hero-facts] through normaliseHeroFacts, every document route renders through DocumentLayout and no route uses ShowJumpChips, the :focus-visible rule is wrapped in :where, the crop files exist at the exact proposal size, ShowFaqList has no chip row, no legend and one data-faq-card, added CSS has no custom property, raw hex, font, side border, dashed rail, 999 radius or hard shadow
+      command: node .agent/memory/project/specs/nos-content-standard/checks/check-static.mjs
+    - id: A3
+      description: diff against origin/main limited to the NOS hero and nav files, the FAQ components, route pages, the two NOS css files, crop files and their cut script, the FAQ content files, docs, e2e and this spec; nothing under components/ui or lib/hero-facts.ts
+      command: node .agent/memory/project/specs/nos-content-standard/checks/check-diff-scope.mjs
+    - id: A4
+      description: typescript compiles
+      command: pnpm exec tsc --noEmit
+    - id: A5
+      description: lint is clean
+      command: pnpm exec eslint app components lib e2e
+    - id: A6
+      description: production build passes (Sanity ids from apphosting.yaml, local site URLs, wall-off flag unset)
+      command: execution/heartbeat_wrap.sh bash .agent/memory/project/specs/nos-content-standard/checks/build.sh
+    - id: A7
+      description: (incl. HR-1 computed hero scrim ramp exactly rgba(11,10,20) 0.92/0.88@38/0.45@56/0.12@76/0.04 at >=1024 and hero text contrast p95 >= 4.5, h1 >= 3, at 1440 and 2056; RB-1 every /sponsors Button link 10px) the standard on every route in the route table at 390@3, 768@2, 1024@2 and 1440@2 (hero height also at 2056@2) - photo hero (box 38%-100% at 1024 and up, stacked full width below) served at least ceil(max(boxW, boxH x aspect) x DPR), hero at most 330px at 1440 and 380px at 2056 with a one-line lede and no facts, and at most 420px at 1440 and 440px at 2056 with lede plus facts (FACTS-1), one h1 and no h2 repeating it or naming a sibling route, the sub-nav-to-first-content rhythm 64 +-4 at 1024 and up and 48 +-4 below with no padding-top or border-top on the first section, no h2 alone in a column, exactly one [data-doc-aside] of the right kind (index first in the DOM and a D7 scroller below 1024 with a trailing mask only while it overflows, snap, sticky and never under the header; content following main) at 7fr/5fr and sticky at 100px with the container at most 12 percent empty at 1440, prose 55-75ch, h2/h3 computed style and line-height equal to ruling (a) and identical across routes, h4 only where PYV-1 allows with its exact style, no skipped heading level, no bold-only paragraph, eyebrow, side border or dashed rail, no element but the eyebrow with radius 999 or more, no legend chip, no nested card, no small target, no horizontal scroll at 390, dl[data-hero-facts] in the FACTS-1 grammar (grid of 2-3 auto columns with a 1px top rule from 768, 72px|1fr hairline rows below; Fraunces 300 dd, Karla dt) with a matching data-fact-count fully inside the first viewport at 1440x900 and 390x844@3 with contrast 4.5 on the photo pixels, the sub-nav and first h2 or index card visible at 1440x900, no ring on the focused h1 on load or after client navigation ; every h1 over 20 characters follows LT-1 (.is-long clamp, one line, hero caps 394 and 415); /sa-exhibitors keeps its directory gated closed (none of her 21 names rendered, the ABSENCE_STATEMENT shown) and its sub-nav marks its own item current; /exhibitors renders the hero and contact panel only; the programme route meets the PG-G1 board, sources, tickets-grid and cap gates; the .nk-grid card images on the programme and tickets pages are served at least box x DPR at 2056@2; the sponsors route additionally meets the SP-1 structure, copy-source and button gates; hero inner height rule PG-1 4 (min-height clamp(320px,22vw,380px), padding-block clamp(48px,4vw,72px) from 768, 2:1 band and 32px padding below); .nk-ticket/.nk-perf/.nk-stamp only inside [data-ticket-card]; the Testing only bar absent on every table route
+      command: execution/heartbeat_wrap.sh node .agent/memory/project/specs/nos-content-standard/checks/gate-standard.mjs
+    - id: A8
+      description: every route with a Drive source renders it word for word and in order (whitespace normalised only) including headings, category names and order; PYV additionally renders her h1, hero lede, standfirst, seven h2, h3 and h4 lists exactly and has zero strong-only paragraphs; struck text is absent; nav labels are asserted (Plant Entry/Registration); a missing, empty or [ERROR] source fails; routes with no source print as GAP
+      command: execution/heartbeat_wrap.sh node .agent/memory/project/specs/nos-content-standard/checks/gate-verbatim.mjs
+    - id: A9
+      description: FAQ variant at 390@3, 768@2, 1024@2 and 1440@2 and with JavaScript off - SEED PENDING fails loudly until the page shows her 12 categories verbatim, the Sections index is the first aside in DOM and Tab order (sticky card at 1024 and up with Karla 15px rows of 44px or more with disjoint boxes, D7 scroller below), serif 300 h2 per category, one warm card per category with hairline rows and 22px summaries with 20px icons, no chip of any kind, no legend, every link lands its h2 below the sticky header, one current underlined link tracking the heading passed at 160px, native details kept
+      command: execution/heartbeat_wrap.sh node .agent/memory/project/specs/nos-content-standard/checks/gate-faq.mjs
+    - id: A10
+      description: NOS Design has signed off the crop contact sheet by eye, in situ at 1440, 2056 and 390 (the lead creates this file when they do; it gates the CROP step only, the layout, type and facts steps do not wait for it)
+      command: test -f .agent/memory/project/specs/nos-content-standard/goldens/crops/NOS-DESIGN-SIGNOFF.txt
+    - id: A11
+      description: docs page written
+      command: test -f docs/nos-content-standard.md
+    - id: A12
+      description: Codex adversarial review of the diff against the spec and DS-1 r2 (cross-model; falls back to the Agent-tool @qa only if codex is not on PATH, and the verdict says so)
+      type: codex_qa
+      target: .agent/memory/project/specs/nos-content-standard/goldens/codex-qa-prompt.md
+      timeout_seconds: 1300
+      command: execution/codex_qa.sh .agent/memory/project/specs/nos-content-standard/goldens/codex-qa-prompt.md
+    - id: A13
+      description: lib/sanity-fixture.ts unit behaviour (rev 43B) - config()/withConfig()/clone() through the wrapper (derived clients are wrapped); the real withCdnFallback(withFixture(client)) from sanity/lib/cdn-fallback.ts makes zero network calls on a hit and does not retry a miss; the key matches the golden vector and ignores useCdn/perspective options (a CDN read and an API read share one entry); mode off/unset returns the very same client; FAIL-CLOSED - assertFixtureEnv and withFixture throw on the hosted runtime (K_SERVICE) for replay and for record even with the confirm flag, record refuses without SANITY_FIXTURE_RECORD_CONFIRM=1, a mode without SANITY_FIXTURE_DIR throws; record goes through the API host (useCdn false) and writes only query/params/result/capturedAt; replay serves deep clones and never calls the client; a miss rejects with SanityFixtureMiss, no HTTP status, logged to _misses.log; the draft perspective is a miss
+      command: node .agent/memory/project/specs/nos-content-standard/checks/check-fixture-unit.mjs
+    - id: A14
+      description: the captured fixture and its wiring - manifest with capture date, API host (not the CDN) and live request count; every file named by its own query+params hash, no credential text; sanity/lib/client.ts wraps the exported client with withFixture and every createClient in sanity/lib is wrapped (so SAOC's CDN->API retry sits above the fixture); the hook is not in sanity/lib/fetch.ts; lib/sanity-fixture.ts is generic (no NOS paths), runs assertFixtureEnv() at module load and keys on query+params only; every createClient in app/lib/sanity/components is wrapped or inventoried as never running on a gated route; lib/sanity-fixture.ts reads SANITY_FIXTURE_DIR and consults isHostedRuntime through a relative import; SANITY_FIXTURE_ is read nowhere under components/ui or app
+      command: node .agent/memory/project/specs/nos-content-standard/checks/check-fixture-files.mjs
+    - id: A15
+      description: after A7, A8 and A9 - each gate's server was started with the fixture switch (its own _started.log says mode=replay), served at least one read from the fixture, had zero fixture misses, and made zero requests to *.api.sanity.io / *.apicdn.sanity.io from the server process (network guard) and from the browser (route guard); cdn.sanity.io images are a separate quota, allowed and counted
+      command: node .agent/memory/project/specs/nos-content-standard/checks/check-fixture-proof.mjs
+    - id: A16
+      description: fail-closed on the hosted runtime, proven at MODULE LOAD in a fresh child process per case (same K_SERVICE pattern as lib/fixture-route-guard.ts) - hosted with mode replay, or record with the confirm flag, throws; hosted with mode unset/off (even with a dir) loads inactive; local record without the confirm flag throws; local replay without a dir throws; local replay and confirmed record load active
+      command: node .agent/memory/project/specs/nos-content-standard/checks/check-fixture-hosted.mjs
+    - id: A17
+      description: the CI e2e step as CI runs it (bash scripts/ci-e2e.sh pnpm test:e2e, the literal command of ci.yml "E2E tests") under the Sanity fixture in replay with the net guard - the suite exits 0, the fixture logs show reads served from the fixture, zero misses and zero Sanity API requests. Catches stale e2e strings (the #67 miss). Run after A15.
+      command: node .agent/memory/project/specs/nos-content-standard/checks/gate-e2e.mjs

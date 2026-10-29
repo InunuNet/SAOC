@@ -55,16 +55,64 @@ async function openNosHome(page: import('@playwright/test').Page, baseURL: strin
 const panelLocator = (page: import('@playwright/test').Page) =>
   page.locator(`#nh-panel-${GROUP.id}`);
 
-async function hasVisibleFocusRing(locator: import('@playwright/test').Locator) {
-  const style = await locator.evaluate((el) => {
-    const s = getComputedStyle(el);
-    return { outlineStyle: s.outlineStyle, outlineWidth: s.outlineWidth, boxShadow: s.boxShadow };
-  });
-  return {
-    style,
-    visible:
-      (style.outlineStyle !== 'none' && style.outlineWidth !== '0px') || style.boxShadow !== 'none',
-  };
+// NAV-1: link lists show an underline on focus, not a ring. The indicator is read from real computed
+// style, in the shapes the header actually draws: a 2px bar on the label's ::after (triggers and plain
+// links), a 2px text underline (panel rows, drawer rows), or an outline/box-shadow (controls). A bar or
+// underline must be non-transparent and reach 3:1 (WCAG 1.4.11) against the ground it sits on, so
+// removing the indicator, thinning it below 2px or making it invisible fails the test.
+const MIN_INDICATOR_PX = 2;
+const MIN_INDICATOR_CONTRAST = 3;
+
+async function hasVisibleFocusIndicator(locator: import('@playwright/test').Locator) {
+  const style = await locator.evaluate((el, minPx) => {
+    const parse = (value: string) => {
+      const m = value.match(/rgba?\(([^)]+)\)/);
+      if (!m) return null;
+      const [r, g, b, a = 1] = m[1].split(/[ ,/]+/).filter(Boolean).map(Number);
+      return { r, g, b, a };
+    };
+    const lum = ({ r, g, b }: { r: number; g: number; b: number }) => {
+      const c = [r, g, b].map((v) => v / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+      return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+    };
+    const ground = (node: Element) => {
+      for (let n: Element | null = node; n; n = n.parentElement) {
+        const bg = parse(getComputedStyle(n).backgroundColor);
+        if (bg && bg.a > 0) return bg;
+      }
+      return { r: 255, g: 255, b: 255, a: 1 };
+    };
+    const contrast = (fg: string, node: Element) => {
+      const f = parse(fg);
+      if (!f || f.a === 0) return 0;
+      const [hi, lo] = [lum(f), lum(ground(node))].sort((x, y) => y - x);
+      return (hi + 0.05) / (lo + 0.05);
+    };
+
+    const own = getComputedStyle(el);
+    const outline =
+      own.outlineStyle !== 'none' && own.outlineWidth !== '0px' ? { kind: 'outline', width: own.outlineWidth } : null;
+    const shadow = own.boxShadow !== 'none' ? { kind: 'box-shadow', value: own.boxShadow } : null;
+    let bar: Record<string, string | number> | null = null;
+    let underline: Record<string, string | number> | null = null;
+    for (const node of [el, ...Array.from(el.querySelectorAll('*'))]) {
+      const after = getComputedStyle(node, '::after');
+      if (!bar && after.content !== 'none' && parseFloat(after.height) >= minPx) {
+        const ratio = contrast(after.backgroundColor, node);
+        if (ratio > 0) bar = { kind: 'bar', height: after.height, colour: after.backgroundColor, contrast: ratio };
+      }
+      const s = getComputedStyle(node);
+      if (!underline && s.textDecorationLine.includes('underline') && parseFloat(s.textDecorationThickness) >= minPx) {
+        const ratio = contrast(s.textDecorationColor, node);
+        if (ratio > 0) underline = { kind: 'underline', thickness: s.textDecorationThickness, colour: s.textDecorationColor, contrast: ratio };
+      }
+    }
+    return { outline, shadow, bar, underline };
+  }, MIN_INDICATOR_PX);
+  const drawn = [style.bar, style.underline].filter(
+    (d): d is Record<string, string | number> => d !== null && Number(d.contrast) >= MIN_INDICATOR_CONTRAST,
+  );
+  return { style, visible: style.outline !== null || style.shadow !== null || drawn.length > 0 };
 }
 
 test.describe('nav keyboard operability (NOS header)', () => {
@@ -111,12 +159,17 @@ test.describe('nav keyboard operability (NOS header)', () => {
     await openNosHome(page, baseURL!);
 
     const trigger = await tabToAccessibleName(page, TRIGGER_NAME);
-    const { style, visible } = await hasVisibleFocusRing(trigger);
+    const { style, visible } = await hasVisibleFocusIndicator(trigger);
 
     expect(
       visible,
       `expected a real focus indicator via getComputedStyle, got ${JSON.stringify(style)}`,
     ).toBe(true);
+
+    // Negative control: the indicator is the focus state, not a standing mark (this trigger is not current).
+    const stable = page.getByRole('button', { name: TRIGGER_NAME, exact: true });
+    await stable.blur();
+    expect((await hasVisibleFocusIndicator(stable)).visible, 'the indicator persists after blur').toBe(false);
   });
 
   test('an item inside the open dropdown shows a visible focus indicator via real computed style', async ({
@@ -145,7 +198,7 @@ test.describe('nav keyboard operability (NOS header)', () => {
       `expected Tab to land on the first link in DOM order (${FIRST_PANEL_HREF}), got href=${focusedHref}`,
     ).toBe(FIRST_PANEL_HREF);
 
-    const { style, visible } = await hasVisibleFocusRing(itemInPanel);
+    const { style, visible } = await hasVisibleFocusIndicator(itemInPanel);
     expect(
       visible,
       `expected a real focus indicator via getComputedStyle, got ${JSON.stringify(style)}`,
@@ -194,7 +247,7 @@ test.describe('nav keyboard operability (NOS header)', () => {
       await link.evaluate((el) => (el as HTMLElement).focus());
       await expect(link).toBeFocused();
 
-      const { style, visible } = await hasVisibleFocusRing(link);
+      const { style, visible } = await hasVisibleFocusIndicator(link);
       expect(
         visible,
         `panel anchor #${i} (href=${href}) has no real focus indicator via getComputedStyle: ${JSON.stringify(style)}`,

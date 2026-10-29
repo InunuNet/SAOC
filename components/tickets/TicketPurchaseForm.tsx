@@ -1,10 +1,19 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 
 import { formatRand } from '@/components/nos/cheapest-admission';
-import { CartAttendeeFields } from '@/components/tickets/CartAttendeeFields';
+import {
+  attendeeRowKey,
+  CartAttendeeFields,
+  type AttendeeFieldErrors,
+} from '@/components/tickets/CartAttendeeFields';
+import {
+  CheckoutErrorSummary,
+  type CheckoutErrorEntry,
+} from '@/components/tickets/CheckoutErrorSummary';
 import { CheckoutRedirectNotice } from '@/components/tickets/CheckoutRedirectNotice';
 import { OzowSandboxTestModeBanner } from '@/components/tickets/OzowSandboxTestModeBanner';
 import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
@@ -19,11 +28,15 @@ import type { KeepsakeDay } from '@/components/tickets/keepsake/types';
 import { CART_MAX_LINE_ITEMS } from '@/lib/cart';
 import { TICKET_COPY } from '@/lib/data/ticket-presentation';
 import { formatShowDay, formatShowDayShort } from '@/lib/show-day-format';
+import { useHydrated } from '@/lib/hooks/useHydrated';
 
 // The CTA stays enabled at quantity 0; a click there fills the hint and moves focus to it.
-// It also stays enabled with no day chosen (r45b): a click shows the picker's required-field error
-// and moves focus to the picker.
+// It also stays enabled with no day chosen (r45b): a click shows the picker's required-field error,
+// which joins the error summary with the attendee errors; the summary takes focus.
 const BUY_HINT_ID = 'ticket-buy-hint';
+const SUMMARY_ID = 'checkout-error-summary';
+// Existing string: the vendor forms' summary heading (humaniseFieldError()'s own fallback sentence).
+const SUMMARY_HEADING = 'Please check the highlighted fields.';
 const MIN_QUANTITY = 1;
 const DAY_GROUP = 'checkout-day';
 const HTTP_CONFLICT = 409;
@@ -40,6 +53,46 @@ interface TicketPurchaseFormProps {
   // The Day Pass's per-day counts, read server-side from the hub's own loader (rLC, r45 P3).
   dayCounts?: KeepsakeDay[] | null;
   showProvisional?: boolean;
+}
+
+interface SummaryInput {
+  dayInvalid: boolean;
+  attendees: number;
+  quantity: number;
+  ticketType: TicketTypeCardData;
+  errors: AttendeeFieldErrors;
+}
+
+// Entries in DOM order: the day, then each attendee's name and email errors.
+function summaryEntries(input: SummaryInput): CheckoutErrorEntry[] {
+  const { dayInvalid, attendees, quantity, ticketType, errors } = input;
+  const entries: CheckoutErrorEntry[] = [];
+  if (dayInvalid) {
+    entries.push({
+      key: DAY_GROUP,
+      message: TICKET_COPY.chooseDay,
+      target: `#${DAY_GROUP} input:not(:disabled)`,
+    });
+  }
+  for (let index = 0; index < attendees; index += 1) {
+    const rowKey = attendeeRowKey(ticketType.slug, index);
+    // With several attendees the row label keeps each entry distinct.
+    const prefix = quantity > 1 ? `Attendee ${index + 1}, ${ticketType.name}: ` : '';
+    for (const field of ['name', 'email'] as const) {
+      const message = errors[rowKey]?.[field];
+      if (!message) continue;
+      const id = `attendee-${rowKey}-${field}`;
+      entries.push({ key: id, message: `${prefix}${message}`, target: `#${id}` });
+    }
+  }
+  return entries;
+}
+
+// focus() alone can leave the summary's last pixel clipped under the viewport edge; centring it keeps
+// it fully in view and clear of the sticky stack, as the field links do.
+function focusSummary(summary: HTMLDivElement | null) {
+  summary?.focus();
+  summary?.scrollIntoView({ block: 'center' });
 }
 
 function startQuantity(requested: number | undefined): number {
@@ -66,6 +119,7 @@ export function TicketPurchaseForm({
   dayCounts = null,
   showProvisional = false,
 }: TicketPurchaseFormProps) {
+  const hydrated = useHydrated();
   const ticketType = ticketTypes[0];
   const cart = useTicketCart(ticketType, {
     quantity: startQuantity(initialQuantity),
@@ -77,6 +131,7 @@ export function TicketPurchaseForm({
   const dayGroupRef = useRef<HTMLFieldSetElement>(null);
   const [dayRequested, setDayRequested] = useState(false);
   const dayInvalid = dayRequested && cart.day === null;
+  const summaryRef = useRef<HTMLDivElement>(null);
 
   // A 409 for a chosen day may mean that day sold out between load and submit. The counts are
   // re-read (router.refresh re-runs the page's hub loader); if the day that was submitted is now
@@ -117,6 +172,15 @@ export function TicketPurchaseForm({
     dayGroupRef.current?.querySelector<HTMLInputElement>('input:not(:disabled)')?.focus();
   }, [raced, submitted, refreshing, dayCounts, cart]);
 
+  const serverMessage =
+    cart.status === 'error' && cart.errorMessage && dayError === null && !raced
+      ? cart.errorMessage
+      : null;
+
+  useEffect(() => {
+    if (serverMessage !== null) focusSummary(summaryRef.current);
+  }, [serverMessage]);
+
   if (cart.redirect) {
     return (
       <CheckoutRedirectNotice
@@ -134,11 +198,21 @@ export function TicketPurchaseForm({
     window.dispatchEvent(new CustomEvent(CHECKOUT_DAY_EVENT, { detail: day }));
   }
 
+  // Focus after a failed submit lives here: the summary, which holds the missing day. (r45b used to
+  // focus the picker for a missing day; focus the first enabled radio of the day group here to
+  // restore that.)
+  function focusFailedSubmit() {
+    // The summary mounts on this render; focus it once it is in the DOM.
+    requestAnimationFrame(() => focusSummary(summaryRef.current));
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (ticketType.requiresDaySelection && cart.day === null) {
-      setDayRequested(true);
-      dayGroupRef.current?.querySelector<HTMLInputElement>('input:not(:disabled)')?.focus();
+    const dayMissing = ticketType.requiresDaySelection && cart.day === null;
+    const attendeesValid = cart.validate();
+    if (dayMissing) setDayRequested(true);
+    if (dayMissing || !attendeesValid) {
+      focusFailedSubmit();
       return;
     }
     if (cart.quantity < MIN_QUANTITY) {
@@ -154,6 +228,7 @@ export function TicketPurchaseForm({
 
   return (
     <form
+      method="post"
       onSubmit={handleSubmit}
       className="nk-checkout grid gap-3"
       noValidate
@@ -165,6 +240,7 @@ export function TicketPurchaseForm({
         <fieldset
           ref={dayGroupRef}
           className="days nk-days"
+          id={DAY_GROUP}
           aria-invalid={dayInvalid}
           {...(dayError === null ? {} : { 'aria-invalid': true })}
         >
@@ -261,11 +337,20 @@ export function TicketPurchaseForm({
         onAttendeeChange={cart.updateAttendeeField}
       />
 
-      {cart.status === 'error' && cart.errorMessage && dayError === null ? (
-        <TicketFieldAlert>{cart.errorMessage}</TicketFieldAlert>
-      ) : null}
-
       <TicketingTestPayNotice />
+      <CheckoutErrorSummary
+        id={SUMMARY_ID}
+        heading={SUMMARY_HEADING}
+        entries={summaryEntries({
+          dayInvalid,
+          attendees: cart.attendees.length,
+          quantity: cart.quantity,
+          ticketType,
+          errors: cart.attendeeErrors,
+        })}
+        serverMessage={serverMessage}
+        summaryRef={summaryRef}
+      />
       <div data-catalogue-total="" className="nk-checkout-total">
         <p aria-live="polite" aria-atomic="true">
           Total <strong>{formatRand(cart.estimatedTotal)}</strong>
@@ -273,7 +358,7 @@ export function TicketPurchaseForm({
         <button
           type="submit"
           className="nk-btn nk-cta"
-          disabled={submitting}
+          disabled={submitting || !hydrated}
           aria-describedby={BUY_HINT_ID}
         >
           {submitting ? (
@@ -286,6 +371,9 @@ export function TicketPurchaseForm({
           )}
         </button>
       </div>
+      <p className="nk-policy">
+        <Link href="/refunds">Refunds</Link> <span aria-hidden="true">·</span> <Link href="/privacy">Privacy</Link>
+      </p>
       <p
         id={BUY_HINT_ID}
         ref={hintRef}

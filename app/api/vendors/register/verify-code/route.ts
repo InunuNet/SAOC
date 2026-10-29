@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isBodyWithinLimit } from '@/lib/request-guards';
 import { cookies } from 'next/headers';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
+import { clientIpFromForwardedFor } from '@/lib/client-ip';
 import { initAdmin } from '@/lib/firebase-admin';
 import { VENDOR_APPLICATIONS_COLLECTION } from '@/lib/vendor-applications';
 import {
@@ -44,9 +46,8 @@ const rateLimitStore = createInMemoryVendorRegistrationCodeVerifyRateLimitStore(
  * (`vendor-register-ip:*`).
  */
 function deriveRateLimitKey(request: NextRequest): string {
-  const forwardedFor = request.headers.get('x-forwarded-for');
-  const firstHop = forwardedFor?.split(',')[0]?.trim();
-  return `vendor-register-code-verify-ip:${firstHop || 'unknown'}`;
+  const ip = clientIpFromForwardedFor(request.headers.get('x-forwarded-for'));
+  return `vendor-register-code-verify-ip:${ip ?? 'unknown'}`;
 }
 
 /**
@@ -87,7 +88,13 @@ function readGeneration(data: FirebaseFirestore.DocumentData): number {
   return typeof raw === 'number' && Number.isFinite(raw) ? raw : 0;
 }
 
+// Cap on the request body, checked against Content-Length before the body is buffered.
+const MAX_BODY_BYTES = 4096;
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  if (!isBodyWithinLimit(request.headers.get('content-length'), MAX_BODY_BYTES)) {
+    return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
+  }
   let rawBody: unknown;
   try {
     rawBody = await request.json();

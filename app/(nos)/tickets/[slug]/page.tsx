@@ -10,11 +10,11 @@ import { TicketBuyCrumbs } from '@/components/tickets/TicketBuyCrumbs';
 import { TicketCard } from '@/components/tickets/keepsake';
 import { isDayClosed } from '@/components/tickets/keepsake/days';
 import { sanityFetch } from '@/sanity/lib/fetch';
+import { fetchTicketTypeBySlug, isHiddenDemoProduct } from '@/lib/data/ticket-type-lookup';
 import {
   activeShowWindowQuery,
   nationalShowSalesQuery,
   ticketsPageQuery,
-  ticketTypeBySlugQuery,
 } from '@/sanity/queries';
 import {
   getAdmissionSoldOutBySlug,
@@ -26,6 +26,8 @@ import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { productIdForSlug } from '@/lib/data/ticket-presentation';
 import { buildShowWindow, computeShowDays } from '@/lib/show-window-lookup';
 import { resolveActiveShow } from '@/lib/show-resolution';
+import { isTicketingTestMode } from '@/lib/ticketing-test-mode';
+import { isTicketOnSale, qaFixturesAllowed } from '@/lib/ticket-on-sale';
 import { nosPath } from '@/lib/nos-paths';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosUrl } from '@/lib/site-hosts';
@@ -62,24 +64,6 @@ interface SanityShowActivation {
   endDate?: unknown;
 }
 
-interface SanityTicketType {
-  _id: string;
-  name: string;
-  slug: string;
-  price: number;
-  regularPrice?: number | null;
-  description: string;
-  capacity: number;
-  releasedQuantity?: number | null;
-  earlyBirdCutoff?: string | null;
-  provisional?: boolean | null;
-  requiresDaySelection?: boolean | null;
-  category?: string | null;
-  capacityPool?: string | null;
-  headcountPerUnit?: number | null;
-  excludedDays?: string[] | null;
-}
-
 interface Props {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ quantity?: string | string[]; day?: string | string[] }>;
@@ -95,12 +79,8 @@ function parseQuantity(raw: string | string[] | undefined): number | null {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const ticketType = await sanityFetch<SanityTicketType | null>({
-    query: ticketTypeBySlugQuery,
-    params: { slug },
-    tags: ['ticketType', 'sanity'],
-  });
-  if (!ticketType) notFound();
+  const ticketType = await fetchTicketTypeBySlug(slug);
+  if (!ticketType || isHiddenDemoProduct(ticketType)) notFound();
   // A ticket is a NOS page (R62 #1): the title comes from the (nos) template, or from the
   // committee-testing prefix template while payments are not live.
   // Sanity does not require a description: without one the page keeps the site default
@@ -123,19 +103,15 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
   const [{ slug }, query] = await Promise.all([params, searchParams]);
 
   const [ticketType, pageData, salesState, allShows] = await Promise.all([
-    sanityFetch<SanityTicketType | null>({
-      query: ticketTypeBySlugQuery,
-      params: { slug },
-      tags: ['ticketType', 'sanity'],
-    }),
+    fetchTicketTypeBySlug(slug),
     sanityFetch<TicketsPageData>({ query: ticketsPageQuery, tags: ['ticketsPage', 'sanity'] }),
-    sanityFetch<SalesState>({ query: nationalShowSalesQuery, tags: ['nationalShow', 'sanity'] }),
-    sanityFetch<SanityShowActivation[]>({ query: activeShowWindowQuery, tags: ['show', 'sanity'] }),
+    sanityFetch<SalesState>({ query: nationalShowSalesQuery, tags: ['nationalShow', 'sanity'], live: true }),
+    sanityFetch<SanityShowActivation[]>({ query: activeShowWindowQuery, tags: ['show', 'sanity'], live: true }),
   ]);
 
   // Every product, admission or programme, buys through this one screen: the hub's Thursday
   // evening, Symposium, WOSA and Workshops cards all link here.
-  if (!ticketType) {
+  if (!ticketType || isHiddenDemoProduct(ticketType)) {
     notFound();
   }
 
@@ -177,12 +153,19 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
 
   const quantity = parseQuantity(query.quantity);
   const productId = productIdForSlug(ticketType.slug);
-  const purchasable = salesOpen && !cardData.soldOut;
+  const purchasable = isTicketOnSale({
+    doc: ticketType,
+    activeShowId,
+    salesOpen,
+    soldOut: cardData.soldOut,
+    now: new Date(),
+    qaFixturesAllowed: qaFixturesAllowed(process.env, !isTicketingTestMode()),
+  }).onSale;
   // rLC (r45 P3): the Day Pass shows the hub card's own per-day counts, from the hub's own
   // loader; no other product has them. A failed load leaves `cards` empty, so no counts show.
   const dayCounts =
     purchasable && cardData.requiresDaySelection && productId === 'day'
-      ? ((await loadTicketCardViewModels()).cards.day?.days ?? null)
+      ? ((await loadTicketCardViewModels({ live: true })).cards.day?.days ?? null)
       : null;
   const showProvisional = !withholdPlaceholderProse();
   // A linked day that is sold out is ignored: the group starts unselected, as with no ?day.
@@ -210,49 +193,50 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
         title={ticketType.name}
         lede={ticketType.description}
         crumbs={breadcrumbs}
-        className="nk-hero-compact"
       />
 
-      <div className="mx-auto max-w-[560px] px-8 pb-12 pt-4">
-        {!salesOpen ? (
-          <SalesClosedNotice message={salesClosedMessage} />
-        ) : cardData.soldOut ? (
-          <div className="nk-closed" role="status">
-            <p className="font-serif text-[20px] text-ink">{soldOutMessage}</p>
-          </div>
-        ) : null}
-        {purchasable && productId ? (
-          <div className="nk-wrap nk-checkout-summary">
-            <TicketCard
-              productId={productId}
-              variant="summary"
-              headingLevel="p"
-              day={summaryDay}
-              provisionalPrice={cardData.provisional}
-              name={ticketType.name}
-              vm={{
-                slug: ticketType.slug,
-                name: ticketType.name,
-                state: 'available',
-                price: effectivePrice,
-                regularPrice: null,
-                scarcity: null,
-                days: null,
-              }}
+      <div data-nos-wrap data-ticket-body className="pb-12 pt-10 md:pt-16">
+        <div className="lg:max-w-[560px]">
+          {!salesOpen ? (
+            <SalesClosedNotice message={salesClosedMessage} />
+          ) : cardData.soldOut ? (
+            <div className="nk-closed" role="status">
+              <p className="font-serif text-[20px] text-ink">{soldOutMessage}</p>
+            </div>
+          ) : null}
+          {purchasable && productId ? (
+            <div className="nk-wrap nk-checkout-summary">
+              <TicketCard
+                productId={productId}
+                variant="summary"
+                headingLevel="p"
+                day={summaryDay}
+                provisionalPrice={cardData.provisional}
+                name={ticketType.name}
+                vm={{
+                  slug: ticketType.slug,
+                  name: ticketType.name,
+                  state: 'available',
+                  price: effectivePrice,
+                  regularPrice: null,
+                  scarcity: null,
+                  days: null,
+                }}
+              />
+            </div>
+          ) : null}
+          {purchasable ? (
+            <TicketPurchaseForm
+              ticketTypes={[cardData]}
+              showDays={showDays}
+              initialQuantity={quantity ?? undefined}
+              initialDay={day}
+              dayCounts={dayCounts}
+              showProvisional={showProvisional}
+              showTestModeBanner={await viewerIsVerifiedAdmin()}
             />
-          </div>
-        ) : null}
-        {purchasable ? (
-          <TicketPurchaseForm
-            ticketTypes={[cardData]}
-            showDays={showDays}
-            initialQuantity={quantity ?? undefined}
-            initialDay={day}
-            dayCounts={dayCounts}
-            showProvisional={showProvisional}
-            showTestModeBanner={await viewerIsVerifiedAdmin()}
-          />
-        ) : null}
+          ) : null}
+        </div>
       </div>
     </>
   );

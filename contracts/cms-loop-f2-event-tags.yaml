@@ -209,22 +209,6 @@ autonomy: high
 assertions:
   phase: 4
   checks:
-    - id: A1
-      description: >
-        THE assertion: edit societyEvent-10-midlands-orchid-show.description in the
-        deployed Studio (real browser automation, authenticated via the proven
-        localStorage-token mechanism), publish, call /api/revalidate with the
-        correct secret and _type: 'societyEvent' (exactly what a real webhook
-        payload for this document would send), and poll the deployed public
-        /events/midlands-orchid-show page's rendered HTML for the sentinel —
-        bounded at 120s, hard FAIL on timeout, identical bound to F6's A1. ALWAYS
-        attempts and verifies cleanup (field cleared, re-published, confirmed
-        absent via both the dataset and the live page) regardless of whether the
-        propagation check passed or failed. Expected to FAIL today — see "WHY THIS
-        IS EXPECTED TO FAIL TODAY" above; this is the correct, honest state of the
-        real system until both F1 and F2 have landed, not a broken check.
-      command: node contracts/checks/cms-loop-f2-event-tags/check-studio-edit-reaches-site.mjs
-
     - id: A2
       description: >
         Negative control on the detection mechanism itself, for the event page: a
@@ -248,3 +232,21 @@ assertions:
       command: >-
         grep -q "tags: \['societyEvent', 'sanity'\]" "app/(marketing)/events/[slug]/page.tsx"
         && ! grep -q "tags: \['events'\]" "app/(marketing)/events/[slug]/page.tsx"
+
+manual_only:
+  - id: A1
+    reason: "check-studio-edit-reaches-site.mjs writes to the production Sanity dataset (project 26yfbug4): Sanity 26yfbug4/production via the deployed Studio (Playwright publish) then restore; sentinel residue once sat on the live site for 3 days; run by hand only, with the operator present"
+    description: >
+      THE assertion: edit societyEvent-10-midlands-orchid-show.description in the
+      deployed Studio (real browser automation, authenticated via the proven
+      localStorage-token mechanism), publish, call /api/revalidate with the
+      correct secret and _type: 'societyEvent' (exactly what a real webhook
+      payload for this document would send), and poll the deployed public
+      /events/midlands-orchid-show page's rendered HTML for the sentinel —
+      bounded at 120s, hard FAIL on timeout, identical bound to F6's A1. ALWAYS
+      attempts and verifies cleanup (field cleared, re-published, confirmed
+      absent via both the dataset and the live page) regardless of whether the
+      propagation check passed or failed. Expected to FAIL today — see "WHY THIS
+      IS EXPECTED TO FAIL TODAY" above; this is the correct, honest state of the
+      real system until both F1 and F2 have landed, not a broken check.
+    command: node contracts/checks/cms-loop-f2-event-tags/check-studio-edit-reaches-site.mjs

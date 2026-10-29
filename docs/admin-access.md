@@ -619,3 +619,32 @@ Toggles Ozow's sandbox environment for testing purchases without real charges. I
 
 The human end-to-end door-scanner proof is later work (mission `admin-auth-hardening`,
 feature F6). Microsoft and Apple sign-in are covered above under their own sections.
+
+## Sign-in errors and password reset
+
+`/admin/login` never shows raw Firebase text. The pure mapping lives in
+`lib/admin-login-errors.ts` (no firebase import, unit-tested with `tsx`); the page keeps every
+Firebase call and passes only the mapped string to `setError`.
+
+| Firebase code | Shown |
+|---|---|
+| `auth/invalid-credential`, `auth/invalid-login-credentials`, `auth/wrong-password`, `auth/user-not-found`, `auth/invalid-email`, `auth/missing-password` | Email or password not recognised. |
+| `auth/too-many-requests` | Too many attempts. Please wait a few minutes and try again. |
+| `auth/network-request-failed` | Network error — check your connection and try again. |
+| anything else (incl. `auth/user-disabled`, the session-mint failure, non-Error throws) | Sign-in failed. Please try again. |
+
+The six credential codes share one string on purpose: a different message for an unknown
+email would reveal which addresses have accounts. `auth/user-disabled` falls to the generic
+message for the same reason.
+
+**Forgot password?** calls `sendPasswordResetEmail` with the typed email. With an empty
+email it prompts for one and sends nothing. Otherwise it always answers "If that address has
+an admin account, a reset link is on its way.", whether the send succeeded or failed with any
+error (including `auth/user-not-found`), so it cannot be used to probe for accounts. Only the
+error code is logged to the console, never the email or message. This is also the recovery
+path for an admin whose account has no password set. It does not create accounts; self-signup
+stays disabled.
+
+**Copy gaps.** The "too many attempts" and "enter your email first" strings have no SAOC
+source; the wording in `goldens/copy.json` is a minimal proposal awaiting SAOC confirmation.
+Change it there and in `lib/admin-login-errors.ts`.

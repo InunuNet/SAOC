@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 import Link from 'next/link';
 
-import { PageHero } from '@/components/ui/PageHero';
+import { RouteHero } from '@/components/ui/RouteHero';
 import { ContactForm } from '@/components/contact';
 import { VenueCard } from '@/components/show';
 import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
@@ -76,8 +76,9 @@ export default async function ContactPage() {
 
   return (
     <>
-      <PageHero
-        image="/images/orchid-pink.jpg"
+      <RouteHero
+        exempt
+        route="/contact"
         eyebrow="Get in touch"
         heading={data?.title ?? 'Contact SAOC'}
         lede={LEDE}
@@ -105,16 +106,18 @@ export default async function ContactPage() {
                     {c.email ? (
                       <a
                         href={`mailto:${c.email}`}
-                        className="mt-1 inline-flex min-h-6 items-center font-sans text-[14px] text-ink underline underline-offset-2 hover:text-accent"
+                        className="mt-1 inline-flex min-h-11 items-center font-sans text-[14px] text-ink underline underline-offset-2 hover:text-accent"
                       >
                         {c.email}
                       </a>
                     ) : null}
-                    {marked && !withhold ? <PlaceholderMarker /> : null}
                   </li>
                 );
               })}
             </ul>
+            {withhold || !contacts.some((c) => isLabelUnsourced(c.role) || isLabelUnsourced(c.name)) ? null : (
+              <PlaceholderMarker />
+            )}
 
             <VenueCard
               venue={show?.venue}

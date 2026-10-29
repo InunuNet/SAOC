@@ -5,6 +5,7 @@ import { aboutPage } from './documents/aboutPage';
 import { nationalShow } from './documents/nationalShow';
 import { contactPage } from './documents/contactPage';
 import { judgingPage } from './documents/judgingPage';
+import { eventsPage } from './documents/eventsPage';
 import { membersPage } from './documents/membersPage';
 import { ticketsPage } from './documents/ticketsPage';
 import { society } from './documents/society';
@@ -55,6 +56,7 @@ export const schemaTypes: SchemaTypeDefinition[] = [
   nationalShow,
   contactPage,
   judgingPage,
+  eventsPage,
   membersPage,
   ticketsPage,
   // F1 (show-visitor-info)

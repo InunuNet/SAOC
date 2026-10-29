@@ -1,0 +1,9 @@
+{
+  "feature": "F4",
+  "allow": [
+    "components/tickets/TicketPurchaseForm.tsx",
+    "app/(nos)/national-show/nos-structure.css",
+    "app/ticket-fixtures/buy/page.tsx",
+    "docs/polish-wave-2-f4-policy-links.md"
+  ]
+}

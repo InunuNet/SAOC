@@ -1,0 +1,22 @@
+{
+  "sniff": [
+    { "name": "pdf", "hex": "255044462d312e340a", "expected": "application/pdf" },
+    { "name": "jpeg", "hex": "ffd8ffe000104a464946", "expected": "image/jpeg" },
+    { "name": "png", "hex": "89504e470d0a1a0a0000000d", "expected": "image/png" },
+    { "name": "webp", "hex": "524946462400000057454250565038", "expected": "image/webp" },
+    { "name": "wav-is-not-webp", "hex": "52494646240000005741564566", "expected": null },
+    { "name": "windows-exe", "hex": "4d5a90000300000004000000", "expected": null },
+    { "name": "html", "hex": "3c68746d6c3e", "expected": null },
+    { "name": "one-byte", "hex": "ff", "expected": null },
+    { "name": "empty", "hex": "", "expected": null }
+  ],
+  "matches": [
+    { "hex": "255044462d312e340a", "mime": "application/pdf", "expected": true },
+    { "hex": "255044462d312e340a", "mime": "image/png", "expected": false },
+    { "hex": "89504e470d0a1a0a0000000d", "mime": "image/jpeg", "expected": false },
+    { "hex": "ffd8ffe000104a464946", "mime": "image/jpeg", "expected": true },
+    { "hex": "524946462400000057454250565038", "mime": "image/webp", "expected": true },
+    { "hex": "4d5a90000300000004000000", "mime": "application/pdf", "expected": false },
+    { "hex": "ffd8ffe000104a464946", "mime": "text/html", "expected": false }
+  ]
+}

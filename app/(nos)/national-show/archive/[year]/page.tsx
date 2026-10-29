@@ -17,6 +17,7 @@ import { NosBreadcrumb } from '@/components/nos/NosBreadcrumb';
 import { NosHero } from '@/components/nos/NosHero';
 import { NosSection } from '@/components/nos/NosSection';
 import { ConfirmationBadge } from '@/components/show';
+import { ArrowIcon } from '@/components/tickets/keepsake/parts';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
@@ -79,6 +80,12 @@ async function loadPastShows(): Promise<ArchiveShow[]> {
   });
   return mergePastShows(sanityShows);
 }
+
+// An unrecorded year calls notFound(), which renders the host-aware root not-found (it reads the request
+// headers). Next fails a statically generated route whose not-found turns dynamic at runtime (500), so
+// this page is dynamic. dynamicParams = false would also work but would 404 a newly published year until
+// the next deploy.
+export const dynamic = 'force-dynamic';
 
 export async function generateStaticParams(): Promise<Array<{ year: string }>> {
   // The Sanity `status == "past"` years only; empty until a real edition is published.
@@ -155,9 +162,11 @@ export default async function ShowYearPage({ params }: { params: Promise<{ year:
           <Link
             href="/archive"
             data-nos-backlink=""
-            className="inline-flex min-h-[44px] items-center font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--lilac-muted)] transition-colors duration-150 hover:text-ivory"
+            data-nos-backarrow=""
+            className="inline-flex min-h-[44px] items-center font-sans text-[14px] font-bold uppercase tracking-[0.12em] text-[var(--lilac-muted)] transition-colors duration-150 hover:text-ivory"
           >
-            ← Past shows
+            <ArrowIcon />
+            Past shows
           </Link>
         }
       />
@@ -215,10 +224,12 @@ export default async function ShowYearPage({ params }: { params: Promise<{ year:
         {prevShow ? (
           <Link
             href={`/archive/${prevShow.year}`}
+            data-nos-backarrow=""
             className="group flex flex-col gap-1"
           >
-            <span className="font-sans text-[12px] font-semibold uppercase tracking-[0.18em] text-muted transition-colors duration-150 group-hover:text-primary">
-              ← Earlier
+            <span className="inline-flex items-center font-sans text-[14px] font-bold uppercase tracking-[0.12em] text-muted transition-colors duration-150 group-hover:text-primary">
+              <ArrowIcon />
+              Earlier
             </span>
             <span className="font-serif text-[20px] font-medium text-ink transition-colors duration-150 group-hover:text-primary">
               {prevShow.host ? `${prevShow.year} — ${prevShow.host}` : prevShow.year}

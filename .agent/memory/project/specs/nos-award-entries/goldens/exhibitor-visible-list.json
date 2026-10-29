@@ -1,0 +1,138 @@
+{
+  "_note": "Visible-text 'exhibitor' occurrences allowed on the NOS host after the change, for NOS Design sign-off. gate-render.mjs content crawls every indexable NOS page, finds each visible line containing 'exhibitor', and fails on any whose lowercase text contains none of these fragments (exact:true entries must equal the whole line). status stand = a stand-booker context (kept); pendingSaoc = Sanity-held plant-entrant wording SAOC will change (NOTE, not fail); decision = open NOS Design/Lee-Ann item. Built from source and the 2026-10-26 fixture; signed off by NOS Design 2026-10-28. Any new plant-entrant use the rendered run finds is a FAIL to fix in the source, never an addition to this list.",
+  "entries": [
+    {
+      "fragment": "display exhibitor",
+      "context": "Brad's Display Exhibitors term (also 'Display Exhibitor setup' in the setup answer)",
+      "status": "stand",
+      "ref": null
+    },
+    {
+      "fragment": "retail vendor",
+      "context": "Brad's Retail Vendors term",
+      "status": "stand",
+      "ref": null
+    },
+    {
+      "fragment": "exhibitors and vendors",
+      "context": "/vendors title, header leaf and show index label, sponsors card; unchanged until Lee-Ann answers AE-1 (a)(c)",
+      "status": "stand",
+      "ref": "D4"
+    },
+    {
+      "fragment": "international guests and exhibitors",
+      "context": "International guests page title and menu (stand and display exhibitors from abroad)",
+      "status": "stand",
+      "ref": null
+    },
+    {
+      "fragment": "exhibitors, vendors and sponsors",
+      "context": "FAQ category title (Lee-Ann's stand questions)",
+      "status": "stand",
+      "ref": null
+    },
+    {
+      "fragment": "south african exhibitors",
+      "context": "Pavilion name in Lee-Ann's /vendors copy",
+      "status": "stand",
+      "ref": null
+    },
+    {
+      "fragment": "commercial exhibitors",
+      "context": "Lee-Ann's /vendors intro",
+      "status": "stand",
+      "ref": null
+    },
+    {
+      "fragment": "exhibitors will present stunning displays",
+      "context": "Lee-Ann's /vendors paragraph (mentions national awards)",
+      "status": "stand",
+      "ref": "D6"
+    },
+    {
+      "fragment": "list of exhibitors and vendors",
+      "context": "Vendor empty state",
+      "status": "stand",
+      "ref": null
+    },
+    {
+      "fragment": "growers, exhibitors, vendors and enthusiasts",
+      "context": "FAQ q1 general description (Sanity)",
+      "status": "stand",
+      "ref": null
+    },
+    {
+      "fragment": "international exhibitors and vendors",
+      "context": "FAQ q8 (Sanity)",
+      "status": "stand",
+      "ref": null
+    },
+    {
+      "fragment": "guests and exhibitors, including international orchid vendors",
+      "context": "FAQ q8 answer (Sanity)",
+      "status": "stand",
+      "ref": null
+    },
+    {
+      "fragment": "guests and exhibitors.",
+      "context": "FAQ q32 answer (Sanity)",
+      "status": "stand",
+      "ref": null
+    },
+    {
+      "fragment": "as an exhibitor, participating",
+      "context": "International presenter bio (Sanity)",
+      "status": "stand",
+      "ref": null
+    },
+    {
+      "fragment": "exhibitors took part",
+      "context": "Archive year statistic; unknown which kind (D7); archive withheld in public",
+      "status": "decision",
+      "ref": "D7"
+    },
+    {
+      "fragment": "exhibitors",
+      "context": "Archive fact label 'Exhibitors' (D7)",
+      "status": "decision",
+      "ref": "D7",
+      "exact": true
+    },
+    {
+      "fragment": "outstanding orchids and exhibitors",
+      "context": "FAQ q25 answer in Sanity; SAOC to apply S1 (new text: \"recognising outstanding orchids.\")",
+      "status": "pendingSaoc",
+      "ref": "S1"
+    },
+    {
+      "fragment": "when can exhibitors set up",
+      "context": "FAQ q28 question in Sanity; SAOC to apply S2",
+      "status": "pendingSaoc",
+      "ref": "S2"
+    },
+    {
+      "fragment": "specific exhibitor setup",
+      "context": "FAQ q28 answer in Sanity; SAOC to apply S2",
+      "status": "pendingSaoc",
+      "ref": "S2"
+    },
+    {
+      "fragment": "exhibitor stages",
+      "context": "ticketsPage.ticketIncludesNote in Sanity; SAOC to rule (D9)",
+      "status": "pendingSaoc",
+      "ref": "S7"
+    },
+    {
+      "fragment": "speakers, judges, exhibitors and researchers",
+      "context": "/international-guests intro: \"Profiles of international speakers, judges, exhibitors and researchers attending the Show.\" (class b, stand)",
+      "status": "stand",
+      "ref": null
+    },
+    {
+      "fragment": "award-winning exhibitors",
+      "context": "/vendors, Lee-Ann's copy (vendors/page.tsx:36): stand-bookers who have won awards (class b, stand). Also raised to Lee-Ann under vvvvv.",
+      "status": "stand",
+      "ref": "vvvvv"
+    }
+  ]
+}

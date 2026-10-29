@@ -9,7 +9,7 @@
 // removed it (restored from b45971b0^). They are NOT Council-supplied. Rules that keep them honest:
 //   - /events is the only reader (app/(marketing)/events/page.tsx), and only while
 //     withholdPlaceholderProse() is false (SHOW_PLACEHOLDER_PREVIEW with the beta wall up).
-//   - Each row carries the PlaceholderMarker and is never a link.
+//   - The page shows PLACEHOLDER_EVENTS_NOTE once above the list (never per row) and a row is never a link.
 //   - Nothing machine-readable reads this module: no JSON-LD Event node, sitemap, .ics feed, event
 //     slug page, llms file or other events list. scripts/checks/events-placeholders-static.mjs fails
 //     the build gate if one of those files imports it.
@@ -18,6 +18,9 @@
 
 import { sastDate } from '../sast-date.ts';
 import type { SanityEvent, SocietyEvent } from '@/types';
+
+/** The one note /events shows above the list while invented events are in it (Brad's wording, kept). */
+export const PLACEHOLDER_EVENTS_NOTE = "AI event: waiting on SAOC's official events";
 
 /** The row /events renders for an invented event: a SanityEvent with no slug (so never a link) and the flag. */
 export type PlaceholderEventRow = SanityEvent & { isPlaceholder: true };

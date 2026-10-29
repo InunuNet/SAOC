@@ -1,0 +1,20 @@
+[
+  "lib/events-list.ts",
+  "lib/sast-date.ts",
+  "sanity/queries.ts",
+  "sanity/schemas/index.ts",
+  "sanity/schemas/documents/eventsPage.ts",
+  "sanity/structure.ts",
+  "components/events/EventCard.tsx",
+  "components/events/MonthGroup.tsx",
+  "components/events/EventsList.tsx",
+  "components/events/EventsAbout.tsx",
+  "components/events/event-link.ts",
+  "components/events/index.ts",
+  "components/home/ShowBand.tsx",
+  "app/(marketing)/events/page.tsx",
+  "scripts/checks/events-until-last-day.mjs",
+  "types/index.ts",
+  "docs/events-redesign.md",
+  "scripts/checks/societies-hidden-leak.mjs"
+]

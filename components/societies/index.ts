@@ -1,12 +1,13 @@
 export { SocietyCard } from './SocietyCard';
 export type { SanitySociety, SocietyCardProps } from './SocietyCard';
+export { SocietiesGrid } from './SocietiesGrid';
+export type { SocietiesGridProps } from './SocietiesGrid';
 export { SocietyFacts } from './SocietyFacts';
 export type { SocietyFactsProps } from './SocietyFacts';
 export { SocietyAbout } from './SocietyAbout';
 export type { SocietyAboutProps } from './SocietyAbout';
 export { SocietyCommittee } from './SocietyCommittee';
 export type { SocietyCommitteeProps } from './SocietyCommittee';
-export { SocietyExpect } from './SocietyExpect';
 export { SocietyEvents } from './SocietyEvents';
 export type { SocietyEventsProps } from './SocietyEvents';
 export { SocietyDetailsCallout } from './SocietyDetailsCallout';

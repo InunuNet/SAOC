@@ -34,12 +34,18 @@ Rules that do not bend:
 """
 from __future__ import annotations
 
+try:
+    import fcntl
+except ImportError:  # Windows: no flock; the locked paths below degrade to no-ops
+    fcntl = None
 import json
+import os
 import re
 import sqlite3
 import time
 import subprocess
 import sys
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -58,6 +64,17 @@ USAGE_CACHE_TTL_SECONDS = 60
 HEAT_AMBER_PCT = 60
 HEAT_RED_PCT = 85
 HOURS_PER_DAY = 24
+# quota_auto_resume.py reads what this file writes under QUOTA_RESUME_DIR.
+QUOTA_RESUME_DIR = Path(".agent") / "memory" / "scratch" / "quota_resume"
+# compact.py reads the live context reading in this directory, one file per claude pid.
+CONTEXT_NOW_DIR = Path(".agent") / "memory" / "scratch" / "context_now"
+CONTEXT_NOW_NO_PID = "nopid"
+CONTEXT_NOW_PRUNE_SECONDS = 24 * 3600
+DECIDER_PATH = Path(__file__).resolve().parent / "hooks" / "lib" / "autocompact_decider.py"
+QUOTA_WINDOWS = ("five_hour", "seven_day")
+ISO_UTC_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+HEARTBEAT_REFRESH_SECONDS = 3600
+HEARTBEAT_PRUNE_SECONDS = 24 * 3600
 
 BACKLOG_ITEM_RE = re.compile(
     r"^\s*-\s*\[[ xX]\]\s*(?:\*\*|__|\*|_)?\s*(P[01])\b:?\s*(.*)$"
@@ -531,9 +548,11 @@ def read_json(path: Path):
 
 def git(root: Path, *args: str) -> str:
     try:
+        # Runs on every render: never take .git/index.lock (a timeout kill leaves it stale).
         done = subprocess.run(["git", "-C", str(root), *args],
                               capture_output=True, text=True,
-                              timeout=GIT_TIMEOUT_SECONDS)
+                              timeout=GIT_TIMEOUT_SECONDS,
+                              env=dict(os.environ, GIT_OPTIONAL_LOCKS="0"))
         return done.stdout.strip() if done.returncode == 0 else ""
     except Exception:
         return ""
@@ -661,6 +680,206 @@ def mission(root: Path) -> tuple[str, bool]:
     return (f"{slug} {done}/{total}" if total else slug), undecided
 
 
+# ── Quota exhaustion record + operator heartbeat (read by quota_auto_resume.py) ─
+
+def iso_utc(epoch: float) -> str:
+    return datetime.fromtimestamp(int(epoch), timezone.utc).strftime(ISO_UTC_FORMAT)
+
+
+def write_json_atomic(target: Path, data: dict) -> None:
+    target.parent.mkdir(parents=True, exist_ok=True)
+    tmp = target.with_name(f"{target.name}.{os.getpid()}.{uuid.uuid4().hex[:8]}.tmp")
+    tmp.write_text(json.dumps(data))
+    tmp.replace(target)
+
+
+def epoch_of(value) -> float | None:
+    """A reset time as epoch seconds, from an epoch number or an ISO string."""
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00")).timestamp()
+        except ValueError:
+            return None
+    return None
+
+
+def exhausted_windows(payload: dict, now: float) -> list[tuple[str, float, float]]:
+    """(window, resets_at epoch, used pct) for every window at the pause band.
+
+    The payload's rate_limits is the source. The shared usage cache is read
+    only when the payload carries none, and only while it is fresh. A window
+    whose reset is already past has rolled over and does not count.
+    """
+    from quota import BAND_PAUSE_PCT
+
+    limits = payload.get("rate_limits")
+    if isinstance(limits, dict):
+        blocks = {w: limits.get(w) for w in QUOTA_WINDOWS}
+        used_key = "used_percentage"
+    else:
+        age = global_age(USAGE_CACHE_NAME)
+        cache = global_json(USAGE_CACHE_NAME)
+        if age is None or age > QUOTA_FRESH_SECONDS or not isinstance(cache, dict):
+            return []
+        blocks = {w: cache.get(w) for w in QUOTA_WINDOWS}
+        used_key = "utilization"
+    found = []
+    for window, block in blocks.items():
+        if not isinstance(block, dict):
+            continue
+        used = block.get(used_key)
+        resets = epoch_of(block.get("resets_at"))
+        if (isinstance(used, (int, float)) and resets is not None
+                and used >= BAND_PAUSE_PCT and resets > now):
+            found.append((window, resets, float(used)))
+    return found
+
+
+def record_exhaustion(payload: dict, root: Path) -> None:
+    """Write exhausted.json when a window is exhausted and the event is new.
+
+    When both windows are, the binding one is the one that resets later: a 5h
+    reset cannot help while the weekly limit is still hit. Never deletes the
+    file -- the trigger's ledger decides what is spent.
+    """
+    now = time.time()
+    found = exhausted_windows(payload, now)
+    if not found:
+        return
+    window, resets, used = max(found, key=lambda item: item[1])
+    resets_iso = iso_utc(resets)
+    event_id = f"{window}@{resets_iso}"
+    target = root / QUOTA_RESUME_DIR / "exhausted.json"
+    existing = read_json(target)
+    if isinstance(existing, dict) and existing.get("event_id") == event_id:
+        return
+    write_json_atomic(target, {
+        "schema": "athanor.quota-exhaustion/v1", "event_id": event_id,
+        "window": window, "resets_at": resets_iso, "used_pct": used,
+        "recorded_at": iso_utc(now), "source": "statusline"})
+
+
+def record_heartbeat(payload: dict, root: Path) -> None:
+    """Move activity_at only when some session did work since it was last seen.
+
+    Fingerprints are kept per session: two idle sessions rendering in turn must
+    not each look like fresh activity against the other's stored value. An idle
+    re-render (a refreshInterval, or a dead session left open) carries an
+    unchanged fingerprint and so is not operator presence. The transcript path
+    is stored too, because the transcript is appended the moment a prompt is
+    submitted -- before any fingerprint field moves -- and the tick reads its
+    mtime as activity.
+    """
+    session = payload.get("session_id")
+    if not isinstance(session, str) or not session:
+        return
+    fingerprint = ":".join(str(x) for x in (
+        session, dig(payload, "cost", "total_api_duration_ms"),
+        dig(payload, "cost", "total_lines_added"),
+        dig(payload, "cost", "total_lines_removed")))
+    transcript = payload.get("transcript_path")
+    transcript = transcript if isinstance(transcript, str) else ""
+    target = root / QUOTA_RESUME_DIR / "heartbeat.json"
+    if fcntl is None:
+        return  # no flock to serialise renders; quota auto-resume is macOS-only anyway
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with open(target.with_name("heartbeat.lock"), "a") as guard:
+        try:
+            fcntl.flock(guard, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            return  # another render is mid-update: skip, never block the panel
+        update_heartbeat(target, session, fingerprint, transcript)
+
+
+def update_heartbeat(target: Path, session: str, fingerprint: str,
+                     transcript: str) -> None:
+    existing = read_json(target)
+    beat = existing if isinstance(existing, dict) else {}
+    sessions = beat.get("sessions") if isinstance(beat.get("sessions"), dict) else {}
+    now = time.time()
+    entry = sessions.get(session) if isinstance(sessions.get(session), dict) else {}
+    moved = entry.get("fingerprint") != fingerprint
+    seen = epoch_of(entry.get("seen_at")) or 0
+    if (not moved and entry.get("transcript_path") == transcript
+            and now - seen < HEARTBEAT_REFRESH_SECONDS):
+        return
+    sessions[session] = {"fingerprint": fingerprint, "transcript_path": transcript,
+                         "seen_at": iso_utc(now)}
+    sessions = {sid: e for sid, e in sessions.items()
+                if isinstance(e, dict)
+                and now - (epoch_of(e.get("seen_at")) or 0) < HEARTBEAT_PRUNE_SECONDS}
+    activity = iso_utc(now) if moved else beat.get("activity_at", iso_utc(now))
+    write_json_atomic(target, {"session_id": session, "fingerprint": fingerprint,
+                               "activity_at": activity, "sessions": sessions})
+
+
+def record_quota_state(payload: dict, root: Path) -> None:
+    """Best-effort: a recording failure must never cost the operator the panel."""
+    for record in (record_exhaustion, record_heartbeat, record_context_now):
+        try:
+            record(payload, root)
+        except Exception:
+            continue
+
+
+def claude_pid() -> str:
+    """Pid of the claude process hosting this render, so readings are per session."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("autocompact_decider", DECIDER_PATH)
+    if spec is None or spec.loader is None:
+        return CONTEXT_NOW_NO_PID
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return str(module.find_claude_ancestor_pid() or CONTEXT_NOW_NO_PID)
+
+
+def prune_context_now(folder: Path) -> None:
+    """Drop readings of sessions long gone."""
+    cutoff = time.time() - CONTEXT_NOW_PRUNE_SECONDS
+    for old in folder.glob("*.json"):
+        if old.stat().st_mtime < cutoff:
+            old.unlink(missing_ok=True)
+
+
+def record_context_now(payload: dict, root: Path) -> None:
+    """Mirror the live context reading for compact.py. Skipped when unknown."""
+    window = dig(payload, "context_window", "context_window_size")
+    used_pct = dig(payload, "context_window", "used_percentage")
+    if (isinstance(window, bool) or isinstance(used_pct, bool)
+            or not isinstance(window, (int, float)) or window <= 0
+            or not isinstance(used_pct, (int, float))):
+        return
+    session = payload.get("session_id")
+    folder = root / CONTEXT_NOW_DIR
+    write_json_atomic(folder / f"{claude_pid()}.json", {
+        "tokens": round(used_pct / 100 * window), "window_size": int(window),
+        "used_pct": float(used_pct), "captured_at": time.time(),
+        "session_id": session if isinstance(session, str) and session else None})
+    prune_context_now(folder)
+
+
+def auto_resume_running(root: Path) -> str:
+    """RUNNING while a headless quota-auto-resume holds the run.lock flock."""
+    if fcntl is None:
+        return ""
+    try:
+        fd = os.open(root / QUOTA_RESUME_DIR / "run.lock", os.O_RDONLY)
+    except OSError:
+        return ""
+    try:
+        fcntl.flock(fd, fcntl.LOCK_SH | fcntl.LOCK_NB)
+    except OSError:
+        return "RUNNING"
+    finally:
+        os.close(fd)
+    return ""
+
+
 # ── Panel ─────────────────────────────────────────────────────────────────────
 
 def header(title: str) -> str:
@@ -720,6 +939,7 @@ def build(payload: dict, root: Path) -> list[str]:
         seg("Sessions", brain_sessions(root)),
         seg("P0", p0, RED if p0 not in ("", "0") else GREEN),
         seg("Mission", mission_name),
+        seg("AUTO-RESUME", auto_resume_running(root), YELLOW),
     )
     if memory:
         warn = f' {RED}⚠ autonomy undecided{R}' if undecided else ""
@@ -745,7 +965,9 @@ def build(payload: dict, root: Path) -> list[str]:
 
 def main() -> int:
     payload = read_payload()
-    panel = build(payload, project_root(payload))
+    root = project_root(payload)
+    record_quota_state(payload, root)
+    panel = build(payload, root)
     if panel:
         print("\n".join(panel))
     return 0

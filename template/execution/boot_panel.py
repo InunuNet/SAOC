@@ -28,6 +28,7 @@ import datetime
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -35,6 +36,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import autonomy as autonomy_dialect  # noqa: E402  (path fixed up above)
+
+from pydeps import require  # noqa: E402  (path fixed up above)
+
+# Re-exec into the venv when it has yaml, but never exit: the panel is how a
+# missing module gets reported (essential "python-deps"), so it must still run.
+require("yaml", "jsonschema", fatal=False)
 
 try:  # copied-project-halt F14 — the ONE reader of the identity question.
     import identity_ambiguity  # noqa: E402  (path fixed up above)
@@ -47,6 +54,7 @@ except ImportError:  # a workspace that never received the probe; see below.
     hook_probe = None
 
 SCHEMA = "athanor.bootpanel/v1"
+PYTHON_DEPS = ("yaml", "jsonschema")
 
 MARKER_REL = ".agent/memory/scratch/.boot_panel.json"
 QUOTA_MIRROR_REL = ".agent/memory/scratch/.quota_status.json"
@@ -81,7 +89,7 @@ CLASS_DIRS = {
 # no provider reads and no sync target writes, and each phantom cell halts the
 # boot printing a remedy that can never clear it.
 
-ALEMBIC_URL = "http://localhost:7077/"
+ALEMBIC_URL = os.environ.get("ALEMBIC_URL", "http://localhost:7077/").rstrip("/") + "/"
 RELEASE_REPO = "InunuNet/Athanor"
 UNKNOWN = "unknown"
 
@@ -253,12 +261,12 @@ def _read_mission(root):
     return None
 
 
-def _run(argv, cwd=None, timeout=PROBE_TIMEOUT_SECONDS, shell=False):
+def _run(argv, cwd=None, timeout=PROBE_TIMEOUT_SECONDS, shell=False, env=None):
     """Run a command; return (rc, first_line_of_output). Never raises."""
     try:
         proc = subprocess.run(
             argv, cwd=str(cwd) if cwd else None, shell=shell, timeout=timeout,
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env,
         )
     except (OSError, subprocess.SubprocessError):
         return 127, "command could not be executed"
@@ -267,7 +275,9 @@ def _run(argv, cwd=None, timeout=PROBE_TIMEOUT_SECONDS, shell=False):
 
 
 def _git(root, *args):
-    rc, out = _run(["git", "-C", str(root)] + list(args), timeout=NETWORK_TIMEOUT_SECONDS)
+    # A read-only panel must never take .git/index.lock (a killed `git status` leaves it stale).
+    env = dict(os.environ, GIT_OPTIONAL_LOCKS="0")
+    rc, out = _run(["git", "-C", str(root)] + list(args), timeout=NETWORK_TIMEOUT_SECONDS, env=env)
     return out if rc == 0 else None
 
 
@@ -513,6 +523,27 @@ def _collect_quota(root, checks):
     })
     _check_quota_reading(checks, quota, root)
     return quota
+
+
+# Harness-written settings key -> the env var that outranks it when set.
+ENV_SHADOWS = {"autoCompactWindow": "CLAUDE_CODE_AUTO_COMPACT_WINDOW"}
+
+
+def _collect_env_shadows(checks):
+    """Warn for each live env var that makes a harness-written settings key inert."""
+    for key, var in ENV_SHADOWS.items():
+        value = os.environ.get(var)
+        if value is None:
+            continue
+        checks.append(_check(
+            "settings.env_shadow", "delivery", "warn",
+            f"{var}={value} is set in the environment, so the {key} settings key "
+            f"is ignored while it is set",
+            False,
+            f"remove the {var} export from your shell startup file "
+            f"(find it with: grep -n {var} ~/.zshrc ~/.zshenv ~/.zprofile ~/.bashrc ~/.profile), "
+            "then open a new terminal",
+            basis="parsed"))
 
 
 def _check_quota_oracle(checks, detail):
@@ -928,6 +959,42 @@ def _athanor_update(root, version):
     return "unknown", f"local {local}, latest stable v{latest}"
 
 
+def _python_deps_entry(root):
+    """Essential: the python3 on PATH can import the harness's third-party modules.
+
+    Probes shutil.which("python3"), not sys.executable -- the panel may itself
+    have re-exec'd into the venv, while every script launched as `python3 ...`
+    still runs on whatever PATH resolves.
+    """
+    python = shutil.which("python3")
+    entry = {"name": "python-deps", "kind": "tool", "blocking": False}
+    if not python:
+        entry.update(status="unknown", detail="python3 not on PATH",
+                     fix="install python3, then pip install pyyaml jsonschema")
+        return entry
+    probe = ("import sys\nmissing = []\n"
+             "for m in %r:\n"
+             "    try:\n        __import__(m)\n"
+             "    except ImportError:\n        missing.append(m)\n"
+             "print(' '.join(missing) + '|' + sys.version.split()[0])" % (PYTHON_DEPS,))
+    rc, out = _run([python, "-c", probe], cwd=root, timeout=NETWORK_TIMEOUT_SECONDS)
+    if rc != 0 or "|" not in (out or ""):
+        entry.update(status="fail", detail=f"{python} could not run the dependency probe",
+                     fix=f"{python} -m pip install pyyaml jsonschema")
+        return entry
+    missing_text, pyver = out.rsplit("|", 1)
+    missing = missing_text.split()
+    if not missing:
+        entry.update(status="ok", detail=f"{python} (Python {pyver}) imports {', '.join(PYTHON_DEPS)}")
+        return entry
+    entry.update(
+        status="fail",
+        detail=f"{python} (Python {pyver}) cannot import {', '.join(missing)}",
+        fix=(f"{python} -m pip install pyyaml jsonschema -- or rebuild ~/.athanor-env "
+             "(scripts re-exec into it automatically when it has them)"))
+    return entry
+
+
 def _collect_essential(root, version, checks):
     essential = []
     status, detail = _athanor_update(root, version)
@@ -939,7 +1006,7 @@ def _collect_essential(root, version, checks):
     essential.append({
         "name": "Alembic", "kind": "service", "status": "ok" if rc == 0 else "fail",
         "detail": f"{ALEMBIC_URL} responds" if rc == 0 else f"{ALEMBIC_URL} unreachable",
-        "blocking": True, "fix": "start Alembic (it must answer on localhost:7077)"})
+        "blocking": True, "fix": f"start Alembic (it must answer on {ALEMBIC_URL}, or set ALEMBIC_URL)"})
 
     # gws is default stack (rule gws.md), but a project that never touches
     # Google Workspace must still boot: report it, never block on it. Missing
@@ -950,6 +1017,8 @@ def _collect_essential(root, version, checks):
         "name": "gws", "kind": "tool", "status": "ok" if version else "unknown",
         "detail": version or "gws not on PATH (Google Workspace CLI)",
         "blocking": False, "fix": "install gws (github.com/googleworkspace/cli), then gws auth login"})
+
+    essential.append(_python_deps_entry(root))
 
     rc, _out = _run(["gh", "auth", "status"], cwd=root, timeout=NETWORK_TIMEOUT_SECONDS)
     essential.append({
@@ -1438,6 +1507,7 @@ def collect(root, refresh=False):
         "estimate": _collect_estimate(root, mission),
         "autonomy": _collect_autonomy(root, profile, active, mission, checks),
     }
+    _collect_env_shadows(checks)
     doc["checks"] = checks
     return _finalize(doc)
 

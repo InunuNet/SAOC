@@ -77,7 +77,7 @@ export type SponsorEnquiryValidation =
   | { ok: false; fieldErrors: SponsorEnquiryFieldErrors };
 
 export interface SponsorEnquiryDoc extends ValidSponsorEnquiry {
-  source: SponsorEnquirySite;
+  source: SponsorEnquirySite | null;
   status: 'new';
   submittedAt: Date;
 }
@@ -192,13 +192,19 @@ export function validateSponsorEnquiry(body: unknown): SponsorEnquiryValidation 
   };
 }
 
-/** The stored document. Every optional is null, never undefined; `site` and `now` come from the server. */
+const SPONSOR_ENQUIRY_SITES: readonly SponsorEnquirySite[] = ['saoc', 'nos'];
+
+/**
+ * The stored document. Every optional is null, never undefined; `site` and `now` come from the
+ * server. A site outside the allowlist is stored as null.
+ */
 export function buildSponsorEnquiryDoc(
   value: ValidSponsorEnquiry,
   site: SponsorEnquirySite,
   now: Date,
 ): SponsorEnquiryDoc {
-  return { ...value, source: site, status: 'new', submittedAt: now };
+  const source = SPONSOR_ENQUIRY_SITES.includes(site) ? site : null;
+  return { ...value, source, status: 'new', submittedAt: now };
 }
 
 export function sponsorLevelLabel(level: SponsorLevel | null): string | null {

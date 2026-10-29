@@ -1,0 +1,1221 @@
+{
+ "_note": "Photo codes are the ruling-(c) crops in goldens/crops/crop-proposals.json; a crop reused from another nav group is logged in that file. Drive sources are frozen copies under goldens/sources/ (sha256 recorded); the live store is an untracked mirror. Routes with drive null and no verifiedBySaoc are GAPs. | rev2 2026-10-25: aside values map to DocumentLayout kinds (index|categories|index -> kind index; venue|contact -> kind content); routes may carry h4:true and headings{h2,h3,h4} asserted by gate-verbatim. | rev3: photo codes re-mapped from the crops-c verdict pool (V1, V3, P1 retired; PK1=PK2); /workshops h2 'Programme' has no Drive source (builder copy), flagged for Lee-Ann, not rewritten (WS-1); data-ticket-card marks purchasable ticket cards.",
+ "routes": [
+  {
+   "nos": "/about",
+   "group": "visit",
+   "kind": "document",
+   "aside": "content",
+   "drive": {
+    "path": ".agent/memory/project/specs/nos-content-standard/goldens/sources/about.md",
+    "version": "v1.2",
+    "sha256": "bb431853bdafec3bddd130cc031c0f3a8ea53da5265a2357826d7bdee5a67837",
+    "driveStorePath": "content/drive-source/National Show/2. About/2.1 About - 2027 National Show/v1.2/content.md",
+    "mode": "range",
+    "from": "The National Orchid Show - Western Cape 2027 is the South Af",
+    "until": "Whether you are an experienced orchid gr",
+    "strikeAbsence": "none",
+    "strikeNote": "AB-G1: her title lines ('About', '2027 South African National Orchid Show') are not the page h1 (NL-1: 'About the show'); the seven paragraphs are asserted verbatim, with her straight quotes and apostrophes kept."
+   },
+   "photo": "S3a",
+   "keyFacts": null,
+   "heroCap": {
+    "1440": 420,
+    "2056": 440
+   },
+   "heroMeasured": {
+    "1440": 392,
+    "2056": 413
+   },
+   "headings": {
+    "h1": "About the show",
+    "h1CaseInsensitive": false
+   },
+   "ab": {
+    "sg": "AB-G1 (NOS Design, comms.md L4012; spec 4.2)",
+    "h1": "About the show",
+    "crumb": "National Show - About the show",
+    "themeTitle": "From Wild Origins to Cultivated Excellence: The Future of Orchids",
+    "themeLines": 2,
+    "themeMaxWidthEm": 20,
+    "factTerms": [
+     "Dates",
+     "Venue"
+    ],
+    "paragraphs": 7,
+    "gateway": [
+     "What to expect",
+     "Plan your visit",
+     "Tickets",
+     "Symposium",
+     "WOSA Conference",
+     "Show sponsors"
+    ],
+    "gatewayMinRow": 64,
+    "absentText": [
+     "Cycle",
+     "Triennial:"
+    ],
+    "hooks": "[data-about-gateway] on the aside list (the six links); the theme element carries class ab-theme"
+   },
+   "facts": {
+    "terms": [
+     "Dates",
+     "Venue"
+    ],
+    "exact": true,
+    "golden": "AB-G1"
+   }
+  },
+  {
+   "nos": "/what-to-expect",
+   "group": "visit",
+   "kind": "document",
+   "aside": "we",
+   "drive": {
+    "path": ".agent/memory/project/specs/nos-content-standard/goldens/sources/what-to-expect.md",
+    "version": "v1.0",
+    "sha256": "aeadd29ec3ef6f332d0e89e7cb2f4d26b69acbbef47bfc969ad9233e488c6bfe",
+    "driveStorePath": "content/drive-source/National Show/3. What to expect/What to Expect/v1.0/content.md",
+    "mode": "listed",
+    "mustPresent": [
+     "The National Orchid Show is a prestigious event that takes place every three years. The Show moves between provinces on this cycle which allows the local societies the opportunity to host the delegates, judges and the public.",
+     "Show dates – for public entrance"
+    ],
+    "strikeAbsence": "none",
+    "strikeNote": "The struck cloakroom block and expectIntro are Sanity content: listed under Sanity edits in research.md; no assertion requires the Sanity change. Opening hours stay as Sanity has them (SAOC)."
+   },
+   "photo": "PK1",
+   "keyFacts": null,
+   "heroCap": {
+    "1440": 340,
+    "2056": 400
+   },
+   "headings": {
+    "h1": "What to expect",
+    "h1CaseInsensitive": false
+   },
+   "noUpscale": true,
+   "we": {
+    "sg": "WE-G1 (NOS Design, comms.md L4033)",
+    "h1": "What to expect",
+    "crumb": "National Show - What to expect",
+    "factTerms": [
+     "Dates",
+     "Venue"
+    ],
+    "sourceFile": "what-to-expect.md",
+    "hoursRows": 3,
+    "admissionRows": "1-4 (a row is omitted when its record is missing or inactive; never shown without a price)",
+    "section3Paragraphs": 7,
+    "stand": {
+     "minPx": 0
+    },
+    "cardStickyTop": 100,
+    "cardMaxWidthBelow1024": 520,
+    "ctaHref": "/tickets",
+    "themeEm": "From Wild Origins to Cultivated Excellence: The Future of Orchids.",
+    "absentText": [
+     "To be confirmed",
+     "Cloakroom",
+     "TBC",
+     "What the show looks like from a visitor",
+     "R350"
+    ],
+    "keepTypo": "takes place",
+    "hooks": "builder-facing hooks asserted by weChecks: [data-we-stand] (Section 1 paragraph), [data-we-card] (the sticky card), [data-we-hours] and [data-we-admission] (dl lists; each row a dt+dd pair), [data-we-rest] (Food, Photography, Accessibility blocks, each an h2 + paragraphs in a wrapper), [data-we-s3] (Section 3 paragraphs). Prices are read from /tickets [data-ticket-price] by name, never typed. Each [data-we-admission] row also carries data-ticket-id=<_id>; /tickets cards are matched by their quantity input id ticket-type-qty-<slug>, slug from the explicit we.admissionSlugs map (SAOC-confirmed).",
+    "ownerItems": "gggg (time format: her doc writes 14.00 / 9.00 with dots, her answers doc writes 9am to 5pm; this page asserts her What to Expect doc verbatim), eeee (first aid: not in this doc, so nothing is asserted and no copy is invented), her typo 'takes place' kept; her doc's admission figures (R350 etc.) are superseded by the ticket records (SAOC, 2026-10-25): the page shows record prices (R300/R800) and the gate bans 'R350'",
+    "admissionIds": [
+     "ticketType-vip",
+     "ticketType-sunset-cocktails-single",
+     "ticketType-weekend-pass-early-bird",
+     "ticketType-early-bird"
+    ],
+    "admissionSlugs": {
+     "ticketType-vip": "vip",
+     "ticketType-sunset-cocktails-single": "sunset-cocktails-single",
+     "ticketType-weekend-pass-early-bird": "weekend-pass-early-bird",
+     "ticketType-early-bird": "early-bird"
+    }
+   },
+   "facts": {
+    "terms": [
+     "Dates",
+     "Venue"
+    ],
+    "exact": true,
+    "golden": "WE-G1"
+   }
+  },
+  {
+   "nos": "/plan-your-visit",
+   "group": "visit",
+   "kind": "document",
+   "aside": "index",
+   "drive": {
+    "path": ".agent/memory/project/specs/nos-content-standard/goldens/sources/plan-your-visit.md",
+    "version": "v1.0",
+    "sha256": "49dfa05546909299eafacb7cd6deb1f1e6896664c6b552c7cf7925db5215076b",
+    "driveStorePath": "content/drive-source/National Show/Plan your Visit/PLAN YOUR VISIT/v1.0/content.md",
+    "mode": "full+listed",
+    "until": "Start planning your visit today",
+    "mustPresent": [
+     "Designated Parking for the National Orchid Show will be provided at the Stellenbosch flying club.",
+     "If you plan to use e-hailing services to get to the National Orchid Show please note that they will have a designated drop off and pick up point.",
+     "The show is held at the hangar at Stellenbosch Flying Club, on the R44 at Stellenbosch Airfield in the Cape Winelands.",
+     "Police (national)",
+     "Ambulance and fire (national)",
+     "All emergencies, from a mobile phone",
+     "Works from any mobile, including one with no airtime."
+    ],
+    "strikeAbsence": "all",
+    "strikeAbsenceExempt": [],
+    "strikeNote": "PV-G1: not rendered: 'Stay informed' (she marks it Remove this section), 'On-site first aid and show duty contact - To be provided' (pending copy; owner item for SAOC/Lee-Ann; this reverses the earlier fix-list item), the map ('To be Provided'), and her trailing 'Explore the show' list (NosShowIndex carries it). The venue card and the emergency band render her Section 1 and Section 2 blocks.",
+    "mustPresentNav": [
+     "Plant Entry/Registration"
+    ],
+    "mustAbsentNav": [
+     "Exhibitor entry guide"
+    ],
+    "note": "PYV-1: h2s are the seven numbered headings of the doc (the lead's message said six; the frozen v1.0 has seven, 7. Make the Most of Your Visit).",
+    "mustAbsentText": [
+     "On-site first aid and show duty contact",
+     "To be Provided",
+     "Stay informed",
+     "Be the first to know",
+     "Ask the council"
+    ]
+   },
+   "photo": "S1b",
+   "keyFacts": [
+    {
+     "term": "Dates",
+     "source": "buildShowFacts() Dates"
+    },
+    {
+     "term": "Venue",
+     "source": "buildShowFacts() Venue"
+    },
+    {
+     "term": "Host",
+     "source": "buildShowFacts() Host (hostRegion), label Host"
+    }
+   ],
+   "h4": true,
+   "headings": {
+    "h1": "Plan your visit",
+    "h1CaseInsensitive": true,
+    "lede": "Discover Stellenbosch, Cape Town, the Cape Winelands and the greater Western Cape",
+    "standfirst": "Join us for the National Orchid Show – Western Cape 2027!",
+    "h2": [
+     "The venue",
+     "1. Getting Here",
+     "2. Where to Stay",
+     "3. Discover Stellenbosch",
+     "4. Discover Cape Town",
+     "5. Explore Beyond Stellenbosch and Cape Town",
+     "6. Practical Information for International Visitors",
+     "7. Make the Most of Your Visit",
+     "In an emergency"
+    ],
+    "h3": [
+     "Getting there",
+     "Public Transport",
+     "By air",
+     "Useful links",
+     "Getting from the airport to Stellenbosch",
+     "Stay in Stellenbosch",
+     "Stay in Cape Town",
+     "Which is the best place to stay?",
+     "Things to see and do",
+     "Plan your Stellenbosch visit",
+     "Highlights of Cape Town",
+     "Plan your Cape Town visit",
+     "Travel documents and visas",
+     "Weather in September",
+     "Currency and payments",
+     "Getting around",
+     "Visitor information"
+    ],
+    "h4": [
+     "History and heritage",
+     "Gardens and botanical interest",
+     "Art, culture and local shopping",
+     "The Cape Winelands",
+     "Outdoor activities",
+     "Table Mountain",
+     "Kirstenbosch National Botanical Garden",
+     "V&A Waterfront",
+     "Robben Island",
+     "Cape Point and the Cape Peninsula",
+     "Beaches and coastal villages"
+    ],
+    "closeLine": "Start planning your visit today"
+   },
+   "keyFactsSignedOff": "NOS Design 2026-10-25: Dates, Venue, Host. No Stellenbosch fact (invented label), no Cycle fact. A TBC fact is omitted, never shown as filler; the row renders only when >= 2 real facts remain.",
+   "pyv": {
+    "index": [
+     "The venue",
+     "1. Getting Here",
+     "2. Where to Stay",
+     "3. Discover Stellenbosch",
+     "4. Discover Cape Town",
+     "5. Explore Beyond Stellenbosch and Cape Town",
+     "6. Practical Information for International Visitors",
+     "7. Make the Most of Your Visit",
+     "In an emergency"
+    ],
+    "tel": [
+     "tel:10111",
+     "tel:10177",
+     "tel:112"
+    ],
+    "heroMax": {
+     "1440": 420,
+     "2056": 440
+    },
+    "measuredByNosDesign": {
+     "1440": 406,
+     "2056": 427
+    }
+   },
+   "pvG1": "NOS Design golden PV-G1, root comms.md line 2964 to the end",
+   "facts": {
+    "terms": [
+     "Dates",
+     "Venue",
+     "Host"
+    ],
+    "exact": true,
+    "golden": "PYV-1"
+   }
+  },
+  {
+   "nos": "/faq",
+   "group": "visit",
+   "kind": "faq",
+   "aside": "categories",
+   "drive": {
+    "path": ".agent/memory/project/specs/nos-content-standard/goldens/sources/faq.md",
+    "version": "v1.0",
+    "sha256": "a35ca3ad1779cb22bc8eb14355abfeb61c41ad485dde786fbe0e98c916f1f4b5",
+    "driveStorePath": "content/drive-source/National Show/17. Frequently Asked Questions/Frequently Asked Questions/v1.0/content.md",
+    "mode": "full",
+    "strikeAbsence": "all",
+    "strikeAbsenceExempt": [],
+    "mustAbsent": [],
+    "strikeNote": "Her title and her question and section numbering render as written (h2 '1. General Show information'; summaries '1. What is ...?'). The invented faqContactNote and its buttons, and the price list appended to Q10, must be absent; the struck faqIntro too unless Sanity holds it (then exempt it and list it).",
+    "dropBlocks": [
+     "Frequently Asked Questions — National Orchid Show – Western Cape 2027"
+    ],
+    "numberSpans": true,
+    "note": "FQ-G1: her title line is the document's own heading and is NOT rendered (its second half repeats the header lockup); the h1 is the existing title. Section and question numbers are rendered as separate figure spans, so the gate re-inserts the space after a leading 'N.' before matching."
+   },
+   "photo": "H4a",
+   "keyFacts": null,
+   "headings": {
+    "h1": "Frequently asked questions",
+    "h1CaseInsensitive": false,
+    "noLede": true
+   },
+   "firstQuestionOpen": true,
+   "emptyCategory": {
+    "id": "faq-10",
+    "link": "Plan your visit",
+    "href": "/plan-your-visit"
+   },
+   "facts": {
+    "terms": null,
+    "exact": false,
+    "golden": "FQ-G1 names FACTS-1 but no terms"
+   }
+  },
+  {
+   "nos": "/contact",
+   "group": "header",
+   "kind": "document",
+   "aside": "ct",
+   "drive": {
+    "path": ".agent/memory/project/specs/nos-content-standard/goldens/sources/contact.md",
+    "version": "v1.1",
+    "sha256": "c7144cfedad11bcbc0943bf750f94a3e3414b98f1c81c7a86ff8b5e174998406",
+    "driveStorePath": "content/drive-source/National Show/18. Contact/2027 Show Contact information/v1.1/content.md",
+    "mode": "listed",
+    "strikeAbsence": "none",
+    "mustPresent": [
+     "Hangar 25, Orca Aero Solutions, Stellenbosch Airfield, Stellenbosch, Western Cape."
+    ],
+    "strikeNote": "CT-G1 (NOS Design, comms.md CT-G1): the committee, address and telephone are asserted by ctChecks against this frozen copy, not as a range: the Otto and Nerine row (no surnames), the bare site URL and the Email address?? notes are NOT rendered (owner item dddd)."
+   },
+   "photo": "H4a",
+   "keyFacts": null,
+   "heroCap": {
+    "1440": 340,
+    "2056": 400
+   },
+   "noUpscale": true,
+   "headings": {
+    "h1": "Contact",
+    "h1CaseInsensitive": false
+   },
+   "ct": {
+    "sg": "CT-G1 (NOS Design, comms.md CT-G1)",
+    "h1": "Contact",
+    "crumb": "National Show - Contact",
+    "factTerms": [
+     "Telephone",
+     "Show co-ordinator"
+    ],
+    "committeeRows": 9,
+    "committeeH2": "Committee",
+    "gatewayLabel": "Looking for something else",
+    "gateway": [
+     "FAQ",
+     "Plan your visit",
+     "What to expect"
+    ],
+    "gatewayMinRow": 44,
+    "formFields": [
+     "name",
+     "email",
+     "subject",
+     "message",
+     "_hp"
+    ],
+    "royalRgb": "rgb(33, 26, 87)",
+    "purpleRgb": "rgb(126, 63, 151)",
+    "hint": "Minimum 10 characters.",
+    "absentText": [
+     "[",
+     "NOT CONFIRMED",
+     "Introduction to be supplied",
+     "Otto",
+     "Nerine",
+     "Needs Surnames",
+     "nos.saoc.co.za",
+     "Email address??"
+    ],
+    "cardStickyTop": 100,
+    "hooks": "[data-ct-card] (the sticky card: address, telephone, gateway) and [data-ct-team] (a dl of div > dt name + dd role); the form is the page's one main form.",
+    "note": "Sourced from 2027 Show Contact information v1.1: committee names and roles (9 rows, her order), 'Address of the show', 'Stellenbosch Airfield', her address line, 'Telephone number', 073 428 4398, 'Lee-Ann McCleland - Show co-ordinator'. Unsourced (builder or nav labels): the crumb prefix, the hero fact labels 'Telephone' (short for her 'Telephone number') and 'Show co-ordinator' (her role words), the gateway aria-label 'Looking for something else' and its three link labels. Owner items: dddd (emails, Otto and Nerine surnames), cccc (her address line says Hangar 25, Orca Aero Solutions; the other venue sources disagree; the page shows her contact doc as written)."
+   },
+   "facts": {
+    "terms": [
+     "Telephone",
+     "Show co-ordinator"
+    ],
+    "exact": true,
+    "golden": "CT-G1"
+   }
+  },
+  {
+   "nos": "/international-guests",
+   "group": "exhibit",
+   "kind": "document",
+   "aside": "none",
+   "drive": null,
+   "photo": "Y1",
+   "keyFacts": null,
+   "driveNote": "No Drive document in the store.",
+   "subnav": {
+    "items": [
+     "International guests",
+     "Plant Entry/Registration",
+     "Exhibitors and vendors"
+    ],
+    "current": "International guests"
+   },
+   "heroCap": {
+    "1440": 420,
+    "2056": 440
+   },
+   "ig": {
+    "h1": "International guests",
+    "lede": "Profiles of international speakers, judges, exhibitors and researchers attending the Show.",
+    "note": "IG-G1 (NOS Design, comms.md L3350). Listing rule: country set and not South Africa, any profile type; no country, no listing. Hooks the dev must add: [data-guest-profile] per row, [data-guest-portrait] around the portrait, [data-guest-role] on the role label, [data-guest-filter] on the role filter. Demo values from her shots (Ten Shin Gardens Co., Ltd.; The Exotic Plant Company; data-demo) must never appear. PR-1 (comms.md L3387): portrait box 320 max, photo rule source >= 640 (Crous 690 shows, Tibbs 201 does not). Real data (SAOC, from her bios): exactly Wijaya (Taiwan, Ten Shin Gardens Co., Ltd.) and Fuchs (United States, R.F. Orchids) are listed; Tibbs is South Africa and Crous/Oberholzer have no country, so none of them is listed; one role (Speaker), so no filter.",
+    "demoValues": [
+     "The Exotic Plant Company"
+    ],
+    "minPortraitSourceW": 640,
+    "boxMax": 320,
+    "boxMaxDesktop": 400,
+    "nameTag": "H2",
+    "listed": [
+     {
+      "name": "Wijaya",
+      "country": "Taiwan",
+      "organisation": "Ten Shin Gardens Co., Ltd."
+     },
+     {
+      "name": "Fuchs",
+      "country": "United States",
+      "organisation": "R.F. Orchids"
+     }
+    ]
+   },
+   "noUpscale": true,
+   "facts": {
+    "terms": [
+     "Dates",
+     "Venue",
+     "Host"
+    ],
+    "exact": true,
+    "golden": "IG-G1"
+   }
+  },
+  {
+   "nos": "/exhibitors",
+   "group": "exhibit",
+   "kind": "document",
+   "aside": "content",
+   "drive": null,
+   "photo": "D1",
+   "keyFacts": null,
+   "headings": {
+    "h1": "Plant Entry/Registration",
+    "h1CaseInsensitive": false,
+    "noLede": false
+   },
+   "subnav": {
+    "items": [
+     "International guests",
+     "Plant Entry/Registration",
+     "Exhibitors and vendors"
+    ],
+    "current": "Plant Entry/Registration"
+   },
+   "heroCap": {
+    "1440": 340,
+    "2056": 400
+   },
+   "noUpscale": true,
+   "strikeNote": "EX-G1 (NOS Design, comms.md L4091 region, supersedes the hero-only rule): no Drive doc covers the entry guide (owner item iiii); the page is FAQ v1.0 section 4 verbatim. The Sanity schemas showExhibitorInfo and showExhibitorStep stay for her future guide; their unsourced records are not rendered.",
+   "ex": {
+    "sg": "EX-G1 (NOS Design, comms.md EX-G1)",
+    "h1": "Plant Entry/Registration",
+    "crumb": "National Show - Plant Entry/Registration",
+    "factTerms": [
+     "Dates",
+     "Venue"
+    ],
+    "stand": 26,
+    "faqQuestions": [
+     25,
+     27,
+     28,
+     30
+    ],
+    "faqAbsent": [
+     29
+    ],
+    "keepTypo": "whose subscriptions",
+    "ariaLabel": "More for exhibitors",
+    "gateway": [
+     "Programme",
+     "Exhibitors and vendors",
+     "International guests",
+     "FAQ",
+     "Contact"
+    ],
+    "gatewayMinRow": 64,
+    "absentText": [
+     "Researched",
+     "not set",
+     "To be confirmed",
+     "TBC",
+     "Key dates for exhibitors",
+     "Questions for the show committee",
+     "Contact the council",
+     "Exhibitor information",
+     "not yet open",
+     "PLACEHOLDER COPY"
+    ],
+    "maxRadius": 999,
+    "note": "Every copy string is FAQ v1.0 section 4 (frozen faq.md). Unsourced: the crumb prefix and the five gateway labels (nav labels). The question h2 is the question text without its number. owner items: iiii (her entry guide), 'whose subscriptions' (her typo, kept)."
+   },
+   "facts": {
+    "terms": [
+     "Dates",
+     "Venue"
+    ],
+    "exact": true,
+    "golden": "EX-G1"
+   },
+   "h2Spec": {
+    "golden": "EX-G1",
+    "family": "fraunces",
+    "weight": "400",
+    "px": 25,
+    "lineHeight": 1.25
+   }
+  },
+  {
+   "nos": "/vendors",
+   "group": "exhibit",
+   "kind": "document",
+   "aside": "content",
+   "drive": {
+    "path": ".agent/memory/project/specs/nos-content-standard/goldens/sources/sa-exhibitors.md",
+    "version": "v1.1",
+    "sha256": "bd5020ac5e40ff767879d13d9c3fb87d6fc0c727a302886e23e31b7463a4707d",
+    "driveStorePath": "content/drive-source/National Show/4. South African Exhibitors/1.1 Exhibitors - South African Exhibitors/v1.1/content.md",
+    "mode": "range",
+    "from": "Showcasing the Finest in South African Orchid Growing",
+    "until": "Whether you are building your first orchid collection",
+    "strikeAbsence": "none",
+    "mustAbsentSelectors": [
+     "[data-nos-cta-band]"
+    ],
+    "strikeNote": "SX-G1 delta onto /vendors (NOS Design, comms.md L3350): her standfirst (L3) and four paragraphs verbatim, plus her aside heading 'Available at the Show' and its six items. Her directory (21 invited names) is NOT rendered: gated (D-SX1; Q-D6/uu, hhhh). Her notes ('Every nursery has:', 'You could even include:') are not copy.",
+    "mustPresent": [
+     "Available at the Show",
+     "Species orchids",
+     "Hybrids",
+     "Miniatures",
+     "South American species",
+     "Asian species",
+     "Growing supplies"
+    ]
+   },
+   "photo": "S1b",
+   "keyFacts": null,
+   "subnav": {
+    "items": [
+     "International guests",
+     "Plant Entry/Registration",
+     "Exhibitors and vendors"
+    ],
+    "current": "Exhibitors and vendors"
+   },
+   "headings": {
+    "h1": "Exhibitors and vendors",
+    "h1CaseInsensitive": false,
+    "standfirst": "Showcasing the Finest in South African Orchid Growing"
+   },
+   "sx": {
+    "directory": "closed",
+    "note": "D-SX1: the invited-vendor wall stays hidden until Q-D6/uu and hhhh are answered; none of her 21 names renders. D-SX2 spellings unconfirmed, never corrected. No empty-state statement is asserted (the ABSENCE_STATEMENT read was removed with the delta).",
+    "noLedeText": "Meet the specialist nurseries"
+   },
+   "sxG1": "SX-G1 delta onto /vendors, NOS Design root comms.md L3350: crop S1b, crumb 'National Show - Exhibitors and vendors', h1 .is-long, hero 394/415, no lede (the 'Meet the specialist nurseries' line is not in BUILDER_BRIEF_SUMMARIES, so it is builder copy)",
+   "facts": {
+    "terms": null,
+    "exact": false,
+    "golden": "no golden lists terms"
+   }
+  },
+  {
+   "nos": "/programme",
+   "group": "programme",
+   "kind": "document",
+   "aside": "none",
+   "drive": null,
+   "photo": "S3b",
+   "keyFacts": null,
+   "layout": "board",
+   "pg": true,
+   "heroCap": {
+    "1440": 375,
+    "2056": 396
+   },
+   "pgG1": "NOS Design golden PG-G1, root comms.md from line 3125. Supersedes PG-1 item 2's 'aside is the h2 index' for this route: the golden is a full-width board with two sections, no aside.",
+   "pgSources": {
+    "file": "what-to-expect.md",
+    "h2": "Show dates – for public entrance",
+    "line": "Thursday 23 to Sunday 26 September 2027",
+    "days": [
+     {
+      "wd": "Thursday",
+      "d": "23",
+      "hours": "VIP Ticket Holders – 14.00 to 19.00"
+     },
+     {
+      "wd": "Friday",
+      "d": "24",
+      "hours": "9.00 to 17.00",
+      "tile": "/symposium"
+     },
+     {
+      "wd": "Saturday",
+      "d": "25",
+      "hours": "9.00 to 17.00",
+      "tile": "/wosa-conference"
+     },
+     {
+      "wd": "Sunday",
+      "d": "26",
+      "hours": "9.00 to 16.00"
+     }
+    ],
+    "h2s": [
+     "Show dates – for public entrance",
+     "Tickets"
+    ],
+    "workshopsRow": {
+     "href": "/workshops",
+     "source": "TICKET_PRODUCTS.workshops.when and .meta, read at gate time from lib/data/ticket-presentation.ts (sourced from Brad's ticket news of 2026-10-07, cited in lib/provisional-figures.ts:477-487 and lib/data/ticket-presentation.ts:164)"
+    }
+   },
+   "facts": {
+    "terms": null,
+    "exact": false,
+    "golden": "PG-1 names FACTS-1 but no terms"
+   },
+   "h2FlaggedForDrive": [
+    "Tickets"
+   ]
+  },
+  {
+   "nos": "/workshops",
+   "group": "programme",
+   "kind": "document",
+   "aside": "ticket",
+   "drive": null,
+   "photo": "S2c",
+   "keyFacts": null,
+   "heroCap": {
+    "1440": 420,
+    "2056": 440
+   },
+   "heroMeasured": {
+    "1440": 328,
+    "2056": 380
+   },
+   "wk": {
+    "sg": "WK-G1 (NOS Design, comms.md L3963; spec 4.12)",
+    "h1": "Workshops",
+    "crumb": "National Show - Workshops",
+    "faqStand": 57,
+    "faqQuestions": [
+     58,
+     59,
+     60
+    ],
+    "faqH2": "Frequently asked questions",
+    "factTerms": [
+     "Dates",
+     "Venue",
+     "Host"
+    ],
+    "absentText": [
+     "Book Sunset Cocktails",
+     "guided Field Trip",
+     "To be confirmed by the show committee",
+     "Sunset Cocktails",
+     "Please check on the website for updates"
+    ],
+    "absentH2": [
+     "Programme"
+    ],
+    "levels": {
+     "Beginner": "rgb(143, 145, 54)",
+     "Intermediate": "rgb(138, 92, 194)",
+     "Advanced": "rgb(33, 26, 87)"
+    },
+    "places": "^(\\d+ of \\d+ places left|Fully booked)$",
+    "recordHooks": "[data-workshop-record] per row, [data-level] (the level word), [data-level-dot] (10px dot), [data-places]; rows render only once SAOC enters workshop records",
+    "schemaGap": "sanity/schemas/documents/workshopSession.ts has title, description, presenter (reference), timeSlot, ticketType and provenance only. SAOC has since approved optional level, duration, included and bring (no places field: the total is the ticket's capacity, the remainder is getPoolRemaining); records render nothing until Lee-Ann supplies data (owner items s to w). The browser gate checks only what a rendered row shows; check-static covers the schema."
+   },
+   "facts": {
+    "terms": [
+     "Dates",
+     "Venue",
+     "Host"
+    ],
+    "exact": true,
+    "golden": "WK-G1"
+   }
+  },
+  {
+   "nos": "/symposium",
+   "group": "programme",
+   "kind": "document",
+   "aside": "ticket",
+   "drive": null,
+   "photo": "D1",
+   "keyFacts": null,
+   "noUpscale": true,
+   "heroCap": {
+    "1440": 420,
+    "2056": 440
+   },
+   "heroMeasured": {
+    "1440": 382,
+    "2056": 402
+   },
+   "ig": {
+    "event": true,
+    "h1": "Symposium",
+    "nameTag": "H3",
+    "count": 5,
+    "boxMax": 320,
+    "minPortraitSourceW": 640,
+    "demoValues": [
+     "The Exotic Plant Company"
+    ],
+    "mustHavePhoto": [
+     "Crous"
+    ],
+    "mustNotHavePhoto": [
+     "Tibbs"
+    ],
+    "note": "PR-1 shared profile on an event page: names are h3 under the h2 'Presenters'; the facts row is omitted entirely when empty; no listing rule (country is filled by SAOC later).",
+    "mustName": "Hildegard Crous",
+    "bannedName": "Hildagard",
+    "orderFile": "lib/view-models/presenter-order.ts",
+    "orderConst": "PRESENTER_FALLBACK_SEQUENCE"
+   },
+   "sy": {
+    "sg": "SY-G1 (NOS Design, comms.md L3387)",
+    "h1": "Symposium",
+    "crumb": "National Show - Symposium",
+    "themeSource": {
+     "path": ".agent/memory/project/specs/nos-content-standard/goldens/sources/symposium-theme.md",
+     "sha256": "aac673ee2eb9fa7feb1b5af0f8f77d029b2d392d4ddcf4d10913612ce30e80cc",
+     "driveRecoveredPath": "content/drive-recovered/06-saoc-symposium/theme/content.md"
+    },
+    "wteSource": ".agent/memory/project/specs/nos-content-standard/goldens/sources/what-to-expect.md",
+    "wteStarts": "The National Show Symposium will feature",
+    "factTerms": [
+     "Date",
+     "Time",
+     "Venue"
+    ],
+    "presentersH2": "Presenters",
+    "absent": [
+     "About the Symposium",
+     "Attending",
+     "PLACEHOLDER COPY"
+    ],
+    "hoursLine": "SAOC Symposium",
+    "dateFaq": 39
+   },
+   "gapNote": "Body copy is asserted by syChecks against the frozen theme doc and What to Expect v1.0 (no single Drive range).",
+   "facts": {
+    "terms": [
+     "Date",
+     "Time",
+     "Venue"
+    ],
+    "exact": true,
+    "golden": "SY-G1"
+   }
+  },
+  {
+   "nos": "/wosa-conference",
+   "group": "programme",
+   "kind": "document",
+   "aside": "ticket",
+   "drive": null,
+   "photo": "PK3",
+   "keyFacts": null,
+   "heroCap": {
+    "1440": 420,
+    "2056": 440
+   },
+   "heroMeasured": {
+    "1440": 406,
+    "2056": 427
+   },
+   "ig": {
+    "event": true,
+    "optional": true,
+    "h1": "WOSA Conference",
+    "nameTag": "H3",
+    "boxMax": 320,
+    "minPortraitSourceW": 640,
+    "demoValues": [
+     "The Exotic Plant Company"
+    ],
+    "mustName": "Hildegard Crous",
+    "bannedName": "Hildagard",
+    "note": "PR-1 applies only once a conferencePresenter has event = wosa; until then there is no Presenters section at all.",
+    "orderFile": "lib/view-models/presenter-order.ts",
+    "orderConst": "PRESENTER_FALLBACK_SEQUENCE"
+   },
+   "wo": {
+    "sg": "WO-G1 (NOS Design, comms.md L3436)",
+    "h1": "WOSA Conference",
+    "crumb": "National Show - WOSA Conference",
+    "ledeFrom": {
+     "file": "faq.md",
+     "startsWith": "For Wild Orchids Southern Africa members"
+    },
+    "factTerms": [
+     "Date",
+     "Time",
+     "Venue"
+    ],
+    "standfirst": {
+     "file": "what-to-expect.md",
+     "startsWith": "A Conference held by Wild Orchids Southern Africa (WOSA)"
+    },
+    "paragraph": {
+     "file": "about.md",
+     "startsWith": "An important feature of the 2027 programme"
+    },
+    "faqH2": "Frequently asked questions",
+    "faqQuestions": [
+     46,
+     49,
+     51,
+     53,
+     54,
+     55,
+     56
+    ],
+    "faqOmitted": [
+     47,
+     48,
+     50,
+     52
+    ],
+    "absent": [
+     "About the Conference",
+     "Attending",
+     "About WOSA",
+     "PLACEHOLDER COPY"
+    ],
+    "venueMaxLines": 2,
+    "hoursLine": "WOSA Conference",
+    "dateFaq": 48
+   },
+   "gapNote": "WO-G1 body copy is asserted by woChecks against the frozen faq.md, what-to-expect.md and about.md.",
+   "facts": {
+    "terms": [
+     "Date",
+     "Time",
+     "Venue"
+    ],
+    "exact": true,
+    "golden": "WO-G1"
+   }
+  },
+  {
+   "nos": "/conferences",
+   "group": "programme",
+   "kind": "document",
+   "aside": "ticket",
+   "drive": null,
+   "photo": "S2a",
+   "keyFacts": null,
+   "heroCap": {
+    "1440": 420,
+    "2056": 440
+   },
+   "heroMeasured": {
+    "1440": 320,
+    "2056": 380
+   },
+   "cr": {
+    "sg": "CR-G1 (NOS Design, comms.md L3989)",
+    "h1": "Conference registration",
+    "crumb": "National Show - Conference registration",
+    "factTerms": [
+     "Symposium",
+     "WOSA Conference",
+     "Time"
+    ],
+    "rows": [
+     {
+      "h2": "Symposium",
+      "introHeading": "6. Symposium",
+      "faqBody": 38,
+      "dateFaq": 39,
+      "hoursLine": "SAOC Symposium",
+      "link": "About the Symposium",
+      "hrefHas": "symposium",
+      "card": "symposium"
+     },
+     {
+      "h2": "WOSA Conference",
+      "introHeading": "7. WOSA Conference",
+      "faqBody": 47,
+      "dateFaq": 48,
+      "hoursLine": "WOSA Conference",
+      "link": "About the WOSA Conference",
+      "hrefHas": "wosa-conference",
+      "card": "wosa"
+     }
+    ],
+    "absentText": [
+     "Register for the National Orchid Show Symposium or the WOSA Conference"
+    ],
+    "absentH2": [
+     "Programme"
+    ],
+    "hooks": "[data-conference-row] around each row (h2, standfirst, body, link, and that conference's one [data-ticket-card])"
+   },
+   "facts": {
+    "terms": [
+     "Symposium",
+     "WOSA Conference",
+     "Time"
+    ],
+    "exact": true,
+    "golden": "CR-G1"
+   },
+   "h2AreNavLabels": true,
+   "h2Note": "CR-G1's row h2s ARE the nav labels (Symposium, WOSA Conference), so the sibling-route-name rule does not apply."
+  },
+  {
+   "nos": "/sponsors",
+   "group": "header",
+   "kind": "document",
+   "aside": "contact",
+   "drive": null,
+   "photo": "PK3",
+   "keyFacts": null,
+   "sp1": true,
+   "sp1Sources": {
+    "standfirst": {
+     "file": "what-to-expect.md",
+     "line": 87
+    },
+    "thanks": {
+     "file": "about.md",
+     "line": 15
+    },
+    "themeProse": {
+     "file": "about.md",
+     "line": 9
+    },
+    "qa": [
+     {
+      "file": "faq.md",
+      "q": 80
+     },
+     {
+      "file": "faq.md",
+      "q": 81
+     }
+    ],
+    "email": "2027national@gmail.com",
+    "notEmail": "info@saoc.co.za"
+   },
+   "sp1Review": "comms.md:2936: crop PK3 (S2a rejected), no bullets on reach rows, wall head stacked, shared 2px Button accepted, strip tiles naturalWidth >= box x DPR at 2056@2 and 390@3",
+   "facts": {
+    "terms": [
+     "Dates",
+     "Venue",
+     "Host"
+    ],
+    "exact": true,
+    "golden": "SP-1"
+   },
+   "h4": true,
+   "h4Spec": "sp1",
+   "h4Note": "SP-1 owns its own h4 rule (level heads on the sponsor wall); the PYV-1 24px/8px spacing applies to /plan-your-visit only.",
+   "h2FlaggedForDrive": [
+    "Show sponsors"
+   ]
+  },
+  {
+   "nos": "/archive",
+   "group": "header",
+   "kind": "listing",
+   "aside": "none",
+   "drive": null,
+   "photo": "S3a",
+   "keyFacts": null,
+   "heroCap": {
+    "1440": 340,
+    "2056": 400
+   },
+   "noUpscale": true,
+   "headings": {
+    "h1": "Past shows",
+    "h1CaseInsensitive": false
+   },
+   "ar": {
+    "sg": "AR-1 (NOS Design, comms.md AR-1, a written ruling with no render, low priority)",
+    "h1": "Past shows",
+    "crumb": "National Show - Past shows",
+    "absentText": [
+     "Looking for the 19th National Show?",
+     "The National Orchid Show is the council's triennial event.",
+     "National Show archive",
+     "←"
+    ],
+    "maxRadius": 999,
+    "factTerms": [
+     "Entries",
+     "Exhibitors",
+     "Visitors",
+     "Trophies"
+    ],
+    "recordHook": "[data-edition-record]",
+    "publicWithhold": "r64 (docs/nos-archive-public-r64.md): the public build 404s the route and hides its links with zero records; asserted statically in check-static because the gate server runs in preview mode only",
+    "note": "Written ruling, no render. The layout gates run in preview mode (the gate server). The filled-state gates (ruled register, newest first, facts dl) run only when an edition record renders. Unsourced: the crumb prefix; no copy is asserted beyond h1 'Past shows' and the absences. Hook the dev adds: [data-edition-record] on each register row."
+   },
+   "facts": {
+    "terms": null,
+    "exact": false,
+    "golden": "AR-1: none until records give real values"
+   },
+   "h2Spec": {
+    "golden": "AR-1",
+    "family": "fraunces",
+    "weight": "400",
+    "px": 25
+   },
+   "h2SpecScope": "record"
+  },
+  {
+   "nos": "/privacy",
+   "group": "legal",
+   "kind": "document",
+   "aside": "index",
+   "drive": null,
+   "photo": "S3b",
+   "keyFacts": null,
+   "verifiedBySaoc": true,
+   "driveNote": "Drive folder 'Privacy/Terms' was skipped by the sync (a '/' in its name); SAOC verified the copy as verbatim. Nothing new is asserted here.",
+   "facts": {
+    "terms": null,
+    "exact": false,
+    "golden": "no golden lists terms"
+   }
+  },
+  {
+   "nos": "/terms",
+   "group": "legal",
+   "kind": "document",
+   "aside": "index",
+   "drive": null,
+   "photo": "S2a",
+   "keyFacts": null,
+   "verifiedBySaoc": true,
+   "driveNote": "Drive folder 'Privacy/Terms' was skipped by the sync (a '/' in its name); SAOC verified the copy as verbatim. Nothing new is asserted here.",
+   "facts": {
+    "terms": null,
+    "exact": false,
+    "golden": "no golden lists terms"
+   }
+  },
+  {
+   "nos": "/refunds",
+   "group": "legal",
+   "kind": "document",
+   "aside": "index",
+   "drive": null,
+   "photo": "Y1",
+   "keyFacts": null,
+   "facts": {
+    "terms": null,
+    "exact": false,
+    "golden": "no golden lists terms"
+   }
+  }
+ ],
+ "cardImageRoutes": [
+  "/programme",
+  "/tickets"
+ ],
+ "retired": [
+  {
+   "from": "/sa-exhibitors",
+   "to": "/vendors",
+   "status": 301,
+   "note": "V1 ruling (change-list.md:54). No sub-nav item for it; the 301 is asserted by gate-standard."
+  }
+ ],
+ "bannedStrings": [
+  {
+   "text": "With Wild Orchids of Southern Africa",
+   "why": "builder theme line on the WOSA ticket card (ticket-presentation.ts `theme`); it misnames the organisation (her FAQ 46: 'Wild Orchids Southern Africa'). Never renders on any route. SAOC ruling: wosa.theme is dropped (no replacement until Lee-Ann supplies one); the org name itself is NOT gated, both of her spellings are hers."
+  },
+  {
+   "text": "Cycle",
+   "why": "NOS Design ruling 2026-10-25: 'Cycle: Triennial' is a builder label (R7). Never renders on any route; her own lowercase 'cycle' in What to Expect is not the label."
+  },
+  {
+   "text": "Triennial",
+   "why": "NOS Design ruling 2026-10-25: the 'Cycle: Triennial' fact is a builder label (R7). Her About v1.2 says 'triennial' in lowercase, which is not gated."
+  }
+ ],
+ "home": {
+  "sg": "HM-G1 (NOS Design, comms.md HM-G1)",
+  "path": "/",
+  "h2s": [
+   "2027 South African National Orchid Show",
+   "Visit",
+   "Programme",
+   "Exhibit & trade"
+  ],
+  "sections": [
+   "about",
+   "visit",
+   "programme",
+   "exhibit",
+   "closing"
+  ],
+  "factTerms": [
+   "Dates",
+   "Venue"
+  ],
+  "aboutHeading": "2027 South African National Orchid Show",
+  "aboutLinks": [
+   "About the show →",
+   "What to expect →"
+  ],
+  "visitLinks": [
+   "About the show",
+   "What to expect",
+   "Plan your visit",
+   "FAQ",
+   "Tickets"
+  ],
+  "visitColumns": {
+   "desktop": 5,
+   "below1024": 2,
+   "below600": 1
+  },
+  "programmeRows": [
+   {
+    "h3": "Symposium",
+    "from": "wte-sentence",
+    "starts": "The National Show Symposium will feature"
+   },
+   {
+    "h3": "WOSA Conference",
+    "from": "wte-sentence",
+    "starts": "A Conference held by Wild Orchids Southern Africa (WOSA)"
+   },
+   {
+    "h3": "Workshops",
+    "from": "faq-first-sentence",
+    "faq": 57
+   }
+  ],
+  "exhibitLead": 26,
+  "exhibitBody": 27,
+  "exhibitLinks": [
+   "Plant Entry/Registration",
+   "Exhibitors and vendors",
+   "International guests"
+  ],
+  "closingLinks": [
+   "Tickets",
+   "Plan your visit"
+  ],
+  "closingMaxWidthCh": 38,
+  "bannedText": [
+   "Three years",
+   "Ten judging",
+   "100-point",
+   "Cycle",
+   "nine provinces",
+   "honestly marked",
+   "Start planning your entry now",
+   "opens in September 2027",
+   "South Africa's triennial orchid competition",
+   "18 editions",
+   "judging classes"
+  ],
+  "bannedPattern": "\\bTBC\\b|to be confirmed|pending|PLACEHOLDER|cloakroom",
+  "hooks": "section[data-hm-section=\"about|visit|programme|exhibit|closing\"] on each band; [data-hm-lede] on the hero lede; [data-hm-visit-card] on the compact card in the About band; [data-hm-exempt] on the hero countdown, price line and CTAs (unchanged, outside the sentence-provenance check); every other <p> in main must be a sentence of About v1.2, What to Expect v1.0 or FAQ v1.0.",
+  "note": "Every sentence is verbatim from the frozen About v1.2, What to Expect v1.0 or FAQ v1.0. Unsourced: the section h2s Visit, Programme and Exhibit & trade (nav group names), the register and link labels (nav labels), and the arrows. The home hero stays PG-1 exempt and unchanged apart from the lede, the TBC chip and the facts row. Owner item vvvv: FAQ 26 'who’s'. About keeps its hyphen ('Show - Western Cape'), What to Expect its en dash. 'Past shows' is gated only through the Visit register's exact link list (the header and footer may carry it in preview)."
+ }
+}

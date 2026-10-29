@@ -1,75 +1,73 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
-import { PageHero } from '@/components/ui/PageHero';
-import { fitDescription } from '@/lib/seo';
+import { Breadcrumb } from '@/components/chrome/Breadcrumb';
+import { RouteHero } from '@/components/ui/RouteHero';
+import { buildPageMetadata } from '@/lib/seo';
 import { CTASection } from '@/components/ui/CTASection';
+import { DocumentLayout } from '@/components/ui/DocumentLayout';
+import { DraftNotice } from '@/components/ui/DraftNotice';
 import { SuggestionForm } from '@/components/members/SuggestionForm';
 
 const LEDE =
   'A restricted area for paid-up SAOC members, separate from the public-facing pages on this site.';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: 'Members Portal',
-  description: fitDescription(
-    'A restricted area for paid-up SAOC members, coming to this site.',
-    LEDE,
-  ),
-};
+  description: 'A restricted area for paid-up SAOC members, coming to this site.',
+  lede: LEDE,
+  path: '/members',
+});
 
 export default function MembersPage() {
   return (
     <>
-      <PageHero
-        image="/images/orchid-yellow.jpg"
+      <Breadcrumb items={[{ label: 'Members Portal' }]} />
+      <RouteHero
+        route="/members"
         eyebrow="For paid-up members"
         heading="Members Portal"
         lede={LEDE}
       />
 
-      <div className="saoc-container py-20">
-        <div className="max-w-[720px] space-y-10">
-          <section
-            data-placeholder="true"
-            className="space-y-3 border border-rule bg-bone px-6 py-5"
-          >
-            <p className="font-sans text-[16px] leading-[1.55] text-ink/80">
-              <strong className="font-medium text-ink">Not yet available.</strong> Member login
-              and the Members Portal itself have not been built for this site yet. This page will
-              be updated once they are.
+      <DocumentLayout
+        aside={
+          <p className="font-sans text-[16px] leading-[1.55] text-ink/80">
+            Have a question about the Members Portal, or how to become a paid-up member?{' '}
+            <Link href="/contact" className="text-ink underline underline-offset-2">
+              Contact SAOC
+            </Link>
+            .
+          </p>
+        }
+      >
+        <section className="doc-section">
+          <div className="doc-prose">
+            <DraftNotice leadIn="Not yet available." placeholder>
+              Member login and the Members Portal itself have not been built for this site yet.
+              This page will be updated once they are.
+            </DraftNotice>
+            <p>
+              The Members Portal will be a restricted area for paid-up SAOC members, separate from
+              the public-facing pages. It will provide member authentication and account
+              management, and a digital library of SAOC Journal issues available only to members.
             </p>
-          </section>
+          </div>
+        </section>
 
-          <section className="space-y-4">
-            <p className="font-sans text-[16px] leading-[1.55] text-ink/80">
-              The Members Portal will be a restricted area for paid-up SAOC members, separate
-              from the public-facing pages. It will provide member authentication and account
-              management, and a digital library of SAOC Journal issues available only to
-              members.
+        <section className="doc-section">
+          <h2 className="doc-h2">Tell us what you&apos;d want from it</h2>
+          <div className="doc-prose">
+            <p>
+              The Members Portal is still being planned. If there&apos;s something you&apos;d want
+              it to do, let us know below.
             </p>
-            <p className="font-sans text-[16px] leading-[1.55] text-ink/80">
-              Have a question about the Members Portal, or how to become a paid-up member?{' '}
-              <a href="/contact" className="text-ink underline underline-offset-2">
-                Contact SAOC
-              </a>
-              .
-            </p>
-          </section>
-
-          <section className="space-y-4 border-t border-rule pt-10">
-            <div>
-              <span className="eyebrow">Help shape it</span>
-              <h2 className="mt-3 font-serif font-normal text-[22px] text-ink">
-                Tell us what you&apos;d want from it
-              </h2>
-              <p className="mt-2 font-sans text-[16px] leading-[1.55] text-ink/80">
-                The Members Portal is still being planned. If there&apos;s something you&apos;d
-                want it to do, let us know below.
-              </p>
-            </div>
+          </div>
+          <div className="mt-8">
             <SuggestionForm />
-          </section>
-        </div>
-      </div>
+          </div>
+        </section>
+      </DocumentLayout>
 
       <CTASection
         eyebrow="In the meantime"

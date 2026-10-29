@@ -1,0 +1,31 @@
+{
+  "now": "2026-10-24T00:00:00.000Z",
+  "valid": {
+    "title": "Spring Orchid Show",
+    "kind": "show",
+    "date": "2027-03-01T09:00:00.000Z",
+    "venue": "Church Hall",
+    "location": "Pretoria",
+    "description": "A long enough description of the event.",
+    "hostSocietyId": "society-abc"
+  },
+  "caps": { "title": 150, "venue": 150, "location": 150, "description": 5000, "hostSocietyId": 64 },
+  "rejects": [
+    { "label": "title is a number", "field": "title", "patch": { "title": 5 } },
+    { "label": "title 151 chars", "field": "title", "patch": { "title": { "repeat": "a", "times": 151 } } },
+    { "label": "venue 151 chars", "field": "venue", "patch": { "venue": { "repeat": "a", "times": 151 } } },
+    { "label": "location is an object", "field": "location", "patch": { "location": {} } },
+    { "label": "description 5001 chars", "field": "description", "patch": { "description": { "repeat": "a", "times": 5001 } } },
+    { "label": "description too short", "field": "description", "patch": { "description": "short" } },
+    { "label": "hostSocietyId is a number", "field": "hostSocietyId", "patch": { "hostSocietyId": 12 } },
+    { "label": "hostSocietyId 65 chars", "field": "hostSocietyId", "patch": { "hostSocietyId": { "repeat": "a", "times": 65 } } },
+    { "label": "kind not allowed", "field": "kind", "patch": { "kind": "rave" } },
+    { "label": "date in the past", "field": "date", "patch": { "date": "2020-01-01T00:00:00.000Z" } },
+    { "label": "date is a number", "field": "date", "patch": { "date": 1800000000000 } },
+    { "label": "endDate before date", "field": "endDate", "patch": { "endDate": "2027-02-01T09:00:00.000Z" } }
+  ],
+  "accepts": [
+    { "label": "hostSocietyId omitted", "patch": { "hostSocietyId": "__delete__" } },
+    { "label": "title exactly 150", "patch": { "title": { "repeat": "a", "times": 150 } } }
+  ]
+}

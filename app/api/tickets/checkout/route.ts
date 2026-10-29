@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isBodyWithinLimit } from '@/lib/request-guards';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
 import { generateBookingRef } from '@/lib/booking-ref';
+import { CONTACT_FIELD_MAX_LENGTHS } from '@/lib/contact-input';
 import {
   aggregateRequestedQuantities,
   buildMultiReservationDocs,
@@ -45,6 +47,12 @@ import {
 } from '@/lib/provisional-figures';
 import { resolveActiveShow } from '@/lib/show-resolution';
 import { nosUrl } from '@/lib/site-hosts';
+import { isTicketingTestMode } from '@/lib/ticketing-test-mode';
+import {
+  isTicketOnSale,
+  qaFixturesAllowed,
+  ticketTypeMatchesActiveShow as sharedTicketTypeMatchesActiveShow,
+} from '@/lib/ticket-on-sale';
 import { MAX_LINE_ITEMS, NATIONAL_SHOW_ID, RESERVATION_TTL_MINUTES } from '@/lib/tickets-constants';
 
 // Re-exported (not just imported) so contracts/checks/ticketing-multi-line-item-cart/
@@ -91,6 +99,11 @@ const TRANSACTION_MAX_ATTEMPTS = 10;
 interface SanityTicketType {
   _id: string;
   name: string;
+  slug: string | null;
+  // Selected so the on-sale predicate can see them (a field the GROQ never selects reads as
+  // absent). `demo` is the QA-fixture marker; `active` is already filtered by the query.
+  demo: boolean | null;
+  active: unknown;
   price: unknown;
   regularPrice: unknown;
   capacity: unknown;
@@ -127,8 +140,9 @@ export function ticketTypeMatchesActiveShow(
   ticketType: TicketTypeShowRef,
   activeShowId: string | null
 ): boolean {
-  if (activeShowId === null) return false;
-  return ticketType.show?._ref === activeShowId;
+  // The rule lives once, in lib/ticket-on-sale.ts, where the shared on-sale predicate also uses
+  // it. This export stays because other contracts' checks import it from this route module.
+  return sharedTicketTypeMatchesActiveShow(ticketType, activeShowId);
 }
 
 // Sanity `validation:` is a Studio-authoring guard, not a read-time guarantee — the seed
@@ -280,6 +294,13 @@ export function parseLineItems(raw: unknown): CheckoutLineItemInput[] | null {
     ) {
       return null;
     }
+    // ticketType is left unbounded: an unknown slug is rejected after the Sanity lookup (route.ts:566).
+    if (
+      attendeeName.length > CONTACT_FIELD_MAX_LENGTHS.name ||
+      attendeeEmail.length > CONTACT_FIELD_MAX_LENGTHS.email
+    ) {
+      return null;
+    }
     if (chosenDay !== undefined && (typeof chosenDay !== 'string' || !CHOSEN_DAY_PATTERN.test(chosenDay))) {
       return null;
     }
@@ -410,7 +431,14 @@ async function fetchSoldOutMessage(): Promise<string> {
   }
 }
 
+// Cap on the request body, checked against Content-Length before the body is buffered.
+// This cap is the effective ceiling for attendeeName, which parseLineItems() does not bound.
+const MAX_BODY_BYTES = 131072;
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  if (!isBodyWithinLimit(request.headers.get('content-length'), MAX_BODY_BYTES)) {
+    return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
+  }
   // Before anything is read or written: without a well-formed key, duplicate protection
   // is opt-in, and therefore absent for exactly the callers that retry.
   const idempotencyKey = request.headers.get(IDEMPOTENCY_KEY_HEADER)?.trim() ?? '';
@@ -552,6 +580,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
     if (!ticketTypeDoc) {
+      return NextResponse.json({ error: `Unknown ticketType: ${slug}` }, { status: 400 });
+    }
+
+    // A demo / QA-fixture product is refused with the SAME response a nonexistent slug gets, so
+    // a refusal never confirms a fixture exists. Only the demo reason is acted on here: every
+    // other refusal below keeps its existing status and body, and the sold-out verdict stays
+    // with the reservation transaction. The policy is read per request, never at module load.
+    const onSale = isTicketOnSale({
+      doc: ticketTypeDoc,
+      activeShowId,
+      salesOpen: true,
+      soldOut: false,
+      now: new Date(),
+      qaFixturesAllowed: qaFixturesAllowed(process.env, !isTicketingTestMode()),
+    });
+    if (onSale.reason === 'demo') {
       return NextResponse.json({ error: `Unknown ticketType: ${slug}` }, { status: 400 });
     }
 

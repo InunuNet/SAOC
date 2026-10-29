@@ -104,6 +104,17 @@ await main('F18-A1 long-form template', async (r) => {
       const spec = COPY[route];
       const { status } = await fetchHtml(route);
       if (status !== 200) { r.fail(`${route}: HTTP ${status}`); continue; }
+      if (spec.verbatimOnly) {
+        // AB-G1: the route is on the content-standard document layout (gated by nos-content-standard abChecks); only the verbatim paragraphs are asserted here.
+        for (const [name, [w, h]] of [['1280', T.viewports.desktop], ['390', T.viewports.phone]]) {
+          const { ctx, page } = await openPage(browser, { width: w, height: h }, route);
+          const got = (await page.evaluate(() => [...document.querySelectorAll('[data-doc-main] p')].map((p) => p.textContent.replace(/\s+/g, ' ').trim()).filter(Boolean))).map(flat);
+          const want = spec.paragraphs.map(flat);
+          if (JSON.stringify(got) !== JSON.stringify(want)) r.fail(`${route} @${name}: paragraphs differ from longform-copy.json (${got.length} vs ${want.length}); first difference: ${got.findIndex((x, i) => x !== want[i])}`);
+          await ctx.close();
+        }
+        continue;
+      }
       for (const [name, [w, h]] of [['1280', T.viewports.desktop], ['900', T.viewports.gridEdge], ['899', T.viewports.belowGridEdge], ['390', T.viewports.phone]]) {
         const { ctx, page } = await openPage(browser, { width: w, height: h }, route);
         const tag = `${route} @${name}`;

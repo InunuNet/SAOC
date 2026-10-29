@@ -87,6 +87,10 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: E2E tests
+        # The checkout-error-summary e2e renders the real form on /ticket-fixtures/buy, which 404s
+        # unless this flag is set. CI only: never in apphosting.yaml or an .env example.
+        env:
+          TICKET_FIXTURES: '1'
         run: bash scripts/ci-e2e.sh pnpm test:e2e
 
       # ADDED 2026-09-08 (mission ticketing-complete M1/F7, contract-f7.yaml A20/A25/
@@ -131,6 +135,17 @@ jobs:
           NEXT_PUBLIC_SANITY_DATASET: production
           SANITY_API_TOKEN: ${{ secrets.SANITY_API_TOKEN }}
         run: pnpm exec tsx scripts/scan-dataset-residue.ts
+
+  live-write-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python3 -m pip install pyyaml
+      - name: No contract runs a live-production write in the default gate
+        run: python3 contracts/checks/live-write-guard/verify_no_ungated_writers.py
 
   firestore-residue-guard:
     runs-on: ubuntu-latest

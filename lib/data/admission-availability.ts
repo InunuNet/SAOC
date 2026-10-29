@@ -15,28 +15,19 @@ import {
 import {
   effectiveCapacity,
   planPooledCapacity,
-  resolveEffectivePrice,
   type CapacityPoolConfig,
 } from '@/lib/checkout-reservation';
-import { REGULAR_PRICE_SIBLING_SLUG } from '@/lib/admission-siblings';
+import type { TicketCardsOutput } from '@/lib/data/ticket-card-view-models';
 import {
-  buildTicketCardViewModels,
-  type TicketCardsOutput,
-  type TicketTypeInput,
-} from '@/lib/data/ticket-card-view-models';
-import { WORKSHOPS_PRODUCT_SLUG } from '@/lib/data/ticket-presentation';
+  buildHubCards,
+  TICKET_CATEGORIES,
+  type HubCmsTicketType,
+} from '@/lib/data/ticket-hub-source';
 import { getSoldCountsByTicketType, getSoldCountsByTicketTypeAndDay } from '@/lib/data/tickets';
 import { filterPubliclyListableTicketTypes } from '@/lib/demo-ticket-type';
-import {
-  ADMISSION_PRODUCTS,
-  CONFERENCE_PRODUCTS,
-  DAY_VISITOR_SELLABLE_DAYS,
-  DAY_VISITOR_SHAPED_SLUGS,
-  WORKSHOP_FIELD_TRIP_PRODUCTS,
-  WORKSHOP_SESSION_PRICE,
-  type ProvisionalAdmissionProduct,
-} from '@/lib/provisional-figures';
+import { DAY_VISITOR_SELLABLE_DAYS, DAY_VISITOR_SHAPED_SLUGS } from '@/lib/provisional-figures';
 import { resolveActiveShow } from '@/lib/show-resolution';
+import { ticketTypeMatchesActiveShow } from '@/lib/ticket-on-sale';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 
 export interface AdmissionAvailabilitySource {
@@ -108,21 +99,7 @@ export async function getAdmissionSoldOutBySlug(
   }
 }
 
-const TICKET_CATEGORIES = ['admission', 'conference', 'workshop-field-trip'] as const;
 const DAY_KEY_SEPARATOR = '::';
-
-interface SanityCardTicketType {
-  name: string;
-  slug: string;
-  price: number | null;
-  regularPrice?: number | null;
-  earlyBirdCutoff?: string | null;
-  capacity?: number | null;
-  releasedQuantity?: number | null;
-  capacityPool?: string | null;
-  headcountPerUnit?: number | null;
-  demo?: boolean | null;
-}
 
 interface ShowActivation {
   _id: string;
@@ -143,49 +120,6 @@ const EMPTY_RESULT: TicketCardViewModelsResult = {
   stockKnown: false,
   salesOpen: false,
 };
-
-// Totals a ticket type carries when Sanity has none: the figures of lib/provisional-figures.ts.
-// They still drive the sales logic; the keepsake components decide what to show (hidden on a
-// public build, marked on the beta preview).
-const PROVISIONAL_STOCK: Readonly<Record<string, ProvisionalAdmissionProduct>> = Object.fromEntries(
-  [...ADMISSION_PRODUCTS, ...CONFERENCE_PRODUCTS, ...WORKSHOP_FIELD_TRIP_PRODUCTS].map((p) => [
-    p.slug,
-    p,
-  ])
-);
-
-function toTypeInput(
-  t: SanityCardTicketType,
-  priceBySlug: Record<string, number | null>,
-  withStock: boolean
-): TicketTypeInput {
-  const sibling = REGULAR_PRICE_SIBLING_SLUG[t.slug];
-  const sanityStock = typeof t.capacity === 'number' || typeof t.releasedQuantity === 'number';
-  const fallback = sanityStock ? undefined : PROVISIONAL_STOCK[t.slug];
-  // The early-bird SKUs carry no regular price of their own: the sibling SKU's live price is it.
-  const regularPrice = sibling ? (priceBySlug[sibling] ?? null) : null;
-  return {
-    slug: t.slug,
-    name: t.name,
-    // The price checkout would charge now: a passed early-bird cutoff falls back to the regular
-    // price (null when there is none), never the expired one.
-    price:
-      typeof t.price !== 'number'
-        ? null
-        : resolveEffectivePrice({
-            price: t.price,
-            regularPrice: regularPrice ?? t.regularPrice ?? null,
-            earlyBirdCutoff: t.earlyBirdCutoff ?? null,
-            now: new Date(),
-          }),
-    regularPrice,
-    capacity: withStock ? (t.capacity ?? fallback?.capacity ?? null) : null,
-    releasedQuantity: withStock ? (t.releasedQuantity ?? fallback?.releasedQuantity ?? null) : null,
-    capacityPool: t.capacityPool ?? fallback?.capacityPool ?? null,
-    capacitySource: fallback ? 'provisional' : 'sanity',
-    headcountPerUnit: t.headcountPerUnit ?? 1,
-  };
-}
 
 function splitSoldByDay(counts: Record<string, number>): Record<string, Record<string, number>> {
   const byDay: Record<string, Record<string, number>> = {};
@@ -222,60 +156,53 @@ async function readStock(): Promise<StockReading | null> {
  * Every ticket card of the keepsake hub, from real stock only (R7). One loader for the hub, the
  * conferences page and the workshops page, so the three never disagree. The sold-out verdict is
  * the same pooled-capacity check checkout runs. A failure is logged by error name and yields
- * cards with no stock numbers, never an exception and never a sample figure.
+ * cards with no stock numbers, never an exception and never a sample figure. `live` skips the Sanity
+ * data cache; the single-type buy screen sets it, the hub pages keep the 60 s cache.
  */
-export async function loadTicketCardViewModels(): Promise<TicketCardViewModelsResult> {
+export async function loadTicketCardViewModels(
+  { live = false }: { live?: boolean } = {},
+): Promise<TicketCardViewModelsResult> {
   try {
     const [byCategory, shows, salesState] = await Promise.all([
       Promise.all(
         TICKET_CATEGORIES.map((category) =>
-          sanityFetch<SanityCardTicketType[]>({
+          sanityFetch<HubCmsTicketType[]>({
             query: activeTicketTypesByCategoryQuery,
             params: { category },
             tags: ['ticketType', 'sanity'],
+            live,
           })
         )
       ),
-      sanityFetch<ShowActivation[]>({ query: activeShowWindowQuery, tags: ['show', 'sanity'] }),
+      sanityFetch<ShowActivation[]>({ query: activeShowWindowQuery, tags: ['show', 'sanity'], live }),
       sanityFetch<{ salesOpen?: boolean | null }>({
         query: nationalShowSalesQuery,
         tags: ['nationalShow', 'sanity'],
+        live,
       }),
     ]);
     const salesOpen = salesState?.salesOpen === true;
     const cmsTypes = filterPubliclyListableTicketTypes(byCategory.flatMap((rows) => rows ?? []));
-    const priceBySlug: Record<string, number | null> = Object.fromEntries(
-      cmsTypes.map((t) => [t.slug, t.price ?? null])
-    );
     const stock = await readStock();
+    const activeShowId = resolveActiveShow(shows ?? []);
 
-    const types: TicketTypeInput[] = cmsTypes.map((t) =>
-      toTypeInput(t, priceBySlug, stock !== null)
-    );
-    // Workshops are priced per session; the product card carries the per-session price and no
-    // stock figure (each session shows its own places).
-    types.push({
-      slug: WORKSHOPS_PRODUCT_SLUG,
-      name: null,
-      price: WORKSHOP_SESSION_PRICE,
-      regularPrice: null,
-      capacity: null,
-      releasedQuantity: null,
-      capacityPool: null,
-      headcountPerUnit: 1,
-    });
-
-    const built = buildTicketCardViewModels({
-      showDays: DAY_VISITOR_SELLABLE_DAYS,
-      types,
+    const built = buildHubCards({
+      cmsTypes,
+      salesOpen,
       soldByType: stock ? stock.sold : {},
       soldByDay: stock ? stock.byDay : null,
-      salesOpen,
+      stockKnown: stock !== null,
+      now: new Date(),
+      showDays: DAY_VISITOR_SELLABLE_DAYS,
+      activeShowId,
     });
 
     if (stock) {
       const sources: AdmissionAvailabilitySource[] = [];
+      // Only the active show's types feed the pooled-capacity check: a type of another show that
+      // shares a pool name must not lower the pool's ceiling and sell out an active-show card.
       for (const t of cmsTypes) {
+        if (!ticketTypeMatchesActiveShow(t, activeShowId)) continue;
         if (typeof t.capacity !== 'number') continue;
         sources.push({
           slug: t.slug,
@@ -285,7 +212,7 @@ export async function loadTicketCardViewModels(): Promise<TicketCardViewModelsRe
           headcountPerUnit: t.headcountPerUnit,
         });
       }
-      const verdict = await getAdmissionSoldOutBySlug(sources, resolveActiveShow(shows ?? []));
+      const verdict = await getAdmissionSoldOutBySlug(sources, activeShowId);
       for (const card of Object.values(built.cards)) {
         if (
           card &&

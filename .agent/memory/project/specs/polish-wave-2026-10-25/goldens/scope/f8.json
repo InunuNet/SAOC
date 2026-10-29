@@ -1,0 +1,7 @@
+{
+  "feature": "F8",
+  "allow": [
+    "app/(nos)/national-show/layout.tsx",
+    "docs/polish-wave-f8-nos-nav.md"
+  ]
+}

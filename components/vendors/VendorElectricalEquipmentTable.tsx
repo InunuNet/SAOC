@@ -21,9 +21,9 @@ const EMPTY_ROW: VendorElectricalEquipmentEntryFormRow = {
 const legendClass = 'font-mono text-[11px] tracking-[0.16em] text-muted';
 const labelClass = 'block font-mono text-[10.5px] tracking-[0.12em] text-muted';
 const inputClass =
-  'w-full rounded-sm border border-rule bg-ivory px-3 py-2 font-sans text-[14px] text-ink outline-none transition-colors focus:border-ink/40 focus-visible:ring-2 focus-visible:ring-ink/40 disabled:opacity-60';
+  'w-full rounded-sm border border-rule bg-ivory px-3 py-2 font-sans text-[14px] text-ink outline-none transition-colors focus:border-ink/40 focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-60';
 const buttonClass =
-  'rounded-sm border border-rule bg-ivory px-3 py-1.5 font-sans text-[13px] font-medium text-ink transition-colors hover:bg-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 disabled:cursor-not-allowed disabled:opacity-50';
+  'rounded-sm border border-rule bg-ivory px-3 py-1.5 font-sans text-[13px] font-medium text-ink transition-colors hover:bg-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50';
 
 export function VendorElectricalEquipmentTable({
   value,

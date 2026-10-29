@@ -66,45 +66,6 @@ assertions:
         known, real E2E stranded test fixtures that should always be present until
         manually cleaned up).
       command: python3 .agent/memory/project/specs/order-reconciliation/goldens/verify_stranded_orders_live.py
-    - id: A4
-      description: >
-        Against LIVE Firestore: findStrandedOrders detects the four known stranded test
-        orders (run with the real, unrestricted query — that's what proves the query
-        itself is correct against whatever the dataset actually contains, including any
-        OTHER real stranded orders that may also exist, which are logged as
-        informational only and never touched); markOrdersAlerted writes
-        reconciliationAlertedAt; an immediate second run correctly excludes them
-        (idempotency — no double-alert bookkeeping); and
-        status/amount/gatewayPaymentId/purchasedAt are proven UNCHANGED across the whole
-        run. This is the assertion that directly proves the "never auto-settle" scope
-        decision, not just states it. The WRITE half is leashed to a hardcoded 4-order
-        allowlist (ALLOWED_ORDER_IDS, resolved only from the hardcoded, correctly
-        SAOC-2027--prefixed booking refs, never from the query's own output) enforced by
-        assertAllowlistedForWrite(), which hard-fails the whole check rather than
-        writing to any id outside it — see this project's
-        contract_checks_mutate_live_content incident memory for why a gate that writes
-        live data needs a leash, not just a correct implementation, before it's trusted
-        to run in any environment. Detection is deliberately dynamic (A3-style); the
-        write leash is deliberately NOT — see the goldens README "A3 is dynamic; A4's
-        write leash is not (on purpose)" for why an explicit, manually-maintained
-        allowlist is the correct tradeoff for the one script permitted to mutate live
-        data, even though it means this list needs a deliberate update whenever the
-        known test-fixture set changes (which is what happened here, and is the leash
-        working as intended, not failing). False-pass risk: a version that flipped
-        status to 'paid' as a "helpful" side effect would only be caught by the explicit
-        before/after field comparison here — an assertion that only checked "the
-        function ran without throwing" would miss it entirely. A version whose
-        filtering logic accidentally widened past the four known orders would be caught
-        by the allowlist guard throwing, not by silently writing further. Requires the
-        Firestore composite index on orders(status, expiresAt)
-        (firestore.indexes.json) to be deployed — without it this fails with
-        FAILED_PRECONDITION, not a defect in the detection logic itself. Safe to
-        re-run repeatedly, including back-to-back within RE_ALERT_WINDOW_MS: if every
-        known order was already alerted by an earlier run, no new write happens and the
-        check instead verifies the already-alerted state is real (each known order
-        genuinely has reconciliationAlertedAt on record) rather than treating "nothing
-        to alert" as a failure.
-      command: npx tsx .agent/memory/project/specs/order-reconciliation/goldens/check-live-detect-and-mark.mjs
     - id: A5
       description: >
         POST /api/admin/reconcile-orders fails closed (401) with no Authorization header
@@ -118,3 +79,45 @@ assertions:
         refusing with 401) would be caught by the explicit `!= "401"` checks, not
         conflated with a pass.
       command: bash .agent/memory/project/specs/order-reconciliation/goldens/check-route-auth-fails-closed.sh
+
+manual_only:
+  - id: A4
+    reason: "check-live-detect-and-mark.mjs writes to the production Firestore (saoc-webapp): Firestore saoc-webapp orders/{id}.reconciliationAlertedAt on real stranded orders plus sentinel docs; run by hand only, with the operator present"
+    description: >
+      Against LIVE Firestore: findStrandedOrders detects the four known stranded test
+      orders (run with the real, unrestricted query — that's what proves the query
+      itself is correct against whatever the dataset actually contains, including any
+      OTHER real stranded orders that may also exist, which are logged as
+      informational only and never touched); markOrdersAlerted writes
+      reconciliationAlertedAt; an immediate second run correctly excludes them
+      (idempotency — no double-alert bookkeeping); and
+      status/amount/gatewayPaymentId/purchasedAt are proven UNCHANGED across the whole
+      run. This is the assertion that directly proves the "never auto-settle" scope
+      decision, not just states it. The WRITE half is leashed to a hardcoded 4-order
+      allowlist (ALLOWED_ORDER_IDS, resolved only from the hardcoded, correctly
+      SAOC-2027--prefixed booking refs, never from the query's own output) enforced by
+      assertAllowlistedForWrite(), which hard-fails the whole check rather than
+      writing to any id outside it — see this project's
+      contract_checks_mutate_live_content incident memory for why a gate that writes
+      live data needs a leash, not just a correct implementation, before it's trusted
+      to run in any environment. Detection is deliberately dynamic (A3-style); the
+      write leash is deliberately NOT — see the goldens README "A3 is dynamic; A4's
+      write leash is not (on purpose)" for why an explicit, manually-maintained
+      allowlist is the correct tradeoff for the one script permitted to mutate live
+      data, even though it means this list needs a deliberate update whenever the
+      known test-fixture set changes (which is what happened here, and is the leash
+      working as intended, not failing). False-pass risk: a version that flipped
+      status to 'paid' as a "helpful" side effect would only be caught by the explicit
+      before/after field comparison here — an assertion that only checked "the
+      function ran without throwing" would miss it entirely. A version whose
+      filtering logic accidentally widened past the four known orders would be caught
+      by the allowlist guard throwing, not by silently writing further. Requires the
+      Firestore composite index on orders(status, expiresAt)
+      (firestore.indexes.json) to be deployed — without it this fails with
+      FAILED_PRECONDITION, not a defect in the detection logic itself. Safe to
+      re-run repeatedly, including back-to-back within RE_ALERT_WINDOW_MS: if every
+      known order was already alerted by an earlier run, no new write happens and the
+      check instead verifies the already-alerted state is real (each known order
+      genuinely has reconciliationAlertedAt on record) rather than treating "nothing
+      to alert" as a failure.
+    command: npx tsx .agent/memory/project/specs/order-reconciliation/goldens/check-live-detect-and-mark.mjs

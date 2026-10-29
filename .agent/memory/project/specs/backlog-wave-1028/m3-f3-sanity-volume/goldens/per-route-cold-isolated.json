@@ -1,0 +1,14 @@
+{
+  "_comment": "Positive control for --assert. Each listed route is requested ONCE on a fresh server process with .next/cache/fetch-cache emptied, so it cannot borrow a query another route already cached. An isolated cold render fetches each distinct query once, so the expected count equals the baseline per-request count measured on origin/main d52d3eb6 (request-count-targets.json). A route that loses a Sanity read, or a counter that stopped counting, fails here. Tolerance 0. If a legitimate product change moves a value, the dev reports the measured number to the architect, who edits this file; the dev never edits it.",
+  "tolerance": 0,
+  "isolated_cold_expected": {
+    "nos /what-to-expect": 7,
+    "nos /tickets": 7,
+    "nos /workshops": 8,
+    "nos /symposium": 8,
+    "nos /conferences": 7,
+    "nos /wosa-conference": 9
+  },
+  "isolated_then_second_request_expected_warm": 0,
+  "whole_pass_cold_total_floor": 1
+}

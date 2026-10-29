@@ -1,0 +1,91 @@
+schema: athanor.contract/v1
+slug: security-hardening
+goal: Close the verified findings from the 2026-10-24 security review (public-form abuse, spoofable client IP, event-submit auth, upload bodies, CSV formula injection, timing compares, open redirect, session 500) and commit the live deny-all Firebase rules, with no new email and no deploy.
+created_at: '2026-10-24'
+autonomy: high
+features:
+  - id: F1
+    name: Security hardening M1-M3, M5, M6, L1-L3 plus deny-all rules files
+    status: pending
+goldens:
+  - contracts/golden/security-hardening/README.md
+  - contracts/golden/security-hardening/firestore.rules.golden
+  - contracts/golden/security-hardening/storage.rules.golden
+  - contracts/golden/security-hardening/fixtures/csv-cases.json
+  - contracts/golden/security-hardening/fixtures/xff-cases.json
+  - contracts/golden/security-hardening/fixtures/sniff-cases.json
+  - contracts/golden/security-hardening/fixtures/contact-cases.json
+  - contracts/golden/security-hardening/fixtures/event-cases.json
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: "M1: shared limiter constants (5 per hour) and 6th attempt denied, other key unaffected"
+      command: pnpm exec tsx contracts/checks/security-hardening/check.mts limiter
+    - id: A2
+      description: "M1: contact validation rejects non-string fields and over-length name/email/subject/message, accepts the boundary, non-object bodies rejected"
+      command: pnpm exec tsx contracts/checks/security-hardening/check.mts contact
+    - id: A3
+      description: "M1: honeypot, Content-Length and base64 limit helpers behave per the golden"
+      command: pnpm exec tsx contracts/checks/security-hardening/check.mts guards
+    - id: A4
+      description: "M1: contact and vendor apply routes rate-limit by client IP before parsing, answer 429 with Retry-After, honour the honeypot"
+      command: pnpm exec tsx contracts/checks/security-hardening/check.mts formwiring
+    - id: A5
+      description: "M2: clientIpFromForwardedFor ignores spoofed leading hops"
+      command: pnpm exec tsx contracts/checks/security-hardening/check.mts xff
+    - id: A6
+      description: "M2: the four vendor routes use the helper and nothing under app/ reads x-forwarded-for directly"
+      command: pnpm exec tsx contracts/checks/security-hardening/check.mts xffwiring
+    - id: A7
+      description: "M3: event submission guard: caps, typeof, email_verified, society lookup fails closed"
+      command: pnpm exec tsx contracts/checks/security-hardening/check.mts events
+    - id: A8
+      description: "M3: events/submit uses revocation check, verified-email gate, parameterised GROQ, uid rate limit"
+      command: pnpm exec tsx contracts/checks/security-hardening/check.mts eventswiring
+    - id: A9
+      description: "M5: magic-byte sniff for pdf/jpeg/png/webp and MIME match"
+      command: pnpm exec tsx contracts/checks/security-hardening/check.mts sniff
+    - id: A10
+      description: "M5: upload routes check Content-Length (413) before request.json(); handlers sniff before storage"
+      command: pnpm exec tsx contracts/checks/security-hardening/check.mts uploadwiring
+    - id: A11
+      description: "M6: csvField neutralises formula leaders and escapes quotes, commas, newlines; export-csv and newsletter share it"
+      command: pnpm exec tsx contracts/checks/security-hardening/check.mts csv
+    - id: A12
+      description: "L1: constantTimeStringEqual semantics and used at all four compare sites"
+      command: pnpm exec tsx contracts/checks/security-hardening/check.mts consttime
+    - id: A13
+      description: "L1: payments diff is comparison-only and TICKETING_PAYMENTS_LIVE stays false"
+      command: pnpm exec tsx contracts/checks/security-hardening/check.mts paymentsdiff
+    - id: A14
+      description: "L2: draft redirect goes through safeNextPath"
+      command: pnpm exec tsx contracts/checks/security-hardening/check.mts redirect
+    - id: A15
+      description: "L3: admin session returns 400 on a bad body"
+      command: pnpm exec tsx contracts/checks/security-hardening/check.mts session
+    - id: A16
+      description: "Rules: firestore.rules and storage.rules equal the deny-all goldens and firebase.json is untouched"
+      command: pnpm exec tsx contracts/checks/security-hardening/check.mts rules
+    - id: A17
+      description: "Docs: docs/security-hardening.md has the required notes and Out of scope list"
+      command: pnpm exec tsx contracts/checks/security-hardening/check.mts docs
+    - id: A18
+      description: "This PR adds no new email send (no added import of the mailer or new send...Email call)"
+      command: "! git diff -U0 $(git merge-base HEAD origin/main) -- app lib | grep -E '^\\+[^+].*(from .@/lib/email.|send[A-Za-z]*Email\\()'"
+    - id: A19
+      description: "Type-check passes"
+      command: pnpm type-check
+    - id: A20
+      description: "ESLint is clean on every touched or new file"
+      command: pnpm exec eslint 'app/api/contact/route.ts' 'app/api/vendors/apply/route.ts' 'app/api/vendors/register/route.ts' 'app/api/vendors/register/verify-code/route.ts' 'app/api/vendors/[id]/proof-of-payment/route.ts' 'app/api/vendors/[id]/marketing-asset/route.ts' 'app/api/events/submit/route.ts' 'app/api/admin/export-csv/route.ts' 'app/api/admin/session/route.ts' 'app/api/draft/route.ts' 'app/api/revalidate/route.ts' 'lib/public-form-rate-limit.ts' 'lib/contact-input.ts' 'lib/request-guards.ts' 'lib/upload-sniff.ts' 'lib/csv-field.ts' 'lib/event-submission-guard.ts' 'lib/recovery-token.ts' 'lib/newsletter.ts' 'lib/payments/ozow.ts' 'lib/payments/payfast.ts' 'lib/vendor-proof-of-payment-handler.ts' 'lib/vendor-marketing-upload-handler.ts'
+    - id: A21
+      description: "Triad gws inbox check is not applicable (this PR sends no new email, see InunuNet/Athanor#1467); declared non-required for the coverage linter, expected to skip"
+      type: gws_inbox_check
+      target: .agent/memory/scratch/security-hardening-gws-manifest.json
+      required: false
+    - id: A22
+      description: "Browser deployed check is not applicable (no page changes, rules not deployed); declared non-required for the coverage linter, expected to skip"
+      type: browser_deployed_check
+      target: .agent/memory/scratch/security-hardening-browser-manifest.json
+      required: false

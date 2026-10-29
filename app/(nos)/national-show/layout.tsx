@@ -28,6 +28,8 @@ const NATIONAL_SHOW_ROOT = '/national-show';
 // its own full title.
 export const metadata: Metadata = { title: NOS_TITLE };
 
+export const revalidate = 60;
+
 /** First label nav-config carries for each /national-show href, depth first. */
 function collectLabels(node: unknown, into: Record<string, string>): void {
   if (!node || typeof node !== 'object') return;

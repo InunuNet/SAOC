@@ -1,13 +1,12 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 
-import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
 import {
   ENQUIRY_CONSENT_LABEL,
   ENQUIRY_LABELS,
-  ENQUIRY_NOS_SUCCESS_BODY_PLACEHOLDER,
   ENQUIRY_PRIVACY_LINK_TEXT,
   ENQUIRY_REUSED,
 } from '@/lib/sponsor-enquiry-copy';
@@ -77,11 +76,9 @@ function Field({ id, label, error, children }: FieldProps) {
 
 interface SponsorEnquiryFormProps {
   site: SponsorEnquirySite;
-  /** Beta preview only: wording awaiting committee approval is marked. */
-  markPlaceholders: boolean;
 }
 
-export function SponsorEnquiryForm({ site, markPlaceholders }: SponsorEnquiryFormProps) {
+export function SponsorEnquiryForm({ site }: SponsorEnquiryFormProps) {
   const [values, setValues] = useState<Values>(EMPTY_VALUES);
   const [honeypot, setHoneypot] = useState('');
   const [status, setStatus] = useState<Status>('idle');
@@ -180,13 +177,6 @@ export function SponsorEnquiryForm({ site, markPlaceholders }: SponsorEnquiryFor
           <p className="mt-3 font-sans text-[16px] leading-[1.55] text-ink/80">
             {ENQUIRY_REUSED.successBody}
           </p>
-        ) : markPlaceholders ? (
-          <div data-placeholder="true" className="mt-3 flex flex-col items-start">
-            <p className="font-sans text-[16px] leading-[1.55] text-ink/80">
-              {ENQUIRY_NOS_SUCCESS_BODY_PLACEHOLDER}
-            </p>
-            <PlaceholderMarker />
-          </div>
         ) : null}
       </div>
     );
@@ -332,20 +322,19 @@ export function SponsorEnquiryForm({ site, markPlaceholders }: SponsorEnquiryFor
               checked={values.consent}
               onChange={setField('consent')}
               disabled={disabled}
-              className="mt-1 h-4 w-4 shrink-0 rounded-sm border border-rule outline-none focus:ring-2 focus:ring-ink/40 disabled:opacity-60"
+              className="mt-0.5 h-6 w-6 shrink-0 rounded-sm border border-rule outline-none focus:ring-2 focus:ring-ink/40 disabled:opacity-60"
               aria-invalid={invalid('consent')}
               aria-describedby={describedBy('consent')}
             />
             <span>{ENQUIRY_CONSENT_LABEL}</span>
           </label>
-          <a
+          <Link
             href="/privacy"
             className="inline-flex min-h-11 items-center font-sans text-[15px] text-ink underline underline-offset-2"
           >
             {ENQUIRY_PRIVACY_LINK_TEXT}
-          </a>
+          </Link>
         </div>
-        {markPlaceholders ? <PlaceholderMarker /> : null}
         {fieldErrors.consent ? (
           <TicketFieldAlert id="se-consent-error">{fieldErrors.consent}</TicketFieldAlert>
         ) : null}

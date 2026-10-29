@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isBodyWithinLimit } from '@/lib/request-guards';
 import { cookies } from 'next/headers';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
+import { clientIpFromForwardedFor } from '@/lib/client-ip';
 import { initAdmin } from '@/lib/firebase-admin';
 import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
 import { VENDOR_APPLICATIONS_COLLECTION } from '@/lib/vendor-applications';
@@ -77,17 +79,13 @@ const GENERIC_INVALID_TOKEN_MESSAGE = 'This registration link is no longer valid
 /**
  * Rate-limit key derived from the request's `x-forwarded-for` header -- a documented
  * best-effort abuse deterrent, not a security boundary. This route has zero auth by design, so
- * there is no stable per-caller identity besides network origin, and `x-forwarded-for`'s first
- * hop is client-supplied and therefore spoofable by a direct caller who sets the header itself.
- * lib/payfast.ts's getClientIp() is deliberately NOT reused here -- it trusts PayFast's own
- * known, fixed proxy topology (reading the second-to-last hop), and no such fixed,
- * known-trustworthy proxy chain is documented for Firebase App Hosting in this repo. See the
- * golden README's "Judgement calls" for the full reasoning.
+ * there is no stable per-caller identity besides network origin. The leading hops of
+ * `x-forwarded-for` are client-supplied and spoofable, so the address comes from
+ * clientIpFromForwardedFor() (lib/client-ip.ts), which reads the hop Google's front end appended.
  */
 function deriveRateLimitKey(request: NextRequest): string {
-  const forwardedFor = request.headers.get('x-forwarded-for');
-  const firstHop = forwardedFor?.split(',')[0]?.trim();
-  return `vendor-register-ip:${firstHop || 'unknown'}`;
+  const ip = clientIpFromForwardedFor(request.headers.get('x-forwarded-for'));
+  return `vendor-register-ip:${ip ?? 'unknown'}`;
 }
 
 function toResponse(result: VendorRegistrationHandlerResult): NextResponse {
@@ -102,7 +100,13 @@ function invalidTokenResponse(): NextResponse {
   return NextResponse.json({ error: GENERIC_INVALID_TOKEN_MESSAGE }, { status: 403 });
 }
 
+// Cap on the request body, checked against Content-Length before the body is buffered.
+const MAX_BODY_BYTES = 262144;
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  if (!isBodyWithinLimit(request.headers.get('content-length'), MAX_BODY_BYTES)) {
+    return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
+  }
   let rawBody: unknown;
   try {
     rawBody = await request.json();

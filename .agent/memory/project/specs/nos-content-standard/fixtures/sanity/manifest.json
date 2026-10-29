@@ -1,0 +1,718 @@
+{
+ "capturedAt": "2026-10-26T02:26:50.982Z",
+ "host": "26yfbug4.api.sanity.io",
+ "perspective": "published",
+ "publicDatasetReadsOnly": true,
+ "requestCount": 15,
+ "queryCount": 88,
+ "queries": [
+  {
+   "key": "041dfdb7dd624887be0a0c382c97e4572597fd912941b98e22f60210f99eaac2",
+   "queryHead": "*[_type == \"aboutPage\"][0]{ title, pillars, timelineNodes, boardIntroText }",
+   "params": {},
+   "capturedAt": "2026-10-25T23:51:19.300Z"
+  },
+  {
+   "key": "059fa80462ae59f7ccc1832f47b8706cb2fd7cfd362d1b2319c2a95bebc8c975",
+   "queryHead": "*[_type == \"showSponsor\" && active == true] | order(tier asc, order asc, name asc){ _id, name, tier, logo, website, desc",
+   "params": {},
+   "capturedAt": "2026-10-25T23:51:19.296Z"
+  },
+  {
+   "key": "08f3eef4b2e55d92bc146da6ea79a84d8d3ffd34fd7f11462d8a64f311ac34ea",
+   "queryHead": "*[_type == \"society\" && listed != false && slug.current == $slug][0]{ _id, name, \"slug\": slug.current, province, region,",
+   "params": {
+    "slug": "cape-orchid-society"
+   },
+   "capturedAt": "2026-10-25T23:51:20.705Z"
+  },
+  {
+   "key": "0c0c69ccaef633dbf727e1fa747cca9657f1410d1b29a6b9193af274c4a2d99d",
+   "queryHead": "*[_type == \"society\" && listed != false] | order(name asc){ _id, name, \"slug\": slug.current, province, region, founded, ",
+   "params": {},
+   "capturedAt": "2026-10-25T23:51:21.802Z"
+  },
+  {
+   "key": "0e6b5c34bb7e7daf642d5167e5becf1ec6182c87c15e855540d99e83cb22ad4e",
+   "queryHead": "*[_type == \"eventsPage\"][0]{ intro }",
+   "params": {},
+   "capturedAt": "2026-10-25T23:51:19.302Z"
+  },
+  {
+   "key": "127df0468fbac5cc90aa78ccbb41feecc49e082f41f51801126cf15b767efa98",
+   "queryHead": "*[_type == \"societyEvent\" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart) || (!defined(dateTime(coalesce(",
+   "params": {
+    "slug": "wolkberg-orchid-society",
+    "todayStart": "2026-10-25T22:00:00.000Z",
+    "todayDate": "2026-10-26"
+   },
+   "capturedAt": "2026-10-25T23:51:22.435Z"
+  },
+  {
+   "key": "1525fb699ca92f823ea2d554cd9a37e3942c5130710066115fe2b28576d72956",
+   "queryHead": "*[_type == \"ticketType\" && slug.current == $slug && active == true][0]{ _id, name, \"slug\": slug.current, demo, active, p",
+   "params": {
+    "slug": "vip"
+   },
+   "capturedAt": "2026-10-25T23:51:34.818Z"
+  },
+  {
+   "key": "1a947bc7a0478182411f1966d09431de325e4a503177b99f1592be045dc9f274",
+   "queryHead": "*[_type == \"contactPage\"][0]{ title, directContacts[]{ name, role, email } }",
+   "params": {},
+   "capturedAt": "2026-10-25T23:51:19.301Z"
+  },
+  {
+   "key": "1a9f48a26b4df84a8ea27d7358ee6ed8f9c3b91a05e23c89f860f4eb15e99d5b",
+   "queryHead": "*[_type == \"society\" && listed != false && defined(slug.current)]{ \"slug\": slug.current }",
+   "params": {},
+   "capturedAt": "2026-10-25T23:51:18.458Z"
+  },
+  {
+   "key": "200f355af96947cdf626835868a05f21e1738b76d3a5220f20bba8869d93d026",
+   "queryHead": "*[_type == \"nationalShow\"][0]{ title, showDate, showEndDate, edition, hostRegion, location, venue, hero, countdownDate }",
+   "params": {},
+   "capturedAt": "2026-10-25T23:51:19.449Z"
+  },
+  {
+   "key": "2660b48dc7357534654837028ad1538405dcdeddd6e1e893edbb71a9c3711722",
+   "queryHead": "*[_type == \"society\" && listed != false && slug.current == $slug][0]{ _id, name, \"slug\": slug.current, province, region,",
+   "params": {
+    "slug": "gonubie-orchid-society"
+   },
+   "capturedAt": "2026-10-25T23:51:23.112Z"
+  },
+  {
+   "key": "27f405c903a46576b3a6a54bffd03be6e8122a8aeec5dbb992e6720fe8ff048a",
+   "queryHead": "*[_type == \"judgingPage\"][0]{ title, intro, howItWorks, stats, becomingAJudge, showPublicDirectory, \"judges\": judges[]->",
+   "params": {},
+   "capturedAt": "2026-10-25T23:51:19.301Z"
+  },
+  {
+   "key": "283fa877eaf3acbd12c42dcbae8dc4b93b071eb520db08b5f4327207c70a22f7",
+   "queryHead": "*[_type == \"society\" && listed != false && slug.current == $slug][0]{ _id, name, \"slug\": slug.current, province, region,",
+   "params": {
+    "slug": "phalaborwa-orchid-society"
+   },
+   "capturedAt": "2026-10-25T23:51:19.294Z"
+  },
+  {
+   "key": "29662a89c7144a5ab6e047b6972759438397b790589a6cffadb5fc1c38de0c54",
+   "queryHead": "*[_type == \"award\"] | order(order asc){ _id, code, name, description, threshold, order }",
+   "params": {},
+   "capturedAt": "2026-10-25T23:51:19.305Z"
+  },
+  {
+   "key": "2a83320ce0993ebca12ec2ff2fb7eadfee2249844848d9c056d6b76e990cfb97",
+   "queryHead": "*[_type == \"conferencePresenter\" && event == $event] | order(order asc) { _id, name, role, bio, country, organisation, \"",
+   "params": {
+    "event": "wosa-conference"
+   },
+   "capturedAt": "2026-10-25T23:53:29.134Z"
+  },
+  {
+   "key": "2aa2b8bcc107bb12f5eb72bb5dd30e7a19e66dea2a254947eade63bc9a83098c",
+   "queryHead": "*[_type == \"societyEvent\" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart) || (!defined(dateTime(coalesce(",
+   "params": {
+    "slug": "alfred-county-orchid-society",
+    "todayStart": "2026-10-25T22:00:00.000Z",
+    "todayDate": "2026-10-26"
+   },
+   "capturedAt": "2026-10-25T23:51:21.631Z"
+  },
+  {
+   "key": "31075ffd06ffd564abb72e74522e1c90d06b41422c438abb938f7a543c215c32",
+   "queryHead": "*[_type == \"society\" && listed != false && slug.current == $slug][0]{ _id, name, \"slug\": slug.current, province, region,",
+   "params": {
+    "slug": "eastern-province-orchid-society"
+   },
+   "capturedAt": "2026-10-25T23:51:22.619Z"
+  },
+  {
+   "key": "353fa250be627fa3bad1ed4047a670bd10b3dcb90e5cd7842bc44bc040a1517b",
+   "queryHead": "*[_type == \"societyEvent\" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart) || (!defined(dateTime(coalesce(",
+   "params": {
+    "slug": "natal-orchid-society",
+    "todayStart": "2026-10-25T22:00:00.000Z",
+    "todayDate": "2026-10-26"
+   },
+   "capturedAt": "2026-10-25T23:51:23.388Z"
+  },
+  {
+   "key": "47667fcb74d6b4f33eff1b7c4e68fef577a810c4df2fabccc10dad8f9697c35d",
+   "queryHead": "*[_type == \"societyEvent\" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart) || (!defined(dateTime(coalesce(",
+   "params": {
+    "slug": "highway-orchid-society",
+    "todayStart": "2026-10-25T22:00:00.000Z",
+    "todayDate": "2026-10-26"
+   },
+   "capturedAt": "2026-10-25T23:51:23.144Z"
+  },
+  {
+   "key": "47e9f141846e835b81780ccc157cfad76266b06b673c6b77ca97a72dd48101fa",
+   "queryHead": "*[_type == \"ticketType\" && slug.current == $slug && active == true][0]{ _id, name, \"slug\": slug.current, demo, active, p",
+   "params": {
+    "slug": "wosa-conference"
+   },
+   "capturedAt": "2026-10-25T23:51:36.535Z"
+  },
+  {
+   "key": "4b3442afb5e27dd05eea74b9419392047ba554fb1b24ea5235301f02718144b0",
+   "queryHead": "*[_type == \"society\" && listed != false && slug.current == $slug][0]{ _id, name, \"slug\": slug.current, province, region,",
+   "params": {
+    "slug": "east-rand-orchid-society"
+   },
+   "capturedAt": "2026-10-25T23:51:20.495Z"
+  },
+  {
+   "key": "4b3ad357b20d47569db8efb14b9ee5c442e0eb0badc53c0c6a9162712920d590",
+   "queryHead": "*[_type == \"societyEvent\" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart) || (!defined(dateTime(coalesce(",
+   "params": {
+    "slug": "plantae-orchid-group",
+    "todayStart": "2026-10-25T22:00:00.000Z",
+    "todayDate": "2026-10-26"
+   },
+   "capturedAt": "2026-10-25T23:51:20.623Z"
+  },
+  {
+   "key": "4f2f604eabc35900056dd2ce9e1307ea97f19cdbe3563e276d6eeef3c7b57807",
+   "queryHead": "*[_type == \"societyEvent\" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart) || (!defined(dateTime(coalesce(",
+   "params": {
+    "slug": "zululand-orchid-society",
+    "todayStart": "2026-10-25T22:00:00.000Z",
+    "todayDate": "2026-10-26"
+   },
+   "capturedAt": "2026-10-25T23:51:22.898Z"
+  },
+  {
+   "key": "51708a5d44ea0bd61af8b8a2a5b4e72355d084f15bf5b5b8f6b1d6a8ce34ab16",
+   "queryHead": "*[_type == \"nationalShow\"][0]{ showDate, showEndDate, venue }",
+   "params": {},
+   "capturedAt": "2026-10-25T23:51:19.303Z"
+  },
+  {
+   "key": "56254db765423243278ee90ff259359409474250b38eef94b11790dfebbecb23",
+   "queryHead": "*[_type == \"society\" && listed != false && slug.current == $slug][0]{ _id, name, \"slug\": slug.current, province, region,",
+   "params": {
+    "slug": "highway-orchid-society"
+   },
+   "capturedAt": "2026-10-25T23:51:22.508Z"
+  },
+  {
+   "key": "5e4422156dc58a498b02fe17f04682c73807d8cb63488559aae1a5721cc2e8f9",
+   "queryHead": "*[_type == \"boardMember\"] | order(order asc){ _id, name, role, email, photo, order, placeholder }",
+   "params": {},
+   "capturedAt": "2026-10-25T23:51:19.303Z"
+  },
+  {
+   "key": "5fcf282d2d299f32255c6947d04447dd5fa948d70029a05f8eb27d852cd1f452",
+   "queryHead": "*[_type == \"ticketType\" && active == true && (category == $category || (!defined(category) && $category == \"admission\"))",
+   "params": {
+    "category": "workshop-field-trip"
+   },
+   "capturedAt": "2026-10-25T23:51:23.796Z"
+  },
+  {
+   "key": "6628fa8ec0270df3a82702ecc87fec423f80515d77770d8b3ad5d24596e6244a",
+   "queryHead": "*[_type == \"showFaq\" && active == true && _id in $ids] | order(order asc){ _id, question, answer, order }",
+   "params": {
+    "ids": [
+     "showFaq-q58",
+     "showFaq-q59",
+     "showFaq-q60"
+    ]
+   },
+   "capturedAt": "2026-10-25T23:52:51.153Z"
+  },
+  {
+   "key": "6a8fb4e15e57245e474351ec3a813b2855ed30ee5047c1c728edec4da5f222b8",
+   "queryHead": "*[_type == \"society\" && listed != false && slug.current == $slug][0]{ _id, name, \"slug\": slug.current, province, region,",
+   "params": {
+    "slug": "zululand-orchid-society"
+   },
+   "capturedAt": "2026-10-25T23:51:22.249Z"
+  },
+  {
+   "key": "6b12fff5e6f27fd4008011ffe25dfab92a61bce65ab51e91f5152e9fff5e4e74",
+   "queryHead": "*[_type == \"societyEvent\" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart) || (!defined(dateTime(coalesce(",
+   "params": {
+    "slug": "phalaborwa-orchid-society",
+    "todayStart": "2026-10-25T22:00:00.000Z",
+    "todayDate": "2026-10-26"
+   },
+   "capturedAt": "2026-10-25T23:51:19.986Z"
+  },
+  {
+   "key": "6de50202ac4c31293e024e5a5d4c67610cae9ba23c6f040f11bce761d6e9db0a",
+   "queryHead": "*[_type == \"ticketType\" && active == true && (category == $category || (!defined(category) && $category == \"admission\"))",
+   "params": {
+    "category": "conference"
+   },
+   "capturedAt": "2026-10-25T23:51:23.596Z"
+  },
+  {
+   "key": "6e4443f79d59dda5b67ebd73b8c57f2587ccbdad66ffe3c3b02bbf7475b24fad",
+   "queryHead": "*[_type == \"society\" && listed != false && slug.current == $slug][0]{ _id, name, \"slug\": slug.current, province, region,",
+   "params": {
+    "slug": "orchid-society-of-the-southern-cape"
+   },
+   "capturedAt": "2026-10-25T23:51:22.615Z"
+  },
+  {
+   "key": "70c1b662f86baf26d3260c7d2b8cc84f100afa978e1512eba90262f2eb8dabbd",
+   "queryHead": "*[_type == \"show\" && status == \"past\"] | order(year desc){ _id, title, \"slug\": slug.current, year, status, location, ent",
+   "params": {},
+   "capturedAt": "2026-10-25T23:51:18.452Z"
+  },
+  {
+   "key": "71989a31076fc7d0bc8ccd4e02c8c3c9997637389ccd15632e5f9b5bbc2af02a",
+   "queryHead": "*[_type == \"society\" && listed != false && slug.current == $slug][0]{ _id, name, \"slug\": slug.current, province, region,",
+   "params": {
+    "slug": "northern-gauteng-orchid-society"
+   },
+   "capturedAt": "2026-10-25T23:51:22.507Z"
+  },
+  {
+   "key": "72345c011d6a39ec80ba040e26265162fbe2a493657a87466877beec81647139",
+   "queryHead": "*[_type == \"ticketType\" && slug.current == $slug && active == true][0]{ _id, name, \"slug\": slug.current, demo, active, p",
+   "params": {
+    "slug": "sunset-cocktails-single"
+   },
+   "capturedAt": "2026-10-25T23:51:34.658Z"
+  },
+  {
+   "key": "73737f144dd38fbacdf660810d52aceb033309cd620787f884f0eb828cabbf88",
+   "queryHead": "*[_type == \"societyEvent\" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart) || (!defined(dateTime(coalesce(",
+   "params": {
+    "slug": "cape-orchid-society",
+    "todayStart": "2026-10-25T22:00:00.000Z",
+    "todayDate": "2026-10-26"
+   },
+   "capturedAt": "2026-10-25T23:51:21.741Z"
+  },
+  {
+   "key": "7492ba91a24b409116b33cddcce95ad6e6a5c67c9bcd0b719f6bfc9eb020fab0",
+   "queryHead": "*[_type == \"societyEvent\" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart) || (!defined(dateTime(coalesce(",
+   "params": {
+    "slug": "pietermaritzberg-orchid-society",
+    "todayStart": "2026-10-25T22:00:00.000Z",
+    "todayDate": "2026-10-26"
+   },
+   "capturedAt": "2026-10-25T23:51:20.966Z"
+  },
+  {
+   "key": "750aace3ce35141ff5e091a27ba0b276f86febbb22a856033ef70889d0a32284",
+   "queryHead": "*[_type == \"societyEvent\" && slug.current == $slug][0]{ _id, title, \"slug\": slug.current, date, endDate, kind, descripti",
+   "params": {
+    "slug": "19th-south-african-national-orchid-show"
+   },
+   "capturedAt": "2026-10-25T23:51:19.304Z"
+  },
+  {
+   "key": "7d1ce65131e00d76aad17c621ce796c656a2f6ce60660a6bbed9e5cab940df24",
+   "queryHead": "*[_type == \"ticketsPage\"][0]{ title, intro, buyButtonLabel, soldOutMessage, salesClosedMessage, termsNote, confirmationP",
+   "params": {},
+   "capturedAt": "2026-10-26T02:26:40.421Z"
+  },
+  {
+   "key": "822038136c3f275a13ce45a7e495ac97030aad437a7b751231f0c6e3d0ac076b",
+   "queryHead": "*[_type == \"conferencePresenter\" && defined(country) && country != \"South Africa\"] | order(order asc) { _id, name, role,",
+   "params": {},
+   "capturedAt": "2026-10-25T23:51:23.802Z"
+  },
+  {
+   "key": "8451bfb6ad281536021978c84498372d3c050afd524d83036fc46b95486cdaa1",
+   "queryHead": "*[_type == \"showFaq\" && active == true && _id in $ids] | order(order asc){ _id, question, answer, order }",
+   "params": {
+    "ids": [
+     "showFaq-q46",
+     "showFaq-q49",
+     "showFaq-q51",
+     "showFaq-q53",
+     "showFaq-q54",
+     "showFaq-q55",
+     "showFaq-q56"
+    ]
+   },
+   "capturedAt": "2026-10-25T23:53:29.135Z"
+  },
+  {
+   "key": "86ae1275ae5d7c3592a70b0a968c8e03838893837ff0f6d3eb002cf65333cb11",
+   "queryHead": "*[_type == \"societyEvent\" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart) || (!defined(dateTime(coalesce(",
+   "params": {
+    "slug": "border-orchid-society",
+    "todayStart": "2026-10-25T22:00:00.000Z",
+    "todayDate": "2026-10-26"
+   },
+   "capturedAt": "2026-10-25T23:51:21.833Z"
+  },
+  {
+   "key": "86f1b8f5abd0fe186f94c1e73f53101196f9633c76a9d12f1d952a3f6e6bdeeb",
+   "queryHead": "*[_type == \"societyEvent\" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart) || (!defined(dateTime(coalesce(",
+   "params": {
+    "slug": "tygerberg-orchid-group",
+    "todayStart": "2026-10-25T22:00:00.000Z",
+    "todayDate": "2026-10-26"
+   },
+   "capturedAt": "2026-10-25T23:51:21.095Z"
+  },
+  {
+   "key": "888d73e4e37f200af0274ba4e0c8536e8e1f52bd9e6522081be9a00cb5a07b0c",
+   "queryHead": "*[_type == \"societyEvent\" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart) || (!defined(dateTime(coalesce(",
+   "params": {
+    "slug": "northern-gauteng-orchid-society",
+    "todayStart": "2026-10-25T22:00:00.000Z",
+    "todayDate": "2026-10-26"
+   },
+   "capturedAt": "2026-10-25T23:51:23.177Z"
+  },
+  {
+   "key": "88919452a2d0144cd5b301030a292b377a2adb30f45454568228890bb04d4abf",
+   "queryHead": "*[_type == \"societyEvent\" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart) || (!defined(dateTime(coalesce(",
+   "params": {
+    "slug": "vlakte-orgideevereniging",
+    "todayStart": "2026-10-25T22:00:00.000Z",
+    "todayDate": "2026-10-26"
+   },
+   "capturedAt": "2026-10-25T23:51:20.992Z"
+  },
+  {
+   "key": "8b586109086a7701de46fe81ca704f8ee14492a29046abe8b6d426cee32b151b",
+   "queryHead": "*[_type == \"society\" && listed != false && slug.current == $slug][0]{ _id, name, \"slug\": slug.current, province, region,",
+   "params": {
+    "slug": "alfred-county-orchid-society"
+   },
+   "capturedAt": "2026-10-25T23:51:20.513Z"
+  },
+  {
+   "key": "8c12718e40189a518d6bf94e7fcde666c4aba8ad785afd997db89166a5d98bdd",
+   "queryHead": "*[_type == \"society\" && listed != false && slug.current == $slug][0]{ _id, name, \"slug\": slug.current, province, region,",
+   "params": {
+    "slug": "witwatersrand-orchid-society"
+   },
+   "capturedAt": "2026-10-25T23:51:19.659Z"
+  },
+  {
+   "key": "8c2a34af6294b0badb60e3342e953f502c2330e9b974a11b993bfc2560a094b4",
+   "queryHead": "*[_type == \"conferencePresenter\" && event == $event] | order(order asc) { _id, name, role, bio, country, organisation, \"",
+   "params": {
+    "event": "saoc-symposium"
+   },
+   "capturedAt": "2026-10-25T23:52:59.434Z"
+  },
+  {
+   "key": "8e1fd439b3a402f307afb33ade256a44aa1428e09c57c43e2a45f01d7e608631",
+   "queryHead": "*[_type == \"society\" && listed != false && slug.current == $slug][0]{ _id, name, \"slug\": slug.current, province, region,",
+   "params": {
+    "slug": "rustenburg-orchid-society"
+   },
+   "capturedAt": "2026-10-25T23:51:19.860Z"
+  },
+  {
+   "key": "8f9a2667a0eb66515abf3a19df0ae0a0701cec129221dfd75a050c03fc56d164",
+   "queryHead": "*[_type == \"society\" && listed != false && slug.current == $slug][0]{ _id, name, \"slug\": slug.current, province, region,",
+   "params": {
+    "slug": "walker-bay-orchid-society"
+   },
+   "capturedAt": "2026-10-25T23:51:19.657Z"
+  },
+  {
+   "key": "922d6e47f19c6f098216c6313595f37ae997f561733816bdff6594b49a06da1f",
+   "queryHead": "*[_type == \"societyEvent\" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart) || (!defined(dateTime(coalesce(",
+   "params": {
+    "slug": "east-rand-orchid-society",
+    "todayStart": "2026-10-25T22:00:00.000Z",
+    "todayDate": "2026-10-26"
+   },
+   "capturedAt": "2026-10-25T23:51:21.299Z"
+  },
+  {
+   "key": "93bc8e0200530d8897101a48b509e8d325647bed290866f3039674da19a0660a",
+   "queryHead": "*[_type == \"society\" && listed != false && slug.current == $slug][0]{ _id, name, \"slug\": slug.current, province, region,",
+   "params": {
+    "slug": "border-orchid-society"
+   },
+   "capturedAt": "2026-10-25T23:51:20.512Z"
+  },
+  {
+   "key": "96c2b2e8bce198e0682759569557140557d7cfec4edf208365df0b5f371b984f",
+   "queryHead": "*[_type == \"ticketType\" && slug.current == $slug && active == true][0]{ _id, name, \"slug\": slug.current, demo, active, p",
+   "params": {
+    "slug": "does-not-exist-fixture-only-soft404"
+   },
+   "capturedAt": "2026-10-26T02:26:42.471Z"
+  },
+  {
+   "key": "a04a8f0273dea155d58a73597ed036e26e7e57c9902dcd492ea631bbbf38e9df",
+   "queryHead": "*[_type == \"showVisitorInfo\"][0]{ pendingLabel, researchLabel, planTitle, planIntro, gettingThereIntro, airportRoutes, p",
+   "params": {},
+   "capturedAt": "2026-10-25T23:51:19.317Z"
+  },
+  {
+   "key": "a9ea1aecbca2755fb1b33177303137a9ee6a3bca31633e3dde3366159d6cbebc",
+   "queryHead": "*[_type == \"vendorNursery\"] | order(name asc){ _id, name, logo, country, bio, owner, history, specialisation, plantsBrou",
+   "params": {},
+   "capturedAt": "2026-10-25T23:51:19.451Z"
+  },
+  {
+   "key": "acca419ea734a653eb3e901efeb3a378241ea172b1f5c1d8773e255e6eed57ff",
+   "queryHead": "*[_type == \"societyEvent\" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart) || (!defined(dateTime(coalesce(",
+   "params": {
+    "slug": "walker-bay-orchid-society",
+    "todayStart": "2026-10-25T22:00:00.000Z",
+    "todayDate": "2026-10-26"
+   },
+   "capturedAt": "2026-10-25T23:51:20.770Z"
+  },
+  {
+   "key": "ba2c5e24882241d7ba4739d36783d9eb6675216de54abe733e84553b0b74a767",
+   "queryHead": "*[_type == \"societyEvent\" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart) || (!defined(dateTime(coalesce(",
+   "params": {
+    "slug": "lowveld-orchid-group",
+    "todayStart": "2026-10-25T22:00:00.000Z",
+    "todayDate": "2026-10-26"
+   },
+   "capturedAt": "2026-10-25T23:51:23.603Z"
+  },
+  {
+   "key": "c2953f51bc4c68847484b9dfcca55857c8e346400a58cbe63923d6abfbe3c6f0",
+   "queryHead": "*[_type == \"societyEvent\" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart) || (!defined(dateTime(coalesce(",
+   "params": {
+    "slug": "gonubie-orchid-society",
+    "todayStart": "2026-10-25T22:00:00.000Z",
+    "todayDate": "2026-10-26"
+   },
+   "capturedAt": "2026-10-25T23:51:23.959Z"
+  },
+  {
+   "key": "c690a1c5272ea62b53dfa41604ad36268d1a09bb63a2ca84fa820bcf8c66911e",
+   "queryHead": "*[_type == \"ticketType\" && slug.current == $slug && active == true][0]{ _id, name, \"slug\": slug.current, demo, active, p",
+   "params": {
+    "slug": "day-visitor"
+   },
+   "capturedAt": "2026-10-26T02:26:40.427Z"
+  },
+  {
+   "key": "c802bfc6fc9f9f661ece0e2071d3b73adcd8e56927dca0594980f3ce0a193d94",
+   "queryHead": "*[_type == \"society\" && listed != false && slug.current == $slug][0]{ _id, name, \"slug\": slug.current, province, region,",
+   "params": {
+    "slug": "natal-orchid-society"
+   },
+   "capturedAt": "2026-10-25T23:51:22.537Z"
+  },
+  {
+   "key": "c9b626cdba550576580884240565a0128e6221c9ff4b3d65ad62cab59d5038d3",
+   "queryHead": "*[_type == \"society\" && listed != false && slug.current == $slug][0]{ _id, name, \"slug\": slug.current, province, region,",
+   "params": {
+    "slug": "tygerberg-orchid-group"
+   },
+   "capturedAt": "2026-10-25T23:51:19.844Z"
+  },
+  {
+   "key": "ce38d3433090666b92446e6ec5b139e02111c24f85fba32b7d5d9a62a9646b44",
+   "queryHead": "*[_type == \"society\" && listed != false && slug.current == $slug][0]{ _id, name, \"slug\": slug.current, province, region,",
+   "params": {
+    "slug": "lowveld-orchid-group"
+   },
+   "capturedAt": "2026-10-25T23:51:22.961Z"
+  },
+  {
+   "key": "cfc8c3b5810acaac1cc1e0fd0c73eef95a93085e8e512779d1cc7cfc2a3254b6",
+   "queryHead": "*[_type == \"showFaq\" && active == true] | order(category asc, order asc, question asc){ _id, question, answer, category,",
+   "params": {},
+   "capturedAt": "2026-10-25T23:51:23.698Z"
+  },
+  {
+   "key": "d4c75d5ea9ac2523ff15f4259559c571236d5f249078b21909594680beb27295",
+   "queryHead": "*[_type == \"societyEvent\" && defined(slug.current)]{ \"slug\": slug.current }",
+   "params": {},
+   "capturedAt": "2026-10-25T23:51:18.455Z"
+  },
+  {
+   "key": "d93af9b86ea15c4c558a6d8565de70d096b63bd308e139a7ded51815bbe25810",
+   "queryHead": "*[_type == \"society\" && listed != false && slug.current == $slug][0]{ _id, name, \"slug\": slug.current, province, region,",
+   "params": {
+    "slug": "wolkberg-orchid-society"
+   },
+   "capturedAt": "2026-10-25T23:51:21.777Z"
+  },
+  {
+   "key": "daff31c09fb1a4282aba2a53f68f4f788b141bee73eddb5844ade12f0e298e17",
+   "queryHead": "*[_type == \"sponsor\" && active == true] | order(tier asc, name asc){ _id, name, tier, logo, website, description }",
+   "params": {},
+   "capturedAt": "2026-10-25T23:51:20.499Z"
+  },
+  {
+   "key": "ddb7c219f73a33a05bba1c562873581a6f8d9ecc96f4045a91b21a2948f500d5",
+   "queryHead": "*[_type == \"societyEvent\" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart) || (!defined(dateTime(coalesce(",
+   "params": {
+    "todayStart": "2026-10-25T22:00:00.000Z",
+    "todayDate": "2026-10-26"
+   },
+   "capturedAt": "2026-10-25T23:51:19.302Z"
+  },
+  {
+   "key": "e33f86b1ca52a4e72898924198b349c8c504d16abc3044ab7df8c55e1151a3d3",
+   "queryHead": "*[_type == \"society\" && listed != false && slug.current == $slug][0]{ _id, name, \"slug\": slug.current, province, region,",
+   "params": {
+    "slug": "pietermaritzberg-orchid-society"
+   },
+   "capturedAt": "2026-10-25T23:51:19.850Z"
+  },
+  {
+   "key": "e545e3005bc617ac7f8fde9e2b33a3adc4b88c34a2c80183a0c1f7ec37489975",
+   "queryHead": "*[_type == \"ticketType\" && slug.current == $slug && active == true][0]{ _id, name, \"slug\": slug.current, demo, active, p",
+   "params": {
+    "slug": "saoc-symposium"
+   },
+   "capturedAt": "2026-10-25T23:51:36.045Z"
+  },
+  {
+   "key": "e98c838cf24ba4c3f58f0a9d32e04a8b0c39a0655fb5ec34abba09bf5997ba38",
+   "queryHead": "*[_type == \"society\" && listed != false && slug.current == $slug][0]{ _id, name, \"slug\": slug.current, province, region,",
+   "params": {
+    "slug": "plantae-orchid-group"
+   },
+   "capturedAt": "2026-10-25T23:51:19.646Z"
+  },
+  {
+   "key": "ea38f6e48d77352ddbdbeaeca1921144f10a927d95ea13fb84f7bc489a76629b",
+   "queryHead": "*[_type == \"societyEvent\" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart) || (!defined(dateTime(coalesce(",
+   "params": {
+    "slug": "witwatersrand-orchid-society",
+    "todayStart": "2026-10-25T22:00:00.000Z",
+    "todayDate": "2026-10-26"
+   },
+   "capturedAt": "2026-10-25T23:51:20.777Z"
+  },
+  {
+   "key": "eb79c7ed0bffc139df84043b8a4d971e6b1ba63d979f042ebd8c24c5c22c8360",
+   "queryHead": "*[_type == \"societyEvent\" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart) || (!defined(dateTime(coalesce(",
+   "params": {
+    "slug": "rustenburg-orchid-society",
+    "todayStart": "2026-10-25T22:00:00.000Z",
+    "todayDate": "2026-10-26"
+   },
+   "capturedAt": "2026-10-25T23:51:20.976Z"
+  },
+  {
+   "key": "eed48d17b3bc16cfeedde92da278b1f87a1e7fc241c69dd23a91c2c863fd2ee4",
+   "queryHead": "*[_type == \"society\" && listed != false && slug.current == $slug][0]{ _id, name, \"slug\": slug.current, province, region,",
+   "params": {
+    "slug": "vlakte-orgideevereniging"
+   },
+   "capturedAt": "2026-10-25T23:51:19.756Z"
+  },
+  {
+   "key": "ef011a654c90e72b36f84ac6fa8936a9bbeff6f7f58305ae53256a00766b58cb",
+   "queryHead": "*[_type == \"ticketType\" && active == true && (category == $category || (!defined(category) && $category == \"admission\"))",
+   "params": {
+    "category": "admission"
+   },
+   "capturedAt": "2026-10-25T23:51:23.610Z"
+  },
+  {
+   "key": "f22ce30875e1f35c49d2c5d30100e59e48807fd4501a2b33241f71f0b31906bf",
+   "queryHead": "*[_type == \"nationalShow\"][0]{ salesOpen }",
+   "params": {},
+   "capturedAt": "2026-10-25T23:51:23.597Z"
+  },
+  {
+   "key": "f4ccc423161a7068ea020281c2b2629f1174dd2c393812c5643c7c548632c63d",
+   "queryHead": "*[_type == \"show\"]{ _id, active, startDate, endDate }",
+   "params": {},
+   "capturedAt": "2026-10-25T23:51:23.695Z"
+  },
+  {
+   "key": "f5332d60c6587ee476eb2c28c4c51e1a0f445720f351f0beff3d09e5addb4078",
+   "queryHead": "*[_type == \"province\"] | order(order asc, name asc){ _id, name, code, order }",
+   "params": {},
+   "capturedAt": "2026-10-25T23:51:21.996Z"
+  },
+  {
+   "key": "f5d7d6c2a56524ae791df444a9c81783650bfbd0430c2a5eff9b2c3914c2e3d2",
+   "queryHead": "*[_type == \"societyEvent\" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart) || (!defined(dateTime(coalesce(",
+   "params": {
+    "slug": "eastern-province-orchid-society",
+    "todayStart": "2026-10-25T22:00:00.000Z",
+    "todayDate": "2026-10-26"
+   },
+   "capturedAt": "2026-10-25T23:51:23.369Z"
+  },
+  {
+   "key": "faaae0a1df9245b4e790799a572d518e952179dc94d5bf246b7dd9fb438d4c30",
+   "queryHead": "*[_type == \"vendorNursery\" && defined(country) && country != \"South Africa\"] | order(name asc) { _id, name, country, bio",
+   "params": {},
+   "capturedAt": "2026-10-25T23:51:23.595Z"
+  },
+  {
+   "key": "fc6f10590154fc8370d70309a9e43d67bc83e03d8d7b47112d66fb7d61453f1c",
+   "queryHead": "*[_type == \"societyEvent\" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart) || (!defined(dateTime(coalesce(",
+   "params": {
+    "slug": "orchid-society-of-the-southern-cape",
+    "todayStart": "2026-10-25T22:00:00.000Z",
+    "todayDate": "2026-10-26"
+   },
+   "capturedAt": "2026-10-25T23:51:23.478Z"
+  },
+  {
+   "key": "fdd42268560d5eda5fb87f97eca5a04df1218de6a0c8a530167541e3abf62093",
+   "queryHead": "*[_type == \"homePage\"][0]{ title, heroImages, missionText }",
+   "params": {},
+   "capturedAt": "2026-10-25T23:51:20.039Z"
+  },
+  {
+   "key": "2bdfb0df0e5d59f8127a1d514b4f4bcea24850b2ea11d5095a245d020007a5d4",
+   "queryHead": "*[_type == \"ticketType\" && slug.current == $slug && active == true][0]{ _id, name, \"slug\": slug.current, demo, active, p",
+   "params": {
+    "slug": "early-bird"
+   },
+   "capturedAt": "2026-10-27T20:15:32.755Z"
+  },
+  {
+   "key": "2d626a765cab8c94c5c725e2c09116e603351a4543b9cd0f5df54d0b5f88540d",
+   "queryHead": "*[_type == \"ticketType\" && slug.current == $slug && active == true][0]{ _id, name, \"slug\": slug.current, demo, active, p",
+   "params": {
+    "slug": "fictional-test-show-general-admission"
+   },
+   "capturedAt": "2026-10-27T20:15:32.946Z"
+  },
+  {
+   "key": "3f169246df14ee163abad37fa95889328bfbdcfbe9789417a8277fc01d5226cd",
+   "queryHead": "*[_type == \"ticketType\" && slug.current == $slug && active == true][0]{ _id, name, \"slug\": slug.current, demo, active, p",
+   "params": {
+    "slug": "weekend-pass-early-bird"
+   },
+   "capturedAt": "2026-10-27T20:15:33.205Z"
+  },
+  {
+   "key": "58f9cc9558c9c8ce72261bef988bb766e443add3ab08658b2079a6a1ab239e5d",
+   "queryHead": "*[_type == \"societyEvent\" && defined(slug.current)]{ \"slug\": slug.current, \"updatedAt\": _updatedAt }",
+   "params": {},
+   "capturedAt": "2026-10-27T20:15:33.405Z"
+  },
+  {
+   "key": "6f6a5ea784b6256955f0a1ed5d50924de98769111bd679e3ecd1040b507c571b",
+   "queryHead": "*[_type == \"ticketType\" && slug.current == $slug && active == true][0]{ _id, name, \"slug\": slug.current, demo, active, p",
+   "params": {
+    "slug": "field-trip"
+   },
+   "capturedAt": "2026-10-27T20:15:33.599Z"
+  },
+  {
+   "key": "87efc3278926c4c4fc46ca964ca50498b8ac01186b0d714625be71f57f830f93",
+   "queryHead": "*[_type == \"ticketType\" && slug.current == $slug && active == true][0]{ _id, name, \"slug\": slug.current, demo, active, p",
+   "params": {
+    "slug": "weekend-pass"
+   },
+   "capturedAt": "2026-10-27T20:15:33.827Z"
+  },
+  {
+   "key": "9f3a3d24d8a823655b661e969300756bca6456eabba631434c3c9196dd146ffe",
+   "queryHead": "*[_type == \"society\" && listed != false && defined(slug.current)]{ \"slug\": slug.current, \"updatedAt\": _updatedAt }",
+   "params": {},
+   "capturedAt": "2026-10-27T20:15:34.096Z"
+  }
+ ],
+ "refreshedAt": "2026-10-27T20:16:38.939Z"
+}

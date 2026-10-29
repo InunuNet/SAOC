@@ -1,5 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 
+import { csvField } from './csv-field';
+
 /**
  * Pure newsletter-subscriber helpers (mission footer-newsletter-subscribe, M1/F1). No
  * firebase-admin import: every Firestore touch lives in lib/newsletter-store.ts so this file
@@ -40,7 +42,6 @@ const UNSUBSCRIBE_TOKEN_SHAPE = /^[A-Za-z0-9_-]{43}$/;
 const TOKEN_BYTES = 32;
 const CSV_HEADER = 'email,source,subscribedAt,unsubscribeUrl,topics';
 // A cell starting with any of these is evaluated as a formula by spreadsheet software.
-const FORMULA_LEADERS = ['=', '+', '-', '@', '\t', '\r'];
 const EMAIL_FORMULA_LEADERS = ['=', '+', '-', '@'];
 
 export function normaliseNewsletterEmail(raw: unknown): string | null {
@@ -109,28 +110,23 @@ export function applySubscribe(
       unsubscribeToken: input.token,
     };
   }
-  const topics = NEWSLETTER_TOPICS.filter((topic) =>
-    subscriberTopics(existing.topics, existing.source).includes(topic) || requestedTopics.includes(topic));
   if (existing.status === 'subscribed') {
+    const topics = NEWSLETTER_TOPICS.filter((topic) =>
+      subscriberTopics(existing.topics, existing.source).includes(topic) || requestedTopics.includes(topic));
     if (topics.length === subscriberTopics(existing.topics, existing.source).length && existing.topics) return null;
     return { ...existing, topics };
   }
   // Re-subscribe keeps the original token and source so previously issued links keep working.
+  // Topics are exactly the new request: consent given before unsubscribing does not carry over.
   return {
     email: existing.email,
     status: 'subscribed',
     source: existing.source,
-    topics,
+    topics: requestedTopics,
     subscribedAt: input.now,
     unsubscribedAt: null,
     unsubscribeToken: existing.unsubscribeToken,
   };
-}
-
-function csvField(value: string): string {
-  const safe = FORMULA_LEADERS.includes(value.charAt(0)) ? `'${value}` : value;
-  if (/[",\r\n]/.test(safe)) return `"${safe.replace(/"/g, '""')}"`;
-  return safe;
 }
 
 /** The origin that hosts the unsubscribe page for a subscriber: one string, or chosen per source. */

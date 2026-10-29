@@ -1,0 +1,115 @@
+{
+  "schema": "council.overrides/v1",
+  "source": "Council correction sheets updated 2026-10-27 (council-1028 council-copy-fixes)",
+  "substitutions": [
+    {
+      "id": "C01",
+      "from": "Thicket types and prices are on the website.",
+      "to": "Ticket types and prices are on the website."
+    },
+    {
+      "id": "C02",
+      "exceptRoutes": ["/faq"],
+      "from": "members who’s subscriptions are valid",
+      "to": "members whose subscriptions are valid"
+    },
+    {
+      "id": "C02b",
+      "exceptRoutes": ["/faq"],
+      "from": "members who’s subscriptions are valid",
+      "to": "members whose subscriptions are valid"
+    },
+    {
+      "id": "C03",
+      "from": "event that takes please every three years",
+      "to": "event that takes place every three years"
+    },
+    {
+      "id": "C04",
+      "exceptRoutes": ["/faq"],
+      "from": "attendees or the public please ensure",
+      "to": "attendees or the public, please ensure"
+    },
+    {
+      "id": "C05",
+      "from": "There are two stairways: one may be suitable for visitors using crutches",
+      "to": "There are two stairways, one of which may be suitable for visitors using crutches"
+    },
+    {
+      "id": "C06",
+      "from": "meet orchid societies from across the country",
+      "to": "meet members of the orchid societies from across the country"
+    },
+    {
+      "id": "pin-takes-please",
+      "from": "takes please",
+      "to": "takes place"
+    },
+    {
+      "id": "pin-whos-subscriptions",
+      "exceptRoutes": ["/faq"],
+      "from": "who’s subscriptions",
+      "to": "whose subscriptions"
+    }
+  ],
+  "sanityExceptions": {
+    "appliesFromFixtureCapturedAt": "2026-10-28T00:00:00Z",
+    "note": "Rows already applied in Sanity on 2026-10-28; applied to the expected Drive text only when the replayed fixture was captured on or after appliesFromFixtureCapturedAt, or NOS_STD_FIXTURE=live.",
+    "substitutions": [
+      {
+        "id": "SX-F13",
+        "sanityDoc": "showFaq-q15",
+        "from": "T&C’s On your",
+        "to": "T&C’s on your"
+      },
+      {
+        "id": "SX-F14",
+        "sanityDoc": "showFaq-q16",
+        "from": "attend on more than one day",
+        "to": "attend more than one day"
+      },
+      {
+        "id": "SX-F19",
+        "sanityDoc": "showFaq-q26",
+        "from": "who’s subscriptions",
+        "to": "whose subscriptions"
+      },
+      {
+        "id": "SX-F28",
+        "sanityDoc": "showFaq-q51",
+        "from": "refrenshments",
+        "to": "refreshments"
+      },
+      {
+        "id": "SX-W2b",
+        "sanityDoc": "showFaq-q29",
+        "from": "public please",
+        "to": "public, please"
+      },
+      {
+        "id": "SX-F3",
+        "sanityDoc": "showFaq-q4",
+        "from": "Walker Bay Orchid Society, Cape Orchid Society, Tygerberg Orchid Group, Southern Cape Orchid Society and Wild Orchids Southern Africa (WOSA)",
+        "to": "Cape Orchid Society, Southern Cape Orchid Society, Tygerberg Orchid Group, Walker Bay Orchid Society and Wild Orchids Southern Africa (WOSA)"
+      },
+      {
+        "id": "SX-F5",
+        "sanityDoc": "showFaq-q7",
+        "from": "The Show is open to the public. You do not need to belong to an orchid society to visit.",
+        "to": "The Show is open to the public."
+      },
+      {
+        "id": "SX-F6",
+        "sanityDoc": "showFaq-q8",
+        "from": "International guests and exhibitors, including",
+        "to": "Yes, international guests and exhibitors, including"
+      },
+      {
+        "id": "SX-F25",
+        "sanityDoc": "showFaq-q40",
+        "from": "Lourens Grobler, Tinus Oberholzer, Michael Tibbs, Rob Fuchs, Elbert Wijaya and Hildegard Crous",
+        "to": "Elbert Wijaya, Hildegard Crous, Lourens Grobler, Michael Tibbs, Rob Fuchs and Tinus Oberholzer"
+      }
+    ]
+  }
+}

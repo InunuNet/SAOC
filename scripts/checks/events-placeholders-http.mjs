@@ -2,8 +2,9 @@
 // mode: `--mode=preview` (SHOW_PLACEHOLDER_PREVIEW=true and the wall creds at build and run time, like the other
 // COPY GAP prose) or `--mode=public` (no preview flag). Starts `next start` on a fixed local port and reads
 // /events, /events.ics, /sitemap.xml and the home page with GET only; takes shots to ../split-shots.
-//   preview  /events shows one marked row per invented event dated today or later (5 on 2026-10-23), the
-//            marked rows are not links, the JSON-LD names no invented event, and the feeds and sitemap list none
+//   preview  /events lists one row per invented event dated today or later (5 on 2026-10-23), the rows carry no
+//            marker of their own and are not links, one AI-event note stands above the list, the JSON-LD names no
+//            invented event, and the feeds and sitemap list none
 //   public   /events shows no marker and no invented title
 import { spawn } from 'node:child_process';
 import { mkdirSync, openSync, readFileSync } from 'node:fs';
@@ -95,22 +96,23 @@ async function run() {
   const tab = await context.newPage();
   await tab.goto(`http://${HOST}/events`, { waitUntil: 'networkidle' });
   const all = await tab.$$eval('article', (articles) =>
-    articles.map((a) => ({ text: a.textContent, label: a.querySelector('[data-placeholder-marker]')?.textContent ?? '', marked: a.querySelector('[data-placeholder-marker]') !== null, linked: a.querySelector('a') !== null })),
+    articles.map((a) => ({ text: a.textContent, marked: a.querySelector('[data-placeholder-marker]') !== null, linked: a.querySelector('a') !== null })),
   );
-  const rows = all.filter((r) => r.marked);
+  const noteLabels = await tab.$$eval('[data-events-about] [data-placeholder-marker]', (n) => n.map((x) => x.textContent));
+  const rows = all.filter((r) => upcoming.some((e) => r.text.includes(e.title)));
   const showRows = all.filter((r) => r.text.includes(NATIONAL_SHOW)).length;
   const other = await context.newPage();
   await other.goto(`http://${HOST}/`, { waitUntil: 'networkidle' });
   const otherLabels = MODE === 'preview' ? await other.$$eval('[data-placeholder-marker]', (n) => n.map((x) => x.textContent)) : [];
   await context.close();
   if (MODE === 'preview') {
-    check(`preview: ${upcoming.length} marked invented rows (today ${todayIso})`, upcoming.length > 0 && rows.length === upcoming.length && upcoming.every((e) => rows.some((r) => r.text.includes(e.title))), `marked rows=${rows.length}`);
+    check(`preview: ${upcoming.length} invented rows (today ${todayIso}), none with a marker of its own`, upcoming.length > 0 && rows.length === upcoming.length && rows.every((r) => !r.marked), `rows=${rows.length}`);
     check('preview: the National Orchid Show is listed once', showRows === 1, `rows=${showRows}`);
-    check('preview: every invented row carries the AI-event label', rows.length > 0 && rows.every((r) => r.label === EVENT_LABEL));
+    check('preview: one AI-event note stands above the list', noteLabels.length === 1 && noteLabels[0] === EVENT_LABEL, `notes=${JSON.stringify(noteLabels)}`);
     check('preview: another page keeps the default marker text', otherLabels.length > 0 && otherLabels.every((t) => t === DEFAULT_LABEL), `labels=${JSON.stringify(otherLabels.slice(0, 3))}`);
     check('preview: invented rows are not links', rows.every((r) => !r.linked));
   } else {
-    check('public: no marked row on /events', rows.length === 0, `marked rows=${rows.length}`);
+    check('public: no invented row and no note on /events', rows.length === 0 && noteLabels.length === 0, `rows=${rows.length} notes=${noteLabels.length}`);
     check('public: no invented-only title on /events', mentions(page.body) === 0, `found ${mentions(page.body)}`);
   }
   check(`${MODE}: JSON-LD names no invented event`, mentions(ld) === 0, `found ${mentions(ld)}`);

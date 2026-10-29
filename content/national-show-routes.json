@@ -186,22 +186,6 @@
       "specNumber": null
     },
     {
-      "slug": "/national-show/sa-exhibitors",
-      "label": "South African Exhibitors",
-      "group": "exhibit-trade",
-      "parent": "/national-show",
-      "order": 1,
-      "listed": true,
-      "dynamic": false,
-      "indexable": true,
-      "status": "created",
-      "owner": "nos-design",
-      "archetype": "listing",
-      "purpose": "Public directory of South African nurseries exhibiting at the show.",
-      "pageKey": "04-south-african-exhibitors",
-      "specNumber": 4
-    },
-    {
       "slug": "/national-show/international-guests",
       "label": "International Guests",
       "group": "exhibit-trade",
@@ -218,8 +202,8 @@
       "specNumber": 5
     },
     {
-      "slug": "/national-show/exhibitors",
-      "label": "Exhibitor Entry Guide",
+      "slug": "/national-show/award-entries",
+      "label": "Award Entries",
       "group": "exhibit-trade",
       "parent": "/national-show",
       "order": 3,

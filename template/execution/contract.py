@@ -21,6 +21,33 @@ Exit-code contract for `gate` on a specific phase number (not "all"/"max"):
   ("all"/"max" phase gating always exits 2 on any failure and 0 on full
   success — the 1-vs-2 codex_qa distinction only applies to the specific-
   phase path above.)
+
+Project-owned check kinds: `<project>/.agent/contract_kinds.json` registers extra
+`type:` values so a project need not pin this file:
+  {"schema": "athanor.contract-kinds/v1",
+   "kinds": {"<name>": {"script": "execution/x.sh", "timeout_seconds": 200}}}
+The project root is the nearest ancestor of the contract file holding `.agent/`.
+A check of a registered type runs `<script> <target>` (check-level `script:`
+overrides; relative paths resolve against the project root) under the codex_qa
+wrapper protocol: 0 pass, 1 fail, 2 or anything else inconclusive (error). A
+malformed registry, or a kind shadowing a built-in, fails validate (and so gate).
+
+Project-owned gate hooks: the same registry may carry a `gate_hooks` list (`kinds` is then
+optional), each {name, stage: pre|post, command: [argv...], on_error: open|closed,
+timeout_seconds (default 120)}. `{contract}` in the command is replaced by the contract
+path; cwd is the project root. Exit 0 clean, 1 a finding, anything else (or a timeout, or a
+command that cannot start) an infrastructure error. Pre hooks run once before any
+assertion (a finding refuses the gate, exit 1); post hooks run once after the phases, even
+when they failed, and a finding or a closed error fails the gate. on_error open reports an
+error and continues. --prove-nonvacuous runs hooks once; the base checkout runs none.
+
+Known-broken assertions: a check may carry
+  known_broken: {reason: "<>= 20 chars>", ref: "<issue/PR>", expires: "YYYY-MM-DD"}
+(expiry at most KNOWN_BROKEN_MAX_DAYS after today; validate refuses anything else).
+The check still runs. While unexpired, a `fail` is reported as KNOWN-BROKEN and does
+not fail the gate; a `pass` reports the marker as stale; past expiry the marker is
+ignored and the failure fails the gate. error/timeout are never excused, and a phase
+with no genuine pass does not pass. See docs/VALIDATION_CONTRACTS.md.
 """
 import argparse
 import difflib
@@ -28,15 +55,32 @@ import json
 import os
 import re
 import shlex
+import shutil
+import signal
 import subprocess
 import sys
-from datetime import datetime, timezone
+import tempfile
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).parent / "checks"))
+from pydeps import require  # noqa: E402
+
+require("yaml")
 
 RESULTS_DIR = Path(".agent/memory/scratch/contract-results")
+KINDS_REGISTRY = Path(".agent/contract_kinds.json")
+KINDS_SCHEMA = "athanor.contract-kinds/v1"
+DEFAULT_KIND_TIMEOUT_SECONDS = 200
+DEFAULT_HOOK_TIMEOUT_SECONDS = 120
+GATE_HOOK_STAGES = ("pre", "post")
+GATE_HOOK_POSTURES = ("open", "closed")
+BUILTIN_KINDS = {"shell", "codex_qa", "file_exists", "file_contains", "json_path",
+                 "handoff_field", "agent_review"}
 MAX_TIMEOUT_SECONDS = 86400  # 24h ceiling -- generous for CI, still finite
+KNOWN_BROKEN_MAX_DAYS = 30
+KNOWN_BROKEN_MIN_REASON_CHARS = 20
 EVIDENCE_DISPLAY_MAX = 2000  # console print cap; storage caps match, so print is a no-op
 
 # Top-level keys seen across the live 331-contract corpus (schema, goal-style
@@ -113,51 +157,209 @@ def _raw_checks(raw):
     return []
 
 
+def _project_root(contract_path) -> Path | None:
+    """Nearest ancestor of the contract file that holds a `.agent/` directory."""
+    start = Path(contract_path).resolve().parent
+    home = Path.home().resolve()
+    for d in (start, *start.parents):
+        if d == home:
+            return None  # ~/.agent is the user's global tree, never a project
+        if (d / ".agent").is_dir():
+            return d
+    return None
+
+
+def _parse_gate_hooks(data, where):
+    """Return (hooks, error) from a registry dict's optional `gate_hooks` list."""
+    raw = data.get("gate_hooks", [])
+    if not isinstance(raw, list):
+        return [], f"{where}: gate_hooks must be a list"
+    hooks = []
+    for i, h in enumerate(raw):
+        label = f"gate_hooks[{i}]"
+        if not isinstance(h, dict) or not isinstance(h.get("name"), str) or not h["name"].strip():
+            return [], f"{where}: {label} needs a non-empty string `name`"
+        label = f"gate hook {h['name']!r}"
+        if h.get("stage") not in GATE_HOOK_STAGES:
+            return [], f"{where}: {label} stage must be one of {', '.join(GATE_HOOK_STAGES)}"
+        cmd = h.get("command")
+        if not isinstance(cmd, list) or not cmd or not all(isinstance(t, str) for t in cmd) \
+                or not cmd[0].strip():
+            return [], f"{where}: {label} command must be a non-empty list of strings"
+        if h.get("on_error") not in GATE_HOOK_POSTURES:
+            return [], f"{where}: {label} on_error must be one of {', '.join(GATE_HOOK_POSTURES)}"
+        ts = h.get("timeout_seconds", DEFAULT_HOOK_TIMEOUT_SECONDS)
+        if isinstance(ts, bool) or not isinstance(ts, int) or ts <= 0:
+            return [], f"{where}: {label} timeout_seconds must be a positive int"
+        hooks.append({"name": h["name"], "stage": h["stage"], "command": cmd,
+                      "on_error": h["on_error"], "timeout_seconds": ts})
+    return hooks, None
+
+
+def _load_gate_hooks(contract_path):
+    """Return (hooks, root) for the project's registered gate hooks; validate has
+    already refused a malformed registry, so a bad one yields no hooks here."""
+    root = _project_root(contract_path)
+    reg = root / KINDS_REGISTRY if root else None
+    if reg is None or not reg.is_file():
+        return [], root
+    try:
+        data = json.loads(reg.read_text())
+    except (OSError, ValueError):
+        return [], root
+    if not isinstance(data, dict):
+        return [], root
+    hooks, error = _parse_gate_hooks(data, str(KINDS_REGISTRY))
+    return ([] if error else hooks), root
+
+
+def _run_hook(hook, contract_path, root):
+    """Run one hook; return (state, rc) with state clean | finding | error."""
+    cmd = [t.replace("{contract}", str(contract_path)) for t in hook["command"]]
+    if not os.path.isabs(cmd[0]) and os.sep in cmd[0]:
+        cmd[0] = str(root / cmd[0])
+    print(f"--- gate hook {hook['name']} ({hook['stage']}) ---", flush=True)
+    try:
+        proc = subprocess.run(cmd, cwd=str(root), capture_output=True, text=True,
+                              timeout=hook["timeout_seconds"])
+    except subprocess.TimeoutExpired:
+        print(f"gate hook {hook['name']} timed out after {hook['timeout_seconds']}s")
+        return "error", None
+    except OSError as exc:
+        print(f"gate hook {hook['name']} could not start: {type(exc).__name__}: {exc}")
+        return "error", None
+    out = (proc.stdout + proc.stderr).rstrip()
+    if out:
+        print(out)
+    if proc.returncode == 0:
+        return "clean", 0
+    return ("finding" if proc.returncode == 1 else "error"), proc.returncode
+
+
+def _run_hook_stage(stage, hooks, contract_path, root):
+    """Run every hook of a stage once, in order. Return (findings, blocking errors)."""
+    findings, blocked = [], []
+    for hook in (h for h in hooks if h["stage"] == stage):
+        state, rc = _run_hook(hook, contract_path, root)
+        if state == "finding":
+            print(f"HOOK FINDING: {hook['name']} ({stage}) reported a finding (exit 1)")
+            findings.append(hook["name"])
+        elif state == "error":
+            if hook["on_error"] == "closed":
+                print(f"HOOK ERROR: {hook['name']} ({stage}) failed (exit {rc}); "
+                      "on_error is closed, so the gate is blocked")
+                blocked.append(hook["name"])
+            else:
+                print(f"WARNING: gate hook {hook['name']} ({stage}) errored (exit {rc}); "
+                      "on_error is open, continuing")
+    return findings, blocked
+
+
+def _load_kind_registry(contract_path):
+    """Return (kinds, error, root). `kinds` maps name -> {script, timeout_seconds}
+    and is empty when the registry is absent or malformed; `error` names the
+    registry file and says what is wrong (None when absent or valid)."""
+    root = _project_root(contract_path) if contract_path else None
+    reg = root / KINDS_REGISTRY if root else None
+    if reg is None or not reg.is_file():
+        return {}, None, root
+    where = f"{KINDS_REGISTRY}"
+    try:
+        data = json.loads(reg.read_text())
+    except (OSError, ValueError) as e:
+        return {}, f"{where}: unreadable or not JSON ({type(e).__name__})", root
+    kinds = data.get("kinds", {}) if isinstance(data, dict) else None
+    if not isinstance(data, dict) or data.get("schema") != KINDS_SCHEMA \
+            or not isinstance(kinds, dict):
+        return {}, f"{where}: expected {{\"schema\": \"{KINDS_SCHEMA}\", \"kinds\": {{...}}}}", root
+    _, hooks_error = _parse_gate_hooks(data, where)
+    if hooks_error:
+        return {}, hooks_error, root
+    parsed = {}
+    for name, spec in kinds.items():
+        if name in BUILTIN_KINDS:
+            return {}, f"{where}: kind {name!r} collides with a built-in kind", root
+        if not isinstance(spec, dict) or not isinstance(spec.get("script"), str) \
+                or not spec["script"].strip():
+            return {}, f"{where}: kind {name!r} needs a string `script`", root
+        ts = spec.get("timeout_seconds", DEFAULT_KIND_TIMEOUT_SECONDS)
+        if isinstance(ts, bool) or not isinstance(ts, int) or ts <= 0:
+            return {}, f"{where}: kind {name!r} timeout_seconds must be a positive int", root
+        parsed[name] = {"script": spec["script"], "timeout_seconds": ts}
+    return parsed, None, root
+
+
 def load_contract(path: str) -> dict:
     p = Path(path)
     if not p.exists():
         print(f"ERROR: contract file not found: {path}", file=sys.stderr)
         sys.exit(1)
     try:
-        # Try YAML first, fall back to JSON
+        import yaml
         try:
-            import yaml
-            try:
-                with open(p) as f:
-                    contract = yaml.safe_load(f)
-                # An unquoted leading `! ` is a YAML tag, not shell negation:
-                # `cmd: ! grep -q x f` loads as `grep -q x f`, silently
-                # inverting the check (GH #1440). Block literals (`|`) are
-                # untouched -- their content carries no tag.
-                for ev in yaml.parse(p.read_text()):
-                    if isinstance(ev, yaml.ScalarEvent) and ev.tag == "!":
-                        print(f"ERROR: {path} line {ev.start_mark.line + 1}: an unquoted "
-                              f"leading '! ' is read by YAML as a tag and dropped, so "
-                              f"'{ev.value[:60]}' would run WITHOUT its negation -- quote "
-                              f"the whole command or use a block literal (|-)", file=sys.stderr)
-                        sys.exit(1)
-            except yaml.YAMLError as e:
-                from yaml_safe import diagnose_scalar_break
-                msg = f"ERROR: failed to parse {path}: {e}"
-                hint = diagnose_scalar_break(p.read_text(), e)
-                if hint:
-                    msg += f"\n  hint: {hint}"
-                print(msg, file=sys.stderr)
-                sys.exit(1)
-        except ImportError:
             with open(p) as f:
-                contract = json.load(f)
+                contract = yaml.safe_load(f)
+            # An unquoted leading `! ` is a YAML tag, not shell negation:
+            # `cmd: ! grep -q x f` loads as `grep -q x f`, silently
+            # inverting the check (GH #1440). Block literals (`|`) are
+            # untouched -- their content carries no tag.
+            for ev in yaml.parse(p.read_text()):
+                if isinstance(ev, yaml.ScalarEvent) and ev.tag == "!":
+                    print(f"ERROR: {path} line {ev.start_mark.line + 1}: an unquoted "
+                          f"leading '! ' is read by YAML as a tag and dropped, so "
+                          f"'{ev.value[:60]}' would run WITHOUT its negation -- quote "
+                          f"the whole command or use a block literal (|-)", file=sys.stderr)
+                    sys.exit(1)
+        except yaml.YAMLError as e:
+            from yaml_safe import diagnose_scalar_break
+            msg = f"ERROR: failed to parse {path}: {e}"
+            hint = diagnose_scalar_break(p.read_text(), e)
+            if hint:
+                msg += f"\n  hint: {hint}"
+            print(msg, file=sys.stderr)
+            sys.exit(1)
     except Exception as e:
         print(f"ERROR: failed to parse {path}: {e}", file=sys.stderr)
         sys.exit(1)
     try:
-        return normalize_contract(contract)
+        return normalize_contract(contract, path)
     except Exception as e:
         print(f"ERROR: failed to parse {path}: {e}", file=sys.stderr)
         sys.exit(1)
 
 
-def normalize_contract(contract: dict) -> dict:
+def _known_broken_error(marker, kind="shell", custom_kinds=()) -> str | None:
+    """Return why a known_broken marker is malformed, or None when it is valid."""
+    if kind == "codex_qa" or kind in custom_kinds:
+        return (f"known_broken is not allowed on a {kind} check: an adversarial "
+                "cross-model finding is never excusable")
+    if not isinstance(marker, dict):
+        return "known_broken must be a mapping with reason, ref and expires"
+    reason = marker.get("reason")
+    if not isinstance(reason, str) or len(reason.strip()) < KNOWN_BROKEN_MIN_REASON_CHARS:
+        return f"known_broken.reason must be a string of at least {KNOWN_BROKEN_MIN_REASON_CHARS} chars"
+    ref = marker.get("ref")
+    if not isinstance(ref, str) or not ref.strip():
+        return "known_broken.ref must be a non-empty string"
+    expires = _known_broken_expiry(marker)
+    if expires is None:
+        return "known_broken.expires must be a date in YYYY-MM-DD form"
+    if expires > date.today() + timedelta(days=KNOWN_BROKEN_MAX_DAYS):
+        return f"known_broken.expires must be at most {KNOWN_BROKEN_MAX_DAYS} days from today"
+    return None
+
+
+def _known_broken_expiry(marker) -> date | None:
+    raw = marker.get("expires")
+    if isinstance(raw, date) and not isinstance(raw, datetime):
+        return raw
+    try:
+        return date.fromisoformat(str(raw))
+    except ValueError:
+        return None
+
+
+def normalize_contract(contract: dict, contract_path=None) -> dict:
     """
     Convert @architect-generated contract format to the internal format contract.py uses.
 
@@ -183,8 +385,10 @@ def normalize_contract(contract: dict) -> dict:
     Also normalizes:
       - slug -> spec (if spec missing)
       - goal -> description (if description missing at top level)
+      - checks whose `type` is a project-registered kind (contract_kinds.json)
     """
     c = dict(contract)
+    custom_kinds, _, kinds_root = _load_kind_registry(contract_path)
 
     # Normalize slug/feature -> spec
     if "spec" not in c and "slug" in c:
@@ -258,6 +462,17 @@ def normalize_contract(contract: dict) -> dict:
                     "script": check.get("script", "execution/codex_qa.sh"),
                     "timeout_seconds": check.get("timeout_seconds", 200),
                 }
+            elif check_type in custom_kinds:
+                reg = custom_kinds[check_type]
+                script = Path(check.get("script", reg["script"]))
+                if not script.is_absolute():
+                    script = kinds_root / script
+                verify = {
+                    "kind": check_type,
+                    "target": check.get("target", ""),
+                    "script": str(script),
+                    "timeout_seconds": check.get("timeout_seconds", reg["timeout_seconds"]),
+                }
             else:
                 verify = {"kind": "shell", "cmd": cmd}
                 if "timeout_seconds" in check:
@@ -267,6 +482,7 @@ def normalize_contract(contract: dict) -> dict:
                 "description": desc,
                 "verify": verify,
                 "required": check.get("required", False),
+                **{k: check[k] for k in ("nonvacuous", "nonvacuous_reason", "known_broken") if k in check},
             })
             assertion_ids.append(cid)
 
@@ -398,7 +614,7 @@ def _assertion_dependency_mtime(assertion: dict, handoff: str | None = None) -> 
         path = verify.get("path", "")
         if path and os.path.isfile(path):
             candidates = [path]
-    elif kind == "codex_qa":
+    elif kind == "codex_qa" or kind not in BUILTIN_KINDS:
         target = verify.get("target", "")
         if target and "://" not in target and os.path.isfile(target):
             candidates = [target]
@@ -452,6 +668,28 @@ def _multiline_python3_c_violation(cmd: str) -> bool:
     return False
 
 
+def _load_assertion_lint():
+    """Import the assertion_lint module. Returns (module, None) or
+    (None, exception). A missing lint must never read as a clean lint, so
+    callers that gate on it turn the exception into a visible refusal.
+
+    Loaded by file path, never by module name: checks/ sits first on
+    sys.path, and a stale pre-v3.8.49 checks/assertion_lint.py left in a
+    downstream tree shadowed this one (MacOS Tweaks, 2026-10-25)."""
+    try:
+        import importlib.util
+        path = Path(__file__).resolve().parent / "assertion_lint.py"
+        spec = importlib.util.spec_from_file_location("assertion_lint", path)
+        if spec is None or spec.loader is None:
+            raise ImportError("assertion_lint not found at %s" % path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        sys.modules["assertion_lint"] = module
+        return module, None
+    except Exception as exc:
+        return None, exc
+
+
 def _attributed_and_chain_script(cmd: str) -> str:
     """Rewrite a top-level `A && B && C` command so that on failure, the
     captured evidence names exactly which conjunct failed (Omarchy failure
@@ -463,11 +701,10 @@ def _attributed_and_chain_script(cmd: str) -> str:
     with that same code; if every conjunct succeeds it exits 0, exactly what
     a real `&&` chain that reaches its end does.
     """
-    try:
-        import assertion_lint
-        parts = [t for t, _ in assertion_lint._split_top_level(cmd, {"&&"})]
-    except Exception:
-        return cmd
+    lint_mod, _exc = _load_assertion_lint()
+    if lint_mod is None:
+        return cmd  # only affects evidence wording; the lint refusal is loud elsewhere
+    parts = [t for t, _ in lint_mod._split_top_level(cmd, {"&&"})]
     if len(parts) <= 1:
         return cmd
     lines = []
@@ -506,6 +743,7 @@ def _timeout_seconds_error(ts) -> str | None:
 def validate_cmd(args):
     contract = load_contract(args.contract)
     errors = []
+    custom_kinds, kinds_error, _ = _load_kind_registry(args.contract)
 
     # Second, line-tracking parse of the same file purely for diagnostics --
     # never used for the actual schema decisions above, only to attach a
@@ -570,15 +808,17 @@ def validate_cmd(args):
             where = ", ".join(f"line {ln}" for ln in locs)
             err(f"Duplicate assertion ID: {rc_id} ({where})", locs[0])
 
+    if kinds_error:
+        err(kinds_error)
+
     ids = set()
-    binary_kinds = {"shell", "file_exists", "file_contains", "json_path", "handoff_field", "codex_qa"}
+    binary_kinds = {"shell", "file_exists", "file_contains", "json_path", "handoff_field",
+                    "codex_qa", *custom_kinds}
     binary_count = 0
-    assertion_lint = None
-    try:
-        import assertion_lint as _al
-        assertion_lint = _al
-    except Exception:
-        pass
+    assertion_lint, lint_exc = _load_assertion_lint()
+    if assertion_lint is None:
+        err(f"assertion_lint could not be imported ({type(lint_exc).__name__}: {lint_exc}) "
+            "-- refusing to validate without the assertion lint")
 
     for i, a in enumerate(assertions):
         aid = a.get("id", "")
@@ -593,12 +833,26 @@ def validate_cmd(args):
         ids.add(aid)
         if not a.get("description", ""):
             err(f"Assertion {aid} missing description", ln)
+        if "nonvacuous" in a and not isinstance(a["nonvacuous"], bool):
+            err(f"Assertion {aid}: nonvacuous must be true or false, got {a['nonvacuous']!r}", ln)
+        elif a.get("nonvacuous") is False and not (
+                isinstance(a.get("nonvacuous_reason"), str) and a["nonvacuous_reason"].strip()):
+            err(f"Assertion {aid}: nonvacuous: false requires a non-empty nonvacuous_reason", ln)
+        if "known_broken" in a:
+            kb_error = _known_broken_error(a["known_broken"], a.get("verify", {}).get("kind", "shell"),
+                                          custom_kinds)
+            if kb_error:
+                err(f"Assertion {aid}: {kb_error}", ln)
         if "verify" not in a:
             err(f"Assertion {aid} missing verify block", ln)
         elif a["verify"].get("kind") in binary_kinds:
             binary_count += 1
 
         verify = a.get("verify", {})
+        if (verify.get("kind") == "codex_qa" or verify.get("kind") in custom_kinds) \
+                and not isinstance(verify.get("target", ""), str):
+            err(f"Assertion {aid}: target must be a string, got "
+                f"{type(verify['target']).__name__} ({verify['target']!r})", ln)
         ts = verify.get("timeout_seconds")
         if ts is not None:
             ts_error = _timeout_seconds_error(ts)
@@ -665,6 +919,8 @@ def validate_cmd(args):
         if assertion_lint is not None and verify.get("kind") == "shell" and cmd.strip():
             for finding in assertion_lint.lint_command(cmd):
                 err(f"Assertion {aid}: {finding['rule']} -- {finding['message']}", ln)
+            for advice in assertion_lint.advise_command(cmd):
+                print(f"  WARNING Assertion {aid}: {advice['rule']} -- {advice['message']}")
 
     strict = getattr(args, "strict", False)
     if strict and binary_count == 0 and len(assertions) > 0:
@@ -762,6 +1018,32 @@ def _run_check_reaped(argv, env, cwd, timeout):
     return subprocess.CompletedProcess(argv, proc.returncode, out, err)
 
 
+def _registered_kinds(contract_path) -> dict:
+    return _load_kind_registry(contract_path)[0]
+
+
+def _run_wrapper(name, script, target, timeout, fail_prefix, error_prefix, pass_text):
+    """Run `<script> <target>` under the wrapper protocol (0 pass, 1 fail,
+    2 inconclusive, anything else inconclusive). Returns (verdict, evidence)."""
+    try:
+        result = subprocess.run([script, target], capture_output=True,
+                                text=True, timeout=timeout, cwd=_RUN_CWD)
+    except subprocess.TimeoutExpired:
+        return "error", (f"{name} wrapper exceeded {timeout}s supervisory timeout "
+                         "(check_cmd level, independent of the wrapper's own internal timeout)")
+    except OSError as e:
+        return "error", f"{name} wrapper could not run {script!r}: {type(e).__name__}: {e}"
+    rc = result.returncode
+    if rc == 0:
+        return "pass", pass_text
+    if rc == 1:
+        return "fail", fail_prefix + result.stdout.strip()[:EVIDENCE_DISPLAY_MAX]
+    if rc == 2:
+        return "error", error_prefix + (result.stdout + result.stderr).strip()[:EVIDENCE_DISPLAY_MAX]
+    return "error", (f"{name} wrapper exited {rc} (neither 0, 1, nor 2) -- treated as "
+                     "inconclusive, not a QA fail")
+
+
 def check_cmd(args):
     contract = load_contract(args.contract)
     assertion_id = args.assertion
@@ -808,11 +1090,13 @@ def check_cmd(args):
         # F5/F6: refuse to run (and never record a verdict for) an assertion
         # whose command shape cannot report a real failure -- validate alone
         # is not enough, because check/gate --run-checks never calls it.
-        try:
-            import assertion_lint
-            lint_findings = assertion_lint.lint_command(cmd)
-        except Exception:
-            lint_findings = []
+        lint_mod, lint_exc = _load_assertion_lint()
+        if lint_mod is None:
+            lint_findings = [{"rule": "assertion_lint-unavailable", "message": (
+                f"assertion_lint could not be imported ({type(lint_exc).__name__}) -- "
+                "refusing to record a pass without the lint")}]
+        else:
+            lint_findings = lint_mod.lint_command(cmd)
         if lint_findings:
             evidence = ("assertion_lint rejected this command: " + "; ".join(
                 f"{f['rule']}: {f['message']}" for f in lint_findings))[:EVIDENCE_DISPLAY_MAX]
@@ -869,29 +1153,16 @@ def check_cmd(args):
                 except: pass
 
     elif kind == "codex_qa":
-        target = verify.get("target", "")
-        script = verify.get("script", "execution/codex_qa.sh")
-        timeout = verify.get("timeout_seconds", 200)
-        try:
-            result = subprocess.run([script, target], capture_output=True,
-                                     text=True, timeout=timeout, cwd=_RUN_CWD)
-            rc = result.returncode
-            if rc == 0:
-                verdict = "pass"
-                evidence = "codex_qa PASS"
-            elif rc == 1:
-                verdict = "fail"
-                evidence = "CODEX_QA_FAIL: " + result.stdout.strip()[:EVIDENCE_DISPLAY_MAX]
-            elif rc == 2:
-                verdict = "error"
-                evidence = "CODEX_QA_WRAPPER_ERROR: " + (result.stdout + result.stderr).strip()[:EVIDENCE_DISPLAY_MAX]
-            else:
-                verdict = "error"
-                evidence = f"codex_qa wrapper exited {rc} (neither 0, 1, nor 2) -- treated as inconclusive, not a QA fail"
-        except subprocess.TimeoutExpired:
-            verdict = "error"
-            evidence = (f"codex_qa wrapper exceeded {timeout}s supervisory timeout "
-                        "(check_cmd level, independent of the wrapper's own internal timeout)")
+        verdict, evidence = _run_wrapper(
+            "codex_qa", verify.get("script", "execution/codex_qa.sh"),
+            verify.get("target", ""), verify.get("timeout_seconds", 200),
+            "CODEX_QA_FAIL: ", "CODEX_QA_WRAPPER_ERROR: ", "codex_qa PASS")
+
+    elif kind in _registered_kinds(args.contract):
+        verdict, evidence = _run_wrapper(
+            kind, verify.get("script", ""), verify.get("target", ""),
+            verify.get("timeout_seconds", DEFAULT_KIND_TIMEOUT_SECONDS),
+            f"{kind}: ", f"{kind} inconclusive: ", f"{kind} PASS")
 
     elif kind == "file_exists":
         path = verify.get("path", "")
@@ -1042,7 +1313,7 @@ _GATE_PHASE_RECORDS = []
 def _record_phase_result(phase_n, *, status=None, reason=None, pass_count=0,
                          skip_count=0, fail_count=0, error_count=0,
                          failing=(), skipped=(), errors=(), allow_skips=False,
-                         assertions_by_id=None):
+                         assertions_by_id=None, known_broken=()):
     """Record one phase's verdict for the optional --report-json output.
 
     `status`, when not given explicitly, is derived from exactly the same
@@ -1079,6 +1350,8 @@ def _record_phase_result(phase_n, *, status=None, reason=None, pass_count=0,
         "allow_skips": bool(allow_skips),
         "reason": reason,
     })
+    if known_broken:
+        _GATE_PHASE_RECORDS[-1]["known_broken"] = list(known_broken)
 
 
 def _write_gate_report(args):
@@ -1185,6 +1458,7 @@ def _gate_single_phase(contract: dict, args) -> bool:
     fail_count = 0
     error_count = 0
     evidence_by_id = {}
+    known_broken_ids = []
 
     # Cache-staleness check (GH #1327): --run-checks already re-runs every
     # assertion live above, so this only applies to the default cache-read
@@ -1233,7 +1507,20 @@ def _gate_single_phase(contract: dict, args) -> bool:
                 "TIMEOUT" if verdict == "timeout" else
                 "FAIL")
         print(f"  {icon} {aid}: {verdict}")
-        if verdict in ("fail", "timeout"):
+        marker = assertions_by_id.get(aid, {}).get("known_broken")
+        marker_expiry = _known_broken_expiry(marker) if isinstance(marker, dict) else None
+        marker_live = marker_expiry is not None and marker_expiry >= date.today()
+        if marker_expiry is not None and verdict == "fail" and not marker_live:
+            print(f"  {aid}: known_broken marker expired on {marker_expiry.isoformat()}"
+                  " -- the failure counts")
+        elif marker_expiry is not None and verdict == "pass":
+            print(f"  {aid}: known_broken marker is stale -- the check now passes; "
+                  "remove the marker")
+        if verdict == "fail" and marker_live:
+            known_broken_ids.append(aid)
+            print(f"  KNOWN-BROKEN {aid}: {marker['reason'].strip()} "
+                  f"(ref: {marker['ref']}, expires {marker_expiry.isoformat()})")
+        elif verdict in ("fail", "timeout"):
             # TIMEOUT is a distinct red, never SKIP and never --allow-skips-
             # suppressible -- it counts as a fail here on purpose.
             failing.append(aid)
@@ -1255,21 +1542,39 @@ def _gate_single_phase(contract: dict, args) -> bool:
             pass_count += 1
 
     print(f"\nPhase {phase_n} summary: {pass_count} pass, {skip_count} skip, "
-          f"{fail_count} fail, {error_count} error")
+          f"{fail_count} fail, {error_count} error"
+          + (f", {len(known_broken_ids)} known-broken" if known_broken_ids else ""))
 
+    no_genuine_pass = bool(known_broken_ids) and not failing and not errors and pass_count == 0
+    floor_override = {"status": "FAIL", "reason": "no_genuine_pass"} if no_genuine_pass else {}
     _record_phase_result(
         phase_n, pass_count=pass_count, skip_count=skip_count,
         fail_count=fail_count, error_count=error_count,
         failing=failing, skipped=skipped, errors=errors,
         allow_skips=allow_skips, assertions_by_id=assertions_by_id,
+        known_broken=known_broken_ids, **floor_override,
     )
 
     def _print_gate_errors():
         for aid in errors:
-            print(f"\nGATE ERROR Phase {phase_n}: codex_qa wrapper did not produce a verdict for {aid}")
-            print(f"   (QA inconclusive -- not a QA failure). {evidence_by_id.get(aid, '')}")
-            print("   Fix: ensure the `codex` binary is on PATH and target/prompt is valid.")
-            print("   See docs/codex_qa.md.")
+            verify = assertions_by_id.get(aid, {}).get("verify", {})
+            kind = verify.get("kind", "")
+            if kind in BUILTIN_KINDS or not kind:
+                print(f"\nGATE ERROR Phase {phase_n}: codex_qa wrapper did not produce a verdict for {aid}")
+                print(f"   (QA inconclusive -- not a QA failure). {evidence_by_id.get(aid, '')}")
+                print("   Fix: ensure the `codex` binary is on PATH and target/prompt is valid.")
+                print("   See docs/codex_qa.md.")
+            else:
+                print(f"\nGATE ERROR Phase {phase_n}: {kind} wrapper did not produce a verdict for {aid}")
+                print(f"   (inconclusive -- not a failure). {evidence_by_id.get(aid, '')}")
+                print(f"   Fix: ensure {verify.get('script', '')} exists, is executable, and "
+                      "that its tooling is available.")
+                print("   See docs/VALIDATION_CONTRACTS.md (Project-owned check kinds).")
+
+    if no_genuine_pass:
+        print(f"\nFAIL Phase {phase_n} gate FAILED -- no assertion genuinely passed; every "
+              f"failure was excused as known-broken: {', '.join(known_broken_ids)}")
+        return False
 
     if failing:
         codex_qa_failing = [
@@ -1367,6 +1672,7 @@ def _uncovered_deletions(contract: dict, contract_path: str) -> list[str]:
     haystack = []
     for a in contract.get("assertions", []):
         haystack.append(str(a.get("verify", {}).get("cmd", "")))
+        haystack.append(str(a.get("command", "")))
         haystack.append(str(a.get("description", "")))
         haystack.append(str(a.get("id", "")))
     blob = "\n".join(haystack)
@@ -1397,6 +1703,9 @@ def _resolve_run_cwd(contract_path, override=None):
     proc = subprocess.run(["git", "-C", str(parent), "rev-parse", "--show-toplevel"],
                           capture_output=True, text=True, timeout=GIT_ROOT_TIMEOUT_SECONDS)
     top = proc.stdout.strip()
+    root = _project_root(contract_path)
+    if root is not None and (not top or Path(top).resolve() in root.parents):
+        return str(root)  # a project nested inside a larger repo runs in its own root
     return top if proc.returncode == 0 and top else None
 
 
@@ -1406,15 +1715,235 @@ def _run_path(path):
     return p if p.is_absolute() or not _RUN_CWD else Path(_RUN_CWD) / p
 
 
+BASE_CHECK_SLACK_SECONDS = 60  # outer margin over an assertion's own timeout at base
+SIGTERM_EXIT_BASE = 128  # shell convention: 128 + signal number
+
+
+def _repo_top(run_cwd):
+    proc = subprocess.run(["git", "-C", str(run_cwd or "."), "rev-parse", "--show-toplevel"],
+                          capture_output=True, text=True, timeout=GIT_ROOT_TIMEOUT_SECONDS)
+    if proc.returncode != 0 or not proc.stdout.strip():
+        raise RuntimeError("--prove-nonvacuous needs the contract inside a git repository")
+    return Path(proc.stdout.strip()).resolve()
+
+
+def _kill_group(proc):
+    """Kill the check's whole process group so grandchildren cannot outlive it."""
+    try:
+        os.killpg(proc.pid, signal.SIGKILL)
+    except (ProcessLookupError, PermissionError):
+        pass
+
+
+def _run_at_base(wt_contract, wt_cwd, aid, timeout):
+    """Run one assertion in the base checkout; returns (verdict word, verdict line)."""
+    proc = subprocess.Popen(
+        [sys.executable, str(Path(__file__).resolve()), "check", str(wt_contract),
+         "--assertion", aid, "--timeout-seconds", str(timeout)],
+        cwd=str(wt_cwd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        start_new_session=True)
+    try:
+        stdout, stderr = proc.communicate(timeout=timeout + BASE_CHECK_SLACK_SECONDS)
+    except subprocess.TimeoutExpired:
+        _kill_group(proc)
+        proc.communicate()
+        return "TIMEOUT", "check did not finish"
+    finally:
+        _kill_group(proc)
+    # The verdict line is "<ICON> <id> (<kind>): ..."; earlier lines may be boot noise.
+    prefix = re.compile(r"^(PASS|FAIL|SKIP|ERROR|TIMEOUT) " + re.escape(aid) + r" \(")
+    for line in stdout.splitlines():
+        found = prefix.match(line)
+        if found:
+            return found.group(1), line
+    return "ERROR", (stdout + stderr).strip()[:120] or "no verdict line"
+
+
+def _copy_spec_dir(contract_path, top, rel_contract, wt):
+    """Carry the contract's spec directory into the base checkout (goldens new at HEAD)."""
+    if contract_path.parent == top:
+        shutil.copy2(contract_path, wt / rel_contract)  # never the whole repo
+        return
+    shutil.copytree(contract_path.parent, wt / rel_contract.parent, symlinks=True,
+                    dirs_exist_ok=True, ignore=shutil.ignore_patterns(".git", ".tmp"))
+
+
+def _prove_nonvacuous(contract, args):
+    """Run the phase's assertions in a temporary checkout of --base.
+
+    Returns (vacuous ids, ids that errored or timed out at base). The checkout is
+    always removed and HEAD's tree is untouched.
+    """
+    top = _repo_top(_RUN_CWD)
+    base = subprocess.run(["git", "-C", str(top), "rev-parse", "--verify", args.base + "^{commit}"],
+                          capture_output=True, text=True, timeout=GIT_ROOT_TIMEOUT_SECONDS)
+    if base.returncode != 0:
+        raise RuntimeError(f"--base {args.base!r} is not a commit in {top}")
+    sha = base.stdout.strip()
+    short = sha[:8]
+    contract_path = Path(args.contract).resolve()
+    try:
+        rel_contract = contract_path.relative_to(top)
+        rel_cwd = Path(_RUN_CWD).resolve().relative_to(top) if _RUN_CWD else Path(".")
+    except ValueError:
+        raise RuntimeError(f"{contract_path} or the run directory is outside the repository {top}")
+    phase = next((p for p in contract.get("phases", []) if _phase_matches(p["id"], args.phase)), None)
+    by_id = {a["id"]: a for a in contract.get("assertions", [])}
+
+    made_tmp = not (top / ".tmp").is_dir()
+    sandbox = top / ".tmp" / "sandbox"
+    sandbox.mkdir(parents=True, exist_ok=True)
+    workdir = Path(tempfile.mkdtemp(prefix="nonvacuous-", dir=str(sandbox)))
+    wt = workdir / "base"
+    vacuous, inconclusive = [], []
+    added = False
+
+    def _on_sigterm(signum, _frame):
+        raise SystemExit(SIGTERM_EXIT_BASE + signum)  # unwinds through the cleanup below
+
+    old_handler = signal.signal(signal.SIGTERM, _on_sigterm)
+    try:
+        add = subprocess.run(["git", "-C", str(top), "worktree", "add", "--detach", str(wt), sha],
+                             capture_output=True, text=True, timeout=GIT_ROOT_TIMEOUT_SECONDS * 4)
+        if add.returncode != 0:
+            raise RuntimeError("git worktree add failed: " + add.stderr.strip()[:300])
+        added = True
+        _copy_spec_dir(contract_path, top, rel_contract, wt)
+        wt_contract = wt / rel_contract
+        wt_cwd = wt / rel_cwd
+        wt_cwd.mkdir(parents=True, exist_ok=True)
+        print(f"\n--- prove-nonvacuous: running phase {args.phase} assertions at {short} ---")
+        for aid in phase.get("assertions", []):
+            a = by_id[aid]
+            if a.get("nonvacuous") is False:
+                print(f"EXEMPT {aid} (nonvacuous: false): {a.get('nonvacuous_reason', '').strip()}")
+                continue
+            if isinstance(a.get("known_broken"), dict):
+                print(f"SKIP {aid}: known_broken, it fails at HEAD so a base run proves nothing")
+                continue
+            timeout = a.get("verify", {}).get("timeout_seconds") or args.timeout_seconds
+            word, line = _run_at_base(wt_contract, wt_cwd, aid, timeout)
+            if word == "PASS":
+                print(f"VACUOUS {aid}: passes at {short} before the fix exists")
+                vacuous.append(aid)
+            elif word in ("ERROR", "TIMEOUT"):
+                print(f"{aid}: {word.lower()} at {short}, counted as not passing ({line[:120]})")
+                inconclusive.append(aid)
+            else:
+                print(f"{aid}: {word.lower()} at {short} (examines the change)")
+    finally:
+        signal.signal(signal.SIGTERM, old_handler)
+        if added:
+            subprocess.run(["git", "-C", str(top), "worktree", "remove", "--force", str(wt)],
+                           capture_output=True, text=True, timeout=GIT_ROOT_TIMEOUT_SECONDS * 4)
+        shutil.rmtree(workdir, ignore_errors=True)
+        if made_tmp:
+            for leftover in (sandbox, top / ".tmp"):
+                try:
+                    leftover.rmdir()
+                except OSError:
+                    pass
+    return vacuous, inconclusive
+
+
+def _exit_after_proof(contract, args):
+    """Gate passed. With --prove-nonvacuous: exit 1 if any assertion is vacuous, 2 if the
+    proof was inconclusive or could not run, else 0."""
+    if getattr(args, "prove_nonvacuous", False):
+        try:
+            vacuous, inconclusive = _prove_nonvacuous(contract, args)
+        except Exception as exc:  # exit 1 means VACUOUS, so a crash must never look like it
+            print(f"ERROR: --prove-nonvacuous failed: {type(exc).__name__}: {exc}", file=sys.stderr)
+            sys.exit(2)
+        if vacuous:
+            print(f"\nFAIL prove-nonvacuous: {len(vacuous)} vacuous assertion(s): {', '.join(vacuous)}")
+            sys.exit(1)
+        if inconclusive:
+            print(f"\nINCONCLUSIVE prove-nonvacuous: errored or timed out at base: "
+                  f"{', '.join(inconclusive)}", file=sys.stderr)
+            sys.exit(2)
+        print("\nPASS prove-nonvacuous: every non-exempt assertion fails at the base")
+    sys.exit(0)
+
+
+def _exit_code(exc):
+    code = exc.code
+    return 0 if code is None else code if isinstance(code, int) else 1
+
+
+def _record_hook_outcome(stage, findings, blocked):
+    """Fold a hook stage into the --report-json record so the report cannot read PASS."""
+    if findings:
+        _record_phase_result(f"hooks-{stage}", status="FAIL", reason="hook_finding",
+                             failing=findings, fail_count=len(findings))
+    elif blocked:
+        _record_phase_result(f"hooks-{stage}", status="ERROR", reason="hook_error",
+                             errors=blocked, error_count=len(blocked))
+
+
+def _gate_with_hooks(args):
+    """Preflight, project-owned pre hooks, the phases, then post hooks (always, once a pre
+    hook has let the gate start), the report, and the folded exit code."""
+    contract = _gate_preflight(args)  # an invalid contract or usage error runs no hooks
+    contract_abs = str(Path(args.contract).resolve())
+    hooks, root = _load_gate_hooks(args.contract)
+    try:
+        if hooks:
+            findings, blocked = _run_hook_stage("pre", hooks, contract_abs, root)
+            if findings or blocked:
+                _record_hook_outcome("pre", findings, blocked)
+                print("\nHOOK %s block: a pre-flight hook refused the gate; no assertion ran: %s"
+                      % ("FINDING" if findings else "ERROR", ", ".join(findings or blocked)))
+                sys.exit(1 if findings else 2)
+        code, pending = 0, None
+        old_term = _install_sigterm_exit() if hooks else None
+        try:
+            _gate_run(contract, args)
+        except SystemExit as exc:
+            code = _exit_code(exc)
+        except BaseException as exc:  # post hooks must still run; re-raised below
+            pending = exc
+        finally:
+            if hooks:
+                signal.signal(signal.SIGTERM, old_term)
+        if hooks:
+            findings, blocked = _run_hook_stage("post", hooks, contract_abs, root)
+            _record_hook_outcome("post", findings, blocked)
+            if findings:
+                print("\nHOOK FINDING block: a post-flight hook reported a finding: "
+                      + ", ".join(findings))
+                code = code or 1
+            if blocked:
+                print("\nHOOK ERROR block: a fail-closed post-flight hook errored: "
+                      + ", ".join(blocked))
+                code = code or 2
+        if pending is not None:
+            raise pending
+        sys.exit(code)
+    finally:
+        _write_gate_report_guarded(args)
+
+
+def _install_sigterm_exit():
+    """Make SIGTERM raise SystemExit so post hooks run; return the handler to restore."""
+    old = signal.getsignal(signal.SIGTERM)
+    if old == signal.SIG_DFL:
+        def _on_term(signum, _frame):
+            raise SystemExit(SIGTERM_EXIT_BASE + signum)
+        signal.signal(signal.SIGTERM, _on_term)
+    return old
+
+
 def gate_cmd(args):
     try:
-        _gate_cmd_body(args)
+        _gate_with_hooks(args)
     finally:
         global _RUN_CWD
         _RUN_CWD = None
 
 
-def _gate_cmd_body(args):
+def _gate_preflight(args):
+    """Validate the arguments and the contract; return the loaded contract. Exits on refusal."""
     global _RUN_CWD
     # One report channel or the other, never both: a caller that asked for the
     # unforgeable descriptor channel must not silently also get the path one.
@@ -1422,6 +1951,14 @@ def _gate_cmd_body(args):
         print("ERROR: --report-fd and --report-json are mutually exclusive.",
               file=sys.stderr)
         sys.exit(2)
+
+    if getattr(args, "prove_nonvacuous", False):
+        if not getattr(args, "base", None):
+            print("ERROR: --prove-nonvacuous requires --base <sha>.", file=sys.stderr)
+            sys.exit(2)
+        if args.phase == "all":
+            print("ERROR: --prove-nonvacuous needs a single --phase, not 'all'.", file=sys.stderr)
+            sys.exit(2)
 
     contract = load_contract(args.contract)
     _RUN_CWD = _resolve_run_cwd(args.contract, getattr(args, "cwd", None))
@@ -1481,81 +2018,86 @@ def _gate_cmd_body(args):
                   f"use a heredoc instead: command: |\\n  python3 - <<'PY'\\n  ...\\n  PY "
                   f"(see docs/harness/assertion-shape.md)", file=sys.stderr)
             sys.exit(1)
+    return contract
 
-    # --report-json (opt-in) is written here so it is produced on every exit
-    # path below -- sys.exit raises SystemExit, which `finally` still runs.
+
+def _gate_run(contract, args):
+    """Run the requested phases; the report write belongs to the caller."""
+    if args.phase == "all":
+        phases_data = sorted(contract.get("phases", []), key=lambda p: _phase_sort_key(p.get("id", 0)))
+        if not phases_data:
+            print("No phases found in contract to gate.")
+            sys.exit(0)
+
+        for phase_def in phases_data:
+            phase_id = phase_def['id']
+            print(f"\n--- Gating Phase {phase_id} ---")
+            # Create a temporary args object for _gate_single_phase
+            single_phase_args = argparse.Namespace(
+                contract=args.contract,
+                phase=str(phase_id),
+                run_checks=getattr(args, "run_checks", False),
+                handoff=getattr(args, "handoff", None),
+                allow_skips=getattr(args, "allow_skips", False),
+                timeout_seconds=getattr(args, "timeout_seconds", DEFAULT_TIMEOUT_SECONDS),
+            )
+            if not _gate_single_phase(contract, single_phase_args):
+                print(f"\nFAIL: Phase {phase_id} failed. Stopping all-phase gate.")
+                sys.exit(2) # Exit on first failure
+        print("\nPASS All phases gated successfully.")
+        sys.exit(0)
+    elif args.phase == "max":
+        phases = contract.get("phases", [])
+        phase_n = sorted(phases, key=lambda p: _phase_sort_key(p["id"]))[-1]["id"] if phases else 1
+        args.phase = str(phase_n) # Update args for _gate_single_phase
+        if not _gate_single_phase(contract, args):
+            if getattr(args, "prove_nonvacuous", False):
+                print("prove-nonvacuous skipped: the normal gate failed.")
+            sys.exit(2)
+        _exit_after_proof(contract, args)
+    else: # Specific phase number
+        if not _gate_single_phase(contract, args):
+            # Exit code contract for the specific-phase gate path:
+            #   1 = reserved specifically for "a real codex_qa adversarial
+            #       finding is among the failing assertions for this phase"
+            #       (args.gate_codex_qa_failure is True). This is the ONLY
+            #       case that exits 1.
+            #   2 = every other failure shape: plain shell/file_exists/etc
+            #       assertion failures with no codex_qa involved at all (the
+            #       pre-existing, widely-relied-on contract for every
+            #       non-codex_qa mission), a pure codex_qa wrapper/usage
+            #       error with zero real fail verdicts, or unresolved skips.
+            # A caller checking the exit code must never mistake a wrapper
+            # crash or a plain assertion failure for an adversarial finding,
+            # or vice versa (see F2's BLOCKED-vs-GATE-ERROR verdict split).
+            if getattr(args, "prove_nonvacuous", False):
+                print("prove-nonvacuous skipped: the normal gate failed.")
+            sys.exit(1 if getattr(args, "gate_codex_qa_failure", False) else 2)
+        _exit_after_proof(contract, args)
+
+
+def _write_gate_report_guarded(args):
+    # The --report-json write is OPTIONAL and must never be able to change
+    # the gate's own verdict. Unguarded, any exception raised here (an
+    # unwritable destination, a read-only or full TMPDIR, ENOSPC, a
+    # serialisation error) propagates out of this `finally` and REPLACES the
+    # in-flight SystemExit -- rewriting e.g. a real FAIL's exit 2 into exit
+    # 1, which :1186-1198 reserves exclusively for a codex_qa adversarial
+    # finding. A report that cannot be written degrades to the consumer's
+    # fail-closed no-file case (see _write_gate_report's docstring); it does
+    # not mutate the verdict. Exception, not BaseException: a genuine
+    # KeyboardInterrupt/SystemExit here is the operator's, and must still
+    # propagate. The inner guard covers a closed stderr (`2>&-`), where the
+    # warning itself would otherwise raise and re-corrupt the exit path.
     try:
-        if args.phase == "all":
-            phases_data = sorted(contract.get("phases", []), key=lambda p: _phase_sort_key(p.get("id", 0)))
-            if not phases_data:
-                print("No phases found in contract to gate.")
-                sys.exit(0)
-
-            for phase_def in phases_data:
-                phase_id = phase_def['id']
-                print(f"\n--- Gating Phase {phase_id} ---")
-                # Create a temporary args object for _gate_single_phase
-                single_phase_args = argparse.Namespace(
-                    contract=args.contract,
-                    phase=str(phase_id),
-                    run_checks=getattr(args, "run_checks", False),
-                    handoff=getattr(args, "handoff", None),
-                    allow_skips=getattr(args, "allow_skips", False),
-                    timeout_seconds=getattr(args, "timeout_seconds", DEFAULT_TIMEOUT_SECONDS),
-                )
-                if not _gate_single_phase(contract, single_phase_args):
-                    print(f"\nFAIL: Phase {phase_id} failed. Stopping all-phase gate.")
-                    sys.exit(2) # Exit on first failure
-            print("\nPASS All phases gated successfully.")
-            sys.exit(0)
-        elif args.phase == "max":
-            phases = contract.get("phases", [])
-            phase_n = sorted(phases, key=lambda p: _phase_sort_key(p["id"]))[-1]["id"] if phases else 1
-            args.phase = str(phase_n) # Update args for _gate_single_phase
-            if not _gate_single_phase(contract, args):
-                sys.exit(2)
-            sys.exit(0)
-        else: # Specific phase number
-            if not _gate_single_phase(contract, args):
-                # Exit code contract for the specific-phase gate path:
-                #   1 = reserved specifically for "a real codex_qa adversarial
-                #       finding is among the failing assertions for this phase"
-                #       (args.gate_codex_qa_failure is True). This is the ONLY
-                #       case that exits 1.
-                #   2 = every other failure shape: plain shell/file_exists/etc
-                #       assertion failures with no codex_qa involved at all (the
-                #       pre-existing, widely-relied-on contract for every
-                #       non-codex_qa mission), a pure codex_qa wrapper/usage
-                #       error with zero real fail verdicts, or unresolved skips.
-                # A caller checking the exit code must never mistake a wrapper
-                # crash or a plain assertion failure for an adversarial finding,
-                # or vice versa (see F2's BLOCKED-vs-GATE-ERROR verdict split).
-                sys.exit(1 if getattr(args, "gate_codex_qa_failure", False) else 2)
-            sys.exit(0)
-    finally:
-        # The --report-json write is OPTIONAL and must never be able to change
-        # the gate's own verdict. Unguarded, any exception raised here (an
-        # unwritable destination, a read-only or full TMPDIR, ENOSPC, a
-        # serialisation error) propagates out of this `finally` and REPLACES the
-        # in-flight SystemExit -- rewriting e.g. a real FAIL's exit 2 into exit
-        # 1, which :1186-1198 reserves exclusively for a codex_qa adversarial
-        # finding. A report that cannot be written degrades to the consumer's
-        # fail-closed no-file case (see _write_gate_report's docstring); it does
-        # not mutate the verdict. Exception, not BaseException: a genuine
-        # KeyboardInterrupt/SystemExit here is the operator's, and must still
-        # propagate. The inner guard covers a closed stderr (`2>&-`), where the
-        # warning itself would otherwise raise and re-corrupt the exit path.
+        _write_gate_report(args)
+    except Exception as exc:
         try:
-            _write_gate_report(args)
-        except Exception as exc:
-            try:
-                print(f"WARNING: could not write --report-json to "
-                      f"{getattr(args, 'report_json', None)!r}: "
-                      f"{type(exc).__name__}: {exc}", file=sys.stderr)
-            except Exception:
-                pass
-
-
+            print(f"WARNING: could not write --report-json to "
+                  f"{getattr(args, 'report_json', None)!r}: "
+                  f"{type(exc).__name__}: {exc}", file=sys.stderr)
+        except Exception:
+            pass
 
 
 def report_cmd(args):
@@ -1643,6 +2185,12 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--cwd", default=None, metavar="DIR",
                    help="Directory assertions run in (default: the contract's git root, "
                         "else the caller's cwd)")
+    g.add_argument("--prove-nonvacuous", action="store_true", default=False,
+                   help="After a passing gate, run every phase assertion in a temporary checkout "
+                        "of --base and fail (exit 1) naming each one that already passes there. "
+                        "Assertions marked nonvacuous: false (with a reason) are exempt.")
+    g.add_argument("--base", default=None, metavar="SHA",
+                   help="Commit to check assertions against for --prove-nonvacuous (required with it)")
     g.add_argument("--report-json", default=None, metavar="PATH",
                    help="Also write the structured athanor.gate-report/v1 verdict to PATH "
                         "(opt-in; stdout/stderr are unchanged). No file is written if the "

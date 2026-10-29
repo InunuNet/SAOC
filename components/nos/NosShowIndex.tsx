@@ -36,7 +36,7 @@ const GROUPS: readonly IndexGroup[] = [
   {
     heading: 'Take part',
     hrefs: [
-      '/national-show/exhibitors',
+      '/national-show/award-entries',
       '/national-show/vendors',
       '/national-show/workshops',
       '/national-show/conferences',
@@ -48,7 +48,6 @@ const GROUPS: readonly IndexGroup[] = [
       '/national-show/about',
       '/national-show/symposium',
       '/national-show/wosa-conference',
-      '/national-show/sa-exhibitors',
       '/national-show/international-guests',
       '/national-show/sponsors',
       PAST_SHOWS_HREF,

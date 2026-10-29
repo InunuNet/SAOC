@@ -34,10 +34,8 @@ export function SponsorGrid({ sponsors }: SponsorGridProps) {
     <div className="space-y-12">
       {orderedTiers.map((tier) => (
         <section key={tier}>
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted mb-6">
-            {tier === 'Other' ? 'Sponsors' : `${tier} sponsors`}
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <h2 className="doc-h2">{tier === 'Other' ? 'Sponsors' : `${tier} sponsors`}</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {grouped[tier].map((sponsor) => (
               <div
                 key={sponsor._id}
@@ -65,7 +63,7 @@ export function SponsorGrid({ sponsors }: SponsorGridProps) {
                     href={sponsor.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-3 inline-block font-sans text-[13px] text-ink underline underline-offset-2"
+                    className="mt-3 inline-flex min-h-6 items-center font-sans text-[13px] text-ink underline underline-offset-2"
                   >
                     Visit website →
                   </a>

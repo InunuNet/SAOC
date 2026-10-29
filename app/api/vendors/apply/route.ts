@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
+import { clientIpFromForwardedFor } from '@/lib/client-ip';
 import { initAdmin } from '@/lib/firebase-admin';
+import { consumeRateLimit } from '@/lib/newsletter-rate-limit';
+import { createAttemptStore, scopeAttemptsToRequest } from '@/lib/newsletter-rate-store';
+import {
+  PUBLIC_FORM_RATE_LIMIT_MAX_ATTEMPTS,
+  PUBLIC_FORM_RATE_LIMIT_WINDOW_MS,
+} from '@/lib/public-form-rate-limit';
+import { isBodyWithinLimit, isHoneypotHit } from '@/lib/request-guards';
 import {
   VENDOR_APPLICATIONS_COLLECTION,
   buildVendorApplication,
@@ -31,12 +39,39 @@ import { saocUrl } from '@/lib/site-hosts';
  * fails this route. See contracts/golden/vendor-flow-notifications/README.md.
  */
 
+const attempts = createAttemptStore(PUBLIC_FORM_RATE_LIMIT_WINDOW_MS);
+
+// Cap on the request body, checked against Content-Length before the body is buffered.
+const MAX_BODY_BYTES = 16384;
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  if (!isBodyWithinLimit(request.headers.get('content-length'), MAX_BODY_BYTES)) {
+    return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
+  }
+  const ip = clientIpFromForwardedFor(request.headers.get('x-forwarded-for'));
+  const limit = consumeRateLimit(
+    { now: new Date(), ...scopeAttemptsToRequest(attempts) },
+    `vendor-apply:${ip ?? 'unknown'}`,
+    PUBLIC_FORM_RATE_LIMIT_MAX_ATTEMPTS,
+    PUBLIC_FORM_RATE_LIMIT_WINDOW_MS,
+  );
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: 'Too many attempts. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } },
+    );
+  }
+
   let rawInput: unknown;
   try {
     rawInput = await request.json();
   } catch {
     return NextResponse.json({ error: 'Malformed JSON body.' }, { status: 400 });
+  }
+
+  // A bot filled the hidden field: answer as if it worked, store and send nothing.
+  if (isHoneypotHit(rawInput)) {
+    return NextResponse.json({ success: true }, { status: 201 });
   }
 
   const validation = validateVendorApplicationInput(rawInput);

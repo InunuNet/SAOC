@@ -14,6 +14,7 @@
 import { useState } from 'react';
 
 import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
+import { useHydrated } from '@/lib/hooks/useHydrated';
 
 type Status = 'idle' | 'submitting' | 'success' | 'error';
 
@@ -42,6 +43,7 @@ function validate(values: Record<FieldKey, string>): FieldErrors {
 }
 
 export function SuggestionForm() {
+  const hydrated = useHydrated();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
@@ -118,7 +120,7 @@ export function SuggestionForm() {
   const labelClass = 'font-mono text-[11px] tracking-[0.16em] text-muted';
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+    <form method="post" onSubmit={handleSubmit} className="space-y-5" noValidate>
       {/* Name */}
       <div className="space-y-1.5">
         <label htmlFor="msf-name" className={labelClass}>
@@ -225,7 +227,7 @@ export function SuggestionForm() {
 
       <button
         type="submit"
-        disabled={status === 'submitting'}
+        disabled={status === 'submitting' || !hydrated}
         className="inline-flex min-h-11 items-center rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ink hover:bg-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {status === 'submitting' ? 'Sending…' : 'Send suggestion'}

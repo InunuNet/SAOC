@@ -18,16 +18,26 @@ Usage:
   mission.py skip <mission.md> --feature F1 --reason "..."
 """
 import argparse
-import fcntl
+try:
+    import fcntl
+except ImportError:  # Windows: no fcntl; locks below use msvcrt
+    fcntl = None
+import importlib.util
 import json
 import os
 import re
 import subprocess
 import sys
+import time
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import NamedTuple
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pydeps import require  # noqa: E402
+
+require("yaml")
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -45,6 +55,55 @@ COMPACTION_HINT_FILE = Path(".agent/memory/scratch/compaction-hint.json")
 SUGGESTED_COMPACT_PCT = 45
 
 # ── YAML/JSON helpers ──────────────────────────────────────────────────────────
+
+
+LOCK_DEADLINE_SECONDS = 120
+LOCK_POLL_SECONDS = 0.05
+
+
+def _lock_fd(fd, blocking=True, label="lock"):
+    """Exclusive lock on fd: flock on POSIX, msvcrt.locking on Windows.
+
+    Windows LK_LOCK gives up after ~10 retries, so a blocking acquire polls
+    LK_NBLCK until LOCK_DEADLINE_SECONDS, then raises TimeoutError naming
+    `label`. A non-blocking miss raises BlockingIOError, as flock does.
+    """
+    if fcntl is not None:
+        fcntl.flock(fd, fcntl.LOCK_EX | (0 if blocking else fcntl.LOCK_NB))
+        return
+    import msvcrt
+    pos = os.lseek(fd, 0, os.SEEK_CUR)
+    deadline = time.monotonic() + LOCK_DEADLINE_SECONDS
+    try:
+        while True:
+            os.lseek(fd, 0, os.SEEK_SET)
+            try:
+                msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+                return
+            except OSError as exc:
+                if not blocking:
+                    raise BlockingIOError(*exc.args) from exc
+                if time.monotonic() >= deadline:
+                    raise TimeoutError(
+                        "could not acquire %s within %ds" % (label, LOCK_DEADLINE_SECONDS)
+                    ) from exc
+                time.sleep(LOCK_POLL_SECONDS)
+    finally:
+        os.lseek(fd, pos, os.SEEK_SET)
+
+
+def _unlock_fd(fd):
+    if fcntl is not None:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        return
+    import msvcrt
+    pos = os.lseek(fd, 0, os.SEEK_CUR)
+    try:
+        os.lseek(fd, 0, os.SEEK_SET)
+        msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+    finally:
+        os.lseek(fd, pos, os.SEEK_SET)
+
 
 def _load_yaml():
     try:
@@ -320,6 +379,20 @@ def emit_compaction_hint(trigger: str, reason: str) -> None:
     except Exception:
         pass
     print("COMPACTION_HINT: " + json.dumps(payload))
+
+
+AUTOCOMPACT_DECIDER = Path(__file__).resolve().parent / "hooks" / "lib" / "autocompact_decider.py"
+
+
+def arm_autocompact(slug: str, mission_file) -> None:
+    """Write the one-shot flag the Stop hook consumes after a clean close-out. Never raises."""
+    try:
+        spec = importlib.util.spec_from_file_location("autocompact_decider", AUTOCOMPACT_DECIDER)
+        decider = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(decider)
+        decider.write_arm_flag(slug, mission_file)
+    except Exception:
+        pass
 
 
 # ── Subcommands ────────────────────────────────────────────────────────────────
@@ -887,6 +960,7 @@ def _refresh_session_state(slug: str, milestone_id, fid: str, old_status: str,
     """
     path = SESSION_STATE_PATH
     lock_fd = None
+    locked = False
     tmp_path = None
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -896,7 +970,8 @@ def _refresh_session_state(slug: str, milestone_id, fid: str, old_status: str,
         # another's entry (lost update).
         lock_path = str(path) + ".lock"
         lock_fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o644)
-        fcntl.flock(lock_fd, fcntl.LOCK_EX)
+        _lock_fd(lock_fd, label=lock_path)
+        locked = True
 
         existing_entries: list[str] = []
         if path.exists():
@@ -948,11 +1023,95 @@ def _refresh_session_state(slug: str, milestone_id, fid: str, old_status: str,
             except OSError:
                 pass
         if lock_fd is not None:
-            try:
-                fcntl.flock(lock_fd, fcntl.LOCK_UN)
-            except OSError:
-                pass
+            if locked:
+                try:
+                    _unlock_fd(lock_fd)
+                except OSError:
+                    pass
             os.close(lock_fd)
+
+
+NO_CONTRACT_REASON_MIN = 20
+PRECONDITION_EXIT_CODE = 4
+
+
+def _project_root() -> Path:
+    """Nearest ancestor of cwd holding `.agent/`; cwd itself when none does."""
+    cwd = Path.cwd().resolve()
+    return next((d for d in (cwd, *cwd.parents) if (d / ".agent").is_dir()), cwd)
+
+
+def _contract_precondition_problems(fm: dict, feature: dict, root: Path) -> list[str]:
+    """Why feature cannot start: no valid contract, or no goldens. Empty list = ok."""
+    fid = feature["id"]
+    contract = feature.get("contract")
+    if not contract:
+        lookup = _existing_contract_for_feature(fm, fid, root)
+        if lookup.invalid_path:
+            return [f"contract fails to validate: {lookup.invalid_path}"]
+        contract = lookup.path
+    if not contract:
+        slug = fm.get("slug", "<slug>")
+        num = fid[1:] if fid.startswith("F") else fid
+        return [f"no contract found for {fid} (looked for "
+                f".agent/memory/project/specs/{slug}/contract-f{num}.yaml)"]
+    path = root / contract
+    if not path.exists():
+        return [f"contract file not found: {contract}"]
+    result = subprocess.run(
+        [sys.executable, str(Path(__file__).parent / "contract.py"), "validate", str(path)],
+        capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        return [f"contract fails to validate: {contract}"]
+    data = _load_yaml().safe_load(path.read_text()) or {}
+    goldens = data.get("goldens") or []
+    if not goldens:
+        return [f"contract {contract} lists no goldens"]
+    if not isinstance(goldens, list):
+        return [f"contract {contract}: goldens must be a list of file paths, "
+                f"got {type(goldens).__name__}"]
+    return [msg for g in goldens if (msg := _golden_problem(g, root))]
+
+
+def _golden_problem(golden, root: Path) -> str | None:
+    """A golden must be a non-empty string naming a regular file inside the project."""
+    if not isinstance(golden, str) or not golden.strip():
+        return f"golden entry is not a non-empty path string: {golden!r}"
+    resolved = (root / golden).resolve()
+    if not resolved.is_relative_to(root.resolve()):
+        return f"golden path escapes the project root: {golden}"
+    if not resolved.is_file():
+        return f"golden file missing (or not a regular file): {golden}"
+    return None
+
+
+def _enforce_dispatch_preconditions(fm: dict, feature: dict, args) -> None:
+    """workflow.md: no contract -> no @dev dispatch; no golden files -> no @dev dispatch."""
+    reason = getattr(args, "no_contract_reason", None)
+    if reason is not None and len(reason.strip()) < NO_CONTRACT_REASON_MIN:
+        print(f"PRECONDITION: --no-contract-reason must be at least "
+              f"{NO_CONTRACT_REASON_MIN} characters", file=sys.stderr)
+        sys.exit(PRECONDITION_EXIT_CODE)
+    root = _project_root()
+    if (root / ".agent/DRAFT_LANE").exists():
+        print("NOTE: draft lane active; contract/golden precondition skipped")
+        return
+    problems = _contract_precondition_problems(fm, feature, root)
+    if not problems:
+        return
+    if reason is not None:
+        feature["no_contract_reason"] = reason.strip()
+        print(f"WARNING: {feature['id']} starts without a contract/goldens "
+              f"({'; '.join(problems)}); reason: {reason.strip()}")
+        return
+    print(f"PRECONDITION: {feature['id']} cannot move to in_progress:", file=sys.stderr)
+    for problem in problems:
+        print(f"  - {problem}", file=sys.stderr)
+    print("Fix: write the contract (with goldens) first, then `mission.py attach-spec` "
+          "it; or pass --no-contract-reason '<at least 20 chars>' for work with nothing "
+          "to gate.", file=sys.stderr)
+    sys.exit(PRECONDITION_EXIT_CODE)
 
 
 def cmd_checkpoint(args):
@@ -982,6 +1141,9 @@ def cmd_checkpoint(args):
         sys.exit(1)
 
     old_status = feature["status"]
+
+    if new_status == "in_progress" and old_status != "in_progress":
+        _enforce_dispatch_preconditions(fm, feature, args)
 
     is_new_start = new_status == "in_progress" and not feature.get("started_at")
     if is_new_start and not getattr(args, "ignore_quota", False):
@@ -1243,11 +1405,13 @@ def cmd_gate(args):
                 continue
 
             # Truly no contract anywhere for this feature (inline_brief).
+            waiver = (f" (no contract: {f['no_contract_reason']})"
+                      if f.get("no_contract_reason") else "")
             if f["status"] in ("pending", "in_progress"):
-                print(f"  FAIL {fid}: status={f['status']} (not done, no contract)")
+                print(f"  FAIL {fid}: status={f['status']} (not done, no contract){waiver}")
                 any_fail = True
             else:
-                print(f"  SKIP {fid}: status={f['status']} (no contract found anywhere)")
+                print(f"  SKIP {fid}: status={f['status']} (no contract found anywhere){waiver}")
                 unverified += 1
             ran += 1
             continue
@@ -1330,7 +1494,8 @@ class ContractLookup(NamedTuple):
     invalid_path: str | None
 
 
-def _existing_contract_for_feature(fm: dict, fid: str) -> ContractLookup:
+def _existing_contract_for_feature(fm: dict, fid: str,
+                                   root: Path | None = None) -> ContractLookup:
     """Resolve the path to feature `fid`'s contract if it exists on disk.
 
     Derives specs/<slug>/contract-f<N>.yaml from the mission's slug and the feature
@@ -1343,7 +1508,7 @@ def _existing_contract_for_feature(fm: dict, fid: str) -> ContractLookup:
     slug = fm.get("slug")
     if not slug:
         return ContractLookup(None, None)
-    specs_base = Path(__file__).parent.parent / ".agent/memory/project/specs"
+    specs_base = (root or Path(__file__).parent.parent) / ".agent/memory/project/specs"
     contract_script = Path(__file__).parent / "contract.py"
 
     contract_path = specs_base / slug / f"contract-f{match.group(1)}.yaml"
@@ -1690,6 +1855,7 @@ def cmd_close_out(args):
         print(f"ERROR: wrap_mission.sh failed:\n{result.stderr}", file=sys.stderr)
         sys.exit(1)
     emit_compaction_hint("close_out", slug)
+    arm_autocompact(slug, args.mission)
     print("DONE: mission closed. Commit now.")
 
 
@@ -1801,6 +1967,9 @@ def main():
     p_cp.add_argument("--handoff", help="Path to handoff JSON file")
     p_cp.add_argument("--ignore-quota", action="store_true", default=False,
                        help="Bypass the quota admission check for this checkpoint")
+    p_cp.add_argument("--no-contract-reason", default=None,
+                       help="Start a feature with no contract/goldens; recorded on the feature "
+                            "(min 20 chars)")
 
     # attach-spec
     p_as = sub.add_parser("attach-spec", help="Attach spec+contract to a feature")

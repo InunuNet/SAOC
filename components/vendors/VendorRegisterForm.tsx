@@ -36,8 +36,16 @@ const subscribeNever = () => () => {};
 
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 
-export function VendorRegisterForm() {
-  const [state, setState] = useState<VendorRegisterFormState>(INITIAL_STATE);
+interface VendorRegisterFormProps {
+  /** Business name from the verified application document; the field stays editable. */
+  initialBusinessName?: string;
+}
+
+export function VendorRegisterForm({ initialBusinessName }: VendorRegisterFormProps = {}) {
+  const [state, setState] = useState<VendorRegisterFormState>({
+    ...INITIAL_STATE,
+    businessName: initialBusinessName ?? '',
+  });
   const [hp, setHp] = useState(''); // honeypot -- never sent to the API
   const [status, setStatus] = useState<Status>('idle');
   const [descriptor, setDescriptor] = useState<VendorRegisterResponseDescription | null>(null);
@@ -145,7 +153,7 @@ export function VendorRegisterForm() {
       <button
         type="submit"
         disabled={disabled || !hydrated}
-        className="rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ink hover:bg-accent-soft transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2"
+        className="rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ink hover:bg-accent-soft transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
       >
         {status === 'submitting' ? 'Submitting…' : 'Submit registration'}
       </button>

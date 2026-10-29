@@ -1,16 +1,10 @@
 import { getFirestore } from 'firebase-admin/firestore';
 
 import { getAdminSession } from '@/lib/admin-auth';
+import { csvField } from '@/lib/csv-field';
 import { initAdmin } from '@/lib/firebase-admin';
 
 const CSV_HEADER = 'bookingRef,attendeeName,attendeeEmail,ticketType,status,purchasedAt';
-
-function escapeField(value: string): string {
-  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-    return `"${value.replace(/"/g, '""')}"`;
-  }
-  return value;
-}
 
 export async function GET() {
   const session = await getAdminSession();
@@ -29,12 +23,12 @@ export async function GET() {
       : '';
 
     return [
-      escapeField(String(data['bookingRef'] ?? '')),
-      escapeField(String(data['attendeeName'] ?? '')),
-      escapeField(String(data['attendeeEmail'] ?? '')),
-      escapeField(String(data['ticketType'] ?? '')),
-      escapeField(String(data['status'] ?? '')),
-      escapeField(purchasedAt),
+      csvField(String(data['bookingRef'] ?? '')),
+      csvField(String(data['attendeeName'] ?? '')),
+      csvField(String(data['attendeeEmail'] ?? '')),
+      csvField(String(data['ticketType'] ?? '')),
+      csvField(String(data['status'] ?? '')),
+      csvField(purchasedAt),
     ].join(',');
   });
 

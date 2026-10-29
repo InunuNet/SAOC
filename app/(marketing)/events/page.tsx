@@ -1,17 +1,18 @@
 import type { Metadata } from 'next';
 
-import { PageHero } from '@/components/ui/PageHero';
-import { EventCard, MonthGroup, eventHref, type ListedEvent } from '@/components/events';
+import { RouteHero } from '@/components/ui/RouteHero';
+import { EventsAbout, EventsList, eventHref, type ListedEvent } from '@/components/events';
+import { ShowBand } from '@/components/home';
 import { JsonLd, eventJsonLd } from '@/components/seo/JsonLd';
-import { ConfirmationBadge } from '@/components/show';
+import { isNationalShowEvent, listSectionVisible, splitListed } from '@/lib/events-list';
 import { upcomingEventsParams } from '@/lib/sast-date';
-import { upcomingPlaceholderEvents } from '@/lib/data/placeholder-events';
+import { PLACEHOLDER_EVENTS_NOTE, upcomingPlaceholderEvents } from '@/lib/data/placeholder-events';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
 import { saocUrl } from '@/lib/site-hosts';
 import { sanityFetch } from '@/sanity/lib/fetch';
-import { upcomingEventsQuery } from '@/sanity/queries';
-import type { SanityEvent } from '@/types';
+import { eventsPageQuery, nationalShowQuery, upcomingEventsQuery } from '@/sanity/queries';
+import type { SanityEvent, ShowIdentity } from '@/types';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
@@ -34,109 +35,79 @@ function eventUrl(event: Parameters<typeof eventHref>[0]): string {
   return href.startsWith('/') ? saocUrl(href) : href;
 }
 
-/** Month label from an ISO date string, e.g. "June 2026" */
-function monthLabel(dateStr: string): string {
-  const date = new Date(dateStr);
-  return date.toLocaleString('en-ZA', { month: 'long', year: 'numeric', timeZone: 'UTC' });
-}
-
-/**
- * Group a sorted list of events by calendar month.
- * Returns an ordered array of [monthLabel, events] pairs.
- */
-function groupByMonth(events: ListedEvent[]): Array<{ month: string; events: ListedEvent[] }> {
-  const map = new Map<string, ListedEvent[]>();
-
-  for (const event of events) {
-    const label = monthLabel(event.date);
-    const bucket = map.get(label);
-    if (bucket) {
-      bucket.push(event);
-    } else {
-      map.set(label, [event]);
-    }
-  }
-
-  return Array.from(map.entries()).map(([month, evts]) => ({ month, events: evts }));
-}
-
 export default async function EventsPage() {
-  const raw = await sanityFetch<SanityEvent[]>({
-    query: upcomingEventsQuery,
-    params: upcomingEventsParams(),
-    tags: ['events', 'sanity'],
-  });
+  const [raw, show, eventsPage] = await Promise.all([
+    sanityFetch<SanityEvent[]>({
+      query: upcomingEventsQuery,
+      params: upcomingEventsParams(),
+      tags: ['events', 'sanity'],
+    }),
+    sanityFetch<ShowIdentity>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
+    sanityFetch<{ intro?: Parameters<typeof EventsAbout>[0]['intro'] }>({
+      query: eventsPageQuery,
+      tags: ['eventsPage', 'sanity'],
+    }),
+  ]);
 
   const events: SanityEvent[] = raw ?? [];
+  const withhold = withholdPlaceholderProse();
 
   // The preview gate is evaluated at static/ISR render. On App Hosting any env or secret change creates a new
   // build and rollout, so a preview-built cache cannot outlive a SITE_PUBLIC_LAUNCH flip.
   // Brad: keep the invented events in, noted as awaiting SAOC's official calendar. Preview only: a public
   // build lists none. They join the rows below but never `events`, which feeds the JSON-LD Event nodes.
-  const placeholders = withholdPlaceholderProse() ? [] : upcomingPlaceholderEvents(new Date(), events);
-  const listed: ListedEvent[] = [...events, ...placeholders].sort((a, b) => a.date.localeCompare(b.date));
+  const placeholders = withhold ? [] : upcomingPlaceholderEvents(new Date(), events);
+  const listed: ListedEvent[] = [...events, ...placeholders].sort((a, b) =>
+    a.date.localeCompare(b.date),
+  );
 
-  const featured = listed.filter((e) => e.isFeatured === true);
-  const remaining = listed.filter((e) => e.isFeatured !== true);
-  const monthGroups = groupByMonth(remaining);
+  // The National Show leads the page in the band, so it is not listed a second time.
+  const { rest } = splitListed(listed);
+  const showEvent = events.find((event) => isNationalShowEvent(event) && event.slug);
 
   return (
     <>
-      <PageHero
-        image="/images/orchid-purple.jpg"
+      <RouteHero
+        exempt
+        route="/events"
         eyebrow="SAOC calendar"
         heading="Events"
         lede={LEDE}
       />
 
-      <div className="saoc-container py-16 space-y-16">
-        {/* One Event node per listed row, so search engines read what the page lists. */}
-        {events.map((event) => (
-          <JsonLd
-            key={event._id}
-            data={eventJsonLd({
-              name: event.title,
-              startDate: event.date,
-              endDate: event.endDate,
-              location: event.location,
-              venue: event.venue,
-              description: event.description,
-              organizer: event.hostSociety?.name,
-              url: eventUrl(event),
-            })}
-          />
-        ))}
+      {/* One Event node per real event, so search engines read what the page lists. */}
+      {events.map((event) => (
+        <JsonLd
+          key={event._id}
+          data={eventJsonLd({
+            name: event.title,
+            startDate: event.date,
+            endDate: event.endDate,
+            location: event.location,
+            venue: event.venue,
+            description: event.description,
+            organizer: event.hostSociety?.name,
+            url: eventUrl(event),
+          })}
+        />
+      ))}
 
-        {/* Featured events */}
-        {featured.length > 0 ? (
-          <section>
-            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted mb-6">
-              Featured events
-            </p>
-            <ul className="space-y-3">
-              {featured.map((event) => (
-                <li key={event._id}>
-                  <EventCard event={event} />
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
+      <ShowBand
+        show={show}
+        detailsHref={showEvent ? `/events/${showEvent.slug}` : undefined}
+        showPhoto={false}
+      />
 
-        {/* Monthly groups */}
-        {monthGroups.length > 0 ? (
-          <div className="space-y-12">
-            {monthGroups.map(({ month, events: monthEvents }) => (
-              <MonthGroup key={month} month={month} events={monthEvents} />
-            ))}
-          </div>
-        ) : listed.length === 0 ? (
-          <div className="space-y-3">
-            <p className="font-sans text-[16px] text-ink/70">No upcoming events scheduled.</p>
-            <ConfirmationBadge status="pending" />
-          </div>
-        ) : null}
-      </div>
+      <EventsAbout
+        intro={eventsPage?.intro}
+        placeholderNote={placeholders.length > 0 ? PLACEHOLDER_EVENTS_NOTE : null}
+      />
+
+      {listSectionVisible(rest.length) ? (
+        <section data-events-list className="saoc-container pb-20">
+          <EventsList events={rest} />
+        </section>
+      ) : null}
     </>
   );
 }

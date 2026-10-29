@@ -28,6 +28,36 @@ export const workshopSession = defineType({
       to: [{ type: 'conferencePresenter' }],
     }),
     defineField({
+      name: 'level',
+      title: 'Level',
+      type: 'string',
+      options: {
+        list: [
+          { title: 'Beginner', value: 'Beginner' },
+          { title: 'Intermediate', value: 'Intermediate' },
+          { title: 'Advanced', value: 'Advanced' },
+        ],
+      },
+    }),
+    defineField({
+      name: 'duration',
+      title: 'Duration',
+      type: 'string',
+      description: 'Free text, as the council gives it.',
+    }),
+    defineField({
+      name: 'included',
+      title: 'Included',
+      type: 'string',
+      description: 'What the ticket price includes, as the council gives it. Leave empty if none.',
+    }),
+    defineField({
+      name: 'bring',
+      title: 'What to bring',
+      type: 'string',
+      description: 'What attendees should bring, as the council gives it. Leave empty if none.',
+    }),
+    defineField({
       name: 'timeSlot',
       title: 'Time Slot',
       type: 'string',

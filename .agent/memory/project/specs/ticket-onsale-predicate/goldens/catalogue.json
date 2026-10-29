@@ -1,0 +1,286 @@
+{
+  "_doc": "Offline Sanity catalogue mirroring the live active catalogue on 2026-10-25 (see .tmp audit ticket-direct-purchase-2026-10-25) plus the two demo fixtures. Served by contracts/checks/ticket-onsale-predicate/_mocks/stub-sanity-client.mjs.",
+  "salesOpen": true,
+  "shows": [
+    {
+      "_id": "show-19-2027",
+      "active": true,
+      "startDate": "2027-09-23",
+      "endDate": "2027-09-26"
+    },
+    {
+      "_id": "show-fictional-test",
+      "active": false,
+      "startDate": "2030-01-01",
+      "endDate": "2030-01-02"
+    }
+  ],
+  "ticketTypes": [
+    {
+      "_id": "ticketType-early-bird",
+      "name": "Early-Bird Exhibition",
+      "slug": "early-bird",
+      "price": 120,
+      "regularPrice": 150,
+      "description": null,
+      "capacity": 500,
+      "show": {
+        "_ref": "show-19-2027"
+      },
+      "releasedQuantity": null,
+      "earlyBirdCutoff": null,
+      "requiresDaySelection": false,
+      "requiresAttendeeNames": false,
+      "provisional": false,
+      "category": "admission",
+      "capacityPool": "admission-early-bird",
+      "headcountPerUnit": 1,
+      "excludedDays": null,
+      "demo": false,
+      "active": true,
+      "order": 1
+    },
+    {
+      "_id": "ticketType-day-visitor",
+      "name": "Day Visitor",
+      "slug": "day-visitor",
+      "price": 150,
+      "regularPrice": null,
+      "description": null,
+      "capacity": 1000,
+      "show": {
+        "_ref": "show-19-2027"
+      },
+      "releasedQuantity": null,
+      "earlyBirdCutoff": null,
+      "requiresDaySelection": true,
+      "requiresAttendeeNames": false,
+      "provisional": false,
+      "category": "admission",
+      "capacityPool": null,
+      "headcountPerUnit": 1,
+      "excludedDays": [
+        "2027-09-23"
+      ],
+      "demo": false,
+      "active": true,
+      "order": 1
+    },
+    {
+      "_id": "ticketType-weekend-pass-early-bird",
+      "name": "Early-Bird Weekend Pass",
+      "slug": "weekend-pass-early-bird",
+      "price": 360,
+      "regularPrice": 380,
+      "description": null,
+      "capacity": 500,
+      "show": {
+        "_ref": "show-19-2027"
+      },
+      "releasedQuantity": null,
+      "earlyBirdCutoff": null,
+      "requiresDaySelection": false,
+      "requiresAttendeeNames": false,
+      "provisional": false,
+      "category": "admission",
+      "capacityPool": "admission-early-bird",
+      "headcountPerUnit": 1,
+      "excludedDays": null,
+      "demo": false,
+      "active": true,
+      "order": 1
+    },
+    {
+      "_id": "ticketType-weekend-pass",
+      "name": "Weekend Pass",
+      "slug": "weekend-pass",
+      "price": 380,
+      "regularPrice": null,
+      "description": null,
+      "capacity": 300,
+      "show": {
+        "_ref": "show-19-2027"
+      },
+      "releasedQuantity": null,
+      "earlyBirdCutoff": null,
+      "requiresDaySelection": false,
+      "requiresAttendeeNames": false,
+      "provisional": false,
+      "category": "admission",
+      "capacityPool": null,
+      "headcountPerUnit": 1,
+      "excludedDays": null,
+      "demo": false,
+      "active": true,
+      "order": 1
+    },
+    {
+      "_id": "ticketType-vip",
+      "name": "VIP",
+      "slug": "vip",
+      "price": 300,
+      "regularPrice": null,
+      "description": null,
+      "capacity": 200,
+      "show": {
+        "_ref": "show-19-2027"
+      },
+      "releasedQuantity": null,
+      "earlyBirdCutoff": null,
+      "requiresDaySelection": false,
+      "requiresAttendeeNames": false,
+      "provisional": false,
+      "category": "admission",
+      "capacityPool": null,
+      "headcountPerUnit": 1,
+      "excludedDays": null,
+      "demo": false,
+      "active": true,
+      "order": 1
+    },
+    {
+      "_id": "ticketType-sunset-cocktails-single",
+      "name": "Sunset Cocktails",
+      "slug": "sunset-cocktails-single",
+      "price": 250,
+      "regularPrice": null,
+      "description": null,
+      "capacity": 80,
+      "show": {
+        "_ref": "show-19-2027"
+      },
+      "releasedQuantity": null,
+      "earlyBirdCutoff": null,
+      "requiresDaySelection": false,
+      "requiresAttendeeNames": false,
+      "provisional": false,
+      "category": "workshop-field-trip",
+      "capacityPool": null,
+      "headcountPerUnit": 1,
+      "excludedDays": null,
+      "demo": false,
+      "active": true,
+      "order": 1
+    },
+    {
+      "_id": "ticketType-saoc-symposium",
+      "name": "SAOC Symposium",
+      "slug": "saoc-symposium",
+      "price": 400,
+      "regularPrice": null,
+      "description": null,
+      "capacity": 100,
+      "show": {
+        "_ref": "show-19-2027"
+      },
+      "releasedQuantity": null,
+      "earlyBirdCutoff": null,
+      "requiresDaySelection": false,
+      "requiresAttendeeNames": false,
+      "provisional": false,
+      "category": "conference",
+      "capacityPool": null,
+      "headcountPerUnit": 1,
+      "excludedDays": null,
+      "demo": false,
+      "active": true,
+      "order": 1
+    },
+    {
+      "_id": "ticketType-wosa-conference",
+      "name": "WOSA Conference",
+      "slug": "wosa-conference",
+      "price": 500,
+      "regularPrice": null,
+      "description": null,
+      "capacity": 100,
+      "show": {
+        "_ref": "show-19-2027"
+      },
+      "releasedQuantity": null,
+      "earlyBirdCutoff": null,
+      "requiresDaySelection": false,
+      "requiresAttendeeNames": false,
+      "provisional": false,
+      "category": "conference",
+      "capacityPool": null,
+      "headcountPerUnit": 1,
+      "excludedDays": null,
+      "demo": false,
+      "active": true,
+      "order": 1
+    },
+    {
+      "_id": "ticketType-qa-fixture-ticket",
+      "name": "QA Fixture Ticket",
+      "slug": "qa-fixture-ticket",
+      "price": 0,
+      "regularPrice": null,
+      "description": null,
+      "capacity": 50,
+      "show": {
+        "_ref": "show-19-2027"
+      },
+      "releasedQuantity": null,
+      "earlyBirdCutoff": null,
+      "requiresDaySelection": false,
+      "requiresAttendeeNames": false,
+      "provisional": false,
+      "category": "qa-fixture-only",
+      "capacityPool": null,
+      "headcountPerUnit": 1,
+      "excludedDays": null,
+      "demo": true,
+      "active": true,
+      "order": 1
+    },
+    {
+      "_id": "ticketType-fictional-test-show-general-admission",
+      "name": "General Admission (Fictional Test Show)",
+      "slug": "fictional-test-show-general-admission",
+      "price": 10,
+      "regularPrice": null,
+      "description": null,
+      "capacity": 50,
+      "show": {
+        "_ref": "show-fictional-test"
+      },
+      "releasedQuantity": null,
+      "earlyBirdCutoff": null,
+      "requiresDaySelection": false,
+      "requiresAttendeeNames": false,
+      "provisional": false,
+      "category": "admission",
+      "capacityPool": null,
+      "headcountPerUnit": 1,
+      "excludedDays": null,
+      "demo": true,
+      "active": true,
+      "order": 1
+    },
+    {
+      "_id": "ticketType-demo-general-admission",
+      "name": "General Admission (Demo)",
+      "slug": "demo-general-admission",
+      "price": 10,
+      "regularPrice": null,
+      "description": null,
+      "capacity": 50,
+      "show": {
+        "_ref": "show-19-2027"
+      },
+      "releasedQuantity": null,
+      "earlyBirdCutoff": null,
+      "requiresDaySelection": false,
+      "requiresAttendeeNames": false,
+      "provisional": false,
+      "category": "admission",
+      "capacityPool": null,
+      "headcountPerUnit": 1,
+      "excludedDays": null,
+      "demo": false,
+      "active": true,
+      "order": 1
+    }
+  ]
+}

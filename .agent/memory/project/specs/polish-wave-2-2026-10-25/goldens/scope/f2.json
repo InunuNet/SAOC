@@ -1,0 +1,7 @@
+{
+  "feature": "F2",
+  "allow": [
+    "app/(marketing)/about/page.tsx",
+    "docs/polish-wave-2-f2-about-stat.md"
+  ]
+}
