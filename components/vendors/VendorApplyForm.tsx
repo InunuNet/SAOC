@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { CircleAlert } from 'lucide-react';
 
 import { Button } from '@/components/nos/Button';
 import { VendorFormField } from './VendorFormField';
@@ -198,13 +199,14 @@ export function VendorApplyForm() {
       </p>
 
       {clientErrors.length > 0 ? (
-        <div ref={summaryRef} id={SUMMARY_ID} tabIndex={-1} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+        <div ref={summaryRef} id={SUMMARY_ID} tabIndex={-1} className="focus:outline-2 focus:outline-solid focus:outline-primary focus:outline-offset-[3px]">
           <div
             role="alert"
-            className="space-y-2 rounded-sm border border-[var(--status-error)] bg-bone p-4"
+            className="space-y-2 rounded-sm border-2 border-[var(--status-error)] p-4"
           >
-            <p className="font-sans text-[15px] font-medium text-[var(--status-error)]">
-              {SUMMARY_HEADING}
+            <p className="flex items-start gap-2 font-sans text-[15px] font-medium text-[var(--status-error)]">
+              <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+              <span>{SUMMARY_HEADING}</span>
             </p>
             <ul className="list-disc space-y-1 pl-5 font-sans text-[14px] text-ink">
               {clientErrors.map((entry) => (
@@ -229,10 +231,11 @@ export function VendorApplyForm() {
       {status === 'error' && errorMessage ? (
         <div
           role="alert"
-          className="space-y-2 rounded-sm border border-[var(--status-error)] bg-bone p-4"
+          className="space-y-2 rounded-sm border-2 border-[var(--status-error)] p-4"
         >
-          <p className="font-sans text-[15px] font-medium text-[var(--status-error)]">
-            {errorMessage}
+          <p className="flex items-start gap-2 font-sans text-[15px] font-medium text-[var(--status-error)]">
+            <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            <span>{errorMessage}</span>
           </p>
           {fieldErrors.length > 0 ? (
             <ul className="list-disc space-y-1 pl-5 font-sans text-[14px] text-ink/80">

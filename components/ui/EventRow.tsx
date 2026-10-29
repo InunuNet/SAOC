@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { useId } from 'react';
 
 import type { SocietyEvent } from '@/types';
+import { ArrowIcon } from '@/components/ui/ArrowIcon';
 
 interface EventRowProps {
   event: SocietyEvent;
@@ -11,6 +12,7 @@ const ROW_CLASSES = [
   'flex items-stretch gap-0',
   'transition-[padding,background] duration-150',
   'hover:bg-bone/60 hover:pl-1',
+  'outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]',
 ].join(' ');
 
 export function EventRow({ event }: EventRowProps) {
@@ -46,7 +48,7 @@ export function EventRow({ event }: EventRowProps) {
         <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted mb-2">
           {event.kind}
         </p>
-        <p id={titleId} className="font-serif font-normal text-[20px] text-primary leading-snug">
+        <p id={titleId} data-corner-title className="font-serif font-normal text-[20px] text-primary leading-snug">
           {event.title}
         </p>
         <p id={venueId} className="font-sans text-[14px] text-ink/70 mt-1">
@@ -63,7 +65,7 @@ export function EventRow({ event }: EventRowProps) {
         )}
         {linked && (
           <span className="font-serif font-medium text-[18px] text-primary" aria-hidden="true">
-            →
+            <ArrowIcon variant="corner" />
           </span>
         )}
       </div>
@@ -78,6 +80,7 @@ export function EventRow({ event }: EventRowProps) {
       {linked ? (
         <Link
           href={`/events/${event.slug}`}
+          data-variant="corner"
           aria-labelledby={titleId}
           aria-describedby={event.venue ? `${dateId} ${venueId}` : dateId}
           className={ROW_CLASSES}

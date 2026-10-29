@@ -53,8 +53,12 @@ const WORDMARK = 'South African Orchid Council';
 const TAGLINE = 'Making a difference since 1968';
 const ACCESSIBLE_LABEL = `South African Orchid Council — ${TAGLINE}`;
 
-const LINK_CLASSES =
-  'rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2';
+// The one focus ring (2px solid, 3px offset): ivory on the dark footer ground, primary on parchment.
+const LINK_CLASSES_BY_TONE = {
+  light:
+    'rounded-sm focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]',
+  dark: 'rounded-sm focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]',
+};
 
 interface SaocLockupProps {
   orientation: 'horizontal' | 'vertical';
@@ -120,7 +124,7 @@ export function SaocLockup({
     // Forced unconditionally when `compact` is set (MobileMenu.tsx), since
     // that drawer stays narrow regardless of the actual viewport width.
     return (
-      <Link href="/" aria-label={ACCESSIBLE_LABEL} className={[LINK_CLASSES, 'flex items-center', className ?? ''].join(' ')}>
+      <Link href="/" aria-label={ACCESSIBLE_LABEL} className={[LINK_CLASSES_BY_TONE[tone], 'flex items-center', className ?? ''].join(' ')}>
         {/* Narrow — emblem + wordmark only. */}
         <span aria-hidden="true" className={['flex items-center gap-[6px]', compact ? 'flex' : 'flex md:hidden'].join(' ')}>
           <span className="relative shrink-0 w-[28px] h-[27px]">
@@ -186,7 +190,7 @@ export function SaocLockup({
     <Link
       href="/"
       aria-label={ACCESSIBLE_LABEL}
-      className={[LINK_CLASSES, 'flex w-full min-w-0 flex-col items-center [container-type:inline-size]', className ?? ''].join(' ')}
+      className={[LINK_CLASSES_BY_TONE[tone], 'flex w-full min-w-0 flex-col items-center [container-type:inline-size]', className ?? ''].join(' ')}
     >
       <span aria-hidden="true" className="flex flex-col items-center">
         <span className="relative shrink-0 w-[166px] h-[160px]">

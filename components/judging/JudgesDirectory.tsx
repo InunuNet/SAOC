@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { SanityImageSource } from '@sanity/image-url';
+import { ArrowIcon } from '@/components/ui/ArrowIcon';
 
 export interface SanityJudge {
   name: string;
@@ -23,9 +24,11 @@ export function JudgesDirectory({ judges, showPublicDirectory }: JudgesDirectory
         </p>
         <Link
           href="/contact"
-          className="mt-3 inline-flex min-h-11 items-center font-sans text-[13px] font-medium text-ink underline underline-offset-2 hover:text-primary"
+          className="mt-3 inline-flex min-h-11 items-center font-sans text-[13px] font-medium text-ink underline underline-offset-2 hover:text-primary outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
         >
-          Contact SAOC →
+          <span>
+            Contact SAOC<ArrowIcon />
+          </span>
         </Link>
       </div>
     );

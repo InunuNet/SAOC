@@ -1,11 +1,11 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { ArrowRight, Pause, Play } from 'lucide-react';
 import type { SanityImageSource } from '@sanity/image-url';
 
+import { HeroPicture } from '@/components/ui/HeroPicture';
 import { HOME_HERO_SLIDES } from '@/lib/data/home-hero-slides';
 import { heroSourceAspect } from '@/lib/data/saoc-hero-photos';
 import { formatShowDateRange, showLabelWithEdition, showYearOf } from '@/lib/show-identity';
@@ -16,8 +16,6 @@ const CAROUSEL_INTERVAL_MS = 7000;
 const FADE_MS = 1400;
 const HEADING_ID = 'home-hero-heading';
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
-// The hero is a full-bleed photograph: its source is served from the quality-88 variant set, up to 3840 wide.
-const HERO_IMAGE_QUALITY = 88;
 
 function subscribeReducedMotion(onChange: () => void): () => void {
   const query = window.matchMedia(REDUCED_MOTION_QUERY);
@@ -30,7 +28,7 @@ function slideLabel(index: number, total: number, subject: string): string {
 }
 
 const HERO_CTA_BASE =
-  'inline-flex min-h-11 w-full items-center justify-center gap-2 border px-6 py-3 font-sans text-[14px] font-medium transition-colors duration-150 sm:w-auto focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]';
+  'inline-flex min-h-11 w-full items-center justify-center gap-2 border px-6 py-3 font-sans text-[14px] font-medium transition-colors duration-150 sm:w-auto outline-ivory focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]';
 
 // The full-bleed hero's box is at least the 860px min-height of .home-hero (globals.css), so a source wider
 // than 860px x its aspect is height-driven and `sizes` must say so.
@@ -85,6 +83,9 @@ export function Hero({ show }: HeroProps) {
     setActiveIdx(next);
     leaveTimer.current = setTimeout(() => setLeavingIdx(null), FADE_MS);
   };
+  // The first slide never fades in: an animated LCP element counts from the end of its animation, so
+  // the crossfade only exists once the carousel has moved off slide 0.
+  const fades = activeIdx !== 0 || leavingIdx !== null;
   const advance = () => goTo((activeIdx + 1) % slides.length);
 
   return (
@@ -116,14 +117,13 @@ export function Hero({ show }: HeroProps) {
               aria-hidden={isActive ? undefined : true}
               data-hero-slide={slide.key}
               className={[
-                'absolute inset-0 transition-opacity duration-[1400ms] ease-(--ease)',
+                'absolute inset-0',
+                fades ? 'transition-opacity duration-[1400ms] ease-(--ease)' : '',
                 isActive ? 'opacity-100' : 'opacity-0',
               ].join(' ')}
             >
-              <Image
+              <HeroPicture
                 src={slide.src}
-                alt=""
-                fill
                 className={['home-hero-img', drifting ? 'home-hero-drift' : ''].join(' ')}
                 style={
                   {
@@ -133,7 +133,6 @@ export function Hero({ show }: HeroProps) {
                 }
                 priority={i === 0}
                 sizes={`(max-width: 1023px) max(100vw, calc(50vw * ${aspect})), max(100vw, ${Math.ceil(HERO_BOX_HEIGHT * aspect)}px)`}
-                quality={HERO_IMAGE_QUALITY}
               />
             </div>
           );

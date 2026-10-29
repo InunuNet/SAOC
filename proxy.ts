@@ -189,6 +189,7 @@ const NEUTRAL_EXACT = new Set<string>([
   '/events.ics',
   '/favicon.ico',
   '/icon.png',
+  '/icon1.png',
   '/apple-icon.png',
 ]);
 // The NOS share card lives at /national-show/og; the bare /og route is SAOC's card, so on the NOS

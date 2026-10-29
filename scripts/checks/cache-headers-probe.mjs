@@ -39,13 +39,42 @@ function ruleFor(mode, routeClass) {
 }
 
 function plannedRoutes(mode) {
+  const statics = expectations.routes.static.map((route) => ({ ...route, routeClass: 'static' }));
   if (mode === 'walled') {
-    return [...expectations.routes.isr, ...expectations.routes.dynamic].map((route) => ({ ...route, routeClass: 'isr' }));
+    return [...expectations.routes.isr, ...expectations.routes.dynamic]
+      .map((route) => ({ ...route, routeClass: 'isr' }))
+      .concat(statics);
   }
   return [
     ...expectations.routes.isr.map((route) => ({ ...route, routeClass: 'isr' })),
     ...expectations.routes.dynamic.map((route) => ({ ...route, routeClass: 'dynamic' })),
+    ...statics,
   ];
+}
+
+const expectedStatus = (route) => route.status ?? 200;
+
+// The first /_next/static asset of the wanted extension that the page's HTML links to.
+function discoverAsset(html, ext) {
+  const pattern = new RegExp(`/_next/static/[^"' <>\\\\]+\\.${ext}`);
+  return pattern.exec(html)?.[0] ?? null;
+}
+
+// A static route has no fixed path: fetch `discover_from`, find an asset, probe that. No asset is a
+// failure, never a skip. `fetchPage(route, path)` returns { status, cacheControl, body }.
+async function probeRoute(route, mode, fetchPage) {
+  let target = route;
+  if (route.routeClass === 'static') {
+    const page = await fetchPage(route, route.discover_from, true);
+    const asset = discoverAsset(page.body, route.ext);
+    if (!asset) {
+      console.log(`FAIL ${route.host} no /_next/static ${route.ext} asset found in ${route.discover_from}`);
+      return false;
+    }
+    target = { ...route, path: asset };
+  }
+  const response = await fetchPage(target, target.path, false);
+  return response.status === expectedStatus(target) && report(target, mode, response.cacheControl);
 }
 
 function report(route, mode, observed) {
@@ -69,10 +98,12 @@ async function spawnMode() {
   const server = await startServer({ port: SPAWN_PORT, countLog: COUNT_LOG, launched: true });
   let failed = 0;
   try {
-    for (const route of plannedRoutes('launched')) {
+    const fetchPage = (route, path, wantBody) => {
       const host = expectations.hosts[route.host].local_host_header.replace('.localhost', '');
-      const response = await get(SPAWN_PORT, server.hostFor(host), route.path);
-      if (response.status !== 200 || !report(route, 'launched', response.cacheControl)) failed += 1;
+      return get(SPAWN_PORT, server.hostFor(host), path, { wantBody });
+    };
+    for (const route of plannedRoutes('launched')) {
+      if (!(await probeRoute(route, 'launched', fetchPage))) failed += 1;
     }
   } finally {
     server.stop();
@@ -88,20 +119,22 @@ async function liveMode(mode) {
     return EXIT_SKIP;
   }
   const authorization = `Basic ${Buffer.from(`${user}:${password}`).toString('base64')}`;
+  const fetchPage = async (route, path) => {
+    const response = await fetch(`${expectations.hosts[route.host].live_base}${path}`, {
+      method: 'GET',
+      headers: { authorization },
+      redirect: 'manual',
+      signal: AbortSignal.timeout(LIVE_TIMEOUT_MS),
+    });
+    const body = await response.text();
+    return { status: response.status, cacheControl: response.headers.get('cache-control'), body };
+  };
   let failed = 0;
   for (const route of plannedRoutes(mode)) {
-    const url = `${expectations.hosts[route.host].live_base}${route.path}`;
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: { authorization },
-        redirect: 'manual',
-        signal: AbortSignal.timeout(LIVE_TIMEOUT_MS),
-      });
-      await response.arrayBuffer();
-      if (response.status !== 200 || !report(route, mode, response.headers.get('cache-control'))) failed += 1;
+      if (!(await probeRoute(route, mode, fetchPage))) failed += 1;
     } catch (error) {
-      console.log(`FAIL ${route.host} ${route.path} request error: ${error instanceof Error ? error.name : 'unknown'}`);
+      console.log(`FAIL ${route.host} ${route.path ?? route.discover_from} request error: ${error instanceof Error ? error.name : 'unknown'}`);
       failed += 1;
     }
   }

@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
-import { cookies } from 'next/headers';
 import Link from 'next/link';
 
 import { SubmitEventPageBody } from '@/components/events/SubmitEventPageBody';
 import { RouteHero } from '@/components/ui/RouteHero';
+import { getAdminSession } from '@/lib/admin-auth';
 import { buildPageMetadata } from '@/lib/seo';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { societyListQuery } from '@/sanity/queries';
@@ -20,21 +20,6 @@ interface SanitySocietyRow {
   name: string;
 }
 
-async function isAuthenticated(): Promise<boolean> {
-  try {
-    const session = (await cookies()).get('session')?.value;
-    if (!session) return false;
-
-    const { initAdmin } = await import('@/lib/firebase-admin');
-    const { getAuth } = await import('firebase-admin/auth');
-    initAdmin();
-    await getAuth().verifySessionCookie(session, true);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 function LoginPrompt() {
   return (
     <RouteHero
@@ -44,7 +29,7 @@ function LoginPrompt() {
       actions={
         <Link
           href="/contact"
-          className="mt-8 inline-flex min-h-11 items-center bg-accent px-6 py-3 font-sans text-[14px] font-medium text-ink transition-colors duration-150 hover:bg-accent-soft"
+          className="mt-8 inline-flex min-h-11 items-center bg-accent px-6 py-3 font-sans text-[14px] font-medium text-ink transition-colors duration-150 hover:bg-accent-soft outline-ivory focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]"
         >
           Contact us about membership
         </Link>
@@ -54,9 +39,9 @@ function LoginPrompt() {
 }
 
 export default async function SubmitEventPage() {
-  const authed = await isAuthenticated();
+  const session = await getAdminSession();
 
-  if (!authed) {
+  if (!session.ok) {
     return <LoginPrompt />;
   }
 
