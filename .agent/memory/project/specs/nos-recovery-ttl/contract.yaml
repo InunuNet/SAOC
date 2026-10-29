@@ -1,0 +1,84 @@
+# Gate environment: run `pnpm install` first (tsx goldens, eslint, tsc, build). Wiring checks diff against
+# `git merge-base HEAD origin/main`; run `git fetch origin main` first (WIRING_BASE=<sha> overrides).
+# @dev starts only after mission nos-security-tiered-access F3 (fix/sec-abuse-controls) has merged, then merges
+# origin/main into the branch (never rebases). No assertion writes to production.
+# Not included on purpose: contracts/checks/ticketing-checkout-orders/check-fail-closed-secret-guard.sh already
+# fails on origin/main (it greps the retired writeReservationPair); the guard it protects is unchanged here.
+schema: athanor.contract/v1
+slug: nos-recovery-ttl
+goal: "A recovery token minted at checkout expires at the end of the active show's end day (Africa/Johannesburg) plus 7 days, read from the active show record, and checkout refuses before any write when that expiry cannot be computed."
+created_at: '2026-10-29'
+autonomy: high
+
+features:
+  - id: F1
+    name: Recovery-token expiry = active show end date + 7 days (absolute, fail closed)
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/nos-recovery-ttl/goldens/check_wiring.py
+  - .agent/memory/project/specs/nos-recovery-ttl/goldens/checkout-mint-site.golden.ts
+  - .agent/memory/project/specs/nos-recovery-ttl/goldens/recovery-expiry.golden.ts
+  - .agent/memory/project/specs/nos-recovery-ttl/goldens/recovery-mint.golden.ts
+  - .agent/memory/project/specs/nos-recovery-ttl/goldens/run_mutations.py
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: "expiry math - SAST end-of-day plus 7 days, month/year/leap-year rollovers, independent of now and of the server TZ (run under four zones), refuses at and after the instant, null/invalid/non-Date show end and invalid now throw typed errors, resolve form never carries an expiry on refusal"
+      command: 'for tz in UTC America/Los_Angeles Africa/Johannesburg Pacific/Kiritimati; do TZ=$tz pnpm exec tsx .agent/memory/project/specs/nos-recovery-ttl/goldens/recovery-expiry.golden.ts || exit 1; done'
+    - id: A2
+      description: "mintRecoveryToken with an explicit expiresAt signs exactly that instant regardless of mint time, verifies to the last ms, expires at the instant, wins over ttlMs, refuses a non-future or invalid instant; legacy ttl path unchanged"
+      command: 'pnpm exec tsx .agent/memory/project/specs/nos-recovery-ttl/goldens/recovery-mint.golden.ts'
+    - id: A3
+      description: "the real checkout route regions, extracted and executed: the pre-write guard refuses HTTP 500 with the existing copy and one code-only log line for no show window, bad end date and expired window, else yields the show expiry; the mint region signs input.recoveryExpiresAt at any mint time and throws if a retry lands after the window"
+      command: 'pnpm exec tsx .agent/memory/project/specs/nos-recovery-ttl/goldens/checkout-mint-site.golden.ts'
+    - id: A4
+      description: "route placement and shape: secret guard, then resolve, then refuse, then reserveTicket; reuses the existing copy; mint passes expiresAt and no ttlMs; required input field"
+      command: 'python3 .agent/memory/project/specs/nos-recovery-ttl/goldens/check_wiring.py route-wiring'
+    - id: A5
+      description: "route.ts diff is additions only, only the pinned lines, at most 5 hunks (keeps the merge with the abuse-controls branch trivial)"
+      command: 'python3 .agent/memory/project/specs/nos-recovery-ttl/goldens/check_wiring.py route-hunks'
+    - id: A6
+      description: "lib/recovery-expiry.ts is pure: no imports, env, clock, logging, literal show date or 180-day fallback"
+      command: 'python3 .agent/memory/project/specs/nos-recovery-ttl/goldens/check_wiring.py pure-module'
+    - id: A7
+      description: "recovery-token.ts change is additive: verify and the rest byte-identical, legacy constant kept, only the two ttl lines removed"
+      command: 'python3 .agent/memory/project/specs/nos-recovery-ttl/goldens/check_wiring.py token-additive'
+    - id: A8
+      description: "no production path uses the 180-day default or mints without an explicit expiresAt; the checkout route is the only minter"
+      command: 'python3 .agent/memory/project/specs/nos-recovery-ttl/goldens/check_wiring.py no-default-ttl'
+    - id: A9
+      description: "no new user-facing copy (the refusal reuses the existing string)"
+      command: 'python3 .agent/memory/project/specs/nos-recovery-ttl/goldens/check_wiring.py no-new-copy'
+    - id: A10
+      description: "the diff touches only the cleared hunk list"
+      command: 'python3 .agent/memory/project/specs/nos-recovery-ttl/goldens/check_wiring.py hunk-list'
+    - id: A11
+      description: "frozen files unchanged (recovery-access, show-window-lookup, sanity, rules, indexes, F6 checks, harness)"
+      command: 'python3 .agent/memory/project/specs/nos-recovery-ttl/goldens/check_wiring.py unchanged'
+    - id: A12
+      description: "no Firestore or Sanity write or read added"
+      command: 'python3 .agent/memory/project/specs/nos-recovery-ttl/goldens/check_wiring.py no-writes'
+    - id: A13
+      description: "the F6 token primitive checks stay green"
+      command: 'for f in contracts/checks/ticketing-f6-recovery-token/check-*.mjs; do node --import tsx/esm "$f" || exit 1; done'
+      timeout_seconds: 600
+    - id: A14
+      description: "typecheck"
+      command: 'pnpm exec tsc --noEmit'
+    - id: A15
+      description: "eslint on touched files"
+      command: 'pnpm exec eslint lib/recovery-expiry.ts lib/recovery-token.ts app/api/tickets/checkout/route.ts'
+    - id: A16
+      description: "live-write-guard: no ungated writer added"
+      command: 'python3 contracts/checks/live-write-guard/verify_no_ungated_writers.py'
+    - id: A17
+      description: "all 46 mutants killed and files restored byte for byte"
+      command: 'python3 .agent/memory/project/specs/nos-recovery-ttl/goldens/run_mutations.py'
+      timeout_seconds: 600
+    - id: A18
+      description: "production build"
+      command: 'pnpm build'
+      timeout_seconds: 600
