@@ -1,0 +1,28 @@
+schema: athanor.contract/v1
+slug: triad-fixture
+goal: fixture
+created_at: '2026-10-29'
+autonomy: high
+features:
+  - id: F1
+    name: fixture
+    status: pending
+goldens: []
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: route exists
+      command: test -f "app/(nos)/national-show/page.tsx"
+    - id: A2
+      description: codex
+      type: codex_qa
+      target: goldens/prompt.md
+    - id: A3
+      description: browser
+      type: browser_deployed_check
+      target: .agent/memory/scratch/manifest.json
+    - id: A4
+      description: inbox
+      type: gws_inbox_check
+      target: .agent/memory/scratch/gws.json

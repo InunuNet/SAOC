@@ -24,7 +24,7 @@ export function DownloadTicketButton({
       href={href}
       download
       aria-label={`Download ticket for ${attendeeName} as a PDF`}
-      className="inline-block rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ink transition-colors hover:bg-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ivory"
+      className="inline-block rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ink transition-colors hover:bg-accent-soft focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
     >
       {label}
     </a>

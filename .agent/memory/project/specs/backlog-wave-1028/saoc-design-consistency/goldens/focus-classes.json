@@ -1,0 +1,75 @@
+{
+  "note": "F1a A4 static enumeration. Every className string under app/ and components/ (.ts and .tsx; NOS-host-only code excluded: components/nos-chrome/, components/nos/, components/show/, components/tickets/TicketTypeCard.tsx, app/(nos)/) that carries focus:ring-*, focus-visible:ring-*, ring-offset-*, focus(-visible):outline-none or a focus outline-offset other than [3px] must be THE ONE RING: focus-visible:outline-2 + focus-visible:outline-solid + focus-visible:outline-offset-[3px] (+ an outline colour), with no ring-* utility and no outline-none. Anything else must be listed here with a reason. Each entry names a file and a key (a substring of the className string); one entry per component, never a glob. An entry matching no hit FAILS the check (stale). Unlisted hits FAIL. Rule (lead, revised): the one ring applies to all standalone actions AND form controls on SAOC surfaces. ANY outline-none (bare, focus:, focus-visible:) is a hit: a bare outline-none is the only way to remove a browser default ring, so it must sit in the same class string as the one ring (the focus-visible ring then paints) or be allowlisted; focus:/focus-visible: outline-none is never allowed with the one ring.",
+  "allow": [
+    {
+      "file": "components/chrome/Header.tsx",
+      "key": "group relative inline-flex",
+      "reason": "NAV-1 underline focus: the Header nav items keep the nav design's own underline focus ruling; F1b owns the nav."
+    },
+    {
+      "file": "components/chrome/MobileMenu.tsx",
+      "key": "group flex items-center",
+      "reason": "NAV-1 underline focus: the MobileMenu drawer nav rows keep the nav design's own underline focus ruling; F1b owns the nav."
+    },
+    {
+      "file": "components/admin/tokens.ts",
+      "key": "focus-visible:outline-offset-[-4px]",
+      "reason": "Codi ruling, inset ring on dark table headers: FOCUS_RING_ON_DARK (inset -4px, accent-soft). An outset ring would clip there."
+    },
+    {
+      "file": "app/admin/login/GoogleSignInButton.tsx",
+      "key": "focus-visible:outline-offset-2",
+      "reason": "Provider sign-in button: a third-party brand button whose className carries the provider's brand hex values (tracked by A6). Admin-only."
+    },
+    {
+      "file": "app/admin/login/AppleSignInButton.tsx",
+      "key": "focus-visible:outline-offset-2",
+      "reason": "Provider sign-in button: a third-party brand button whose className carries the provider's brand hex values (tracked by A6). Admin-only."
+    },
+    {
+      "file": "app/admin/login/MicrosoftSignInButton.tsx",
+      "key": "focus-visible:outline-offset-2",
+      "reason": "Provider sign-in button: a third-party brand button whose className carries the provider's brand hex values (tracked by A6). Admin-only."
+    },
+    {
+      "file": "components/contact/ContactForm.tsx",
+      "key": "text-[22px] text-ink outline-none",
+      "reason": "programmatic focus target heading; not interactive; focus is moved by script for screen-reader announcement"
+    },
+    {
+      "file": "components/sponsors/SponsorEnquiryForm.tsx",
+      "key": "text-[22px] text-ink outline-none",
+      "reason": "programmatic focus target heading; not interactive; focus is moved by script for screen-reader announcement"
+    },
+    {
+      "file": "components/sponsors/SponsorEnquirySection.tsx",
+      "key": "outline-none",
+      "reason": "programmatic focus target heading; not interactive; focus is moved by script for screen-reader announcement (both the document and standalone branches)"
+    },
+    {
+      "file": "components/events/EventCard.tsx",
+      "key": "border-b border-rule py-5 outline-none",
+      "reason": "NAV-1-family underline focus (title underline plus 2px left bar)"
+    },
+    {
+      "file": "app/(marketing)/societies/SocietiesClient.tsx",
+      "key": "py-2 font-sans text-[16px] text-ink placeholder:text-muted outline-none",
+      "reason": "wrapper carries the ring via focus-within"
+    },
+    {
+      "file": "components/show/ShowJumpChips.tsx",
+      "key": "inline-flex min-h-[44px] items-center rounded-[length:var(--radius-pill)]",
+      "reason": "NOS default chip ring (2px offset, --ring-focus) kept for the NOS host. A SAOC route may render it only if the caller passes the one ring via linkClassName; check-focus-classes-static.mjs asserts that for every SAOC caller (MediaKitJumpNav on /media-kit)."
+    },
+    {
+      "file": "components/show/VenueCard.tsx",
+      "key": "mt-2 inline-block underline underline-offset-2",
+      "reason": "NOS default has no ring, passed to NOS Site as a finding. A SAOC route may render VenueCard only if the caller passes the one ring via linkClassName; check-focus-classes-static.mjs asserts that for every SAOC caller (/contact and /events/[slug])."
+    },
+    {
+      "file": "components/show/VenueCard.tsx",
+      "key": "mt-5 inline-flex min-h-[44px] items-center font-sans text-[12px]",
+      "reason": "NOS default has no ring, passed to NOS Site as a finding. A SAOC route may render VenueCard only if the caller passes the one ring via linkClassName; check-focus-classes-static.mjs asserts that for every SAOC caller (/contact and /events/[slug])."
+    }
+  ]
+}

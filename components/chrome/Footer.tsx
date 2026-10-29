@@ -9,6 +9,7 @@
 // All copy and link lists live in ./footer-data (shared with the NOS footer).
 // =============================================================
 
+import { CircleAlert } from 'lucide-react';
 import Link from 'next/link';
 import { NewsletterSignup } from '@/components/newsletter/NewsletterSignup';
 import { SaocLockup } from './SaocLockup';
@@ -53,7 +54,7 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
           {/* HD-1: moved here from the retired utility bar, directly under the registration line. */}
           <a
             href="mailto:info@saoc.co.za"
-            className={`${FOOTER_RHYTHM.row} font-mono text-ivory/80 hover:text-ivory transition-colors duration-150 focus-visible:text-ivory focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4 forced-colors:focus-visible:decoration-[color:Highlight]`}
+            className={`${FOOTER_RHYTHM.row} font-mono text-ivory/80 hover:text-ivory transition-colors duration-150 focus-visible:text-ivory focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]`}
           >
             info@saoc.co.za
           </a>
@@ -64,7 +65,7 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
                 href={FOOTER_WOSA.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`${FOOTER_RHYTHM.row} gap-1 font-sans text-ivory/80 hover:text-ivory transition-colors duration-150 focus-visible:text-ivory focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4 forced-colors:focus-visible:decoration-[color:Highlight]`}
+                className={`${FOOTER_RHYTHM.row} gap-1 font-sans text-ivory/80 hover:text-ivory transition-colors duration-150 focus-visible:text-ivory focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]`}
               >
                 {FOOTER_WOSA.label}
                 <ExternalArrow />
@@ -86,7 +87,7 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
                 <li key={n.id}>
                   <NavLink
                     href={n.href}
-                    className={`${FOOTER_RHYTHM.row} min-w-11 font-sans text-ivory/80 hover:text-ivory transition-colors duration-150 focus-visible:text-ivory focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4 forced-colors:focus-visible:decoration-[color:Highlight]`}
+                    className={`${FOOTER_RHYTHM.row} min-w-11 font-sans text-ivory/80 hover:text-ivory transition-colors duration-150 focus-visible:text-ivory focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]`}
                   >
                     {n.label}
                   </NavLink>
@@ -114,10 +115,11 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
             submitLabel={FOOTER_BULLETIN.submitLabel}
             fieldsClassName="flex flex-wrap items-end gap-0"
             labelClassName="sr-only"
-            inputClassName="min-h-11 min-w-0 flex-1 bg-ivory/10 border border-ivory/20 text-ivory placeholder:text-ivory/40 font-sans text-[16px] px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ivory"
-            buttonClassName="min-h-11 min-w-11 bg-accent text-primary-800 font-sans text-[13px] font-medium px-4 py-2 hover:bg-accent-soft transition-colors duration-150 shrink-0 disabled:opacity-60"
+            inputClassName="min-h-11 min-w-0 flex-1 bg-ivory/10 border border-accent-soft aria-invalid:border-[var(--status-error-on-dark)] text-ivory placeholder:text-ivory/75 font-sans text-[16px] px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-ivory"
+            buttonClassName="min-h-11 min-w-11 bg-accent text-primary-800 font-sans text-[13px] font-medium px-4 py-2 hover:bg-accent-soft transition-colors duration-150 shrink-0 disabled:opacity-60 outline-ivory focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]"
             statusClassName="mt-2 font-sans text-[13px] text-ivory/80 empty:hidden"
-            errorClassName="mt-2 font-sans text-[13px] text-ivory"
+            errorClassName="mt-2 flex items-start gap-2 border border-[var(--status-error-on-dark)] px-3 py-2 font-sans text-[13px] text-ivory"
+            errorIcon={<CircleAlert aria-hidden="true" className="mt-px size-4 shrink-0 text-[var(--status-error-on-dark)]" />}
           />
         </div>
       </div>
@@ -134,14 +136,14 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
               <Link
                 key={l.href}
                 href={l.href}
-                className="inline-flex min-h-11 items-center font-sans text-[13px] text-ivory/65 hover:text-ivory transition-colors duration-150 focus-visible:text-ivory focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4 forced-colors:focus-visible:decoration-[color:Highlight]"
+                className="inline-flex min-h-11 items-center font-sans text-[13px] text-ivory/65 hover:text-ivory transition-colors duration-150 focus-visible:text-ivory focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]"
               >
                 {l.label}
               </Link>
             ))}
             <MediaKitFooterLink
               {...FOOTER_MEDIA_KIT}
-              className="inline-flex min-h-11 items-center font-sans text-[13px] text-ivory/65 hover:text-ivory transition-colors duration-150 focus-visible:text-ivory focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4 forced-colors:focus-visible:decoration-[color:Highlight]"
+              className="inline-flex min-h-11 items-center font-sans text-[13px] text-ivory/65 hover:text-ivory transition-colors duration-150 focus-visible:text-ivory focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]"
             />
           </div>
         </div>

@@ -1,0 +1,67 @@
+schema: athanor.contract/v1
+slug: saoc-dc-f1d-lcp
+goal: One priority AVIF-first hero image per page, LCP <=2.5s on Slow 4G for / and /about, sharpness unchanged.
+created_at: '2026-10-28'
+autonomy: high
+
+features:
+  - id: F1
+    name: SA-9 hero priority, AVIF, LCP
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/lcp-measure.md
+  - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/proof-on-main.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: "/about: exactly one fetchpriority=high img (the hero, never lazy), one matching AVIF preload, AVIF-first <picture> with WebP fallback (fails on main, 0 fetchpriority, 2 preloads, no AVIF)"
+      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-priority.mjs"
+    - id: A2
+      description: "Hero AVIF and WebP width sets are identical, each ~1200w candidate <=180 KB as served, sharpness served >= box x DPR at 390@3 and 2056@2 (fails on main, no AVIF srcset; bytes and sharpness parts are regression guards)"
+      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-bytes-sharpness.mjs"
+    - id: A3
+      description: "scripts/generate-image-variants.mjs and lib/image-loader.ts know AVIF (fails on main)"
+      command: "grep -q -i 'avif' scripts/generate-image-variants.mjs lib/image-loader.ts"
+    - id: A4
+      description: "Codex adversarial QA of the whole diff against the goldens and proof-on-main"
+      type: codex_qa
+      target: >-
+        Adversarially review git diff origin/main...HEAD against ONLY these goldens: .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/lcp-measure.md, and the F1d section of proof-on-main.md (the other features' goldens in that directory are out of scope). Fonts, the favicon, arrow glyphs and the preload order belong to F1e. Do not fail F1d on another feature's golden. Find an input, width or route where the claimed fix does not hold and the checks still pass.
+      required: true
+    - id: A5
+      phase: 5
+      description: "PHASE 5 (manifest is written by the post-deploy BrowserAgent/gws run, so it cannot exist at the phase 4 gate). browser_deployed_check on beta /, declared for the triad linter but non-required. It cannot pass while the beta Basic Auth wall is up (execution/browser_deployed_check.sh live re-check sends no auth, HARNESS defect, backlog.md 2026-10-07). The authenticated post-deploy shell assertion is the real proof."
+      type: browser_deployed_check
+      target: .agent/memory/scratch/saoc-dc-f1d-browser-manifest.json
+      required: false
+    - id: A6
+      phase: 5
+      description: "PHASE 5 (manifest is written by the post-deploy BrowserAgent/gws run, so it cannot exist at the phase 4 gate). gws inbox check, no email path is touched; declared non-required to satisfy the triad coverage linter, expected to skip"
+      type: gws_inbox_check
+      target: .agent/memory/scratch/saoc-dc-f1d-gws-manifest.json
+      required: false
+    - id: A7
+      phase: 5
+      description: "RUN AFTER DEPLOY (phase 5, not part of the phase 4 gate). Lighthouse mobile LCP <=2500 ms on / and /about (Slow 4G simulated). Fails on main: / measured 3262 ms. Exit 2 if DC_BASE_URL unset. Plain shell check (not the browser_deployed_check kind, see above); reads BETA_BASIC_AUTH_USER/PASSWORD inside the scripts, never printed."
+      command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-lcp.mjs"
+    - id: A8
+      phase: 5
+      description: "RUN AFTER DEPLOY (phase 5, not part of the phase 4 gate). Hero priority/AVIF/bytes/sharpness on deployed / and /about. Plain shell check (not the browser_deployed_check kind, see above); reads BETA_BASIC_AUTH_USER/PASSWORD inside the scripts, never printed."
+      command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-priority.mjs"
+    - id: A9
+      description: "Server HTML (no JS) carries exactly one img fetchpriority=high (the hero) and one image preload with imagesrcset+imagesizes; the header lockup is loading=eager with default fetchpriority (fails on main: no fetchpriority in the HTML, 2 preloads, lockup has no explicit loading=eager)"
+      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-html.mjs"
+    - id: A10
+      description: "No opacity animation or transition on the hero img, its wrappers or the h1 (guard on /about; the Home crossfade first slide is covered by the deployed variant)"
+      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-no-fade.mjs"
+    - id: A11
+      phase: 5
+      description: "Deployed server-HTML check on / and /about. RUN AFTER DEPLOY (phase 5). Plain shell check, reads beta credentials inside the scripts, never printed."
+      command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-html.mjs"
+    - id: A12
+      phase: 5
+      description: "Deployed no-fade check including the Home crossfade first slide. RUN AFTER DEPLOY (phase 5). Plain shell check."
+      command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-no-fade.mjs"

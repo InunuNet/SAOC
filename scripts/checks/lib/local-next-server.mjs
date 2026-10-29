@@ -58,6 +58,12 @@ export function countLines(countLog) {
   return readFileSync(countLog, 'utf8').split('\n').filter(Boolean).length;
 }
 
+// The count-log lines appended after the first `before` lines (a prior countLines value).
+export function linesSince(countLog, before) {
+  if (!existsSync(countLog)) return [];
+  return readFileSync(countLog, 'utf8').split('\n').filter(Boolean).slice(before);
+}
+
 export function get(port, host, path, { headers = {}, wantBody = false } = {}) {
   return new Promise((done) => {
     const request = http.request(

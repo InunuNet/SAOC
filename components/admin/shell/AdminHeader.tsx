@@ -24,7 +24,7 @@ export function AdminHeader({ menuOpen, onToggleMenu }: AdminHeaderProps) {
       <Link
         href="/admin"
         aria-label={LOCKUP_LABEL}
-        className="min-w-0 shrink rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+        className="min-w-0 shrink rounded-sm focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
       >
         <Image
           src="/images/saoc-lockup-horizontal-full-name.png"

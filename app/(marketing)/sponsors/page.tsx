@@ -67,7 +67,7 @@ export default async function SponsorsPage() {
         actions={
           <Link
             href="#enquire"
-            className="mt-8 inline-flex min-h-11 items-center rounded-[length:var(--radius-1)] bg-accent px-6 py-3 font-sans text-[14px] font-medium text-ink transition-colors duration-150 hover:bg-accent-soft lg:hidden"
+            className="mt-8 inline-flex min-h-11 items-center rounded-[length:var(--radius-1)] bg-accent px-6 py-3 font-sans text-[14px] font-medium text-ink transition-colors duration-150 hover:bg-accent-soft lg:hidden outline-ivory focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]"
           >
             {ENQUIRY_CTA_LABEL}
           </Link>
@@ -86,7 +86,7 @@ export default async function SponsorsPage() {
             )}
             <Link
               href="#enquire"
-              className="mt-6 inline-flex min-h-11 items-center rounded-[length:var(--radius-1)] bg-accent px-6 py-3 font-sans text-[14px] font-medium text-ink transition-colors duration-150 hover:bg-accent-soft"
+              className="mt-6 inline-flex min-h-11 items-center rounded-[length:var(--radius-1)] bg-accent px-6 py-3 font-sans text-[14px] font-medium text-ink transition-colors duration-150 hover:bg-accent-soft outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
             >
               {ENQUIRY_CTA_LABEL}
             </Link>

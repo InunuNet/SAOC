@@ -40,10 +40,13 @@ The root `app/not-found.tsx` read the request host through `requestSite()` (`hea
 Both run from the repo root; Sanity is stubbed and Firebase blanked, so no live Sanity or Firestore is touched. GET only.
 
 - `node scripts/checks/sanity-request-count.mjs --build | --assert | --ttl-check | --notfound`. Run `--build` first; `--assert` refuses a build from a different source revision.
-- `node scripts/checks/cache-headers-probe.mjs --selftest | --spawn | --live --mode walled|launched`. `--live` reads `BETA_BASIC_AUTH_USER/PASSWORD` inside node and exits 77 if absent. While the beta wall is up only `--mode walled` can pass; use `launched` after `SITE_PUBLIC_LAUNCH` flips.
+- `node scripts/checks/sanity-request-count.mjs --live-reads` (needs a prior `--build` of the same revision). Requests `/tickets/<unknown slug>` twice on the NOS host: the second request must re-read ticketType, nationalShow sales and the show window (live), and must serve `ticketsPage` from cache, which is the positive control. Parameters in `m3-f4-gate-hardening/goldens/live-reads-behaviour.json`.
+- `pnpm exec tsx scripts/checks/buy-path-live-reads.mts [--root <dir>]`. TypeScript-AST check that every `sanityFetch` in the buy-path files (`goldens/buy-path-live-reads.json`) passes `live: true` or `live`, that `loadTicketCardViewModels` is called with `live: true`, and that no covered file calls `client.fetch`. Exit 2 if it finds fewer calls than the manifest minimum. Covers the sites the null stub cannot reach (page.tsx:168, `loadTicketCardViewModels`, the admission-availability reads). `ticketsPageQuery` and `ticketTypesByPoolQuery` (capacity-pool sold-out display) are allow-listed as cached, each with a written reason.
+- `node scripts/checks/cache-headers-probe.mjs --selftest | --spawn | --live --mode walled|launched`. `--live` reads `BETA_BASIC_AUTH_USER/PASSWORD` inside node and exits 77 if absent. While the beta wall is up only `--mode walled` can pass; use `launched` after `SITE_PUBLIC_LAUNCH` flips. It also probes `/tickets/<unknown slug>` (404, no-store) and a `/_next/static` css and js asset discovered from each host's HTML: `public, max-age=31536000, immutable` launched, `private, no-store, max-age=0` and never `immutable` walled.
+
+CI (`.github/workflows/ci.yml`, `build` job): the AST check and probe `--selftest` run before Build; the stubbed `--build`, `--live-reads` and `--spawn` run last, on their own build, because the CI `.next` has real origins baked in and the harness needs localhost ones. None is `continue-on-error`.
 
 ## Open items
 
-- QA L1: the gate does not pin the buy-path `live` flags.
 - QA L2: 404 cache entries are unbounded.
 - The Sanity webhook is unverified, and `docs/launch-checklist.md:126` names `/api/sanity-revalidate` while the route is `/api/revalidate`.

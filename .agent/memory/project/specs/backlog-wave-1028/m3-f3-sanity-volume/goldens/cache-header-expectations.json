@@ -7,10 +7,11 @@
   "modes": {
     "launched": {
       "isr": {"must_match": "s-maxage=60", "must_not_match": "no-store|private"},
-      "dynamic": {"must_match": "no-store", "must_not_match": "s-maxage"}
+      "dynamic": {"must_match": "no-store", "must_not_match": "s-maxage"},
+      "static": {"must_match": "^public, max-age=31536000, immutable$", "must_not_match": "no-store|private|s-maxage"}
     },
     "walled": {
-      "all": {"must_match": "private, no-store, max-age=0", "must_not_match": "public|s-maxage"}
+      "all": {"must_match": "private, no-store, max-age=0", "must_not_match": "public|s-maxage|immutable"}
     }
   },
   "routes": {
@@ -23,7 +24,12 @@
     ],
     "dynamic": [
       {"host": "nos", "path": "/what-to-expect"}, {"host": "nos", "path": "/tickets"}, {"host": "nos", "path": "/workshops"},
-      {"host": "nos", "path": "/symposium"}, {"host": "nos", "path": "/conferences"}, {"host": "nos", "path": "/wosa-conference"}
+      {"host": "nos", "path": "/symposium"}, {"host": "nos", "path": "/conferences"}, {"host": "nos", "path": "/wosa-conference"},
+      {"host": "nos", "path": "/tickets/no-such-ticket-f4", "status": 404}
+    ],
+    "static": [
+      {"host": "saoc", "discover_from": "/", "ext": "css"}, {"host": "saoc", "discover_from": "/", "ext": "js"},
+      {"host": "nos", "discover_from": "/", "ext": "css"}, {"host": "nos", "discover_from": "/", "ext": "js"}
     ]
   },
   "selftest_vectors": [
@@ -34,6 +40,13 @@
     {"mode": "launched", "class": "dynamic", "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate", "expect": "pass"},
     {"mode": "launched", "class": "dynamic", "cache_control": "s-maxage=60, stale-while-revalidate=31535940", "expect": "fail"},
     {"mode": "walled", "class": "isr", "cache_control": "private, no-store, max-age=0", "expect": "pass"},
-    {"mode": "walled", "class": "isr", "cache_control": "s-maxage=60, stale-while-revalidate=31535940", "expect": "fail"}
+    {"mode": "walled", "class": "isr", "cache_control": "s-maxage=60, stale-while-revalidate=31535940", "expect": "fail"},
+    {"mode": "launched", "class": "static", "cache_control": "public, max-age=31536000, immutable", "expect": "pass"},
+    {"mode": "launched", "class": "static", "cache_control": "public, max-age=31536000", "expect": "fail"},
+    {"mode": "launched", "class": "static", "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate", "expect": "fail"},
+    {"mode": "launched", "class": "static", "cache_control": "s-maxage=60, stale-while-revalidate=31535940", "expect": "fail"},
+    {"mode": "launched", "class": "static", "cache_control": null, "expect": "fail"},
+    {"mode": "walled", "class": "static", "cache_control": "private, no-store, max-age=0", "expect": "pass"},
+    {"mode": "walled", "class": "static", "cache_control": "public, max-age=31536000, immutable", "expect": "fail"}
   ]
 }
