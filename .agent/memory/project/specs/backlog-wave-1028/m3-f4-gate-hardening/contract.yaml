@@ -31,7 +31,7 @@ assertions:
       command: pnpm exec tsx scripts/checks/buy-path-live-reads.mts
       timeout_seconds: 120
     - id: A2
-      description: F4a mutation proof, nine sandbox mutations (dropping live at page.tsx 108/109/168, ticket-type-lookup, load-ticket-card, the three admission-availability reads, and a new non-live sanityFetch in layout.tsx) are each caught with exit 1 naming the file, unmutated control exits 0
+      description: F4a mutation proof, fifteen sandbox mutations (nine dropping live at page.tsx 108/109/168, ticket-type-lookup, load-ticket-card, the three admission-availability reads, and a new non-live sanityFetch in layout.tsx, plus six QA-found dodges: aliased and namespace imports, a non-call reference, a local live const, sanityClient.fetch) are each caught with exit 1 naming the file, unmutated control exits 0
       command: python3 .agent/memory/project/specs/backlog-wave-1028/m3-f4-gate-hardening/checks/mutate_live_reads.py
       timeout_seconds: 600
     - id: A3

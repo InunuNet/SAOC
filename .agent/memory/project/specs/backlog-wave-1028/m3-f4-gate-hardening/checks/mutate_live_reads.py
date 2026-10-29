@@ -58,10 +58,14 @@ def main() -> int:
         copy_tree(manifest, root)
         path = root / mutation["file"]
         text = path.read_text()
-        mutated, count = re.subn(mutation["regex"], mutation["replace"], text, count=0, flags=re.DOTALL)
-        if count != 1:
-            print(f"SETUP: {mutation['id']} regex matched {count} times in {mutation['file']} (want exactly 1)")
-            return SETUP
+        # One-edit form (regex, replace) or an ordered `edits` list; each edit must match exactly once.
+        edits = mutation.get("edits") or [{"regex": mutation["regex"], "replace": mutation["replace"]}]
+        mutated = text
+        for edit in edits:
+            mutated, count = re.subn(edit["regex"], edit["replace"], mutated, count=0, flags=re.DOTALL)
+            if count != 1:
+                print(f"SETUP: {mutation['id']} regex {edit['regex']!r} matched {count} times in {mutation['file']} (want exactly 1)")
+                return SETUP
         path.write_text(mutation.get("prepend_import", "") + mutated)
         result = run_checker(root)
         output = result.stdout + result.stderr

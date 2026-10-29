@@ -24,7 +24,13 @@ Manifest: `goldens/buy-path-live-reads.json` (read it from the spec dir by path,
 4. A direct `client.fetch(` in a covered file is a violation (the page loaders must go through `sanityFetch`, `docs/sanity-request-volume.md`).
 Output: one `VIOLATION <relative file>:<line> <callee> <reason>` line per problem, and `ok <n> sites` on success. Exit 0 clean, 1 violations, 2 setup. GET-free, no network, no Next build needed.
 
-Mutation proof: `checks/mutate_live_reads.py` (already written, do not edit) applies M1-M9 to sandbox copies and requires exit 1 plus the mutated file named in the output, with an unmutated control at exit 0. M3 and M6-M8 are the sites the runtime layer cannot reach.
+Dodge rules (QA found each of these exiting 0 on the first implementation, 2026-10-29; mutations D1-D6 in the manifest pin them, all must exit 1 and name the file, not exit 2):
+5. Resolve imports of the sanityFetch module (any specifier ending `sanity/lib/fetch`, alias or relative): `import { sanityFetch as sf }` and `import * as sx` then `sx.sanityFetch(...)` are the same callee as `sanityFetch`, so a missing `live` on them is a violation at the call site, never a setup error.
+6. Flag any non-call reference to the resolved sanityFetch binding in a covered file (`const w = sanityFetch`, passing it as an argument, storing it in an object or array) as a violation with its own message: the checker cannot follow it, so it is not allowed.
+7. The `live` identifier counts only when it resolves to a PARAMETER of the enclosing function (as in `loadTicketCardViewModels({ live = false })`). A local `const live = false`, an outer variable or an import named `live` is a violation, written `live,` or `live: live`.
+8. Any `.fetch(` call whose receiver resolves to a binding imported from a Sanity client module (any specifier ending `sanity/lib/client`, under any local name) or created in the file with `createClient` is a violation, in addition to the literal receiver `client` in rule 4.
+
+Mutation proof: `checks/mutate_live_reads.py` (already written, do not edit) applies M1-M9 and D1-D6 to sandbox copies and requires exit 1 plus the mutated file named in the output, with an unmutated control at exit 0. M3 and M6-M8 are the sites the runtime layer cannot reach.
 
 ### Layer 2: behavioural `node scripts/checks/sanity-request-count.mjs --live-reads`
 
@@ -67,7 +73,9 @@ Change only `execution/verify_triad_coverage.py` (plus the docstring and `docs/v
 
 Add a compiled, case-insensitive module constant, named, next to `APP_PATH_PATTERN`:
 
-`https?://(?:[a-z0-9-]+\.)*saoc\.co\.za(?=[:/?#\s'"\\)]|$)`
+`https?://(?:[^\s/@]+@)?(?:[a-z0-9-]+\.)*saoc\.co\.za(?=\.?(?:[^a-z0-9.@-]|$))`
+
+The terminator is a non-hostname-character boundary, not an allow-list of punctuation: after `saoc.co.za` (and at most one trailing `.`) the next character must not be a letter, digit, `.`, `-` or `@`, or the text must end. That stops `saoc.co.za.evil.com`, `saoc.co.za-evil.com`, `saoc.co.zaxyz` and `https://saoc.co.za@evil.com/` (saoc.co.za as userinfo) while accepting `;`, `|`, `&`, a backtick, `]`, `}`, `,`, `>`, quotes, `:port`, `/` and end of string. Optional userinfo is allowed before the host, so `https://user@saoc.co.za/x` and `https://evil.com@saoc.co.za/` (real host saoc.co.za) classify as the deployed site. QA found the first version's allow-list lookahead missed all of these (2026-10-29); fixtures `term-*.yaml`, `userinfo*.yaml`, `trailing-dot.yaml` and the negatives `lookalike-hyphen`, `lookalike-dot-com`, `userinfo-reversed`, `path-decoy` pin it. Re-measure the blast radius with the final pattern on both sets and restate the numbers in the dev result; if either set changes from the figures below, stop and report before adding any baseline entry.
 
 `is_ui_workflow_contract` returns True when ANY assertion text field (`command`, `cmd`, `target`, nested `verify.cmd`/`verify.target`: the existing `assertion_text_fields`) matches `APP_PATH_PATTERN` OR this deployed-site URL pattern. `description` stays unscanned. Update the FAIL/PASS/EXEMPT message text to say "an app/ path or a deployed-site URL". Rewrite the "Known limitations" docstring block honestly: the URL false negative is closed for literal `saoc.co.za` URLs; still not detected are URLs built from shell/env variables (`"$SITE_URL/x"`), `localhost` URLs, and sites reached through a helper script. Do not widen further.
 
