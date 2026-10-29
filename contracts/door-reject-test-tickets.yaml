@@ -1,3 +1,11 @@
+# Gate environment (contract.py gate, residue guard and build assertion A15). Without these the
+# residue guard fails open and the build reads live Sanity:
+#   NEXT_PUBLIC_SANITY_PROJECT_ID, NEXT_PUBLIC_SANITY_DATASET  (read from apphosting.yaml, as
+#       .agent/memory/project/specs/nos-content-standard/checks/build.sh does)
+#   NEXT_PUBLIC_SAOC_SITE_URL, NEXT_PUBLIC_NOS_SITE_URL, SITE_URL  (the site-URL values in apphosting.yaml)
+#   SANITY_FIXTURE_MODE=replay
+#   SANITY_FIXTURE_DIR=$PWD/.agent/memory/project/specs/nos-content-standard/fixtures/sanity
+#   (unset K_SERVICE; the fixture loader refuses replay on the hosted runtime)
 schema: athanor.contract/v1
 slug: door-reject-test-tickets
 goal: Reject sandbox and unmarked tickets at the door as soon as the existing launch flag switches to live, while preserving committee scanner testing.
@@ -87,3 +95,13 @@ assertions:
       target: contracts/golden/door-reject-test-tickets/codex-qa-prompt.md
       timeout_seconds: 1300
       required: true
+    - id: A17
+      description: BrowserAgent against the deployed site (optional - the door scanner is admin-only; the deployed check runs after rollout, and the offline route and banner test A3 covers rendering)
+      type: browser_deployed_check
+      target: .agent/memory/scratch/door-reject-test-tickets-browser-manifest.json
+      required: false
+    - id: A18
+      description: gws inbox check (not applicable - no email is sent or changed)
+      type: gws_inbox_check
+      target: .agent/memory/scratch/door-reject-test-tickets-gws-manifest.json
+      required: false
