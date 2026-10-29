@@ -199,23 +199,44 @@ def check_extraction_verbatim() -> None:
     need("Download ticket" not in comp, "button label stays a prop, not a literal in the list")
 
 
+COPY_ALLOWLIST = {"Tickets", "Download ticket"}
+SKIP_ATTRS = {"className", "href", "src", "route", "key", "width", "height", "id", "type", "rel", "target", "role", "name", "variant", "kind"}
+
+
+def rendered_strings(src: str) -> set[str]:
+    """Every piece of text the file can put on a page: JSX text nodes, string/template attribute values
+    (alt, title, aria-label, label, ...), and JSX-expression string literals. Comments and imports are removed."""
+    code = re.sub(r"/\*.*?\*/", "", src, flags=re.S)
+    code = "\n".join(l for l in code.split("\n") if not l.strip().startswith(("//", "import ")) and "anchor:" not in l)
+    found: set[str] = set()
+    for m in re.finditer(r"(?<![=\-])>([^<>{}]*[A-Za-z][^<>{}]*)(?=[<{])", code):
+        found.add(m.group(1))
+    for m in re.finditer(r"\}([^<>{}\n]*[A-Za-z][^<>{}\n]*)(?=<)", code):
+        if ";" not in m.group(1) and " = " not in m.group(1):  # code after a closing brace, not JSX text
+            found.add(m.group(1))
+    for m in re.finditer(r"\b([A-Za-z][\w-]*)=(?:\"([^\"]*)\"|\{\s*'([^']*)'\s*\}|\{`([^`]*)`\})", code):
+        if m.group(1) in SKIP_ATTRS or m.group(1).startswith("data-"):
+            continue
+        for g in m.groups()[1:]:
+            if g:
+                found.update(re.split(r"\$\{[^}]*\}", g))
+    for m in re.finditer(r"\{\s*['\"]([^'\"]*[A-Za-z][^'\"]*)['\"]\s*\}", code):
+        found.add(m.group(1))
+    return {" ".join(t.split()) for t in found if re.search(r"[A-Za-z]", t)}
+
+
 def check_no_new_copy() -> None:
+    """Effect check on what is RENDERED: the set of text a recover-page file can show must be a subset of the
+    confirmation page's text at the merge base (strings that already shipped) plus an explicit allowlist."""
     base = merge_base()
-    literal = re.compile(r"'([^'\n]{3,})'|\"([^\"\n]{3,})\"|>([A-Za-z][^<>{}\n]{3,})<")
-    found = []
-    for rel in (PAGE, LIST, ACCESS):
-        for line in read(rel).split("\n"):
-            s = line.strip()
-            if s.startswith(("//", "*", "/*", "import ")) or "console." in line or "anchor:" in line or "Error(" in line or "className" in s and "=" in s and "'" not in s:
+    base_text = " ".join(git("show", f"{base}:{CONFIRM}").split())
+    new_text = []
+    for rel in (PAGE, LIST):
+        for text in sorted(rendered_strings(read(rel))):
+            if text in COPY_ALLOWLIST or text in base_text:
                 continue
-            for m in literal.finditer(line):
-                text = next(g for g in m.groups() if g)
-                if text.count(" ") < 1 or not re.fullmatch(r"[A-Z][A-Za-z0-9 ,.'’!?:;()\-—/]+", text):
-                    continue
-                present = subprocess.run(["git", "grep", "-F", "-q", "--", text, base, "--", "app", "components", "lib"], cwd=ROOT, capture_output=True).returncode == 0
-                if not present:
-                    found.append(f"{rel}: {text!r}")
-    need(not found, "new user-facing copy (docs/rules/no-invention.md): " + "; ".join(found))
+            new_text.append(f"{rel}: {text!r}")
+    need(not new_text, "rendered text that is not on the base confirmation page nor allowlisted (docs/rules/no-invention.md): " + "; ".join(new_text))
 
 
 def check_no_resend() -> None:

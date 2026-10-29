@@ -82,6 +82,10 @@ MUTATIONS = [
     ("P10", PAGE, "append", None, "", "\nexport async function generateStaticParams() { return []; }\n", wiring("page-wiring")),
     ("P11", PAGE, "first", None, "process.env.RECOVERY_TOKEN_SECRET", "'fixed-secret'", wiring("page-wiring")),
     ("P12", PAGE, "first", None, 'title="Tickets"', 'title="Your recovered tickets are here"', wiring("no-new-copy")),
+    ("P16", PAGE, "first", None, "<ConfirmedTicketList", "<p>Resend</p><ConfirmedTicketList", wiring("no-new-copy")),
+    ("P17", PAGE, "first", None, "<ConfirmedTicketList", "<a aria-label=\"Resend\" /><ConfirmedTicketList", wiring("no-new-copy")),
+    ("P18", PAGE, "first", None, "<ConfirmedTicketList", "{'Resend'}<ConfirmedTicketList", wiring("no-new-copy")),
+    ("O05", LIST, "first", None, "<DownloadTicketButton", "<span>Resend</span><DownloadTicketButton", wiring("no-new-copy")),
     ("P13", PAGE, "append", None, "", "\nimport { sendEmail } from '@/lib/email';\n", wiring("no-resend")),
     ("P14", "app/api/tickets/resend-my-tickets/route.ts", "create", None, "", "export const POST = 1;\n", wiring("no-resend")),
     # --- lib/orders.ts, components, confirmation page
