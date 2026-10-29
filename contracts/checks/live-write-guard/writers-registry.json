@@ -1,6 +1,12 @@
 {
  "schema": "saoc.writer-registry/v1",
  "scripts": {
+  ".agent/memory/project/specs/nos-order-recovery/goldens/run_mutations.py": {
+   "class": "STATIC_FP",
+   "match": "def mutate\\(text: str, mode: str",
+   "note": "mutate() is a local string-edit helper that rewrites repo source text and restores it byte for byte; no Sanity, Firestore, Auth or network call exists in the file",
+   "target": "local source files only"
+  },
   ".agent/memory/project/specs/nos-order-recovery/goldens/check-recover-live.mts": {
    "class": "SANDBOX_SCRUBBED",
    "match": "startServer\\(\\{ port: PORT",
