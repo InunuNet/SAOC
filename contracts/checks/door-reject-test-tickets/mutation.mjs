@@ -9,7 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
-const files = ['lib/checkin.ts', 'lib/checkin-test-ticket-guard.ts', 'lib/tickets-constants.ts', 'lib/ticket-issuance-mode.ts', 'lib/payments/ozow.ts', 'lib/payments/payfast.ts', 'lib/checkout-reservation.ts', 'lib/orders.ts', 'lib/payments/pending-hold.ts'];
+const files = ['lib/checkin.ts', 'lib/checkin-test-ticket-guard.ts', 'lib/tickets-constants.ts', 'lib/ticket-issuance-mode.ts', 'lib/payments/sandbox-mode.ts', 'lib/checkout-reservation.ts', 'lib/orders.ts', 'lib/payments/pending-hold.ts'];
 const mutants = [
   { name: 'control', file: null },
   { name: 'guard-truthy-rule', file: 'lib/checkin-test-ticket-guard.ts', from: /input\.issuedInTestMode !== false/, to: 'input.issuedInTestMode === true' },
@@ -18,8 +18,6 @@ const mutants = [
   { name: 'stamp-always-false', file: 'lib/ticket-issuance-mode.ts', from: /isTicketingTestMode\(\) \|\| PAYMENT_GATEWAYS_SANDBOX_ONLY/, to: 'false' },
   { name: 'settlement-rewrites-order-marker', file: 'lib/orders.ts', from: /status: 'paid',\n      gatewayPaymentId: input\.gatewayPaymentId,/, to: "status: 'paid',\n      issuedInTestMode: false,\n      gatewayPaymentId: input.gatewayPaymentId," },
   { name: 'settlement-rewrites-position-marker', file: 'lib/orders.ts', from: /status: 'paid',\n        purchasedAt: input\.now,/, to: "status: 'paid',\n        issuedInTestMode: false,\n        purchasedAt: input.now," },
-  { name: 'ozow-flag-live-while-sandbox', file: 'lib/payments/ozow.ts', from: /OZOW_SANDBOX_MODE = true;/, to: 'OZOW_SANDBOX_MODE = false;' },
-  { name: 'payfast-flag-live-while-sandbox', file: 'lib/payments/payfast.ts', from: /PAYFAST_SANDBOX_MODE = true;/, to: 'PAYFAST_SANDBOX_MODE = false;' },
   { name: 'issuance-ignores-payfast-flag', file: 'lib/ticket-issuance-mode.ts', from: / \|\| PAYFAST_SANDBOX_MODE;/, to: ';' },
   { name: 'stamp-drops-payfast', file: 'lib/ticket-issuance-mode.ts', from: /OZOW_SANDBOX_MODE \|\| PAYFAST_SANDBOX_MODE/, to: 'OZOW_SANDBOX_MODE' },
   { name: 'stamp-drops-ozow', file: 'lib/ticket-issuance-mode.ts', from: /OZOW_SANDBOX_MODE \|\| PAYFAST_SANDBOX_MODE/, to: 'PAYFAST_SANDBOX_MODE' },

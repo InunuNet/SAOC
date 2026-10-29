@@ -97,13 +97,18 @@ Both builders and `createOrderWithPosition` use `isIssuanceTestMode()`. The door
 `false` only in the reviewed go-live commit, with the adapters. `gateway-coupling.sh` fails the build if
 the flag is `false` while `lib/payments/ozow.ts` or `payfast.ts` still show a sandbox marker, so the flip
 cannot happen alone. Stamp matrix (golden): `false` only in the row where both switches are live.
-AMENDMENT (orchestrator decision, security standing condition): the hand flag is deleted. Allowed `lib/payments`
-edits, and only these: `export const OZOW_SANDBOX_MODE = true;` and `const OZOW_IS_TEST = String(OZOW_SANDBOX_MODE);`
-in ozow.ts, and `export const PAYFAST_SANDBOX_MODE = true;` in payfast.ts (comments aside). `PAYMENT_GATEWAYS_SANDBOX_ONLY`
-= `OZOW_SANDBOX_MODE || PAYFAST_SANDBOX_MODE`. `adapter-guard.mjs diff` rejects any other change in `lib/payments`; `coupling` rejects
-a flag that says live next to sandbox URLs or credentials; `adapter-mutation.mjs` proves both bite. The launch
-constant stays true; this feature does not launch payments. At go-live the adapter flags are flipped together with
-the credentials and URLs they guard, in the reviewed go-live commit.
+AMENDMENT 2 (orchestrator decision; supersedes the first amendment, which put the flags in the adapters and broke
+`pnpm build`: builders -> ticket-issuance-mode -> payfast.ts -> node:dns reached a client bundle). The flags live in a new
+import-free leaf, `lib/payments/sandbox-mode.ts`: `export const OZOW_SANDBOX_MODE = true;` and
+`export const PAYFAST_SANDBOX_MODE = true;`. Allowed `lib/payments` changes, and only these (comments aside):
+that file; in ozow.ts the flag import and `const OZOW_IS_TEST = String(OZOW_SANDBOX_MODE);` replacing
+`const OZOW_IS_TEST = 'true';`; in payfast.ts the flag import and, at the start of `initiate`,
+`if (!PAYFAST_SANDBOX_MODE) return { ok: false, reason: 'not-configured' };` (fail closed). `lib/ticket-issuance-mode.ts`
+imports both flags from the leaf only and computes `PAYMENT_GATEWAYS_SANDBOX_ONLY = OZOW_SANDBOX_MODE || PAYFAST_SANDBOX_MODE`.
+`adapter-guard.mjs` has three modes: `coupling` (leaf, stamp, IsTest and fail-closed agree), `client-safe` (the stamp module
+imports nothing from lib/payments but the leaf, no node: module, no dynamic import) and `diff` (rejects any other
+lib/payments change). `adapter-mutation.mjs` proves each bites. The flags stay true; this feature does not launch
+payments. At go-live the flags are flipped together with the credentials and URLs they guard.
 
 A reservation is stamped at creation and never relabelled (settlement preserves it, #69 behaviour). A real
 paid order therefore carries `false` exactly when it was created after the full go-live. Ozow
@@ -117,7 +122,7 @@ should cancel them (hand-off 2).
 
 1. In a subshell: `git merge origin/main` into fix/door-reject-test-tickets (no rebase, no force-push).
    Expect no conflicts; confirm the table above.
-2. Add `lib/ticket-issuance-mode.ts` exactly as above.
+2. Add `lib/ticket-issuance-mode.ts` and `lib/payments/sandbox-mode.ts` as in AMENDMENT 2.
 3. `lib/checkout-reservation.ts`: replace the import with `isIssuanceTestMode` and the two lines
    `const issuedInTestMode = isTicketingTestMode();` with `isIssuanceTestMode()`. Update the header comment
    (lines 11-13) to name the new module. NOTHING else in this file.

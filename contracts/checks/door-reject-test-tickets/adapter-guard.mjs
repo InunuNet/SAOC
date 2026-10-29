@@ -1,72 +1,92 @@
-// F4 adapter guard (SEC-06). Two static checks that tie the stamp to what the payment adapters really do.
-//   node adapter-guard.mjs coupling [root]      the adapter-owned sandbox constants, the stamp and IsTest agree
-//   node adapter-guard.mjs diff [diffFile]      the only lib/payments change is the two exported constants and IsTest reading the flag
-// Exit 0 pass, 1 fail with reasons on stderr. adapter-mutation.mjs proves both checks bite.
+// F4 adapter guard (SEC-06). Static checks that tie the issuance stamp to what the payment adapters really do.
+//   node adapter-guard.mjs coupling [root]      sandbox-mode.ts, the stamp, Ozow IsTest and PayFast initiate agree
+//   node adapter-guard.mjs client-safe [root]   lib/ticket-issuance-mode.ts reaches lib/payments only through sandbox-mode
+//   node adapter-guard.mjs diff [diffFile]      the only lib/payments change is the leaf module, the flag reads and PayFast's fail-closed branch
+// Exit 0 pass, 1 fail with reasons on stderr. adapter-mutation.mjs proves each check bites.
 import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 
 const OZOW = 'lib/payments/ozow.ts';
 const PAYFAST = 'lib/payments/payfast.ts';
+const LEAF = 'lib/payments/sandbox-mode.ts';
 const ISSUANCE = 'lib/ticket-issuance-mode.ts';
-const ALLOWED_REMOVED = ["const OZOW_IS_TEST = 'true';"];
-const REQUIRED_ADDED = [
-  'export const OZOW_SANDBOX_MODE = true;',
-  'const OZOW_IS_TEST = String(OZOW_SANDBOX_MODE);',
-  'export const PAYFAST_SANDBOX_MODE = true;',
-];
+const LEAF_IMPORT = "'@/lib/payments/sandbox-mode'";
+const PAYFAST_FAIL_CLOSED = "if (!PAYFAST_SANDBOX_MODE) return { ok: false, reason: 'not-configured' };";
+
+// Every non-comment line the branch may add or remove under lib/payments, per file. Each must occur exactly once.
+const ADDED = {
+  [LEAF]: ['export const OZOW_SANDBOX_MODE = true;', 'export const PAYFAST_SANDBOX_MODE = true;'],
+  [OZOW]: [`import { OZOW_SANDBOX_MODE } from ${LEAF_IMPORT};`, 'const OZOW_IS_TEST = String(OZOW_SANDBOX_MODE);'],
+  [PAYFAST]: [`import { PAYFAST_SANDBOX_MODE } from ${LEAF_IMPORT};`, PAYFAST_FAIL_CLOSED],
+};
+const REMOVED = { [OZOW]: ["const OZOW_IS_TEST = 'true';"] };
 
 export function checkCoupling(read) {
   const errors = [];
-  const issuance = read(ISSUANCE), ozow = read(OZOW), payfast = read(PAYFAST);
+  const issuance = read(ISSUANCE), ozow = read(OZOW), payfast = read(PAYFAST), leaf = read(LEAF);
+  const ozowFlag = leaf.match(/^export const OZOW_SANDBOX_MODE = (true|false);$/m);
+  const payfastFlag = leaf.match(/^export const PAYFAST_SANDBOX_MODE = (true|false);$/m);
+  if (!ozowFlag) errors.push(`${LEAF}: export const OZOW_SANDBOX_MODE must be a literal boolean`);
+  if (!payfastFlag) errors.push(`${LEAF}: export const PAYFAST_SANDBOX_MODE must be a literal boolean`);
+  if (/^\s*(import|export\s+\*|export\s*\{[^}]*\}\s*from)\b|\brequire\(|\bprocess\./m.test(leaf)) errors.push(`${LEAF}: must import nothing and read no env`);
   if (!/^export const PAYMENT_GATEWAYS_SANDBOX_ONLY = OZOW_SANDBOX_MODE \|\| PAYFAST_SANDBOX_MODE;$/m.test(issuance)) errors.push(`${ISSUANCE}: PAYMENT_GATEWAYS_SANDBOX_ONLY must be exactly OZOW_SANDBOX_MODE || PAYFAST_SANDBOX_MODE (no hand-set flag)`);
-  if (!/import\s*\{[^}]*\bOZOW_SANDBOX_MODE\b[^}]*\}\s*from\s*'@\/lib\/payments\/ozow'/.test(issuance)) errors.push(`${ISSUANCE}: must import OZOW_SANDBOX_MODE from '@/lib/payments/ozow'`);
-  if (!/import\s*\{[^}]*\bPAYFAST_SANDBOX_MODE\b[^}]*\}\s*from\s*'@\/lib\/payments\/payfast'/.test(issuance)) errors.push(`${ISSUANCE}: must import PAYFAST_SANDBOX_MODE from '@/lib/payments/payfast'`);
-  const ozowFlag = ozow.match(/^export const OZOW_SANDBOX_MODE = (true|false);$/m);
-  const payfastFlag = payfast.match(/^export const PAYFAST_SANDBOX_MODE = (true|false);$/m);
-  if (!ozowFlag) errors.push(`${OZOW}: export const OZOW_SANDBOX_MODE missing`);
-  if (!payfastFlag) errors.push(`${PAYFAST}: export const PAYFAST_SANDBOX_MODE missing`);
-  if (!/^const OZOW_IS_TEST = String\(OZOW_SANDBOX_MODE\);$/m.test(ozow)) errors.push(`${OZOW}: OZOW_IS_TEST must read OZOW_SANDBOX_MODE`);
+  if (!new RegExp(`import\\s*\\{[^}]*\\bOZOW_SANDBOX_MODE\\b[^}]*\\}\\s*from\\s*${LEAF_IMPORT}`).test(issuance) || !new RegExp(`import\\s*\\{[^}]*\\bPAYFAST_SANDBOX_MODE\\b[^}]*\\}\\s*from\\s*${LEAF_IMPORT}`).test(issuance)) errors.push(`${ISSUANCE}: must import both flags from ${LEAF_IMPORT}`);
+  if (!ozow.includes(ADDED[OZOW][0]) || /^(export )?const OZOW_SANDBOX_MODE\b/m.test(ozow)) errors.push(`${OZOW}: must import OZOW_SANDBOX_MODE from the leaf module and not redefine it`);
+  if (!ozow.includes(ADDED[OZOW][1])) errors.push(`${OZOW}: OZOW_IS_TEST must be String(OZOW_SANDBOX_MODE)`);
   if (!/IsTest: OZOW_IS_TEST,/.test(ozow)) errors.push(`${OZOW}: the initiate payload must send IsTest: OZOW_IS_TEST`);
-  // A flag that says live while the adapter still names sandbox hosts, URLs or credentials is a lie.
+  if (!payfast.includes(ADDED[PAYFAST][0]) || /^(export )?const PAYFAST_SANDBOX_MODE\b/m.test(payfast)) errors.push(`${PAYFAST}: must import PAYFAST_SANDBOX_MODE from the leaf module and not redefine it`);
+  // Fail closed: with the flag false PayFast must refuse before it builds any sandbox form.
+  const initiate = payfast.indexOf('async initiate(');
+  const guard = payfast.indexOf(PAYFAST_FAIL_CLOSED);
+  const sandboxForm = payfast.indexOf('processUrl: PAYFAST_SANDBOX_PROCESS_URL');
+  if (guard < 0 || initiate < 0 || guard < initiate || (sandboxForm >= 0 && guard > sandboxForm)) errors.push(`${PAYFAST}: initiate must start with the fail-closed PAYFAST_SANDBOX_MODE branch before any sandbox form`);
+  // A flag that says live while Ozow still names sandbox credentials is a lie.
   if (ozowFlag?.[1] === 'false' && /OZOW_SANDBOX_(?!MODE\b)[A-Z_]+/.test(ozow)) errors.push(`${OZOW}: OZOW_SANDBOX_MODE is false but the adapter still uses OZOW_SANDBOX_* credentials`);
-  if (payfastFlag?.[1] === 'false' && /PAYFAST_SANDBOX_(?!MODE\b)[A-Z_]+/.test(payfast)) errors.push(`${PAYFAST}: PAYFAST_SANDBOX_MODE is false but the adapter still uses the PayFast sandbox URLs or credentials`);
+  return errors;
+}
+
+export function checkClientSafe(read) {
+  const errors = [];
+  const source = read(ISSUANCE);
+  for (const match of source.matchAll(/(?:from\s*|import\s*\(\s*|require\(\s*)'([^']+)'/g)) {
+    const spec = match[1];
+    if (/(^|\/)payments(\/|$)/.test(spec) && spec !== '@/lib/payments/sandbox-mode') errors.push(`${ISSUANCE}: imports ${spec}; only @/lib/payments/sandbox-mode is allowed`);
+    if (/^node:/.test(spec) || /(^|\/)payfast$|(^|\/)ozow$/.test(spec)) errors.push(`${ISSUANCE}: imports ${spec}, which can reach an adapter or a Node built-in`);
+  }
   return errors;
 }
 
 export function checkDiff(diffText) {
   const errors = [];
-  const files = new Set();
-  const added = [], removed = [];
+  const added = new Map(), removed = new Map();
+  let file = null;
   for (const line of diffText.split('\n')) {
-    if (line.startsWith('+++ ') || line.startsWith('--- ')) {
-      const name = line.slice(4).replace(/^[ab]\//, '');
-      if (name !== '/dev/null') files.add(name);
-    } else if (line.startsWith('+')) added.push(line.slice(1));
-    else if (line.startsWith('-')) removed.push(line.slice(1));
+    if (line.startsWith('--- ')) continue;
+    if (line.startsWith('+++ ')) {
+      file = line.slice(4).replace(/^[ab]\//, '');
+      if (![OZOW, PAYFAST, LEAF].includes(file)) errors.push(`unexpected file in lib/payments diff: ${file}`);
+    } else if (line.startsWith('+')) added.set(file, [...(added.get(file) ?? []), line.slice(1).trim()]);
+    else if (line.startsWith('-')) removed.set(file, [...(removed.get(file) ?? []), line.slice(1).trim()]);
   }
-  for (const file of files) if (file !== OZOW && file !== PAYFAST) errors.push(`unexpected file in lib/payments diff: ${file}`);
   const isComment = (text) => /^\s*(\/\/|\/\*|\*)/.test(text) || text.trim() === '';
-  for (const text of removed) if (!ALLOWED_REMOVED.includes(text)) errors.push(`removed line not allowed: ${text}`);
-  for (const text of added) if (!REQUIRED_ADDED.includes(text) && !isComment(text)) errors.push(`added line not allowed: ${text}`);
-  for (const text of ALLOWED_REMOVED) if (removed.filter((r) => r === text).length !== 1) errors.push(`expected exactly one removal of: ${text}`);
-  for (const text of REQUIRED_ADDED) if (added.filter((a) => a === text).length !== 1) errors.push(`expected exactly one addition of: ${text}`);
+  for (const [name, lines] of added) for (const text of lines) if (!(ADDED[name] ?? []).includes(text) && !isComment(text)) errors.push(`${name}: added line not allowed: ${text}`);
+  for (const [name, lines] of removed) for (const text of lines) if (!(REMOVED[name] ?? []).includes(text)) errors.push(`${name}: removed line not allowed: ${text}`);
+  for (const [name, lines] of Object.entries(ADDED)) for (const text of lines) if ((added.get(name) ?? []).filter((a) => a === text).length !== 1) errors.push(`${name}: expected exactly one addition of: ${text}`);
+  for (const [name, lines] of Object.entries(REMOVED)) for (const text of lines) if ((removed.get(name) ?? []).filter((r) => r === text).length !== 1) errors.push(`${name}: expected exactly one removal of: ${text}`);
   return errors;
 }
 
-if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith('adapter-guard.mjs')) {
+if (process.argv[1]?.endsWith('adapter-guard.mjs')) {
   const [mode, arg] = process.argv.slice(2);
+  const reader = () => { const root = path.resolve(arg ?? '.'); return (file) => readFileSync(path.join(root, file), 'utf8'); };
   let errors;
-  if (mode === 'coupling') {
-    const root = path.resolve(arg ?? '.');
-    errors = checkCoupling((file) => readFileSync(path.join(root, file), 'utf8'));
-  } else if (mode === 'diff') {
-    const text = arg ? readFileSync(arg, 'utf8') : spawnSync('git', ['diff', '-U0', 'origin/main', '--', 'lib/payments'], { encoding: 'utf8' }).stdout;
+  if (mode === 'coupling') errors = checkCoupling(reader());
+  else if (mode === 'client-safe') errors = checkClientSafe(reader());
+  else if (mode === 'diff') {
+    const text = arg ? readFileSync(arg, 'utf8') : spawnSync('git', ['diff', '-U0', '--no-renames', 'origin/main', '--', 'lib/payments'], { encoding: 'utf8' }).stdout;
     errors = checkDiff(text);
-  } else {
-    console.error('usage: adapter-guard.mjs coupling [root] | diff [diffFile]');
-    process.exit(2);
-  }
+  } else { console.error('usage: adapter-guard.mjs coupling|client-safe [root] | diff [diffFile]'); process.exit(2); }
   for (const error of errors) console.error(error);
   process.exit(errors.length ? 1 : 0);
 }

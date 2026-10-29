@@ -15,16 +15,15 @@ const golden = JSON.parse(readFileSync(path.resolve(here, '../../golden/door-rej
 const stamp = { seconds: 1, nanoseconds: 0 };
 
 // Loads real source through an explicit allowlist. `gatewaySandboxOnly` is served to
-// lib/ticket-issuance-mode.ts as both adapters' sandbox flags, so a go-live commit can be simulated
-// without editing the repo. The adapters' real flags are checked by the 'adapter flags' test.
+// lib/ticket-issuance-mode.ts as both adapters' sandbox flags (lib/payments/sandbox-mode.ts), so a go-live commit can be simulated
+// without editing the repo. The real flags and their coupling to the adapters are checked by adapter-guard.mjs (assertions A12, A14, A19, A20).
 function loader({ testMode, gatewaySandboxOnly = true, ozowSandbox = gatewaySandboxOnly, payfastSandbox = gatewaySandboxOnly, db } = {}) {
   const cache = new Map();
   const stubs = {
     'firebase-admin/firestore': { getFirestore: () => db, Timestamp: { now: () => stamp } },
     '@/lib/firebase-admin': { initAdmin: () => ({}) },
     '@/lib/ticketing-test-mode': { isTicketingTestMode: () => testMode },
-    '@/lib/payments/ozow': { OZOW_SANDBOX_MODE: ozowSandbox },
-    '@/lib/payments/payfast': { PAYFAST_SANDBOX_MODE: payfastSandbox },
+    '@/lib/payments/sandbox-mode': { OZOW_SANDBOX_MODE: ozowSandbox, PAYFAST_SANDBOX_MODE: payfastSandbox },
     '@/lib/qr': { generateBookingRefQrDataUri: () => { throw Error('QR outside test scope'); } },
   };
   const allowed = new Set(['lib/checkin.ts', 'lib/checkin-test-ticket-guard.ts', 'lib/tickets-constants.ts', 'lib/ticket-issuance-mode.ts', 'lib/checkout-reservation.ts', 'lib/orders.ts', 'lib/payments/pending-hold.ts']);
@@ -139,25 +138,4 @@ test('settlement: marking an order paid never rewrites the issued test marker', 
       assert.equal(Object.hasOwn(patch, 'issuedInTestMode'), false, `${id} patch must not carry the marker`);
     }
   }
-});
-
-// Reads an adapter's real source (never a stub) so a flag hand-flipped to false while the adapter
-// still carries sandbox behaviour is caught. A flag that is not literally `true` or `false` fails.
-const ADAPTERS = [
-  { file: 'lib/payments/ozow.ts', flag: 'OZOW_SANDBOX_MODE', sandboxMarkers: [/IsTest: OZOW_IS_TEST/, /OZOW_SANDBOX_PRIVATE_KEY/, /OZOW_SANDBOX_SITE_CODE/] },
-  { file: 'lib/payments/payfast.ts', flag: 'PAYFAST_SANDBOX_MODE', sandboxMarkers: [/processUrl: PAYFAST_SANDBOX_PROCESS_URL/, /PAYFAST_SANDBOX_MERCHANT_ID/, /PAYFAST_SANDBOX_PASSPHRASE/] },
-];
-
-test('adapter flags: an adapter may only declare itself live once no sandbox behaviour is left in it', () => {
-  for (const adapter of ADAPTERS) {
-    const source = readFileSync(path.join(root, adapter.file), 'utf8');
-    const match = source.match(new RegExp(`^export const ${adapter.flag} = (true|false);$`, 'm'));
-    assert.ok(match, `${adapter.file}: ${adapter.flag} must be declared as a literal boolean`);
-    if (match[1] === 'true') continue;
-    for (const marker of adapter.sandboxMarkers) {
-      assert.ok(!marker.test(source), `${adapter.file}: ${adapter.flag} is false but sandbox behaviour ${marker} remains`);
-    }
-  }
-  const issuance = readFileSync(path.join(root, 'lib/ticket-issuance-mode.ts'), 'utf8');
-  assert.match(issuance, /^export const PAYMENT_GATEWAYS_SANDBOX_ONLY = OZOW_SANDBOX_MODE \|\| PAYFAST_SANDBOX_MODE;$/m);
 });
