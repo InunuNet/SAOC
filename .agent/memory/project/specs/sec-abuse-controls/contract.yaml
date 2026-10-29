@@ -1,0 +1,74 @@
+schema: athanor.contract/v1
+slug: sec-abuse-controls
+goal: Checkout, the public forms and the payment webhooks are protected by a durable cross-instance limiter, bounded seat holds and a capped webhook body, without breaking any legitimate purchase or notification.
+created_at: '2026-10-29'
+autonomy: high
+
+features:
+  - id: F3
+    name: abuse controls (SEC-02 checkout seat-hold abuse, SEC-15 durable limiter, SEC-17 webhook body cap)
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/sec-abuse-controls/goldens/abuse-limiter.golden.ts
+  - .agent/memory/project/specs/sec-abuse-controls/goldens/checkout-holds.golden.ts
+  - .agent/memory/project/specs/sec-abuse-controls/goldens/webhook-body.golden.ts
+  - .agent/memory/project/specs/sec-abuse-controls/goldens/reservation-actor.golden.ts
+  - .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py
+  - .agent/memory/project/specs/sec-abuse-controls/goldens/run_mutations.py
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: limiter semantics - Nth allowed, N+1 denied without a write, exact Retry-After, sliding window, cross-instance shared count, weights, hashed key and TTL field, fail closed, IPv6 /64 actor key
+      command: pnpm exec tsx .agent/memory/project/specs/sec-abuse-controls/goldens/abuse-limiter.golden.ts
+    - id: A2
+      description: checkout hold budget - frozen limit values, live-only seat counting, cap boundaries, legitimate carts never refused
+      command: pnpm exec tsx .agent/memory/project/specs/sec-abuse-controls/goldens/checkout-holds.golden.ts
+    - id: A3
+      description: webhook body cap - declared length refused unread, chunked stream cut and cancelled at the cap, lying Content-Length, worst-case notification fits
+      command: pnpm exec tsx .agent/memory/project/specs/sec-abuse-controls/goldens/webhook-body.golden.ts
+    - id: A4
+      description: reservation docs carry clientKey and buyerKey on the order and every position, null (never undefined) when absent
+      command: pnpm exec tsx .agent/memory/project/specs/sec-abuse-controls/goldens/reservation-actor.golden.ts
+    - id: A5
+      description: checkout wiring - per-IP limit before request.json, per-buyer limit before any Sanity or gateway work, hold budget inside the reservation transaction after the replay branch, actor stamp passed to the builder
+      command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py checkout-order
+    - id: A6
+      description: contact, newsletter, ticket status, ticket pdf and checkout no longer use the per-instance limiter and call the durable one
+      command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py no-memory-limiter
+    - id: A7
+      description: both notification handlers read the body through the capped reader before verification, return 413, and no longer call request.text
+      command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py webhook-order
+    - id: A8
+      description: the limiter imports firebase-admin lazily
+      command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py limiter-lazy
+    - id: A9
+      description: firestore.indexes.json declares the TTL policy on abuseLimits.expireAt
+      command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py ttl-policy
+    - id: A10
+      description: the diff touches no SAOC-lane file (vendor, events, sponsors, admin, sanity are hand-offs)
+      command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py lanes
+    - id: A11
+      description: reconcile route, orders ledger, payment adapters, proxy, ticket constants (30 minute hold, 20 line items), tickets data and apphosting.yaml are unchanged
+      command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py unchanged
+    - id: A12
+      description: typecheck
+      command: pnpm exec tsc --noEmit
+    - id: A13
+      description: eslint on the touched trees
+      command: pnpm exec eslint lib app/api/tickets app/api/contact app/api/newsletter
+    - id: A14
+      description: production build
+      command: pnpm build
+      timeout_seconds: 900
+    - id: A15
+      description: mutation proof - 18 mutations across limiter, budget, webhook cap, actor stamp and wiring are each killed by a check above, files restored byte for byte
+      command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/run_mutations.py
+      timeout_seconds: 900
+    - id: A16
+      description: cross-model adversarial review of the diff
+      type: codex_qa
+      target: .agent/memory/project/specs/sec-abuse-controls/codex-qa-prompt.md
+      timeout_seconds: 1500
