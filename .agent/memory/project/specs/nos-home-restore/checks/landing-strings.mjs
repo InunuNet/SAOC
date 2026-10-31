@@ -8,7 +8,9 @@ export const SOURCE = `${SPEC}/goldens/sources/landing-page-v1.0.md`;
 // Same de-markdown rule as nos-content-standard/checks/gate-standard.mjs spUnmd.
 export const unmd = (b) => b.replace(/\\([.\-_*#>()[\]!])/g, '$1').replace(/\*\*|__/g, '').replace(/(^|[^*])\*([^*\n]+)\*/g, '$1$2').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/\s+/g, ' ').trim();
 export const norm = (t) => t.replace(/\s+/g, ' ').trim();
-const strip = (l) => unmd(l.replace(/^\s*(\*|\+|-)\s+(\+\s+)?/, ''));
+// Override, Brad 2026-10-31: her doc still says "Ten judging groups" over 13 groups; the site says Thirteen.
+const GROUPS_HEADING = 'Thirteen judging groups';
+const strip =(l) => unmd(l.replace(/^\s*(\*|\+|-)\s+(\+\s+)?/, ''));
 
 export function parseLanding(path = SOURCE) {
   const lines = readFileSync(path, 'utf8').split('\n');
@@ -35,7 +37,7 @@ export function parseLanding(path = SOURCE) {
   const startPlanning = unmd(lines[find(/^\*\*Start planning your entry now\.\*\*/)]);
   const registerHere = unmd(lines[find(/^Register Here – /)]).split(' – ')[0];
   const cta = unmd(lines[find(/^The 19th National Orchid Show opens on/)]);
-  return { tagline, para1, para2, figures, groupsHeading: 'Ten judging groups', groups, plantEntryHeading: unmd(lines[find(/^\*\*Plant Entry for SAOC Members\*\*/)]), stages, startPlanning, registerHere, cta };
+  return { tagline, para1, para2, figures, groupsHeading: GROUPS_HEADING, groups, plantEntryHeading: unmd(lines[find(/^\*\*Plant Entry for SAOC Members\*\*/)]), stages, startPlanning, registerHere, cta };
 }
 
 /** Her editorial notes to us: none may ever render. Each is a substring of the source. */

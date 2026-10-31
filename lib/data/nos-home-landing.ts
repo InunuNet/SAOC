@@ -51,7 +51,8 @@ export const LANDING_FIGURES: readonly LandingFigure[] = [
   },
 ];
 
-export const JUDGING_GROUPS_HEADING = 'Ten judging groups';
+// Departs from her doc v1.0 ("Ten judging groups") by Brad's instruction of 2026-10-31.
+export const JUDGING_GROUPS_HEADING = 'Thirteen judging groups';
 
 export const JUDGING_GROUPS: readonly JudgingGroup[] = [
   {
