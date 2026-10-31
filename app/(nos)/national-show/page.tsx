@@ -116,14 +116,13 @@ const CLOSING = "Whether your passion lies in conservation, scientific discovery
 
 // HM-G1 (NOS Design, comms.md): the home keeps its approved rhythm and takes Lee-Ann's words. Every
 // sentence below is verbatim from About v1.2, What to Expect v1.0 or FAQ v1.0 (docs/rules/no-invention.md):
-// her About keeps its hyphen ("Show - Western Cape"), What to Expect its en dash. The section h2s Visit,
+// her About keeps its hyphen ("Show - Western Cape"), What to Expect its en dash. The section h2s
 // Programme and Exhibit & trade are the nav group names; register and link labels are read from the nav.
 // "who\u2019s" in FAQ 26 is her spelling (owner item vvvv).
 const FACT_LABELS = ['Dates', 'Venue'] as const;
 const ABOUT_HEADING = '2027 South African National Orchid Show';
 const ABOUT_LINK_LABEL = 'About the show';
 const WTE_LINK_LABEL = 'What to expect';
-const VISIT_IDS = ['about-the-show', 'what-to-expect', 'plan-your-visit', 'faq', 'tickets'] as const;
 const EXHIBIT_IDS = ['exhibitors', 'vendors', 'international-guests'] as const;
 const PROGRAMME_ROWS = [
   { id: 'symposium', line: SYMPOSIUM_LINE },
@@ -376,25 +375,6 @@ export default async function NationalShowPage() {
         <Link href={nosPath(aboutLink.href)} className="nos-hm-link">
           {ABOUT_LINK_LABEL} <span aria-hidden="true">&rarr;</span>
         </Link>
-      </NosSection>
-
-      <NosSection data-hm-section="visit" aria-labelledby="hm-visit-h">
-        <h2 id="hm-visit-h" className="nos-hm-h2">
-          Planning a visit
-        </h2>
-        <ul className="nos-hm-register nos-hm-visit">
-          {VISIT_IDS.map((id) => {
-            const leaf = leafFor(id);
-            return (
-              <li key={id}>
-                <Link href={nosPath(leaf.href)}>
-                  <h3>{leaf.label}</h3>
-                  <span aria-hidden="true">&rarr;</span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
       </NosSection>
 
       <NosSection data-hm-section="judging" aria-labelledby="hm-judging-h">
