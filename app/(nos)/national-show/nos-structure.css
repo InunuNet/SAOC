@@ -2665,6 +2665,109 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
   }
 }
+/* Brad 2026-10-29: the intro's copy and card align to the top, and the figures sit under the copy
+   in one row, so the band carries no empty column. The About block below is single column. */
+.nos-theme .nos-about-top {
+  align-items: start;
+}
+.nos-theme .nos-figures-below {
+  margin-top: 40px;
+}
+/* .nos-figures.nos-figures-below outranks the base .nos-figures > li rules below (same file, later),
+   so the base border-top never shows above the 85% rule. */
+.nos-theme .nos-figures.nos-figures-below > li,
+.nos-theme .nos-figures.nos-figures-below > li:last-child:nth-child(odd) {
+  flex-basis: calc(33.333% - 32px);
+  align-items: center;
+  text-align: center;
+  border-top: 0;
+  padding-top: 0;
+}
+/* The rule above each figure is 85% of the column, centred (Brad: "reduce the length of the line 15%"). */
+.nos-theme .nos-figures.nos-figures-below > li::before {
+  content: '';
+  display: block;
+  width: 85%;
+  margin: 0 auto 20px;
+  border-top: 1px solid var(--rule);
+}
+.nos-theme .nos-figures.nos-figures-below .nos-figure {
+  display: block;
+  line-height: 1;
+  text-align: center;
+}
+.nos-theme .nos-figures.nos-figures-below .nos-figure-label {
+  display: block;
+  text-align: center;
+}
+/* The show-dates card floats down the whole home body like the What to expect card (Brad 2026-10-29).
+   .nos-hm-float wraps every band from the intro to the closing and is the sticky track;
+   .nos-hm-float-track is an absolute column over the wrap's right 5/12 (the nos-about grid's second
+   column) and the card inside it sticks under the header until the closing band ends. Every band's
+   wrap keeps its content to the left 7/12 so nothing runs under the card. Below 1024px the card is
+   a normal block before the intro band. */
+.nos-theme .nos-hm-float {
+  position: relative;
+}
+@media (max-width: 1023px) {
+  .nos-theme .nos-hm-float-track {
+    width: 100%;
+    max-width: var(--nos-axis-max);
+    margin-inline: auto;
+    padding: clamp(40px, 6vw, 64px) var(--nos-axis-pad) 0;
+  }
+}
+@media (min-width: 1024px) {
+  .nos-theme .nos-hm-float-track {
+    --hm-gap: clamp(40px, 7vw, 96px);
+    --hm-wrap: min(var(--nos-axis-max), 100%);
+    --hm-inner: calc(var(--hm-wrap) - 2 * var(--nos-axis-pad));
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: calc((100% - var(--hm-wrap)) / 2 + var(--nos-axis-pad));
+    width: calc((var(--hm-inner) - var(--hm-gap)) * 5 / 12);
+    padding-top: clamp(72px, 9vw, 120px);
+    z-index: 1;
+    pointer-events: none;
+  }
+  .nos-theme .nos-hm-float-track .nos-hm-card {
+    position: sticky;
+    top: 100px;
+    pointer-events: auto;
+  }
+  .nos-theme .nos-hm-float .nos-section > [data-nos-wrap] > * {
+    max-width: calc((100% - clamp(40px, 7vw, 96px)) * 7 / 12);
+  }
+  /* Every nos-about grid under the float collapses to one column (the card owns the second). */
+  .nos-theme .nos-hm-float .nos-about {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+  .nos-theme .nos-hm-float [data-hm-section='exhibit'] .nos-hm-register {
+    max-width: 24rem;
+  }
+  .nos-theme .nos-hm-float .nos-hm-closing-text {
+    margin-inline: 0;
+  }
+  /* Beside the card the left column is 7/12 wide: the judging and stage card grids run two-up. */
+  .nos-theme .nos-hm-float [data-hm-section='judging'] [data-nos-wrap] > .grid,
+  .nos-theme .nos-hm-float [data-hm-section='plant-entry'] [data-nos-wrap] > .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .nos-theme .nos-hm-float [data-hm-section='judging'] [data-hm-judging-card]:last-child {
+    grid-column: span 2;
+  }
+  .nos-theme .nos-hm-float .nos-hm-closing {
+    text-align: left;
+  }
+  .nos-theme .nos-hm-float .nos-hm-closing > .flex {
+    justify-content: flex-start;
+  }
+}
+.nos-theme .nos-hm-about-single {
+  max-width: 62ch;
+}
 .nos-theme .nos-figures {
   display: flex;
   flex-wrap: wrap;

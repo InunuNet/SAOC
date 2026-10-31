@@ -1145,8 +1145,11 @@
    "Exhibit & trade"
   ],
   "sections": [
+   "intro",
    "about",
    "visit",
+   "judging",
+   "plant-entry",
    "programme",
    "exhibit",
    "closing"
@@ -1202,20 +1205,19 @@
   ],
   "closingMaxWidthCh": 38,
   "bannedText": [
-   "Three years",
-   "Ten judging",
    "100-point",
    "Cycle",
    "nine provinces",
    "honestly marked",
-   "Start planning your entry now",
    "opens in September 2027",
    "South Africa's triennial orchid competition",
    "18 editions",
    "judging classes"
   ],
   "bannedPattern": "\\bTBC\\b|to be confirmed|pending|PLACEHOLDER|cloakroom",
-  "hooks": "section[data-hm-section=\"about|visit|programme|exhibit|closing\"] on each band; [data-hm-lede] on the hero lede; [data-hm-visit-card] on the compact card in the About band; [data-hm-exempt] on the hero countdown, price line and CTAs (unchanged, outside the sentence-provenance check); every other <p> in main must be a sentence of About v1.2, What to Expect v1.0 or FAQ v1.0.",
-  "note": "Every sentence is verbatim from the frozen About v1.2, What to Expect v1.0 or FAQ v1.0. Unsourced: the section h2s Visit, Programme and Exhibit & trade (nav group names), the register and link labels (nav labels), and the arrows. The home hero stays PG-1 exempt and unchanged apart from the lede, the TBC chip and the facts row. Owner item vvvv: FAQ 26 'who’s'. About keeps its hyphen ('Show - Western Cape'), What to Expect its en dash. 'Past shows' is gated only through the Visit register's exact link list (the header and footer may carry it in preview)."
+  "hooks": "section[data-hm-section=\"about|visit|programme|exhibit|closing\"] on each band; [data-hm-lede] on the hero lede; [data-hm-visit-card] on the compact card in the About band; [data-hm-exempt] on the hero countdown, price line and CTAs (unchanged, outside the sentence-provenance check); every other <p> in main must be a sentence of About v1.2, What to Expect v1.0 or FAQ v1.0. nos-home-restore adds data-hm-section=\"intro|judging|plant-entry\".",
+  "note": "Every sentence is verbatim from the frozen About v1.2, What to Expect v1.0 or FAQ v1.0. Unsourced: the section h2s Visit, Programme and Exhibit & trade (nav group names), the register and link labels (nav labels), and the arrows. The home hero stays PG-1 exempt and unchanged apart from the lede, the TBC chip and the facts row. Owner item vvvv: FAQ 26 'who’s'. About keeps its hyphen ('Show - Western Cape'), What to Expect its en dash. 'Past shows' is gated only through the Visit register's exact link list (the header and footer may carry it in preview).",
+  "pendingMarkerScope": "[data-hm-section=\"plant-entry\"] [data-hm-register-marker]",
+  "restoreAmendment": "nos-home-restore (Brad 2026-10-29, carve-out from the copy freeze): sections gains intro, judging, plant-entry (order: intro, about, visit, judging, plant-entry, programme, exhibit, closing); bannedText drops the three strings Lee-Ann's landing doc v1.0 now requires (\"Three years\", \"Ten judging\", \"Start planning your entry now\"); the one pending marker (Register Here) is exempt from bannedPattern only inside pendingMarkerScope; the sentence-provenance corpus gains landing-page-v1.0.md. See .agent/memory/project/specs/nos-home-restore/."
  }
 }

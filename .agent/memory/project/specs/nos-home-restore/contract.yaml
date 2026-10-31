@@ -1,0 +1,56 @@
+# nos-home-restore. Authority: Brad 2026-10-29, "we need to roll it back ... Stuff about the Orchid Awards Judging Catagories it was our own copy not LA's" (explicit carve-out from the 2026-10-29 copy freeze, this scope only).
+# Governing: docs/rules/no-invention.md; design/design_handoff_saoc/ and branding/National Show 2027/ (visuals come from the pre-17b25555 components, no new tokens); NOS Design rulings in history (HM-G1, FS-1, R13 grid-orphan rule, PR #106 17b25555).
+# Base: origin/main 20e62c45, branch feat/nos-home-restore. Run every command from the repo root of the dev's worktree. The main-tree copies of nos-content-standard are STALE; this contract amends the origin/main versions (goldens/spec.md, "Gate amendment").
+# Pre-existing drift on origin/main, NOT this mission: `shasum -c` on nos-content-standard/goldens/checks.sha256 already FAILS for checks/_lib.mjs and goldens/spec.md; this contract therefore gates its own checks.sha256 and does not call that file.
+schema: athanor.contract/v1
+slug: nos-home-restore
+goal: The NOS home (/national-show) again carries the tagline band with figures, the Ten judging groups grid, the Plant Entry stages with Start planning your entry now, and her closing sentence at the foot of the Plant Entry band, all rendered word for word from Lee-Ann's landing doc v1.0 with none of our invented judging copy, her editorial notes, or a dead Register Here link.
+created_at: '2026-10-29'
+autonomy: high
+exclusions:
+  - item: 'Hero lede/theme change, "Planning a visit" heading, newsletter "Stay in touch" and "Explore" links from her landing doc'
+    reason: 'Not blocks removed by 17b25555; under the copy freeze, not the rollback (coordinator ruling 2026-10-29).'
+  - item: 'Sanity writes to showClass or showExhibitorStep'
+    reason: 'Data path is a sourced module (goldens/spec.md); no data op needed.'
+features:
+  - id: F1
+    name: Restore the removed NOS home bands (intro+figures, judging groups, plant entry stages with her closing sentence) from Lee-Ann's landing doc via lib/data/nos-home-landing.ts, existing bands untouched
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-home-restore/goldens/spec.md
+  - .agent/memory/project/specs/nos-home-restore/goldens/invented-copy.json
+  - .agent/memory/project/specs/nos-home-restore/goldens/sources/landing-page-v1.0.md
+  - .agent/memory/project/specs/nos-home-restore/goldens/codex-qa-prompt.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: gate inputs (checks, goldens, frozen landing doc, invented-copy list) unchanged since the architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-home-restore/goldens/checks.sha256
+    - id: A2
+      description: amended nos-content-standard gate inputs (route-table.json home, gate-standard.mjs) are the architect's versions
+      command: grep -q "nos-home-restore" .agent/memory/project/specs/nos-content-standard/goldens/route-table.json
+    - id: A3
+      description: static - sourced module carries every restored string verbatim, no editorial note, no invented copy, no Sanity read of showClass/showExhibitorStep, no dead Register Here link, StatusMarker used
+      command: node .agent/memory/project/specs/nos-home-restore/checks/check-home-restore-static.mjs
+    - id: A4
+      description: types
+      command: pnpm exec tsc --noEmit
+    - id: A5
+      description: lint
+      command: pnpm exec eslint app components lib e2e
+    - id: A6
+      description: production build against the captured Sanity fixture
+      command: execution/heartbeat_wrap.sh bash .agent/memory/project/specs/nos-content-standard/checks/build.sh
+    - id: A7
+      description: rendered, every viewport - HR-1..HR-9 (verbatim restored strings, her notes absent, old invented copy absent, existing bands present) plus every existing HM-G1 / FS-1.4 home assertion, with the amended band order
+      command: execution/heartbeat_wrap.sh node .agent/memory/project/specs/nos-content-standard/checks/gate-standard.mjs
+    - id: A8
+      description: Brand folder untouched
+      command: test -z "$(git diff --name-only origin/main -- branding)"
+    - id: A9
+      description: docs written
+      command: test -f docs/nos-home-restore.md
+    - id: A10
+      description: cross-vendor adversarial review of the whole diff
+      command: execution/codex_qa.sh .agent/memory/project/specs/nos-home-restore/goldens/codex-qa-prompt.md

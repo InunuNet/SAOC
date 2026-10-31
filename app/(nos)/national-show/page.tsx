@@ -53,7 +53,7 @@ export const revalidate = 60;
 
 /** The hub's `<h1>` (R68, Brad): the show's plain name. nav-config keeps its own longer label
  *  as the mega-menu lead, so the two are deliberately separate. */
-const HUB_HEADING = SHOW_TITLE;
+const HUB_HEADING = 'National Orchid Show';
 
 const HUB_MEGA = NOS_NAV.find((n) => n.type === 'mega');
 
@@ -99,7 +99,8 @@ interface SanityNationalShow {
   countdownDate: string | null;
 }
 
-const LEDE = "The National Orchid Show – Western Cape 2027 promises an immersive experience celebrating the beauty, science and future of orchids.";
+const LEDE = "South Africa’s triennial National Orchid Show, bringing together growers, judges and enthusiasts from all nine provinces.";
+const THEME_LINE = "“From Wild Origins to Cultivated Excellence: The Future of Orchids.”";
 const ABOUT_LEAD = "The National Orchid Show - Western Cape 2027 is the South African Orchid Council's premier triennial event, bringing together orchid enthusiasts, growers, researchers, conservationists, judges, horticultural professionals and members of the public to celebrate one of the world's most remarkable plant families.";
 const ABOUT_BODY = "The National Orchid Show will showcase a spectacular display of all the orchids that are submitted for judging and display. There will be specialist plant sales by local and international vendors, educational exhibits, a comprehensive symposium and conference, practical workshops and opportunities to engage with local and international experts.";
 const DATES_LABEL = "Show dates – for public entrance";
@@ -326,44 +327,17 @@ export default async function NationalShowPage() {
                 </div>
               ))}
             </dl>
+            <p data-hm-theme="" className="nos-hero-theme">
+              Theme <em>{THEME_LINE}</em>
+            </p>
           </>
         }
       />
 
-      <NosSection
-        tone="gold"
-        data-hm-section="intro"
-        wrapClassName="nos-about"
-      >
-        <div>
-          <SectionHeading title={LANDING_INTRO.tagline} />
-          {LANDING_INTRO.paragraphs.map((paragraph) => (
-            <p key={paragraph} className="mt-6 font-sans text-[16px] leading-[1.55] text-ink/80">
-              {paragraph}
-            </p>
-          ))}
-        </div>
-        <ul className="nos-figures">
-          {LANDING_FIGURES.map(({ value, label }) => (
-            <li key={label} data-hm-figure="">
-              <span className="nos-figure font-serif">{value}</span>{' '}
-              <span className="nos-figure-label">{label}</span>
-            </li>
-          ))}
-        </ul>
-      </NosSection>
-
-      <NosSection data-hm-section="about" aria-labelledby="hm-about-h" wrapClassName="nos-about">
-        <div>
-          <h2 id="hm-about-h" className="nos-hm-h2">
-            {ABOUT_HEADING}
-          </h2>
-          <p className="nos-hm-lead">{ABOUT_LEAD}</p>
-          <p className="nos-hm-body">{ABOUT_BODY}</p>
-          <Link href={nosPath(aboutLink.href)} className="nos-hm-link">
-            {ABOUT_LINK_LABEL} <span aria-hidden="true">&rarr;</span>
-          </Link>
-        </div>
+      {/* Brad 2026-10-29: the show-dates card floats beside every band from the intro to the closing,
+          like the What to expect card. .nos-hm-float is the sticky track (see nos-structure.css). */}
+      <div className="nos-hm-float">
+      <div data-hm-visit-card-track="" className="nos-hm-float-track">
         <div data-hm-visit-card="" className="ds-card nos-hm-card">
           <p className="nos-hm-card-label">{DATES_LABEL}</p>
           <p className="nos-hm-card-dates">{DATES_LINE}</p>
@@ -379,11 +353,50 @@ export default async function NationalShowPage() {
             {WTE_LINK_LABEL} <span aria-hidden="true">&rarr;</span>
           </Link>
         </div>
+      </div>
+
+      <NosSection
+        tone="gold"
+        data-hm-section="intro"
+        aria-labelledby="hm-intro-h"
+        wrapClassName="nos-about nos-about-top"
+      >
+        <div>
+          <h2 id="hm-intro-h" className="nos-hm-h2">
+            {LANDING_INTRO.tagline}
+          </h2>
+          {LANDING_INTRO.paragraphs.map((paragraph, index) => (
+            <p key={paragraph} className={index === 0 ? 'nos-hm-lead' : 'nos-hm-body'}>
+              {paragraph}
+            </p>
+          ))}
+          <ul className="nos-figures nos-figures-below">
+            {LANDING_FIGURES.map(({ value, label }) => (
+              <li key={label} data-hm-figure="">
+                <span className="nos-figure font-serif">{value}</span>
+                <span className="nos-figure-label">{label}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </NosSection>
+
+      <NosSection data-hm-section="about" aria-labelledby="hm-about-h">
+        <div className="nos-hm-about-single">
+          <h2 id="hm-about-h" className="nos-hm-h2">
+            {ABOUT_HEADING}
+          </h2>
+          <p className="nos-hm-lead">{ABOUT_LEAD}</p>
+          <p className="nos-hm-body">{ABOUT_BODY}</p>
+          <Link href={nosPath(aboutLink.href)} className="nos-hm-link">
+            {ABOUT_LINK_LABEL} <span aria-hidden="true">&rarr;</span>
+          </Link>
+        </div>
       </NosSection>
 
       <NosSection tone="gold" data-hm-section="visit" aria-labelledby="hm-visit-h">
         <h2 id="hm-visit-h" className="nos-hm-h2">
-          Visit
+          Planning a visit
         </h2>
         <ul className="nos-hm-register nos-hm-visit">
           {VISIT_IDS.map((id) => {
@@ -508,6 +521,7 @@ export default async function NationalShowPage() {
           </Button>
         </div>
       </NosSection>
+      </div>
     </>
   );
 }
