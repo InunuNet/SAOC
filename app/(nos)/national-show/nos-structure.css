@@ -2652,24 +2652,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   margin: 32px 0 16px;
 }
 /* F18-KEEPSAKE-END */
-/* Hub "What it is" row and its figures (v4 about and figures): prose and figures share a
-   baseline, each figure sits under a hairline, two per row. */
-.nos-theme .nos-about {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: clamp(40px, 7vw, 96px);
-  align-items: end;
-}
-@media (min-width: 1024px) {
-  .nos-theme .nos-about {
-    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-  }
-}
-/* Brad 2026-10-29: the intro's copy and card align to the top, and the figures sit under the copy
-   in one row, so the band carries no empty column. The About block below is single column. */
-.nos-theme .nos-about-top {
-  align-items: start;
-}
+/* Hub figures (v4 figures, Brad 2026-10-29): three in one row under the intro copy. */
 .nos-theme .nos-figures-below {
   margin-top: 40px;
 }
@@ -2701,72 +2684,58 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   text-align: center;
 }
 /* The show-dates card floats down the whole home body like the What to expect card (Brad 2026-10-29).
-   .nos-hm-float wraps every band from the intro to the closing and is the sticky track;
-   .nos-hm-float-track is an absolute column over the wrap's right 5/12 (the nos-about grid's second
-   column) and the card inside it sticks under the header until the closing band ends. Every band's
-   wrap keeps its content to the left 7/12 so nothing runs under the card. Below 1024px the card is
-   a normal block before the intro band. */
+   .nos-hm-float carries the /what-to-expect geometry (7fr/5fr, same gap) and takes the 64/48 first-block
+   gap from `.nos-subnav + *`. From 1024px .nos-hm-bands is the left column and the track, stretched to
+   its height, is the right one, so the card sticks under the header until the closing band ends. Below
+   1024px the card is a block before the intro band. */
 .nos-theme .nos-hm-float {
-  position: relative;
+  max-width: var(--nos-axis-max);
+  margin-inline: auto;
+  padding-inline: var(--nos-axis-pad);
+}
+.nos-theme .nos-hm-bands {
+  min-width: 0;
 }
 @media (max-width: 1023px) {
   .nos-theme .nos-hm-float-track {
-    width: 100%;
-    max-width: var(--nos-axis-max);
-    margin-inline: auto;
-    padding: clamp(40px, 6vw, 64px) var(--nos-axis-pad) 0;
+    margin-bottom: 40px;
   }
 }
 @media (min-width: 1024px) {
+  .nos-theme .nos-hm-float {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    column-gap: clamp(40px, 6vw, 80px);
+  }
+  .nos-theme .nos-hm-bands {
+    grid-area: 1 / 1;
+  }
   .nos-theme .nos-hm-float-track {
-    --hm-gap: clamp(40px, 7vw, 96px);
-    --hm-wrap: min(var(--nos-axis-max), 100%);
-    --hm-inner: calc(var(--hm-wrap) - 2 * var(--nos-axis-pad));
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    right: calc((100% - var(--hm-wrap)) / 2 + var(--nos-axis-pad));
-    width: calc((var(--hm-inner) - var(--hm-gap)) * 5 / 12);
-    padding-top: clamp(72px, 9vw, 120px);
-    z-index: 1;
-    pointer-events: none;
+    grid-area: 1 / 2;
+    min-width: 0;
   }
   .nos-theme .nos-hm-float-track .nos-hm-card {
     position: sticky;
     top: 100px;
-    pointer-events: auto;
-  }
-  .nos-theme .nos-hm-float .nos-section > [data-nos-wrap] > * {
-    max-width: calc((100% - clamp(40px, 7vw, 96px)) * 7 / 12);
-  }
-  /* Every nos-about grid under the float collapses to one column (the card owns the second). */
-  .nos-theme .nos-hm-float .nos-about {
-    grid-template-columns: minmax(0, 1fr);
-    align-items: start;
-  }
-  .nos-theme .nos-hm-float [data-hm-section='exhibit'] .nos-hm-register {
-    max-width: 24rem;
-  }
-  .nos-theme .nos-hm-float .nos-hm-closing-text {
-    margin-inline: 0;
-  }
-  /* Beside the card the left column is 7/12 wide: the judging and stage card grids run two-up. */
-  .nos-theme .nos-hm-float [data-hm-section='judging'] [data-nos-wrap] > .grid,
-  .nos-theme .nos-hm-float [data-hm-section='plant-entry'] [data-nos-wrap] > .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .nos-theme .nos-hm-float [data-hm-section='judging'] [data-hm-judging-card]:last-child {
-    grid-column: span 2;
-  }
-  .nos-theme .nos-hm-float .nos-hm-closing {
-    text-align: left;
-  }
-  .nos-theme .nos-hm-float .nos-hm-closing > .flex {
-    justify-content: flex-start;
   }
 }
-.nos-theme .nos-hm-about-single {
-  max-width: 62ch;
+/* Ruled blocks on one ground: the wrap carries the padding, because the shared same-ground rule
+   zeroes a following section's padding-top. The first band opens on the float's own gap. */
+.nos-theme .nos-hm-bands .nos-section {
+  padding-block: 0;
+}
+.nos-theme .nos-hm-bands .nos-section + .nos-section {
+  border-top: 1px solid var(--rule);
+}
+.nos-theme .nos-hm-bands [data-nos-wrap] {
+  max-width: none;
+  padding: clamp(48px, 5vw, 72px) 0;
+}
+.nos-theme .nos-hm-bands [data-hm-section='intro'] [data-nos-wrap] {
+  padding-top: 0;
+}
+.nos-theme .nos-hm-bands [data-hm-section='closing'] [data-nos-wrap] {
+  padding-bottom: var(--section-y);
 }
 .nos-theme .nos-figures {
   display: flex;
@@ -2804,46 +2773,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   margin-top: 10px;
   font-size: 14px;
   color: var(--muted);
-}
-
-/* Card family on the NOS home (NOS Design hero-cards-ruling B1, B2, B8): the same petal echo, in NOS
-   tokens. A cream face, one soft layered shadow, and a plate behind it offset 8px right and down,
-   in the glyph chips' lavender (--primary-100). The face and plate are pseudo layers (a negative z-index child paints over its
-   parent's own background), so the card itself carries no colour or shadow. These cards are not
-   links, so there is no hover lift. */
-.nos-theme .nos-petal {
-  position: relative;
-  isolation: isolate;
-  border-radius: var(--radius-card);
-  background-color: transparent;
-  box-shadow: none;
-}
-.nos-theme .nos-petal::before,
-.nos-theme .nos-petal::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: var(--radius-card);
-}
-.nos-theme .nos-petal::before {
-  z-index: -2;
-  /* NOS Design #51: plate shares the glyph chips' lavender; 8px offset. */
-  background-color: var(--primary-100);
-  transform: translate(8px, 8px);
-}
-.nos-theme .nos-petal::after {
-  z-index: -1;
-  background-color: var(--parchment);
-  box-shadow:
-    0 1px 2px rgba(33, 26, 87, 0.05),
-    0 14px 32px -12px rgba(33, 26, 87, 0.18);
-}
-.nos-theme .nos-stage-card.nos-petal::before {
-  background-color: rgba(255, 255, 255, 0.08);
-}
-.nos-theme .nos-stage-card.nos-petal::after {
-  background-color: color-mix(in srgb, #fff 7%, var(--primary));
-  box-shadow: none;
 }
 
 /* ============================================================
@@ -4489,13 +4418,14 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     0 10px 28px rgba(33, 26, 87, 0.09);
 }
 
-/* HM-G1 home bands: about / visit / programme / exhibit / closing. Registers are ruled lists, no cards. */
+/* HM-G1 home bands: intro to closing on the page parchment. Registers are ruled lists, no cards. */
 .nos-theme .nos-hm-h2 {
   font-family: var(--serif);
   font-weight: 400;
   font-size: clamp(1.75rem, 1.2rem + 1.6vw, 2.5rem);
   line-height: 1.15;
   margin: 0 0 clamp(20px, 3vw, 32px);
+  color: var(--ink);
 }
 /* LT-1: the clamp reaches 32px at an 800px viewport (1.2rem + 1.6vw), where it takes the light weight. */
 @media (min-width: 800px) {
@@ -4506,26 +4436,25 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 .nos-theme .nos-hm-lead {
   font-family: var(--serif);
   font-weight: 300;
-  font-size: clamp(1.375rem, 1.1rem + 0.9vw, 1.75rem);
-  line-height: 1.35;
-  max-width: 40ch;
+  font-size: clamp(1.25rem, 1.05rem + 0.6vw, 1.5rem);
+  line-height: 1.38;
+  max-width: 34ch;
   margin: 0 0 20px;
 }
 .nos-theme .nos-hm-body {
   max-width: 62ch;
   margin: 0 0 24px;
+  font-family: var(--sans);
+  font-size: 1rem;
   line-height: 1.6;
-}
-.nos-theme .nos-hm-link,
-.nos-theme .nos-hm-register a {
-  color: inherit;
-  font-weight: 600;
-  text-decoration: none;
 }
 .nos-theme .nos-hm-link {
   display: inline-block;
   padding-block: 12px;
   border-bottom: 1px solid currentColor;
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
 }
 .nos-theme .nos-hm-card-label {
   font-size: 15px;
@@ -4556,79 +4485,90 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   font-size: 1.1875rem;
   white-space: nowrap;
 }
-.nos-theme .nos-hm-register {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-}
-.nos-theme .nos-hm-register li {
-  border-top: 1px solid var(--rule);
-}
-.nos-theme .nos-hm-register a {
-  display: block;
-  padding-block: 16px;
-  min-height: 44px;
-}
-.nos-theme .nos-hm-visit {
-  gap: 0 32px;
-}
-.nos-theme .nos-hm-visit li {
-  border-bottom: 1px solid var(--rule);
-}
-.nos-theme .nos-hm-visit a {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 24px;
-  align-items: center;
-  min-height: 72px;
-  padding-block: 18px;
-}
-.nos-theme .nos-hm-visit h3 {
-  margin: 0;
-  font-family: var(--serif);
-  font-weight: 400;
-  font-size: 1.375rem;
-  line-height: 1.25;
-}
-.nos-theme .nos-hm-visit a > span {
-  justify-self: end;
-  font-size: 22px;
-  line-height: 1;
-}
-@media (min-width: 600px) {
-  .nos-theme .nos-hm-visit {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-@media (min-width: 1024px) {
-  .nos-theme .nos-hm-visit {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-}
+/* Visit, Exhibit and Programme share one ruled row, as the About page's right-rail links do. The -1px
+   collapses each row's top rule onto the bottom rule of the row above. */
+.nos-theme .nos-hm-register,
 .nos-theme .nos-hm-rows {
   list-style: none;
   margin: 0;
   padding: 0;
 }
-.nos-theme .nos-hm-rows li {
-  border-top: 1px solid var(--rule);
+.nos-theme .nos-hm-register {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  column-gap: 32px;
 }
+.nos-theme .nos-hm-register li,
+.nos-theme .nos-hm-rows li {
+  margin-top: -1px;
+  border-block: 1px solid var(--rule);
+}
+.nos-theme .nos-hm-register a,
 .nos-theme .nos-hm-rows a {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 4px 24px;
-  align-items: baseline;
-  padding-block: 20px;
-  color: inherit;
+  grid-template-columns: minmax(0, 1fr) 24px;
+  min-height: 64px;
+  padding-block: 18px;
+  color: var(--ink);
   text-decoration: none;
+  transition: color 150ms;
+}
+.nos-theme .nos-hm-register a {
+  align-items: center;
+}
+.nos-theme .nos-hm-rows a {
+  column-gap: 24px;
+  row-gap: 4px;
+  align-items: baseline;
+}
+.nos-theme .nos-hm-register a,
+.nos-theme .nos-hm-register h3,
+.nos-theme .nos-hm-rows h3 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.375rem;
+  line-height: 1.25;
+  font-variation-settings: 'opsz' 24;
+}
+.nos-theme .nos-hm-register h3,
+.nos-theme .nos-hm-rows h3 {
+  margin: 0;
+  color: inherit;
+}
+.nos-theme .nos-hm-register a > span,
+.nos-theme .nos-hm-rows a > span {
+  justify-self: end;
+  font-size: 22px;
+  line-height: 1;
+  transition: transform 150ms;
+}
+.nos-theme .nos-hm-register a:hover,
+.nos-theme .nos-hm-rows a:hover {
+  color: var(--accent);
+}
+.nos-theme .nos-hm-register a:hover > span,
+.nos-theme .nos-hm-rows a:hover > span {
+  transform: translateX(4px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nos-theme .nos-hm-register a,
+  .nos-theme .nos-hm-rows a,
+  .nos-theme .nos-hm-register a > span,
+  .nos-theme .nos-hm-rows a > span {
+    transition: none;
+  }
+  .nos-theme .nos-hm-register a:hover > span,
+  .nos-theme .nos-hm-rows a:hover > span {
+    transform: none;
+  }
+}
+@media (min-width: 600px) and (max-width: 1023px) {
+  .nos-theme .nos-hm-visit {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 .nos-theme .nos-hm-rows h3 {
   grid-column: 1;
-  font-family: var(--serif);
-  font-weight: 400;
-  font-size: clamp(1.375rem, 1.2rem + 0.6vw, 1.75rem);
-  margin: 0;
 }
 .nos-theme .nos-hm-rows p {
   grid-column: 1;
@@ -4641,17 +4581,168 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   grid-column: 2;
   grid-row: 1;
 }
-.nos-theme .nos-hm-closing {
-  text-align: center;
+/* Judging groups, a herbarium index: the floating card's white surface, so the page has one card
+   language. Six tracks: a described group spans three (two-up), a name-only group two (three-up).
+   These cards are not links, so there is no hover lift. */
+.nos-theme .nos-hm-judging {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+@media (min-width: 560px) {
+  .nos-theme .nos-hm-judging {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+  .nos-theme .nos-hm-judging > * {
+    grid-column: span 3;
+  }
+  .nos-theme .nos-hm-judging > .nos-jg-compact {
+    grid-column: span 2;
+  }
+}
+@media (min-width: 1024px) {
+  .nos-theme .nos-hm-judging {
+    gap: 20px;
+  }
+}
+.nos-theme .nos-jg-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: clamp(20px, 2vw, 28px);
+  border-radius: 10px;
+  background: white;
+  box-shadow: var(--shadow-md);
+}
+.nos-theme .nos-jg-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 0 0 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.nos-theme .nos-jg-n {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: 2.75rem;
+  line-height: 1;
+  letter-spacing: normal;
+  font-variation-settings: 'opsz' 72;
+  font-variant-numeric: normal;
+  color: var(--ink);
+}
+.nos-theme .nos-jg-name {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.25rem;
+  line-height: 1.25;
+  text-wrap: balance;
+  color: var(--ink);
+}
+.nos-theme .nos-jg-text {
+  margin: 8px 0 0;
+  font-family: var(--sans);
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+.nos-theme .nos-jg-text em {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--ink);
+}
+/* Plant entry stages: a ruled numbered list on the parchment, then the foot under its own rule. */
+.nos-theme .nos-hm-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px 24px;
+  align-items: baseline;
+  padding-block: 24px;
+  border-top: 1px solid var(--rule);
+}
+@media (min-width: 600px) {
+  .nos-theme .nos-hm-stage {
+    grid-template-columns: 96px minmax(0, 1fr);
+  }
+}
+.nos-theme .nos-stage-label {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.nos-theme .nos-stage-title {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.375rem;
+  line-height: 1.25;
+  color: var(--ink);
+}
+.nos-theme .nos-stage-text {
+  max-width: 58ch;
+  margin: 8px 0 0;
+  font-family: var(--sans);
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.nos-theme .nos-hm-foot {
+  display: grid;
+  justify-items: start;
+  gap: 16px;
+  padding-top: 24px;
+  border-top: 1px solid var(--rule);
+  color: var(--ink);
+}
+.nos-theme .nos-hm-foot p {
+  margin: 0;
+}
+.nos-theme .nos-hm-foot-lead {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem);
+  line-height: 1.3;
+}
+.nos-theme .nos-hm-foot-register {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+.nos-theme .nos-hm-foot-label {
+  font-family: var(--sans);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.55;
+}
+.nos-theme .nos-hm-foot-text {
+  max-width: 58ch;
+  font-family: var(--sans);
+  font-size: 1rem;
+  line-height: 1.55;
 }
 .nos-theme .nos-hm-closing-text {
   font-family: var(--serif);
   font-weight: 300;
-  font-size: clamp(1.75rem, 1.2rem + 1.8vw, 2.5rem);
-  line-height: 1.25;
+  font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem);
+  line-height: 1.3;
   max-width: 38ch;
-  color: var(--ivory);
-  margin: 0 auto 32px;
+  color: var(--ink);
+  margin: 0 0 32px;
   text-wrap: balance;
 }
 

@@ -9,7 +9,8 @@ import { ExhibitorStageCard } from '@/components/nos/ExhibitorStageCard';
 import { JudgingGroupCard } from '@/components/nos/JudgingGroupCard';
 import { NosHero } from '@/components/nos/NosHero';
 import { NosSection } from '@/components/nos/NosSection';
-import { SectionHeading } from '@/components/nos/SectionHeading';
+import { NosSubNav } from '@/components/nos/NosSubNav';
+import { subNavGroupFor } from '@/components/nos/nos-subnav-groups';
 import { StatusMarker } from '@/components/show/_shared/StatusMarker';
 import { JsonLd, nationalShowEventJsonLd } from '@/components/seo/JsonLd';
 import { sanityFetch } from '@/sanity/lib/fetch';
@@ -31,7 +32,7 @@ import {
   PLANT_ENTRY_STAGES,
   type JudgingGroup,
 } from '@/lib/data/nos-home-landing';
-import { COLUMN_CLASS, SPAN_CLASS, resolveGridLayout } from '@/lib/grid-columns';
+import { getVisibleNav } from '@/lib/data/past-shows-public';
 import { cheapestAdmission, formatRand } from '@/components/nos/cheapest-admission';
 import { buildShowOffers, type SanityHubTicketType } from '@/lib/data/national-show-offers';
 import { TICKET_CATEGORIES } from '@/lib/data/ticket-hub-source';
@@ -130,17 +131,6 @@ const PROGRAMME_ROWS = [
   { id: 'workshops', line: WORKSHOPS_LINE },
 ] as const;
 
-// C-4 / R13: the judging grid's column count is derived from the live group count, never a literal.
-// Counts divisible by five keep the five-up grid; any other count takes the orphan-free layout.
-const JUDGING_WIDE_COLUMNS = 5;
-const JUDGING_GRID_LAYOUT = resolveGridLayout(JUDGING_GROUPS.length);
-const JUDGING_COLUMNS_CLASS =
-  JUDGING_GROUPS.length % JUDGING_WIDE_COLUMNS === 0
-    ? 'lg:grid-cols-5'
-    : COLUMN_CLASS[JUDGING_GRID_LAYOUT.columns];
-// An odd count leaves a lone last card in the two-up grid; it spans the row there, as at desktop.
-const JUDGING_ODD_SPAN_CLASS = JUDGING_GROUPS.length % 2 === 1 ? 'sm:col-span-2' : '';
-
 /** Her description with each of her italic runs (species and section names) set in <em>. */
 function withItalics(group: JudgingGroup): ReactNode {
   if (group.description === null) return null;
@@ -154,15 +144,6 @@ function withItalics(group: JudgingGroup): ReactNode {
   }
   parts.push(group.description.slice(cursor));
   return parts.map((part, i) => <Fragment key={i}>{part}</Fragment>);
-}
-
-function judgingCardSpanClass(index: number): string {
-  if (index !== JUDGING_GROUPS.length - 1) return '';
-  const lgSpan =
-    JUDGING_GROUPS.length % JUDGING_WIDE_COLUMNS !== 0 && JUDGING_GRID_LAYOUT.finalCardSpans > 1
-      ? SPAN_CLASS[JUDGING_GRID_LAYOUT.finalCardSpans]
-      : '';
-  return [JUDGING_ODD_SPAN_CLASS, lgSpan].filter(Boolean).join(' ');
 }
 
 // The hub keeps the full NOS default title; the group template would only repeat the show's name.
@@ -268,6 +249,8 @@ export default async function NationalShowPage() {
 
   const aboutLink = leafFor('about-the-show');
   const wteLink = leafFor('what-to-expect');
+  // The row the inner pages have, with no current item: the home is not one of its leaves.
+  const subNavGroup = subNavGroupFor(aboutLink.href, await getVisibleNav());
 
   return (
     <>
@@ -334,6 +317,15 @@ export default async function NationalShowPage() {
         }
       />
 
+      {subNavGroup ? (
+        <NosSubNav
+          label={`${subNavGroup.heading} pages`}
+          items={subNavGroup.items}
+          currentHref=""
+          exact={false}
+        />
+      ) : null}
+
       {/* Brad 2026-10-29: the show-dates card floats beside every band from the intro to the closing,
           like the What to expect card. .nos-hm-float is the sticky track (see nos-structure.css). */}
       <div className="nos-hm-float">
@@ -355,46 +347,38 @@ export default async function NationalShowPage() {
         </div>
       </div>
 
-      <NosSection
-        tone="gold"
-        data-hm-section="intro"
-        aria-labelledby="hm-intro-h"
-        wrapClassName="nos-about nos-about-top"
-      >
-        <div>
-          <h2 id="hm-intro-h" className="nos-hm-h2">
-            {LANDING_INTRO.tagline}
-          </h2>
-          {LANDING_INTRO.paragraphs.map((paragraph, index) => (
-            <p key={paragraph} className={index === 0 ? 'nos-hm-lead' : 'nos-hm-body'}>
-              {paragraph}
-            </p>
+      <div className="nos-hm-bands">
+      <NosSection data-hm-section="intro" aria-labelledby="hm-intro-h">
+        <h2 id="hm-intro-h" className="nos-hm-h2">
+          {LANDING_INTRO.tagline}
+        </h2>
+        {LANDING_INTRO.paragraphs.map((paragraph, index) => (
+          <p key={paragraph} className={index === 0 ? 'nos-hm-lead' : 'nos-hm-body'}>
+            {paragraph}
+          </p>
+        ))}
+        <ul className="nos-figures nos-figures-below">
+          {LANDING_FIGURES.map(({ value, label }) => (
+            <li key={label} data-hm-figure="">
+              <span className="nos-figure font-serif">{value}</span>
+              <span className="nos-figure-label">{label}</span>
+            </li>
           ))}
-          <ul className="nos-figures nos-figures-below">
-            {LANDING_FIGURES.map(({ value, label }) => (
-              <li key={label} data-hm-figure="">
-                <span className="nos-figure font-serif">{value}</span>
-                <span className="nos-figure-label">{label}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        </ul>
       </NosSection>
 
       <NosSection data-hm-section="about" aria-labelledby="hm-about-h">
-        <div className="nos-hm-about-single">
-          <h2 id="hm-about-h" className="nos-hm-h2">
-            {ABOUT_HEADING}
-          </h2>
-          <p className="nos-hm-lead">{ABOUT_LEAD}</p>
-          <p className="nos-hm-body">{ABOUT_BODY}</p>
-          <Link href={nosPath(aboutLink.href)} className="nos-hm-link">
-            {ABOUT_LINK_LABEL} <span aria-hidden="true">&rarr;</span>
-          </Link>
-        </div>
+        <h2 id="hm-about-h" className="nos-hm-h2">
+          {ABOUT_HEADING}
+        </h2>
+        <p className="nos-hm-lead">{ABOUT_LEAD}</p>
+        <p className="nos-hm-body">{ABOUT_BODY}</p>
+        <Link href={nosPath(aboutLink.href)} className="nos-hm-link">
+          {ABOUT_LINK_LABEL} <span aria-hidden="true">&rarr;</span>
+        </Link>
       </NosSection>
 
-      <NosSection tone="gold" data-hm-section="visit" aria-labelledby="hm-visit-h">
+      <NosSection data-hm-section="visit" aria-labelledby="hm-visit-h">
         <h2 id="hm-visit-h" className="nos-hm-h2">
           Planning a visit
         </h2>
@@ -413,53 +397,50 @@ export default async function NationalShowPage() {
         </ul>
       </NosSection>
 
-      <NosSection tone="gold" data-hm-section="judging" className="nos-section-joined">
-        <SectionHeading title={JUDGING_GROUPS_HEADING} />
-        <div className={`mt-10 grid grid-cols-1 gap-7 sm:grid-cols-2 ${JUDGING_COLUMNS_CLASS}`}>
-          {JUDGING_GROUPS.map((group, index) => (
-            <div key={group.n} data-hm-judging-card="" className={judgingCardSpanClass(index)}>
-              <JudgingGroupCard
-                code={String(group.n)}
-                group={`Group ${group.n}`}
-                name={group.name}
-                description={withItalics(group)}
-              />
+      <NosSection data-hm-section="judging" aria-labelledby="hm-judging-h">
+        <h2 id="hm-judging-h" className="nos-hm-h2">
+          {JUDGING_GROUPS_HEADING}
+        </h2>
+        <div className="nos-hm-judging">
+          {JUDGING_GROUPS.map((group) => (
+            <div
+              key={group.n}
+              data-hm-judging-card=""
+              className={group.description === null ? 'nos-jg-compact' : undefined}
+            >
+              <JudgingGroupCard n={group.n} name={group.name} description={withItalics(group)} />
             </div>
           ))}
         </div>
       </NosSection>
 
-      <NosSection tone="royal" data-hm-section="plant-entry">
-        <SectionHeading title={PLANT_ENTRY_HEADING} tone="on-dark" />
-        <div className="mt-12 grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-4">
+      <NosSection data-hm-section="plant-entry" aria-labelledby="hm-plant-entry-h">
+        <h2 id="hm-plant-entry-h" className="nos-hm-h2">
+          {PLANT_ENTRY_HEADING}
+        </h2>
+        <div>
           {PLANT_ENTRY_STAGES.map(({ stage, title, description }) => (
-            <div key={stage} data-hm-stage="" className="h-full [&>*]:h-full">
+            <div key={stage} data-hm-stage="" className="nos-hm-stage">
               <ExhibitorStageCard stage={stage} title={title} description={description} />
             </div>
           ))}
         </div>
-        <div className="mt-14 flex flex-col items-start gap-5">
-          <p className="font-serif tracking-[-0.015em] text-[clamp(1.5rem,1.2rem+1.2vw,2rem)] leading-tight text-ivory">
-            {LANDING_CTA.startPlanning}
-          </p>
+        <div className="nos-hm-foot">
+          <p className="nos-hm-foot-lead">{LANDING_CTA.startPlanning}</p>
           {/* Her form is not supplied yet: plain text, never a link, with the one pending marker. */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <p className="font-sans text-[18px] font-semibold leading-[1.55] text-ivory">
-              {LANDING_CTA.registerHere}
-            </p>
+          <div className="nos-hm-foot-register">
+            <p className="nos-hm-foot-label">{LANDING_CTA.registerHere}</p>
             <span data-hm-register-marker="">
               <StatusMarker
                 kind="confirmation"
                 status="pending"
                 pendingLabel={visitorInfo?.pendingLabel}
-                tone="dark"
+                tone="light"
                 as="span"
               />
             </span>
           </div>
-          <p className="max-w-[58ch] font-sans text-[18px] leading-[1.55] text-[var(--lilac-muted)]">
-            {LANDING_CTA.openingSentence}
-          </p>
+          <p className="nos-hm-foot-text">{LANDING_CTA.openingSentence}</p>
         </div>
       </NosSection>
 
@@ -483,19 +464,12 @@ export default async function NationalShowPage() {
         </ul>
       </NosSection>
 
-      <NosSection
-        tone="gold"
-        data-hm-section="exhibit"
-        aria-labelledby="hm-exhibit-h"
-        wrapClassName="nos-about"
-      >
-        <div>
-          <h2 id="hm-exhibit-h" className="nos-hm-h2">
-            Exhibit &amp; trade
-          </h2>
-          <p className="nos-hm-lead">{EXHIBIT_LEAD}</p>
-          <p className="nos-hm-body">{EXHIBIT_BODY}</p>
-        </div>
+      <NosSection data-hm-section="exhibit" aria-labelledby="hm-exhibit-h">
+        <h2 id="hm-exhibit-h" className="nos-hm-h2">
+          Exhibit &amp; trade
+        </h2>
+        <p className="nos-hm-lead">{EXHIBIT_LEAD}</p>
+        <p className="nos-hm-body">{EXHIBIT_BODY}</p>
         <ul className="nos-hm-register">
           {EXHIBIT_IDS.map((id) => {
             const leaf = leafFor(id);
@@ -510,17 +484,18 @@ export default async function NationalShowPage() {
         </ul>
       </NosSection>
 
-      <NosSection tone="royal" data-hm-section="closing" wrapClassName="nos-hm-closing">
+      <NosSection data-hm-section="closing">
         <p className="nos-hm-closing-text">{CLOSING}</p>
-        <div className="flex flex-wrap justify-center gap-4">
-          <Button<typeof Link> as={Link} href={nosPath(TICKETS_CTA.href)} variant="on-dark">
+        <div className="flex flex-wrap gap-4">
+          <Button<typeof Link> as={Link} href={nosPath(TICKETS_CTA.href)} variant="primary">
             {TICKETS_CTA.label}
           </Button>
-          <Button<typeof Link> as={Link} href={nosPath(HUB_PLAN_LINK.href)} variant="ghost-on-dark">
+          <Button<typeof Link> as={Link} href={nosPath(HUB_PLAN_LINK.href)} variant="ghost">
             {HUB_PLAN_LINK.label}
           </Button>
         </div>
       </NosSection>
+      </div>
       </div>
     </>
   );
