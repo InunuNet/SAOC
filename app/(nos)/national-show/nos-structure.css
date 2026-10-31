@@ -2698,6 +2698,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 }
 @media (max-width: 1023px) {
   .nos-theme .nos-hm-float-track {
+    max-width: 520px;
     margin-bottom: 40px;
   }
 }
@@ -4438,7 +4439,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   font-weight: 300;
   font-size: clamp(1.25rem, 1.05rem + 0.6vw, 1.5rem);
   line-height: 1.38;
-  max-width: 34ch;
+  max-width: 40ch;
   margin: 0 0 20px;
 }
 .nos-theme .nos-hm-body {
@@ -4502,6 +4503,11 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 .nos-theme .nos-hm-rows li {
   margin-top: -1px;
   border-block: 1px solid var(--rule);
+}
+/* The last row closes on the next band's top rule, so it draws no second line of its own. */
+.nos-theme .nos-hm-register li:last-child,
+.nos-theme .nos-hm-rows li:last-child {
+  border-bottom: 0;
 }
 .nos-theme .nos-hm-register a,
 .nos-theme .nos-hm-rows a {
@@ -4658,8 +4664,8 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 .nos-theme .nos-jg-text em {
   font-family: var(--serif);
   font-style: italic;
-  font-weight: 400;
-  color: var(--ink);
+  font-weight: 300;
+  color: inherit;
 }
 /* Plant entry stages: a ruled numbered list on the parchment, then the foot under its own rule. */
 .nos-theme .nos-hm-stage {
@@ -4704,7 +4710,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   display: grid;
   justify-items: start;
   gap: 16px;
-  padding-top: 24px;
+  padding-top: clamp(32px, 4vw, 40px);
   border-top: 1px solid var(--rule);
   color: var(--ink);
 }
