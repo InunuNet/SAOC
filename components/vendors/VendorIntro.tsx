@@ -39,7 +39,7 @@ export function VendorIntro() {
   return (
     <section className="max-w-3xl">
       <h2
-        className="font-serif font-normal text-[28px] leading-snug text-ink"
+        className="font-serif font-light text-[length:var(--h2-role)] leading-[1.15] text-ink"
         dangerouslySetInnerHTML={{ __html: HEADING }}
       />
       <div className="mt-5 space-y-4 font-sans text-[16px] leading-[1.55] text-ink/80">

@@ -166,7 +166,7 @@ export function ShowBand({ show, detailsHref, showPhoto = true, split }: ShowBan
               <span className="eyebrow eyebrow--light">Flagship Event</span>
             </div>
 
-            <h2 className="font-serif font-light text-[clamp(32px,3.8vw,48px)] leading-[1.1] tracking-[-0.015em] text-ivory mb-8 text-balance">
+            <h2 className="font-serif font-light text-[length:var(--h2-role)] leading-[1.15] tracking-[-0.015em] text-ivory mb-8 text-balance">
               {showTitleWithEdition(show?.edition, 'National Orchid Show')}
             </h2>
 

@@ -44,7 +44,7 @@ export function EventsStrip({ events }: EventsStripProps) {
       <div className="saoc-container">
         {/* Section header: the label that used to be the eyebrow is the heading */}
         <div className="flex items-end justify-between gap-6 mb-8">
-          <h2 className="font-serif font-light text-[clamp(32px,4vw,48px)] leading-[1.08] tracking-[-0.015em] text-primary">
+          <h2 className="font-serif font-light text-[length:var(--h2-role)] leading-[1.15] tracking-[-0.015em] text-primary">
             What&apos;s on
           </h2>
           <Link
