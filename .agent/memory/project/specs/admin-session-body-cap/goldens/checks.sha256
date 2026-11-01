@@ -1,5 +1,5 @@
-dda1a1639c53c0e8db731db6c4cf40aa1f03da4bcc00829a3b10c6c4a6857383  .agent/memory/project/specs/admin-session-body-cap/checks/lib-harness.cjs
-1c7abf5835516114af33b2213e98d1a8d58492b5fe8d6fa1d43b96be598484f3  .agent/memory/project/specs/admin-session-body-cap/checks/run.cjs
-1350e5c8040a3ef670a581aa15f63045404e1603257ee86af0cc2e004fab8ffd  .agent/memory/project/specs/admin-session-body-cap/checks/selftest.cjs
+8c14470a36b070f9e6cb91c68a7ffb8e6b1005a47cdae1873841c5440ae4e6ce  .agent/memory/project/specs/admin-session-body-cap/checks/lib-harness.cjs
+f23b7fa3bef264d1ab03e5386dc123f2ef93027a188e5145c20a890c18d0590c  .agent/memory/project/specs/admin-session-body-cap/checks/run.cjs
+4d92b7decf20b532941ba331b3f99435d624a71ad8daa6126f6d86181b8d516c  .agent/memory/project/specs/admin-session-body-cap/checks/selftest.cjs
 0b3814de2dcfcc01142e2e7cafc70019ab34fd33a8c654f68026bb67867c7f50  .agent/memory/project/specs/admin-session-body-cap/checks/diff-scope.sh
-dcac982faa56db49e9f4f74e70ebc5cf0c9c5c72f7d76d6a87e0c14d436a8c01  .agent/memory/project/specs/admin-session-body-cap/goldens/spec.md
+34647ed04a7316683f5625215cc46e2b05f20204299407dfe027f66a0448d83f  .agent/memory/project/specs/admin-session-body-cap/goldens/spec.md

@@ -11,3 +11,8 @@ Cap the bytes read by `POST /api/admin/session`. Nothing else changes.
 
 ## Not in scope
 Trusted-XFF routes (deferred until F3 merges). Copy changes. F3 branch fix/sec-abuse-controls.
+
+## Addendum: body-stream error paths (QA finding, low severity)
+- The reader must never let a stream failure escape as a 500. `reader.read()` rejecting mid-read gives 400 `{ error: 'Invalid request body' }` (what `request.json()` gave before), with no Firebase call (S8).
+- An over-cap body whose `reader.cancel()` rejects is still 413; the cancel failure is swallowed (S9).
+- The reader lock is released on every exit (`try/finally` `releaseLock()`): stream error, cancel failure, overflow and success. Tested without reaching into internals via the public `ReadableStream.locked` of `request.body` after the handler returns (S8, S9, S10). A10 asserts it; S8/S9 also carry a lock check, so A8/A9 fail on a leaked lock too.

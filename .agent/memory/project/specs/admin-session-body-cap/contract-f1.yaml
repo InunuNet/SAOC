@@ -24,7 +24,7 @@ assertions:
       description: diff limited to the route, the new lib/admin-session-body.ts, tests, docs and this spec
       command: bash .agent/memory/project/specs/admin-session-body-cap/checks/diff-scope.sh
     - id: A3
-      description: reference handlers prove the harness discriminates - good passes all 17 scenarios, mutants no-cap, cap-after-parse, content-length-only and cap-after-verify are each killed
+      description: reference handlers prove the harness discriminates - good passes all 26 scenarios, mutants no-cap, cap-after-parse, content-length-only, cap-after-verify, unguarded-read, unguarded-cancel and lock-not-released are each killed
       command: node .agent/memory/project/specs/admin-session-body-cap/checks/selftest.cjs
     - id: A4
       description: real handler - 413 for no-length, under-declared and over-declared bodies, bytes pulled bounded, verifyIdToken never called, 3000-char token and exact-cap body still 200, cap+1 is 413, invalid JSON stays 400
@@ -38,3 +38,12 @@ assertions:
     - id: A7
       description: lint is clean on the touched paths
       command: pnpm exec eslint app/api/admin/session lib/admin-session-body.ts
+    - id: A8
+      description: body stream error mid-read gives 400 with Invalid request body and no Firebase call (S8)
+      command: node .agent/memory/project/specs/admin-session-body-cap/checks/run.cjs S8
+    - id: A9
+      description: over-cap body whose reader.cancel() rejects still gives 413 and no Firebase call (S9)
+      command: node .agent/memory/project/specs/admin-session-body-cap/checks/run.cjs S9
+    - id: A10
+      description: the request body stream is unlocked after every exit - stream error, cancel failure, overflow, success (S8, S9, S10)
+      command: node .agent/memory/project/specs/admin-session-body-cap/checks/run.cjs S10

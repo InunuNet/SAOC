@@ -39,6 +39,25 @@ function streamRequest(totalBytes, declared) {
   const req = new NextRequest('http://localhost/api/admin/session', { method: 'POST', headers, body, duplex: 'half' });
   return { req, pulled: () => pulled };
 }
+// Stream that delivers some bytes then errors mid-read (cancelRejects: cancel() rejects instead).
+function faultyRequest({ errorAfter, totalBytes, cancelRejects }) {
+  const { NextRequest } = require('next/server');
+  const chunk = new Uint8Array(1024).fill(0x61);
+  let pulled = 0;
+  const body = new ReadableStream({
+    pull(ctl) {
+      if (errorAfter !== undefined && pulled >= errorAfter) { ctl.error(new Error('stream boom')); return; }
+      if (totalBytes !== undefined && pulled >= totalBytes) { ctl.close(); return; }
+      pulled += chunk.length;
+      ctl.enqueue(chunk);
+    },
+    cancel() { if (cancelRejects) throw new Error('cancel boom'); },
+  });
+  const req = new NextRequest('http://localhost/api/admin/session', {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body, duplex: 'half',
+  });
+  return { req, stream: req.body };
+}
 function jsonRequest(text) {
   const { NextRequest } = require('next/server');
   return new NextRequest('http://localhost/api/admin/session', {
@@ -48,7 +67,9 @@ function jsonRequest(text) {
 const tokenOfLength = (n) => 'x'.repeat(n);
 
 // Returns [{id, ok, detail}]
-async function runScenarios(POST) {
+async function runScenarios(rawPOST) {
+  // A handler that throws (unhandled -> Next would answer 500) is recorded as status 500.
+  const POST = async (r) => { try { return await rawPOST(r); } catch { return new Response('{"error":"thrown"}', { status: 500 }); } };
   const out = [];
   const rec = (id, ok, detail) => out.push({ id, ok, detail });
   const reset = () => { state.verifyCalls = 0; state.createCalls = 0; };
@@ -106,6 +127,35 @@ async function runScenarios(POST) {
   res = await POST(jsonRequest('{}'));
   rec('S7-missing-token-400', res.status === 400, `status ${res.status}`);
   rec('S7-no-verify', state.verifyCalls === 0, `verify ${state.verifyCalls}`);
+
+  // S8: body stream errors mid-read -> 400 Invalid request body (was 400 via request.json()), no Firebase call
+  reset();
+  let f = faultyRequest({ errorAfter: 2048 });
+  res = await POST(f.req);
+  rec('S8-stream-error-400', res.status === 400, `status ${res.status}`);
+  rec('S8-stream-error-body', (await res.json().catch(() => ({}))).error === 'Invalid request body', 'body error text');
+  rec('S8-no-firebase', state.verifyCalls === 0 && state.createCalls === 0, `verify ${state.verifyCalls}`);
+  rec('S8-lock-released', f.stream.locked === false, `locked ${f.stream.locked}`);
+
+  // S9: over-cap body where cancel() rejects -> still 413, no Firebase call
+  reset();
+  f = faultyRequest({ totalBytes: CAP * 8, cancelRejects: true });
+  res = await POST(f.req);
+  rec('S9-cancel-rejects-413', res.status === 413, `status ${res.status}`);
+  rec('S9-no-firebase', state.verifyCalls === 0 && state.createCalls === 0, `verify ${state.verifyCalls}`);
+  rec('S9-lock-released', f.stream.locked === false, `locked ${f.stream.locked}`);
+
+  // S10: reader lock released on the other exits (overflow with healthy cancel, success)
+  reset();
+  s = streamRequest(CAP * 8, undefined);
+  const st = s.req.body;
+  res = await POST(s.req);
+  rec('S10-lock-released-on-overflow', res.status === 413 && st.locked === false, `status ${res.status} locked ${st.locked}`);
+  reset();
+  const okReq = jsonRequest(JSON.stringify({ idToken: 'tok' }));
+  const okStream = okReq.body;
+  res = await POST(okReq);
+  rec('S10-lock-released-on-success', res.status === 200 && okStream.locked === false, `status ${res.status} locked ${okStream.locked}`);
   return out;
 }
 module.exports = { runScenarios, CAP, state };
