@@ -13,6 +13,7 @@ import {
   PUBLIC_FORM_RATE_LIMIT_WINDOW_MS,
 } from '@/lib/public-form-rate-limit';
 import { isBodyWithinLimit, isHoneypotHit } from '@/lib/request-guards';
+import { readBodyCapped } from '@/lib/admin-session-body';
 import { buildContactSubmissionDoc, sendContactAcknowledgement } from '@/lib/contact-submission';
 import { siteForHost } from '@/lib/site-hosts';
 import { deliverContactEmails } from '@/lib/contact-delivery';
@@ -55,9 +56,15 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // anchor: route-body-cap
+    const capped = await readBodyCapped(request, MAX_BODY_BYTES);
+    if (!capped.ok && capped.reason === 'too-large') {
+      return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
+    }
     let body: unknown;
     try {
-      body = await request.json();
+      if (!capped.ok) throw new Error('read-failed');
+      body = JSON.parse(capped.text);
     } catch {
       return NextResponse.json({ error: 'Invalid request body.' }, { status: HTTP_BAD_REQUEST });
     }

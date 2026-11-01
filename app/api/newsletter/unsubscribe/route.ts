@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isBodyWithinLimit } from '@/lib/request-guards';
+import { readBodyCapped } from '@/lib/admin-session-body';
 import { getFirestore } from 'firebase-admin/firestore';
 
 import { NEWSLETTER_COPY } from '@/components/chrome/newsletter-copy';
@@ -24,7 +25,7 @@ function logError(message: string, context: Record<string, string>): void {
   console.error(`[newsletter/unsubscribe] ${message}`, context);
 }
 
-// Cap on the request body, checked against Content-Length before the body is buffered.
+// Cap on the request body: checked against Content-Length up front, then on the bytes actually read.
 const MAX_BODY_BYTES = 4096;
 
 export async function POST(request: NextRequest) {
@@ -51,11 +52,18 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    body = null;
+  // anchor: route-body-cap
+  const capped = await readBodyCapped(request, MAX_BODY_BYTES);
+  if (!capped.ok && capped.reason === 'too-large') {
+    return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
+  }
+  let body: unknown = null;
+  if (capped.ok) {
+    try {
+      body = JSON.parse(capped.text);
+    } catch {
+      body = null;
+    }
   }
 
   try {

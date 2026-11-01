@@ -7,8 +7,8 @@ export type CappedBody =
 /**
  * Reads a request body, counting the bytes actually pulled from the stream (never
  * trusting Content-Length). Cancels the stream and reports overflow once more than
- * `maxBytes` have been read; a stream error reports `read-failed`. A null body is
- * treated as empty. The reader lock is always released.
+ * `maxBytes` have been read; a stream error reports `read-failed` (logged with the request
+ * method and path, never body content). A null body is treated as empty. The reader lock is always released.
  */
 export async function readBodyCapped(
   request: Request,
@@ -33,7 +33,7 @@ export async function readBodyCapped(
     }
   } catch (error) {
     console.warn('[admin-session] body read failed', {
-      operation: 'POST /api/admin/session',
+      operation: `${request.method} ${new URL(request.url).pathname}`,
       error: error instanceof Error ? error.name : 'unknown',
     });
     return { ok: false, reason: 'read-failed' };
