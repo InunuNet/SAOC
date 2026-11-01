@@ -48,7 +48,7 @@ assertions:
       description: checkout hold budget - frozen limit values, live-only seat counting, cap boundaries, legitimate carts never refused
       command: pnpm exec tsx .agent/memory/project/specs/sec-abuse-controls/goldens/checkout-holds.golden.ts
     - id: A3
-      description: webhook body cap - declared length refused unread, chunked stream cut and cancelled at the cap, lying Content-Length, worst-case notification fits
+      description: webhook body cap - declared length refused unread, chunked stream cut and cancelled at the cap, lying Content-Length, a rejecting cancel() still gives the refusal on all three paths, genuinely form-encoded multibyte PayFast and Ozow worst cases fit with a 2x margin
       command: pnpm exec tsx .agent/memory/project/specs/sec-abuse-controls/goldens/webhook-body.golden.ts
     - id: A4
       description: reservation docs carry clientKey and buyerKey on the order and every position, null (never undefined) when absent
@@ -143,7 +143,7 @@ assertions:
       description: the real contact, newsletter subscribe, newsletter unsubscribe, ticket status and ticket pdf handlers - the Nth request passes and the N+1th gets 429 with Retry-After, a forged leading hop buys nothing, another client is untouched, store failure and missing secret refuse the request, no raw address stored
       command: pnpm exec tsx .agent/memory/project/specs/sec-abuse-controls/goldens/routes-limited.golden.ts
     - id: A40
-      description: the two shared notification handlers and the four ITN routes - over-cap declared, chunked and lying bodies get 413 without verification and cancel the stream, a body exactly at the cap verifies, no other body reader is used
+      description: the two shared notification handlers and the four ITN routes - over-cap declared, chunked and lying bodies get 413 without verification and cancel the stream (also when cancel() rejects), a stream error never reaches verification, a body exactly at the cap verifies, no other body reader is used
       command: pnpm exec tsx .agent/memory/project/specs/sec-abuse-controls/goldens/webhook-handlers.golden.ts
     - id: A41
       description: the capacity ledger counts - both functions, inside and outside a transaction, release only expired Timestamp reservations and keep paid, Pending, legacy and fail-closed holds

@@ -15,17 +15,21 @@ async function main() {
   const tickets = await import(path.join(ROOT, 'lib/tickets-notification.ts'));
   const vendors = await import(path.join(ROOT, 'lib/vendor-stand-payment-notification.ts'));
 
-  function build(chunks: Uint8Array[], headers: Record<string, string>) {
+  function build(chunks: Uint8Array[], headers: Record<string, string>, options: { rejectCancel?: boolean; errorAfter?: number } = {}) {
     const probe = { cancelled: false, pulledBytes: 0, readers: [] as string[] };
     let index = 0;
     const body = new ReadableStream<Uint8Array>({
       pull(controller) {
+        if (options.errorAfter !== undefined && index >= options.errorAfter) { controller.error(new Error('socket reset')); return; }
         if (index >= chunks.length) { controller.close(); return; }
         const chunk = chunks[index++];
         probe.pulledBytes += chunk.byteLength;
         controller.enqueue(chunk);
       },
-      cancel() { probe.cancelled = true; },
+      cancel() {
+        probe.cancelled = true;
+        if (options.rejectCancel) return Promise.reject(new Error('cancel refused'));
+      },
     });
     const request = new NextRequest('http://localhost/api/notify', {
       method: 'POST', headers, body,
@@ -42,15 +46,20 @@ async function main() {
 
   for (const [name, handler] of [['tickets', tickets.POST], ['vendor stand', vendors.POST]] as const) {
     const label = (text: string) => `${name}: ${text}`;
-    const run = async (chunks: Uint8Array[], headers: Record<string, string>) => {
+    const run = async (chunks: Uint8Array[], headers: Record<string, string>, options: { rejectCancel?: boolean; errorAfter?: number } = {}) => {
       let verifications = 0;
       const provider = {
         id: 'stub',
         verifyNotification: async () => { verifications += 1; return { verified: false, reason: 'bad-signature', reference: null }; },
       };
-      const { request, probe } = build(chunks, headers);
-      const response = await handler(provider, request);
-      return { status: response.status, verifications, probe };
+      const { request, probe } = build(chunks, headers, options);
+      let status: number | 'threw' = 'threw';
+      try {
+        status = (await handler(provider, request)).status;
+      } catch {
+        // A handler that throws is reported as 'threw'; each caller decides whether that is allowed.
+      }
+      return { status, verifications, probe };
     };
 
     // A declared Content-Length over the cap: 413, never verified, stream cancelled.
@@ -71,6 +80,24 @@ async function main() {
     r = await run(Array.from({ length: 8 }, () => bytes(4096)), { 'content-length': '10' });
     assert.equal(r.status, 413, label('a lying Content-Length is 413'));
     assert.equal(r.verifications, 0);
+
+    // Codex QA A27 (round 8): a cancel() that rejects must not cost the 413 on any over-cap path.
+    for (const [what, chunks, headers] of [
+      ['declared oversize', [bytes(100)], { 'content-length': String(CAP + 1) }],
+      ['chunked oversize', Array.from({ length: 8 }, () => bytes(4096)), {}],
+      ['lying Content-Length', Array.from({ length: 8 }, () => bytes(4096)), { 'content-length': '10' }],
+    ] as const) {
+      r = await run([...chunks], { ...headers }, { rejectCancel: true });
+      assert.equal(r.status, 413, label(`${what} with a rejecting cancel() is still 413, not a throw`));
+      assert.equal(r.verifications, 0, label(`${what} with a rejecting cancel() never reaches verification`));
+      assert.equal(r.probe.cancelled, true, label(`${what}: cancel was attempted`));
+    }
+
+    // A stream that errors mid-read. No status is defined for this by the handler contract today (the
+    // reader does not catch, so the handler throws and the framework answers), so none is asserted and
+    // none is invented: the only guarantee pinned is that an unreadable body never reaches verification.
+    r = await run([bytes(100), bytes(100)], {}, { errorAfter: 1 });
+    assert.equal(r.verifications, 0, label('a stream error never reaches verification'));
 
     // Exactly at the cap, declared and chunked: still verified, acknowledged (the stub rejects the signature).
     for (const headers of [{ 'content-length': String(CAP) }, {}]) {
@@ -96,6 +123,8 @@ async function main() {
     const { request } = build([bytes(100)], { 'content-length': String(CAP + 1), 'content-type': 'application/x-www-form-urlencoded' });
     const response = await POST(request);
     assert.equal(response.status, 413, `${file}: an over-cap notification is 413`);
+    const rejecting = build([bytes(100)], { 'content-length': String(CAP + 1), 'content-type': 'application/x-www-form-urlencoded' }, { rejectCancel: true });
+    assert.equal((await POST(rejecting.request)).status, 413, `${file}: an over-cap notification is 413 even when cancel() rejects`);
   }
 
   console.log('webhook-handlers golden: PASS');

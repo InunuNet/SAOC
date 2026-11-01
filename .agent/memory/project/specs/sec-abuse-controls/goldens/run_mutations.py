@@ -68,7 +68,7 @@ MUTATIONS = [
     ("M32", "components/tickets/useTicketCart.ts", "append", None, "", "\nimport { getCheckoutAppCheckToken } from '@/lib/app-check-client';\n", wiring("flag-off-inlining")),
     ("M33", "app/api/newsletter/subscribe/route.ts", "first", None, "consumeAbuseLimit(", "consumeAbuseLimitX(", wiring("newsletter-limited")),
     ("M34", ".agent/memory/project/specs/footer-newsletter-subscribe/checks/check-subscribe-handler.mjs", "append", None, "", "\n// edit\n", wiring("newsletter-checks-reviewed")),
-    ("M35", WEBHOOK, "anchor", "webhook-declared-cancel", "await request.body?.cancel();", "", golden("webhook-body")),
+    ("M35", WEBHOOK, "anchor", "webhook-declared-cancel", "await request.body?.cancel().catch(() => undefined);", "", golden("webhook-body")),
     ("M36", SEATS, "anchor", "held-timestamp", "instanceof Timestamp", "instanceof Object", golden("seat-holds")),
     ("M37", LIMITER, "anchor", "limiter-tx-read", "await transaction.get(ref)", "await db.runTransaction((other) => other.get(ref)).then(async (stale) => { await new Promise<void>((r) => setImmediate(r)); return stale; })", golden("abuse-limiter")),
     ("M38", CLIENT_IP, "anchor", "xff-min-hops", "< 2", "< 1", golden("abuse-limiter")),
@@ -149,6 +149,11 @@ MUTATIONS = [
     ("M112", "lib/admin-session-body.ts", "first", None, "return { ok: false, reason: 'read-failed' };", "return { ok: false, reason: 'too-large' };", golden("routes-body-cap")),
     ("M113", "lib/admin-session-body.ts", "first", None, "if (total > maxBytes) {", "if (total > maxBytes * 1000) {", golden("routes-body-cap")),
     ("M114", "app/api/contact/route.ts", "append", None, "", "\nconst leak = await request.json();\n", wiring("route-body-cap")),
+    # Webhook cancel failures (round 8): a rejecting cancel() must keep the over-cap refusal.
+    ("M115", WEBHOOK, "anchor", "webhook-declared-cancel", "await request.body?.cancel().catch(() => undefined);", "await request.body?.cancel();", golden("webhook-body")),
+    ("M116", WEBHOOK, "anchor", "webhook-declared-cancel", "await request.body?.cancel().catch(() => undefined);", "await request.body?.cancel();", golden("webhook-handlers")),
+    ("M117", WEBHOOK, "anchor", "webhook-stream-cancel", "await reader.cancel().catch(() => undefined);", "await reader.cancel();", golden("webhook-body")),
+    ("M118", WEBHOOK, "anchor", "webhook-stream-cancel", "await reader.cancel().catch(() => undefined);", "await reader.cancel();", golden("webhook-handlers")),
     ("M18", "app/api/contact/route.ts", "append", None, "", "\nimport { createAttemptStore } from '@/lib/newsletter-rate-store';\n", wiring("no-memory-limiter")),
 ]
 
