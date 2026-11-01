@@ -131,6 +131,7 @@ MUTATIONS = [
     ("M95", "app/api/tickets/checkout/route.ts", "anchor", "checkout-body-cap", "await readCappedBody(request, MAX_BODY_BYTES)", "await readCappedBody(request, Number.MAX_SAFE_INTEGER)", golden("checkout-route")),
     ("M96", "app/api/tickets/checkout/route.ts", "anchor", "checkout-body-cap", "await readCappedBody(request, MAX_BODY_BYTES)", "await readCappedBody(request, MAX_BODY_BYTES * 1000)", golden("checkout-route")),
     ("M97", "app/api/tickets/checkout/route.ts", "first", None, "const actorKey = clientActorKey(request.headers.get('x-forwarded-for'));", "await request.text().catch(() => '');\n  const actorKey = clientActorKey(request.headers.get('x-forwarded-for'));", golden("checkout-route")),
+    ("M98", CHECKOUT, "first", None, "actorLimit = await consumeAbuseLimit(", "await readCappedBody(request, MAX_BODY_BYTES);\n    actorLimit = await consumeAbuseLimit(", wiring("checkout-order")),
     ("M18", "app/api/contact/route.ts", "append", None, "", "\nimport { createAttemptStore } from '@/lib/newsletter-rate-store';\n", wiring("no-memory-limiter")),
 ]
 

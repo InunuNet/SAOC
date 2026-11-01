@@ -61,13 +61,13 @@ def first(text: str, needle: str, rel: str, start: int = 0) -> int:
 def check_checkout_order() -> None:
     text = read(CHECKOUT)
     limit1 = first(text, "consumeAbuseLimit(", CHECKOUT)
-    if limit1 > first(text, "request.json()", CHECKOUT):
-        fail("per-IP consumeAbuseLimit must run before request.json()")
+    if limit1 > first(text, "readCappedBody(request, MAX_BODY_BYTES)", CHECKOUT):
+        fail("per-IP consumeAbuseLimit must run before the capped body read")
     if limit1 > first(text, "resolveActiveGateway(", CHECKOUT):
         fail("per-IP consumeAbuseLimit must run before any Sanity/gateway work")
     appcheck = first(text, "requireCheckoutAppCheck(", CHECKOUT)
-    if not (limit1 < appcheck < first(text, "request.json()", CHECKOUT)):
-        fail("requireCheckoutAppCheck must run after the per-IP limit and before request.json()")
+    if not (limit1 < appcheck < first(text, "readCappedBody(request, MAX_BODY_BYTES)", CHECKOUT)):
+        fail("requireCheckoutAppCheck must run after the per-IP limit and before the capped body read")
     parse = first(text, "parseLineItems(body.lineItems)", CHECKOUT)
     limit2 = first(text, "consumeAbuseLimit(", CHECKOUT, limit1 + 1)
     if not (parse < limit2 < first(text, "resolveActiveGateway(", CHECKOUT)):
