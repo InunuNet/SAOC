@@ -1,10 +1,6 @@
 {
- "origin": "c0e4e380bed890e96bb4862428fe48a0445cbbfd",
+ "origin": "9b9c1b8cf7c669cdc42864b99eba2cf782cd772f",
  "pristine": true,
- "refreshedFrom": {
-  "commit": "2563583f (design/nos-home-align, the approved home build)",
-  "note": "home, /faq, /plan-your-visit refreshed 2026-10-31; other routes still from c0e4e380"
- },
  "entries": {
   "1280 /": [
    {
@@ -405,6 +401,15 @@
    },
    {
     "lockup": false,
+    "tag": "P",
+    "text": "Early-Bird Exhibition Ticket from R120",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
     "tag": "DT",
     "text": "Dates",
     "size": 15,
@@ -415,7 +420,7 @@
    {
     "lockup": false,
     "tag": "DD",
-    "text": "Dates to be confirmed",
+    "text": "23–26 September 2027",
     "size": 16,
     "tracking": "normal",
     "transform": "none",
@@ -433,7 +438,7 @@
    {
     "lockup": false,
     "tag": "DD",
-    "text": "Venue to be confirmed",
+    "text": "The Hangar, Stellenbosch Flying Club",
     "size": 16,
     "tracking": "normal",
     "transform": "none",
@@ -1387,7 +1392,7 @@
    {
     "lockup": false,
     "tag": "SPAN",
-    "text": "To be confirmed",
+    "text": "To be confirmed by the show committee",
     "size": 12,
     "tracking": "normal",
     "transform": "none",
@@ -1854,17 +1859,71 @@
    },
    {
     "lockup": false,
-    "tag": "P",
-    "text": "Show dates to be confirmed",
-    "size": 24,
-    "tracking": "normal",
+    "tag": "DIV",
+    "text": "00",
+    "size": 42,
+    "tracking": "-0.63px",
     "transform": "none",
     "mono": false
    },
    {
     "lockup": false,
-    "tag": "SPAN",
-    "text": "To be confirmed",
+    "tag": "DIV",
+    "text": "Days",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "00",
+    "size": 42,
+    "tracking": "-0.63px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "Hours",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "00",
+    "size": 42,
+    "tracking": "-0.63px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "Min",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "00",
+    "size": 42,
+    "tracking": "-0.63px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "Sec",
     "size": 12,
     "tracking": "1.68px",
     "transform": "uppercase",
@@ -2270,6 +2329,60 @@
    },
    {
     "lockup": false,
+    "tag": "DT",
+    "text": "Dates",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DD",
+    "text": "23–26 September 2027",
+    "size": 24,
+    "tracking": "-0.24px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DT",
+    "text": "Venue",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DD",
+    "text": "The Hangar, Stellenbosch Flying Club",
+    "size": 24,
+    "tracking": "-0.24px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DT",
+    "text": "Host",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DD",
+    "text": "Western Cape",
+    "size": 24,
+    "tracking": "-0.24px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
     "tag": "A",
     "text": "About the show",
     "size": 14.5,
@@ -2325,6 +2438,33 @@
    {
     "lockup": false,
     "tag": "A",
+    "text": "3. Getting to the venue and accessibilit",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "4. Orchid displays, judging and awards",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "5. Orchid sales and vendors",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
     "text": "6. Symposium",
     "size": 15,
     "tracking": "normal",
@@ -2343,7 +2483,43 @@
    {
     "lockup": false,
     "tag": "A",
+    "text": "8. Workshops and other activities",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "9. Food, refreshments and facilities",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
     "text": "10. Accommodation, travel and tourism",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "11. Exhibitors, vendors and sponsors",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "12. Policies and visitor information",
     "size": 15,
     "tracking": "normal",
     "transform": "none",
@@ -2379,6 +2555,258 @@
    {
     "lockup": false,
     "tag": "SPAN",
+    "text": "1.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What is the National Orchid Show – Weste",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The National Orchid Show is a major cele",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "2.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "When and where will the Show take place?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The Show will take place in September 20",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Plant delivery for judging will take pla",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "3.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What is the theme of the Show?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The theme is “From Wild Origins to Culti",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "4.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Who is organising the Show?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The Show is being hosted by five orchid ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "5.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What can visitors expect to see and do?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Visitors can explore orchid displays, vi",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "6.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Is the Show suitable for beginners?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes. The Show is intended for both exper",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "7.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Do I need to be a member of an orchid so",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "No. The Show is open to the public.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "8.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will there be international exhibitors a",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, international guests and exhibitors",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "9.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Where can I find updates about the Show?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Updates will be published on the officia",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
     "text": "2.",
     "size": 24.18,
     "tracking": "-0.585px",
@@ -2399,6 +2827,834 @@
     "tag": "P",
     "text": "Ticket types and prices are on the websi",
     "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "10.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "How much do tickets cost?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Planned ticket categories include Early ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "11.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Where can I buy tickets?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Online ticket sales via the website. The",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "12.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can I buy tickets at the door?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, with debit or credit cards. No Cash",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "13.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What is included in each ticket type?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "There are several ticket types and the w",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "14.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Are children admitted, and do they need ",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "All Children are welcome. Full ticket pr",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "15.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can I get a refund if I cannot attend?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Tickets can only be refunded via the OWZ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "16.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can I use one ticket to attend more than",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "No, you need a ticket for each day or a ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "17.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Do I need to print my ticket?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Tickets will be emailed to you and will ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "3.",
+    "size": 24.18,
+    "tracking": "-0.585px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Getting to the venue and accessibility",
+    "size": 39,
+    "tracking": "-0.585px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "18.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Where is the venue?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The Show will be held at Hangar 25, Orca",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "19.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Is parking available?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, secure parking is available at the ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "20.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can I get to the venue by public transpo",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Visitors should plan their journey in ad",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "21.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Is the venue wheelchair accessible?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The Hangar ground floor is accessible to",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Some activities and events will take pla",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "22.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Are accessible toilets available?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "23.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Are there places to sit and rest?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, there will be a few benches and tab",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "24.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can I bring a guide dog or assistance an",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Only service dogs will be allowed.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "4.",
+    "size": 24.18,
+    "tracking": "-0.585px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Orchid displays, judging and awards",
+    "size": 39,
+    "tracking": "-0.585px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "25.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will the orchids be judged?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes. Judging and awards form part of the",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "26.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can I enter my own orchids for judging?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "All South African Orchid Council members",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "27.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can orchid societies create their own di",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "All submitted orchids will be placed in ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "28.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "When can Display Exhibitors set up their",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The venue access period currently planne",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "29.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can visitors photograph the orchids?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Photography of all plants and exhibition",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "All rights are reserved by the managemen",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "30.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will prize-winning orchids be identified",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, they will be identified and display",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "5.",
+    "size": 24.18,
+    "tracking": "-0.585px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Orchid sales and vendors",
+    "size": 39,
+    "tracking": "-0.585px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "31.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will orchids be available to buy?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes. Orchid sales are planned, with part",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "32.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Which vendors will attend?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The final vendor list will be published ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "33.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can I buy rare or unusual orchids?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Vendors may offer a range of orchid spec",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "34.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can I pay by card or electronic transfer",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Payment methods will vary by vendor. How",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "35.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can I reserve plants with a vendor befor",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Most vendors are open to pre-orders. All",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "36.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can international visitors take orchids ",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Not automatically. Taking live plants ac",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "37.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will vendors sell pots, fertilisers and ",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "There will be some vendors who will be s",
+    "size": 16,
     "tracking": "normal",
     "transform": "none",
     "mono": false
@@ -2433,6 +3689,222 @@
    {
     "lockup": false,
     "tag": "SPAN",
+    "text": "38.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What is the Orchid Symposium?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The Symposium is an educational programm",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "39.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "When and where will the Symposium take p",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "It will take place in conjunction with t",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "40.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Who will be speaking at the Symposium?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Speakers being considered include Elbert",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "41.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Do I need a separate ticket for the Symp",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, the tickets are sold separately fro",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "42.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Is the Symposium suitable for beginners?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The programme is expected to appeal to o",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "43.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will refreshments be provided?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Refreshments will be provided for all at",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "44.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can I attend only one Symposium session?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "A ticket is valid for all sessions. You ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "45.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will presentations or recordings be avai",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, presentations will be made availabl",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
     "text": "7.",
     "size": 24.18,
     "tracking": "-0.585px",
@@ -2453,6 +3925,636 @@
     "tag": "P",
     "text": "For Wild Orchids Southern Africa members",
     "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "46.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What is WOSA?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "WOSA stands for Wild Orchids Southern Af",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "47.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What is the WOSA Conference?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The 7th WOSA Conference will be held in ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "48.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "When and where will the WOSA Conference ",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The conference is planned for 25 Septemb",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "49.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Do I have to be a WOSA member to attend?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "No, anyone can attend.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "50.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "How much does the WOSA Conference cost?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "All ticket prices are available on the w",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "51.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What is included in the WOSA Conference ",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The conference and refreshments.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "52.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will there be discounted or Early Bird t",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, please check the website for more d",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "53.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will the conference include speakers?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, a speaker programme is planned. The",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "54.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will refreshments and lunch be provided?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Refreshments will be provided for all at",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "55.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Is the WOSA Conference accessible to whe",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, the venue is accessible.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "56.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "How do I register for the WOSA Conferenc",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Via the National Show website and ticket",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "8.",
+    "size": 24.18,
+    "tracking": "-0.585px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Workshops and other activities",
+    "size": 39,
+    "tracking": "-0.585px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "57.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will there be orchid-growing workshops?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Workshops are planned as part of the wid",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "58.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Do I need to book workshops in advance?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, it is best to book in advance to av",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "59.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Are workshops suitable for beginners?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "There will be a mix of workshops. Most w",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "60.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Are workshop materials included in the p",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, workshop materials will be included",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "61.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will there be guided tours or field trip",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, these will be published in the fina",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "62.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will there be an opening ceremony or coc",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "A cocktail will be held on Thursday even",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "9.",
+    "size": 24.18,
+    "tracking": "-0.585px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Food, refreshments and facilities",
+    "size": 39,
+    "tracking": "-0.585px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "63.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will food and drinks be available at the",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, there is a restaurant on site as we",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "64.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can I bring my own food and drinks?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "No food can be brought into the venue.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "65.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will vegetarian, vegan or special-diet o",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "This may or may not be available dependi",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "66.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will there be an ATM or cash facilities?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "No ATM facilities are available at the v",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "67.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Is there a cloakroom or a place to store",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "No, there is no cloakroom or storage fac",
+    "size": 16,
     "tracking": "normal",
     "transform": "none",
     "mono": false
@@ -2489,6 +4591,366 @@
     "tag": "A",
     "text": "Plan your visit",
     "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "11.",
+    "size": 24.18,
+    "tracking": "-0.585px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibitors, vendors and sponsors",
+    "size": 39,
+    "tracking": "-0.585px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "75.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "How can I apply to exhibit at the Show?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Email 2027national@gmail.com or compete ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "76.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "How can I book a vendor stand?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Vendor booking information, stand sizes,",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "77.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "When must vendor fees be paid?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Once your application has been accepted ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "78.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What is the cancellation and refund poli",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The current planning provides for no ref",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "79.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Are international orchid vendors welcome",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "International vendors are part of the Sh",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "80.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "How can a business sponsor the Show?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Businesses interested in supporting the ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "81.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can a company donate money or products?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, sponsorship and donations can be ex",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "12.",
+    "size": 24.18,
+    "tracking": "-0.585px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Policies and visitor information",
+    "size": 39,
+    "tracking": "-0.585px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "82.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Are pets allowed?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Only official service animals will be ac",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "83.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Is smoking permitted?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "No smoking is permitted on the premises.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "84.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Is there a lost property service?",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, there will be an information desk w",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "85.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What should I do if I need assistance du",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Visitors should approach an event stewar",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "86.",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Who can I contact with questions that ar",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Email 2027national@gmail.com",
+    "size": 16,
     "tracking": "normal",
     "transform": "none",
     "mono": false
@@ -3140,6 +5602,60 @@
     "text": "Discover Stellenbosch, Cape Town, the Ca",
     "size": 20,
     "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DT",
+    "text": "Dates",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DD",
+    "text": "23–26 September 2027",
+    "size": 24,
+    "tracking": "-0.24px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DT",
+    "text": "Venue",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DD",
+    "text": "The Hangar, Stellenbosch Flying Club",
+    "size": 24,
+    "tracking": "-0.24px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DT",
+    "text": "Host",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DD",
+    "text": "Western Cape",
+    "size": 24,
+    "tracking": "-0.24px",
     "transform": "none",
     "mono": false
    },
@@ -5307,6 +7823,15 @@
    },
    {
     "lockup": false,
+    "tag": "P",
+    "text": "Early-Bird Exhibition Ticket from R120",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
     "tag": "DT",
     "text": "Dates",
     "size": 15,
@@ -5317,7 +7842,7 @@
    {
     "lockup": false,
     "tag": "DD",
-    "text": "Dates to be confirmed",
+    "text": "23–26 September 2027",
     "size": 16,
     "tracking": "normal",
     "transform": "none",
@@ -5335,7 +7860,7 @@
    {
     "lockup": false,
     "tag": "DD",
-    "text": "Venue to be confirmed",
+    "text": "The Hangar, Stellenbosch Flying Club",
     "size": 16,
     "tracking": "normal",
     "transform": "none",
@@ -5489,8 +8014,8 @@
     "lockup": false,
     "tag": "H2",
     "text": "Three years in the making, four days on ",
-    "size": 28,
-    "tracking": "-0.42px",
+    "size": 32,
+    "tracking": "-0.48px",
     "transform": "none",
     "mono": false
    },
@@ -5570,8 +8095,8 @@
     "lockup": false,
     "tag": "H2",
     "text": "2027 South African National Orchid Show",
-    "size": 28,
-    "tracking": "-0.42px",
+    "size": 32,
+    "tracking": "-0.48px",
     "transform": "none",
     "mono": false
    },
@@ -5615,8 +8140,8 @@
     "lockup": false,
     "tag": "H2",
     "text": "Thirteen judging groups",
-    "size": 28,
-    "tracking": "-0.42px",
+    "size": 32,
+    "tracking": "-0.48px",
     "transform": "none",
     "mono": false
    },
@@ -6155,8 +8680,8 @@
     "lockup": false,
     "tag": "H2",
     "text": "Plant Entry for SAOC Members",
-    "size": 28,
-    "tracking": "-0.42px",
+    "size": 32,
+    "tracking": "-0.48px",
     "transform": "none",
     "mono": false
    },
@@ -6289,7 +8814,7 @@
    {
     "lockup": false,
     "tag": "SPAN",
-    "text": "To be confirmed",
+    "text": "To be confirmed by the show committee",
     "size": 12,
     "tracking": "normal",
     "transform": "none",
@@ -6308,8 +8833,8 @@
     "lockup": false,
     "tag": "H2",
     "text": "Programme",
-    "size": 28,
-    "tracking": "-0.42px",
+    "size": 32,
+    "tracking": "-0.48px",
     "transform": "none",
     "mono": false
    },
@@ -6398,8 +8923,8 @@
     "lockup": false,
     "tag": "H2",
     "text": "Exhibit & trade",
-    "size": 28,
-    "tracking": "-0.42px",
+    "size": 32,
+    "tracking": "-0.48px",
     "transform": "none",
     "mono": false
    },
@@ -6756,17 +9281,71 @@
    },
    {
     "lockup": false,
-    "tag": "P",
-    "text": "Show dates to be confirmed",
-    "size": 24,
-    "tracking": "normal",
+    "tag": "DIV",
+    "text": "00",
+    "size": 42,
+    "tracking": "-0.63px",
     "transform": "none",
     "mono": false
    },
    {
     "lockup": false,
-    "tag": "SPAN",
-    "text": "To be confirmed",
+    "tag": "DIV",
+    "text": "Days",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "00",
+    "size": 42,
+    "tracking": "-0.63px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "Hours",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "00",
+    "size": 42,
+    "tracking": "-0.63px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "Min",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "00",
+    "size": 42,
+    "tracking": "-0.63px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "Sec",
     "size": 12,
     "tracking": "1.68px",
     "transform": "uppercase",
@@ -7172,6 +9751,60 @@
    },
    {
     "lockup": false,
+    "tag": "DT",
+    "text": "Dates",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DD",
+    "text": "23–26 September 2027",
+    "size": 20,
+    "tracking": "-0.2px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DT",
+    "text": "Venue",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DD",
+    "text": "The Hangar, Stellenbosch Flying Club",
+    "size": 20,
+    "tracking": "-0.2px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DT",
+    "text": "Host",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DD",
+    "text": "Western Cape",
+    "size": 20,
+    "tracking": "-0.2px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
     "tag": "A",
     "text": "About the show",
     "size": 14.5,
@@ -7227,6 +9860,33 @@
    {
     "lockup": false,
     "tag": "A",
+    "text": "3. Getting to the venue and accessibilit",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "4. Orchid displays, judging and awards",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "5. Orchid sales and vendors",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
     "text": "6. Symposium",
     "size": 15,
     "tracking": "normal",
@@ -7245,7 +9905,43 @@
    {
     "lockup": false,
     "tag": "A",
+    "text": "8. Workshops and other activities",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "9. Food, refreshments and facilities",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
     "text": "10. Accommodation, travel and tourism",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "11. Exhibitors, vendors and sponsors",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "12. Policies and visitor information",
     "size": 15,
     "tracking": "normal",
     "transform": "none",
@@ -7281,6 +9977,258 @@
    {
     "lockup": false,
     "tag": "SPAN",
+    "text": "1.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What is the National Orchid Show – Weste",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The National Orchid Show is a major cele",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "2.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "When and where will the Show take place?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The Show will take place in September 20",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Plant delivery for judging will take pla",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "3.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What is the theme of the Show?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The theme is “From Wild Origins to Culti",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "4.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Who is organising the Show?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The Show is being hosted by five orchid ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "5.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What can visitors expect to see and do?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Visitors can explore orchid displays, vi",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "6.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Is the Show suitable for beginners?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes. The Show is intended for both exper",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "7.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Do I need to be a member of an orchid so",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "No. The Show is open to the public.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "8.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will there be international exhibitors a",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, international guests and exhibitors",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "9.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Where can I find updates about the Show?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Updates will be published on the officia",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
     "text": "2.",
     "size": 19.84,
     "tracking": "-0.48px",
@@ -7301,6 +10249,834 @@
     "tag": "P",
     "text": "Ticket types and prices are on the websi",
     "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "10.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "How much do tickets cost?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Planned ticket categories include Early ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "11.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Where can I buy tickets?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Online ticket sales via the website. The",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "12.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can I buy tickets at the door?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, with debit or credit cards. No Cash",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "13.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What is included in each ticket type?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "There are several ticket types and the w",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "14.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Are children admitted, and do they need ",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "All Children are welcome. Full ticket pr",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "15.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can I get a refund if I cannot attend?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Tickets can only be refunded via the OWZ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "16.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can I use one ticket to attend more than",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "No, you need a ticket for each day or a ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "17.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Do I need to print my ticket?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Tickets will be emailed to you and will ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "3.",
+    "size": 19.84,
+    "tracking": "-0.48px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Getting to the venue and accessibility",
+    "size": 32,
+    "tracking": "-0.48px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "18.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Where is the venue?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The Show will be held at Hangar 25, Orca",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "19.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Is parking available?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, secure parking is available at the ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "20.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can I get to the venue by public transpo",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Visitors should plan their journey in ad",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "21.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Is the venue wheelchair accessible?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The Hangar ground floor is accessible to",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Some activities and events will take pla",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "22.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Are accessible toilets available?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "23.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Are there places to sit and rest?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, there will be a few benches and tab",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "24.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can I bring a guide dog or assistance an",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Only service dogs will be allowed.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "4.",
+    "size": 19.84,
+    "tracking": "-0.48px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Orchid displays, judging and awards",
+    "size": 32,
+    "tracking": "-0.48px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "25.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will the orchids be judged?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes. Judging and awards form part of the",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "26.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can I enter my own orchids for judging?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "All South African Orchid Council members",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "27.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can orchid societies create their own di",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "All submitted orchids will be placed in ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "28.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "When can Display Exhibitors set up their",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The venue access period currently planne",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "29.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can visitors photograph the orchids?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Photography of all plants and exhibition",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "All rights are reserved by the managemen",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "30.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will prize-winning orchids be identified",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, they will be identified and display",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "5.",
+    "size": 19.84,
+    "tracking": "-0.48px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Orchid sales and vendors",
+    "size": 32,
+    "tracking": "-0.48px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "31.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will orchids be available to buy?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes. Orchid sales are planned, with part",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "32.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Which vendors will attend?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The final vendor list will be published ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "33.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can I buy rare or unusual orchids?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Vendors may offer a range of orchid spec",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "34.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can I pay by card or electronic transfer",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Payment methods will vary by vendor. How",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "35.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can I reserve plants with a vendor befor",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Most vendors are open to pre-orders. All",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "36.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can international visitors take orchids ",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Not automatically. Taking live plants ac",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "37.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will vendors sell pots, fertilisers and ",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "There will be some vendors who will be s",
+    "size": 16,
     "tracking": "normal",
     "transform": "none",
     "mono": false
@@ -7335,6 +11111,222 @@
    {
     "lockup": false,
     "tag": "SPAN",
+    "text": "38.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What is the Orchid Symposium?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The Symposium is an educational programm",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "39.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "When and where will the Symposium take p",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "It will take place in conjunction with t",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "40.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Who will be speaking at the Symposium?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Speakers being considered include Elbert",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "41.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Do I need a separate ticket for the Symp",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, the tickets are sold separately fro",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "42.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Is the Symposium suitable for beginners?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The programme is expected to appeal to o",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "43.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will refreshments be provided?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Refreshments will be provided for all at",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "44.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can I attend only one Symposium session?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "A ticket is valid for all sessions. You ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "45.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will presentations or recordings be avai",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, presentations will be made availabl",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
     "text": "7.",
     "size": 19.84,
     "tracking": "-0.48px",
@@ -7355,6 +11347,636 @@
     "tag": "P",
     "text": "For Wild Orchids Southern Africa members",
     "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "46.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What is WOSA?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "WOSA stands for Wild Orchids Southern Af",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "47.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What is the WOSA Conference?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The 7th WOSA Conference will be held in ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "48.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "When and where will the WOSA Conference ",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The conference is planned for 25 Septemb",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "49.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Do I have to be a WOSA member to attend?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "No, anyone can attend.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "50.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "How much does the WOSA Conference cost?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "All ticket prices are available on the w",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "51.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What is included in the WOSA Conference ",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The conference and refreshments.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "52.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will there be discounted or Early Bird t",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, please check the website for more d",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "53.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will the conference include speakers?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, a speaker programme is planned. The",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "54.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will refreshments and lunch be provided?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Refreshments will be provided for all at",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "55.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Is the WOSA Conference accessible to whe",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, the venue is accessible.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "56.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "How do I register for the WOSA Conferenc",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Via the National Show website and ticket",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "8.",
+    "size": 19.84,
+    "tracking": "-0.48px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Workshops and other activities",
+    "size": 32,
+    "tracking": "-0.48px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "57.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will there be orchid-growing workshops?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Workshops are planned as part of the wid",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "58.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Do I need to book workshops in advance?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, it is best to book in advance to av",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "59.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Are workshops suitable for beginners?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "There will be a mix of workshops. Most w",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "60.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Are workshop materials included in the p",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, workshop materials will be included",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "61.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will there be guided tours or field trip",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, these will be published in the fina",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "62.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will there be an opening ceremony or coc",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "A cocktail will be held on Thursday even",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "9.",
+    "size": 19.84,
+    "tracking": "-0.48px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Food, refreshments and facilities",
+    "size": 32,
+    "tracking": "-0.48px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "63.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will food and drinks be available at the",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, there is a restaurant on site as we",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "64.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can I bring my own food and drinks?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "No food can be brought into the venue.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "65.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will vegetarian, vegan or special-diet o",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "This may or may not be available dependi",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "66.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Will there be an ATM or cash facilities?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "No ATM facilities are available at the v",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "67.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Is there a cloakroom or a place to store",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "No, there is no cloakroom or storage fac",
+    "size": 16,
     "tracking": "normal",
     "transform": "none",
     "mono": false
@@ -7391,6 +12013,366 @@
     "tag": "A",
     "text": "Plan your visit",
     "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "11.",
+    "size": 19.84,
+    "tracking": "-0.48px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibitors, vendors and sponsors",
+    "size": 32,
+    "tracking": "-0.48px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "75.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "How can I apply to exhibit at the Show?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Email 2027national@gmail.com or compete ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "76.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "How can I book a vendor stand?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Vendor booking information, stand sizes,",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "77.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "When must vendor fees be paid?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Once your application has been accepted ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "78.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What is the cancellation and refund poli",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The current planning provides for no ref",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "79.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Are international orchid vendors welcome",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "International vendors are part of the Sh",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "80.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "How can a business sponsor the Show?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Businesses interested in supporting the ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "81.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Can a company donate money or products?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, sponsorship and donations can be ex",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "12.",
+    "size": 19.84,
+    "tracking": "-0.48px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Policies and visitor information",
+    "size": 32,
+    "tracking": "-0.48px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "82.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Are pets allowed?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Only official service animals will be ac",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "83.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Is smoking permitted?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "No smoking is permitted on the premises.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "84.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Is there a lost property service?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Yes, there will be an information desk w",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "85.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What should I do if I need assistance du",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Visitors should approach an event stewar",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "86.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Who can I contact with questions that ar",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Email 2027national@gmail.com",
+    "size": 16,
     "tracking": "normal",
     "transform": "none",
     "mono": false
@@ -8042,6 +13024,60 @@
     "text": "Discover Stellenbosch, Cape Town, the Ca",
     "size": 18,
     "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DT",
+    "text": "Dates",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DD",
+    "text": "23–26 September 2027",
+    "size": 20,
+    "tracking": "-0.2px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DT",
+    "text": "Venue",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DD",
+    "text": "The Hangar, Stellenbosch Flying Club",
+    "size": 20,
+    "tracking": "-0.2px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DT",
+    "text": "Host",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DD",
+    "text": "Western Cape",
+    "size": 20,
+    "tracking": "-0.2px",
     "transform": "none",
     "mono": false
    },
