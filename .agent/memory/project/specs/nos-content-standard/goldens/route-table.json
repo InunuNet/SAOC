@@ -172,7 +172,7 @@
     "strikeAbsenceExempt": [],
     "strikeNote": "PV-G1: not rendered: 'Stay informed' (she marks it Remove this section), 'On-site first aid and show duty contact - To be provided' (pending copy; owner item for SAOC/Lee-Ann; this reverses the earlier fix-list item), the map ('To be Provided'), and her trailing 'Explore the show' list (NosShowIndex carries it). The venue card and the emergency band render her Section 1 and Section 2 blocks.",
     "mustPresentNav": [
-     "Plant Entry/Registration"
+     "Award Entries"
     ],
     "mustAbsentNav": [
      "Exhibitor entry guide"
@@ -420,7 +420,7 @@
    "subnav": {
     "items": [
      "International guests",
-     "Plant Entry/Registration",
+     "Award Entries",
      "Exhibitors and vendors"
     ],
     "current": "International guests"
@@ -473,17 +473,17 @@
    "photo": "D1",
    "keyFacts": null,
    "headings": {
-    "h1": "Plant Entry/Registration",
+    "h1": "Award Entries",
     "h1CaseInsensitive": false,
     "noLede": false
    },
    "subnav": {
     "items": [
      "International guests",
-     "Plant Entry/Registration",
+     "Award Entries",
      "Exhibitors and vendors"
     ],
-    "current": "Plant Entry/Registration"
+    "current": "Award Entries"
    },
    "heroCap": {
     "1440": 340,
@@ -493,8 +493,8 @@
    "strikeNote": "EX-G1 (NOS Design, comms.md L4091 region, supersedes the hero-only rule): no Drive doc covers the entry guide (owner item iiii); the page is FAQ v1.0 section 4 verbatim. The Sanity schemas showExhibitorInfo and showExhibitorStep stay for her future guide; their unsourced records are not rendered.",
    "ex": {
     "sg": "EX-G1 (NOS Design, comms.md EX-G1)",
-    "h1": "Plant Entry/Registration",
-    "crumb": "National Show - Plant Entry/Registration",
+    "h1": "Award Entries",
+    "crumb": "National Show - Award Entries",
     "factTerms": [
      "Dates",
      "Venue"
@@ -583,7 +583,7 @@
    "subnav": {
     "items": [
      "International guests",
-     "Plant Entry/Registration",
+     "Award Entries",
      "Exhibitors and vendors"
     ],
     "current": "Exhibitors and vendors"
