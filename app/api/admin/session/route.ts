@@ -11,7 +11,9 @@ const SESSION_DURATION_MS = 60 * 60 * 24 * 5 * 1000; // 5 days
 export async function POST(request: NextRequest) {
   const capped = await readBodyCapped(request);
   if (!capped.ok) {
-    return NextResponse.json({ error: 'Request body too large' }, { status: 413 });
+    return capped.reason === 'too-large'
+      ? NextResponse.json({ error: 'Request body too large' }, { status: 413 })
+      : NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
   let body: { idToken?: unknown };
