@@ -1,0 +1,6 @@
+{
+  "_comment": "Failure-mode list as machine data. mustNotBeSelected: ids that must never appear in classes.*.docs. mustNotAppearAnywhere: KEEP-* ids that must be absent from the entire manifest (selected AND heldBack). mustBeHeld: ids that must be in heldBack but never in classes. See failure-modes.md for the why.",
+  "mustNotBeSelected": ["KEEP-O-RES-FUTURE","HELD-O-RES-EXP-PENDING","HELD-O-RES-EXP-OZOWREF","KEEP-O-PAID-REAL","HELD-O-PAID-UNFLAGGED","KEEP-O-CANCELLED","KEEP-T-5","KEEP-T-6","HELD-T-9","HELD-T-10","HELD-T-11","KEEP-T-12","KEEP-T-13","KEEP-T-14","HELD-VSO-PAYFAST-UNFLAGGED","KEEP-VSO-REAL","KEEP-VSO-PENDING"],
+  "mustNotAppearAnywhere": ["KEEP-O-RES-FUTURE","KEEP-O-PAID-REAL","KEEP-O-CANCELLED","KEEP-T-5","KEEP-T-6","KEEP-T-12","KEEP-T-13","KEEP-T-14","KEEP-VSO-REAL","KEEP-VSO-PENDING"],
+  "mustBeHeld": ["HELD-O-RES-EXP-PENDING","HELD-O-RES-EXP-OZOWREF","HELD-O-PAID-UNFLAGGED","HELD-T-9","HELD-T-10","HELD-T-11","HELD-VSO-PAYFAST-UNFLAGGED"]
+}

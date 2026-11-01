@@ -4517,8 +4517,8 @@ def cmd_reconcile_from_history(targets: list[str]) -> int:
 
 # Ship-time content hash of THIS file, written by execution/bump_version.sh
 # at every version bump (updater-self-check F1). Independent of the
-# 587b1896 self-heal below (updater_self_stale / updater_disk_hash_before /
-# updater_had_baseline), which only detects drift during a real --apply
+# 587b1896 self-heal below (updater_self_stale /
+# updater_disk_hash_before), which only detects drift during a real --apply
 # fetch -- this answers "does the code I am running match what my own
 # version number claims" on ANY invocation, no fetch or prior run required.
 UPDATER_HASH_PATH = Path("execution/update_template.sha256.json")
@@ -4968,19 +4968,6 @@ def main():
         # "stale but HEALED this run" (a fresh updater is now on disk and a
         # re-run would behave differently). Only the second may re-exec.
         updater_disk_hash_before: str | None = None
-        # ...and whether the updater carried a recorded baseline BEFORE this
-        # run. This is what separates the two populations that both arrive at
-        # `updater_self_stale`, and they must not be treated alike:
-        #
-        #   * baseline RECORDED -- an ordinary workspace that is simply behind.
-        #     The updater-self-staleness contract governs it: refuse, hold the
-        #     stamp, exit 1, so the operator re-runs deliberately with the new
-        #     updater. Unchanged by this feature.
-        #   * NO baseline -- the fleet-heal population (onboarded before
-        #     HARNESS baseline coverage). Its documented single command cannot
-        #     ever complete, because every run half-heals and exits 1 with the
-        #     stamp held. Only this population may re-exec.
-        updater_had_baseline = True
         if dry_run:
             print("[dry-run] No changes will be written. Pass --apply to apply changes.")
         else:
@@ -4998,14 +4985,6 @@ def main():
                     # check treats as "cannot prove a heal" and so never
                     # re-execs. Degrading to today's exit 1 is always safe.
                     updater_disk_hash_before = None
-                # Read the store ONCE, here, before the loop can write to it:
-                # the bootstrap-reconcile and the manifest loop both record
-                # baselines as they deliver, so the same question asked at
-                # exit time would answer "recorded" for every healed path and
-                # tell the two populations apart never.
-                updater_had_baseline = bool(
-                    load_template_baselines().get("execution/update_template.py")
-                )
 
             # Pre-apply version-regression guard: refuse to install a payload
             # whose declared template version is older than what's already
@@ -5915,23 +5894,23 @@ def main():
                 #      hop only: if the child still reports staleness, that
                 #      is a real defect and must surface as exit 1, never as
                 #      another hop.
-                #   4. The updater carried NO recorded baseline before this
-                #      run. A workspace that HAS one is an ordinary behind-
-                #      by-a-version install, and the updater-self-staleness
-                #      contract deliberately refuses it: hold the stamp, exit
-                #      1, let the operator re-run with the new updater. This
-                #      feature narrows to the population that contract leaves
-                #      with no way through at all -- it does not overrule it.
+                #   Baseline or not, the heal re-execs: one `make update-
+                #   template` takes an older install to the current one.
                 _REEXEC_ENV = SELF_HEAL_REEXEC_ENV
                 updater_path = Path(__file__).resolve()
                 healed = False
-                if (updater_disk_hash_before is not None
-                        and not updater_had_baseline
-                        and os.environ.get(_REEXEC_ENV) != "1"):
+                disk_changed = False
+                if updater_disk_hash_before is not None:
+                    try:
+                        disk_changed = (
+                            _sha256_of_file(updater_path) != updater_disk_hash_before
+                        )
+                    except OSError:
+                        disk_changed = False
+                if disk_changed and os.environ.get(_REEXEC_ENV) != "1":
                     try:
                         healed = (
-                            _sha256_of_file(updater_path) != updater_disk_hash_before
-                            and _paths_have_identical_content(
+                            _paths_have_identical_content(
                                 source / "execution" / "update_template.py",
                                 updater_path,
                             )
@@ -5972,11 +5951,29 @@ def main():
                             "to complete this update",
                             file=sys.stderr,
                         )
+                if os.environ.get(_REEXEC_ENV) == "1":
+                    not_finished = (
+                        "the refreshed updater re-ran once and is still behind "
+                        "the payload, so upstream changed during this update. "
+                        "Run `make update-template` again."
+                    )
+                elif not disk_changed:
+                    not_finished = (
+                        "the updater was not replaced (withheld, pinned in "
+                        ".agent/no-update, or locally modified), so the version "
+                        "was held and a re-run will repeat this. To update it, "
+                        "unpin it or run `python3 execution/update_template.py "
+                        "--apply --force-path execution/update_template.py`."
+                    )
+                else:
+                    not_finished = (
+                        "this run replaced the updater itself but could not "
+                        "re-run the new copy, so the version was held. Run "
+                        "`make update-template` once more to complete it."
+                    )
                 print(
-                    "UPDATE NOT FINISHED (exit 1 is expected here): this run "
-                    "replaced the updater itself but ran on the old copy, so "
-                    "the version was held. Run `make update-template` once "
-                    "more to complete it.",
+                    "UPDATE NOT FINISHED (exit 1 is expected here): "
+                    + not_finished,
                     file=sys.stderr,
                 )
                 sys.exit(1)

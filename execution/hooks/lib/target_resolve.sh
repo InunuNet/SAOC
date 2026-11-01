@@ -286,7 +286,7 @@ expand_target() {
 # trailing slash on the raw token is itself dropped by that pass). Requiring
 # `/` unconditionally made the directory reachable as a write target that
 # matched nothing.
-re_write_protpath='(^|/)\.claude/settings\.json$|(^|/)\.claude/settings\.local\.json$|(^|/)\.claude/hooks(/|$)|(^|/)execution/hooks(/|$)|(^|/)CLAUDE\.md$|(^|/)AGENTS\.md$|(^|/)GEMINI\.md$|(^|/)\.agent/autonomy_matrix\.json$|(^|/)init\.sh$|(^|/)full_boot\.sh$|(^|/)\.env$|(^|/)\.sops\.yaml$|(^|/)\.agent/enforcement_breakglass\.json$'
+re_write_protpath='(^|/)\.claude/settings\.json$|(^|/)\.claude/settings\.local\.json$|(^|/)\.claude/hooks(/|$)|(^|/)execution/hooks(/|$)|(^|/)CLAUDE\.md$|(^|/)AGENTS\.md$|(^|/)GEMINI\.md$|(^|/)\.agent/autonomy_matrix\.json$|(^|/)init\.sh$|(^|/)full_boot\.sh$|(^|/)\.env$|(^|/)\.sops\.yaml$|(^|/)\.agent/enforcement_breakglass\.json$|(^|/)\.agent/privilege_permit\.json$|(^|/)execution/escalate\.py$'
 
 # ci_match <regex> <string> -- case-insensitive ERE match of one protected-
 # path regex, scoped to this one test (nocasematch is restored immediately
@@ -401,6 +401,11 @@ tr_glob_location_known() {
 tr_glob_expand() {
   local pat="$1" restore m
   local -a matches
+  # TR_GLOB_CWD: the session's own directory, when it differs from the hook's.
+  if [ -n "${TR_GLOB_CWD:-}" ]; then
+    ( cd "$TR_GLOB_CWD" 2>/dev/null || exit 1; TR_GLOB_CWD=""; tr_glob_expand "$pat" )
+    return
+  fi
   restore=$(shopt -p nullglob dotglob nocaseglob)
   shopt -s nullglob nocaseglob
   if [ "${TR_DOTGLOB:-1}" = 0 ]; then shopt -u dotglob; else shopt -s dotglob; fi
@@ -418,6 +423,10 @@ tr_glob_expand() {
 tr_wildcard_reaches() {
   local prefix="$1" lit="$2" dirs d
   tr_glob_location_known "${prefix:-.}" || return 0
+  if [ -n "${TR_GLOB_CWD:-}" ]; then
+    ( cd "$TR_GLOB_CWD" 2>/dev/null || exit 0; TR_GLOB_CWD=""; tr_wildcard_reaches "$prefix" "$lit" )
+    return
+  fi
   [ -z "$prefix" ] && prefix="."
   if tr_has_glob "$prefix"; then
     dirs=$(tr_glob_expand "$prefix") || return 0
@@ -489,7 +498,7 @@ re_read_protpath_settings='(^|/)\.claude/settings\.json$|(^|/)\.claude/settings\
 # backslash. A prefilter that is too tight is a bypass; too loose only costs a
 # check_target call. RR_PREFILTER_WRITE adds the write-only names, for copies.
 RR_PREFILTER_READ='[.]ssh|[.]aws|[.]gnupg|secrets|[.]env|[.]sops[.]yaml|[.]pem$|[.]key$|settings[.]'
-RR_PREFILTER_WRITE="${RR_PREFILTER_READ}"'|init[.]sh|full_boot[.]sh|claude[.]md|agents[.]md|gemini[.]md|autonomy_matrix|enforcement_breakglass|hooks'
+RR_PREFILTER_WRITE="${RR_PREFILTER_READ}"'|init[.]sh|full_boot[.]sh|claude[.]md|agents[.]md|gemini[.]md|autonomy_matrix|enforcement_breakglass|privilege_permit|escalate[.]py|hooks'
 
 # re_read_protpath — the union, unchanged in membership from before the split.
 # It is what the WRITE direction tests (a config file you may not read you
