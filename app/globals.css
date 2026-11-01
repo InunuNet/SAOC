@@ -676,15 +676,14 @@ h3.font-serif {
   text-align: center;
 }
 /* Event hero only (NOS Design 2026-10-27): a left-aligned row from the h1 edge; from 1024px the cells
-   share one row and wrap their text instead of overflowing. */
+   share one row and wrap at word breaks, never inside a word. */
 .hero-facts[data-facts-align='start'] > div {
   align-items: flex-start;
-  min-width: 0;
   text-align: left;
 }
 .hero-facts[data-facts-align='start'] dd,
 .hero-facts[data-facts-align='start'] dt {
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 @media (min-width: 1024px) {
   .hero-facts[data-facts-align='start'] {
