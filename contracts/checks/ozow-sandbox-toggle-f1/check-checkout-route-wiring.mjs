@@ -69,7 +69,7 @@ if (flagReadMatches.length !== 1) {
 // feeds both resolveExpectedGatewayAmount() (into reserveTicket's input) and
 // resolveOzowInitiateAmount() (into initiate()).
 const flagReadIndex = src.indexOf('isOzowSandboxTestModeEnabled(');
-const reserveTicketIndex = src.indexOf('reserveTicket(');
+const reserveTicketIndex = src.indexOf('await reserveTicket(');
 if (flagReadIndex === -1) {
   fail('isOzowSandboxTestModeEnabled(...) is not called in app/api/tickets/checkout/route.ts');
 } else if (reserveTicketIndex === -1) {
