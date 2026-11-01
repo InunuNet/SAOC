@@ -353,19 +353,32 @@ async function seedFixtureDoc(fixture: Fixture): Promise<void> {
 // teardown
 // ---------------------------------------------------------------------------
 
-async function teardown(): Promise<void> {
+/** True only when the stored doc carries both fixture markers. */
+function hasFixtureMarkers(data: Record<string, unknown> | undefined): boolean {
+  return data?.attendeeEmail === MARKER_EMAIL && data?.attendeeName === MARKER_NAME;
+}
+
+/** Deletes marker-verified fixtures by exact bookingRef. Returns the refs it skipped. */
+async function teardown(): Promise<string[]> {
   const database = db();
+  const skipped: string[] = [];
   for (const bookingRef of SEEDED_BOOKING_REFS) {
     const snapshot = await database
       .collection(TICKETS_COLLECTION)
       .where('bookingRef', '==', bookingRef)
       .limit(1)
       .get();
-    if (!snapshot.empty) {
-      await snapshot.docs[0]!.ref.delete();
+    if (snapshot.empty) continue;
+    const found = snapshot.docs[0]!;
+    if (!hasFixtureMarkers(found.data())) {
+      console.error(`Skipped ${bookingRef}: markers do not match, not deleted.`);
+      skipped.push(bookingRef);
+      continue;
     }
+    await found.ref.delete();
   }
-  console.log(`Tore down ${SEEDED_BOOKING_REFS.length} door test ticket(s): ${SEEDED_BOOKING_REFS.join(', ')}`);
+  console.log(`Tore down ${SEEDED_BOOKING_REFS.length - skipped.length} door test ticket(s).`);
+  return skipped;
 }
 
 // ---------------------------------------------------------------------------
@@ -473,7 +486,8 @@ async function main(): Promise<void> {
     return;
   }
   if (command === 'teardown') {
-    await teardown();
+    const skipped = await teardown();
+    if (skipped.length > 0) process.exitCode = 1;
     return;
   }
   console.error('Usage: tsx scripts/seed-door-test-tickets.ts seed|teardown');
