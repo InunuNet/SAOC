@@ -21,7 +21,7 @@ assertions:
   checks:
     - id: A1
       required: false
-      note: PARKED - Content-Length fix applied but check premise is obsolete (route now ignores client providerId; resolves gateway from Firestore adminSettings, gateway-picker-admin-only F1). Needs rewrite by architect.
+      note: "RETIRED 2026-11-01: premise obsolete since gateway-picker-admin-only F1 (route.ts:484); script kept as method documentation"
       description: >-
         Ozow providerid-fail-closed check passes after the check's request sets Content-Length (FIX; defect is in the check, route now 413s a missing Content-Length)
       command: |-
