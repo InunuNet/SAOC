@@ -1,0 +1,35 @@
+# B3 (go-live lane B). Assertions run from the repo root of worktree .tmp/sandbox/go-live-b3. The real proof is the PR's CI run, then a re-run that restores the cache.
+schema: athanor.contract/v1
+slug: ci-playwright-timeout-cache
+goal: The CI build job and its Playwright install step have timeouts that clear real run times, and ~/.cache/ms-playwright is cached on the installed Playwright version with OS deps installed on a hit.
+created_at: '2026-11-01'
+autonomy: high
+exclusions:
+  - item: 'ops/merge-when-green.sh, other CI jobs, any existing ci.yml line, any copy change'
+    reason: 'Stays with SAOC; A2 enforces the diff scope and additions-only.'
+features:
+  - id: F1
+    name: timeout-minutes on the build job and Playwright install, plus a version-keyed browser cache
+    status: pending
+goldens:
+  - .agent/memory/project/specs/ci-playwright-timeout-cache/goldens/spec.md
+  - .agent/memory/project/specs/ci-playwright-timeout-cache/goldens/reference-ci.diff
+  - .agent/memory/project/specs/ci-playwright-timeout-cache/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: frozen goldens and check scripts unmodified since the architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/ci-playwright-timeout-cache/goldens/checks.sha256
+    - id: A2
+      description: diff limited to ci.yml, docs and this spec, and ci.yml is additions-only
+      command: bash .agent/memory/project/specs/ci-playwright-timeout-cache/checks/diff-scope.sh
+    - id: A3
+      description: parsed ci.yml has job timeout 50-90, install and install-deps timeouts 5-20, actions/cache pinned to a major, path ~/.cache/ms-playwright, key from runner.os plus the version step output with no restore-keys, miss/hit split, correct step order
+      command: python3 .agent/memory/project/specs/ci-playwright-timeout-cache/checks/verify_ci_playwright.py
+    - id: A4
+      description: each assertion in A3 is load-bearing - ten in-memory mutants (timeouts removed or too small, cache step removed, wrong path, floating key, unpinned action, restore-keys, install always runs, install-deps removed) are all rejected
+      command: python3 .agent/memory/project/specs/ci-playwright-timeout-cache/checks/verify_ci_playwright.py --selftest
+    - id: A5
+      description: ops/merge-when-green.sh is unchanged
+      command: git diff --quiet origin/main -- ops/merge-when-green.sh
