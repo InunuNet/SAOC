@@ -3,14 +3,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuth, type DecodedIdToken } from 'firebase-admin/auth';
 
 import { classifyRefusal, isAdminToken } from '@/lib/admin-auth';
+import { readBodyCapped } from '@/lib/admin-session-body';
 import { initAdmin } from '@/lib/firebase-admin';
 
 const SESSION_DURATION_MS = 60 * 60 * 24 * 5 * 1000; // 5 days
 
 export async function POST(request: NextRequest) {
+  const capped = await readBodyCapped(request);
+  if (!capped.ok) {
+    return NextResponse.json({ error: 'Request body too large' }, { status: 413 });
+  }
+
   let body: { idToken?: unknown };
   try {
-    const parsed: unknown = await request.json();
+    const parsed: unknown = JSON.parse(capped.text);
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
     }
