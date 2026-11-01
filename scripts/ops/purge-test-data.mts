@@ -35,6 +35,7 @@ const MAX_MANIFEST_AGE_MS = 60 * 60 * 1000;
 const SCHEMA_VERSION = 1;
 const TOKEN_LENGTH = 12;
 const ENV_FILE = '.env.local';
+export const EXPECTED_PROJECT_ID = 'saoc-webapp';
 const DEFAULT_OUT_DIR = '.tmp/sandbox/purge';
 const PROJECT_ROOT = path.resolve(import.meta.dirname, '../..');
 const SANDBOX_ROOT = path.join(PROJECT_ROOT, '.tmp', 'sandbox');
@@ -175,6 +176,10 @@ function revisionOf(time: { seconds: number; nanoseconds: number }): string {
 
 async function readLive(): Promise<{ snapshot: Snapshot; now: string }> {
   loadEnv();
+  const configured = process.env.FIREBASE_ADMIN_PROJECT_ID ?? '';
+  if (configured !== EXPECTED_PROJECT_ID) {
+    throw new ExitError(2, `refusing live run: configured project is not ${EXPECTED_PROJECT_ID}`);
+  }
   const { initAdmin } = await import('../../lib/firebase-admin.ts');
   const { getFirestore } = await import('firebase-admin/firestore');
   initAdmin();
@@ -227,13 +232,38 @@ function buildManifest(
   };
 }
 
-function reportDryRun(manifest: Manifest, file: string): void {
+function countComps(manifest: Manifest, snapshot: Snapshot): Record<string, number> {
+  const comps: Record<string, number> = {};
+  for (const cls of Object.values(manifest.classes)) {
+    for (const ref of cls.docs) {
+      if (snapshot.collections[ref.collection][ref.id].gateway === 'comp') {
+        comps[ref.collection] = (comps[ref.collection] ?? 0) + 1;
+      }
+    }
+  }
+  return comps;
+}
+
+function reportCoverage(manifest: Manifest, snapshot: Snapshot): void {
+  const comps = countComps(manifest, snapshot);
+  const compTotal = Object.values(comps).reduce((n, c) => n + c, 0);
+  say(`  comp docs in delete set (may belong to real people, review): ${compTotal}`);
+  for (const name of COLLECTIONS) {
+    const read = Object.keys(snapshot.collections[name]).length;
+    const selected = manifest.totals.byCollection[name] ?? 0;
+    const held = Object.values(manifest.heldBack).flat().filter((r) => r.collection === name).length;
+    say(`  kept, not classified ${name}: ${read - selected - held} (read ${read})`);
+  }
+}
+
+function reportDryRun(manifest: Manifest, file: string, snapshot: Snapshot): void {
   say(`DRY RUN (${manifest.source}, project ${manifest.projectId}) at ${manifest.now}`);
   for (const [id, cls] of Object.entries(manifest.classes)) say(`  select ${id} (${cls.rule}): ${cls.count}`);
   for (const [id, list] of Object.entries(manifest.heldBack)) say(`  held   ${id}: ${list.length}`);
   for (const row of manifest.stockDelta.rows) {
     say(`  stock  ${row.showId} / ${row.ticketType}: ${row.before} -> ${row.after}`);
   }
+  reportCoverage(manifest, snapshot);
   say(`totals: selected ${manifest.totals.selected}, held ${manifest.totals.heldBack}`);
   say(`manifest: ${path.relative(PROJECT_ROOT, file)}`);
   say(`confirm token: ${manifest.confirmToken}`);
@@ -247,7 +277,7 @@ async function runDry(opts: Options): Promise<void> {
   fs.mkdirSync(outDir, { recursive: true });
   const file = path.join(outDir, `manifest-${stamp(manifest.generatedAt)}.json`);
   fs.writeFileSync(file, JSON.stringify(manifest, null, 2) + '\n');
-  reportDryRun(manifest, file);
+  reportDryRun(manifest, file, snapshot);
 }
 
 // ---- apply: gates ----------------------------------------------------------------------------
@@ -349,6 +379,10 @@ function errorCode(err: unknown): number | null {
   return typeof code === 'number' ? code : null;
 }
 
+function isSkippable(code: number | null): boolean {
+  return code === FIRESTORE_FAILED_PRECONDITION || code === FIRESTORE_NOT_FOUND;
+}
+
 async function liveDeleter(): Promise<(batch: DeleteTarget[]) => Promise<string[]>> {
   const { getFirestore, Timestamp } = await import('firebase-admin/firestore');
   const db = getFirestore();
@@ -363,15 +397,14 @@ async function liveDeleter(): Promise<(batch: DeleteTarget[]) => Promise<string[
       await writer.commit();
       return [];
     } catch (err) {
-      if (errorCode(err) !== FIRESTORE_FAILED_PRECONDITION) throw err;
+      if (!isSkippable(errorCode(err))) throw err;
     }
     const skipped: string[] = [];
     for (const t of batch) {
       try {
         await refOf(t).delete(pre(t));
       } catch (err) {
-        const code = errorCode(err);
-        if (code !== FIRESTORE_FAILED_PRECONDITION && code !== FIRESTORE_NOT_FOUND) throw err;
+        if (!isSkippable(errorCode(err))) throw err;
         skipped.push(`${t.collection}/${t.id}`);
       }
     }

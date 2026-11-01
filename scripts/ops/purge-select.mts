@@ -83,8 +83,19 @@ const STOCK_NOTE =
   '(status reserved|paid, expired reservations excluded, mirrors lib/data/tickets.ts ' +
   'stillHoldsSeat). Rows with before==after are omitted.';
 
+/** An explicit `issuedInTestMode: false` always wins over the sandbox amount. */
 export function isTestEvidence(doc: PurgeDoc): boolean {
+  if (doc.issuedInTestMode === false) return false;
   return doc.issuedInTestMode === true || doc.expectedGatewayAmount === SANDBOX_AMOUNT;
+}
+
+/** Flagged real yet carrying the sandbox amount: contradictory, so held, never deleted. */
+function isContradictory(doc: PurgeDoc): boolean {
+  return doc.issuedInTestMode === false && doc.expectedGatewayAmount === SANDBOX_AMOUNT;
+}
+
+function isHeldPaid(doc: PurgeDoc): boolean {
+  return !isTestEvidence(doc) && (isContradictory(doc) || !isExplicitlyReal(doc));
 }
 
 /** Positive record that the sale was real (flag false, or a gateway amount that is not the sandbox one). */
@@ -174,20 +185,23 @@ export function stockDelta(
 function classifyOrders(orders: Record<string, PurgeDoc>, nowMs: number) {
   const reservedExpired: string[] = [];
   const heldGatewayRef: string[] = [];
+  const heldFlaggedReal: string[] = [];
   const sandboxPaid: string[] = [];
   const heldPaid: string[] = [];
   for (const id of Object.keys(orders).sort()) {
     const order = orders[id];
     if (order.status === 'reserved' && isExpired(order, nowMs)) {
       const noGatewayTrace = isNil(order.gatewayPaymentId) && isNil(order.gatewayPending);
-      if (noGatewayTrace || isTestEvidence(order)) reservedExpired.push(id);
-      else heldGatewayRef.push(id);
+      if (isTestEvidence(order)) reservedExpired.push(id);
+      else if (!noGatewayTrace) heldGatewayRef.push(id);
+      else if (order.issuedInTestMode === false) heldFlaggedReal.push(id);
+      else reservedExpired.push(id);
     } else if (order.status === 'paid') {
       if (isTestEvidence(order)) sandboxPaid.push(id);
-      else if (!isExplicitlyReal(order)) heldPaid.push(id);
+      else if (isHeldPaid(order)) heldPaid.push(id);
     }
   }
-  return { reservedExpired, heldGatewayRef, sandboxPaid, heldPaid };
+  return { reservedExpired, heldGatewayRef, heldFlaggedReal, sandboxPaid, heldPaid };
 }
 
 function classifyOrphans(
@@ -228,7 +242,7 @@ export function selectPurge(snapshot: Snapshot, now: string): Selection {
   );
   const vsoHeld = sortedIds(
     vendorStandOrders,
-    (v) => v.status === 'paid' && !isTestEvidence(v) && !isExplicitlyReal(v),
+    (v) => v.status === 'paid' && isHeldPaid(v),
   );
 
   const classes: Record<ClassId, SelectedClass> = {
@@ -246,6 +260,10 @@ export function selectPurge(snapshot: Snapshot, now: string): Selection {
     orphanPositionsNotPurgeable: refs('tickets', orphans.held),
     vendorStandOrdersPaidWithoutTestEvidence: refs('vendorStandOrders', vsoHeld),
   };
+  // Emitted only when non-empty so the manifest shape stays identical to the golden.
+  if (o.heldFlaggedReal.length > 0) {
+    heldBack.reservedExpiredFlaggedReal = refs('orders', o.heldFlaggedReal);
+  }
 
   const selectedTickets = [...cascadeIds, ...orphans.selected];
   const byCollection: Record<string, number> = { orders: 0, tickets: 0, vendorStandOrders: 0 };
@@ -301,7 +319,8 @@ export function hardGuard(
   if (!(PURGEABLE_COLLECTIONS as readonly string[]).includes(collection)) {
     return { ok: false, reason: `collection ${collection} is not purgeable` };
   }
-  if (isTestEvidence(doc) || options.parentIsTest === true) return { ok: true, reason: 'test evidence' };
+  const cascadedFromTest = options.parentIsTest === true && doc.issuedInTestMode !== false;
+  if (isTestEvidence(doc) || cascadedFromTest) return { ok: true, reason: 'test evidence' };
   if (PROTECTED_STATUSES.includes(String(doc.status))) {
     return { ok: false, reason: `status ${String(doc.status)} without test evidence` };
   }
