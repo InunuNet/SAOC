@@ -1,0 +1,40 @@
+# B2 (go-live lane B). Assertions run from the repo root of worktree .tmp/sandbox/go-live-b2 with node_modules present.
+schema: athanor.contract/v1
+slug: admin-session-body-cap
+goal: POST /api/admin/session rejects bodies over 4096 bytes with 413 by capping bytes actually read, before any token verification, with all other responses unchanged.
+created_at: '2026-11-01'
+autonomy: high
+exclusions:
+  - item: 'trusted-XFF routes, fix/sec-abuse-controls (F3), lib/webhook-body.ts, DELETE handler, lib/admin-auth.ts, any copy change'
+    reason: 'Brad: only the session body cap now; XFF deferred until F3 merges. A2 enforces the diff scope.'
+features:
+  - id: F1
+    name: 4096-byte read-capped body on POST /api/admin/session
+    status: pending
+goldens:
+  - .agent/memory/project/specs/admin-session-body-cap/goldens/spec.md
+  - .agent/memory/project/specs/admin-session-body-cap/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: frozen goldens and check scripts unmodified since the architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/admin-session-body-cap/goldens/checks.sha256
+    - id: A2
+      description: diff limited to the route, the new lib/admin-session-body.ts, tests, docs and this spec
+      command: bash .agent/memory/project/specs/admin-session-body-cap/checks/diff-scope.sh
+    - id: A3
+      description: reference handlers prove the harness discriminates - good passes all 17 scenarios, mutants no-cap, cap-after-parse, content-length-only and cap-after-verify are each killed
+      command: node .agent/memory/project/specs/admin-session-body-cap/checks/selftest.cjs
+    - id: A4
+      description: real handler - 413 for no-length, under-declared and over-declared bodies, bytes pulled bounded, verifyIdToken never called, 3000-char token and exact-cap body still 200, cap+1 is 413, invalid JSON stays 400
+      command: node .agent/memory/project/specs/admin-session-body-cap/checks/run.cjs
+    - id: A5
+      description: F3's lib/webhook-body.ts is not created on this branch
+      command: test ! -e lib/webhook-body.ts
+    - id: A6
+      description: typescript compiles
+      command: pnpm exec tsc --noEmit
+    - id: A7
+      description: lint is clean on the touched paths
+      command: pnpm exec eslint app/api/admin/session lib/admin-session-body.ts
