@@ -28,6 +28,14 @@
       {"host": "nos", "path": "/tickets/no-such-ticket-f4", "status": 404},
       {"host": "nos", "path": "/tickets/recover?token=bogus", "status": 404}
     ],
+    "admin": [
+      {"host": "saoc", "path": "/admin", "status": 307},
+      {"host": "saoc", "path": "/admin/door", "status": 307},
+      {"host": "saoc", "path": "/admin/vendors", "status": 307},
+      {"host": "saoc", "path": "/admin/tickets", "status": 307},
+      {"host": "saoc", "path": "/api/admin/whoami", "status": 401},
+      {"host": "saoc", "path": "/api/admin/export-csv", "status": 401}
+    ],
     "static": [
       {"host": "saoc", "discover_from": "/", "ext": "css"}, {"host": "saoc", "discover_from": "/", "ext": "js"},
       {"host": "nos", "discover_from": "/", "ext": "css"}, {"host": "nos", "discover_from": "/", "ext": "js"}
@@ -49,5 +57,27 @@
     {"mode": "launched", "class": "static", "cache_control": null, "expect": "fail"},
     {"mode": "walled", "class": "static", "cache_control": "private, no-store, max-age=0", "expect": "pass"},
     {"mode": "walled", "class": "static", "cache_control": "public, max-age=31536000, immutable", "expect": "fail"}
+  ],
+  "page_checks": [
+    {"host": "nos", "path": "/tickets", "title_test_prefix": "[Testing only, not live]", "title_rule": "when payments=live the <title> must exist and must not contain the prefix; when payments=testing print SKIP (the prefix is deliberately on); never PASS on a missing <title>", "anchor": "ticket-wosa", "anchor_runs_in": ["live"], "title_scope": "EVERY probed route that returns HTML 200 (isr, dynamic, admin 200s), not only /tickets; static assets excluded. Applies per payments mode exactly as title_rule."}
+  ],
+  "status_vectors": [
+    {"class": "isr", "expected_status": 200, "observed_status": 200, "cache_control": "s-maxage=60, stale-while-revalidate=31535940", "expect_line": "^PASS "},
+    {"class": "isr", "expected_status": 200, "observed_status": 500, "cache_control": "s-maxage=60, stale-while-revalidate=31535940", "expect_line": "^FAIL .*status=500 expected=200"},
+    {"class": "dynamic", "expected_status": 401, "observed_status": 200, "cache_control": "no-store", "expect_line": "^FAIL .*status=200 expected=401"},
+    {"class": "dynamic", "expected_status": 307, "observed_status": 0, "cache_control": null, "expect_line": "^FAIL .*status=0 expected=307"},
+    {"class": "dynamic", "expected_status": 404, "observed_status": 404, "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate", "expect_line": "^PASS "}
+  ],
+  "title_vectors": [
+    {"payments": "live", "html": "<html><head><title>[Testing only, not live] Tickets | NOS</title></head></html>", "expect": "fail"},
+    {"payments": "live", "html": "<html><head><title>Tickets | NOS</title></head></html>", "expect": "pass"},
+    {"payments": "live", "html": "<html><head></head><body>no title</body></html>", "expect": "fail"},
+    {"payments": "testing", "html": "<html><head><title>[Testing only, not live] Tickets | NOS</title></head></html>", "expect": "skip"},
+    {"payments": "testing", "html": "<html><head><title>Tickets | NOS</title></head></html>", "expect": "skip"}
+  ],
+  "anchor_vectors": [
+    {"anchor": "ticket-wosa", "html": "<article id=\"ticket-wosa\" data-ticket-card=\"\">", "expect": "pass"},
+    {"anchor": "ticket-wosa", "html": "<a href=\"#ticket-wosa\">jump</a>", "expect": "fail"},
+    {"anchor": "ticket-wosa", "html": "<article id=\"ticket-symposium\">", "expect": "fail"}
   ]
 }
