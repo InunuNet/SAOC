@@ -1,0 +1,77 @@
+schema: athanor.contract/v1
+slug: go-live-prep-f2
+goal: Triage the 3 failing Ozow checks, make dataset-residue-guard neutral on Sanity 402, and spec two health probes.
+created_at: '2026-11-01'
+autonomy: high
+
+features:
+  - id: F2
+    name: Ozow check triage + residue-guard quota handling + health probes
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/go-live-prep/f2-ozow-residue/goldens/stub-402.json
+  - .agent/memory/project/specs/go-live-prep/f2-ozow-residue/goldens/stub-500.json
+  - .agent/memory/project/specs/go-live-prep/f2-ozow-residue/goldens/stub-401.json
+  - .agent/memory/project/specs/go-live-prep/f2-ozow-residue/goldens/expected-skip-line.txt
+  - .agent/memory/project/specs/go-live-prep/f2-ozow-residue/goldens/hc-additions.sh
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      required: false
+      note: PARKED - Content-Length fix applied but check premise is obsolete (route now ignores client providerId; resolves gateway from Firestore adminSettings, gateway-picker-admin-only F1). Needs rewrite by architect.
+      description: >-
+        Ozow providerid-fail-closed check passes after the check's request sets Content-Length (FIX; defect is in the check, route now 413s a missing Content-Length)
+      command: |-
+        env NEXT_PUBLIC_SANITY_PROJECT_ID= node_modules/.bin/tsx contracts/checks/ozow-m1-f2/check-providerid-fail-closed.mjs
+    - id: A2
+      description: >-
+        Ozow checkout-route-wiring check passes after it ignores comment text when locating the reserveTicket( call site (FIX; defect is in the check, line 402 comment matched first)
+      command: |-
+        node contracts/checks/ozow-sandbox-toggle-f1/check-checkout-route-wiring.mjs
+    - id: A3
+      description: contract-m1-f3 A2 (check-live-purchase against a deleted scratch artifact) is retired with required false
+      command: |-
+        awk '/- id: A2/{f=1} /- id: A3/{f=0} f&&/required: false/{ok=1} END{exit !ok}' .agent/memory/project/specs/ozow-payment-provider/contract-m1-f3.yaml
+    - id: A4
+      description: residue scanner exits 0 and prints the SKIPPED line on a stubbed 402
+      command: |-
+        bash contracts/checks/go-live-prep-f2/verify-residue-exit.sh --stub-fetch-error .agent/memory/project/specs/go-live-prep/f2-ozow-residue/goldens/stub-402.json 0 "^SKIPPED: Sanity quota exhausted"
+    - id: A5
+      description: residue scanner fails (exit 1) on a stubbed 500, never skipping
+      command: |-
+        bash contracts/checks/go-live-prep-f2/verify-residue-exit.sh --stub-fetch-error .agent/memory/project/specs/go-live-prep/f2-ozow-residue/goldens/stub-500.json 1
+    - id: A6
+      description: residue scanner fails (exit 1) on a stubbed 401, never skipping
+      command: |-
+        bash contracts/checks/go-live-prep-f2/verify-residue-exit.sh --stub-fetch-error .agent/memory/project/specs/go-live-prep/f2-ozow-residue/goldens/stub-401.json 1
+    - id: A7
+      description: residue fixture still exits 1
+      command: |-
+        bash contracts/checks/go-live-prep-f2/verify-residue-exit.sh --fixture contracts/golden/dataset-residue-guard/fixture-dirty-nested.json 1
+    - id: A8
+      description: clean fixture still exits 0 with ALL CLEAR
+      command: |-
+        bash contracts/checks/go-live-prep-f2/verify-residue-exit.sh --fixture contracts/golden/dataset-residue-guard/fixture-clean.json 0 "ALL CLEAR"
+    - id: A9
+      description: CI job still runs the scanner and no continue-on-error masks failures
+      command: |-
+        grep -q "scripts/scan-dataset-residue.ts" .github/workflows/ci.yml
+    - id: A10
+      description: scanner source handles 402 and plan_limit_reached
+      command: |-
+        grep -q "plan_limit_reached" scripts/scan-dataset-residue.ts
+    - id: A11
+      required: false
+      note: hc.sh lives in the untracked .tmp/sandbox/health dir, absent on CI and in worktrees
+      description: hc.sh has the Sanity quota probe alerting on 402
+      command: |-
+        grep -q "ALERT: Sanity quota exhausted" .tmp/sandbox/health/hc.sh
+    - id: A12
+      required: false
+      note: hc.sh lives in the untracked .tmp/sandbox/health dir, absent on CI and in worktrees
+      description: hc.sh has the tickets-hub latency probe with a 10 second threshold
+      command: |-
+        grep -q "nos.saoc.co.za/tickets slow" .tmp/sandbox/health/hc.sh
