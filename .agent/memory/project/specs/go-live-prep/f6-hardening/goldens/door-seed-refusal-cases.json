@@ -1,0 +1,18 @@
+{
+  "_comment": "Env objects handed to assertSeedTargetAllowed(env). env is the already-merged view (process env first, local dotenv fallback) of FIREBASE_ADMIN_PROJECT_ID, FIREBASE_ADMIN_CLIENT_EMAIL, NEXT_PUBLIC_FIREBASE_PROJECT_ID, GOOGLE_CLOUD_PROJECT, GCLOUD_PROJECT. Live project id: saoc-webapp. There is no bypass key; the last refuse case proves a bypass-looking key changes nothing.",
+  "refuse": [
+    { "label": "live id exact", "env": { "FIREBASE_ADMIN_PROJECT_ID": "saoc-webapp" } },
+    { "label": "live id uppercase", "env": { "FIREBASE_ADMIN_PROJECT_ID": "SAOC-WEBAPP" } },
+    { "label": "live id padded with whitespace", "env": { "FIREBASE_ADMIN_PROJECT_ID": "  saoc-webapp " } },
+    { "label": "admin id blank fails closed", "env": { "FIREBASE_ADMIN_PROJECT_ID": "   " } },
+    { "label": "admin id empty string fails closed", "env": { "FIREBASE_ADMIN_PROJECT_ID": "" } },
+    { "label": "admin id benign but service-account email belongs to the live project", "env": { "FIREBASE_ADMIN_PROJECT_ID": "saoc-door-fixture-test", "FIREBASE_ADMIN_CLIENT_EMAIL": "seed@saoc-webapp.iam.gserviceaccount.com" } },
+    { "label": "admin id benign but public client id is live", "env": { "FIREBASE_ADMIN_PROJECT_ID": "saoc-door-fixture-test", "NEXT_PUBLIC_FIREBASE_PROJECT_ID": "saoc-webapp" } },
+    { "label": "admin id benign but GOOGLE_CLOUD_PROJECT is live", "env": { "FIREBASE_ADMIN_PROJECT_ID": "saoc-door-fixture-test", "GOOGLE_CLOUD_PROJECT": "saoc-webapp" } },
+    { "label": "attempted env bypass is ignored", "env": { "FIREBASE_ADMIN_PROJECT_ID": "saoc-webapp", "DOOR_SEED_ALLOW_LIVE": "1", "FORCE": "1" } }
+  ],
+  "allow": [
+    { "label": "distinct non-live project", "env": { "FIREBASE_ADMIN_PROJECT_ID": "saoc-door-fixture-test", "FIREBASE_ADMIN_CLIENT_EMAIL": "seed@saoc-door-fixture-test.iam.gserviceaccount.com", "NEXT_PUBLIC_FIREBASE_PROJECT_ID": "saoc-door-fixture-test" } },
+    { "label": "lookalike id is not the live project", "env": { "FIREBASE_ADMIN_PROJECT_ID": "saoc-webapp-staging-fixture" } }
+  ]
+}
