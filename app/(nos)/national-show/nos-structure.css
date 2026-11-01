@@ -949,7 +949,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   grid-row: 1 / span 2;
   align-self: start;
   position: sticky;
-  top: 100px;
+  top: var(--doc-aside-top);
   aspect-ratio: 4 / 5;
   border-radius: 10px;
   overflow: hidden;
@@ -2717,7 +2717,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   }
   .nos-theme .nos-hm-float-track .nos-hm-card {
     position: sticky;
-    top: 100px;
+    top: var(--doc-aside-top);
   }
 }
 /* Ruled blocks on one ground: the wrap carries the padding, because the shared same-ground rule
@@ -4100,7 +4100,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   }
   .nos-theme .nos-ct-card {
     position: sticky;
-    top: 100px;
+    top: var(--doc-aside-top);
     grid-column: 2;
     grid-row: 1 / span 2;
   }
@@ -4283,7 +4283,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   }
   .nos-theme .nos-we-card {
     position: sticky;
-    top: 100px;
+    top: var(--doc-aside-top);
     max-width: none;
     margin-bottom: 0;
   }
