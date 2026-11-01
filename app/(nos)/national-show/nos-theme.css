@@ -611,6 +611,31 @@
   line-height: 1.45;
   color: var(--ivory);
 }
+/* Theme line (Lee-Ann, landing doc v1.0 Section 1), placed under Dates / Venue on Brad's
+   instruction 2026-10-29. */
+.nos-theme .nos-hero-theme {
+  margin: 48px 0 0;
+  max-width: none;
+  white-space: nowrap;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(1.15rem, 1rem + 0.6vw, 1.375rem);
+  line-height: 1.42;
+  color: var(--bone);
+  font-variation-settings: 'opsz' 28;
+  text-wrap: pretty;
+}
+.nos-theme .nos-hero-theme em {
+  font-style: italic;
+}
+@media (max-width: 1023px) {
+  .nos-theme .nos-hero-theme {
+    margin-top: 32px;
+    white-space: normal;
+    font-size: 18px;
+    line-height: 1.5;
+  }
+}
 
 /* R68 hub hero actions row: the CTA cluster (buttons, then the price anchor) and the countdown
    share one flex row, bottoms aligned, the countdown pushed to the far edge. Under 640px the two

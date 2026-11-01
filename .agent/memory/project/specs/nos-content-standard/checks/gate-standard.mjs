@@ -14,6 +14,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { fsRoute, fsTickets, fsTicketsFan, fsHome, fsContact, ndNavGate, fsAboutH1 } from './fs-checks.mjs';
+import { homeRestoreChecks, LANDING_SOURCE } from '../../nos-home-restore/checks/home-restore-checks.mjs';
 import { AUTH, BANNED, CROPS, RETIRED, gotoRoute, EXCLUDED, ROUTES, STD, driveState, readSource, launchChromium, newContext, withServer } from './_lib.mjs';
 
 const HERO_IMG = 'section[data-nos-hero] [data-nos-hero-media] img';
@@ -483,7 +484,8 @@ async function ledePreloadScope(browser, server, c) {
     if (await gotoRoute(page, server, path, c, tag)) {
       const hrefs = await page.evaluate(() => [...document.querySelectorAll('link[rel="preload"][as="font"]')].map((n) => new URL(n.getAttribute('href'), location.href).href));
       const shas = []; for (const h of hrefs) { try { shas.push({ h, sha: sha256Hex(await (await context.request.get(h)).body()) }); } catch { shas.push({ h, sha: null }); } }
-      c.check(`${tag} Rev 46c no Fraunces italic preload outside /symposium (${shas.length} font preloads; ${shas.filter((x) => x.sha === F.italic).length} are the Fraunces italic file; ${shas.filter((x) => !x.sha).length} unreadable)`, shas.every((x) => x.sha) && !shas.some((x) => x.sha === F.italic));
+      // '/' is allowed the italic preload: home carries her Theme line and judging italics (Lee-Ann approved 2026-10-31).
+      c.check(`${tag} Rev 46c no Fraunces italic preload outside /symposium (${shas.length} font preloads; ${shas.filter((x) => x.sha === F.italic).length} are the Fraunces italic file; ${shas.filter((x) => !x.sha).length} unreadable)`, shas.every((x) => x.sha) && (path === '/' || !shas.some((x) => x.sha === F.italic)));
     }
     await context.close();
   }
@@ -829,11 +831,11 @@ async function homeChecks(page, vp, c, tag) {
   const iH = wte.findIndex((l) => spUnmd(l) === 'Opening hours'); const iA = wte.findIndex((l) => spUnmd(l) === 'Admission');
   const hours = wte.slice(iH + 1, iA).map((l) => { const [a, ...b] = spUnmd(l).split(' – '); return { label: a, value: b.join(' – ') }; });
   const dateLabel = 'Show dates – for public entrance'; const dateLine = spUnmd(wte[wte.findIndex((l) => spUnmd(l) === dateLabel) + 1] ?? '');
-  const lede = sentences(s3[0])[0]; const closing = s3[s3.length - 1];
+  const wteLede = sentences(s3[0])[0]; const lede = norm(spUnmd(readSource(LANDING_SOURCE).split('\n').map((l) => l.trim()).find((l) => /^To: /.test(l)) ?? '').replace(/^To: /, '')); const closing = s3[s3.length - 1];
   const f26 = spQa(H.exhibitLead); const f27 = spQa(H.exhibitBody);
   const prog = H.programmeRows.map((r) => ({ ...r, text: r.from === 'wte-sentence' ? wteSentence(r.starts) : (sentences(spQa(r.faq).a[0])[0] ?? '') }));
-  const corpus = norm([...about, ...wte.map(spUnmd), ...readSource(`${SPDIR}faq.md`).split('\n').map(spUnmd)].join(' '));
-  c.check(`${tag} HM-G1 sources are real: the lede, About paragraphs 1 and 3, the dates line, ${H.programmeRows.length} programme sentences, FAQ ${H.exhibitLead}/${H.exhibitBody} and the closing paragraph were found in the frozen copies`, Boolean(lede) && aboutBody.length >= 3 && Boolean(dateLine) && hours.length === 3 && prog.every((p) => p.text.length > 30) && Boolean(f26?.a.length) && Boolean(f27?.a.length) && closing.startsWith('Whether your passion lies'));
+  const corpus = norm([...about, ...wte.map(spUnmd), ...readSource(`${SPDIR}faq.md`).split('\n').map(spUnmd), ...readSource(LANDING_SOURCE).split('\n').map(spUnmd)].join(' '));
+  c.check(`${tag} HM-G1 sources are real: the lede, About paragraphs 1 and 3, the dates line, ${H.programmeRows.length} programme sentences, FAQ ${H.exhibitLead}/${H.exhibitBody} and the closing paragraph were found in the frozen copies`, Boolean(wteLede) && Boolean(lede) && aboutBody.length >= 3 && Boolean(dateLine) && hours.length === 3 && prog.every((p) => p.text.length > 30) && Boolean(f26?.a.length) && Boolean(f27?.a.length) && closing.startsWith('Whether your passion lies'));
   const m = await page.evaluate((H) => {
     const txt = (e) => e.textContent.replace(/\s+/g, ' ').trim(); const fam = (e) => getComputedStyle(e).fontFamily.split(',')[0].replace(/["']/g, '').toLowerCase();
     const sec = (k) => document.querySelector(`[data-hm-section="${k}"]`); const main = document.querySelector('main') ?? document.body;
@@ -846,21 +848,21 @@ async function homeChecks(page, vp, c, tag) {
     const closeEl = sec('closing'); const cp = closeEl ? [...closeEl.querySelectorAll('p')][0] : null; const ccs = cp ? getComputedStyle(cp) : null;
     const rows = (el) => el ? [...el.querySelectorAll('h3')].map((h) => { const row = h.closest('li, article, div'); return { h3: txt(h), p: row ? [...row.querySelectorAll('p')].map(txt) : [], a: row ? row.querySelectorAll('a').length : 0, arrow: row ? txt(row).includes('→') : false }; }) : [];
     return { secs: H.sections.map((k) => Boolean(sec(k))), order: H.sections.map((k) => { const e = sec(k); return e ? e.getBoundingClientRect().top + scrollY : null; }),
-      lede: lede ? txt(lede) : null, facts, h2s: [...main.querySelectorAll('h2')].map(txt), body: txt(main),
+      lede: lede ? txt(lede) : null, facts, h2s: [...main.querySelectorAll('h2')].map(txt), body: txt(main), bodyUnmarked: (() => { const k = main.cloneNode(true); k.querySelectorAll(H.pendingMarkerScope).forEach((e) => e.remove()); return txt(k); })(),
       aboutP: ps(about), aboutLinks: links(about).map((x) => x.t).filter((t) => /→/.test(t)), cardText: card ? txt(card) : '', cardPos: card ? getComputedStyle(card).position : null, cardLinks: links(card).map((x) => x.t),
-      visit: links(sec('visit')), prog: rows(sec('programme')), exhP: ps(sec('exhibit')), exhLinks: links(sec('exhibit')).map((x) => x.t.replace(/\s*→.*$/, '')), exhOl: sec('exhibit') ? sec('exhibit').querySelectorAll('ol').length : 0,
+      prog: rows(sec('programme')), exhP: ps(sec('exhibit')), exhLinks: links(sec('exhibit')).map((x) => x.t.replace(/\s*→.*$/, '')), exhOl: sec('exhibit') ? sec('exhibit').querySelectorAll('ol').length : 0,
       closing: cp ? { t: txt(cp), fam: fam(cp), w: ccs.fontWeight, mw: ccs.maxWidth, fs: parseFloat(ccs.fontSize), ch: (() => { const pr = document.createElement('span'); pr.style.cssText = 'display:inline-block;width:1ch;position:absolute;visibility:hidden'; cp.appendChild(pr); const w = pr.getBoundingClientRect().width; pr.remove(); return w; })(), wrap: ccs.textWrap || ccs.textWrapStyle } : null, closeLinks: links(closeEl).map((x) => x.t.replace(/\s*→.*$/, '')),
       orphan, sw: document.documentElement.scrollWidth, iw: innerWidth };
   }, H);
   c.check(`${tag} HM-G1 the five bands exist in order: ${H.sections.join(', ')} (${m.secs.join(',')})`, m.secs.every(Boolean) && m.order.every((y, i) => i === 0 || y > m.order[i - 1]));
-  c.check(`${tag} HM-G1 gone: ${H.bannedText.filter((t) => m.body.includes(t)).join(' | ') || 'none of'} the builder strings (stats, "Ten judging groups", step cards, the old lede, "Cycle", "Past shows"); no TBC, pending or placeholder chip`, H.bannedText.every((t) => !m.body.includes(t)) && !new RegExp(H.bannedPattern, 'i').test(m.body));
-  c.check(`${tag} HM-G1 the hero lede is What to Expect v1.0 section 3 sentence 1, verbatim, in [data-hm-lede] (${m.lede && m.lede.slice(0, 50)})`, m.lede === lede);
+  c.check(`${tag} HM-G1 gone: ${H.bannedText.filter((t) => m.body.includes(t)).join(' | ') || 'none of'} the builder strings (stats, "Ten judging groups", step cards, the old lede, "Cycle", "Past shows"); no TBC, pending or placeholder chip`, H.bannedText.every((t) => !m.body.includes(t)) && !new RegExp(H.bannedPattern, 'i').test(m.bodyUnmarked));
+  c.check(`${tag} HM-G1 the hero lede is her landing doc v1.0 Section 1 "To:" sentence, verbatim, in [data-hm-lede] (Brad 2026-10-31: the approved page applies it; it replaces the What to Expect sentence) (${m.lede && m.lede.slice(0, 50)})`, m.lede === lede);
   c.check(`${tag} HM-G1 the hero facts are exactly ${H.factTerms.join(' / ')}, labels sentence case, 15px, not uppercase (${m.facts.map((f) => `${f.t} ${f.tt} ${f.px}`).join('; ')})`, JSON.stringify(m.facts.map((f) => f.t)) === JSON.stringify(H.factTerms) && m.facts.every((f) => f.tt === 'none' && Math.abs(f.px - 15) <= 0.5));
   c.check(`${tag} HM-G1 About band: h2 "${H.aboutHeading}", About v1.2 paragraph 1 as a Fraunces 300 lead, paragraph 3 as body, links ${H.aboutLinks.join(' / ')} (${m.aboutP.length} paragraphs)`, m.h2s.includes(H.aboutHeading) && m.aboutP.some((p) => p.t === aboutBody[0] && p.fam.includes('fraunces') && p.w === '300') && m.aboutP.some((p) => p.t === aboutBody[2]) && JSON.stringify([...m.aboutLinks, ...m.cardLinks.filter((t) => /→/.test(t) && !m.aboutLinks.includes(t))]) === JSON.stringify(H.aboutLinks));
-  c.check(`${tag} HM-G1 the visit card is static and shows "${dateLabel}", "${dateLine}" and her ${hours.length} hours rows verbatim (${m.cardPos})`, m.cardPos !== null && m.cardPos !== 'sticky' && [dateLabel, dateLine, ...hours.map((h) => h.label), ...hours.map((h) => h.value)].every((t) => m.cardText.includes(t)));
+  c.check(`${tag} HM-G1 the show-dates card floats: sticky from 1024, static below, and shows "${dateLabel}", "${dateLine}" and her ${hours.length} hours rows verbatim (${m.cardPos})`, m.cardPos !== null && (vp.width >= 1024 ? m.cardPos === 'sticky' : m.cardPos !== 'sticky') && [dateLabel, dateLine, ...hours.map((h) => h.label), ...hours.map((h) => h.value)].every((t) => m.cardText.includes(t)));
   await fsHome(page, vp, c, tag, { dateLabel, dateLine });
-  { const lefts = [...new Set(m.visit.map((l) => l.l))].length; const want = vp.width >= 1024 ? H.visitColumns.desktop : vp.width >= 600 ? H.visitColumns.below1024 : H.visitColumns.below600;
-    c.check(`${tag} HM-G1 Visit: h2 "Visit" and the nav-label register ${H.visitLinks.join(' / ')} with a → each, no descriptions, ${want} column(s) (${lefts})`, m.h2s.includes('Visit') && JSON.stringify(m.visit.map((l) => l.t.replace(/\s*→.*$/, ''))) === JSON.stringify(H.visitLinks) && m.visit.every((l) => l.t.includes('→')) && lefts === want); }
+  await homeRestoreChecks(page, vp, c, tag);
+  // HM-G1 Visit band assertions retired (Brad 2026-10-31): the sub-nav replaces the visit band, which is removed from the approved home.
   c.check(`${tag} HM-G1 Programme: h2 "Programme" and ${prog.length} rows, h3 nav label + her sentence + →: ${prog.map((p) => p.h3).join(' / ')} (${m.prog.map((r) => r.h3).join(' / ')})`, m.h2s.includes('Programme') && m.prog.length === prog.length && prog.every((p, i) => m.prog[i].h3 === p.h3 && m.prog[i].p.includes(p.text) && m.prog[i].arrow));
   c.check(`${tag} HM-G1 Exhibit & trade: FAQ ${H.exhibitLead} as a Fraunces 300 lead, FAQ ${H.exhibitBody} as body, a register of ${H.exhibitLinks.join(' / ')}, no ordered step cards`, m.h2s.includes('Exhibit & trade') && m.exhP.some((p) => p.t === f26.a[0] && p.fam.includes('fraunces') && p.w === '300') && m.exhP.some((p) => p.t === f27.a[0]) && JSON.stringify(m.exhLinks) === JSON.stringify(H.exhibitLinks) && m.exhOl === 0);
   c.check(`${tag} HM-G1 closing band: her closing paragraph verbatim in Fraunces 300, max-width ${H.closingMaxWidthCh}ch (the width of a "0" in the rendered font x ${H.closingMaxWidthCh}, +-4ch), balanced, then ${H.closingLinks.join(' / ')} (${m.closing && `${m.closing.fam} ${m.closing.w} ${m.closing.mw} ${m.closing.wrap}`})`, Boolean(m.closing) && m.closing.t === closing && m.closing.fam.includes('fraunces') && m.closing.w === '300' && m.closing.wrap === 'balance' && Math.abs(parseFloat(m.closing.mw) - H.closingMaxWidthCh * m.closing.ch) <= m.closing.ch * 4 && JSON.stringify(m.closeLinks) === JSON.stringify(H.closingLinks));
