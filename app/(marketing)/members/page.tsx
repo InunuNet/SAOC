@@ -17,6 +17,7 @@ export const metadata: Metadata = buildPageMetadata({
   description: 'A restricted area for paid-up SAOC members, coming to this site.',
   lede: LEDE,
   path: '/members',
+  noIndex: true,
 });
 
 export default function MembersPage() {

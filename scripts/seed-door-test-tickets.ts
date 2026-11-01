@@ -48,7 +48,9 @@ const MARKER_EMAIL = 'fixture@door-qr-check.invalid';
 const MARKER_NAME = 'Door QR Fixture';
 const NATIONAL_SHOW_ID = 'nationalShow';
 const WRONG_SHOW_ID = 'door-qr-check-wrong-show';
-const TICKET_TYPE = 'exhibitor';
+export const FIXTURE_TICKET_TYPE = 'door-qr-fixture';
+export const LIVE_PROJECT_ID = 'saoc-webapp';
+const BORN_EXPIRED_SECONDS = 60;
 
 interface FixtureDoc {
   readonly bookingRef: string;
@@ -59,6 +61,7 @@ interface FixtureDoc {
   readonly status: string;
   readonly amount: number;
   readonly purchasedAtServerNow: boolean;
+  readonly bornExpired?: boolean;
 }
 
 interface ScanExpectation {
@@ -92,7 +95,7 @@ const FIXTURES: readonly Fixture[] = [
       showId: NATIONAL_SHOW_ID,
       attendeeName: MARKER_NAME,
       attendeeEmail: MARKER_EMAIL,
-      ticketType: TICKET_TYPE,
+      ticketType: FIXTURE_TICKET_TYPE,
       status: 'paid',
       amount: 0,
       purchasedAtServerNow: true,
@@ -102,7 +105,7 @@ const FIXTURES: readonly Fixture[] = [
         ordinal: 1,
         expect: { ok: true, resultingStatus: 'checked-in' },
         qrCardOutcome: 'ADMIT',
-        expectedScreenMessage: '✓ Checked in — Door QR Fixture — exhibitor — DOOR-QR-ADMIT-01',
+        expectedScreenMessage: '✓ Checked in — Door QR Fixture — door-qr-fixture — DOOR-QR-ADMIT-01',
       },
       {
         ordinal: 2,
@@ -121,10 +124,11 @@ const FIXTURES: readonly Fixture[] = [
       showId: NATIONAL_SHOW_ID,
       attendeeName: MARKER_NAME,
       attendeeEmail: MARKER_EMAIL,
-      ticketType: TICKET_TYPE,
+      ticketType: FIXTURE_TICKET_TYPE,
       status: 'reserved',
       amount: 0,
       purchasedAtServerNow: false,
+      bornExpired: true,
     },
     scans: [
       {
@@ -144,7 +148,7 @@ const FIXTURES: readonly Fixture[] = [
       showId: WRONG_SHOW_ID,
       attendeeName: MARKER_NAME,
       attendeeEmail: MARKER_EMAIL,
-      ticketType: TICKET_TYPE,
+      ticketType: FIXTURE_TICKET_TYPE,
       status: 'paid',
       amount: 0,
       purchasedAtServerNow: true,
@@ -177,6 +181,65 @@ const FIXTURES: readonly Fixture[] = [
 const SEEDED_BOOKING_REFS: readonly string[] = FIXTURES.filter((f) => f.seededInFirestore).map(
   (f) => f.bookingRef,
 );
+
+// ---------------------------------------------------------------------------
+// Live-project guard (go-live-prep F6 / H12)
+// ---------------------------------------------------------------------------
+
+const TARGET_ENV_KEYS = [
+  'FIREBASE_ADMIN_PROJECT_ID',
+  'FIREBASE_ADMIN_CLIENT_EMAIL',
+  'NEXT_PUBLIC_FIREBASE_PROJECT_ID',
+  'GOOGLE_CLOUD_PROJECT',
+  'GCLOUD_PROJECT',
+] as const;
+
+/** Merged view of the target-identifying variables: process env first, local dotenv fallback. */
+function seedTargetEnv(): Record<string, string | undefined> {
+  const envLocal = readEnvLocal();
+  const merged: Record<string, string | undefined> = {};
+  for (const key of TARGET_ENV_KEYS) {
+    merged[key] = process.env[key] ?? envLocal[key];
+  }
+  return merged;
+}
+
+function isLiveId(value: string | undefined): boolean {
+  return (value ?? '').trim().toLowerCase() === LIVE_PROJECT_ID;
+}
+
+/**
+ * Refuses unless the seed target is provably not the live project. Fails closed when the
+ * admin project id is unset or blank. There is deliberately no bypass flag or env override.
+ * Returns the trimmed admin project id when allowed.
+ */
+export function assertSeedTargetAllowed(env: Record<string, string | undefined>): string {
+  const adminId = (env['FIREBASE_ADMIN_PROJECT_ID'] ?? '').trim();
+  if (adminId === '') {
+    throw new Error(
+      'door-seed refused: FIREBASE_ADMIN_PROJECT_ID is unset or blank, so the target cannot be ' +
+        'shown to be a non-live project.',
+    );
+  }
+  const signals: ReadonlyArray<readonly [string, boolean]> = [
+    ['FIREBASE_ADMIN_PROJECT_ID', isLiveId(adminId)],
+    ['NEXT_PUBLIC_FIREBASE_PROJECT_ID', isLiveId(env['NEXT_PUBLIC_FIREBASE_PROJECT_ID'])],
+    ['GOOGLE_CLOUD_PROJECT', isLiveId(env['GOOGLE_CLOUD_PROJECT'])],
+    ['GCLOUD_PROJECT', isLiveId(env['GCLOUD_PROJECT'])],
+    [
+      'FIREBASE_ADMIN_CLIENT_EMAIL',
+      (env['FIREBASE_ADMIN_CLIENT_EMAIL'] ?? '').toLowerCase().includes(LIVE_PROJECT_ID),
+    ],
+  ];
+  const hit = signals.find(([, isLive]) => isLive);
+  if (hit) {
+    throw new Error(
+      `door-seed refused: ${hit[0]} points at the live project "${LIVE_PROJECT_ID}". ` +
+        'Seeding is only allowed against a separate fixture project or the emulator.',
+    );
+  }
+  return adminId;
+}
 
 // ---------------------------------------------------------------------------
 // Admin SDK
@@ -240,7 +303,31 @@ function assertMarkerIntact(doc: FixtureDoc): void {
 // seed
 // ---------------------------------------------------------------------------
 
+/** Pure: the exact Firestore field set for a seeded fixture. No `undefined` own properties. */
+export function buildFixtureFields(fixture: Fixture, now: Timestamp): Record<string, unknown> {
+  if (!fixture.doc) {
+    throw new Error(`Fixture ${fixture.bookingRef} has no document to build.`);
+  }
+  return {
+    bookingRef: fixture.doc.bookingRef,
+    showId: fixture.doc.showId,
+    attendeeName: fixture.doc.attendeeName,
+    attendeeEmail: fixture.doc.attendeeEmail,
+    ticketType: fixture.doc.ticketType,
+    status: fixture.doc.status,
+    amount: fixture.doc.amount,
+    purchasedAt: fixture.doc.purchasedAtServerNow ? now : null,
+    expiresAt: fixture.doc.bornExpired
+      ? Timestamp.fromMillis(now.toMillis() - BORN_EXPIRED_SECONDS * 1000)
+      : null,
+    checkedInAt: null,
+    m_payment_id: fixture.doc.bookingRef,
+    pf_payment_id: null,
+  };
+}
+
 async function seedFixtureDoc(fixture: Fixture): Promise<void> {
+  assertSeedTargetAllowed(seedTargetEnv());
   if (!fixture.doc) return;
   assertMarkerIntact(fixture.doc);
 
@@ -251,19 +338,7 @@ async function seedFixtureDoc(fixture: Fixture): Promise<void> {
     .limit(1)
     .get();
 
-  const fields = {
-    bookingRef: fixture.doc.bookingRef,
-    showId: fixture.doc.showId,
-    attendeeName: fixture.doc.attendeeName,
-    attendeeEmail: fixture.doc.attendeeEmail,
-    ticketType: fixture.doc.ticketType,
-    status: fixture.doc.status,
-    amount: fixture.doc.amount,
-    purchasedAt: fixture.doc.purchasedAtServerNow ? Timestamp.now() : null,
-    checkedInAt: null,
-    m_payment_id: fixture.doc.bookingRef,
-    pf_payment_id: null,
-  };
+  const fields = buildFixtureFields(fixture, Timestamp.now());
 
   if (existing.empty) {
     await database.collection(TICKETS_COLLECTION).add(fields);
@@ -309,7 +384,7 @@ function renderScanBlock(scan: ScanExpectation): string {
   const outcomeLabel = scan.expect.ok ? 'ADMIT' : (scan.expect.code ?? 'unknown');
   const httpStatus = scan.expect.ok ? 200 : (scan.expect.httpStatus ?? '');
   const messageLine = scan.expect.ok
-    ? `${MARKER_NAME} / ${TICKET_TYPE} / ${scan.expect.resultingStatus ?? ''}`
+    ? `${MARKER_NAME} / ${FIXTURE_TICKET_TYPE} / ${scan.expect.resultingStatus ?? ''}`
     : (scan.expect.error ?? '');
   return `
       <div class="scan">
@@ -388,6 +463,7 @@ async function generateOutput(): Promise<void> {
 async function main(): Promise<void> {
   const command = process.argv[2];
   if (command === 'seed') {
+    assertSeedTargetAllowed(seedTargetEnv());
     for (const fixture of FIXTURES) {
       await seedFixtureDoc(fixture);
     }
