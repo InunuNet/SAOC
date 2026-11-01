@@ -41,6 +41,7 @@ export async function GET() {
     headers: {
       'Content-Type': 'text/csv',
       'Content-Disposition': 'attachment; filename="tickets.csv"',
+      'Cache-Control': 'no-store',
     },
   });
 }
