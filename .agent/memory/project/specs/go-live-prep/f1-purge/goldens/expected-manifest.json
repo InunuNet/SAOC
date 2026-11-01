@@ -1,0 +1,59 @@
+{
+  "_comment": "Normalised expected manifest for fixtures/snapshot.json at now=2026-11-01T10:00:00.000Z. The check strips generatedAt, selectionDigest, confirmToken and every docs[].updateTime before comparing (they are volatile or asserted separately). Key order is not significant; docs arrays are compared sorted by collection+id.",
+  "schemaVersion": 1,
+  "mode": "dry-run",
+  "source": "fixture",
+  "projectId": "fixture-project",
+  "now": "2026-11-01T10:00:00.000Z",
+  "classes": {
+    "reservedExpired": { "rule": "R1", "action": "delete", "count": 2, "docs": [
+      { "collection": "orders", "id": "SELECT-O-RES-EXP-LEGACY" },
+      { "collection": "orders", "id": "SELECT-O-RES-EXP-TEST" }
+    ] },
+    "sandboxPaidOrders": { "rule": "R2", "action": "delete", "count": 3, "docs": [
+      { "collection": "orders", "id": "SELECT-O-PAID-TEST-FLAG" },
+      { "collection": "orders", "id": "SELECT-O-PAID-TEST-OZOWREF" },
+      { "collection": "orders", "id": "SELECT-O-PAID-TEST-R001" }
+    ] },
+    "orderPositions": { "rule": "R3", "action": "delete", "count": 5, "docs": [
+      { "collection": "tickets", "id": "SELECT-T-1" },
+      { "collection": "tickets", "id": "SELECT-T-2" },
+      { "collection": "tickets", "id": "SELECT-T-3" },
+      { "collection": "tickets", "id": "SELECT-T-4" },
+      { "collection": "tickets", "id": "SELECT-T-4B" }
+    ] },
+    "orphanPositions": { "rule": "R4", "action": "delete", "count": 2, "docs": [
+      { "collection": "tickets", "id": "SELECT-T-7" },
+      { "collection": "tickets", "id": "SELECT-T-8" }
+    ] },
+    "sandboxVendorStandOrders": { "rule": "R5", "action": "delete", "count": 1, "docs": [
+      { "collection": "vendorStandOrders", "id": "SELECT-VSO-OZOW-SANDBOX" }
+    ] }
+  },
+  "heldBack": {
+    "reservedExpiredWithGatewayRef": [
+      { "collection": "orders", "id": "HELD-O-RES-EXP-OZOWREF" },
+      { "collection": "orders", "id": "HELD-O-RES-EXP-PENDING" }
+    ],
+    "paidWithoutTestEvidence": [
+      { "collection": "orders", "id": "HELD-O-PAID-UNFLAGGED" }
+    ],
+    "orphanPositionsNotPurgeable": [
+      { "collection": "tickets", "id": "HELD-T-10" },
+      { "collection": "tickets", "id": "HELD-T-11" },
+      { "collection": "tickets", "id": "HELD-T-9" }
+    ],
+    "vendorStandOrdersPaidWithoutTestEvidence": [
+      { "collection": "vendorStandOrders", "id": "HELD-VSO-PAYFAST-UNFLAGGED" }
+    ]
+  },
+  "stockDelta": {
+    "note": "Report only. No stored counter exists: availability is derived from tickets (status reserved|paid, expired reservations excluded, mirrors lib/data/tickets.ts stillHoldsSeat). Rows with before==after are omitted.",
+    "rows": [
+      { "showId": "nationalShow", "ticketType": "exhibitor", "before": 1, "after": 0 },
+      { "showId": "show-19-2027", "ticketType": "early-bird", "before": 1, "after": 0 },
+      { "showId": "show-19-2027", "ticketType": "vip", "before": 5, "after": 4 }
+    ]
+  },
+  "totals": { "selected": 13, "heldBack": 7, "byCollection": { "orders": 5, "tickets": 7, "vendorStandOrders": 1 } }
+}
