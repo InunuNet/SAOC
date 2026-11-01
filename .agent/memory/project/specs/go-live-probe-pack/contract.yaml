@@ -1,0 +1,55 @@
+schema: athanor.contract/v1
+slug: go-live-probe-pack
+goal: Extend cache-headers-probe with admin routes, a payments-mode-aware test-title check, a ticket-wosa anchor check and a FAIL line carrying the observed status, with no product copy change.
+created_at: '2026-11-01'
+autonomy: high
+
+features:
+  - id: F1
+    name: go-live probe pack (probe-only; conditional H2 no-store on export-csv 401)
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/go-live-probe-pack/goldens/probe-pack-fragment.json
+  - .agent/memory/project/specs/go-live-probe-pack/goldens/mutants.json
+  - .agent/memory/project/specs/go-live-probe-pack/goldens/run-mutants.mjs
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: probe selftest passes offline, including the new status, title and anchor vectors
+      command: node scripts/checks/cache-headers-probe.mjs --selftest
+    - id: A2
+      description: selftest output shows a FAIL line verdict for an observed 500 (effect, not presence)
+      command: node scripts/checks/cache-headers-probe.mjs --selftest | grep -q "status=500 expected=200"
+    - id: A3
+      description: selftest exits nonzero if any vector is WRONG (no WRONG lines on a clean tree)
+      command: "! node scripts/checks/cache-headers-probe.mjs --selftest | grep -q WRONG"
+    - id: A4
+      description: every golden mutant is killed by the selftest
+      command: node .agent/memory/project/specs/go-live-probe-pack/goldens/run-mutants.mjs .agent/memory/project/specs/go-live-probe-pack/goldens/mutants.json .agent/memory/project/specs/go-live-probe-pack/mutant-patches.json
+    - id: A5
+      description: payments mode is read from the source constant, never defaulted
+      command: grep -q "TICKETING_PAYMENTS_LIVE" scripts/checks/cache-headers-probe.mjs
+    - id: A6
+      description: admin routes are in the expectations table with unauthenticated statuses
+      command: grep -q "/api/admin/whoami" .agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/goldens/cache-header-expectations.json
+    - id: A7
+      description: admin shell redirect still produces the 307 the table expects
+      command: grep -q "redirect('/admin/login')" "app/admin/(shell)/layout.tsx"
+    - id: A8
+      description: ticket-wosa anchor source still emitted by TicketCard (CI substitute for the live-only anchor check)
+      command: grep -qF 'id={`ticket-${productId}`}' components/tickets/keepsake/TicketCard.tsx
+    - id: A9
+      description: test-title prefix constant unchanged
+      command: git diff --quiet origin/main -- lib/ticketing-test-mode.ts lib/ticketing-test-metadata.ts
+    - id: A10
+      description: no copy, component or hero change
+      command: git diff --quiet origin/main -- components "app/(nos)" "app/(marketing)" content
+    - id: A11
+      description: live-write guard clean
+      command: python3 contracts/checks/live-write-guard/verify_no_ungated_writers.py --summary
+    - id: A12
+      description: contract is structurally valid
+      command: python3 execution/contract.py validate .agent/memory/project/specs/go-live-probe-pack/contract.yaml --strict
