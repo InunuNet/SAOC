@@ -22,7 +22,9 @@ export async function homeRestoreChecks(page, vp, c, tag) {
   });
   const body = norm(m.body); const has = (s) => body.includes(norm(s));
   c.check(`${tag} HR-1 tagline "${L.tagline}" is an h2 in the intro band, and the two paragraphs are verbatim <p>s there (typos kept: "can be judges")`, Boolean(m.intro) && m.intro.h2.includes(L.tagline) && m.intro.ps.includes(L.para1) && m.intro.ps.includes(L.para2));
-  c.check(`${tag} HR-2 the figures row is exactly ${L.figures.join(' / ')}, one [data-hm-figure] each, value then label (${m.intro && m.intro.figures.join(' / ')})`, Boolean(m.intro) && JSON.stringify(m.intro.figures) === JSON.stringify(L.figures));
+  // The value and label are separate spans with no whitespace between them in textContent ("3Years"), so compare with all whitespace removed.
+  const squash = (t) => t.replace(/\s+/g, '');
+  c.check(`${tag} HR-2 the figures row is exactly ${L.figures.join(' / ')}, one [data-hm-figure] each, value then label, whitespace across the spans ignored (${m.intro && m.intro.figures.join(' / ')})`, Boolean(m.intro) && JSON.stringify(m.intro.figures.map(squash)) === JSON.stringify(L.figures.map(squash)));
   c.check(`${tag} HR-3 judging band: h2 "${L.groupsHeading}" over ${L.groups.length} cards in her order, each h3 her name, a "Group N" label, her description verbatim where she gave one and no paragraph where she gave none (groups 11-13)`,
     Boolean(m.judging) && m.judging.h2.includes(L.groupsHeading) && m.judging.cards.length === L.groups.length && L.groups.every((g, i) => { const k = m.judging.cards[i];
       return k.h3.length === 1 && k.h3[0] === g.name && k.text.includes(g.label) && (g.description === null ? !k.ps.some((p) => p !== g.label) : k.ps.includes(g.description)); }));
@@ -34,5 +36,5 @@ export async function homeRestoreChecks(page, vp, c, tag) {
   c.check(`${tag} HR-6 the foot of the plant-entry band carries "${L.cta}" verbatim, after the stages, with no extra band for it`, Boolean(m.plant) && m.plant.text.includes(L.cta) && m.plant.text.indexOf(L.cta) > m.plant.text.indexOf(L.startPlanning) && m.plant.text.indexOf(L.startPlanning) > m.plant.text.indexOf(L.stages[3].description) && !m.hasCtaBand);
   const leaked = EDITORIAL_NOTES.filter(has); c.check(`${tag} HR-7 none of her editorial notes to us renders (${leaked.join(' | ') || 'none'})`, leaked.length === 0);
   const old = inv.filter(has); c.check(`${tag} HR-8 none of our old invented judging/stage copy renders (${old.join(' | ') || 'none'})`, old.length === 0);
-  c.check(`${tag} HR-9 the existing bands are still there: h2s ${['2027 South African National Orchid Show', 'Visit', 'Programme', 'Exhibit & trade'].join(' / ')} (${m.h2s.length} h2s)`, ['2027 South African National Orchid Show', 'Visit', 'Programme', 'Exhibit & trade'].every((h) => m.h2s.includes(h)));
+  c.check(`${tag} HR-9 the existing bands are still there: h2s ${['2027 South African National Orchid Show', 'Programme', 'Exhibit & trade'].join(' / ')}; the Visit h2 is retired with the visit band, which the sub-nav replaces (Brad 2026-10-31) (${m.h2s.length} h2s)`, ['2027 South African National Orchid Show', 'Programme', 'Exhibit & trade'].every((h) => m.h2s.includes(h)));
 }

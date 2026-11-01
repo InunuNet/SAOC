@@ -5,7 +5,9 @@
 // National Orchid Show Website landing-page document v1.0 (Drive: National Show / 1. Home),
 // verbatim, typos included ("can be judges", no full stop after "12pm"). Her editorial notes
 // to us are never copy and are not here. Nothing in this file is ours; add no words of your own
-// (docs/rules/no-invention.md). See docs/nos-home-restore.md.
+// (docs/rules/no-invention.md). Two Brad-sanctioned exceptions (2026-10-31, Lee-Ann approved the
+// page): the judging heading reads "Thirteen judging groups" (her doc says "Ten"), and the visit
+// band is removed from the home (the sub-nav carries those links). See docs/nos-home-restore.md.
 // =============================================================
 
 export interface LandingFigure {

@@ -4,7 +4,7 @@
 # Pre-existing drift on origin/main, NOT this mission: `shasum -c` on nos-content-standard/goldens/checks.sha256 already FAILS for checks/_lib.mjs and goldens/spec.md; this contract therefore gates its own checks.sha256 and does not call that file.
 schema: athanor.contract/v1
 slug: nos-home-restore
-goal: The NOS home (/national-show) again carries the tagline band with figures, the Ten judging groups grid, the Plant Entry stages with Start planning your entry now, and her closing sentence at the foot of the Plant Entry band, all rendered word for word from Lee-Ann's landing doc v1.0 with none of our invented judging copy, her editorial notes, or a dead Register Here link.
+goal: The NOS home (/national-show) again carries the tagline band with figures, the Thirteen judging groups grid (Brad 2026-10-31; her doc says Ten; the visit band is also removed, the sub-nav replaces it), the Plant Entry stages with Start planning your entry now, and her closing sentence at the foot of the Plant Entry band, all rendered word for word from Lee-Ann's landing doc v1.0 with none of our invented judging copy, her editorial notes, or a dead Register Here link.
 created_at: '2026-10-29'
 autonomy: high
 exclusions:
