@@ -150,3 +150,12 @@ content/drive-source/
 # state file. Mirrors the content/drive-source/ treatment above, though this tree carries only
 # Drive id/name/mimeType/modifiedTime/md5Checksum metadata, never file content.
 content/drive-watch/
+# Floor denial log: per-machine, high-churn, holds command text.
+.agent/memory/project/telemetry/floor_denials.jsonl
+# Operator privilege permit: a standing grant of elevation / out-of-project paths. Per-machine
+# and time-bounded; never committed. Also the audit log of its use and the pending requests.
+.agent/privilege_permit.json
+.agent/privilege_permit.json.*
+.agent/.privilege_permit.*.tmp
+.agent/memory/project/privileged_command_audit.log
+.agent/memory/scratch/escalation/
