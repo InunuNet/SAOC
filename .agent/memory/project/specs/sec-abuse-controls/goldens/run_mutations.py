@@ -132,6 +132,23 @@ MUTATIONS = [
     ("M96", "app/api/tickets/checkout/route.ts", "anchor", "checkout-body-cap", "await readCappedBody(request, MAX_BODY_BYTES)", "await readCappedBody(request, MAX_BODY_BYTES * 1000)", golden("checkout-route")),
     ("M97", "app/api/tickets/checkout/route.ts", "first", None, "const actorKey = clientActorKey(request.headers.get('x-forwarded-for'));", "await request.text().catch(() => '');\n  const actorKey = clientActorKey(request.headers.get('x-forwarded-for'));", golden("checkout-route")),
     ("M98", CHECKOUT, "first", None, "actorLimit = await consumeAbuseLimit(", "await readCappedBody(request, MAX_BODY_BYTES);\n    actorLimit = await consumeAbuseLimit(", wiring("checkout-order")),
+    # Body cap on the bytes actually read (round 7): the Content-Length pre-check alone trusts the header.
+    ("M99", "app/api/contact/route.ts", "anchor", "route-body-cap", "await readBodyCapped(request, MAX_BODY_BYTES)", "{ ok: true as const, text: JSON.stringify(await request.json()) }", golden("routes-body-cap")),
+    ("M100", "app/api/newsletter/subscribe/route.ts", "anchor", "route-body-cap", "await readBodyCapped(request, MAX_BODY_BYTES)", "{ ok: true as const, text: JSON.stringify(await request.json()) }", golden("routes-body-cap")),
+    ("M101", "app/api/newsletter/unsubscribe/route.ts", "anchor", "route-body-cap", "await readBodyCapped(request, MAX_BODY_BYTES)", "{ ok: true as const, text: JSON.stringify(await request.json()) }", golden("routes-body-cap")),
+    ("M102", "app/api/contact/route.ts", "anchor", "route-body-cap", "await readBodyCapped(request, MAX_BODY_BYTES)", "await readBodyCapped(request, Number.MAX_SAFE_INTEGER)", golden("routes-body-cap")),
+    ("M103", "app/api/newsletter/subscribe/route.ts", "anchor", "route-body-cap", "await readBodyCapped(request, MAX_BODY_BYTES)", "await readBodyCapped(request, Number.MAX_SAFE_INTEGER)", golden("routes-body-cap")),
+    ("M104", "app/api/newsletter/unsubscribe/route.ts", "anchor", "route-body-cap", "await readBodyCapped(request, MAX_BODY_BYTES)", "await readBodyCapped(request, Number.MAX_SAFE_INTEGER)", golden("routes-body-cap")),
+    ("M105", "app/api/contact/route.ts", "first", None, "limit = await consumeAbuseLimit({", "await readBodyCapped(request, MAX_BODY_BYTES);\n    limit = await consumeAbuseLimit({", golden("routes-body-cap")),
+    ("M106", "app/api/newsletter/subscribe/route.ts", "first", None, "limit = await consumeAbuseLimit({", "await readBodyCapped(request, MAX_BODY_BYTES);\n    limit = await consumeAbuseLimit({", golden("routes-body-cap")),
+    ("M107", "app/api/newsletter/unsubscribe/route.ts", "first", None, "limit = await consumeAbuseLimit({", "await readBodyCapped(request, MAX_BODY_BYTES);\n    limit = await consumeAbuseLimit({", golden("routes-body-cap")),
+    ("M108", "app/api/contact/route.ts", "first", None, "await readBodyCapped(request, MAX_BODY_BYTES)", "{ ok: true as const, text: '{}' }", wiring("route-body-cap")),
+    ("M109", "app/api/newsletter/subscribe/route.ts", "first", None, "await readBodyCapped(request, MAX_BODY_BYTES)", "{ ok: true as const, text: '{}' }", wiring("route-body-cap")),
+    ("M110", "app/api/newsletter/unsubscribe/route.ts", "first", None, "await readBodyCapped(request, MAX_BODY_BYTES)", "{ ok: true as const, text: '{}' }", wiring("route-body-cap")),
+    ("M111", "lib/admin-session-body.ts", "first", None, ".catch(() => undefined)", "", golden("routes-body-cap")),
+    ("M112", "lib/admin-session-body.ts", "first", None, "return { ok: false, reason: 'read-failed' };", "return { ok: false, reason: 'too-large' };", golden("routes-body-cap")),
+    ("M113", "lib/admin-session-body.ts", "first", None, "if (total > maxBytes) {", "if (total > maxBytes * 1000) {", golden("routes-body-cap")),
+    ("M114", "app/api/contact/route.ts", "append", None, "", "\nconst leak = await request.json();\n", wiring("route-body-cap")),
     ("M18", "app/api/contact/route.ts", "append", None, "", "\nimport { createAttemptStore } from '@/lib/newsletter-rate-store';\n", wiring("no-memory-limiter")),
 ]
 

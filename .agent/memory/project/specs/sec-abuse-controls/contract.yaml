@@ -31,6 +31,7 @@ goldens:
   - .agent/memory/project/specs/sec-abuse-controls/goldens/fakes.ts
   - .agent/memory/project/specs/sec-abuse-controls/goldens/checkout-route.golden.ts
   - .agent/memory/project/specs/sec-abuse-controls/goldens/routes-limited.golden.ts
+  - .agent/memory/project/specs/sec-abuse-controls/goldens/routes-body-cap.golden.ts
   - .agent/memory/project/specs/sec-abuse-controls/goldens/webhook-handlers.golden.ts
   - .agent/memory/project/specs/sec-abuse-controls/goldens/ledger-counts.golden.ts
   - .agent/memory/project/specs/sec-abuse-controls/goldens/appcheck-header.golden.ts
@@ -150,6 +151,12 @@ assertions:
     - id: A42
       description: the cart hook's App Check header - a rejected SDK import, a failed attestation and a synchronous throw all send the checkout tokenless instead of skipping it, a fresh token per call, no loader means no header
       command: pnpm exec tsx .agent/memory/project/specs/sec-abuse-controls/goldens/appcheck-header.golden.ts
+    - id: A43
+      description: contact, newsletter subscribe and unsubscribe enforce their body cap on the bytes actually read - an under-declared Content-Length with an endless stream or a 100,000-byte JSON value gets 413 and the stream is cut near the cap and cancelled, absent Content-Length stays 413, a body of exactly the cap passes and one byte over is 413, a rejecting cancel keeps the 413, a stream error gets the route's existing invalid-body response, and an exhausted client or a down limiter store pulls zero bytes
+      command: pnpm exec tsx .agent/memory/project/specs/sec-abuse-controls/goldens/routes-body-cap.golden.ts
+    - id: A44
+      description: the three routes read the body only through the one shared readBodyCapped (lib/admin-session-body.ts) after the limiter, with no request.json/text/formData/arrayBuffer/blob/clone and no private stream reader, the Content-Length pre-check and 413 message unchanged
+      command: python3 .agent/memory/project/specs/sec-abuse-controls/goldens/check_wiring.py route-body-cap
     - id: A27
       description: cross-model adversarial review of the diff
       type: codex_qa

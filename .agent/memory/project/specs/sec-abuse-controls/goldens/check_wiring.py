@@ -457,6 +457,39 @@ def check_newsletter_checks_reviewed() -> None:
             fail(f"{rel}: QA input changed after architect review (sha256 {actual[:12]}...); only @architect may edit it")
 
 
+BODY_CAP_ROUTES = {
+    "app/api/contact/route.ts": "MAX_BODY_BYTES",
+    "app/api/newsletter/subscribe/route.ts": "MAX_BODY_BYTES",
+    "app/api/newsletter/unsubscribe/route.ts": "MAX_BODY_BYTES",
+}
+BODY_READERS = ("request.json(", "request.text(", "request.formData(", "request.arrayBuffer(", "request.blob(", "request.clone(")
+
+
+def check_route_body_cap() -> None:
+    """The three public JSON routes read their body through the ONE shared capped reader, after the limiter."""
+    helper = read("lib/admin-session-body.ts")
+    first(helper, "export async function readBodyCapped(", "lib/admin-session-body.ts")
+    for rel, cap in BODY_CAP_ROUTES.items():
+        text = read(rel)
+        if not re.search(r"""import\s*\{[^}]*\breadBodyCapped\b[^}]*\}\s*from\s*['"]@/lib/admin-session-body['"]""", text):
+            fail(f"{rel}: must import readBodyCapped from '@/lib/admin-session-body' (one shared helper, no per-route copy)")
+        for reader in BODY_READERS:
+            if reader in text:
+                fail(f"{rel}: still reads the body with {reader}; use readBodyCapped so the cap is enforced on bytes read")
+        if "getReader(" in text:
+            fail(f"{rel}: must not carry its own stream reader")
+        lines = text.split("\n")
+        marker = next((i for i, line in enumerate(lines) if "// anchor: route-body-cap" in line), None)
+        if marker is None or marker + 1 >= len(lines) or f"await readBodyCapped(request, {cap}" not in lines[marker + 1]:
+            fail(f"{rel}: `// anchor: route-body-cap` must sit directly above `await readBodyCapped(request, {cap}...)`")
+        read_at = text.index("await readBodyCapped(")
+        if read_at < first(text, "consumeAbuseLimit(", rel):
+            fail(f"{rel}: the body may only be read AFTER the limiter has decided")
+        first(text, "isBodyWithinLimit(request.headers.get('content-length'), " + cap + ")", rel)
+        first(text, "'Request body too large.'", rel)
+        first(text, "413", rel)
+
+
 CHECKS = {
     "checkout-order": check_checkout_order,
     "no-memory-limiter": check_no_memory_limiter,
@@ -479,6 +512,7 @@ CHECKS = {
     "flag-off-inlining": check_flag_off_inlining,
     "newsletter-limited": check_newsletter_limited,
     "newsletter-checks-reviewed": check_newsletter_checks_reviewed,
+    "route-body-cap": check_route_body_cap,
 }
 
 if __name__ == "__main__":
