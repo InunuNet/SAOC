@@ -977,8 +977,8 @@ async function heroOnlyChecks(page, route, vp, c, tag) {
 
 const SECTION_NAV = 'nav[data-doc-index][aria-label="Sections"]';
 
-/** D7 (FINAL): below 1024 the index is a sticky horizontal scroller. Under 780 the header is not sticky and the scroller sticks at
- env(safe-area-inset-top, 0); from 780 it sticks at the sticky header's height. 32px trailing mask fade only while it overflows; scroll-snap;
+/** D7 (FINAL): below 1024 the index is a sticky horizontal scroller. Under 768 the header is not sticky and the scroller sticks at
+ env(safe-area-inset-top, 0); from 768 it sticks at the sticky header's height. 32px trailing mask fade only while it overflows; scroll-snap;
  the active item is kept in view. It never overlaps the header and stays reachable when scrolled mid-page. */
 async function scrollerChecks(page, vp, c, tag) {
   const s = await page.evaluate((sel) => {
@@ -998,8 +998,8 @@ async function scrollerChecks(page, vp, c, tag) {
   c.check(`${tag} 32px trailing mask fade only while it overflows (overflow ${s.over}, mask ${s.mask})`, s.mask === s.over);
   c.check(`${tag} scroll-snap on the scroller (${s.snap})`, s.snap !== 'none');
   c.check(`${tag} the scroller is sticky`, s.stick);
-  const wantTop = vp.width >= 780 ? 97 : 0;
-  c.check(`${tag} the scroller sticks at top ${wantTop}px (${s.stickTop}; 97 from 780 up, env(safe-area-inset-top,0) below)`, s.stickTop !== null && Math.abs(parseFloat(s.stickTop) - wantTop) <= 2);
+  const wantTop = vp.width >= 768 ? 97 : 0;
+  c.check(`${tag} the scroller sticks at top ${wantTop}px (${s.stickTop}; 97 from 768 up, env(safe-area-inset-top,0) below)`, s.stickTop !== null && Math.abs(parseFloat(s.stickTop) - wantTop) <= 2);
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight / 2));
   await page.waitForTimeout(250);
   const g = await page.evaluate(({ sel, hs }) => { const a = document.querySelector(sel)?.closest('[data-doc-aside]') ?? document.querySelector(sel); const b = a.getBoundingClientRect(); const h = document.querySelector('header'); const hb = hs && h ? h.getBoundingClientRect().bottom : 0; return { top: b.top, hb }; }, { sel: SECTION_NAV, hs: s.headerSticky });

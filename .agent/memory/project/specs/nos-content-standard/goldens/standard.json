@@ -188,7 +188,7 @@
   "a skipped heading level"
  ],
  "index": {
-  "d7": "Below 1024 the index is a sticky horizontal scroller: from 780 up it sticks at top 97 (the sticky header's height), below 780 (header not sticky) at env(safe-area-inset-top,0); 32px trailing mask fade only while scrollWidth > clientWidth; scroll-snap; active item scrolled into view; never overlaps the header; reachable mid-page at 390. The desktop aside sticks at top 100.",
+  "d7": "Below 1024 the index is a sticky horizontal scroller: from 768 up it sticks at top 97 (the sticky header's height), below 768 (header not sticky) at env(safe-area-inset-top,0); 32px trailing mask fade only while scrollWidth > clientWidth; scroll-snap; active item scrolled into view; never overlaps the header; reachable mid-page at 390. The desktop aside sticks at top 100.",
   "rows": "12 names verbatim, Karla 15px, >=44px, hairline --rule-soft, disjoint boxes",
   "active": "royal text with a green-1 underline; no pill, fill or side border",
   "landing": "clicking a link lands its h2 below the sticky header(s) (scroll-margin-top)"

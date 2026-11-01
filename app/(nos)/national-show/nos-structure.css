@@ -949,7 +949,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   grid-row: 1 / span 2;
   align-self: start;
   position: sticky;
-  top: 100px;
+  top: var(--doc-aside-top);
   aspect-ratio: 4 / 5;
   border-radius: 10px;
   overflow: hidden;
@@ -2717,7 +2717,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   }
   .nos-theme .nos-hm-float-track .nos-hm-card {
     position: sticky;
-    top: 100px;
+    top: var(--doc-aside-top);
   }
 }
 /* Ruled blocks on one ground: the wrap carries the padding, because the shared same-ground rule
@@ -2783,14 +2783,14 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
    ============================================================ */
 
 /* Sticky values the shared CSS reads (SAOC 9bff74a6): the aside sticks at 100px, the index scroller
-   under the NOS header (not sticky under 780), and an h2 lands below both. --doc-scroll-margin is the
+   under the NOS header (not sticky under 768), and an h2 lands below both. --doc-scroll-margin is the
    total landing distance of an h2 from the viewport top, not a remainder. */
 .nos-theme {
   --doc-aside-top: 100px;
   --doc-index-top: env(safe-area-inset-top, 0px);
   --doc-scroll-margin: 80px;
 }
-@media (min-width: 780px) {
+@media (min-width: 768px) {
   .nos-theme {
     --doc-index-top: 97px;
     --doc-scroll-margin: 136px;
@@ -3028,8 +3028,8 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   text-underline-offset: 6px;
 }
 
-/* D7: below 1024 the index is a sticky square-link scroller above the body. Under 780 the header is
-   not sticky, so it sticks at the safe-area inset; from 780 it sticks under the header. The trailing
+/* D7: below 1024 the index is a sticky square-link scroller above the body. Under 768 the header is
+   not sticky, so it sticks at the safe-area inset; from 768 it sticks under the header. The trailing
    mask fades only while the row overflows and is not at its end (a scroll-driven animation is inactive
    on a row that does not scroll, so the base style, no mask, applies). */
 @media (max-width: 1023.98px) {
@@ -4100,7 +4100,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   }
   .nos-theme .nos-ct-card {
     position: sticky;
-    top: 100px;
+    top: var(--doc-aside-top);
     grid-column: 2;
     grid-row: 1 / span 2;
   }
@@ -4283,7 +4283,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   }
   .nos-theme .nos-we-card {
     position: sticky;
-    top: 100px;
+    top: var(--doc-aside-top);
     max-width: none;
     margin-bottom: 0;
   }
@@ -4422,17 +4422,11 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 /* HM-G1 home bands: intro to closing on the page parchment. Registers are ruled lists, no cards. */
 .nos-theme .nos-hm-h2 {
   font-family: var(--serif);
-  font-weight: 400;
-  font-size: clamp(1.75rem, 1.2rem + 1.6vw, 2.5rem);
+  font-weight: 300;
+  font-size: clamp(2rem, 1.2rem + 1.6vw, 2.5rem);
   line-height: 1.15;
   margin: 0 0 clamp(20px, 3vw, 32px);
   color: var(--ink);
-}
-/* LT-1: the clamp reaches 32px at an 800px viewport (1.2rem + 1.6vw), where it takes the light weight. */
-@media (min-width: 800px) {
-  .nos-theme .nos-hm-h2 {
-    font-weight: 300;
-  }
 }
 .nos-theme .nos-hm-lead {
   font-family: var(--serif);
