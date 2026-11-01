@@ -25,7 +25,7 @@ export async function readCappedBody(
     // anchor: webhook-declared
     if (Number(declared) > maxBytes) {
       // anchor: webhook-declared-cancel
-      await request.body?.cancel();
+      await request.body?.cancel().catch(() => undefined);
       return { ok: false, bytesSeen: Number(declared) };
     }
   }
@@ -41,7 +41,8 @@ export async function readCappedBody(
     total += value.byteLength;
     // anchor: webhook-stream
     if (total > maxBytes) {
-      await reader.cancel();
+      // anchor: webhook-stream-cancel
+      await reader.cancel().catch(() => undefined);
       return { ok: false, bytesSeen: total };
     }
     text += decoder.decode(value, { stream: true });
