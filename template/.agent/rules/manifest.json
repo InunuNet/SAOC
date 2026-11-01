@@ -3,8 +3,10 @@
   "rules": [
     "alembic",
     "athanor",
+    "athanor-routes",
     "behavior",
     "coding",
+    "comms",
     "dispatch-naming",
     "gws",
     "sandbox",
