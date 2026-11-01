@@ -1,12 +1,36 @@
 {
   "_comment": "Golden: the additions the dev merges into cache-header-expectations.json (path in spec.md). Admin statuses are the UNAUTHENTICATED behaviour read from code: app/admin/(shell)/layout.tsx redirect('/admin/login') -> 307; app/api/admin/whoami/route.ts returns 401 + Cache-Control no-store; app/api/admin/export-csv/route.ts returns 401 'Unauthorized' for no-session. The dev MUST confirm each observed status and cache-control with a local --spawn run and change a row only with the observed value in the PR body. /admin/login is deliberately excluded (public chrome, not a protected surface). POST-only /api/admin/checkin is excluded (GET is 405, not a gate).",
   "routes_admin": [
-    {"host": "saoc", "path": "/admin", "status": 307},
-    {"host": "saoc", "path": "/admin/door", "status": 307},
-    {"host": "saoc", "path": "/admin/vendors", "status": 307},
-    {"host": "saoc", "path": "/admin/tickets", "status": 307},
-    {"host": "saoc", "path": "/api/admin/whoami", "status": 401},
-    {"host": "saoc", "path": "/api/admin/export-csv", "status": 401}
+    {
+      "host": "saoc",
+      "path": "/admin",
+      "status": 307
+    },
+    {
+      "host": "saoc",
+      "path": "/admin/door",
+      "status": 307
+    },
+    {
+      "host": "saoc",
+      "path": "/admin/vendors",
+      "status": 307
+    },
+    {
+      "host": "saoc",
+      "path": "/admin/tickets",
+      "status": 307
+    },
+    {
+      "host": "saoc",
+      "path": "/api/admin/whoami",
+      "status": 401
+    },
+    {
+      "host": "saoc",
+      "path": "/api/admin/export-csv",
+      "status": 401
+    }
   ],
   "page_checks": [
     {
@@ -15,26 +39,91 @@
       "title_test_prefix": "[Testing only, not live]",
       "title_rule": "when payments=live the <title> must exist and must not contain the prefix; when payments=testing print SKIP (the prefix is deliberately on); never PASS on a missing <title>",
       "anchor": "ticket-wosa",
-      "anchor_runs_in": ["live"]
+      "anchor_runs_in": [
+        "live"
+      ],
+      "title_scope": "EVERY probed route that returns HTML 200 (isr, dynamic, admin 200s), not only /tickets; static assets excluded. Applies per payments mode exactly as title_rule."
     }
   ],
   "status_vectors": [
-    {"class": "isr", "expected_status": 200, "observed_status": 200, "cache_control": "s-maxage=60, stale-while-revalidate=31535940", "expect_line": "^PASS "},
-    {"class": "isr", "expected_status": 200, "observed_status": 500, "cache_control": "s-maxage=60, stale-while-revalidate=31535940", "expect_line": "^FAIL .*status=500 expected=200"},
-    {"class": "dynamic", "expected_status": 401, "observed_status": 200, "cache_control": "no-store", "expect_line": "^FAIL .*status=200 expected=401"},
-    {"class": "dynamic", "expected_status": 307, "observed_status": 0, "cache_control": null, "expect_line": "^FAIL .*status=0 expected=307"},
-    {"class": "dynamic", "expected_status": 404, "observed_status": 404, "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate", "expect_line": "^PASS "}
+    {
+      "class": "isr",
+      "expected_status": 200,
+      "observed_status": 200,
+      "cache_control": "s-maxage=60, stale-while-revalidate=31535940",
+      "expect_line": "^PASS "
+    },
+    {
+      "class": "isr",
+      "expected_status": 200,
+      "observed_status": 500,
+      "cache_control": "s-maxage=60, stale-while-revalidate=31535940",
+      "expect_line": "^FAIL .*status=500 expected=200"
+    },
+    {
+      "class": "dynamic",
+      "expected_status": 401,
+      "observed_status": 200,
+      "cache_control": "no-store",
+      "expect_line": "^FAIL .*status=200 expected=401"
+    },
+    {
+      "class": "dynamic",
+      "expected_status": 307,
+      "observed_status": 0,
+      "cache_control": null,
+      "expect_line": "^FAIL .*status=0 expected=307"
+    },
+    {
+      "class": "dynamic",
+      "expected_status": 404,
+      "observed_status": 404,
+      "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "expect_line": "^PASS "
+    }
   ],
   "title_vectors": [
-    {"payments": "live", "html": "<html><head><title>[Testing only, not live] Tickets | NOS</title></head></html>", "expect": "fail"},
-    {"payments": "live", "html": "<html><head><title>Tickets | NOS</title></head></html>", "expect": "pass"},
-    {"payments": "live", "html": "<html><head></head><body>no title</body></html>", "expect": "fail"},
-    {"payments": "testing", "html": "<html><head><title>[Testing only, not live] Tickets | NOS</title></head></html>", "expect": "skip"},
-    {"payments": "testing", "html": "<html><head><title>Tickets | NOS</title></head></html>", "expect": "skip"}
+    {
+      "payments": "live",
+      "html": "<html><head><title>[Testing only, not live] Tickets | NOS</title></head></html>",
+      "expect": "fail"
+    },
+    {
+      "payments": "live",
+      "html": "<html><head><title>Tickets | NOS</title></head></html>",
+      "expect": "pass"
+    },
+    {
+      "payments": "live",
+      "html": "<html><head></head><body>no title</body></html>",
+      "expect": "fail"
+    },
+    {
+      "payments": "testing",
+      "html": "<html><head><title>[Testing only, not live] Tickets | NOS</title></head></html>",
+      "expect": "skip"
+    },
+    {
+      "payments": "testing",
+      "html": "<html><head><title>Tickets | NOS</title></head></html>",
+      "expect": "skip"
+    }
   ],
   "anchor_vectors": [
-    {"anchor": "ticket-wosa", "html": "<article id=\"ticket-wosa\" data-ticket-card=\"\">", "expect": "pass"},
-    {"anchor": "ticket-wosa", "html": "<a href=\"#ticket-wosa\">jump</a>", "expect": "fail"},
-    {"anchor": "ticket-wosa", "html": "<article id=\"ticket-symposium\">", "expect": "fail"}
+    {
+      "anchor": "ticket-wosa",
+      "html": "<article id=\"ticket-wosa\" data-ticket-card=\"\">",
+      "expect": "pass"
+    },
+    {
+      "anchor": "ticket-wosa",
+      "html": "<a href=\"#ticket-wosa\">jump</a>",
+      "expect": "fail"
+    },
+    {
+      "anchor": "ticket-wosa",
+      "html": "<article id=\"ticket-symposium\">",
+      "expect": "fail"
+    }
   ]
 }

@@ -45,3 +45,11 @@ Shared-lane: none, unless H2 fires (touches the admin API surface; other lanes o
 
 ## Risks
 Dev must not reorder PASS output (existing text kept verbatim). Admin `get()` returns the raw 307, so the probe must not follow redirects (it does not). SPAWN port 3219 unchanged.
+
+## Amendment 2026-11-01: SAOC authoritative scope (replaces conflicting parts above)
+Files in scope: scripts/checks/ and docs/launch-checklist.md (H5 targets that file, not a new doc).
+- (a) Immutable on /_next/static under launch: `--spawn` already runs `startServer({ launched: true })`, which sets SITE_PUBLIC_LAUNCH=true in the LOCAL child env only (local-next-server.mjs:95), and the `static` rows (css and js, both hosts) assert `^public, max-age=31536000, immutable$`. Nothing deployed is ever set; `--live` sends GET only. Contract A13/A14 pin both facts.
+- (b) Title scope widened: the no-prefix check covers EVERY probed HTML 200 route, not just /tickets. Treatment of test mode is unchanged: payments=testing prints SKIP per route (prefix deliberately on, cannot fail today); payments=live asserts absence and fails on a missing title.
+- (c) #ticket-wosa on the tickets hub: NOS /tickets, `--live` only (see table); CI source check A8.
+- (d) /tickets/[slug] no-store: the existing 404 row; a real slug has no CI stub data, so it is asserted on the 404 response and live.
+- (e), (f) as specified above.

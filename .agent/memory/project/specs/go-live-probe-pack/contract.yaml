@@ -50,6 +50,15 @@ assertions:
     - id: A11
       description: live-write guard clean
       command: python3 contracts/checks/live-write-guard/verify_no_ungated_writers.py --summary
+    - id: A13
+      description: launched spawn sets SITE_PUBLIC_LAUNCH only in the local child env
+      command: grep -q "env.SITE_PUBLIC_LAUNCH = 'true'" scripts/checks/lib/local-next-server.mjs
+    - id: A14
+      description: static immutable rule present in the table
+      command: grep -qF 'public, max-age=31536000, immutable' .agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/goldens/cache-header-expectations.json
+    - id: A15
+      description: launch checklist documents the pre-go-live probe
+      command: grep -q "cache-headers-probe" docs/launch-checklist.md
     - id: A12
       description: contract is structurally valid
       command: python3 execution/contract.py validate .agent/memory/project/specs/go-live-probe-pack/contract.yaml --strict
