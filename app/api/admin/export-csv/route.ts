@@ -10,7 +10,10 @@ export async function GET() {
   const session = await getAdminSession();
   if (!session.ok) {
     const status = session.reason === 'no-session' || session.reason === 'invalid-session' ? 401 : 403;
-    return new Response(status === 401 ? 'Unauthorized' : 'Forbidden', { status });
+    return new Response(status === 401 ? 'Unauthorized' : 'Forbidden', {
+      status,
+      headers: { 'Cache-Control': 'no-store' },
+    });
   }
 
   const db = getFirestore(initAdmin());
