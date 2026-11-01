@@ -107,7 +107,7 @@ export function PageHero({
       <div
         data-page-hero-copy
         className={`relative z-10 flex w-full flex-col items-start px-[var(--container-pad)] py-10 text-left md:py-16 ${
-          image ? 'md:ml-[52%] md:w-[48%] md:pl-0' : 'saoc-container lg:py-0'
+          image ? 'md:ml-[52%] md:w-[min(48%,calc(var(--container-max)/2_-_2%))] md:pl-0' : 'saoc-container lg:py-0'
         }`}
       >
         {eyebrow ? (
