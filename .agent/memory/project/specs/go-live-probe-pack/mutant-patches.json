@@ -1,0 +1,37 @@
+{
+  "M1": {
+    "file": "scripts/checks/cache-headers-probe.mjs",
+    "find": "emit\\(verdict\\.line\\);",
+    "replace": "if (verdict.pass) emit(verdict.line);"
+  },
+  "M2": {
+    "file": "scripts/checks/cache-headers-probe.mjs",
+    "find": "status=\\$\\{response\\.status\\} expected",
+    "replace": "expected"
+  },
+  "M3": {
+    "file": "scripts/checks/cache-headers-probe.mjs",
+    "find": "let pass = verdict\\.pass;",
+    "replace": "let pass = true;"
+  },
+  "M4": {
+    "file": "scripts/checks/cache-headers-probe.mjs",
+    "find": "if \\(title === undefined\\) return 'fail';",
+    "replace": "if (title === undefined) return 'pass';"
+  },
+  "M5": {
+    "file": "scripts/checks/cache-headers-probe.mjs",
+    "find": "if \\(payments === 'testing'\\) return 'skip';",
+    "replace": "if (false) return 'skip';"
+  },
+  "M6": {
+    "file": "scripts/checks/cache-headers-probe.mjs",
+    "find": "return new RegExp\\(.*\\)\\.test\\(html\\) \\? 'pass' : 'fail';",
+    "replace": "return html.includes(anchor) ? 'pass' : 'fail';"
+  },
+  "M7": {
+    "file": "scripts/checks/cache-headers-probe.mjs",
+    "find": "throw new Error\\(`expected exactly[^\\n]*\\);",
+    "replace": "return 'live';"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "_comment": "Each mutant is applied to a COPY of scripts/checks/cache-headers-probe.mjs (and scripts/checks/lib/*.mjs) under .tmp/sandbox/; `node <copy> --selftest` must then exit NONZERO. 'find' is a regex over the probe source; the dev may adjust the pattern to the final code but must keep the intent and keep every mutant killed. A mutant that survives is a missing selftest vector.",
+  "mutants": [
+    {"id": "M1", "intent": "restore the silent status mismatch: status mismatch prints no FAIL line (the original `status && report` form)", "target": "verdict function", "kill": "status_vectors FAIL rows"},
+    {"id": "M2", "intent": "FAIL line drops the observed status (no status=<n>)", "target": "FAIL line format", "kill": "status_vectors expect_line regex"},
+    {"id": "M3", "intent": "mismatch no longer counted: probeRoute returns true on a status mismatch", "target": "probeRoute", "kill": "status_vectors verdict true/false assertion"},
+    {"id": "M4", "intent": "title check passes when <title> is missing", "target": "titleVerdict", "kill": "title_vectors live/no-title"},
+    {"id": "M5", "intent": "title check asserts in testing mode too (would fail today)", "target": "titleVerdict", "kill": "title_vectors testing rows"},
+    {"id": "M6", "intent": "anchor check accepts href=#ticket-wosa as the anchor", "target": "anchorVerdict", "kill": "anchor_vectors href-only"},
+    {"id": "M7", "intent": "payments mode reader defaults to live when the constant is unparseable", "target": "readPaymentsMode", "kill": "selftest asserts unparseable source throws / exit 2"}
+  ]
+}
