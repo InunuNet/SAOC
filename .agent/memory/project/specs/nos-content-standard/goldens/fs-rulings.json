@@ -39,22 +39,12 @@
     },
     "home": {
       "item": 4,
-      "visit": {
-        "minHeight": 72,
-        "paddingBlock": 18,
-        "columnsDesktop": 5,
-        "columnGap": 32,
-        "arrowCol": 24,
-        "arrowPx": 22,
-        "h3Px": 22,
-        "h3Weight": "400"
-      },
       "programme": {
         "h3Clamp": [
           22,
-          19.2,
-          0.006,
-          28
+          22,
+          0,
+          22
         ],
         "pPx": 16,
         "pLineHeight": 1.6,
@@ -173,6 +163,11 @@
         ],
         "/about": [],
         "/exhibitors": []
+      },
+      "plainCards": {
+        "/": [
+          ".nos-jg-card"
+        ]
       },
       "allowedKinds": [
         "[data-ticket-card]",

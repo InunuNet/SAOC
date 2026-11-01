@@ -364,6 +364,12 @@ def weather() -> str:
 
 def quota_window(block, label: str) -> str:
     """One quota window: utilisation, plus how long until it resets."""
+    if block is None:
+        # The usage API returned null for this window (seen 2026-11-01 for
+        # five_hour while seven_day was at 95%). Show the gap rather than
+        # silently dropping the segment, which read as the statusline
+        # having lost it.
+        return f"{DIM}{label}: --{R}"
     if not isinstance(block, dict):
         return ""
     used = block.get("utilization")

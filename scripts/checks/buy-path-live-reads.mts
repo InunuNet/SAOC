@@ -18,6 +18,9 @@ const EXIT_SETUP = 2;
 const SANITY_FETCH = 'sanityFetch';
 const FETCH_MODULE_SUFFIX = 'sanity/lib/fetch';
 const CLIENT_MODULE_SUFFIX = 'sanity/lib/client';
+const QUERIES_MODULE = 'sanity/queries';
+const QUERIES_MODULE_EXTENSIONS = ['', '.ts', '.js'];
+const ROOT_ALIAS = '@/';
 const CREATE_CLIENT = 'createClient';
 
 interface AllowEntry {
@@ -167,9 +170,32 @@ function liveIsParameter(node: ts.Node): boolean {
   return false;
 }
 
+// The static name of a plain property, or null for a computed key or a non-property member.
 function propertyName(property: ts.ObjectLiteralElementLike): string | null {
   if (ts.isShorthandPropertyAssignment(property)) return property.name.text;
-  if (ts.isPropertyAssignment(property) && ts.isIdentifier(property.name)) return property.name.text;
+  if (!ts.isPropertyAssignment(property)) return null;
+  const name = property.name;
+  if (ts.isIdentifier(name) || ts.isStringLiteral(name)) return name.text;
+  return null;
+}
+
+// Options-object shapes whose runtime `live`/`query` value the checker cannot read off the syntax:
+// a spread, a method or accessor member, a computed key (`["li" + "ve"]: false` overwrites `live`),
+// or a repeated `live`/`query` key (the last one wins at runtime).
+function unreadableOptionsReason(object: ts.ObjectLiteralExpression): string | null {
+  const seen = new Map<string, number>();
+  for (const property of object.properties) {
+    if (ts.isSpreadAssignment(property)) return 'options object spreads an unknown value';
+    if (!ts.isPropertyAssignment(property) && !ts.isShorthandPropertyAssignment(property)) {
+      return 'options object has a method or accessor member';
+    }
+    if (ts.isComputedPropertyName(property.name)) return 'options object has a computed property key';
+    const name = propertyName(property);
+    if (name !== null) seen.set(name, (seen.get(name) ?? 0) + 1);
+  }
+  for (const guarded of ['live', 'query']) {
+    if ((seen.get(guarded) ?? 0) > 1) return `options object repeats the ${guarded} key`;
+  }
   return null;
 }
 
@@ -195,16 +221,79 @@ function queryIdentifier(object: ts.ObjectLiteralExpression): string | null {
   return null;
 }
 
-function judgeFetchCall(call: ts.CallExpression, allowedQueries: Set<string>): string | null {
+// Every declaration in the file that binds `name`: imports, parameters, variables (destructured
+// too), catch variables, and function, class, enum and namespace names.
+function declarationsOf(source: ts.SourceFile, name: string): ts.Node[] {
+  const found: ts.Node[] = [];
+  const visit = (node: ts.Node): void => {
+    const named =
+      ts.isImportSpecifier(node) || ts.isNamespaceImport(node) || ts.isImportEqualsDeclaration(node) ||
+      ts.isFunctionDeclaration(node) || ts.isFunctionExpression(node) || ts.isClassDeclaration(node) ||
+      ts.isClassExpression(node) || ts.isEnumDeclaration(node) || ts.isModuleDeclaration(node) ||
+      ts.isImportClause(node) || ts.isParameter(node) || ts.isVariableDeclaration(node) || ts.isBindingElement(node);
+    // Every kind matched above carries an optional `name`; the union has no common declared type.
+    const declared = named ? (node as { name?: ts.Node }).name : undefined;
+    if (declared && ts.isIdentifier(declared) && declared.text === name) found.push(node);
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return found;
+}
+
+// True only when `specifier` resolves to <root>/sanity/queries itself: `@/` is the root (tsconfig
+// paths), a relative specifier resolves from the importing file. A suffix match would let a barrel
+// such as `@/evil/sanity/queries` re-export any query under an allowlisted name, so a bare package,
+// any other alias, or a directory form (trailing `/`, which resolves to an index) is rejected.
+function resolvesToQueriesModule(specifier: string, importer: string, root: string): boolean {
+  if (specifier.endsWith('/')) return false;
+  let target: string;
+  if (specifier.startsWith(ROOT_ALIAS)) {
+    target = resolve(root, specifier.slice(ROOT_ALIAS.length));
+  } else if (specifier.startsWith('./') || specifier.startsWith('../')) {
+    target = resolve(dirname(importer), specifier);
+  } else {
+    return false;
+  }
+  const queriesModule = resolve(root, QUERIES_MODULE);
+  return QUERIES_MODULE_EXTENSIONS.some((extension) => target === queriesModule + extension);
+}
+
+// An allowlist entry names the query exported by sanity/queries, not any identifier spelled the
+// same: the name must be bound exactly once in the file, by an unaliased value import from that
+// module. A parameter, local or alias of that name could hold any query, so it fails closed.
+function isQueriesImport(source: ts.SourceFile, name: string, root: string): boolean {
+  const declarations = declarationsOf(source, name);
+  if (declarations.length !== 1) return false;
+  const [specifier] = declarations;
+  if (!ts.isImportSpecifier(specifier) || specifier.isTypeOnly) return false;
+  if ((specifier.propertyName ?? specifier.name).text !== name) return false;
+  const clause = specifier.parent.parent;
+  const declaration = clause.parent;
+  return (
+    !clause.isTypeOnly &&
+    ts.isStringLiteral(declaration.moduleSpecifier) &&
+    resolvesToQueriesModule(declaration.moduleSpecifier.text, source.fileName, root)
+  );
+}
+
+function judgeFetchCall(
+  call: ts.CallExpression,
+  allowedQueries: Set<string>,
+  source: ts.SourceFile,
+  root: string,
+): string | null {
   const [argument] = call.arguments;
   if (!argument || !ts.isObjectLiteralExpression(argument)) {
     return 'options argument is not an object literal';
   }
-  if (argument.properties.some((property) => ts.isSpreadAssignment(property))) {
-    return 'options object spreads an unknown value';
-  }
+  // Checked before the allowlist: a spread or computed key can replace an allowlisted `query` at
+  // runtime (`...opts`, `["qu" + "ery"]: other`), so an unreadable object is never exempt.
+  const unreadable = unreadableOptionsReason(argument);
+  if (unreadable) return unreadable;
   const query = queryIdentifier(argument);
-  if (query && allowedQueries.has(query)) return null;
+  if (query && allowedQueries.has(query)) {
+    return isQueriesImport(source, query, root) ? null : `allowlisted ${query} is not bound only by its sanity/queries import`;
+  }
   const live = findProperty(argument, 'live');
   if (!live) return 'no live property';
   return passesLive(live) ? null : 'live is not true';
@@ -213,6 +302,8 @@ function judgeFetchCall(call: ts.CallExpression, allowedQueries: Set<string>): s
 function judgeCallerCall(call: ts.CallExpression): string | null {
   const [argument] = call.arguments;
   if (!argument || !ts.isObjectLiteralExpression(argument)) return 'no options object, live: true not passed';
+  const unreadable = unreadableOptionsReason(argument);
+  if (unreadable) return unreadable;
   const live = findProperty(argument, 'live');
   if (!live || !ts.isPropertyAssignment(live) || live.initializer.kind !== ts.SyntaxKind.TrueKeyword) {
     return 'live: true not passed';
@@ -244,7 +335,7 @@ function checkFile(manifest: Manifest, root: string, relFile: string): { violati
       const callee = plainCalleeName(node);
       if (isSanityFetchCall(node, bindings)) {
         sites[SANITY_FETCH] = (sites[SANITY_FETCH] ?? 0) + 1;
-        const reason = judgeFetchCall(node, allowed);
+        const reason = judgeFetchCall(node, allowed, source, root);
         if (reason) report(node, SANITY_FETCH, reason);
       } else if (callee && callers.has(callee)) {
         sites[callee] = (sites[callee] ?? 0) + 1;

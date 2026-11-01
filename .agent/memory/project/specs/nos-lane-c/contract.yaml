@@ -1,0 +1,59 @@
+schema: athanor.contract/v1
+slug: nos-lane-c
+goal: Five CSS and markup polish items for go-live ship with no copy change and the hero untouched.
+created_at: '2026-11-01'
+autonomy: high
+
+features:
+  - id: C1
+    name: NOS home h2 32px weight 300 at every width
+    status: done
+  - id: C2
+    name: One sticky-top variable on NOS
+    status: done
+  - id: C3
+    name: Doc index scroller clears the pinned header from 768
+    status: done
+  - id: C4
+    name: PageHero copy column capped at the container edge
+    status: done
+  - id: C5
+    name: ShowCountdown group role; ShowBand labels guarded, already clear on main
+    status: done
+
+goldens:
+  - .agent/memory/project/specs/nos-lane-c/goldens/spec.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: C1 home h2 computed 32px or more at weight 300, no overflow
+      command: node .agent/memory/project/specs/nos-lane-c/checks/lane-c.mjs C1
+    - id: A2
+      description: C2 sticky cards compute top 100 on home, what-to-expect and sponsors
+      command: node .agent/memory/project/specs/nos-lane-c/checks/lane-c.mjs C2
+    - id: A3
+      description: C2 no literal top 100px left in the NOS structure CSS
+      command: "! grep -qE '^[[:space:]]*top: 100px' 'app/(nos)/national-show/nos-structure.css'"
+    - id: A4
+      description: C3 scroller clears the header at 767, 768, 779, 780 and 1023 on five routes
+      command: node .agent/memory/project/specs/nos-lane-c/checks/lane-c.mjs C3
+    - id: A5
+      description: C4 copy stays inside the CTA edge, hero 480 holds, facts one row
+      command: node .agent/memory/project/specs/nos-lane-c/checks/lane-c.mjs C4
+    - id: A6
+      description: C5 regression guard, ShowBand labels at least 8px apart at 390, inside their cells
+      command: node .agent/memory/project/specs/nos-lane-c/checks/lane-c.mjs C5
+    - id: A7
+      description: C5 ShowCountdown labelled div has a group role
+      command: grep -q 'role="group"' components/show/ShowCountdown.tsx
+    - id: A8
+      description: Hero frozen, no changed line names a nos-hero rule and NosHero is untouched
+      command: "! git diff origin/main --unified=0 -- app components | grep -E '^[+-]' | grep -qE 'nos-hero|NosHero'"
+    - id: A9
+      description: Only the allowed source files changed
+      command: "! git diff origin/main --name-only | grep -vE '^(app/\\(nos\\)/national-show/nos-structure\\.css|app/globals\\.css|components/ui/PageHero\\.tsx|components/show/ShowCountdown\\.tsx|\\.agent/memory/project/specs/)'"
+    - id: A10
+      description: Type check passes
+      command: pnpm type-check

@@ -146,8 +146,12 @@ assertions:
       command: bash contracts/checks/ozow-m1-f3/check-live-purchase-blocked.sh
 
     - id: A2
+      required: false
       description: >-
-        A REAL, LIVE PAYFAST SANDBOX PURCHASE ALSO REACHES status:'paid' UNDER gateway:'payfast',
+        RETIRED 2026-11-01 (go-live-prep F2): the historical live-run artifact this check reads
+        (.agent/memory/scratch/ozow-f3-live-runs/payfast-2026-08-22T03-52-19Z.json) no longer
+        exists, so the check can only fail. The script is kept as method documentation. Original
+        scope follows. A REAL, LIVE PAYFAST SANDBOX PURCHASE ALSO REACHES status:'paid' UNDER gateway:'payfast',
         ON THE SAME DEPLOYED BUILD AS A1 — THE ACTUAL REGRESSION PROOF FOR F2's SHARED
         CHECKOUT/NOTIFICATION REFACTOR, not merely a repeat of F2's own offline behavioural
         assertions. Same artifact schema and same two-stage verification method as A1 (structured

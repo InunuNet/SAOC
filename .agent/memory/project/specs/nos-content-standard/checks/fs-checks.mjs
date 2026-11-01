@@ -94,16 +94,6 @@ export async function fsHome(page, vp, c, tag, ctx) {
     const px = (v) => parseFloat(v) || 0; const fam = (e) => getComputedStyle(e).fontFamily.split(',')[0].replace(/["']/g, '').toLowerCase();
     const sec = (k) => document.querySelector(`[data-hm-section="${k}"]`);
     const ch = (e) => { const s = document.createElement('span'); s.style.cssText = 'position:absolute;visibility:hidden;width:1ch'; e.appendChild(s); const w = s.getBoundingClientRect().width; s.remove(); return w; };
-    const visit = sec('visit'); const list = visit ? visit.querySelector('ul') : null; const lcs = list ? getComputedStyle(list) : null;
-    const items = list ? [...list.querySelectorAll('a')].map((a) => {
-      const cs = getComputedStyle(a); const li = a.closest('li'); const lics = li ? getComputedStyle(li) : null; const ab = a.getBoundingClientRect();
-      const h3 = a.querySelector('h3') ?? li?.querySelector('h3') ?? null; const hcs = h3 ? getComputedStyle(h3) : cs;
-      const arrow = [...a.querySelectorAll('*')].find((e) => e.children.length === 0 && (e.tagName.toLowerCase() === 'svg' || /→/.test(e.textContent))) ?? null; const arb = arrow ? arrow.getBoundingClientRect() : null;
-      const acs = arrow ? getComputedStyle(arrow) : null;
-      return { display: cs.display, tracks: cs.gridTemplateColumns.trim().split(/\s+/).map(px), minH: px(cs.minHeight), pt: px(cs.paddingTop), pb: px(cs.paddingBottom), pr: px(cs.paddingRight),
-        liTop: lics ? px(lics.borderTopWidth) : 0, liBot: lics ? px(lics.borderBottomWidth) : 0, aTop: px(cs.borderTopWidth), aBot: px(cs.borderBottomWidth),
-        h3: Boolean(h3), fam: fam(h3 ?? a), w: hcs.fontWeight, px: px(hcs.fontSize), arrow: Boolean(arrow), arrowPx: arrow ? (arrow.tagName.toLowerCase() === 'svg' ? arb.width : px(acs.fontSize)) : 0, arrowRight: arb ? arb.right : null, aRight: ab.right };
-    }) : [];
     const prog = sec('programme'); const progRows = prog ? [...prog.querySelectorAll('h3')].map((h) => {
       const row = h.closest('li, article, div'); const p = row ? row.querySelector('p') : null; const pcs = p ? getComputedStyle(p) : null;
       return { h3px: px(getComputedStyle(h).fontSize), h3fam: fam(h), pPx: pcs ? px(pcs.fontSize) : null, pLh: pcs ? px(pcs.lineHeight) : null, pW: p ? p.getBoundingClientRect().width : null, pCh: p ? ch(p) : null };
@@ -118,19 +108,14 @@ export async function fsHome(page, vp, c, tag, ctx) {
         lab: lab ? { fam: fam(lab), w: getComputedStyle(lab).fontWeight, px: px(getComputedStyle(lab).fontSize) } : null, dat: dat ? { fam: fam(dat), w: getComputedStyle(dat).fontWeight, px: px(getComputedStyle(dat).fontSize) } : null,
         dds: dds.map((d) => ({ fam: fam(d), px: px(getComputedStyle(d).fontSize), ws: getComputedStyle(d).whiteSpace })), ruled };
     }
-    return { cols: lcs ? lcs.gridTemplateColumns.trim().split(/\s+/).length : 0, colGap: lcs ? px(lcs.columnGap) : 0, items, progRows, cardInfo };
+    return { progRows, cardInfo };
   }, ctx);
-  c.check(`${t} Visit: the register is a ruled grid, each link grid 1fr/${H.visit.arrowCol}px, min-height ${H.visit.minHeight}, padding-block ${H.visit.paddingBlock} (${m.items.map((i) => `${i.display} ${i.tracks.map(Math.round).join('/')} h${i.minH} p${i.pt}/${i.pb}`).join(' | ')})`,
-    m.items.length > 0 && m.items.every((i) => i.display === 'grid' && i.tracks.length === 2 && near(i.tracks[1], H.visit.arrowCol, 0.5) && near(i.minH, H.visit.minHeight, 0.5) && near(i.pt, H.visit.paddingBlock, 0.5) && near(i.pb, H.visit.paddingBlock, 0.5)));
-  c.check(`${t} Visit: a rule top and bottom on each Visit li (${m.items.map((i) => `${i.liTop || i.aTop}/${i.liBot || i.aBot}`).join(',')})`, m.items.length > 0 && m.items.every((i) => (i.liTop || i.aTop) >= 1 && (i.liBot || i.aBot) >= 1));
-  if (vp.width >= 1024) c.check(`${t} Visit: ${H.visit.columnsDesktop} columns, column-gap ${H.visit.columnGap} (${m.cols}, ${m.colGap})`, m.cols === H.visit.columnsDesktop && near(m.colGap, H.visit.columnGap, 0.5));
-  c.check(`${t} Visit h3: Fraunces ${H.visit.h3Weight} ${H.visit.h3Px}px, and the arrow is ${H.visit.arrowPx}px at the cell end (${m.items.map((i) => `${i.h3 ? 'h3' : 'no h3'} ${i.fam} ${i.w} ${i.px}; arrow ${i.arrowPx}${i.arrowRight === null ? ' none' : ` end ${Math.round(i.aRight - i.pr - i.arrowRight)}`}`).join(' | ')})`,
-    m.items.length > 0 && m.items.every((i) => i.h3 && i.fam.includes('fraunces') && i.w === H.visit.h3Weight && near(i.px, H.visit.h3Px, 0.5) && i.arrow && near(i.arrowPx, H.visit.arrowPx, 0.5) && i.arrowRight !== null && i.arrowRight >= i.aRight - i.pr - 3));
+  // FS-1.4 Visit assertions (ruled grid, rules, columns, h3/arrow) retired with the Visit band (Brad 2026-10-31: the sub-nav replaces it).
   const ph = clampAt(H.programme.h3Clamp, vp.width);
-  c.check(`${t} Programme h3 is Fraunces at clamp(1.375rem, 1.2rem + 0.6vw, 1.75rem) = ${ph.toFixed(1)}px; its p is ${H.programme.pPx}px/${H.programme.pLineHeight}, at most ${H.programme.pMaxCh}ch (${m.progRows.map((r) => `${r.h3fam} ${r.h3px.toFixed(1)} | p ${r.pPx}/${r.pLh} ${r.pW === null ? '-' : (r.pW / r.pCh).toFixed(0) + 'ch'}`).join(' ; ')})`,
+  c.check(`${t} Programme h3 is Fraunces at a fixed 1.375rem = ${ph.toFixed(1)}px (shared with the Exhibit register rows); its p is ${H.programme.pPx}px/${H.programme.pLineHeight}, at most ${H.programme.pMaxCh}ch (${m.progRows.map((r) => `${r.h3fam} ${r.h3px.toFixed(1)} | p ${r.pPx}/${r.pLh} ${r.pW === null ? '-' : (r.pW / r.pCh).toFixed(0) + 'ch'}`).join(' ; ')})`,
     m.progRows.length > 0 && m.progRows.every((r) => r.h3fam.includes('fraunces') && near(r.h3px, ph, 1) && near(r.pPx, H.programme.pPx, 0.5) && near(r.pLh, H.programme.pPx * H.programme.pLineHeight, 0.6) && r.pW !== null && r.pW <= H.programme.pMaxCh * r.pCh + 2));
   const ci = m.cardInfo; const dp = clampAt(H.hours.datesClamp, vp.width);
-  c.check(`${t} About hours is a white static .ds-card with padding (${ci ? `${ci.bg}; ${ci.pos}; ds-card ${ci.dsCard}; padding ${ci.pad}` : 'no [data-hm-visit-card]'})`, Boolean(ci) && ci.bg === H.hours.white && ci.pos !== 'sticky' && ci.pad > 0);
+  c.check(`${t} About hours is a white .ds-card with padding, sticky from 1024 and static below (${ci ? `${ci.bg}; ${ci.pos}; ds-card ${ci.dsCard}; padding ${ci.pad}` : 'no [data-hm-visit-card]'})`, Boolean(ci) && ci.bg === H.hours.white && (vp.width >= 1024 ? ci.pos === 'sticky' : ci.pos !== 'sticky') && ci.pad > 0);
   c.check(`${t} hours label is sans ${H.hours.labelWeight} ${H.hours.labelPx}px; dates are Fraunces ${H.hours.datesWeight} clamp(1.5rem, 1.3rem + 0.6vw, 1.875rem) = ${dp.toFixed(1)}px (${ci && ci.lab ? `${ci.lab.fam} ${ci.lab.w} ${ci.lab.px}` : 'no label'}; ${ci && ci.dat ? `${ci.dat.fam} ${ci.dat.w} ${ci.dat.px.toFixed(1)}` : 'no dates'})`,
     Boolean(ci && ci.lab && ci.dat) && !ci.lab.fam.includes('fraunces') && ci.lab.w === H.hours.labelWeight && near(ci.lab.px, H.hours.labelPx, 0.5) && ci.dat.fam.includes('fraunces') && ci.dat.w === H.hours.datesWeight && near(ci.dat.px, dp, 1));
   c.check(`${t} hours rows are ruled and each dd is Fraunces ${H.hours.ddPx}px nowrap (${ci ? ci.dds.map((d) => `${d.px.toFixed(1)} ${d.ws}`).join(', ') : '-'}; ruled ${ci ? ci.ruled.join(',') : '-'})`, Boolean(ci) && ci.dds.length > 0 && ci.ruled.every(Boolean) && ci.dds.every((d) => d.fam.includes('fraunces') && near(d.px, H.hours.ddPx, 0.5) && /nowrap/.test(d.ws)));
@@ -208,10 +193,10 @@ const FS2 = RULINGS.fs2;
 export async function fsCardSurface(page, route, vp, c, tag) {
   const S = FS2.sCard; const t = `${tag} FS-2.1`;
   if (S.excludeRoutes.includes(route.nos)) { c.note(`${t} S-CARD does not run on ${route.nos}: ${S.excludeNote}`); return; }
-  const expected = S.expected[route.nos] ?? null;
+  const expected = S.expected[route.nos] ?? null; const plain = S.plainCards?.[route.nos] ?? [];
   const allowed = [...S.allowedKinds, ...(S.routeAllowed[route.nos] ?? [])];
   if (S.routeCite?.[route.nos]) c.note(`${t} ${route.nos} allows a golden card: ${S.routeCite[route.nos]}`);
-  const m = await page.evaluate(({ S, expected, allowed }) => {
+  const m = await page.evaluate(({ S, expected, allowed, plain }) => {
     const px = (v) => parseFloat(v) || 0; const main = document.querySelector('main'); if (!main) return null;
     const isWhite = (cs) => { const q = cs.backgroundColor.match(/rgba?\(([^)]+)\)/); if (!q) return false; const p = q[1].split(',').map(Number); const a = p[3] === undefined ? 1 : p[3]; return a >= 0.9 && p[0] >= 250 && p[1] >= 250 && p[2] >= 250; };
     const skip = 'button, input, select, textarea, a, summary, label, option, svg, img, nav, footer, section[data-nos-hero]';
@@ -219,18 +204,20 @@ export async function fsCardSurface(page, route, vp, c, tag) {
       return isWhite(cs) && (cs.boxShadow !== 'none' || px(cs.borderTopLeftRadius) >= 8) && b.width >= S.minW && b.height >= S.minH; });
     const surfaces = all.filter((e) => !all.some((o) => o !== e && o.contains(e)));
     const sel = (e) => e.tagName.toLowerCase() + (e.className ? '.' + e.className.toString().trim().split(/\s+/).slice(0, 2).join('.') : '') + [...e.attributes].filter((a) => a.name.startsWith('data-')).map((a) => `[${a.name}]`).slice(0, 2).join('');
-    const known = (e) => (expected ?? []).some((x) => e.matches(x) || e.closest(x)) ;
+    const known = (e) => [...(expected ?? []), ...plain].some((x) => e.matches(x) || e.closest(x)) ;
     const ok = (e) => allowed.some((x) => e.matches(x) || e.closest(x));
     const stray = surfaces.filter((e) => !known(e) && !ok(e)).map(sel);
     const ds = [...main.querySelectorAll('.ds-card')].map((e) => ({ sel: sel(e), r: px(getComputedStyle(e).borderTopLeftRadius), sh: getComputedStyle(e).boxShadow, white: isWhite(getComputedStyle(e)) }));
     const exp = (expected ?? []).map((x) => { const e = main.querySelector(x); if (!e) return { x, found: false }; const card = e.closest('.ds-card') ?? (e.matches('.ds-card') ? e : e.querySelector('.ds-card')); const cs = getComputedStyle(card ?? e); return { x, found: true, ds: Boolean(card), white: isWhite(cs), r: px(cs.borderTopLeftRadius), sh: cs.boxShadow }; });
-    return { n: surfaces.length, stray, ds, exp };
-  }, { S, expected, allowed });
+    const pl = plain.flatMap((x) => [...main.querySelectorAll(x)].map((e) => { const cs = getComputedStyle(e); return { x, ds: e.matches('.ds-card'), white: isWhite(cs), r: px(cs.borderTopLeftRadius), sh: cs.boxShadow }; }));
+    return { n: surfaces.length, stray, ds, exp, pl };
+  }, { S, expected, allowed, plain });
   if (!m) return;
   c.check(`${t} no stray card surface in main (${m.stray.join(', ') || `${m.n} surface(s), all expected or allowed`})`, m.stray.length === 0);
   if (expected) {
     c.check(`${t} ${route.nos}: exactly ${expected.length} .ds-card (${m.ds.length}) and ${expected.length === 0 ? 'no card on the gateway aside' : `the card is ${expected.join(', ')}`}`, m.ds.length === expected.length);
     for (const e of m.exp) c.check(`${t} ${e.x} is a white .ds-card, radius ${S.radius}, with the DS-1 shadow (${e.found ? `ds-card ${e.ds}; white ${e.white}; r ${e.r}; shadow ${e.sh.slice(0, 40)}` : 'not found'})`, e.found && e.ds && e.white && e.r === S.radius && e.sh !== 'none');
+    for (const x of plain) { const rows = m.pl.filter((p) => p.x === x); c.check(`${t} ${x}: ${rows.length} plain white card(s), radius ${S.radius}, with a shadow (not .ds-card; the floating card's white surface; ${rows.filter((p) => p.white && p.r === S.radius && p.sh !== 'none').length} ok)`, rows.length > 0 && rows.every((p) => !p.ds && p.white && p.r === S.radius && p.sh !== 'none')); }
   }
 }
 

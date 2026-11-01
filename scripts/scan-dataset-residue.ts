@@ -37,6 +37,9 @@ import { pathToFileURL } from 'node:url';
 import { createClient, type SanityClient } from '@sanity/client';
 
 const FIXTURE_FLAG = '--fixture';
+const STUB_FETCH_ERROR_FLAG = '--stub-fetch-error';
+const SANITY_QUOTA_STATUS = 402;
+const SANITY_QUOTA_MESSAGE = /plan_limit_reached/;
 const SANITY_API_VERSION = '2024-01-01';
 
 // ---------------------------------------------------------------------------
@@ -300,7 +303,39 @@ function loadFixtureDocuments(fixturePath: string): Record<string, unknown>[] {
   return parsed as Record<string, unknown>[];
 }
 
-async function fetchLiveDocuments(): Promise<Record<string, unknown>[]> {
+/** Raised when Sanity refuses the fetch because the plan quota is exhausted (not residue). */
+class SanityQuotaExhaustedError extends Error {}
+
+function isQuotaExhausted(err: unknown): boolean {
+  if (err === null || typeof err !== 'object') {
+    return false;
+  }
+  const { statusCode, message } = err as { statusCode?: unknown; message?: unknown };
+  return (
+    statusCode === SANITY_QUOTA_STATUS ||
+    (typeof message === 'string' && SANITY_QUOTA_MESSAGE.test(message))
+  );
+}
+
+/**
+ * Test hook: loads `{statusCode, message}` from a JSON file and throws it as the fetch error,
+ * so the quota-handling path can be exercised offline. Inert unless --stub-fetch-error is passed.
+ */
+function throwStubbedFetchError(stubPath: string): never {
+  const parsed: unknown = JSON.parse(readFileSync(path.resolve(process.cwd(), stubPath), 'utf8'));
+  // parsed is the stub's {statusCode, message} object; assigned onto the Error as the SDK does.
+  const message = String((parsed as { message?: unknown }).message ?? 'stubbed fetch error');
+  throw Object.assign(new Error(message), parsed);
+}
+
+async function fetchLiveDocuments(stubPath?: string): Promise<Record<string, unknown>[]> {
+  if (stubPath) {
+    try {
+      throwStubbedFetchError(stubPath);
+    } catch (err) {
+      throw isQuotaExhausted(err) ? new SanityQuotaExhaustedError() : err;
+    }
+  }
   const envLocal = readEnvLocal();
   const projectId = resolveEnvVar('NEXT_PUBLIC_SANITY_PROJECT_ID', envLocal);
   const dataset = resolveEnvVar('NEXT_PUBLIC_SANITY_DATASET', envLocal);
@@ -329,7 +364,12 @@ async function fetchLiveDocuments(): Promise<Record<string, unknown>[]> {
     useCdn: false,
   });
 
-  const documents: unknown = await client.fetch('*[]');
+  let documents: unknown;
+  try {
+    documents = await client.fetch('*[]');
+  } catch (err) {
+    throw isQuotaExhausted(err) ? new SanityQuotaExhaustedError() : err;
+  }
   if (!Array.isArray(documents)) {
     throw new Error('Unexpected response shape from Sanity: expected an array of documents.');
   }
@@ -363,24 +403,35 @@ function report(documents: Record<string, unknown>[]): number {
 // Entry point
 // ---------------------------------------------------------------------------
 
-function parseFixtureArg(argv: string[]): string | undefined {
-  const flagIndex = argv.indexOf(FIXTURE_FLAG);
+function parsePathArg(argv: string[], flag: string): string | undefined {
+  const flagIndex = argv.indexOf(flag);
   if (flagIndex === -1) {
     return undefined;
   }
   const value = argv[flagIndex + 1];
   if (!value) {
-    throw new Error(`${FIXTURE_FLAG} requires a path argument.`);
+    throw new Error(`${flag} requires a path argument.`);
   }
   return value;
 }
 
 async function main(): Promise<void> {
-  const fixturePath = parseFixtureArg(process.argv.slice(2));
+  const argv = process.argv.slice(2);
+  const fixturePath = parsePathArg(argv, FIXTURE_FLAG);
+  const stubPath = parsePathArg(argv, STUB_FETCH_ERROR_FLAG);
 
-  const documents = fixturePath
-    ? loadFixtureDocuments(fixturePath)
-    : await fetchLiveDocuments();
+  let documents: Record<string, unknown>[];
+  try {
+    documents = fixturePath ? loadFixtureDocuments(fixturePath) : await fetchLiveDocuments(stubPath);
+  } catch (err) {
+    if (err instanceof SanityQuotaExhaustedError) {
+      // Quota exhaustion is an account state, not residue: neutral skip, loudly annotated.
+      console.log('SKIPPED: Sanity quota exhausted');
+      console.log('::warning::Sanity quota exhausted (402 / plan_limit_reached) - not a clean scan');
+      process.exit(0);
+    }
+    throw err;
+  }
 
   const exitCode = report(documents);
   process.exit(exitCode);

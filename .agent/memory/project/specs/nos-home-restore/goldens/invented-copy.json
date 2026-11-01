@@ -1,0 +1,32 @@
+{
+ "_note": "Our own pre-#106 (17b25555^) home copy and the Sanity showClass / showExhibitorStep text. Invented by us, not Lee-Ann's. None of it may render on the home or appear in the restore's source module. Derived from git show 17b25555^:'app/(nos)/national-show/page.tsx' and a read-only Sanity query on 2026-10-29. The 'premier competitive orchid event' wording is ours; her paragraph says 'premier orchid event'.",
+ "banned": [
+  "premier competitive orchid event",
+  "four days of competition, education, and community",
+  "against the 100-point scale",
+  "Judges score on a 100-point scale",
+  "Every exhibit is entered in one of ten botanical classes",
+  "across ten botanical classes",
+  "highest-scoring exhibit across all classes",
+  "Editions held",
+  "Judging classes",
+  "Register your interest",
+  "Contact your provincial society",
+  "Early registration secures bench space",
+  "Staging and preparation",
+  "bench set-up from early morning",
+  "Judging begins the following morning",
+  "followed by the awards ceremony",
+  "Register your interest through your society or contact the council directly",
+  "Find your society",
+  "Cattleya Alliance",
+  "Oncidium Alliance",
+  "Paphiopedilum & Phragmipedium",
+  "Den-Phal, hard-cane",
+  "Plants with flowers under 4cm",
+  "Growers who have not won a first prize",
+  "Standard, miniature, pendulous and species Cymbidium",
+  "Vandaceous",
+  "Novice"
+ ]
+}

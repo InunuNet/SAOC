@@ -63,6 +63,17 @@ const SECURITY_HEADERS = [
   { key: 'Content-Security-Policy-Report-Only', value: CONTENT_SECURITY_POLICY_REPORT_ONLY },
 ];
 
+// /tickets/recover carries a bearer token in its query: the global strict-origin-when-cross-origin
+// still sends the full URL as Referer to same-origin requests, so this route sends none, and it
+// is never cached or indexed. Two disjoint rules (this and the catch-all excluding it) so no
+// result depends on how Next merges duplicate keys.
+const RECOVER_HEADERS = [
+  ...SECURITY_HEADERS.filter(({ key }) => key !== 'Referrer-Policy'),
+  { key: 'Referrer-Policy', value: 'no-referrer' },
+  { key: 'Cache-Control', value: 'private, no-store, max-age=0' },
+  { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+];
+
 const nextConfig: NextConfig = {
   // Inlined as '' when unset: Next only substitutes NEXT_PUBLIC_* variables that exist at build
   // time, and an unsubstituted read would stop lib/app-check-client.ts's build-key ternary from
@@ -113,7 +124,10 @@ const nextConfig: NextConfig = {
     ],
   },
   async headers() {
-    return [{ source: '/:path*', headers: SECURITY_HEADERS }];
+    return [
+      { source: '/tickets/recover', headers: RECOVER_HEADERS },
+      { source: '/:path((?!tickets/recover/?$).*)', headers: SECURITY_HEADERS },
+    ];
   },
   async redirects() {
     return [

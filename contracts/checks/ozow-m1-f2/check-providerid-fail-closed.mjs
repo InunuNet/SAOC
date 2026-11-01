@@ -59,6 +59,7 @@ async function callCheckout(bodyOverrides) {
     headers: {
       'Content-Type': 'application/json',
       'Idempotency-Key': nextIdempotencyKey(),
+      'Content-Length': String(Buffer.byteLength(JSON.stringify(body))),
     },
     body: JSON.stringify(body),
   });

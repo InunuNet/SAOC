@@ -1,0 +1,43 @@
+{
+  "_comment": "Fixture Firestore snapshot for purge-test-data.mts --fixture. Timestamps are ISO strings in the fields expiresAt/purchasedAt/gatewayPending.at; _updateTime is the doc revision (stands in for Firestore updateTime). now = 2026-11-01T10:00:00.000Z. Ids are prefixed by intent: SELECT-* must be selected, HELD-* must be reported under heldBack and not selected, KEEP-* must not appear anywhere in the manifest.",
+  "now": "2026-11-01T10:00:00.000Z",
+  "projectId": "fixture-project",
+  "collections": {
+    "orders": {
+      "SELECT-O-RES-EXP-TEST": { "showId": "show-19-2027", "status": "reserved", "expiresAt": "2026-08-18T10:00:00.000Z", "gateway": "ozow", "gatewayPaymentId": null, "issuedInTestMode": true, "expectedGatewayAmount": 0.01, "buyerEmail": "e2e-test@example.com", "_updateTime": "2026-08-18T09:45:00.000Z" },
+      "SELECT-O-RES-EXP-LEGACY": { "showId": "show-19-2027", "status": "reserved", "expiresAt": "2026-08-19T10:00:00.000Z", "gateway": "payfast", "gatewayPaymentId": null, "buyerEmail": "e2e-test@example.com", "_updateTime": "2026-08-19T09:45:00.000Z" },
+      "KEEP-O-RES-FUTURE": { "showId": "show-19-2027", "status": "reserved", "expiresAt": "2026-11-01T10:20:00.000Z", "gateway": "ozow", "gatewayPaymentId": null, "issuedInTestMode": false, "_updateTime": "2026-11-01T10:00:00.000Z" },
+      "HELD-O-RES-EXP-PENDING": { "showId": "show-19-2027", "status": "reserved", "expiresAt": "2026-10-30T10:00:00.000Z", "gateway": "ozow", "gatewayPaymentId": null, "gatewayPending": { "rawStatus": "Pending", "at": "2026-10-30T09:50:00.000Z" }, "_updateTime": "2026-10-30T09:50:00.000Z" },
+      "HELD-O-RES-EXP-OZOWREF": { "showId": "show-19-2027", "status": "reserved", "expiresAt": "2026-10-30T11:00:00.000Z", "gateway": "ozow", "gatewayPaymentId": "OZ-LIVE-0001", "issuedInTestMode": false, "_updateTime": "2026-10-30T10:50:00.000Z" },
+      "SELECT-O-PAID-TEST-FLAG": { "showId": "show-19-2027", "status": "paid", "gateway": "ozow", "gatewayPaymentId": "OZ-SBX-1", "issuedInTestMode": true, "purchasedAt": "2026-10-10T08:00:00.000Z", "_updateTime": "2026-10-10T08:00:00.000Z" },
+      "SELECT-O-PAID-TEST-R001": { "showId": "show-19-2027", "status": "paid", "gateway": "ozow", "gatewayPaymentId": "OZ-SBX-2", "expectedGatewayAmount": 0.01, "purchasedAt": "2026-10-11T08:00:00.000Z", "_updateTime": "2026-10-11T08:00:00.000Z" },
+      "SELECT-O-PAID-TEST-OZOWREF": { "showId": "show-19-2027", "status": "paid", "gateway": "ozow", "gatewayPaymentId": "OZ-SBX-3", "issuedInTestMode": true, "purchasedAt": "2026-10-12T08:00:00.000Z", "_updateTime": "2026-10-12T08:00:00.000Z" },
+      "KEEP-O-PAID-REAL": { "showId": "show-19-2027", "status": "paid", "gateway": "ozow", "gatewayPaymentId": "OZ-LIVE-9999", "issuedInTestMode": false, "expectedGatewayAmount": null, "purchasedAt": "2026-10-31T08:00:00.000Z", "_updateTime": "2026-10-31T08:00:00.000Z" },
+      "HELD-O-PAID-UNFLAGGED": { "showId": "show-19-2027", "status": "paid", "gateway": "payfast", "gatewayPaymentId": "PF-1", "purchasedAt": "2026-08-20T08:00:00.000Z", "_updateTime": "2026-08-20T08:00:00.000Z" },
+      "KEEP-O-CANCELLED": { "showId": "show-19-2027", "status": "cancelled", "gateway": "ozow", "gatewayPaymentId": null, "issuedInTestMode": true, "_updateTime": "2026-09-01T08:00:00.000Z" }
+    },
+    "tickets": {
+      "SELECT-T-1": { "showId": "show-19-2027", "ticketType": "vip", "status": "reserved", "orderId": "SELECT-O-RES-EXP-TEST", "expiresAt": "2026-08-18T10:00:00.000Z", "_updateTime": "2026-08-18T09:45:00.000Z" },
+      "SELECT-T-2": { "showId": "show-19-2027", "ticketType": "vip", "status": "reserved", "orderId": "SELECT-O-RES-EXP-LEGACY", "expiresAt": "2026-08-19T10:00:00.000Z", "_updateTime": "2026-08-19T09:45:00.000Z" },
+      "SELECT-T-3": { "showId": "show-19-2027", "ticketType": "vip", "status": "paid", "orderId": "SELECT-O-PAID-TEST-FLAG", "issuedInTestMode": true, "_updateTime": "2026-10-10T08:00:00.000Z" },
+      "SELECT-T-4": { "showId": "show-19-2027", "ticketType": "early-bird", "status": "paid", "orderId": "SELECT-O-PAID-TEST-R001", "_updateTime": "2026-10-11T08:00:00.000Z" },
+      "SELECT-T-4B": { "showId": "show-19-2027", "ticketType": "day-visitor", "status": "checked-in", "orderId": "SELECT-O-PAID-TEST-OZOWREF", "issuedInTestMode": true, "_updateTime": "2026-10-12T09:00:00.000Z" },
+      "KEEP-T-5": { "showId": "show-19-2027", "ticketType": "vip", "status": "paid", "orderId": "KEEP-O-PAID-REAL", "issuedInTestMode": false, "_updateTime": "2026-10-31T08:00:00.000Z" },
+      "KEEP-T-6": { "showId": "show-19-2027", "ticketType": "vip", "status": "reserved", "orderId": "KEEP-O-RES-FUTURE", "expiresAt": "2026-11-01T10:20:00.000Z", "_updateTime": "2026-11-01T10:00:00.000Z" },
+      "SELECT-T-7": { "showId": "nationalShow", "ticketType": "exhibitor", "status": "reserved", "orderId": null, "_updateTime": "2026-07-01T08:00:00.000Z" },
+      "SELECT-T-8": { "showId": "nationalShow", "ticketType": "adult", "status": "reserved", "orderId": "MISSING-ORDER", "expiresAt": "2026-07-02T08:00:00.000Z", "_updateTime": "2026-07-01T08:00:00.000Z" },
+      "HELD-T-9": { "showId": "nationalShow", "ticketType": "adult", "status": "paid", "orderId": null, "_updateTime": "2026-07-01T08:00:00.000Z" },
+      "HELD-T-10": { "showId": "show-19-2027", "ticketType": "vip", "status": "reserved", "orderId": null, "expiresAt": "2026-11-01T10:30:00.000Z", "_updateTime": "2026-11-01T10:00:00.000Z" },
+      "HELD-T-11": { "showId": "nationalShow", "ticketType": "adult", "status": "checked-in", "orderId": null, "_updateTime": "2026-07-01T08:00:00.000Z" },
+      "KEEP-T-12": { "showId": "show-19-2027", "ticketType": "vip", "status": "reserved", "orderId": "HELD-O-RES-EXP-OZOWREF", "expiresAt": "2026-10-30T11:00:00.000Z", "_updateTime": "2026-10-30T10:50:00.000Z" },
+      "KEEP-T-13": { "showId": "show-19-2027", "ticketType": "vip", "status": "reserved", "orderId": "HELD-O-RES-EXP-PENDING", "expiresAt": "2026-10-30T10:00:00.000Z", "_updateTime": "2026-10-30T09:50:00.000Z" },
+      "KEEP-T-14": { "showId": "show-19-2027", "ticketType": "vip", "status": "paid", "orderId": "HELD-O-PAID-UNFLAGGED", "_updateTime": "2026-08-20T08:00:00.000Z" }
+    },
+    "vendorStandOrders": {
+      "SELECT-VSO-OZOW-SANDBOX": { "status": "paid", "gateway": "ozow", "gatewayPaymentId": "OZ-SBX-V1", "expectedGatewayAmount": 0.01, "_updateTime": "2026-10-05T08:00:00.000Z" },
+      "HELD-VSO-PAYFAST-UNFLAGGED": { "status": "paid", "gateway": "payfast", "gatewayPaymentId": "PF-V1", "_updateTime": "2026-09-05T08:00:00.000Z" },
+      "KEEP-VSO-REAL": { "status": "paid", "gateway": "ozow", "gatewayPaymentId": "OZ-LIVE-V2", "expectedGatewayAmount": null, "_updateTime": "2026-10-30T08:00:00.000Z" },
+      "KEEP-VSO-PENDING": { "status": "pending", "gateway": "ozow", "gatewayPaymentId": null, "_updateTime": "2026-10-30T08:00:00.000Z" }
+    }
+  }
+}

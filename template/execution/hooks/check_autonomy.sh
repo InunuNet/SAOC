@@ -76,7 +76,7 @@ ro_stage_ok() {
 # changes directory or links (`>` anywhere, `&`, backtick, and every command
 # not listed disqualify), so a glob in a later part sees the filesystem the
 # hook sees. The word screen matches ro_pipeline.
-RO_SEQ_EXTRA=" cmp diff echo printf true test [ "
+RO_SEQ_EXTRA=" cmp diff echo printf true test pwd [ "
 ro_seq_stage_ok() {
   local stage="${1//[\'\"]/}" first
   stage="${stage#"${stage%%[! ]*}"}"; first="${stage%% *}"
@@ -85,6 +85,8 @@ ro_seq_stage_ok() {
   # later part's glob expands (Codex QA 2026-10-24).
   [ "$first" != git ] || return 1
   ro_stage_ok "$1" && return 0
+  # contract.py validate only reads the contract it is given (path, --strict).
+  [[ "$stage" =~ ^python3\ execution/contract\.py\ validate(\ --strict)?\ [A-Za-z0-9_./*?-]+$ ]] && return 0
   [[ -n "$first" && "$RO_SEQ_EXTRA" == *" $first "* ]]
 }
 ro_sequence() {
@@ -206,9 +208,81 @@ mask_quoted_metachars() {
     printf '%s' "$out"
   fi
 }
+# floor_log_denial <reason> [path] -- append one JSON line per floor denial to the
+# project-local telemetry log, so false positives can be counted instead of
+# anecdotal. Best effort and silent: a log that cannot be written (parent is a
+# file, path is a directory, read-only dir) changes neither the verdict nor stderr.
+# The command is masked (secret-looking values) before it is cut to 300 chars.
+FLOOR_DENIAL_LOG=".agent/memory/project/telemetry/floor_denials.jsonl"
+FLOOR_LOG_CMD_MAX=300
+floor_mask() {
+  sed -E \
+    -e 's/([A-Za-z0-9_]*([Kk][Ee][Yy]|[Tt][Oo][Kk][Ee][Nn]|[Ss][Ee][Cc][Rr][Ee][Tt]|[Pp][Aa][Ss][Ss][A-Za-z]*|[Aa][Uu][Tt][Hh][A-Za-z]*)=)[^[:space:]]+/\1***/g' \
+    -e 's/([Bb][Ee][Aa][Rr][Ee][Rr]|[Bb][Aa][Ss][Ii][Cc]|[Tt][Oo][Kk][Ee][Nn]) +[^[:space:]]+/\1 ***/g' \
+    -e 's#://[^/@ ]+:[^@ ]+@#://***@#g' \
+    -e 's/(--(password|token|secret|api-key)[ =])[^[:space:]]+/\1***/g' \
+    -e 's/xox[a-z]-[^[:space:]]+/***/g' \
+    -e 's/sk-[A-Za-z0-9_-]{8,}/***/g' \
+    -e 's/gh[a-z]_[A-Za-z0-9]{8,}/***/g'
+}
+# The append walks the log path with O_NOFOLLOW at every component (openat style), so a
+# symlink swapped in at any point -- before or after any check -- is refused, never followed.
+floor_append_nofollow() {
+  python3 -c '
+import os, sys
+parts = sys.argv[1].split("/")
+line = sys.stdin.read()
+fd = os.open(".", os.O_RDONLY | os.O_DIRECTORY)
+for part in parts[:-1]:
+    try:
+        os.mkdir(part, 0o755, dir_fd=fd)
+    except FileExistsError:
+        pass
+    fd = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=fd)
+out = os.open(parts[-1], os.O_WRONLY | os.O_CREAT | os.O_APPEND | os.O_NOFOLLOW, 0o644, dir_fd=fd)
+os.write(out, line.encode())
+' "$1"
+}
+floor_log_denial() {
+  {
+    local cmd="" reason path
+    if [ "$TOOL" = "Bash" ]; then
+      cmd=$(printf '%s' "$COMMAND" | floor_mask)
+      cmd="${cmd:0:$FLOOR_LOG_CMD_MAX}"
+    fi
+    reason=$(printf '%s' "$1" | floor_mask)
+    path=$(printf '%s' "${2:-}" | floor_mask)
+    jq -nc --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg tool "$TOOL" \
+           --arg reason "$reason" --arg path "$path" --arg command "$cmd" \
+           '{ts: $ts, tool: $tool, reason: $reason, path: (if $path == "" then null else $path end), command: $command}' \
+      | floor_append_nofollow "$FLOOR_DENIAL_LOG"
+  } 2>/dev/null || true
+}
 TR_CWD_KNOWN=0
+TR_GLOB_CWD=""
 if [ "$TOOL" = "Bash" ]; then
   _session_cwd=$(echo "$INPUT" | jq -r '.cwd // ""' 2>/dev/null || echo "")
+  # A session cwd that is a real directory inside this project (a worktree, a
+  # subtree) is where relative wildcards expand, not the hook's own pwd: the
+  # glob is resolved there, so `*` is judged by what that tree really holds.
+  if [ -n "$_session_cwd" ] && ! [ "$_session_cwd" -ef "$(pwd)" ] && [ -d "$_session_cwd" ]; then
+    _real_cwd=$(cd -P "$_session_cwd" 2>/dev/null && pwd -P) || _real_cwd=""
+    _real_root=$(pwd -P)
+    # Not when that tree is itself protected (a cwd of .ssh, secrets, .git, the
+    # hooks): there the old unknown-cwd pattern verdict stands, so `cat *` stays denied.
+    _cwd_rel="${_real_cwd#"$_real_root"/}"
+    _nc=0; shopt -q nocasematch && _nc=1
+    shopt -s nocasematch
+    case "$_real_cwd" in
+      "$_real_root"/*)
+        case "/$_cwd_rel/" in
+          */.ssh/*|*/.aws/*|*/.gnupg/*|*/secrets/*|*/.git/*|*/.claude/*|*/.agent/*|*/execution/hooks/*) ;;
+          *) TR_GLOB_CWD="$_real_cwd"; _session_cwd="" ;;
+        esac ;;
+    esac
+    [ "$_nc" = 1 ] || shopt -u nocasematch
+    unset _real_cwd _real_root _cwd_rel _nc
+  fi
   _mcmd=$(mask_quoted_metachars "$COMMAND")
   _nl=$'\n'
   # A bare `.` is the source builtin only in command position: first word, first
@@ -505,6 +579,7 @@ route3_hard_denied() {
     */.agent/autonomy_matrix.json|\
     */.agent/enforcement_breakglass.json|\
     */.agent/enforcement_emergency.json|\
+    */.agent/privilege_permit.json|\
     */execution/hooks/check_autonomy.sh)
       return 0 ;;
   esac
@@ -611,6 +686,9 @@ check_enforcement_hatch() {
   if [[ "$raw" = /* ]]; then target_abs="$raw"; else target_abs="$(pwd)/${raw}"; fi
   target_canon=$(canon_path "$target_abs")
   [ -z "$target_canon" ] && return 1
+  # The operator permit is never reachable through Routes 1-3: a route is agent-authored
+  # evidence, and the permit is the one file only the operator's answer may create.
+  ci_match '(^|/)\.agent/privilege_permit\.json$' "$target_canon" && return 1
 
   HATCH_METHOD=""; HATCH_MISSION=""; HATCH_FEATURE=""; HATCH_CONTRACT=""
   if route1_permit "$target_canon" || route2_permit "$target_canon" \
@@ -622,6 +700,206 @@ check_enforcement_hatch() {
     return 0
   fi
   return 1
+}
+
+# ── Operator permit (privilege_permit.json) ─────────────────────────────────────
+# Elevation verbs (sudo, doas, pkexec, run0, su, systemd-run, sudoedit, runuser, machinectl) run
+# only under a live grant in .agent/privilege_permit.json, which no agent route can write; the
+# human's answer to an AskUserQuestion (execution/escalate.py request) creates it. Out-of-project
+# paths covered by a live path grant get an explicit allow decision at the final exit. All parsing
+# and validation lives in lib/privilege_permit.py; any helper failure is a deny.
+# Design: docs/privileged-command-permit.md. Note: autonomy_matrix.json floor_denials.commands is
+# inert (enforcement-owned, never read here); the verb set below is authoritative.
+PERMIT_HELPER="${HOOK_DIR}/lib/privilege_permit.py"
+PERMIT_FILE=".agent/privilege_permit.json"
+PERMIT_ELEV_VERBS=" sudo doas pkexec run0 su systemd-run sudoedit runuser machinectl "
+# Plain file tools: the only commands whose out-of-project operands may get an allow decision.
+PERMIT_PATH_CMDS=" cat head tail ls cp mv mkdir rmdir touch tee echo printf grep egrep fgrep wc stat file diff cmp rm install ln sort uniq cut tr "
+PERMIT_ASK_HINT="needs an operator permit. Ask: python3 execution/escalate.py request --kind command --scope <verbs> --reason '<why>' --ttl 4h, then raise the AskUserQuestion it prints (permit file: .agent/privilege_permit.json)"
+PERMIT_PRESENT=0
+[ -e "$PERMIT_FILE" ] && PERMIT_PRESENT=1
+PERMIT_ELEV_USED=0
+PERMIT_PATH_BAD=0
+PERMIT_NAMES_BAD=0
+declare -a PERMIT_USES=()
+declare -a PERMIT_TARGETS=()
+FL_VERB=""
+
+# fl_elev_verb <word> -- sets FL_VERB to the elevation verb the word runs as, or "". A backslash or
+# $ prefix, a path, and a symlink alias (any chain ending in a verb binary) all count.
+fl_elev_verb() {
+  local w="$1" b p t hop
+  FL_VERB=""
+  while [ -n "$w" ]; do
+    case "$w" in \\*|'$'*) w="${w#?}" ;; *) break ;; esac
+  done
+  b="${w##*/}"
+  if [[ "$PERMIT_ELEV_VERBS" == *" $b "* ]]; then FL_VERB="$b"; return; fi
+  case "$w" in */*) ;; *) return ;; esac
+  p="$w"
+  for ((hop = 0; hop < 8; hop++)); do
+    [ -L "$p" ] || return
+    t=$(readlink "$p" 2>/dev/null) || return
+    case "$t" in /*) p="$t" ;; *) p="$(dirname "$p")/$t" ;; esac
+    b="${p##*/}"
+    if [[ "$PERMIT_ELEV_VERBS" == *" $b "* ]]; then FL_VERB="$b"; return; fi
+  done
+}
+
+# fl_elevate <run|link> <separator> <verb> <args...> -- one elevation-verb command. The helper
+# decides (live permit, strict option parse, allowlist); what the verb runs is then judged like
+# any other command, so `sudo rm -rf /` stays denied. Audit lines are written after the whole
+# command is judged (permit_flush_audit).
+fl_elevate() {
+  local mode="$1" sep="$2" verb="$3" f kind
+  shift 3
+  local -a res=() inner=()
+  while IFS= read -r -d '' f; do res+=("$f"); done \
+    < <(python3 "$PERMIT_HELPER" use --root "$PWD" --verb "$verb" --mode "$mode" -- "$@" 2>/dev/null)
+  if [ "${res[0]:-}" != ok ]; then
+    _blk=1
+    _why="$verb $PERMIT_ASK_HINT"
+    [ -n "${res[0]:-}" ] && _why="$_why [${res[0]#deny:}]"
+    return
+  fi
+  PERMIT_ELEV_USED=1
+  PERMIT_USES+=("$verb"$'\t'"${res[1]}"$'\t'"${res[2]}"$'\t'"${res[3]}")
+  kind="${res[4]:-none}"
+  inner=("${res[@]:5}")
+  case "$kind" in
+    words)
+      # `sudo sh` / `pkexec bash` with no -c is a root shell fed by stdin, never an agent use.
+      case "${inner[0]##*/}" in
+        sh|bash|zsh|dash|ksh|fish)
+          local ia isc=0
+          for ia in "${inner[@]:1}"; do case "$ia" in -c|-[!-]*c*) isc=1 ;; esac; done
+          if [ "$isc" = 0 ]; then
+            _blk=1; _why="$verb ${inner[0]}: an interactive root shell is never an agent use"; return
+          fi ;;
+      esac
+      fl_check_cmd "$sep" "${inner[@]}" ;;
+    shell) fl_classify "${inner[0]:-}" $((FL_DEPTH + 1)) ;;
+    edit)
+      # `sudo -e FILE` / sudoedit write FILE: every operand goes through the Write/Edit floor.
+      for f in "${inner[@]}"; do
+        local r; r=$(expand_target "$f")
+        if floor_glob_match "$f" || floor_glob_match "$r" || [[ "$r" =~ $re_write_protpath ]] \
+           || ci_match "$re_read_protpath" "$r" \
+           || ci_match '(^|/)\.agent/privilege_permit\.json$' "$r"; then
+          _blk=1; _why="$verb -e / sudoedit on protected path '$f'"; return
+        fi
+      done ;;
+  esac
+}
+
+# fl_grant_guard <command-name> <args...> -- `escalate.py grant` and `grant-from-answer` are the
+# operator's (and the registered PostToolUse hook's) commands, never an agent's: an agent that
+# runs either is forging the human's answer. It judges one command's WORDS, never its text: an
+# interpreter whose argv names escalate.py (or a copy carrying the ESCALATE_OPERATOR_ONLY marker)
+# AND carries `grant` / `grant-from-answer` as a word of its own, `-m escalate` /
+# `-m privilege_permit`, or a -c/-e blob that loads either module. Prose in a heredoc, an echo, a
+# commit message or `brain.py --summary` is a single quoted word, not a command, and is not judged.
+# The helper's process-ancestry check and the terminal confirmation are the real protection.
+FL_GRANT_WHY="operator-only: answer the AskUserQuestion yourself; escalate.py grant and grant-from-answer are not agent commands"
+fl_grant_guard() {
+  local name="$1" a script="" sub=0 ep=0 prev=""
+  shift
+  case "$name" in
+    python|python[0-9]*|pypy*|*.py|uv|node|ruby|perl|php|deno) ;;
+    *) return ;;
+  esac
+  case "$name" in escalate.py|privilege_permit.py) ep=1 ;; esac
+  for a in "$@"; do
+    case "$prev" in
+      -m) case "${a%.py}" in escalate|privilege_permit) _blk=1 ;; esac ;;
+      -c|-e)
+        # code that loads either module, whatever it then calls
+        case "$a" in
+          *"import escalate"*|*"import privilege_permit"*|*"from escalate"*|*"from privilege_permit"*) _blk=1 ;;
+          *runpy*|*run_path*|*exec_module*|*spec_from_file_location*|*"exec("*|*"exec ("*)
+            case "$a" in *escalate*|*privilege_permit*) _blk=1 ;; esac ;;
+        esac ;;
+    esac
+    case "$a" in grant|grant-from-answer) sub=1 ;; esac
+    case "$a" in -*) ;; *) [ -z "$script" ] && script="$a" ;; esac
+    case "${a##*/}" in escalate.py|privilege_permit.py) ep=1 ;; esac
+    prev="$a"
+  done
+  if [ "$_blk" = 1 ] || { [ "$sub" = 1 ] && [ "$ep" = 1 ]; }; then _blk=1; _why="$FL_GRANT_WHY"; return; fi
+  [ "$sub" = 1 ] || return
+  case "$name" in *.py) script="$name" ;; esac
+  if [ -f "$script" ] && head -c 65536 "$script" 2>/dev/null | grep -q ESCALATE_OPERATOR_ONLY; then
+    _blk=1; _why="$FL_GRANT_WHY"
+  fi
+}
+
+# permit_note_target <resolved-path> -- remember an out-of-project operand for the path decision.
+permit_note_target() {
+  local t="$1"
+  [ "$PERMIT_PRESENT" = 1 ] && [ -n "$t" ] || return 0
+  case "$t" in /dev/null|/dev/stdout|/dev/stderr|/dev/stdin|/dev/tty) return 0 ;; esac
+  path_in_project "$t" && return 0
+  PERMIT_TARGETS+=("$t")
+  return 0
+}
+
+# permit_flush_audit -- write the `used` lines for every elevation this command was admitted by.
+permit_flush_audit() {
+  local cmd
+  [ "${#PERMIT_USES[@]}" -gt 0 ] || return 0
+  cmd=$(printf '%s' "$COMMAND" | floor_mask)
+  cmd="${cmd:0:$FLOOR_LOG_CMD_MAX}"
+  printf '%s\n' "${PERMIT_USES[@]}" \
+    | python3 "$PERMIT_HELPER" audit-used --root "$PWD" --command "$cmd" 2>/dev/null
+}
+
+# permit_paths_covered -- (Grep and Glob never get an allow decision: a recursive search of a granted
+# directory would surface credential-named files inside it.) True when the tool call touches out-of-project paths and a live path
+# grant covers every one of them (writing the path_used audit lines). Unresolvable shapes
+# (variables, substitutions, globs, cd/eval, commands other than plain file tools) are never covered.
+permit_paths_covered() {
+  local cmd="" rc p
+  local -a targets=()
+  [ "$PERMIT_PRESENT" = 1 ] || return 1
+  case "$TOOL" in
+    Bash)
+      [ "${#PERMIT_TARGETS[@]}" -gt 0 ] && [ "$PERMIT_PATH_BAD" = 0 ] && [ "$PERMIT_NAMES_BAD" = 0 ] || return 1
+      [[ "$COMMAND" == *[\$\`\*\?\[\{\\]* || "$COMMAND" == *'<('* || "$COMMAND" == *'>('* ]] && return 1
+      [[ "$COMMAND" =~ (^|[^[:alnum:]_./-])(cd|pushd|popd|eval|source|exec)([[:space:]]|$) ]] && return 1
+      targets=("${PERMIT_TARGETS[@]}")
+      cmd=$(printf '%s' "$COMMAND" | floor_mask)
+      cmd="${cmd:0:$FLOOR_LOG_CMD_MAX}" ;;
+    Write|Edit|NotebookEdit|Read)
+      p=$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // .tool_input.notebook_path // .tool_input.path // ""' 2>/dev/null)
+      [ -n "$p" ] || return 1
+      declare -A VARS=()
+      p=$(expand_target "$p")
+      path_in_project "$p" && return 1
+      targets=("$p") ;;
+    *) return 1 ;;
+  esac
+  python3 "$PERMIT_HELPER" path-use --root "$PWD" --tool "$TOOL" --command "$cmd" -- "${targets[@]}" 2>/dev/null
+  rc=$?
+  if [ "$rc" = 2 ]; then
+    floor_log_denial "permitted path use denied: audit log not writable"
+    echo "⛔ AUTONOMY FLOOR: path use denied, audit log (.agent/memory/project/privileged_command_audit.log) is not writable" >&2
+    exit 2
+  fi
+  [ "$rc" = 0 ]
+}
+
+# permit_finalize -- at the final exit, emit the allow decision when the operator permit admitted
+# an elevation or covers every out-of-project path; otherwise return and stay silent.
+permit_finalize() {
+  local why=""
+  if [ "$PERMIT_ELEV_USED" = 1 ]; then
+    why="operator permit admits this elevated command"
+  elif permit_paths_covered; then
+    why="operator permit covers every out-of-project path"
+  fi
+  [ -n "$why" ] || return 0
+  printf '%s\n' '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","permissionDecisionReason":"'"$why"'"}}'
+  exit 0
 }
 
 # ── Floor denials — always blocked at every level including high ──────────────
@@ -678,7 +956,9 @@ floor_glob_match() {
     */execution/hooks/*|execution/hooks/*|\
     */CLAUDE.md|CLAUDE.md|*/AGENTS.md|AGENTS.md|*/GEMINI.md|GEMINI.md|\
     */.agent/autonomy_matrix.json|.agent/autonomy_matrix.json|\
-    */.agent/enforcement_breakglass.json|.agent/enforcement_breakglass.json)
+    */.agent/enforcement_breakglass.json|.agent/enforcement_breakglass.json|\
+    */.agent/privilege_permit.json|.agent/privilege_permit.json|\
+    */execution/escalate.py|execution/escalate.py)
       return 0 ;;
   esac
   return 1
@@ -699,13 +979,15 @@ if [ -n "$FILE_PATH" ]; then
   if floor_glob_match "$FILE_PATH" \
      || floor_glob_match "$FLOOR_RESOLVED" \
      || [[ "$FLOOR_RESOLVED" =~ $re_write_protpath ]] \
-     || [[ "$FLOOR_RESOLVED" =~ $re_read_protpath ]]; then
+     || [[ "$FLOOR_RESOLVED" =~ $re_read_protpath ]] \
+     || ci_match '(^|/)\.agent/privilege_permit\.json$' "$FLOOR_RESOLVED"; then
     if project_owned_secret "$FLOOR_RESOLVED"; then
       exit 0
     fi
     if check_enforcement_hatch "$FLOOR_RESOLVED"; then
       exit 0
     fi
+    floor_log_denial "write to protected path '$FILE_PATH'" "$FLOOR_RESOLVED"
     echo "⛔ AUTONOMY FLOOR: write to protected path '$FILE_PATH' always denied" >&2
     exit 2
   fi
@@ -739,7 +1021,7 @@ re_code_open=$'open[[:space:]]*\\([[:space:]]*[\'\"]([^\'\"]+)[\'\"][[:space:]]*
 # `s.replace(...)` and `os.path.exists(...)` must NOT read as writes.
 re_code_wverb=$'(write_text|write_bytes|writelines|writeFileSync|appendFileSync|createWriteStream|rmtree|makedirs|copyfile|copytree|copy2)[[:space:]]*\\(|(os|shutil|fs|FileUtils)\\.(write|copy|move|rename|replace|remove|unlink|truncate|mkdir|symlink|link)[A-Za-z_]*[[:space:]]*\\(|File\\.(write|delete|rename)|IO\\.write|(^|[[:space:];&|])(install|truncate|shred|sponge|tee|dd)[[:space:]]'
 
-_target_blk=0; _target_why=""
+_target_blk=0; _target_why=""; _target_path=""
 
 # scan_read_token: the INVERTED read rule (SEC-P1-4c). The read direction no
 # longer asks "is this a known reader command?" — that allowlist can never be
@@ -756,7 +1038,7 @@ _target_blk=0; _target_why=""
 scan_read_token() {
   local t="$1"
   [ -z "$t" ] && return
-  case "$t" in *[[:space:]]*) return ;; esac
+  case "$t" in *[[:space:]]*) case "$t" in */*) PERMIT_PATH_BAD=1 ;; esac; return ;; esac
   check_target "read" "$t"
 }
 
@@ -765,7 +1047,7 @@ scan_read_token() {
 scan_write_token() {
   local t="$1"
   [ -z "$t" ] && return
-  case "$t" in *[[:space:]]*) return ;; esac
+  case "$t" in *[[:space:]]*) case "$t" in */*) PERMIT_PATH_BAD=1 ;; esac; return ;; esac
   check_target "write" "$t"
 }
 
@@ -876,8 +1158,10 @@ check_target() {
     fi
   fi
   local cand resolved
+  [[ "$raw" == *[\*\?\[\{]* ]] && PERMIT_PATH_BAD=1
   for cand in "${candidates[@]}"; do
     resolved=$(expand_target "$cand")
+    permit_note_target "$resolved"
     # A write target is tested against BOTH lists: a credential store you may
     # not read, you certainly may not write. Without the second test only the
     # redirect write slipped through (`echo x > ~/.ssh/authorized_keys`) —
@@ -892,7 +1176,7 @@ check_target() {
         return
       fi
       if ! check_enforcement_hatch "$resolved"; then
-        _target_blk=1; _target_why="write to protected path '$resolved'"
+        _target_blk=1; _target_path="$resolved"; _target_why="write to protected path '$resolved'"
       fi
       return
     # The read direction goes through read_protected() rather than the raw
@@ -901,7 +1185,7 @@ check_target() {
     # (D26). Writes above stay on the raw union — nothing about them changes.
     # read_protected() itself applies the case-fold and glob-component checks.
     elif [ "$kind" = "read" ] && read_protected "$resolved"; then
-      _target_blk=1; _target_why="read of protected path '$resolved'"
+      _target_blk=1; _target_path="$resolved"; _target_why="read of protected path '$resolved'"
       return
     fi
   done
@@ -1435,6 +1719,30 @@ if [ -n "$COMMAND" ]; then
       case "$a" in -*) ;; *) nonflag+=("$a") ;; esac
     done
 
+    # An elevation verb is a transparent wrapper: scan the command it runs, so
+    # `sudo cp x execution/hooks/f` is judged as the cp it is.
+    local ev_name="${cmdname##*/}" ef
+    while [ "${ev_name#\\}" != "$ev_name" ]; do ev_name="${ev_name#\\}"; done
+    if [[ " sudo doas pkexec run0 su runuser systemd-run sudoedit machinectl " == *" $ev_name "* ]]; then
+      local -a ev_in=()
+      while IFS= read -r -d '' ef; do ev_in+=("$ef"); done \
+        < <(python3 "$PERMIT_HELPER" parse --verb "$ev_name" -- "${args[@]}" 2>/dev/null)
+      if [ "${ev_in[0]:-}" = ok ] && [ "${ev_in[4]:-}" = shell ]; then
+        scan_rw "${ev_in[5]:-}" $((RW_DEPTH + 1))
+        return
+      fi
+      if [ "${ev_in[0]:-}" = ok ] && [ "${ev_in[4]:-}" = edit ]; then
+        for ef in "${ev_in[@]:5}"; do check_target "write" "$ef"; done
+        return
+      fi
+      if [ "${ev_in[0]:-}" = ok ] && [ "${ev_in[4]:-}" = words ] && [ "${#ev_in[@]}" -gt 5 ]; then
+        cmdname="${ev_in[5]}"; args=("${ev_in[@]:6}"); nonflag=()
+        for a in "${args[@]}"; do
+          case "$a" in -*) ;; *) nonflag+=("$a") ;; esac
+        done
+      fi
+    fi
+
     # Pipe-into-shell recursion (R24, #1407): `printf 'cat ~/.ssh/id_rsa' | sh`
     # — RW_PIPE_SRC was captured by an echo/printf simple command earlier in
     # THIS pipeline (set at the bottom of the echo|printf arm below) and is
@@ -1572,7 +1880,7 @@ if [ -n "$COMMAND" ]; then
           fi
           [ "${args[$i]}" = "-c" ] && seen_c=1
         done ;;
-      sh|bash|zsh|dash|ksh|perl|ruby|node|deno|php)
+      sh|bash|zsh|dash|ksh|perl|ruby|node|deno|php|su|runuser)
         # `sh -c "cat ~/.ssh/id_rsa"` and `ruby -e 'File.read("…/.ssh/id_rsa")'`
         # hide the path inside one quoted word that the whitespace guard would
         # skip. Scan that word as a code blob. Prose inside it still tokenizes
@@ -1683,9 +1991,26 @@ if [ -n "$COMMAND" ]; then
     # <root> -not -path '*/.git/*'` was denied as a read of `*/.git/*`). The
     # ROOTS are still judged above; with -exec/-delete/-L present ro_find_stage
     # fails and every operand keeps today's verdict.
-    local nf_seen=0 ro_find=0 pat_next=0
+    local nf_seen=0 ro_find=0 pat_next=0 ep_scope=0 prev_a=""
     [ "$cmdname" = find ] && ro_find_stage "find ${args[*]}" && ro_find=1
+    # `python3 execution/escalate.py request --scope <path>` hands the path to a program that
+    # refuses credential and enforcement paths itself, so the --scope value is a string being
+    # refused, not a file being read. Only the project's own (floor-write-protected) script, run
+    # from the project root, gets this: any other script keeps the ordinary verdict.
+    case "${cmdname##*/}" in
+      python|python3*)
+        if [ "${#nonflag[@]}" -ge 2 ] && [ "${nonflag[1]}" = request ] \
+           && [ "$TR_CWD" = "$TR_PROJECT_ROOT" ] \
+           && case "${nonflag[0]}" in execution/escalate.py|./execution/escalate.py|"$TR_PROJECT_ROOT/execution/escalate.py") true ;; *) false ;; esac; then
+          ep_scope=1
+        fi ;;
+    esac
     for a in "${args[@]}"; do
+      if [ "$ep_scope" = 1 ]; then
+        case "$prev_a:$a" in --scope:*) prev_a="$a"; continue ;; esac
+        prev_a="$a"
+        case "$a" in --scope=*) continue ;; esac
+      fi
       if [ "$pat_next" = 1 ]; then pat_next=0; continue; fi
       if [ "$ro_find" = 1 ]; then
         case "$a" in
@@ -1757,6 +2082,7 @@ if [ -n "$COMMAND" ]; then
   scan_rw "$COMMAND" 0
 
   if [ "$_target_blk" = 1 ]; then
+    floor_log_denial "$_target_why" "$_target_path"
     echo "⛔ AUTONOMY FLOOR: $_target_why always denied" >&2
     exit 2
   fi
@@ -2185,9 +2511,15 @@ if [ -n "$COMMAND" ]; then
     # Function definitions (`f(){ cmd; }`, `function f { cmd; }`) are the same:
     # the lexer glues the header into one word and the body's first command
     # would otherwise be demoted to an argument.
+    # `case x in pat) cmd` and a later `pat) cmd` branch: the pattern label is not the command.
+    if [ "${w[$i]}" = case ]; then
+      for ((j = i + 1; j < n; j++)); do
+        case "${w[$j]}" in *")") i=$((j + 1)); break ;; esac
+      done
+    fi
     while [ "$i" -lt "$n" ]; do
       case "${w[$i]}" in
-        "{"|"("|"!"|"(("|"()") i=$((i + 1)) ;;
+        "{"|"("|"!"|"(("|"()"|then|do|else|elif|if|while|until|*")") i=$((i + 1)) ;;
         function) i=$((i + 2)) ;;
         *)
           [[ "${w[$i]}" =~ ^[A-Za-z_][A-Za-z0-9_.:-]*\(\)\{?$ ]] || break
@@ -2202,24 +2534,31 @@ if [ -n "$COMMAND" ]; then
     while [ "$i" -lt "$n" ] && [ "$guard" -lt 8 ]; do
       guard=$((guard + 1))
       wrap="${w[$i]##*/}"
+      while [ "${wrap#\\}" != "$wrap" ]; do wrap="${wrap#\\}"; done
       case "$wrap" in
-        xargs|env|nohup|command|nice|time|timeout|stdbuf|ionice|setsid|exec) ;;
+        xargs|env|nohup|command|nice|time|timeout|stdbuf|ionice|setsid|exec|builtin|watch|flock) ;;
         *) break ;;
       esac
       i=$((i + 1))
       while [ "$i" -lt "$n" ]; do
         case "${w[$i]}" in
-          -*) i=$((i + 1)) ;;
-          [0-9]*) case "$wrap" in timeout|nice|ionice) i=$((i + 1)) ;; *) break ;; esac ;;
+          -*)
+            # `command -v sudo` only looks the name up; nothing runs.
+            case "$wrap:${w[$i]}" in command:-v|command:-V|command:-pv|command:-pV) return ;; esac
+            i=$((i + 1)) ;;
+          [0-9]*) case "$wrap" in timeout|nice|ionice|watch) i=$((i + 1)) ;; *) break ;; esac ;;
           *) break ;;
         esac
       done
+      # flock takes the lock file as its first operand, then the command.
+      [ "$wrap" = flock ] && [ "$i" -lt "$n" ] && i=$((i + 1))
     done
     # `env NAME=value cmd`: the assignments after a wrapper are not the command.
     while [ "$i" -lt "$n" ] && [[ "${w[$i]}" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; do i=$((i + 1)); done
     [ "$i" -ge "$n" ] && return
 
     name="${w[$i]##*/}"
+    while [ "${name#\\}" != "$name" ] || [ "${name#\$}" != "$name" ]; do name="${name#?}"; done
     # `(rm -rf /)` glues the paren to the name — the lexer has no reason to
     # split it, so strip it here rather than let punctuation hide a command.
     while [ -n "$name" ]; do
@@ -2278,6 +2617,13 @@ if [ -n "$COMMAND" ]; then
              esac ;;
       esac
     fi
+
+    # An elevation verb is judged by the operator permit, then by what it runs.
+    fl_elev_verb "${w[$i]}"
+    if [ -n "$FL_VERB" ]; then fl_elevate run "$sep" "$FL_VERB" "${args[@]}"; return; fi
+    fl_grant_guard "$name" "${args[@]}"
+    [ "$_blk" = 1 ] && return
+    [[ "$PERMIT_PATH_CMDS" == *" $name "* ]] || PERMIT_NAMES_BAD=1
 
     case "$name" in
       rm)
@@ -2356,8 +2702,14 @@ if [ -n "$COMMAND" ]; then
         # is a find primary. Its start paths are not visible here, so chmod is
         # never allowed, and the segment must carry its own -type f/-type d.
         fl_find_tail 0 "$name" "${args[@]}" ;;
-      sudo|doas)
-        _blk=1; _why="privileged/destructive"; return ;;
+      ln)
+        # Linking to a verb binary mints an alias that no later name check could see.
+        for a in "${args[@]}"; do
+          fl_elev_verb "$a"
+          [ -n "$FL_VERB" ] || continue
+          fl_elevate link "" "$FL_VERB"
+          [ "$_blk" = 1 ] && return
+        done ;;
       chmod)
         for a in "${args[@]}"; do
           case "$a" in 777|0777) _blk=1; _why="privileged/destructive"; return ;; esac
@@ -2372,7 +2724,7 @@ if [ -n "$COMMAND" ]; then
         # prose-shaped word, and the floor is disarmed. Classify the blob.
         for a in "${args[@]}"; do
           if [ "$seen_c" = 1 ]; then fl_classify "$a" $((FL_DEPTH + 1)); return; fi
-          case "$a" in -c) seen_c=1 ;; esac
+          case "$a" in -c|-[!-]*c*) seen_c=1 ;; esac
         done ;;
       eval)
         # `eval "rm -rf /"` builds its program out of its own arguments. The
@@ -2440,7 +2792,7 @@ if [ -n "$COMMAND" ]; then
       _blk=1; _why="destructive-command recursion exceeded depth limit ($FL_MAXDEPTH)"
       return
     fi
-    local stripped code tok sep="" redir=0
+    local stripped code tok sep="" redir=0 amp=0 wv
     local -a toks words=()
 
     # A heredoc fed to cat or `git commit -F -` is DATA and is dropped — that
@@ -2485,6 +2837,18 @@ if [ -n "$COMMAND" ]; then
       && [[ "$rawsep" != *[\&\(\)\{\}\<\>\`\$\~\\\*\?\[]* ]] && FL_TWO=1
 
     for tok in "${toks[@]}"; do
+      # A lone `&` backgrounds the command before it and starts the next one, exactly as `;`
+      # does -- except `&> file`, where the next token is the redirect.
+      if [ "$amp" = 1 ]; then
+        amp=0
+        case "$tok" in
+          "OP:>"|"OP:>>") ;;
+          *)
+            fl_check_cmd "$sep" "${words[@]}"
+            [ "$_blk" = 1 ] && return
+            sep=";"; words=(); redir=0; FL_WROTE=0 ;;
+        esac
+      fi
       case "$tok" in
         "OP:;"|"OP:&&"|"OP:||"|"OP:|"|"OP:NL")
           fl_check_cmd "$sep" "${words[@]}"
@@ -2507,7 +2871,17 @@ if [ -n "$COMMAND" ]; then
             # fd duplication (2>&1, >&-).
             case "${tok#W:}" in /dev/null|"&"[0-9]|"&-") ;; *) FL_WROTE=1 ;; esac
             redir=0
-          elif [ "$redir" = 1 ]; then redir=0; else words+=("${tok#W:}"); fi ;;
+          elif [ "$redir" = 1 ]; then redir=0
+          else
+            wv="${tok#W:}"
+            if [ "$wv" = "&" ]; then amp=1
+            elif [[ "$wv" == "&"[!0-9\&\>-]* ]]; then
+              # `ls &rm -rf /`: the lexer glued the next command to the ampersand.
+              fl_check_cmd "$sep" "${words[@]}"
+              [ "$_blk" = 1 ] && return
+              sep=";"; redir=0; FL_WROTE=0; words=("${wv#&}")
+            else words+=("$wv"); fi
+          fi ;;
       esac
     done
     fl_check_cmd "$sep" "${words[@]}"
@@ -2516,7 +2890,18 @@ if [ -n "$COMMAND" ]; then
   }
 
   fl_classify "$COMMAND" 0
-  [ "$_blk" = 1 ] && { echo "⛔ AUTONOMY FLOOR: command denied at all levels ($_why)" >&2; exit 2; }
+  [ "$_blk" = 1 ] && {
+    floor_log_denial "command denied at all levels ($_why)"
+    echo "⛔ AUTONOMY FLOOR: command denied at all levels ($_why)" >&2
+    exit 2
+  }
+  # A permitted elevation is audited only now that the whole command is allowed; an
+  # audit line that cannot be written turns the permit into a deny.
+  permit_flush_audit || {
+    floor_log_denial "permitted elevation denied: audit log not writable"
+    echo "⛔ AUTONOMY FLOOR: elevation denied, audit log (.agent/memory/project/privileged_command_audit.log) is not writable" >&2
+    exit 2
+  }
 fi
 
 # ── Off: block all writes and shell ──────────────────────────────────────────
@@ -2586,6 +2971,12 @@ if [ "$LEVEL" = "medium" ]; then
     esac
   fi
 fi
+
+# ── Operator permit: allow decisions ──────────────────────────────────────────
+# Every floor check has passed. A command the permit admitted, or a path that a live path grant
+# covers entirely, gets an explicit allow so Claude Code's own classifier does not re-block what
+# the operator granted. Anything else stays silent, exactly as before.
+permit_finalize
 
 # ── cd-chain auto-allow ───────────────────────────────────────────────────────
 # Claude Code's own permission engine cannot statically resolve a cd-chained

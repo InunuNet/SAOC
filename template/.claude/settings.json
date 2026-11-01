@@ -8,8 +8,6 @@
       "Edit",
       "Glob",
       "Grep",
-      "WebFetch",
-      "WebSearch",
       "Task",
       "Skill",
       "ToolSearch",
@@ -17,6 +15,8 @@
       "ListAgents"
     ],
     "deny": [
+      "WebFetch",
+      "WebSearch",
       "Bash(rm -rf *)",
       "Bash(git push --force *)",
       "Bash(dd if=/dev/zero*)",
@@ -44,6 +44,11 @@
           {
             "type": "command",
             "command": "[ -f execution/session_title.py ] || exit 0; python3 execution/session_title.py",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "[ -f execution/timesheet.py ] || exit 0; python3 execution/timesheet.py boot-check || exit 0",
             "timeout": 5
           }
         ]
@@ -91,6 +96,28 @@
             "type": "command",
             "command": "[ -f execution/hooks/permission_gate.sh ] || exit 0; bash execution/hooks/permission_gate.sh attended",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "[ -f execution/timesheet.py ] || exit 0; python3 execution/timesheet.py hook || exit 0",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f execution/timesheet.py ] || exit 0; python3 execution/timesheet.py hook || exit 0",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "[ -f execution/escalate.py ] || exit 0; python3 execution/escalate.py grant-from-answer || exit 0",
+            "timeout": 10
           }
         ]
       }

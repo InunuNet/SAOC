@@ -95,6 +95,12 @@
       "harness_version": "3.8.58",
       "note": "code delivered in 3.8.58; opt-in install awaits Brad explicit yes",
       "result": "applied"
+    },
+    "ATH-20261101-privileged-command-permit": {
+      "at": "2026-11-01T17:36:22Z",
+      "harness_version": "3.8.74",
+      "note": "",
+      "result": "applied"
     }
   },
   "schema": "athanor.directives-applied/v1"

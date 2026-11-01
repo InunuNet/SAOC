@@ -1,0 +1,50 @@
+schema: athanor.contract/v1
+slug: go-live-prep
+goal: >
+  A dry-run-first purge script (scripts/ops/purge-test-data.mts) that lists, then on Brad's
+  explicit confirmation deletes, leftover test data in Firestore (expired reserved orders,
+  sandbox-paid orders and their tickets, orphan legacy positions, sandbox vendor stand orders)
+  without ever touching a real sale, and reports the stock delta it would produce.
+created_at: '2026-11-01'
+autonomy: high
+features:
+  - id: F1
+    name: >
+      Test-data purge: pure selector (scripts/ops/purge-select.mts) plus CLI (scripts/ops/purge-test-data.mts)
+      with default --dry-run manifest, and a guarded --apply (fresh manifest, exact re-selection match,
+      PURGE_CONFIRM token, backup before delete, batches of at most 400). The agent never runs --apply on live.
+    status: pending
+goldens:
+  - .agent/memory/project/specs/go-live-prep/f1-purge/goldens/README.md
+  - .agent/memory/project/specs/go-live-prep/f1-purge/goldens/failure-modes.md
+  - .agent/memory/project/specs/go-live-prep/f1-purge/goldens/expected-manifest.json
+  - .agent/memory/project/specs/go-live-prep/f1-purge/goldens/forbidden-ids.json
+  - .agent/memory/project/specs/go-live-prep/f1-purge/goldens/fixtures/snapshot.json
+  - .agent/memory/project/specs/go-live-prep/f1-purge/goldens/checks/check-purge.mjs
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Script and pure selector files exist at the specified paths.
+      command: test -f scripts/ops/purge-test-data.mts && test -f scripts/ops/purge-select.mts
+    - id: A2
+      description: The selector exports hardGuard and the CLI defines the 400 batch limit and reads PURGE_CONFIRM.
+      command: grep -q "export function hardGuard" scripts/ops/purge-select.mts && grep -q "BATCH_LIMIT = 400" scripts/ops/purge-test-data.mts && grep -q "PURGE_CONFIRM" scripts/ops/purge-test-data.mts
+    - id: A3
+      description: The pure selector module contains no Firestore write API and no firebase import, so dry-run cannot write by construction.
+      command: bash -c '! grep -qE "\.(delete|commit|set|update|batch)\(|firebase-admin" scripts/ops/purge-select.mts'
+    - id: A4
+      description: Default invocation (no flags) is a dry-run; manifest equals the golden; forbidden ids absent or held; digest and token correct; no env secret in output; flag and out-dir guards. False-pass risk is low because the expected manifest is hand-derived from the fixture.
+      command: node .agent/memory/project/specs/go-live-prep/f1-purge/goldens/checks/check-purge.mjs dry
+    - id: A5
+      description: Every apply refusal path (no manifest, missing or wrong token, 61 min old, tampered manifest, doc edited since dry-run, selection grew) exits non-zero and leaves no backup, result or output snapshot.
+      command: node .agent/memory/project/specs/go-live-prep/f1-purge/goldens/checks/check-purge.mjs refuse
+    - id: A6
+      description: A valid apply (manifest 59 min old, correct token) deletes exactly the 13 selected docs, leaves every other doc byte-identical, and writes a complete backup before the first delete.
+      command: node .agent/memory/project/specs/go-live-prep/f1-purge/goldens/checks/check-purge.mjs happy
+    - id: A7
+      description: 1000 deletions are committed in batches of at most 400 and the total equals 1000.
+      command: node .agent/memory/project/specs/go-live-prep/f1-purge/goldens/checks/check-purge.mjs batch
+    - id: A8
+      description: Read-only live dry-run smoke. Reserved-expired candidates (selected plus held) number at least 31; the run writes only the manifest. Needs .env.local credentials; never run with --apply.
+      command: node .agent/memory/project/specs/go-live-prep/f1-purge/goldens/checks/check-purge.mjs live
