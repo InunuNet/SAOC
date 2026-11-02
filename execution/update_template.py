@@ -343,7 +343,7 @@ def _open_fd_nofollow(path: Path, label: str, stop_at: Path | None = None) -> in
                 f"{target_desc} — proceeding (allow-listed via "
                 f"{ALLOWED_SYMLINKS_PATH} or --allow-symlink)."
             )
-            return os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644)
+            return os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC | getattr(os, "O_BINARY", 0), 0o644)
         print(
             f"  WARN  {label} is reached through a symlink at {offending} -> "
             f"{target_desc} — REFUSING to write through a symlinked "
@@ -356,7 +356,7 @@ def _open_fd_nofollow(path: Path, label: str, stop_at: Path | None = None) -> in
 
     try:
         return os.open(
-            str(path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o644
+            str(path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0), 0o644
         )
     except OSError as e:
         if e.errno == errno.ELOOP:
@@ -445,8 +445,15 @@ def _copy2_nofollow(src: Path, dst: Path, label: str, stop_at: Path | None = Non
         with open(src, "rb") as sf:
             shutil.copyfileobj(sf, f)
         f.flush()
-        os.fchmod(f.fileno(), stat.S_IMODE(src_stat.st_mode))
-        os.utime(f.fileno(), ns=(src_stat.st_atime_ns, src_stat.st_mtime_ns))
+        # Windows has no os.fchmod and (before 3.13) no fd-based os.utime
+        if hasattr(os, "fchmod"):
+            os.fchmod(f.fileno(), stat.S_IMODE(src_stat.st_mode))
+        if os.utime in os.supports_fd:
+            os.utime(f.fileno(), ns=(src_stat.st_atime_ns, src_stat.st_mtime_ns))
+    if not hasattr(os, "fchmod"):
+        os.chmod(dst, stat.S_IMODE(src_stat.st_mode))
+    if os.utime not in os.supports_fd:
+        os.utime(dst, ns=(src_stat.st_atime_ns, src_stat.st_mtime_ns))
     return True
 
 

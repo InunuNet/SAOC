@@ -455,7 +455,18 @@ STEPS = {
 }
 
 
+def _utf8_streams():
+    """Report glyphs from child output without a cp1252 console crash. Children are NOT
+    given PYTHONUTF8: their own encoding failures are what this test must expose."""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
+
 def main():
+    _utf8_streams()
     parser = argparse.ArgumentParser(
         description="Fleet acceptance test — six steps in a throwaway scaffold; "
                     "exit 0 iff all six pass.",

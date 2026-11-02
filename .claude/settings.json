@@ -222,6 +222,11 @@
             "type": "command",
             "command": "[ -f execution/hooks/permission_gate.sh ] || exit 0; bash execution/hooks/permission_gate.sh notify",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "[ -f execution/voice_say.py ] || exit 0; (python3 execution/voice_say.py --hook --event input-needed </dev/null >/dev/null 2>&1 &)",
+            "timeout": 10
           }
         ]
       }

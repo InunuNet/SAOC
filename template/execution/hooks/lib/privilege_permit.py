@@ -10,10 +10,10 @@ One file shared by three callers, so the rules cannot drift apart:
                       entry point: the human's answer is the only thing that creates a grant) and
                       `process_request` (the operator's `grant <id>` fallback).
 
-Design: docs/privileged-command-permit.md. Every function fails closed: an unreadable permit, an
+Design: docs/harness/privileged-command-permit.md. Every function fails closed: an unreadable permit, an
 unparseable option or an unwritable audit log is a deny, never an allow.
 """
-import fcntl
+import errno
 import hashlib
 import json
 import os
@@ -21,10 +21,51 @@ import re
 import stat
 import subprocess
 import sys
+import time
 from collections import namedtuple
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+if os.name == "nt":
+    import msvcrt
+else:
+    import fcntl
+
+# Windows has neither O_NOFOLLOW nor flock: _open_nofollow and _locked carry the same two
+# guarantees (never follow a link at the leaf, never proceed without the lock) by other means.
+_O_NOFOLLOW = getattr(os, "O_NOFOLLOW", 0)
+_O_BINARY = getattr(os, "O_BINARY", 0)
+_WINDOWS_LINK_TAGS = (getattr(stat, "IO_REPARSE_TAG_SYMLINK", 0xA000000C),
+                      getattr(stat, "IO_REPARSE_TAG_MOUNT_POINT", 0xA0000003))
+LOCK_WAIT_SECONDS = 30
+LOCK_POLL_SECONDS = 0.05
+
+
+def _refuse_link(path):
+    """Where O_NOFOLLOW does not exist, raise ELOOP for a symlink or junction at the leaf."""
+    if _O_NOFOLLOW:
+        return
+    try:
+        info = os.lstat(str(path))
+    except FileNotFoundError:
+        return
+    if stat.S_ISLNK(info.st_mode) or getattr(info, "st_reparse_tag", 0) in _WINDOWS_LINK_TAGS:
+        raise OSError(errno.ELOOP, "refusing to follow a link", str(path))
+
+
+def _open_nofollow(path, flags, mode=0o777):
+    """os.open that never follows a link at the leaf and never translates newlines."""
+    _refuse_link(path)
+    fd = os.open(str(path), flags | _O_NOFOLLOW | _O_BINARY, mode)
+    try:
+        if not os.path.samestat(os.fstat(fd), os.lstat(str(path))):
+            raise OSError(errno.ELOOP, "opened file is not the path's own file", str(path))
+    except BaseException:
+        os.close(fd)
+        raise
+    return fd
+
 
 PERMIT_REL = ".agent/privilege_permit.json"
 AUDIT_REL = ".agent/memory/project/privileged_command_audit.log"
@@ -136,8 +177,8 @@ def question_text(request_id, kind, scope, reason, ttl_seconds):
 
 def read_regular(path, limit=MAX_FILE_BYTES):
     """Read a regular file without following a symlink or blocking on a FIFO; raise otherwise."""
-    flags = os.O_RDONLY | os.O_NOFOLLOW | getattr(os, "O_NONBLOCK", 0)
-    fd = os.open(str(path), flags)
+    flags = os.O_RDONLY | getattr(os, "O_NONBLOCK", 0)
+    fd = _open_nofollow(path, flags)
     try:
         info = os.fstat(fd)
         if not stat.S_ISREG(info.st_mode):
@@ -183,7 +224,7 @@ def audit_append(root, event, **fields):
     log = Path(root) / AUDIT_REL
     try:
         log.parent.mkdir(parents=True, exist_ok=True)
-        fd = os.open(str(log), os.O_WRONLY | os.O_APPEND | os.O_CREAT | os.O_NOFOLLOW, 0o644)
+        fd = _open_nofollow(log, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o644)
         try:
             os.write(fd, line.encode("ascii"))
         finally:
@@ -767,7 +808,7 @@ def _write_grant(root, grant, now, default_by):
     tmp = permit_path.with_name(".privilege_permit.%d.tmp" % os.getpid())
     body = json.dumps({"granted_by": granted_by, "grants": kept + [grant]}, indent=2) + "\n"
     permit_path.parent.mkdir(parents=True, exist_ok=True)
-    fd = os.open(str(tmp), os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+    fd = _open_nofollow(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(fd, "w") as handle:
         handle.write(body)
     scope = grant.get("path") or ",".join(grant.get("commands") or ["*"])
@@ -790,14 +831,37 @@ def _new_grant(request_id, kind, scope, ttl, reason, now):
     return grant
 
 
+def _acquire(fd):
+    """Take the exclusive lock. POSIX blocks until it has it, exactly as before. Windows has no
+    blocking flock, so it polls msvcrt for LOCK_WAIT_SECONDS and then raises Refusal: a lock that
+    cannot be taken is a deny, never a proceed-without."""
+    if os.name != "nt":
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        return
+    deadline = time.monotonic() + LOCK_WAIT_SECONDS
+    while True:
+        try:
+            msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+            return
+        except OSError:  # EACCES or EDEADLOCK: another holder has it
+            if time.monotonic() >= deadline:
+                raise Refusal("permit lock is held elsewhere (waited %ds)" % LOCK_WAIT_SECONDS)
+            time.sleep(LOCK_POLL_SECONDS)
+
+
 @contextmanager
 def _locked(root):
     directory = pending_dir(root)
     directory.mkdir(parents=True, exist_ok=True)
-    fd = os.open(str(directory / ".lock"), os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+    fd = _open_nofollow(directory / ".lock", os.O_RDWR | os.O_CREAT, 0o600)
     try:
-        fcntl.flock(fd, fcntl.LOCK_EX)
-        yield
+        _acquire(fd)
+        try:
+            yield
+        finally:
+            if os.name == "nt":
+                os.lseek(fd, 0, os.SEEK_SET)
+                msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
     finally:
         os.close(fd)
 
