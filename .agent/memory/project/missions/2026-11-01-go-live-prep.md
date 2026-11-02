@@ -22,6 +22,7 @@ last_checkpoint:
   ts: null
 features: []
 milestones: []
+force_orphaned_at: '2026-11-02T21:23:59.513421+00:00'
 ---
 
 # Mission: Ticketing go-live prep, no copy changes (Brad 2026-11-01): M1 structural (test-data purge dry-run, reconcile-cron engineering half, Ozow check triage, go-live probe pack, admin session body cap + trusted-XFF routes, merge-when-green all checks, CI timeouts/cache, residue-guard quota handling, Sanity/tickets health probes, gate hygiene re-pins); M2 design polish (NOS home phone h2 32/300, sticky card 3px gap, 2056 overruns, 768 scroller under header, countdown labels at 390, noindex/JSON-LD). Hard stop 12:00 SAST 2026-11-01 for the quota reset.
