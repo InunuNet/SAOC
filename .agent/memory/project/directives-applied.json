@@ -132,10 +132,22 @@
       "note": "delivered by SAOC#149 harness files; not separately exercised",
       "result": "applied"
     },
+    "ATH-20261029-harness-quality-pass": {
+      "at": "2026-11-02T21:22:15Z",
+      "harness_version": "3.8.87",
+      "note": "Now 3.8.87; 16 locally modified harness files withheld, stamp held by updater",
+      "result": "applied"
+    },
     "ATH-20261101-privileged-command-permit": {
       "at": "2026-11-01T17:36:22Z",
       "harness_version": "3.8.74",
       "note": "",
+      "result": "applied"
+    },
+    "ATH-20261102-voice-output": {
+      "at": "2026-11-02T21:22:16Z",
+      "harness_version": "3.8.87",
+      "note": "Now 3.8.87; voice stays off by default, not enabled here",
       "result": "applied"
     }
   },
