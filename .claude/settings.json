@@ -176,6 +176,11 @@
             "type": "command",
             "command": "[ -f execution/timesheet.py ] || exit 0; python3 execution/timesheet.py hook || exit 0",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "[ -f execution/voice_say.py ] || exit 0; python3 execution/voice_say.py --hook --event prompt >/dev/null 2>&1 || exit 0",
+            "timeout": 5
           }
         ]
       }

@@ -22,6 +22,11 @@ failing backend never changes a gate verdict or blocks a prompt. A failing gate 
   Deleting that file turns the voice off again. Agents do not create it.
 - **Away.** A project containing `.agent/memory/scratch/UNATTENDED` is silent. Both the switch and
   UNATTENDED are read on every call.
+- **Goodnight.** A prompt saying goodnight, going to bed or the like, typed in ANY project, makes the
+  UserPromptSubmit hook (`voice_say.py --hook --event prompt`) write `/Users/vetus/ai/Voice/MacOS/.asleep`,
+  and every project is then silent. The first prompt in any project at least 4 hours later
+  (`VOICE_SLEEP_MIN_SECONDS`) removes it, so the operator's morning message resumes voice updates.
+  Delete `.asleep` by hand to wake it sooner.
 - **Platform.** macOS only. Elsewhere the speaker exits 0, silently in hook mode, with one stderr line
   otherwise.
 
