@@ -5366,3 +5366,9 @@ Approval covers design/nos-home-align @ 2563583f (restore + NOS Design align + B
 
 ## 2026-11-01 — Firebase App Hosting builds take ~50-55 min, not 10
 Measured: build 2e4026bf (20e62c45) ran 16:12→17:06Z; build b93611f9 (5a29e41c) was still BUILDING at 49 min. Watchers must allow 60+ min after a merge before calling a rollout stuck. The slow step is `scripts/generate-image-variants.mjs` + `next build` on the App Hosting builder. Backlog candidate: cache generated image variants (or commit them) to cut deploy time.
+
+## 2026-11-02 — RULE: always self-compact to reduce context and save tokens
+Brad, verbatim: "self compaction is important save it as a rule and always use it to reduce context and save tokens". Aim for about 100k working context, hard ceiling 300k (Athanor fleet notice, same day).
+- After every committed feature or mission close-out with large context: `python3 execution/compact.py now`. Don't wait to be told.
+- Mid-task: `python3 execution/compact.py delay`, then `python3 execution/compact.py restore` at the next safe point. `python3 execution/compact.py status` shows tokens and what is scheduled.
+- Commit and wrap up properly first, so nothing is lost (2026-09-14 lesson above still holds).
