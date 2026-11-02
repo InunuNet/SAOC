@@ -1,0 +1,3 @@
+# 138-a10-check-rejects-real-live-products
+
+**#138 A10 check rejects real live products** (2026-10-28) — contracts/checks/onsale-followups/check-deployed-nos-jsonld.mjs derives its expected set from a recorded admission-only fixture, so it FAILs beta on sunset-cocktails-single (800), saoc-symposium (2000) and wosa-conference (2000). All three are live Sanity ticketTypes on show-19-2027, not demo, prices match. The page is correct and the check is wrong: derive the expected set from live Sanity (or treat non-fixture active-show types as allowed when their live price matches). VIP 300 holds on beta. The only failures are these three.

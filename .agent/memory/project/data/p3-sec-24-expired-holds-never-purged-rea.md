@@ -1,0 +1,3 @@
+# p3-sec-24-expired-holds-never-purged-rea
+
+**[P3] SEC-24 expired holds never purged (read cost grows).** NOS Site feature; TTL purge field. H7 2026-10-29: 31 reserved orders all expired; 44 reserved positions (33 expired, 11 legacy PayFast-era docs with no expiresAt / no ticketTypeId; showId "nationalShow", slugs exhibitor×7/adult×4 — inactive products, not the live show-19-2027, so no live seats held) — add the 11 to the pre-go-live purge. Ledger IS keyed on 'nationalShow' (lib/tickets-constants.ts:5) and matches by slug, so NEVER reuse slugs `adult`/`exhibitor` (product or capacityPool) before the purge.

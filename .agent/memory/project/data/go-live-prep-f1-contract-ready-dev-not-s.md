@@ -1,0 +1,3 @@
+# go-live-prep-f1-contract-ready-dev-not-s
+
+**[go-live-prep F1, contract READY, dev NOT started — parked at the 12:00 stop 2026-11-01]** Purge contract: .agent/memory/project/specs/go-live-prep/f1-purge/contract.yaml (+ goldens, fixture-backed, 8 assertions). Design: pure selector + CLI; dry-run default; apply gated by fresh manifest digest + PURGE_CONFIRM + backup + 400-batch + per-doc precondition; Brad runs apply. OPEN for Brad before dev: (1) pre-flag PayFast-era paid orders with neither `issuedInTestMode` nor R0.01 marker go to heldBack — decide: explicit id list or buyer-email rule; (2) delete+backup (chosen) vs cancel-in-place for the 31 reserved; (3) vendorStandOrders R5 in scope (2 sandbox-paid) — keep or drop. Dispatch Dev_Son5_M1-F1_GoLivePrep once answered.

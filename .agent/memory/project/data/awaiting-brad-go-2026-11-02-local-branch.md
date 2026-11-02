@@ -1,0 +1,3 @@
+# awaiting-brad-go-2026-11-02-local-branch
+
+**[awaiting Brad go, 2026-11-02] Local branch for sequencing: design/nos-tech-audit @ 8dd2ab63** (NOS Design clone, off d7838cae): .nos-num contrast floor, NOS newsletter labels in Karla, --status-error-on-dark on NOS, /international-guests portrait sizes. Gate 7/7 per NOS Design; no PR build yet. Open after it: Manrope file still downloads on the dev server (TYPE-15, needs a production-build check); /archive not audited (404 on test server); heroes and logos not judged (/images/_opt 404 on test server). ShowCountdown aria-label already on main via #172.

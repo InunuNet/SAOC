@@ -1,0 +1,9 @@
+{
+  "schema": "athanor.mission-touched-files/v1",
+  "slug": "claude-md-slim",
+  "pending_baselines": {},
+  "paths": [
+    ".agent/memory/project/handoff/SESSION_STATE.md",
+    ".agent/memory/project/missions/claude-md-slim.touched.json"
+  ]
+}

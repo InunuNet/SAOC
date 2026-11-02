@@ -1,0 +1,3 @@
+# awaiting-brad-go-2026-11-02-local-branch-2
+
+**[awaiting Brad go, 2026-11-02] Local branch fix/go-live-f6 @ a0c025dd (go-live-prep F6, not pushed).** Door seed refuses the live project; teardown checks fixture markers before each delete and exits non-zero on a skip; /members noindex. Same-vendor QA PASS and gate 7/7 at 222c1315; the teardown commit after it had A1-A7, tsc and eslint re-run plus a coordinator diff read, with no test exercising the skip path. Retro-Codex owed from 2026-11-04. Whoever merges second of this and fix/sec-abuse-controls must drop or re-point the F3 A26 exemption for this script.

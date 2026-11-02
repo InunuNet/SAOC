@@ -1,0 +1,3 @@
+# p1-security-saoc-lane-after-f3-green-202
+
+**[P1, security, SAOC lane, after F3 green, 2026-11-02] Content-Length-only body gate on main.** lib/request-guards.ts isBodyWithinLimit checks only the header, then routes call request.json(). NOS Site saw Content-Length: 2 parse a 100,000-byte body on contact/newsletter (local test; not tested on beta). F3 fixes contact, newsletter/subscribe and newsletter/unsubscribe. Same pattern by grep, not run: vendors/apply, vendors/register, vendors/register/verify-code, vendors/stand-payment/initiate, vendors/[id]/proof-of-payment, vendors/[id]/marketing-asset, sponsors/enquire; events/submit needs a manual look. Do as one feature with H1/H13 on the green F3 SHA, using readBodyCapped.

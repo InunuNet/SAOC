@@ -1,0 +1,3 @@
+# awaiting-brad-go-2026-11-02-local-branch-3
+
+**[awaiting Brad go, 2026-11-02] Local branch fix/go-live-f8 @ 1c6d6e97 (go-live-prep F8, not pushed).** Streaming body cap on 8 vendor/sponsor/event routes, H1 durable limiter, H13 old XFF helper removed. Gate 22 pass with placeholder site URLs; A23 review reports accepted or known items (register reads capped body first; one chunk can pass the cap before the 413; contact/newsletter await rebase; admin log lost operation field); A24/A25 need a deploy. Same-vendor QA PASS at 7d0c5a27, then A4/A8/A10 restored as required with narrowed checks. Before merge: push F3 from the NOS Site clone, rebase F8 onto 676f60c8 and repoint contact and newsletter. Before deploy: H4 hop count. Retro-Codex owed from 2026-11-04.

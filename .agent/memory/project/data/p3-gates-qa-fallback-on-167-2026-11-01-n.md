@@ -1,0 +1,3 @@
+# p3-gates-qa-fallback-on-167-2026-11-01-n
+
+**[P3, gates, QA FALLBACK on #167 2026-11-01] nos-content-standard/goldens/checks.sha256 now mismatches 6 files** (2 pre-existing: _lib.mjs, spec.md; 4 edited by #167: gate-standard.mjs, route-table.json, fs-checks.mjs, fs-rulings.json; the first two had hash lines updated but the files changed again after). Re-pin all six from main after #167 merges, in the same dev pass as the stale route-table items. Also: contract.yaml goal/exclusions for nos-home-restore still describe the pre-approval page (docs only); nos-baseline.json /faq and /plan-your-visit refresh absorbed unrelated main drift (scope was correct; re-record all routes per the earlier item).
