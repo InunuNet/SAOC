@@ -6,6 +6,9 @@
 # (post_compact_inject.sh) reads the flag on the next user turn and injects the context.
 set -uo pipefail
 
+# Remove a Route-A lowered autoCompactWindow (and any stale arm flag) after the compaction it caused.
+python3 execution/hooks/lib/autocompact_decider.py disarm >/dev/null 2>&1 || true
+
 python3 - <<'EOF'
 import json, pathlib, re
 

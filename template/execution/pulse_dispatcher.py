@@ -4,7 +4,10 @@
 from __future__ import annotations
 
 import argparse
-import fcntl
+try:
+    import fcntl
+except ImportError:  # Windows: no fcntl; locks below use msvcrt
+    fcntl = None
 import json
 import os
 import shlex
@@ -29,6 +32,54 @@ DEFAULT_MAX_LAUNCHES = 1
 # Fix 2: consecutive-failure provider backoff constants.
 CONSECUTIVE_FAILURE_THRESHOLD = 3
 BACKOFF_SECONDS = 14400  # 4 hours
+
+
+LOCK_DEADLINE_SECONDS = 120
+LOCK_POLL_SECONDS = 0.05
+
+
+def _lock_fd(fd, blocking=True, label="lock"):
+    """Exclusive lock on fd: flock on POSIX, msvcrt.locking on Windows.
+
+    Windows LK_LOCK gives up after ~10 retries, so a blocking acquire polls
+    LK_NBLCK until LOCK_DEADLINE_SECONDS, then raises TimeoutError naming
+    `label`. A non-blocking miss raises BlockingIOError, as flock does.
+    """
+    if fcntl is not None:
+        fcntl.flock(fd, fcntl.LOCK_EX | (0 if blocking else fcntl.LOCK_NB))
+        return
+    import msvcrt
+    pos = os.lseek(fd, 0, os.SEEK_CUR)
+    deadline = time.monotonic() + LOCK_DEADLINE_SECONDS
+    try:
+        while True:
+            os.lseek(fd, 0, os.SEEK_SET)
+            try:
+                msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+                return
+            except OSError as exc:
+                if not blocking:
+                    raise BlockingIOError(*exc.args) from exc
+                if time.monotonic() >= deadline:
+                    raise TimeoutError(
+                        "could not acquire %s within %ds" % (label, LOCK_DEADLINE_SECONDS)
+                    ) from exc
+                time.sleep(LOCK_POLL_SECONDS)
+    finally:
+        os.lseek(fd, pos, os.SEEK_SET)
+
+
+def _unlock_fd(fd):
+    if fcntl is not None:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        return
+    import msvcrt
+    pos = os.lseek(fd, 0, os.SEEK_CUR)
+    try:
+        os.lseek(fd, 0, os.SEEK_SET)
+        msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+    finally:
+        os.lseek(fd, pos, os.SEEK_SET)
 
 
 def utc_now() -> str:
@@ -151,7 +202,7 @@ class ConcurrencySlot:
 
     def release(self) -> None:
         try:
-            fcntl.flock(self.fd, fcntl.LOCK_UN)
+            _unlock_fd(self.fd)
             os.close(self.fd)
         except OSError:
             pass
@@ -167,7 +218,7 @@ def acquire_concurrency_slot(max_slots: int, base: "Path | None" = None) -> "Con
         slot = base / f"slot-{i}.lock"
         fd = os.open(str(slot), os.O_WRONLY | os.O_CREAT, 0o644)
         try:
-            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            _lock_fd(fd, blocking=False, label=str(slot))
         except OSError:
             os.close(fd)
             continue

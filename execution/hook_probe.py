@@ -251,6 +251,18 @@ def _write_seed(box, files):
         target.write_text(_expand(str(content), box))
 
 
+def _link_execution(target, link):
+    """Point link at the real execution/ tree. Windows refuses unprivileged
+    directory symlinks, so there a junction (no privilege needed) stands in."""
+    try:
+        os.symlink(str(target), str(link))
+    except (OSError, NotImplementedError):
+        if os.name != "nt":
+            raise
+        import _winapi  # Windows-only stdlib module
+        _winapi.CreateJunction(str(target), str(link))
+
+
 def _make_box(root, decl, files):
     """Build one throwaway workspace and return its path.
 
@@ -265,7 +277,7 @@ def _make_box(root, decl, files):
     for rel in (".agent/memory/scratch", ".agent/memory/project/specs",
                 ".agent/memory/project/missions", ".agent/config", "docs", ".tmp"):
         (box / rel).mkdir(parents=True, exist_ok=True)
-    os.symlink(str(root / "execution"), str(box / "execution"))
+    _link_execution(root / "execution", box / "execution")
     handoffs = root / HANDOFFS_REL
     if handoffs.is_file():
         shutil.copyfile(str(handoffs), str(box / HANDOFFS_REL))
@@ -307,13 +319,19 @@ def _box_env(box):
 
 def _scrub(box):
     if box is not None:
+        if os.name == "nt":
+            # a junction must be removed as a link, never walked into
+            try:
+                os.rmdir(str(box / "execution"))
+            except OSError:
+                pass
         shutil.rmtree(str(box), ignore_errors=True)
 
 
 def _kill_group(proc):
     try:
         os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
-    except (OSError, ProcessLookupError):
+    except (OSError, ProcessLookupError, AttributeError):  # AttributeError: no killpg on Windows
         try:
             proc.kill()
         except OSError:

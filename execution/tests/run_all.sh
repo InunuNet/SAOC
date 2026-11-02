@@ -8,6 +8,8 @@ LAYER="${1:-all}"
 LIVE_STATE=".tmp/sandbox/tests/live_state.json"
 TOTAL_PASS=0; TOTAL_FAIL=0
 FAILED_TESTS=()
+mkdir -p "$(dirname "$LIVE_STATE")"
+python3 execution/tests/lib/live_state.py reset "$LIVE_STATE"
 
 run_layer() {
   local name="$1" scripts_glob="$2"
@@ -53,6 +55,8 @@ esac
 echo ""
 echo "========================================"
 echo "TOTAL: $TOTAL_PASS passed, $TOTAL_FAIL failed"
+# Restores undo a parallel session's real edits too: say so where it is seen.
+python3 execution/tests/lib/live_state.py report "$LIVE_STATE"
 if [ "$TOTAL_FAIL" -gt 0 ]; then
   echo "FAILED TESTS:"
   for f in "${FAILED_TESTS[@]}"; do echo "  - $f"; done

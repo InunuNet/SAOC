@@ -56,6 +56,9 @@ paths:
   path: .agent/profile.json
 - category: WORKSPACE
   path: .agent/no-update
+# Project-owned contract check kinds registry (read by execution/contract.py); never shipped.
+- category: WORKSPACE
+  path: .agent/contract_kinds.json
 - category: WORKSPACE
   path: WORKSPACE
 - category: DERIVED
@@ -134,6 +137,9 @@ paths:
   comment: this manifest is harness-owned
   path: .agent/update-manifest.yaml
 - category: WORKSPACE
+  comment: the project's own path classifications (WORKSPACE/DERIVED); read by validate_manifest.sh and update_template.py
+  path: .agent/update-manifest.local.yaml
+- category: WORKSPACE
   comment: "parent of project/ and brain/ \u2014 both are WORKSPACE"
   path: .agent/memory/
 - category: HARNESS
@@ -192,8 +198,9 @@ retractions:
     inert in every downstream: the CLI answers "CLAUDE_CODE_AUTO_COMPACT_WINDOW
     is set and takes precedence. Unset it to change this setting here." On a 1M
     model the threshold is min(300000, 1M) = 300000, discarding ~700k of usable
-    context with no operator recourse. The default belongs in the
-    autoCompactWindow settings key, which leaves /autocompact free to override.
+    context with no operator recourse. (The autoCompactWindow settings key that
+    replaced it was itself retracted in v3.8.51: project settings outrank the
+    user settings /autocompact writes, so the window is the operator's.)
     Reported by GJ Dauth Estate 2026-09-09 (InunuNet/Athanor#1430)
   issue: "1430"
 - path: .claude/settings.json
@@ -207,6 +214,30 @@ retractions:
     file while doing nothing at all. Dead weight, retracted.
     Reported by GJ Dauth Estate 2026-09-09 (InunuNet/Athanor#1430)
   issue: "1430"
+- path: .claude/settings.json
+  key_path: autoCompactWindow
+  bad_value: 400000
+  action: remove
+  replacement: null
+  reason: >
+    project settings outrank the user settings that /autocompact and /config
+    write, so a harness-shipped autoCompactWindow could never be overridden by
+    the operator; Claude Code reported "a higher-priority override is active
+    (400k tokens)" (SAOC NOS Design, 2026-10-24). 400000 shipped from
+    2026-09-21 (300000 from 2026-09-17); any other value is the operator's and
+    is kept.
+  issue: "autocompact-user-control"
+- path: .claude/settings.json
+  key_path: autoCompactWindow
+  bad_value: 300000
+  action: remove
+  replacement: null
+  reason: >
+    same key, earlier shipped value. 300000 shipped 2026-09-17, 400000 from
+    2026-09-21. Project settings outrank the user settings /autocompact
+    writes, so the harness value could never be overridden; any other value
+    is the operator's and is kept.
+  issue: "autocompact-user-control"
 retired_paths:
 - path: .agent/providers/gemini-cli.json  # RETIRED
   reason: RETIRED - Gemini CLI retired in v3.8.14; its stale provider JSON made make sync fail (sync_autonomy BROKEN gemini-cli)
@@ -377,4 +408,27 @@ retired_paths:
   reason: RETIRED - hook removed in the 2026-09-06 cleanup (30 to 6 hooks); its guarded registration becomes a no-op
   sha256:
   - 0a3b3d9f5ed5ef2447c95dd535dd5c397e1b613c89a974a6b5c49314ec7767c0
+- path: execution/pulse_quota_resume.sh  # RETIRED
+  reason: RETIRED - replaced by execution/quota_auto_resume.py (per-project launchd tick, quota-auto-resume F1); its input checkpoint writer was already dead
+  sha256:
+  - 6e740bd04638dabf8513f98c9108290f14788c1acb2514e0e8df321e76c17e77
+  - 7cd8770d8ae5c9e7e0c2747a35ae96561f586207c9d6ba7ff487c74b0dd837e7
+  - 951d48d3c909326918019d2bdb99c4579b66ddd308481ba0c6ceb686690baaa7
+- path: execution/checks/assertion_lint.py  # RETIRED
+  reason: RETIRED - moved to execution/assertion_lint.py in v3.8.49; the stale copy shadowed it until v3.8.55 (MacOS Tweaks)
+  sha256:
+  - 6b7438156df9406c64daa14dff7066070cd93e16a30a09c771b2fb37ccb92fa6
+- path: execution/quota_resume_window.py  # RETIRED
+  reason: RETIRED - replaced by execution/quota_auto_resume.py (per-project launchd tick, quota-auto-resume F1); its input checkpoint writer was already dead
+  sha256:
+  - 300c6227f567c3863622762e3daf15a849bbbd5863a8cb6697037fe2a9a1585d
+  - b29d18c14ce544ec8ad4eb58f60e46c9d92a66f502522e7c8a55c167948b4256
+- path: execution/quota_resume_notice.sh  # RETIRED
+  reason: RETIRED - replaced by execution/quota_auto_resume.py (per-project launchd tick, quota-auto-resume F1); its input checkpoint writer was already dead
+  sha256:
+  - 6f7a3c231b56b98ea4eb87178ae25c56f9e689e98f069ca1721110e502e17586
+- path: .agent/pulse/registry/quota_resume.sh  # RETIRED
+  reason: RETIRED - replaced by execution/quota_auto_resume.py (per-project launchd tick, quota-auto-resume F1); its input checkpoint writer was already dead
+  sha256:
+  - 7714146698ec7bd98fead77340c04b38eccb1f91f21b6f612458afa7a558aae2
 schema: athanor.manifest/v1

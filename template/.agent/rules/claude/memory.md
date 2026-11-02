@@ -1,18 +1,11 @@
 ---
-description: Rules and best practices for project memory management.
+description: Bounded reading of learned.md.
+paths:
+  - ".agent/memory/project/learned.md"
 ---
 
-# Memory Usage Rules
+# learned.md
 
-## Before Starting Work
-1. Run `python3 execution/brain.py last-session` — understand prior context
-2. Read `.agent/memory/project/goals.md` — what are we trying to achieve
-3. Read `.agent/memory/project/learned.md` — avoid known pitfalls
-
-## During Work
-- Log significant decisions to scratch: `.agent/memory/scratch/`
-- For brain queries: `python3 execution/brain.py recall "topic" --n 3`
-
-## After Work
-- Claude Code: maintainer agent handles this automatically via SessionEnd hook
-- Other tools: `python3 execution/brain.py wrap-up -s "summary" -t "tags"`
+It grows without bound. Never read it whole: `tail -n 60` for recent entries, or
+`grep -n -i <topic>` / `python3 execution/brain.py recall "topic" --n 3` on demand. Append new
+lessons; do not rewrite old ones.

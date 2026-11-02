@@ -107,6 +107,30 @@ if [ "$WORKSPACE_ROLE" != "harness" ]; then
     exit 0
 fi
 
+# --- directive release gate ---
+# A release ships .agent/directives/ to the fleet, and a downstream reader skips
+# a directive that fails to parse (summary over 120 chars) and withholds one
+# whose body trips its own deny-list. v3.8.52 and v3.8.53 each shipped one of
+# those (JordanPumps, 2026-10-25). Refuse the bump before anything is written.
+if ! python3 - <<'PYEOF'
+import sys
+from pathlib import Path
+sys.path.insert(0, "execution")
+import directives
+metas, bodies, problems = directives.load_directives(Path("."))
+bad = list(problems)
+for meta in metas:
+    if meta.get("status") == "active":
+        bad += ["%s: %s" % (meta["id"], f) for f in directives.lint_body(bodies.get(meta["id"], ""))]
+for line in bad:
+    print("bump_version.sh: directive problem -- %s" % line, file=sys.stderr)
+sys.exit(1 if bad else 0)
+PYEOF
+then
+    echo "bump_version.sh: refused, nothing written -- fix the directive(s) above first" >&2
+    exit 1
+fi
+
 # --- dual-write ---
 printf '%s\n' "$NEW" > "$CANON"
 printf '%s\n' "$NEW" > "$TPL"
@@ -147,6 +171,15 @@ try:
 except Exception as exc:
     warn("updater content-hash regeneration failed unexpectedly: %s" % exc)
 PYEOF
+
+# --- shipped-blob ledger ---
+# execution/shipped_blobs.py lists every blob id the harness ever shipped, so a
+# downstream with no Athanor git history can prove an old Makefile/init.sh was
+# never edited. Regenerated per bump; a failure WARNs and never aborts the bump.
+for ledger_path in execution/shipped_blobs.txt template/execution/shipped_blobs.txt; do
+    python3 execution/shipped_blobs.py --output "$ledger_path" \
+        || echo "WARN: shipped-blob ledger regeneration failed for ${ledger_path}; left as-is" >&2
+done
 
 # --- reconcile bookkeeping (.agent/.template_state, .agent/profile.json) ---
 # Mirrors write_template_state()/update_profile_version() in update_template.py:

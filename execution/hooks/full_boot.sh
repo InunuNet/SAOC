@@ -693,25 +693,11 @@ fi
 unset _BOOT_LEVEL _BOOT_AUTONOMY_DECIDED _BOOT_AUTONOMY _BOOT_UNDECIDED
 
 
-COMMS_FILE=".agent/memory/project/comms.md"
-COMMS_HASH_FILE=".agent/memory/scratch/.comms_last_hash"
-if [ -f "$COMMS_FILE" ]; then
-  LATEST_DIRECTIVE=""
-  LAST_CODI_LINE=$(grep -n "^## \[CODI" "$COMMS_FILE" 2>/dev/null | tail -1 | cut -d: -f1)
-  if [ -n "$LAST_CODI_LINE" ]; then
-    LATEST_DIRECTIVE=$(awk -v startline="$LAST_CODI_LINE" 'NR > startline { if (/^## \[/) {exit} count++; if(count>=10){print "[truncated — read full comms.md]"; exit} print }' "$COMMS_FILE" 2>/dev/null)
-  fi
-  if [ -n "$LATEST_DIRECTIVE" ]; then
-    NEW_COMMS_HASH=$(printf '%s' "$LATEST_DIRECTIVE" | shasum -a 256 | awk '{print $1}')
-    CACHED_COMMS_HASH=$(cat "$COMMS_HASH_FILE" 2>/dev/null || echo "")
-    if [ "$NEW_COMMS_HASH" != "$CACHED_COMMS_HASH" ]; then
-      echo "--- LATEST DIRECTIVE (comms.md) ---"
-      echo "$LATEST_DIRECTIVE"
-      echo "---"
-      echo ""
-      printf '%s' "$NEW_COMMS_HASH" > "$COMMS_HASH_FILE"
-    fi
-  fi
+# Unread messages addressed to this project (or FLEET) on its root comms.md,
+# the one board since 2026-09-21. Guarded like the directive block below: a
+# project without the script prints nothing and errors nothing.
+if [ -f "execution/comms_inbox.py" ]; then
+  python3 execution/comms_inbox.py boot 2>/dev/null || true
 fi
 
 # Directive channel (spec directive-channel F1): directives published by the lead

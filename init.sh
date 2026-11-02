@@ -2116,6 +2116,26 @@ verify_no_placeholder_residue() {
         hits="${kept%$'\n'}"
     fi
 
+    # GITIGNORED PATHS ARE NOT DELIVERED. A .venv's site-packages is full of
+    # `{{field}}` f-strings (pip, packaging, pygments): re-running init.sh on an
+    # established project exited 1 over them (Phising Attack Back, 2026-10-20).
+    # check-ignore never reports a tracked file, so a force-added one is kept.
+    # Only the project's OWN repository decides: a folder nested in another
+    # work tree would otherwise be judged by the outer repo's .gitignore.
+    local top
+    top="$(git_clean -C "$PROJECT_PATH" rev-parse --show-toplevel 2>/dev/null || true)"
+    if [ -n "$hits" ] && [ -n "$top" ] && [ "$(cd "$top" && pwd -P)" = "$(cd "$PROJECT_PATH" && pwd -P)" ]; then
+        local ignored
+        ignored=$(printf '%s\n' "$hits" | sed -E 's/:[0-9]+:.*$//' | sort -u \
+            | git_clean -C "$PROJECT_PATH" check-ignore --stdin 2>/dev/null || true)
+        if [ -n "$ignored" ]; then
+            hits=$(printf '%s\n' "$hits" | while IFS= read -r line; do
+                grep -Fxq -- "$(printf '%s' "$line" | sed -E 's/:[0-9]+:.*$//')" <<< "$ignored" \
+                    || printf '%s\n' "$line"
+            done)
+        fi
+    fi
+
     if [ -n "$hits" ]; then
         printf "\n${YELLOW}❌ Unsubstituted placeholders delivered — refusing to scaffold a workspace whose instructions are half-written:${NC}\n" >&2
         printf '%s\n' "$hits" >&2

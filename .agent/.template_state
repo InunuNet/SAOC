@@ -1,8 +1,8 @@
 {
-  "template_version": "3.8.41",
-  "applied_at": "2026-10-20T15:12:42Z",
+  "template_version": "3.8.85",
+  "applied_at": "2026-11-02T15:44:44Z",
   "delivery": "partial",
-  "workspace_id": "0508fe91e31545b0",
+  "workspace_id": "44a2b8bc49dd98e3",
   "withheld": [
     ".agent/agents/maintainer.md",
     ".agent/rules/_core/workflow.md",
