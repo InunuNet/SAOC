@@ -34,6 +34,7 @@ milestones:
   - F1
   name: Working footer newsletter subscribe
   status: pending
+force_orphaned_at: '2026-10-22T22:41:37.174418+00:00'
 ---
 
 # Mission: Footer newsletter Subscribe actually subscribes (Brad 2026-10-22: 'If they're already putting their email in and clicking subscribe, then just add them to the mailing list. They can unsubscribe if they don't want to be there.') Single opt-in, both footers (SAOC + NOS), unsubscribe path, admin export.

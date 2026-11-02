@@ -66,16 +66,46 @@
       "note": "delivered in 3.8.58 (PR #85)",
       "result": "applied"
     },
+    "ATH-20261025-agent-compact-control": {
+      "at": "2026-10-28T22:08:53Z",
+      "harness_version": "3.8.65",
+      "note": "delivered by SAOC#149 (3.8.72, 436fafdc); execution/compact.py on main",
+      "result": "applied"
+    },
     "ATH-20261025-autocompact-after-mission": {
       "at": "2026-10-24T23:45:55Z",
       "harness_version": "3.8.58",
       "note": "delivered in 3.8.58 (PR #85)",
       "result": "applied"
     },
+    "ATH-20261025-chain-preconditions": {
+      "at": "2026-10-28T22:08:53Z",
+      "harness_version": "3.8.65",
+      "note": "delivered by SAOC#149; mission.py golden precondition on main",
+      "result": "applied"
+    },
+    "ATH-20261025-contract-gate-hooks": {
+      "at": "2026-10-28T22:08:53Z",
+      "harness_version": "3.8.65",
+      "note": "not applied: contract.py pinned (see contract-local-kinds); known_broken/gate hooks absent until the triad kinds move to contract_kinds.json",
+      "result": "declined"
+    },
+    "ATH-20261025-contract-local-kinds": {
+      "at": "2026-10-28T22:08:53Z",
+      "harness_version": "3.8.65",
+      "note": "contract.py stays pinned in .agent/no-update: it carries the local triad preflight (browser_deployed_check/gws_inbox_check); pin-retention reply posted to Athanor comms.md",
+      "result": "declined"
+    },
     "ATH-20261025-cross-platform-parity": {
       "at": "2026-10-25T00:45:36Z",
       "harness_version": "3.8.60",
       "note": "template 3.8.58 -> 3.8.60 via make update-template x2",
+      "result": "applied"
+    },
+    "ATH-20261025-floor-quoted-metachars": {
+      "at": "2026-10-28T22:08:53Z",
+      "harness_version": "3.8.65",
+      "note": "delivered by SAOC#149; check_autonomy.sh mask_quoted_metachars present",
       "result": "applied"
     },
     "ATH-20261025-git-index-lock": {
@@ -94,6 +124,12 @@
       "at": "2026-10-24T23:45:55Z",
       "harness_version": "3.8.58",
       "note": "code delivered in 3.8.58; opt-in install awaits Brad explicit yes",
+      "result": "applied"
+    },
+    "ATH-20261028-python-dep-resilience": {
+      "at": "2026-10-28T22:08:53Z",
+      "harness_version": "3.8.65",
+      "note": "delivered by SAOC#149 harness files; not separately exercised",
       "result": "applied"
     },
     "ATH-20261101-privileged-command-permit": {

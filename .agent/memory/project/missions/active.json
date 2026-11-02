@@ -1,17 +1,16 @@
 {
-  "mission": ".agent/memory/project/missions/2026-10-21-footer-newsletter-subscribe.md",
+  "mission": ".agent/memory/project/missions/2026-11-01-go-live-prep.md",
   "checkpoint": {
-    "milestone": "M1",
-    "feature": "F1",
-    "ts": "2026-10-21T22:57:26.863019+00:00"
+    "milestone": null,
+    "feature": null
   },
-  "activated_at": "2026-10-21T22:57:26.308053+00:00",
+  "activated_at": "2026-11-01T08:55:46.623614+00:00",
   "autonomy": {
     "level": "high",
     "normalized": "autonomous",
     "permission_tier": "high",
-    "updated_at": "2026-10-21T22:57:26.308414+00:00",
-    "decided_at": "2026-10-21T22:57:26.308414+00:00",
+    "updated_at": "2026-11-01T08:55:46.624143+00:00",
+    "decided_at": "2026-11-01T08:55:46.624143+00:00",
     "decided_by": "workspace default (profile.json)"
   }
 }

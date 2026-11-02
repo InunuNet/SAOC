@@ -5339,3 +5339,30 @@ Test and notification emails sent to Brad go to brad+<saoc|nos>-<ticket|form|app
 - (2026-10-15) Worktree gates need `.env.local`. Symlink the main tree's `.env.local` into the worktree (it is gitignored) rather than copying it. Without it the build fails, and the dataset residue guard errors on the missing `NEXT_PUBLIC_SANITY_PROJECT_ID`.
 - (2026-10-15) Browser-check ports must be env-overridable and set in the contract command (`VENDOR_P1_PORT=3517 SITE_PUBLIC_LAUNCH=true`). On the shared machine, another session's server held 3417 and answered 401 (basic auth), so the browser checks silently hit the wrong server.
 - (2026-10-15) Contract goal text must match the golden, and the golden wins. Codex flagged a 42→44px button growth against a goal saying "without enlarging the visual box", while the golden prescribed `min-h-11`. Reconcile the goal text to the golden before dispatch.
+
+## Questions for Lee-Ann doc — rules (Brad, 2026-10-29, after a 175-question doc became unusable)
+- Every question is ONE short sentence that she can answer in a few words. No preamble, no "we will do X until you answer", and no explaining our process, AI, gates or design reasoning.
+- Ask only what blocks the site or launch AND is not already answered in her Drive docs, her earlier answers in the doc, or the Copy Updates doc. Check all three before asking.
+- Never ask about spelling or typos. Those go as anchored Word comments in her .docx, and the site shows her words verbatim.
+- Never ask for content she already knows is missing ("send the copy for page X"). She tracks that herself.
+- No duplicates, no "ignore question X" follow-ups, and no corrections of earlier questions. Fix the question instead.
+- Remove answered and acted-on questions. The doc holds only what is open. Back up before every rewrite.
+- Group under a few plain headings. Number 1..n fresh each cleanup; no running letters (aaaaa).
+- During a COPY FREEZE nothing is added at all.
+- Cap: at most 10–15 open questions in the doc at any time. Lifecycle: she answers, we act, we remove the question (and her answer) in the same pass. The doc is a short live queue, never an archive.
+
+## 2026-10-29 — NOS home hero is FROZEN (Brad)
+Brad, after approving the hero on the restore branch: "the hero is good dont change it again untill we get feedback from Lee-Ann". Hero = title "National Orchid Show", her Section 1 lede, Theme line under Dates/Venue (nos-hero-theme). No agent or session touches `app/(nos)/national-show/page.tsx` hero block, NosHero hub props, or `.nos-hero-*` rules in nos-theme.css until Lee-Ann's feedback is logged in Copy Updates. Checks and gates adapt to the hero, never the other way round.
+
+## 2026-10-29 — Dev model is Sonnet 5.5, retries included (Brad)
+Brad: "Why we using Opus for Dev work use Sonnet 5.5". The dispatch-naming retry ladder (sonnet5 → opus5 → fable5) does NOT apply to @dev on SAOC. Every @dev dispatch, first or retry, is `--model sonnet5` / Agent `model: sonnet`. A retry gets a sharper brief (the QA findings verbatim), not a bigger model. Same for @architect and @docs. QA stays cross-vendor (Codex) with the @qa-apex fallback only while Codex is unavailable.
+Addendum (Brad, same day): "The Athanor harness has the agents predefined to lower token usage use it as intended when we run a mission." The `.claude/agents/*.md` frontmatter already fixes each role's model (dev/qa/architect/analyst/maintainer = sonnet, docs = haiku). NEVER pass `model:` on an Agent dispatch, and ignore `dispatch_name.py --retry` tier advice. The dispatch NAME still records the tier the definition gives (`--model sonnet5`, docs `haiku`).
+
+## 2026-10-31 — ONE review address for Brad (Brad, angry: "Can we not standardize it so that I can always look at the right place?")
+Brad never guesses a port. Anything for him to review runs at http://nos.localhost:3000/ (NOS) / http://localhost:3000/ (SAOC), password prompt off, Sanity fixture replay while the quota is out. Exactly one server on 3000 at a time: whoever puts new work up first stops the previous one, and tells Brad "3000 is updated", never a new port. Scratch servers for gates/checks use other ports and are never mentioned to him. Pattern script: .tmp/sandbox/nos-home-restore/dev-serve.sh (set -p 3000 and NEXT_PUBLIC_*_SITE_URL to :3000).
+
+## 2026-10-31 — Lee-Ann approved the NOS home; Brad: "push the NOS Home page to firebase"
+Approval covers design/nos-home-align @ 2563583f (restore + NOS Design align + Brad's rulings). The hero freeze stays (her feedback on the hero itself is not in yet); everything below the hero is approved as shown on 3000. Ship = gate updates per NOS Design's list, build, fallback QA, docs, PR, CI green, merge → beta auto-deploys. Stand-down lifted for this delivery only.
+
+## 2026-11-01 — Firebase App Hosting builds take ~50-55 min, not 10
+Measured: build 2e4026bf (20e62c45) ran 16:12→17:06Z; build b93611f9 (5a29e41c) was still BUILDING at 49 min. Watchers must allow 60+ min after a merge before calling a rollout stuck. The slow step is `scripts/generate-image-variants.mjs` + `next build` on the App Hosting builder. Backlog candidate: cache generated image variants (or commit them) to cut deploy time.

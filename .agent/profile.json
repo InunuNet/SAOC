@@ -45,5 +45,11 @@
   "autonomy": {
     "level": "high",
     "updated_at": "2026-07-30T20:24:48.736513Z"
+  },
+  "billing": {
+    "billable": true,
+    "client": "SA Orchid Council",
+    "rate": 750,
+    "currency": "ZAR"
   }
 }
