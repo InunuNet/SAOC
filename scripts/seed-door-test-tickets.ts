@@ -28,8 +28,13 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { cert, getApps, initializeApp } from 'firebase-admin/app';
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { cert, getApps, initializeApp, type App } from 'firebase-admin/app';
+import {
+  getFirestore,
+  Timestamp,
+  type DocumentReference,
+  type Firestore,
+} from 'firebase-admin/firestore';
 import QRCode from 'qrcode';
 
 import { readEnvLocal } from './scan-firestore-residue';
@@ -273,6 +278,34 @@ function db() {
 }
 
 /**
+ * Refuses unless the Admin SDK app actually in use is provably not the live project. The env
+ * guard cannot see an app initialised earlier (admin() reuses it), so the app's own project id
+ * is checked too. Fails closed when the id is missing.
+ */
+export function assertAppTargetAllowed(app: Pick<App, 'options'>): void {
+  const appId = (app.options.projectId ?? '').trim();
+  if (appId === '') {
+    throw new Error(
+      'door-seed refused: the initialised Admin SDK app has no project id, so the target cannot ' +
+        'be shown to be a non-live project.',
+    );
+  }
+  if (isLiveId(appId)) {
+    throw new Error(
+      `door-seed refused: the initialised Admin SDK app points at the live project "${LIVE_PROJECT_ID}". ` +
+        'Seeding is only allowed against a separate fixture project or the emulator.',
+    );
+  }
+}
+
+/** Firestore handle for writes: the app in use is checked, not only the env. */
+function seedDb(): Firestore {
+  const app = admin();
+  assertAppTargetAllowed(app);
+  return getFirestore(app);
+}
+
+/**
  * Refuses to write any fixture doc whose marker fields do not match exactly — mirrors
  * createTicketDoc()'s isSentinelEmail guard in
  * contracts/checks/ticketing-hardening/_shared.mjs, so a future edit cannot silently
@@ -331,7 +364,7 @@ async function seedFixtureDoc(fixture: Fixture): Promise<void> {
   if (!fixture.doc) return;
   assertMarkerIntact(fixture.doc);
 
-  const database = db();
+  const database = seedDb();
   const existing = await database
     .collection(TICKETS_COLLECTION)
     .where('bookingRef', '==', fixture.bookingRef)
@@ -358,26 +391,46 @@ function hasFixtureMarkers(data: Record<string, unknown> | undefined): boolean {
   return data?.attendeeEmail === MARKER_EMAIL && data?.attendeeName === MARKER_NAME;
 }
 
-/** Deletes marker-verified fixtures by exact bookingRef. Returns the refs it skipped. */
-async function teardown(): Promise<string[]> {
-  const database = db();
+/**
+ * Deletes one document inside a transaction that re-reads it and re-checks the markers, so a
+ * document changed after the query cannot be deleted unmarked. Returns false for a skip.
+ */
+async function deleteIfStillMarked(database: Firestore, ref: DocumentReference): Promise<boolean> {
+  try {
+    return await database.runTransaction(async (tx) => {
+      const current = await tx.get(ref);
+      if (!current.exists || !hasFixtureMarkers(current.data())) return false;
+      tx.delete(ref);
+      return true;
+    });
+  } catch (err) {
+    console.error(`Transaction failed for ${ref.path}:`, err);
+    return false;
+  }
+}
+
+/**
+ * Deletes marker-verified fixtures by exact bookingRef, examining every match. Returns one
+ * entry per kept document.
+ */
+async function teardown(database: Firestore = db()): Promise<string[]> {
   const skipped: string[] = [];
+  let deleted = 0;
   for (const bookingRef of SEEDED_BOOKING_REFS) {
     const snapshot = await database
       .collection(TICKETS_COLLECTION)
       .where('bookingRef', '==', bookingRef)
-      .limit(1)
       .get();
-    if (snapshot.empty) continue;
-    const found = snapshot.docs[0]!;
-    if (!hasFixtureMarkers(found.data())) {
-      console.error(`Skipped ${bookingRef}: markers do not match, not deleted.`);
-      skipped.push(bookingRef);
-      continue;
+    for (const found of snapshot.docs) {
+      if (await deleteIfStillMarked(database, found.ref)) {
+        deleted += 1;
+      } else {
+        console.error(`Skipped ${bookingRef}: markers do not match, not deleted.`);
+        skipped.push(bookingRef);
+      }
     }
-    await found.ref.delete();
   }
-  console.log(`Tore down ${SEEDED_BOOKING_REFS.length - skipped.length} door test ticket(s).`);
+  console.log(`Tore down ${deleted} door test ticket(s).`);
   return skipped;
 }
 

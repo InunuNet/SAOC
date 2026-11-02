@@ -50,3 +50,7 @@ assertions:
       description: lib/checkin.ts is untouched (the fixture showId constraint depends on it).
       command: git diff --quiet origin/main -- lib/checkin.ts
       timeout_seconds: 15
+    - id: A8
+      description: Door teardown against an in-memory fake (marked deleted, unmarked kept and non-zero, duplicate reference examined, markers vanishing before delete kept) and the guard refusing an initialised app on saoc-webapp. Offline, no Firestore.
+      command: node_modules/.bin/tsx contracts/checks/go-live-f6/door-teardown-skip.mts
+      timeout_seconds: 90
