@@ -1,0 +1,43 @@
+schema: athanor.contract/v1
+slug: claude-md-slim
+goal: CLAUDE.md shrinks to at most 7000 bytes by moving four sections verbatim into PROJECT_GUIDE.md, with nothing lost and nothing new.
+created_at: '2026-11-02'
+autonomy: high
+
+enforcement_edits:
+  - path: CLAUDE.md
+    reason: "Brad 2026-11-02 lean order: slim always-loaded CLAUDE.md"
+
+features:
+  - id: F1
+    name: Move Project Structure, Firebase Setup, Adding Data and Design Handoff Workflow into PROJECT_GUIDE.md, leave pointer lines
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/claude-md-slim/goldens/expected-layout.md
+  - .agent/memory/project/specs/claude-md-slim/goldens/baseline-dirty.txt
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: CLAUDE.md is at most 7000 bytes
+      command: python3 .agent/memory/project/specs/claude-md-slim/verify_slim.py size
+    - id: A2
+      description: title, Client Context, Tech Stack, Coding Conventions, Running Locally and Deployment are byte-identical to the pinned commit's copy
+      command: python3 .agent/memory/project/specs/claude-md-slim/verify_slim.py kept
+    - id: A3
+      description: every non-blank line of the pinned CLAUDE.md is in the new CLAUDE.md or the guide, and moved sections are verbatim and contiguous in the guide
+      command: python3 .agent/memory/project/specs/claude-md-slim/verify_slim.py coverage
+    - id: A4
+      description: each moved section has a pointer line naming it and PROJECT_GUIDE.md, and CLAUDE.md has no other new text
+      command: python3 .agent/memory/project/specs/claude-md-slim/verify_slim.py pointers
+    - id: A5
+      description: guide has no non-blank line absent from the pinned CLAUDE.md except its title and one intro line
+      command: python3 .agent/memory/project/specs/claude-md-slim/verify_slim.py guide
+    - id: A6
+      description: only CLAUDE.md and PROJECT_GUIDE.md changed outside the ignored harness and asset paths
+      command: python3 .agent/memory/project/specs/claude-md-slim/verify_slim.py files
+    - id: A7
+      description: every relative Markdown link in CLAUDE.md and PROJECT_GUIDE.md that resolved at the pinned commit still resolves from the repo root
+      command: python3 .agent/memory/project/specs/claude-md-slim/verify_slim.py links
