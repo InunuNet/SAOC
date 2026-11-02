@@ -1,11 +1,16 @@
 // go-live-prep F6 -- offline behaviour of door-seed teardown and the app-project guard, against
 // an in-memory fake. No Firestore, no credentials, no .env.local.
+import { generateKeyPairSync } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+
 import { initializeApp } from 'firebase-admin/app';
 import type { DocumentReference, Firestore } from 'firebase-admin/firestore';
 
 import {
   assertAppTargetAllowed,
+  buildAppOptions,
   teardown,
+  teardownExitCode,
 } from '../../../scripts/seed-door-test-tickets.ts';
 
 const MARKER_EMAIL = 'fixture@door-qr-check.invalid';
@@ -67,7 +72,7 @@ async function run(
     console.log = log;
     console.error = err;
   }
-  const exitCode = skipped.length > 0 ? 1 : 0;
+  const exitCode = teardownExitCode(skipped);
   if (skipped.length !== expectedSkips) fail(`${label}: expected ${expectedSkips} skip(s), got ${skipped.length}`);
   if (exitCode !== (expectedSkips > 0 ? 1 : 0)) fail(`${label}: wrong exit status ${exitCode}`);
   const remaining = Object.keys(store).sort();
@@ -104,6 +109,31 @@ try {
   fail('app guard allowed an app with no project id');
 } catch {
   // expected: fails closed
+}
+
+// The app is built the way the script builds it, so a benign project must be accepted.
+const { privateKey } = generateKeyPairSync('rsa', {
+  modulusLength: 2048,
+  privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+  publicKeyEncoding: { type: 'spki', format: 'pem' },
+});
+const email = 'fixture@benign-fixture-project.iam.gserviceaccount.com';
+for (const [id, allowed] of [['benign-fixture-project', true], ['saoc-webapp', false]] as const) {
+  const app = initializeApp(buildAppOptions(id, email, privateKey), `door-teardown-skip-real-${id}`);
+  try {
+    assertAppTargetAllowed(app);
+    if (!allowed) fail(`script-built app for ${id} was allowed`);
+  } catch (err) {
+    if (allowed) fail(`script-built app for ${id} was refused: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
+// The CLI teardown branch must set its exit status through teardownExitCode.
+const source = readFileSync('scripts/seed-door-test-tickets.ts', 'utf8');
+const branch = source.slice(source.indexOf("command === 'teardown'"));
+const branchBody = branch.slice(0, branch.indexOf('return;'));
+if (!/process\.exitCode = teardownExitCode\(skipped\)/.test(branchBody)) {
+  fail('the CLI teardown branch does not set process.exitCode = teardownExitCode(skipped)');
 }
 
 if (failures.length) {

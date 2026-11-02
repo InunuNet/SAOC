@@ -28,7 +28,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { cert, getApps, initializeApp, type App } from 'firebase-admin/app';
+import { cert, getApps, initializeApp, type App, type AppOptions } from 'firebase-admin/app';
 import {
   getFirestore,
   Timestamp,
@@ -252,6 +252,15 @@ export function assertSeedTargetAllowed(env: Record<string, string | undefined>)
 
 let adminAppInitialized = false;
 
+/** Admin SDK options; projectId is top level because app.options.projectId is not read from the credential. */
+export function buildAppOptions(
+  projectId: string,
+  clientEmail: string,
+  privateKey: string,
+): AppOptions {
+  return { projectId, credential: cert({ projectId, clientEmail, privateKey }) };
+}
+
 function admin() {
   if (!adminAppInitialized && getApps().length === 0) {
     const envLocal = readEnvLocal();
@@ -267,7 +276,7 @@ function admin() {
       );
     }
     const privateKey = privateKeyRaw.replace(/\\n/g, '\n');
-    initializeApp({ credential: cert({ projectId, clientEmail, privateKey }) });
+    initializeApp(buildAppOptions(projectId, clientEmail, privateKey));
   }
   adminAppInitialized = true;
   return getApps()[0]!;
@@ -434,6 +443,11 @@ async function teardown(database: Firestore = db()): Promise<string[]> {
   return skipped;
 }
 
+/** Process exit status for a teardown run: non-zero when any document was kept. */
+export function teardownExitCode(skipped: readonly string[]): number {
+  return skipped.length > 0 ? 1 : 0;
+}
+
 // ---------------------------------------------------------------------------
 // QR sheet + manifest output
 // ---------------------------------------------------------------------------
@@ -540,7 +554,7 @@ async function main(): Promise<void> {
   }
   if (command === 'teardown') {
     const skipped = await teardown();
-    if (skipped.length > 0) process.exitCode = 1;
+    process.exitCode = teardownExitCode(skipped);
     return;
   }
   console.error('Usage: tsx scripts/seed-door-test-tickets.ts seed|teardown');
