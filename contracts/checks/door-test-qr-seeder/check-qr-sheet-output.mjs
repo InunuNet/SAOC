@@ -1,4 +1,4 @@
-// A7 — `pnpm door:seed` generates a manifest that deep-equals the golden fixture table,
+// A7 — generateOutput() (the offline half of `pnpm door:seed`) generates a manifest that deep-equals the golden fixture table,
 // and a sheet.html that visibly names every bookingRef and expected error string plus
 // exactly 4 base64 PNG QR images, one of which decodes to the exact literal bookingRef
 // string 'DOOR-QR-ADMIT-01' — proving the sheet encodes exactly what
@@ -10,7 +10,15 @@ import path from 'node:path';
 import jsQR from 'jsqr';
 import { PNG } from 'pngjs';
 
-import { deleteTicketByBookingRef, PROJECT_ROOT, assert, runDoorSeedCli, runDoorTeardownCli } from './_shared.mjs';
+import { generateOutput } from '../../../scripts/seed-door-test-tickets.ts';
+
+const PROJECT_ROOT = process.cwd();
+
+function assert(condition, message) {
+  if (!condition) {
+    throw new Error(message);
+  }
+}
 
 const OUTPUT_DIR = path.join(PROJECT_ROOT, 'scripts/output/door-test-qr');
 const GOLDEN_PATH = path.join(
@@ -50,12 +58,8 @@ function decodeQrPayload(dataUrl) {
 }
 
 async function main() {
-  try {
-    runDoorTeardownCli();
-  } catch {
-    // fine if nothing existed yet
-  }
-  runDoorSeedCli();
+  // go-live-prep F6: the sheet and manifest are rendered offline. No Firestore, no credentials, no live write.
+  await generateOutput();
 
   const manifest = JSON.parse(readFileSync(path.join(OUTPUT_DIR, 'manifest.json'), 'utf8'));
   const expected = loadGoldenExpected();
@@ -91,13 +95,7 @@ async function main() {
   console.log('PASS: A7 the QR sheet and manifest match the golden fixture table and the ADMIT QR decodes exactly');
 }
 
-main()
-  .catch((err) => {
-    console.error(`FAIL: A7 — ${err.message}`);
-    process.exitCode = 1;
-  })
-  .finally(async () => {
-    await deleteTicketByBookingRef('DOOR-QR-ADMIT-01');
-    await deleteTicketByBookingRef('DOOR-QR-UNPAID-01');
-    await deleteTicketByBookingRef('DOOR-QR-WRONGSHOW-01');
-  });
+main().catch((err) => {
+  console.error(`FAIL: A7 — ${err.message}`);
+  process.exitCode = 1;
+});

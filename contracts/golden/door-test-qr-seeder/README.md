@@ -177,7 +177,7 @@ rendered text content):
    `ok: true` case) and `expect.httpStatus`.
 5. The first scan's exact expected `expect.error` string verbatim (for the `ok: true`
    case, print the three success fields instead:
-   `Door QR Fixture` / `exhibitor` / the bookingRef — see
+   `Door QR Fixture` / `door-qr-fixture` / the bookingRef — see
    `components/admin/DoorResultBanner.tsx`'s success rendering, which this text should
    describe so Brad recognises a correct screen).
 6. For `ADMIT` only, also render its `scans[1]` (the second-scan / anti-passback) block
@@ -233,3 +233,12 @@ table from HTML text.
   test anything the first one doesn't already prove about the encoding pipeline.
 - Set explicit `timeout_seconds` on every assertion in the contract — `execution/
   contract.py`'s 60s default is a known live bug (do not rely on it).
+
+## go-live-prep F6 (H12) amendments, 2026-11-02
+
+Authoritative detail: `.agent/memory/project/specs/go-live-prep/f6-hardening/goldens/README.md`.
+In short: `seed` refuses the live project (`saoc-webapp`) before any write and fails closed when the
+project id is unset, with no bypass; fixtures use ticketType `door-qr-fixture` instead of
+`exhibitor`; the reserved UNPAID fixture carries an already-expired `expiresAt`. The
+Firestore-writing checks formerly A2-A5 were retired from `contracts/contract-door-test-qr-seeder.yaml`
+because their only possible target is the live project; A7 now renders the sheet offline.

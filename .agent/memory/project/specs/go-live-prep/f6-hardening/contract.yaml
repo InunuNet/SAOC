@@ -1,0 +1,56 @@
+schema: athanor.contract/v1
+slug: go-live-prep-f6-hardening
+goal: Make the door-test seeder impossible to run against the live Firebase project and keep /members out of search indexes, with no copy change.
+created_at: '2026-11-02'
+autonomy: high
+
+features:
+  - id: F1
+    name: H12 door-seed refuses the live project, fixtures leave the exhibitor slug, reserved fixture expires
+    status: pending
+  - id: F2
+    name: /members noindex nofollow with title and description untouched
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/go-live-prep/f6-hardening/goldens/README.md
+  - .agent/memory/project/specs/go-live-prep/f6-hardening/goldens/door-seed-refusal-cases.json
+  - .agent/memory/project/specs/go-live-prep/f6-hardening/goldens/members-metadata.json
+  - contracts/golden/door-test-qr-seeder/fixtures.golden.json
+  - contracts/golden/door-test-qr-seeder/README.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Pure guard cases from door-seed-refusal-cases.json, seedFixtureDoc blocked on the live id, and fixture fields match fixtures.golden.json including expiresAt. Fails on main (the required exports do not exist).
+      command: node_modules/.bin/tsx contracts/checks/go-live-f6/door-seed-guard.mts
+      timeout_seconds: 90
+    - id: A2
+      description: The real seed entry point refuses live, unset and blank ids and ignores bypass flags and env, with a non-live control that is not refused. Offline, scrubbed env, dotenv-free sandbox. Fails on main.
+      command: node contracts/checks/go-live-f6/door-seed-cli-refusal.mjs
+      timeout_seconds: 240
+    - id: A3
+      description: Static shape of the seeder - no bypass surface, guard before db(), teardown exact-bookingRef and ungated, fixture slug, scanner exemption kept. Fails on main.
+      command: node contracts/checks/go-live-f6/door-seed-static.mjs
+      timeout_seconds: 30
+    - id: A4
+      description: members page carries noIndex true with title, description, path and lede pinned to the golden, is in no sitemap, and the cancelled, recover and confirmation pages keep noindex. Fails on main (noIndex absent); the sitemap and sibling clauses already pass.
+      command: node contracts/checks/go-live-f6/members-noindex.mjs
+      timeout_seconds: 30
+    - id: A5
+      description: Legacy A7 rewired to render the QR sheet offline and still match the golden table. Passes on main by design (regression guard for the rewire).
+      command: node_modules/.bin/tsx contracts/checks/door-test-qr-seeder/check-qr-sheet-output.mjs
+      timeout_seconds: 60
+    - id: A6
+      description: The amended legacy door contract still validates strictly after the live-write assertions were retired.
+      command: python3 execution/contract.py validate contracts/contract-door-test-qr-seeder.yaml --strict
+      timeout_seconds: 30
+    - id: A7
+      description: lib/checkin.ts is untouched (the fixture showId constraint depends on it).
+      command: git diff --quiet origin/main -- lib/checkin.ts
+      timeout_seconds: 15
+    - id: A8
+      description: Door teardown against an in-memory fake (marked deleted, unmarked kept and non-zero, duplicate reference examined, markers vanishing before delete kept) and the guard refusing an initialised app on saoc-webapp. Offline, no Firestore.
+      command: node_modules/.bin/tsx contracts/checks/go-live-f6/door-teardown-skip.mts
+      timeout_seconds: 90
