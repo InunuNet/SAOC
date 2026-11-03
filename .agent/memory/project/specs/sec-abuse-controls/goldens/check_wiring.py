@@ -209,9 +209,9 @@ TICKET_DECLARATION_FILES = [
     "sanity/schemas/documents/ticketType.ts", "scripts/seed-door-test-tickets.ts",
 ]
 TICKET_DECLARATION_DIRS = ["app/ticket-fixtures"]
-# Known existing use, tolerated until SAOC retargets the seeder (hand-off H12): the door QR test
-# seeder writes a `reserved` fixture ticket of type "exhibitor". Exact (file, line) text only.
-RETIRED_SLUG_EXEMPTIONS = {("scripts/seed-door-test-tickets.ts", "const TICKET_TYPE = 'exhibitor';")}
+# No exemptions: the door QR seeder was retargeted to the `door-qr-fixture` slug in #177 (hand-off H12 closed).
+# Exact (file, line text) pairs only, if one is ever needed again.
+RETIRED_SLUG_EXEMPTIONS: set[tuple[str, str]] = set()
 
 
 APP_CHECK_ALLOWED_USERS = {
