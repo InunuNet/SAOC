@@ -1,6 +1,6 @@
 # Door Test-Ticket QR Seeder
 
-**Contract:** `contracts/contract-door-test-qr-seeder.yaml` (6/7). A5 is RED for environmental reasons.
+**Contract:** `contracts/contract-door-test-qr-seeder.yaml` .
 
 **Status:** Unblocks mission `admin-auth-hardening` F6. Test data seeding is complete and idempotent. The door admission logic itself is proven end to end in [ticketing-hardening.md](ticketing-hardening.md) F1; this tool provides the QR-code test vectors.
 
@@ -38,13 +38,13 @@ Four fixed booking references prove five outcomes:
 
 ---
 
-## Known Issues
+## Live-project guard
 
-### A5 — Environmental RED (not a defect)
+`pnpm door:seed` refuses to run against the live Firebase project `saoc-webapp`. It checks `FIREBASE_ADMIN_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `GOOGLE_CLOUD_PROJECT`, `GCLOUD_PROJECT` and the service-account email, and fails closed when the admin project id is unset or blank. There is no flag or env override. The refusal happens before any credential is parsed or any write is attempted, and the same guard sits inside `seedFixtureDoc`. With only the live project configured, `seed` cannot run; a separate fixture project or the emulator is required.
 
-A5 requires the entire live `tickets` collection to be residue-free before the seeder can pass. Currently, ~15 pre-existing `@harden-check.invalid` documents (fixture residue from earlier test runs) remain. This blocks A5 only — A1–A4 are green.
+`pnpm door:teardown` is not gated. It deletes only the three exact fixture booking references, so it can clean earlier residue from any project.
 
-**Remedy:** Delete the pre-existing residue documents from Firestore, then A5 will pass. This is Brad's call, not automated.
+Fixtures use ticket type `door-qr-fixture` (not `exhibitor`), so they cannot be counted against a real product. The reserved fixture is seeded with `expiresAt` 60 seconds before seed time, so it is never a live hold. The legacy live-write contract assertions (A2-A5) were retired; offline checks live in `contracts/checks/go-live-f6/`.
 
 ---
 

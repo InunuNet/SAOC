@@ -1,0 +1,7 @@
+{
+  "_comment": "Pinned exactly as on main at d7838cae. F6 adds noIndex: true to the members buildPageMetadata call and changes none of these strings. Brad 2026-11-02: no copy changes.",
+  "title": "Members Portal",
+  "description": "A restricted area for paid-up SAOC members, coming to this site.",
+  "path": "/members",
+  "lede": "A restricted area for paid-up SAOC members, separate from the public-facing pages on this site."
+}

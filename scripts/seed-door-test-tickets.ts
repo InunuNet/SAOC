@@ -28,8 +28,13 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { cert, getApps, initializeApp } from 'firebase-admin/app';
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { cert, getApps, initializeApp, type App, type AppOptions } from 'firebase-admin/app';
+import {
+  getFirestore,
+  Timestamp,
+  type DocumentReference,
+  type Firestore,
+} from 'firebase-admin/firestore';
 import QRCode from 'qrcode';
 
 import { readEnvLocal } from './scan-firestore-residue';
@@ -48,7 +53,9 @@ const MARKER_EMAIL = 'fixture@door-qr-check.invalid';
 const MARKER_NAME = 'Door QR Fixture';
 const NATIONAL_SHOW_ID = 'nationalShow';
 const WRONG_SHOW_ID = 'door-qr-check-wrong-show';
-const TICKET_TYPE = 'exhibitor';
+export const FIXTURE_TICKET_TYPE = 'door-qr-fixture';
+export const LIVE_PROJECT_ID = 'saoc-webapp';
+const BORN_EXPIRED_SECONDS = 60;
 
 interface FixtureDoc {
   readonly bookingRef: string;
@@ -59,6 +66,7 @@ interface FixtureDoc {
   readonly status: string;
   readonly amount: number;
   readonly purchasedAtServerNow: boolean;
+  readonly bornExpired?: boolean;
 }
 
 interface ScanExpectation {
@@ -92,7 +100,7 @@ const FIXTURES: readonly Fixture[] = [
       showId: NATIONAL_SHOW_ID,
       attendeeName: MARKER_NAME,
       attendeeEmail: MARKER_EMAIL,
-      ticketType: TICKET_TYPE,
+      ticketType: FIXTURE_TICKET_TYPE,
       status: 'paid',
       amount: 0,
       purchasedAtServerNow: true,
@@ -102,7 +110,7 @@ const FIXTURES: readonly Fixture[] = [
         ordinal: 1,
         expect: { ok: true, resultingStatus: 'checked-in' },
         qrCardOutcome: 'ADMIT',
-        expectedScreenMessage: '✓ Checked in — Door QR Fixture — exhibitor — DOOR-QR-ADMIT-01',
+        expectedScreenMessage: '✓ Checked in — Door QR Fixture — door-qr-fixture — DOOR-QR-ADMIT-01',
       },
       {
         ordinal: 2,
@@ -121,10 +129,11 @@ const FIXTURES: readonly Fixture[] = [
       showId: NATIONAL_SHOW_ID,
       attendeeName: MARKER_NAME,
       attendeeEmail: MARKER_EMAIL,
-      ticketType: TICKET_TYPE,
+      ticketType: FIXTURE_TICKET_TYPE,
       status: 'reserved',
       amount: 0,
       purchasedAtServerNow: false,
+      bornExpired: true,
     },
     scans: [
       {
@@ -144,7 +153,7 @@ const FIXTURES: readonly Fixture[] = [
       showId: WRONG_SHOW_ID,
       attendeeName: MARKER_NAME,
       attendeeEmail: MARKER_EMAIL,
-      ticketType: TICKET_TYPE,
+      ticketType: FIXTURE_TICKET_TYPE,
       status: 'paid',
       amount: 0,
       purchasedAtServerNow: true,
@@ -179,10 +188,78 @@ const SEEDED_BOOKING_REFS: readonly string[] = FIXTURES.filter((f) => f.seededIn
 );
 
 // ---------------------------------------------------------------------------
+// Live-project guard (go-live-prep F6 / H12)
+// ---------------------------------------------------------------------------
+
+const TARGET_ENV_KEYS = [
+  'FIREBASE_ADMIN_PROJECT_ID',
+  'FIREBASE_ADMIN_CLIENT_EMAIL',
+  'NEXT_PUBLIC_FIREBASE_PROJECT_ID',
+  'GOOGLE_CLOUD_PROJECT',
+  'GCLOUD_PROJECT',
+] as const;
+
+/** Merged view of the target-identifying variables: process env first, local dotenv fallback. */
+function seedTargetEnv(): Record<string, string | undefined> {
+  const envLocal = readEnvLocal();
+  const merged: Record<string, string | undefined> = {};
+  for (const key of TARGET_ENV_KEYS) {
+    merged[key] = process.env[key] ?? envLocal[key];
+  }
+  return merged;
+}
+
+function isLiveId(value: string | undefined): boolean {
+  return (value ?? '').trim().toLowerCase() === LIVE_PROJECT_ID;
+}
+
+/**
+ * Refuses unless the seed target is provably not the live project. Fails closed when the
+ * admin project id is unset or blank. There is deliberately no bypass flag or env override.
+ * Returns the trimmed admin project id when allowed.
+ */
+export function assertSeedTargetAllowed(env: Record<string, string | undefined>): string {
+  const adminId = (env['FIREBASE_ADMIN_PROJECT_ID'] ?? '').trim();
+  if (adminId === '') {
+    throw new Error(
+      'door-seed refused: FIREBASE_ADMIN_PROJECT_ID is unset or blank, so the target cannot be ' +
+        'shown to be a non-live project.',
+    );
+  }
+  const signals: ReadonlyArray<readonly [string, boolean]> = [
+    ['FIREBASE_ADMIN_PROJECT_ID', isLiveId(adminId)],
+    ['NEXT_PUBLIC_FIREBASE_PROJECT_ID', isLiveId(env['NEXT_PUBLIC_FIREBASE_PROJECT_ID'])],
+    ['GOOGLE_CLOUD_PROJECT', isLiveId(env['GOOGLE_CLOUD_PROJECT'])],
+    ['GCLOUD_PROJECT', isLiveId(env['GCLOUD_PROJECT'])],
+    [
+      'FIREBASE_ADMIN_CLIENT_EMAIL',
+      (env['FIREBASE_ADMIN_CLIENT_EMAIL'] ?? '').toLowerCase().includes(LIVE_PROJECT_ID),
+    ],
+  ];
+  const hit = signals.find(([, isLive]) => isLive);
+  if (hit) {
+    throw new Error(
+      `door-seed refused: ${hit[0]} points at the live project "${LIVE_PROJECT_ID}". ` +
+        'Seeding is only allowed against a separate fixture project or the emulator.',
+    );
+  }
+  return adminId;
+}
+
+// ---------------------------------------------------------------------------
 // Admin SDK
 // ---------------------------------------------------------------------------
 
 let adminAppInitialized = false;
+
+/** Admin SDK options; projectId is top level because app.options.projectId is not read from the credential. */
+export function buildAppOptions(
+  projectId: string,
+  clientEmail: string,
+  privateKey: string,
+): AppOptions {
+  return { projectId, credential: cert({ projectId, clientEmail, privateKey }) };
+}
 
 function admin() {
   if (!adminAppInitialized && getApps().length === 0) {
@@ -199,7 +276,7 @@ function admin() {
       );
     }
     const privateKey = privateKeyRaw.replace(/\\n/g, '\n');
-    initializeApp({ credential: cert({ projectId, clientEmail, privateKey }) });
+    initializeApp(buildAppOptions(projectId, clientEmail, privateKey));
   }
   adminAppInitialized = true;
   return getApps()[0]!;
@@ -207,6 +284,34 @@ function admin() {
 
 function db() {
   return getFirestore(admin());
+}
+
+/**
+ * Refuses unless the Admin SDK app actually in use is provably not the live project. The env
+ * guard cannot see an app initialised earlier (admin() reuses it), so the app's own project id
+ * is checked too. Fails closed when the id is missing.
+ */
+export function assertAppTargetAllowed(app: Pick<App, 'options'>): void {
+  const appId = (app.options.projectId ?? '').trim();
+  if (appId === '') {
+    throw new Error(
+      'door-seed refused: the initialised Admin SDK app has no project id, so the target cannot ' +
+        'be shown to be a non-live project.',
+    );
+  }
+  if (isLiveId(appId)) {
+    throw new Error(
+      `door-seed refused: the initialised Admin SDK app points at the live project "${LIVE_PROJECT_ID}". ` +
+        'Seeding is only allowed against a separate fixture project or the emulator.',
+    );
+  }
+}
+
+/** Firestore handle for writes: the app in use is checked, not only the env. */
+function seedDb(): Firestore {
+  const app = admin();
+  assertAppTargetAllowed(app);
+  return getFirestore(app);
 }
 
 /**
@@ -240,18 +345,12 @@ function assertMarkerIntact(doc: FixtureDoc): void {
 // seed
 // ---------------------------------------------------------------------------
 
-async function seedFixtureDoc(fixture: Fixture): Promise<void> {
-  if (!fixture.doc) return;
-  assertMarkerIntact(fixture.doc);
-
-  const database = db();
-  const existing = await database
-    .collection(TICKETS_COLLECTION)
-    .where('bookingRef', '==', fixture.bookingRef)
-    .limit(1)
-    .get();
-
-  const fields = {
+/** Pure: the exact Firestore field set for a seeded fixture. No `undefined` own properties. */
+export function buildFixtureFields(fixture: Fixture, now: Timestamp): Record<string, unknown> {
+  if (!fixture.doc) {
+    throw new Error(`Fixture ${fixture.bookingRef} has no document to build.`);
+  }
+  return {
     bookingRef: fixture.doc.bookingRef,
     showId: fixture.doc.showId,
     attendeeName: fixture.doc.attendeeName,
@@ -259,11 +358,29 @@ async function seedFixtureDoc(fixture: Fixture): Promise<void> {
     ticketType: fixture.doc.ticketType,
     status: fixture.doc.status,
     amount: fixture.doc.amount,
-    purchasedAt: fixture.doc.purchasedAtServerNow ? Timestamp.now() : null,
+    purchasedAt: fixture.doc.purchasedAtServerNow ? now : null,
+    expiresAt: fixture.doc.bornExpired
+      ? Timestamp.fromMillis(now.toMillis() - BORN_EXPIRED_SECONDS * 1000)
+      : null,
     checkedInAt: null,
     m_payment_id: fixture.doc.bookingRef,
     pf_payment_id: null,
   };
+}
+
+async function seedFixtureDoc(fixture: Fixture): Promise<void> {
+  assertSeedTargetAllowed(seedTargetEnv());
+  if (!fixture.doc) return;
+  assertMarkerIntact(fixture.doc);
+
+  const database = seedDb();
+  const existing = await database
+    .collection(TICKETS_COLLECTION)
+    .where('bookingRef', '==', fixture.bookingRef)
+    .limit(1)
+    .get();
+
+  const fields = buildFixtureFields(fixture, Timestamp.now());
 
   if (existing.empty) {
     await database.collection(TICKETS_COLLECTION).add(fields);
@@ -278,19 +395,57 @@ async function seedFixtureDoc(fixture: Fixture): Promise<void> {
 // teardown
 // ---------------------------------------------------------------------------
 
-async function teardown(): Promise<void> {
-  const database = db();
+/** True only when the stored doc carries both fixture markers. */
+function hasFixtureMarkers(data: Record<string, unknown> | undefined): boolean {
+  return data?.attendeeEmail === MARKER_EMAIL && data?.attendeeName === MARKER_NAME;
+}
+
+/**
+ * Deletes one document inside a transaction that re-reads it and re-checks the markers, so a
+ * document changed after the query cannot be deleted unmarked. Returns false for a skip.
+ */
+async function deleteIfStillMarked(database: Firestore, ref: DocumentReference): Promise<boolean> {
+  try {
+    return await database.runTransaction(async (tx) => {
+      const current = await tx.get(ref);
+      if (!current.exists || !hasFixtureMarkers(current.data())) return false;
+      tx.delete(ref);
+      return true;
+    });
+  } catch (err) {
+    console.error(`Transaction failed for ${ref.path}:`, err);
+    return false;
+  }
+}
+
+/**
+ * Deletes marker-verified fixtures by exact bookingRef, examining every match. Returns one
+ * entry per kept document.
+ */
+async function teardown(database: Firestore = db()): Promise<string[]> {
+  const skipped: string[] = [];
+  let deleted = 0;
   for (const bookingRef of SEEDED_BOOKING_REFS) {
     const snapshot = await database
       .collection(TICKETS_COLLECTION)
       .where('bookingRef', '==', bookingRef)
-      .limit(1)
       .get();
-    if (!snapshot.empty) {
-      await snapshot.docs[0]!.ref.delete();
+    for (const found of snapshot.docs) {
+      if (await deleteIfStillMarked(database, found.ref)) {
+        deleted += 1;
+      } else {
+        console.error(`Skipped ${bookingRef}: markers do not match, not deleted.`);
+        skipped.push(bookingRef);
+      }
     }
   }
-  console.log(`Tore down ${SEEDED_BOOKING_REFS.length} door test ticket(s): ${SEEDED_BOOKING_REFS.join(', ')}`);
+  console.log(`Tore down ${deleted} door test ticket(s).`);
+  return skipped;
+}
+
+/** Process exit status for a teardown run: non-zero when any document was kept. */
+export function teardownExitCode(skipped: readonly string[]): number {
+  return skipped.length > 0 ? 1 : 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -309,7 +464,7 @@ function renderScanBlock(scan: ScanExpectation): string {
   const outcomeLabel = scan.expect.ok ? 'ADMIT' : (scan.expect.code ?? 'unknown');
   const httpStatus = scan.expect.ok ? 200 : (scan.expect.httpStatus ?? '');
   const messageLine = scan.expect.ok
-    ? `${MARKER_NAME} / ${TICKET_TYPE} / ${scan.expect.resultingStatus ?? ''}`
+    ? `${MARKER_NAME} / ${FIXTURE_TICKET_TYPE} / ${scan.expect.resultingStatus ?? ''}`
     : (scan.expect.error ?? '');
   return `
       <div class="scan">
@@ -388,6 +543,7 @@ async function generateOutput(): Promise<void> {
 async function main(): Promise<void> {
   const command = process.argv[2];
   if (command === 'seed') {
+    assertSeedTargetAllowed(seedTargetEnv());
     for (const fixture of FIXTURES) {
       await seedFixtureDoc(fixture);
     }
@@ -397,7 +553,8 @@ async function main(): Promise<void> {
     return;
   }
   if (command === 'teardown') {
-    await teardown();
+    const skipped = await teardown();
+    process.exitCode = teardownExitCode(skipped);
     return;
   }
   console.error('Usage: tsx scripts/seed-door-test-tickets.ts seed|teardown');

@@ -9,8 +9,8 @@
     "_comment": "RFC 2606 .invalid TLD, same convention as SENTINEL_EMAIL_DOMAIN in contracts/checks/ticketing-hardening/_shared.mjs. bookingRefPrefix is chosen to be unmistakable at a glance next to a real 'SAOC-2027-XXXXXXXXXXXX' ref."
   },
 
-  "ticketType": "exhibitor",
-  "_ticketType_comment": "Reused from contracts/checks/ticketing-hardening/_shared.mjs TARGET_TICKET_TYPE: price 0, so this tool never creates a non-zero-value looking ticket.",
+  "ticketType": "door-qr-fixture",
+  "_ticketType_comment": "go-live-prep F6 (H12): fixtures sit in their own ticketType slug, which matches no Sanity product, so they can never be counted against the exhibitor (or any real) product ledger. It was 'exhibitor' before F6. showId stays 'nationalShow' for ADMIT and UNPAID only because lib/checkin.ts refuses any other showId with wrong-show before it looks at status (lib/checkin.ts:88), so those two outcomes are unreachable otherwise; the protection against the national ledger is the seed refusal on the live project, not a different showId.",
 
   "fixtures": [
     {
@@ -22,10 +22,11 @@
         "showId": "nationalShow",
         "attendeeName": "Door QR Fixture",
         "attendeeEmail": "fixture@door-qr-check.invalid",
-        "ticketType": "exhibitor",
+        "ticketType": "door-qr-fixture",
         "status": "paid",
         "amount": 0,
         "purchasedAt": "SERVER_NOW",
+        "expiresAt": null,
         "checkedInAt": null,
         "m_payment_id": "DOOR-QR-ADMIT-01",
         "pf_payment_id": null
@@ -35,7 +36,7 @@
           "ordinal": 1,
           "expect": { "ok": true, "resultingStatus": "checked-in" },
           "qrCardOutcome": "ADMIT",
-          "expectedScreenMessage": "✓ Checked in — Door QR Fixture — exhibitor — DOOR-QR-ADMIT-01"
+          "expectedScreenMessage": "✓ Checked in — Door QR Fixture — door-qr-fixture — DOOR-QR-ADMIT-01"
         },
         {
           "ordinal": 2,
@@ -54,10 +55,11 @@
         "showId": "nationalShow",
         "attendeeName": "Door QR Fixture",
         "attendeeEmail": "fixture@door-qr-check.invalid",
-        "ticketType": "exhibitor",
+        "ticketType": "door-qr-fixture",
         "status": "reserved",
         "amount": 0,
         "purchasedAt": null,
+        "expiresAt": "SERVER_NOW_MINUS_60S",
         "checkedInAt": null,
         "m_payment_id": "DOOR-QR-UNPAID-01",
         "pf_payment_id": null
@@ -80,10 +82,11 @@
         "showId": "door-qr-check-wrong-show",
         "attendeeName": "Door QR Fixture",
         "attendeeEmail": "fixture@door-qr-check.invalid",
-        "ticketType": "exhibitor",
+        "ticketType": "door-qr-fixture",
         "status": "paid",
         "amount": 0,
         "purchasedAt": "SERVER_NOW",
+        "expiresAt": null,
         "checkedInAt": null,
         "m_payment_id": "DOOR-QR-WRONGSHOW-01",
         "pf_payment_id": null
@@ -114,6 +117,7 @@
   ],
 
   "notes": {
+    "SERVER_NOW_MINUS_60S": "Timestamp.now() minus 60 seconds, so a reserved fixture is born already expired and can never be a live hold. Checks assert expiresAt is a Timestamp at or before the seed time for every reserved fixture and null for every other one.",
     "SERVER_NOW": "Timestamp.now() at seed time — not literal-comparable in JSON; checks assert purchasedAt is non-null for these two docs, not an exact value.",
     "idempotency": "seed must be safe to run twice in a row: look up each bookingRef first; if the doc exists, overwrite its fields back to this exact shape (this is what resets ADMIT from 'checked-in' back to 'paid' for a repeat test); if it does not exist, create it.",
     "screenMessage_format": "Documented here as 'label — line1 — line2' for readability; the actual UI (components/admin/DoorResultBanner.tsx) renders these as separate lines/elements, not one concatenated string. Checks must match against the underlying API response fields (result.ok/result.code/result.httpStatus/result.error, or for the success case result.ticket.attendeeName/ticketType/bookingRef), never against rendered DOM text, since no assertion in this contract drives a browser."

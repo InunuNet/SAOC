@@ -38,69 +38,11 @@ assertions:
       command: grep -q '"door:seed"' package.json && grep -q '"door:teardown"' package.json && grep -q "DOOR-QR-" scripts/seed-door-test-tickets.ts && grep -q "fixture@door-qr-check.invalid" scripts/seed-door-test-tickets.ts && grep -q "EXPECTED_LIVE_DOOR_QR_FIXTURES" scripts/scan-firestore-residue.ts && grep -q "'DOOR-QR-ADMIT-01'" scripts/scan-firestore-residue.ts
       timeout_seconds: 15
 
-    - id: A2
-      description: >
-        `pnpm door:seed` writes exactly the three Firestore docs specified in
-        fixtures.golden.json (ADMIT paid/nationalShow, UNPAID reserved/nationalShow,
-        WRONGSHOW paid/door-qr-check-wrong-show) with the exact marker fields, and does
-        NOT write any doc for DOOR-QR-MISSING-01. Re-running seed a second time resets
-        ADMIT back to status 'paid' (idempotency — proves a repeat test at the door
-        works without a manual Firestore edit). REJECTS a variant that seeds fewer/more
-        than 3 docs, gets any field wrong (status/showId/marker), writes a doc for the
-        MISSING ref, or is not idempotent (second seed call throws, or leaves ADMIT
-        stuck at 'checked-in').
-      command: node_modules/.bin/tsx contracts/checks/door-test-qr-seeder/check-seed-fixtures.mjs
-      timeout_seconds: 45
-
-    - id: A3
-      description: >
-        Full 5-outcome decision table proven by calling checkInByBookingRef (lib/
-        checkin.ts) directly against the seeded fixtures, in this order: ADMIT scan 1
-        (ok:true, ticket.status becomes 'checked-in'), ADMIT scan 2 (ok:false,
-        code:'already-checked-in', httpStatus:409), UNPAID scan 1 (ok:false,
-        code:'unpaid', httpStatus:403), WRONGSHOW scan 1 (ok:false, code:'wrong-show',
-        httpStatus:403), MISSING scan 1 (ok:false, code:'not-found', httpStatus:404).
-        REJECTS a variant whose fixtures don't actually exercise every branch of the
-        decision table (e.g. a "paid" fixture accidentally on the wrong show so the
-        wrong-show branch is never hit at rule 3, or an ADMIT ticket that was already
-        checked-in before scan 1 so the true admit branch is never exercised) — the
-        assertion fails loudly with the outcome that was actually returned, not just a
-        boolean.
-      command: node_modules/.bin/tsx contracts/checks/door-test-qr-seeder/check-admission-table.mjs
-      timeout_seconds: 45
-
-    - id: A4
-      description: >
-        `pnpm door:teardown` deletes exactly the three fixture docs (re-query by each
-        exact bookingRef returns null for all three afterward) and does NOT delete an
-        unrelated control document the check plants first with its own distinct marker
-        (control@door-qr-check-teardown-control.invalid) — proving teardown matches an
-        exact bookingRef set, not a marker-domain sweep or a collection-wide delete. The
-        check deletes its own control doc in a finally regardless of outcome. REJECTS a
-        variant that sweeps by email domain or by bookingRef prefix (would delete the
-        control doc too if it happened to share the domain, and more importantly would
-        make teardown reusable code that's one refactor away from becoming a live-domain
-        sweep that races other suites) — this assertion's positive control is the control
-        doc's survival, not merely the three fixtures' absence.
-      command: node_modules/.bin/tsx contracts/checks/door-test-qr-seeder/check-teardown-scoped.mjs
-      timeout_seconds: 45
-
-    - id: A5
-      description: >
-        With fixtures seeded, `pnpm exec tsx scripts/scan-firestore-residue.ts` (live
-        mode) exits 0 and prints an INFO line (not a FAIL) for at least the
-        'DOOR-QR-ADMIT-01' hit — proving the residue scanner does not alarm on this
-        tool's deliberately-live fixtures while they exist. The check seeds first, runs
-        the scanner, asserts exit 0 and stdout contains "INFO" and "DOOR-QR-ADMIT-01"
-        and does NOT contain "FAIL", then tears down in a finally. REJECTS a variant
-        that either (a) never adds the exemption (scanner would exit non-zero, this
-        assertion catches the gap A1's grep alone would miss if the set were added but
-        never wired into matchesAnyPattern/walk/report) or (b) suppresses the hit
-        entirely instead of reporting it as INFO (this assertion requires the string
-        'DOOR-QR-ADMIT-01' to actually appear in stdout, not merely be absent from a
-        FAIL line).
-      command: node_modules/.bin/tsx contracts/checks/door-test-qr-seeder/check-residue-scanner-exempts-live-fixtures.mjs
-      timeout_seconds: 60
+    # go-live-prep F6 (H12): former A2-A5 seeded, scanned and tore down real documents in the
+    # project named by the local credentials. That is the live project, and `seed` now refuses it, so
+    # they were retired together with their check scripts. The refusal, the fixture shape and
+    # the teardown scope are covered offline by .agent/memory/project/specs/go-live-prep/f6-hardening/contract.yaml.
+    # The scanner exemption is still covered by A1 (static) and A6 (negative control).
 
     - id: A6
       description: >
@@ -119,7 +61,7 @@ assertions:
 
     - id: A7
       description: >
-        `pnpm door:seed` generates scripts/output/door-test-qr/manifest.json whose 4
+        Rendering the sheet (generateOutput, offline, no Firestore) writes scripts/output/door-test-qr/manifest.json whose 4
         entries (label/bookingRef/scans[].expect) deep-equal
         contracts/golden/door-test-qr-seeder/fixtures.golden.json's fixtures[].scans
         exactly, and scripts/output/door-test-qr/sheet.html contains, as visible text,
