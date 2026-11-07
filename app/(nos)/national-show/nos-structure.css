@@ -2782,11 +2782,11 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
    the .doc-* classes are the shared API's, this block only re-values them for the NOS ground.
    ============================================================ */
 
-/* Sticky values the shared CSS reads (SAOC 9bff74a6): the aside sticks at 100px, the index scroller
+/* Sticky values the shared CSS reads (SAOC 9bff74a6): the aside sticks at 121px, the index scroller
    under the NOS header (not sticky under 768), and an h2 lands below both. --doc-scroll-margin is the
    total landing distance of an h2 from the viewport top, not a remainder. */
 .nos-theme {
-  --doc-aside-top: 100px;
+  --doc-aside-top: 121px;
   --doc-index-top: env(safe-area-inset-top, 0px);
   --doc-scroll-margin: 80px;
 }
@@ -2994,7 +2994,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   }
 }
 
-/* The one aside: a warm card at 5fr, sticky under the header (NOS value 100px). */
+/* The one aside: a warm card at 5fr, sticky under the header (NOS value 121px). */
 .nos-theme .doc-aside {
   border-radius: 10px;
   box-shadow: var(--shadow-md);
