@@ -48,7 +48,7 @@ _Last compacted: 2026-11-02 by backlog_trim.py. Full history: git log on this fi
 - [ ] WAITING ON BRAD (2026-10-27): no JDK on this machine → [details](data/waiting-on-brad-2026-10-27-no-jdk-on-thi.md)
 - [ ] P2 — SAOC `--status-error` undefined on SAOC host (only nos-theme.css defines it); vendor apply error summary border/heading colour undefined. Ruling requested from NOS Design 2026-10-28.
 - [x] **CI: Playwright install hang has no timeout** (2026-10-28) — run 40573088420 (#… → [details](data/ci-playwright-install-hang-has-no-timeou.md) — closed 2026-11-07: #169 23113989
-- [ ] **P1 — SAOC client-JS weight blocks mobile LCP** (2026-10-28, from F1e; NOS Desi… → [details](data/p1-saoc-client-js-weight-blocks-mobile-l.md)
+- [ ] **P1 — SAOC client-JS weight blocks mobile LCP** (2026-10-28, from F1e; NOS Desi… → [details](data/p1-saoc-client-js-weight-blocks-mobile-l.md) — 2026-11-07: local branch perf/lazy-firebase-signout (970ca700) drops the Firebase Auth chunk from every public page, ~35 KB gz per route (/ 200→165, /events 205→169); awaiting Codex (after 2026-11-08 13:04) and Brad's go. Measurements: .agent/memory/scratch/js-weight-2026-11-07.md
 - [x] **Root not-found NOS branch ships NOS CSS to every SAOC route** (2026-10-28, fro… → [details](data/root-not-found-nos-branch-ships-nos-css.md) — closed 2026-11-07: app/not-found.tsx on origin/main 52b63e6d is host-neutral SAOC-only; NOS 404s come from app/(nos)/national-show/[...slug]
 - [ ] **Header lockup webp (24KB) heavier than the hero (19KB)** (2026-10-28, from F1e) — candidate for resizing to served px.
 - [ ] **P2 — PageHero copy column overruns container at 2056** (2026-10-28, NOS Design… → [details](data/p2-pagehero-copy-column-overruns-contain.md)
