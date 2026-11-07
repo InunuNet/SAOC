@@ -2,10 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { getAuth } from 'firebase/auth';
 
 import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
-import { getFirebaseApp } from '@/lib/firebase';
 import { useHydrated } from '@/lib/hooks/useHydrated';
 
 type FormValues = {
@@ -115,8 +113,21 @@ export function SubmitEventForm({ societies }: SubmitEventFormProps) {
     setStatus('submitting');
     setServerError(null);
 
-    const auth = getAuth(getFirebaseApp());
-    const user = auth.currentUser;
+    let user;
+    try {
+      const [{ getAuth }, { getFirebaseApp }] = await Promise.all([
+        import('firebase/auth'),
+        import('@/lib/firebase'),
+      ]);
+      user = getAuth(getFirebaseApp()).currentUser;
+    } catch {
+      setServerError({
+        text: 'Failed to get auth token. Please sign in again.',
+        linkText: SIGN_IN_LINK_TEXT,
+      });
+      setStatus('error');
+      return;
+    }
     if (!user) {
       setServerError({ text: 'Please sign in again.', linkText: SIGN_IN_LINK_TEXT });
       setStatus('error');
