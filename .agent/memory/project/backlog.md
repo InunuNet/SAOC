@@ -68,7 +68,7 @@ _Last compacted: 2026-11-02 by backlog_trim.py. Full history: git log on this fi
 - [ ] 2026-12-01 WOSA site booking button goes live (Brad scheduled; WOSA commit 0518873) → targets https://nos.saoc.co.za/tickets#ticket-wosa. Keep that anchor stable; re-check it resolves before 1 Dec.
 - [ ] Before 2026-12-01 (ticketing live on SAOC's Ozow account, Brad 2026-10-28): purg… → [details](data/before-2026-12-01-ticketing-live-on-saoc.md)
 - [ ] [P1] (2026-10-29, M3/F3 architect) Sanity webhook unverified: docs/launch-checkl… → [details](data/p1-2026-10-29-m3-f3-architect-sanity-web.md)
-- [ ] [P1] (2026-10-29, M3/F3 QA L1) Pin the buy-path live flags in a gate before tick… → [details](data/p1-2026-10-29-m3-f3-qa-l1-pin-the-buy-pa.md)
+- [x] [P1] (2026-10-29, M3/F3 QA L1) Pin the buy-path live flags in a gate before tick… → [details](data/p1-2026-10-29-m3-f3-qa-l1-pin-the-buy-pa.md) — closed 2026-11-07: pinned by scripts/checks/buy-path-live-reads.mts with golden buy-path-live-reads.json (M3/F4, #154 + #160)
 - [ ] [P2] (2026-10-29, M3/F3 QA L2) Each distinct unknown URL creates a cached 404 entry, so growth is unbounded in principle (bot scans). Monitor App Hosting disk and memory after launch.
 - [ ] [P1] (2026-10-29, filed upstream as Athanor#1474) contract.py codex_qa wrapper e… → [details](data/p1-2026-10-29-filed-upstream-as-athanor.md)
 - [ ] [P0] (2026-10-29, Brad direct) Two missions authorised, dispatched by SAOC:
