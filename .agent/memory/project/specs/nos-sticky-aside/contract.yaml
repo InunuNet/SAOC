@@ -1,0 +1,29 @@
+schema: athanor.contract/v1
+slug: nos-sticky-aside
+goal: The NOS sticky asides stick 24px clear of the 97px pinned header (--doc-aside-top 121px) so they match the #enquire landing, with no other change.
+created_at: '2026-11-07'
+autonomy: high
+
+features:
+  - id: F1
+    name: --doc-aside-top 100px to 121px in nos-structure.css (one value, comments aside)
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/nos-sticky-aside/goldens/expected-values.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: nos-theme declares aside-top 121px
+      command: 'grep -q -e "--doc-aside-top: 121px;" "app/(nos)/national-show/nos-structure.css"'
+    - id: A2
+      description: no 100px aside-top declaration remains
+      command: 'test "$(grep -c -e "--doc-aside-top: 100px" "app/(nos)/national-show/nos-structure.css")" = 0'
+    - id: A3
+      description: 'diff touches only nos-structure.css and only that declaration outside comments (proves no copy change)'
+      command: python3 .agent/memory/project/specs/nos-sticky-aside/checks/check_css_diff.py
+    - id: A4
+      description: 'headless measurement at 1024/1440/2056 (aside = enquire = 121 +-1, WE card 121 +-1), not sticky below 1024'
+      command: node .agent/memory/project/specs/nos-sticky-aside/checks/measure-sticky-aside.mjs

@@ -1,0 +1,15 @@
+{
+  "source": "design/design_handoff_saoc/colors_and_type.css:71 (--space-5: 24px); NOS Design ruling via SAOC, 2026-11-07",
+  "declaration": { "file": "app/(nos)/national-show/nos-structure.css", "selector": ".nos-theme", "property": "--doc-aside-top", "before": "100px", "after": "121px" },
+  "derivation": "pinned NOS header bottom 97px + --space-5 24px = 121px; equals scroll-margin-top of [data-sponsor-enquiry='nos'] (nos-structure.css, min-width 768)",
+  "measure": {
+    "tolerancePx": 1,
+    "stickyViewports": [1024, 1440, 2056],
+    "nonStickyViewports": [1023, 768, 390],
+    "sponsors": { "route": "/sponsors#enquire", "aside": "[data-doc-aside-kind=content]", "target": "#enquire", "expect": "aside.top == #enquire.top == 121 +-1" },
+    "whatToExpect": { "route": "/what-to-expect", "card": ".nos-we-card", "scrollY": 600, "expect": "card.top == 121 +-1" },
+    "belowDesktop": "computed position of both elements is not sticky"
+  },
+  "exitCodes": { "0": "all PASS", "1": "a measurement FAIL", "2": "setup failure (no node_modules, no playwright, server never up)", "3": "BLOCKED (fixture miss, non-200, #enquire could not reach 121)" },
+  "copyFreeze": "no non-comment CSS content other than the one declaration, and no file outside nos-structure.css, may change"
+}
