@@ -7,6 +7,7 @@ _Last compacted: 2026-11-02 by backlog_trim.py. Full history: git log on this fi
 - [ ] P0 Reconcile cron engineering half: secret in apphosting.yaml + scheduler job (enablement is Brad's; /spec first) -> lines 3083, 2951
 - [x] P1 CI: timeout + cache for Playwright install -> line 3017 — closed 2026-11-07: #169 23113989
 - [x] P1 Go-live probes: immutable cache, no "[Testing only]" title, `#ticket-wosa` anchor, `/tickets/[slug]` no-store, admin routes in probe table (after #160) -> lines 3031, 3038, 3063, 3072, 3140 — closed 2026-11-07: #171 cb1e6e1a
+- [ ] P1 Runtime dependency security patches (2026-11-07, Brad AFK, local only): chore/sharp-0.35.5 (6bbbe747; sharp audit hits 3->0; next already ran 0.35.5 for live images, the 0.34.5 pin was check-script only) and chore/runtime-transitive-patches (4d6bb9f2; grpc-js 1.14.4->1.14.7, busboy 3.2.0->3.2.5, valibot 1.4.1->1.5.0, package.json unchanged, audit 135->129; lockfile integrity checked against npm registry). Both: type-check 0, next build 0. Left: grpc-js 1.9.16 under client firebase>@firebase/firestore (exact-pinned parent; needs a firebase bump, own feature). Awaiting Codex (after 2026-11-08 13:04) and Brad push.
 - [ ] P1 merge-when-green must require every check green -> line 3058
 - [ ] P1 SAOC client-JS weight blocks mobile LCP (own feature) -> line 3018
 - [x] P1 Re-run 3 failing Ozow checks; fix or retire -> line 2277 — closed 2026-11-07: #168 6ad70584 (triaged: fixed, retired or parked per PR body)
