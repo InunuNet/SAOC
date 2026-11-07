@@ -5,11 +5,11 @@ Open items only. Everything else, including older open items and closed work: `a
 - [ ] P0 Purge test orders, sandbox-paid orders/tickets, legacy positions, stock inflation (dry-run first; apply needs Brad) -> lines 3064, 3088, 3090, 1944, 1954, 2965
 _Last compacted: 2026-11-02 by backlog_trim.py. Full history: git log on this file._
 - [ ] P0 Reconcile cron engineering half: secret in apphosting.yaml + scheduler job (enablement is Brad's; /spec first) -> lines 3083, 2951
-- [ ] P1 CI: timeout + cache for Playwright install -> line 3017
-- [ ] P1 Go-live probes: immutable cache, no "[Testing only]" title, `#ticket-wosa` anchor, `/tickets/[slug]` no-store, admin routes in probe table (after #160) -> lines 3031, 3038, 3063, 3072, 3140
+- [x] P1 CI: timeout + cache for Playwright install -> line 3017 — closed 2026-11-07: #169 23113989
+- [x] P1 Go-live probes: immutable cache, no "[Testing only]" title, `#ticket-wosa` anchor, `/tickets/[slug]` no-store, admin routes in probe table (after #160) -> lines 3031, 3038, 3063, 3072, 3140 — closed 2026-11-07: #171 cb1e6e1a
 - [ ] P1 merge-when-green must require every check green -> line 3058
 - [ ] P1 SAOC client-JS weight blocks mobile LCP (own feature) -> line 3018
-- [ ] P1 Re-run 3 failing Ozow checks; fix or retire -> line 2277
+- [x] P1 Re-run 3 failing Ozow checks; fix or retire -> line 2277 — closed 2026-11-07: #168 6ad70584 (triaged: fixed, retired or parked per PR body)
 - [ ] **[P1] (filed upstream 2026-10-29 as Athanor#1473; waiting on fix) Harness friction: `execution/gate_sweep.py --sandbox-dir` is jointly unsa… → [details](data/p1-harness-friction-execution-gate-sweep.md)
 - [ ] **[P0] No enforcement for the "never cd" rule — agents keep prompting the operat… → [details](data/p0-no-enforcement-for-the-never-cd-rule.md)
 - [ ] **[P1] Migration script write-polarity — decision needed, not fixed overnight** … → [details](data/p1-migration-script-write-polarity-decis.md)
@@ -42,12 +42,12 @@ _Last compacted: 2026-11-02 by backlog_trim.py. Full history: git log on this fi
 - [ ] (2026-10-26, Codex triage) The SAOC-host /privacy hero lede is PRIVACY_POLICY.su… → [details](data/2026-10-26-codex-triage-the-saoc-host-pr.md)
 - [ ] (2026-10-26) False positives in contracts/checks/policy-pages/check-refunds-no-f… → [details](data/2026-10-26-false-positives-in-contracts.md)
 - [ ] P2-2 /events/submit is admin-only in practice (session route 403s non-admins, no member sign-in) but page says "available to SAOC members". Asked Lee-Ann Q yyyy 2026-10-26.
-- [ ] P3 contracts/checks/saoc-seo-polish/check-sitemap-routes.mts and contracts/checks/audit-fixes-2026-10-25/check-sitemap-routes.mts already FAIL on origin/main (stale golden; missing import) — found by Arch saoc-functionality-fixes 2026-10-26.
+- [x] P3 contracts/checks/saoc-seo-polish/check-sitemap-routes.mts and contracts/checks/audit-fixes-2026-10-25/check-sitemap-routes.mts already FAIL on origin/main (stale golden; missing import) — found by Arch saoc-functionality-fixes 2026-10-26. — closed 2026-11-07: both checks PASS on origin/main 52b63e6d (run by lead)
 - [ ] FYI Brad (2026-10-27): the identity gate in the "SAOC NOS Site" folder (reason n… → [details](data/fyi-brad-2026-10-27-the-identity-gate-in.md)
 - [ ] FYI Brad (2026-10-27): during PR #128 assertion A5, a NOS Site dev agent got pas… → [details](data/fyi-brad-2026-10-27-during-pr-128-assert.md)
 - [ ] WAITING ON BRAD (2026-10-27): no JDK on this machine → [details](data/waiting-on-brad-2026-10-27-no-jdk-on-thi.md)
 - [ ] P2 — SAOC `--status-error` undefined on SAOC host (only nos-theme.css defines it); vendor apply error summary border/heading colour undefined. Ruling requested from NOS Design 2026-10-28.
-- [ ] **CI: Playwright install hang has no timeout** (2026-10-28) — run 40573088420 (#… → [details](data/ci-playwright-install-hang-has-no-timeou.md)
+- [x] **CI: Playwright install hang has no timeout** (2026-10-28) — run 40573088420 (#… → [details](data/ci-playwright-install-hang-has-no-timeou.md) — closed 2026-11-07: #169 23113989
 - [ ] **P1 — SAOC client-JS weight blocks mobile LCP** (2026-10-28, from F1e; NOS Desi… → [details](data/p1-saoc-client-js-weight-blocks-mobile-l.md)
 - [ ] **Root not-found NOS branch ships NOS CSS to every SAOC route** (2026-10-28, fro… → [details](data/root-not-found-nos-branch-ships-nos-css.md)
 - [ ] **Header lockup webp (24KB) heavier than the hero (19KB)** (2026-10-28, from F1e) — candidate for resizing to served px.
@@ -55,7 +55,7 @@ _Last compacted: 2026-11-02 by backlog_trim.py. Full history: git log on this fi
 - [ ] **P0/BRAD — Sanity API CDN quota exhausted** (2026-10-28 05:20 SAST) — apicdn re… → [details](data/p0-brad-sanity-api-cdn-quota-exhausted-2.md)
 - [ ] **contracts/mission-slug-collision-fix/contract-f1.yaml still fails `validate --… → [details](data/contracts-mission-slug-collision-fix-con.md)
 - [ ] **#138 A10 check rejects real live products** (2026-10-28) — contracts/checks/on… → [details](data/138-a10-check-rejects-real-live-products.md)
-- [ ] P1 SMALL: launch-checklist probe. HTML and /_next/static are `private, no-store` on beta (the wall), and nothing proves `immutable` caching returns once SITE_PUBLIC_LAUNCH=true. Add a probe to the launch checklist.
+- [x] P1 SMALL: launch-checklist probe. HTML and /_next/static are `private, no-store` on beta (the wall), and nothing proves `immutable` caching returns once SITE_PUBLIC_LAUNCH=true. Add a probe to the launch checklist. — closed 2026-11-07: #171 cb1e6e1a (probe bullet in docs/launch-checklist.md, immutable rows pass with SITE_PUBLIC_LAUNCH=true)
 - [ ] (2026-10-28) #142 archive back-arrows: A15 BrowserAgent check on beta is DEFERRE… → [details](data/2026-10-28-142-archive-back-arrows-a15-b.md)
 - [ ] (2026-10-28) **gate-standard D7 scroller vs 97px header at 768** — nos-content-s… → [details](data/2026-10-28-gate-standard-d7-scroller-vs.md)
 - [ ] (2026-10-28) **Retire or rewrite nos-critique-r12 `f6-rendered`** — dead on main: requests /national-show on the default host, which the NOS split retired (308 to nos). council-copy-fixes A9 now uses check-f6-baseline-copy.mjs instead. Point it at the NOS host or retire it.
@@ -83,8 +83,8 @@ _Last compacted: 2026-11-02 by backlog_trim.py. Full history: git log on this fi
 - [ ] **[P3] SEC-24 expired holds never purged (read cost grows).** NOS Site feature; … → [details](data/p3-sec-24-expired-holds-never-purged-rea.md)
 - [ ] **[P1] F3 hand-offs H9–H12 (NOS Site spec 1e3cdd0e, 2026-10-29).** H9 operator o… → [details](data/p1-f3-hand-offs-h9-h12-nos-site-spec-1e3.md)
 - [ ] **[P3] verify_manual_only_contracts_validate counts 0 manual_only contracts** al… → [details](data/p3-verify-manual-only-contracts-validate.md)
-- [ ] **[P1, fix dispatched 2026-10-29] Codex post-merge FAIL on #154 (7095d23c, M3/F4… → [details](data/p1-fix-dispatched-2026-10-29-codex-post.md)
-- [ ] **[P1, fix dispatched 2026-10-29] PR #160 (fix/m3-f4-gate-codex-findings, 8c08c8… → [details](data/p1-fix-dispatched-2026-10-29-pr-160-fix.md)
+- [x] **[P1, fix dispatched 2026-10-29] Codex post-merge FAIL on #154 (7095d23c, M3/F4… → [details](data/p1-fix-dispatched-2026-10-29-codex-post.md) — closed 2026-11-07: #160 ec0d5c71 merged
+- [x] **[P1, fix dispatched 2026-10-29] PR #160 (fix/m3-f4-gate-codex-findings, 8c08c8… → [details](data/p1-fix-dispatched-2026-10-29-pr-160-fix.md) — closed 2026-11-07: #160 ec0d5c71 merged
 - [ ] **[P2, NOS Design queued after F1c] /events/[slug] facts overrun the copy column at 2056:** facts reach x=1896 against a container right edge of 1634. Ruling source: NOS Design 2026-10-29 (16a4894). Dispatch after SDC F1c merges.
 - [ ] **[P2, dispatched 2026-10-29] Codex post-merge on SDC #153/#156/#157/#158: all FAIL. Triage:**
 - [ ] **[P3, nos-beautiful-design, queued after NR-11] BD-6r /tickets masthead at ≥1240 (NOS Design be9a821, 2026-10-29; replaces withdrawn BD-6, whose "lone stub" was a capture artefact of the fan-out entrance).**
@@ -94,15 +94,15 @@ _Last compacted: 2026-11-02 by backlog_trim.py. Full history: git log on this fi
 - [ ] **[standing deploy condition, from NOS Site F3 2026-10-29] Never grant a public … → [details](data/standing-deploy-condition-from-nos-site.md)
 - [ ] **[P3 ×4, daily security lane 2026-10-29] Review of 45 main commits (76fcb082^..98aa1da1): 0 P0/P1/P2.** Report: .tmp/sandbox/daily-review/2026-10-29-security.md.
 - [ ] **[F5 cleared by SAOC 2026-10-29] NOS Site F5 (stand orders + SEC-22, fix/sec-st… → [details](data/f5-cleared-by-saoc-2026-10-29-nos-site-f.md)
-- [ ] **[P1+P2×2, fix dispatched to Dev_Opu5_M3-F4 2026-10-29] Codex round-2 FAIL on #… → [details](data/p1-p2-2-fix-dispatched-to-dev-opu5-m3-f4.md)
-- [ ] **[P1 functional, ticketing SHARED, offered to NOS Site 2026-10-29] Order-recove… → [details](data/p1-functional-ticketing-shared-offered-t.md)
+- [x] **[P1+P2×2, fix dispatched to Dev_Opu5_M3-F4 2026-10-29] Codex round-2 FAIL on #… → [details](data/p1-p2-2-fix-dispatched-to-dev-opu5-m3-f4.md) — closed 2026-11-07: #160 ec0d5c71 merged
+- [x] **[P1 functional, ticketing SHARED, offered to NOS Site 2026-10-29] Order-recove… → [details](data/p1-functional-ticketing-shared-offered-t.md) — closed 2026-11-07: #165 12086ce4 (/tickets/recover served)
 - [ ] **[P1+P2×5, fix dispatched to Arch_Son5_M1-F1_SDC 2026-10-29] Codex FAIL on #163… → [details](data/p1-p2-5-fix-dispatched-to-arch-son5-m1-f.md)
 - [ ] **[P1, NOS lane, before 1 Dec] Recovery-token TTL is 180 days from purchase (lib… → [details](data/p1-nos-lane-before-1-dec-recovery-token.md)
 - [ ] **[P1×2+P2×4, re-dispatched to Arch_Son5_M1-F1_SDC 2026-10-29] Codex round-2 FAI… → [details](data/p1-2-p2-4-re-dispatched-to-arch-son5-m1.md)
 - [ ] **[P1, fix dispatched 2026-10-29] Codex r3 on #163 @b1f8102d: 1 finding left.** … → [details](data/p1-fix-dispatched-2026-10-29-codex-r3-on.md)
 - [ ] **[P1×3+P2×2, final fix round dispatched 2026-10-29] Codex r2 FAIL on #164 @27cd… → [details](data/p1-3-p2-2-final-fix-round-dispatched-202.md)
 - [ ] **[P2, ticketing shared, from NOS Site #165 Codex 2026-10-29] Confirmation displ… → [details](data/p2-ticketing-shared-from-nos-site-165-co.md)
-- [ ] **[P1+P2, final round dispatched 2026-10-29] Codex r3 on #160 @1a3c4131.** buy-p… → [details](data/p1-p2-final-round-dispatched-2026-10-29.md)
+- [x] **[P1+P2, final round dispatched 2026-10-29] Codex r3 on #160 @1a3c4131.** buy-p… → [details](data/p1-p2-final-round-dispatched-2026-10-29.md) — closed 2026-11-07: #160 ec0d5c71 merged
 - [ ] **[P1+P2×2, coverage follow-ups from #163 scoped Codex r5, .tmp/sandbox/codexqa/… → [details](data/p1-p2-2-coverage-follow-ups-from-163-sco.md)
 - [ ] **[P2, SAOC, from NOS Site 2026-10-29] contracts/checks/ticketing-checkout-orders/check-fail-closed-secret-guard.sh fails on origin/main.** It greps the retired `writeReservationPair`. Retarget it to the current reservation write path.
 - [ ] **[ops, 2026-10-29] Codex usage limit until 2026-11-04 08:55; Gemini CLI retired (IneligibleTierError: "migrate to Antigravity").** Policy (coordinator, per workflow.md exit-2 fallback):
@@ -112,16 +112,16 @@ _Last compacted: 2026-11-02 by backlog_trim.py. Full history: git log on this fi
 - [ ] **[health 2026-10-30 ~07:45 SAST, P2 while the Sanity quota is out] nos.saoc.co.… → [details](data/health-2026-10-30-07-45-sast-p2-while-th.md)
 - [ ] **[health 2026-10-30 ~12:00 SAST] Scheduled CI on main (run 41036406426, 09:50Z)… → [details](data/health-2026-10-30-12-00-sast-scheduled-c.md)
 - [ ] **[health 2026-10-31 ~08:00 SAST] Clean.** The only red on main is still yesterd… → [details](data/health-2026-10-31-08-00-sast-clean-the-o.md)
-- [ ] **[P3, gates, 2026-10-31] saoc-mono-floor/checks/nos-baseline.json is stale for … → [details](data/p3-gates-2026-10-31-saoc-mono-floor-chec.md)
-- [ ] **[P2, gates, found 2026-10-31 by the NOS home ship gate run] nos-content-standa… → [details](data/p2-gates-found-2026-10-31-by-the-nos-hom.md)
+- [x] **[P3, gates, 2026-10-31] saoc-mono-floor/checks/nos-baseline.json is stale for … → [details](data/p3-gates-2026-10-31-saoc-mono-floor-chec.md) — closed 2026-11-07: #176 d7838cae (mono baseline re-recorded)
+- [x] **[P2, gates, found 2026-10-31 by the NOS home ship gate run] nos-content-standa… → [details](data/p2-gates-found-2026-10-31-by-the-nos-hom.md) — closed 2026-11-07: #176 d7838cae (route table realigned; leftovers tracked in the #176 29-failure item)
 - [ ] **[health 2026-10-31 ~20:20 SAST] Scheduled CI on main red again (run 4118887559… → [details](data/health-2026-10-31-20-20-sast-scheduled-c.md)
 - [ ] **[health 2026-11-01 ~08:00 SAST] Clean apart from the known Sanity scheduled-ru… → [details](data/health-2026-11-01-08-00-sast-clean-apart.md)
 - [ ] **[P3, gates, QA FALLBACK on #167 2026-11-01] nos-content-standard/goldens/check… → [details](data/p3-gates-qa-fallback-on-167-2026-11-01-n.md)
 - [ ] **[P2, NOS home, from NOS Design live check of 5a29e41c 2026-11-01] Phone sectio… → [details](data/p2-nos-home-from-nos-design-live-check-o.md)
-- [ ] **[go-live-prep F1, contract READY, dev NOT started — parked at the 12:00 stop 2… → [details](data/go-live-prep-f1-contract-ready-dev-not-s.md)
+- [x] **[go-live-prep F1, contract READY, dev NOT started — parked at the 12:00 stop 2… → [details](data/go-live-prep-f1-contract-ready-dev-not-s.md) — closed 2026-11-07: #175defaa6ca
 - [ ] **[P2, from QA on #168 2026-11-01] Residue-guard quota skip has no escalation:**… → [details](data/p2-from-qa-on-168-2026-11-01-residue-gua.md)
 - [ ] **APPROVED by Brad 2026-11-01 — model conservation for the week of 2 Nov 2026 (standing rules, not a to-do):**
-- [ ] **[P1, security, from NOS Site 2026-11-01] app/api/admin/export-csv/route.ts: th… → [details](data/p1-security-from-nos-site-2026-11-01-app.md)
+- [x] **[P1, security, from NOS Site 2026-11-01] app/api/admin/export-csv/route.ts: th… → [details](data/p1-security-from-nos-site-2026-11-01-app.md) — closed 2026-11-07: #173 9b9c1b8c (200 sets no-store, route.ts:44 on origin/main)
 - [ ] **[P2, NOS, from F5 PR #176 2026-11-01] 29 gate-standard failures left open, del… → [details](data/p2-nos-from-f5-pr-176-2026-11-01-29-gate.md)
 - [ ] **[P1, security, SAOC lane, after F3 green, 2026-11-02] Content-Length-only body… → [details](data/p1-security-saoc-lane-after-f3-green-202.md)
 - [ ] **[awaiting Brad go, 2026-11-02] Local branch for sequencing: design/nos-tech-au… → [details](data/awaiting-brad-go-2026-11-02-local-branch.md)
@@ -133,5 +133,5 @@ _Last compacted: 2026-11-02 by backlog_trim.py. Full history: git log on this fi
 - [ ] **[awaiting Brad, 2026-11-02] F3 head 676f60c8 is only in the separate clone /Us… → [details](data/awaiting-brad-2026-11-02-f3-head-676f60c.md)
 - [ ] **[awaiting Brad go, 2026-11-02] Local branch fix/go-live-f8 @ 1c6d6e97 (go-live… → [details](data/awaiting-brad-go-2026-11-02-local-branch-3.md)
 - [ ] **[P1, harness, 2026-11-02] Root AGENTS.md holds the architect persona, not proj… → [details](data/p1-harness-2026-11-02-root-agents-md-hol.md)
-- [ ] **[next mission, Brad-ordered 2026-11-02] Slim CLAUDE.md (18.8 KB loads every bo… → [details](data/next-mission-brad-ordered-2026-11-02-sli.md)
+- [x] **[next mission, Brad-ordered 2026-11-02] Slim CLAUDE.md (18.8 KB loads every bo… → [details](data/next-mission-brad-ordered-2026-11-02-sli.md) — closed 2026-11-07: 4a3cc33b, 5d0a0c45 (claude-md-slim mission closed)
 - [ ] **[Brad-approved 2026-11-02, run after the slim mission, one small mission each]… → [details](data/brad-approved-2026-11-02-run-after-the-s.md)
