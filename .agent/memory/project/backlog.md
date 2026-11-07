@@ -101,7 +101,7 @@ _Last compacted: 2026-11-02 by backlog_trim.py. Full history: git log on this fi
 - [ ] **[P1×2+P2×4, re-dispatched to Arch_Son5_M1-F1_SDC 2026-10-29] Codex round-2 FAI… → [details](data/p1-2-p2-4-re-dispatched-to-arch-son5-m1.md)
 - [ ] **[P1, fix dispatched 2026-10-29] Codex r3 on #163 @b1f8102d: 1 finding left.** … → [details](data/p1-fix-dispatched-2026-10-29-codex-r3-on.md)
 - [ ] **[P1×3+P2×2, final fix round dispatched 2026-10-29] Codex r2 FAIL on #164 @27cd… → [details](data/p1-3-p2-2-final-fix-round-dispatched-202.md)
-- [ ] **[P2, ticketing shared, from NOS Site #165 Codex 2026-10-29] Confirmation displ… → [details](data/p2-ticketing-shared-from-nos-site-165-co.md)
+- [ ] **[P2, ticketing shared, from NOS Site #165 Codex 2026-10-29] Confirmation displ… → [details](data/p2-ticketing-shared-from-nos-site-165-co.md) — assessed 2026-11-07: m_payment_id is the booking ref, minted per order by lib/booking-ref.ts generateBookingRef() (crypto randomBytes, 60 bits), so a collision is negligible at show volume; residual is a write-time uniqueness assert (P3)
 - [x] **[P1+P2, final round dispatched 2026-10-29] Codex r3 on #160 @1a3c4131.** buy-p… → [details](data/p1-p2-final-round-dispatched-2026-10-29.md) — closed 2026-11-07: #160 ec0d5c71 merged
 - [ ] **[P1+P2×2, coverage follow-ups from #163 scoped Codex r5, .tmp/sandbox/codexqa/… → [details](data/p1-p2-2-coverage-follow-ups-from-163-sco.md)
 - [ ] **[P2, SAOC, from NOS Site 2026-10-29] contracts/checks/ticketing-checkout-orders/check-fail-closed-secret-guard.sh fails on origin/main.** It greps the retired `writeReservationPair`. Retarget it to the current reservation write path.
