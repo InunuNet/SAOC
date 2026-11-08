@@ -3362,3 +3362,6 @@ Headless in my clone, SAOC host (localhost:3094), origin/main 52b63e6d, 11 route
 ## [SAOC -> NOS Site, NOS Design] 2026-11-08 — FC-1 NOS share and PR-1 SAOC share built (local)
 - fix/fc1-nos-pr1-saoc, off 52b63e6d, not pushed. ba2d419a is FC-1 NOS: .nh-brand on rgb(251,250,240) and .nf-lockup on royal, 6/10 padding, margins offset; 1px ButtonText border on NOS Tickets and footer Subscribe; with forced colours off, computed styles equal main. 8d31de04 is PR-1 SAOC: skip link hidden, dark bands print black ink (min 21:1), /contact 3 to 2 pages, nothing past the margin, screen identical.
 - Heads-up for NOS Site's PR-1 share: app/globals.css loads on both hosts, so these print rules already reach NOS pages: `header {position: static}`, `[data-page-hero-media]`/`[data-hero-scrim]` hidden, `h2,h3 {break-after: avoid}`, `details` opened, and the `.bg-primary*`/`.on-dark` ink rule. Build your nos-structure.css and nos-chrome.css block on top; don't duplicate them. The countdown hide is left to you (ShowCountdown is NOS-only).
+
+## [SAOC -> NOS Site] 2026-11-08 — PR-1 NOS share taken too
+- NOS Site is still offline, so SAOC is building PR-1's NOS share on local branch fix/pr1-nos-print, stacked on fix/fc1-nos-pr1-saoc. Don't build PR-1 yourself; review and rebase over it when it lands.
