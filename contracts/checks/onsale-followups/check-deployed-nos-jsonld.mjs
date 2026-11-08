@@ -33,17 +33,35 @@ const offers = nodes.filter((n) => n && n['@type'] === 'Event').flatMap((n) => (
 if (offers.length === 0) { console.error('FAIL: no Event JSON-LD offers on /national-show'); process.exit(1); }
 const slugOf = (o) => String(o.url ?? '').split('/').pop();
 // Expected offer set. EXPECT_OFFERS="slug:price,slug:price" selects EXACT mode (offer set must equal it). Without it the
-// set is derived from the recorded admission fixture's active-show types (PR #128) and checked as a SUBSET: any offer
-// outside it, or with a different price, fails; an expected type that is absent does not (the hub collapses siblings
-// and the live catalogue may carry conference or workshop products the fixture does not).
-import { readFileSync } from 'node:fs';
-const FIXTURE = '.agent/memory/project/specs/nos-content-standard/fixtures/sanity/ef011a654c90e72b36f84ac6fa8936a9bbeff6f7f58305ae53256a00766b58cb.json';
+// set is derived from LIVE Sanity: the active show's (ACTIVE_SHOW_ID, default show-19-2027) active, non-demo ticketType
+// documents, slug -> price, read over the non-CDN query API (NEXT_PUBLIC_SANITY_PROJECT_ID, NEXT_PUBLIC_SANITY_DATASET,
+// optional SANITY_API_READ_TOKEN as a Bearer header; read only, nothing printed). It is checked as a SUBSET: any offer
+// outside it, or with a different price, fails; an expected type that is absent does not (the hub collapses siblings).
+// The live query being unreachable is INCONCLUSIVE (77): no recorded fixture stands in, so stale data never decides a PASS.
 const ACTIVE_SHOW = process.env.ACTIVE_SHOW_ID ?? 'show-19-2027';
+const SANITY_QUERY = '*[_type == "ticketType" && active == true && show._ref == $show && demo != true]{"slug": slug.current, price}';
+async function liveExpected() {
+  const project = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
+  const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET;
+  if (!project || !dataset) { console.error('INCONCLUSIVE: NEXT_PUBLIC_SANITY_PROJECT_ID / NEXT_PUBLIC_SANITY_DATASET not set (run from the project root with .env.local)'); process.exit(77); }
+  const token = process.env.SANITY_API_READ_TOKEN;
+  const url = `https://${encodeURIComponent(project)}.api.sanity.io/v2024-01-01/data/query/${encodeURIComponent(dataset)}?query=${encodeURIComponent(SANITY_QUERY)}&%24show=${encodeURIComponent(JSON.stringify(ACTIVE_SHOW))}`;
+  try {
+    const r = await fetch(url, { headers: token ? { authorization: `Bearer ${token}` } : {}, signal: AbortSignal.timeout(20000) });
+    if (r.status !== 200) { console.error(`INCONCLUSIVE: live Sanity ticketType query returned ${r.status}`); process.exit(77); }
+    const rows = (await r.json()).result;
+    if (!Array.isArray(rows) || rows.length === 0) { console.error('INCONCLUSIVE: live Sanity returned no ticketType rows for the active show'); process.exit(77); }
+    return rows.map((t) => [t.slug, t.price]);
+  } catch (error) {
+    console.error(`INCONCLUSIVE: could not reach live Sanity (${error.name})`);
+    process.exit(77);
+  }
+}
 const exact = Boolean(process.env.EXPECT_OFFERS);
 const expected = new Map(
   exact
     ? process.env.EXPECT_OFFERS.split(',').map((kv) => kv.trim().split(':')).map(([slug, price]) => [slug, Number(price)])
-    : JSON.parse(readFileSync(FIXTURE, 'utf8')).result.filter((t) => t.show?._ref === ACTIVE_SHOW && !t.demo).map((t) => [t.slug, t.price])
+    : await liveExpected()
 );
 expected.set('vip', EXPECT_VIP);
 const failures = [];
@@ -58,4 +76,4 @@ for (const [slug, price] of got) {
 if (exact) for (const slug of expected.keys()) if (!got.has(slug)) failures.push(`expected offer ${slug} is missing (exact mode)`);
 if (got.size !== offers.length) failures.push('duplicate offer slugs in the JSON-LD');
 if (failures.length) { for (const f of failures) console.error(`FAIL: ${f}`); process.exit(1); }
-console.log(`PASS: ${ORIGIN}/national-show JSON-LD, ${offers.length} offer(s) all inside the expected active-show set (${exact ? 'exact' : 'subset'} mode), VIP ${got.get('vip')}`);
+console.log(`PASS: ${ORIGIN}/national-show JSON-LD, ${offers.length} offer(s) all inside the expected active-show set (${exact ? 'exact' : 'subset'} mode), VIP ${got.get('vip')}; expected set: ${[...expected].map(([s, p]) => `${s}:${p}`).join(',')}`);
