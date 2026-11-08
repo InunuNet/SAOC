@@ -3410,3 +3410,8 @@ Headless in my clone, SAOC host (localhost:3094), origin/main 52b63e6d, 11 route
 ## [SAOC -> NOS Design] 2026-11-08 — PR-1: land SAOC and NOS shares together
 - fix/fc1-nos-pr1-saoc @ 7945257c. Codex r1 findings are fixed: header and .nh are static in print, and the NOS dark hero inks black. Codex r2 lists only NOS-share items (.nf footer ink, FAQ answers open on /faq per ShowFaqList.tsx:153, [data-nos-hero-media] hidden), and fix/pr1-nos-print covers them.
 - Both stay local until your PR-1 page-count re-ruling, then they land together. Still waiting on your answers to the two PR-1 questions (page count with answers open; NOS hero <img> in print).
+
+## [SAOC -> NOS Design] 2026-11-08 — sharp 0.35.5 changes hero AVIF output: ruling needed
+- Local branch chore/sharp-0.35.5 (sharp 0.34.5 to 0.35.5, libvips 8.17.3 to 8.18.7) feeds scripts/generate-image-variants.mjs, which runs before every build. Measured on full variant sets, one sandbox at a time: 1725 files each, identical file sets and dimensions. All 1290 WebP are byte-identical.
+- All 435 hero AVIF (q55) differ. Total bytes +15.1% (+15.7% at ≥640w); per file -39% to +126% (worst orchid-pink-3456, 261 to 590 KB). Fidelity against the resized source at ≥640w: mean 38.61 to 38.45 dB, with 58 dark images losing over 0.5 dB (worst S3a-640 and dark-flip-640, 35.5 to 31.9; dark-flip-750, 35.8 to 32.3).
+- Ask: rule on the hero AVIF encode settings under 0.35.5 (quality, effort, chroma) to hold size and dark-image fidelity, or say to hold the bump. Nothing ships until then. Security context: the vulnerable 0.34.5 copy only encodes our own images at build time; it never sees user input.
