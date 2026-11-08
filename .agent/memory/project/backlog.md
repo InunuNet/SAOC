@@ -132,7 +132,7 @@ _Last compacted: 2026-11-02 by backlog_trim.py. Full history: git log on this fi
 - [ ] **[standing, Brad 2026-11-02] No merge to main while Lee-Ann is confirming conte… → [details](data/standing-brad-2026-11-02-no-merge-to-mai.md)
 - [ ] **[awaiting Brad go, 2026-11-02] F3 fix/sec-abuse-controls local head 676f60c8: … → [details](data/awaiting-brad-go-2026-11-02-f3-fix-sec-a.md)
 - [ ] **[awaiting Brad, 2026-11-02] F3 head 676f60c8 is only in the separate clone /Us… → [details](data/awaiting-brad-2026-11-02-f3-head-676f60c.md)
-- [ ] **[awaiting Brad go, 2026-11-02] Local branch fix/go-live-f8 @ 1c6d6e97 (go-live… → [details](data/awaiting-brad-go-2026-11-02-local-branch-3.md)
+- [ ] **[awaiting Brad go, 2026-11-02] Local branch fix/go-live-f8 @ 1c6d6e97 (go-live… → [details](data/awaiting-brad-go-2026-11-02-local-branch-3.md) — 2026-11-08: tip 5a673db1, git merge-tree onto origin/main 52b63e6d is clean (F6 #177 landed meanwhile; no rebase needed). fix/go-live-f6 is fully in main (empty diff vs 52b63e6d), so that branch can be deleted.
 - [ ] **[P1, harness, 2026-11-02] Root AGENTS.md holds the architect persona, not proj… → [details](data/p1-harness-2026-11-02-root-agents-md-hol.md)
 - [x] **[next mission, Brad-ordered 2026-11-02] Slim CLAUDE.md (18.8 KB loads every bo… → [details](data/next-mission-brad-ordered-2026-11-02-sli.md) — closed 2026-11-07: 4a3cc33b, 5d0a0c45 (claude-md-slim mission closed)
 - [ ] **[Brad-approved 2026-11-02, run after the slim mission, one small mission each]… → [details](data/brad-approved-2026-11-02-run-after-the-s.md)
