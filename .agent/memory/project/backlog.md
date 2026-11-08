@@ -41,7 +41,7 @@ _Last compacted: 2026-11-02 by backlog_trim.py. Full history: git log on this fi
 - [ ] (2026-10-26, from NOS Site) Font CLS 0.024 on /symposium at 768: hero-fact dd wr… → [details](data/2026-10-26-from-nos-site-font-cls-0-024.md)
 - [ ] (2026-10-26, NOS Design beta check on 17b25555) Live stock is carrying test orde… → [details](data/2026-10-26-nos-design-beta-check-on-17b2.md)
 - [ ] (2026-10-26, Codex triage) The SAOC-host /privacy hero lede is PRIVACY_POLICY.su… → [details](data/2026-10-26-codex-triage-the-saoc-host-pr.md)
-- [ ] (2026-10-26) False positives in contracts/checks/policy-pages/check-refunds-no-f… → [details](data/2026-10-26-false-positives-in-contracts.md)
+- [x] (2026-10-26) False positives in contracts/checks/policy-pages/check-refunds-no-f… → [details](data/2026-10-26-false-positives-in-contracts.md) — closed 2026-11-08: #122 3646ff81 — both scripts strip script/style payloads then all tags before scanning (no-fabrication.mjs:55-59, provisional-figures.mjs:110-124), so attribute text (og:image %20, -translate-y-[300%]) is never scanned.
 - [ ] P2-2 /events/submit is admin-only in practice (session route 403s non-admins, no member sign-in) but page says "available to SAOC members". Asked Lee-Ann Q yyyy 2026-10-26.
 - [x] P3 contracts/checks/saoc-seo-polish/check-sitemap-routes.mts and contracts/checks/audit-fixes-2026-10-25/check-sitemap-routes.mts already FAIL on origin/main (stale golden; missing import) — found by Arch saoc-functionality-fixes 2026-10-26. — closed 2026-11-07: both checks PASS on origin/main 52b63e6d (run by lead)
 - [ ] FYI Brad (2026-10-27): the identity gate in the "SAOC NOS Site" folder (reason n… → [details](data/fyi-brad-2026-10-27-the-identity-gate-in.md)
