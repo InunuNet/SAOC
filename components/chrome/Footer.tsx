@@ -49,7 +49,7 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
           {/* The lockup is sized by its container, so the auto track needs a definite width to hug.
               -mt-[30px] cancels the emblem PNG's transparent top (116px of 618 at the 160px box), so the
               artwork's top sits on the column headings' top line (NOS Design). */}
-          <div className={`${FOOTER_LAYOUT.brandMark} -mt-[30px] w-[280px]`}>
+          <div className={`${FOOTER_LAYOUT.brandMark} -mt-[30px] w-[280px] print:hidden`}>
             <SaocLockup orientation="vertical" tone="dark" />
           </div>
           <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-ivory/65">
@@ -63,7 +63,7 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
             info@saoc.co.za
           </a>
           {/* WOSA appears once in this footer, under the registration line (as in NosFooter). */}
-          <ul className={FOOTER_RHYTHM.list}>
+          <ul className={`${FOOTER_RHYTHM.list} print:hidden`}>
             <li>
               <a
                 href={FOOTER_WOSA.href}
@@ -80,7 +80,7 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
         </div>
 
         {/* Col 2 — Explore */}
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 print:hidden">
           <div className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-ivory/55 mb-1">
             {FOOTER_HEADINGS.explore}
           </div>
@@ -102,7 +102,7 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
         </div>
 
         {/* Col 3 — Stay in touch */}
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 print:hidden">
           <div className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-ivory/55 mb-1">
             {FOOTER_HEADINGS.touch}
           </div>
@@ -135,7 +135,7 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
             &copy; {new Date().getFullYear()}
             {FOOTER_COPYRIGHT_TAIL}
           </span>
-          <div className={FOOTER_LAYOUT.legal}>
+          <div className={`${FOOTER_LAYOUT.legal} print:hidden`}>
             {FOOTER_LEGAL_LINKS.map((l) => (
               <Link
                 key={l.href}
