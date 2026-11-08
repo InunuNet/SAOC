@@ -919,17 +919,18 @@ h3.font-serif {
   [data-page-hero-media], [data-home-hero-media], [data-hero-scrim] {
     display: none !important;
   }
-  header { position: static; }
-  :is(.bg-primary-800, .bg-primary, .bg-ink, .on-dark),
-  :is(.bg-primary-800, .bg-primary, .bg-ink, .on-dark) * {
+  /* !important: the SAOC header's `sticky` utility and NOS `.nh { position: sticky }` both
+     outrank a bare element selector. */
+  header, .nh { position: static !important; }
+  :is(.bg-primary-800, .bg-primary, .bg-ink, .on-dark, .nos-on-dark),
+  :is(.bg-primary-800, .bg-primary, .bg-ink, .on-dark, .nos-on-dark) * {
     background: none !important;
     color: #000 !important;
     border-color: #000 !important;
   }
-  :is(.bg-primary-800, .bg-primary, .bg-ink, .on-dark) a {
+  :is(.bg-primary-800, .bg-primary, .bg-ink, .on-dark, .nos-on-dark) a {
     text-decoration: underline;
   }
   h2, h3 { break-after: avoid; }
   article, figure, address, details, [data-event-card] { break-inside: avoid; }
-  details::details-content { content-visibility: visible; display: block; }
 }
