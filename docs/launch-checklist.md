@@ -45,8 +45,7 @@ NEXT_PUBLIC_SANITY_PROJECT_ID=26yfbug4
 NEXT_PUBLIC_SANITY_DATASET=production
 SANITY_API_READ_TOKEN=                 # Sanity → API → Tokens → viewer token
 SANITY_API_TOKEN=                      # Sanity → API → Tokens → editor token (for seed script)
-SANITY_WEBHOOK_SECRET=                 # Any random string ≥32 chars
-SANITY_REVALIDATE_SECRET=              # Any random string ≥32 chars
+SANITY_REVALIDATE_SECRET=              # Any random string ≥32 chars; the value Sanity's webhook sends in the x-sanity-secret header
 ```
 
 ### 2b. Firebase App Hosting secrets (production)
@@ -61,8 +60,7 @@ In the Firebase console → App Hosting → your backend → Environment:
 | `FIREBASE_ADMIN_PRIVATE_KEY` | From service account JSON |
 | `RESEND_API_KEY` | From Resend dashboard |
 | `SANITY_API_READ_TOKEN` | Viewer token from Sanity |
-| `SANITY_WEBHOOK_SECRET` | Same random string used in `.env.local` |
-| `SANITY_REVALIDATE_SECRET` | Same random string used in `.env.local` |
+| `SANITY_REVALIDATE_SECRET` | Same random string used in `.env.local`; the value Sanity's webhook sends in the `x-sanity-secret` header |
 
 Then update `apphosting.yaml` to reference them — add under `env:`:
 
@@ -91,10 +89,6 @@ Then update `apphosting.yaml` to reference them — add under `env:`:
     secret: SANITY_API_READ_TOKEN
     availability:
       - BUILD
-      - RUNTIME
-  - variable: SANITY_WEBHOOK_SECRET
-    secret: SANITY_WEBHOOK_SECRET
-    availability:
       - RUNTIME
   - variable: SANITY_REVALIDATE_SECRET
     secret: SANITY_REVALIDATE_SECRET
