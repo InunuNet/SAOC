@@ -123,13 +123,31 @@ After seeding, open `/studio` locally (or at your Firebase App Hosting URL) to v
 
 In Sanity → API → Webhooks → create new:
 
-- **URL:** `https://saoc.co.za/api/sanity-revalidate`
+- **URL:** `https://saoc.co.za/api/revalidate` (route: `app/api/revalidate/route.ts`)
 - **Dataset:** `production`
 - **Trigger on:** Create, Update, Delete
 - **HTTP method:** POST
-- **Secret:** same value as `SANITY_WEBHOOK_SECRET` in `.env.local`
+- **HTTP Headers:** add one header, name `x-sanity-secret`, value = the `SANITY_REVALIDATE_SECRET` secret (Secret Manager, mapped in `apphosting.yaml`)
+- **Secret field:** leave empty. It makes Sanity sign the payload, and the route does not verify signatures; it only compares the `x-sanity-secret` header to `SANITY_REVALIDATE_SECRET`. Do not use the `?secret=` query form: secrets in URLs end up in logs.
+- **Projection:** keep `_type` in the payload (the default projection includes it). The route always revalidates the `sanity` tag, and also revalidates the tag named by `body._type`.
 
 This triggers Next.js ISR revalidation whenever Sanity content changes.
+
+**Verify (never print or inline the secret):** export it into your shell first, e.g. `read -rs SANITY_REVALIDATE_SECRET && export SANITY_REVALIDATE_SECRET`.
+
+```bash
+# Wrong header value: must return 401 {"ok":false,"error":"Invalid secret"}
+curl -s -o /dev/null -w '%{http_code}\n' -X POST \
+  -H 'x-sanity-secret: wrong' -H 'content-type: application/json' \
+  -d '{"_type":"event"}' https://saoc.co.za/api/revalidate
+
+# Real secret from the env var: must return {"ok":true,"revalidated":true,"type":"event"}
+curl -s -X POST \
+  -H "x-sanity-secret: ${SANITY_REVALIDATE_SECRET}" -H 'content-type: application/json' \
+  -d '{"_type":"event"}' https://saoc.co.za/api/revalidate
+```
+
+Then use the webhook's "Attempts" log in Sanity to confirm a real publish returns 200.
 
 ---
 
