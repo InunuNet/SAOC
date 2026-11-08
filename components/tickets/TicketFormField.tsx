@@ -43,7 +43,7 @@ interface TicketFormFieldProps {
   onChange: (value: string) => void;
   disabled: boolean;
   error?: string;
-  autoComplete?: 'name' | 'email' | 'tel';
+  autoComplete?: 'name' | 'email' | 'tel' | 'off';
   maxLength?: number;
 }
 
