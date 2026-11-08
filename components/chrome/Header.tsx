@@ -97,7 +97,7 @@ export function Header() {
             href="/"
             data-hd="brand"
             aria-current={navAriaCurrent(pathname, '/')}
-            className="mr-3 flex aspect-[405/70] w-[min(100%,405px)] shrink-0 items-center rounded-sm max-[780px]:mr-0 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
+            className="mr-3 flex aspect-[405/70] w-[min(100%,405px)] shrink-0 items-center rounded-sm max-[780px]:mr-0 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] forced-colors:forced-color-adjust-none forced-colors:bg-parchment forced-colors:px-2.5 forced-colors:py-1.5"
             aria-label="South African Orchid Council — Making a difference since 1968"
           >
             {/* Eager, default fetch priority, and no preload: the hero is the one prioritised image. React
