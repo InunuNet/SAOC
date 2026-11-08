@@ -143,7 +143,7 @@ export function Header() {
                       data-hd="item"
                       aria-current={navAriaCurrent(pathname, n.href, { crossSite: n.crossSite })}
                       className={[
-                        'group relative inline-flex min-h-11 items-center px-[9px] font-sans text-[14.5px] font-semibold leading-none transition-colors duration-150 hover:text-primary focus-visible:text-primary focus-visible:outline-none aria-[current=page]:text-primary',
+                        'group relative inline-flex min-h-11 items-center px-[9px] font-sans text-[14.5px] font-semibold leading-none transition-colors duration-150 hover:text-primary focus-visible:text-primary rounded-sm outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] aria-[current=page]:text-primary',
                         n.quiet ? 'text-muted' : 'text-ink',
                       ].join(' ')}
                     >
@@ -162,7 +162,7 @@ export function Header() {
                   href={CONTACT_LINK.href}
                   data-hd="item"
                   aria-current={navAriaCurrent(pathname, CONTACT_LINK.href)}
-                  className="group relative inline-flex min-h-11 items-center px-[9px] font-sans text-[14.5px] font-semibold leading-none text-ink transition-colors duration-150 hover:text-primary focus-visible:text-primary focus-visible:outline-none aria-[current=page]:text-primary"
+                  className="group relative inline-flex min-h-11 items-center px-[9px] font-sans text-[14.5px] font-semibold leading-none text-ink transition-colors duration-150 hover:text-primary focus-visible:text-primary rounded-sm outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] aria-[current=page]:text-primary"
                 >
                   <span
                     data-hd="label"
