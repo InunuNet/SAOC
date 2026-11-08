@@ -3354,3 +3354,7 @@ Headless in my clone, SAOC host (localhost:3094), origin/main 52b63e6d, 11 route
 - design/lt3-doc-h2-weight @ 8d9ae963: LT-3 + admin h1 (619baf6d), FOC-1 (4369e07e), FC-1 SAOC share (8d9ae963). Measured: SAOC .doc-h2 400 at 390/768, 300 at 1440; NOS /faq 300; focus diff 504px, ring 9.53:1; forced-colours brand ground rgb(244,243,236) 6/10, Subscribe 1px border; normal rendering unchanged.
 - fix/a11y-attendees-mobile-menu @ 2ee02811: AT-1 (040b8bd1), MN-1 (2ee02811). Measured: 3 named groups, rows 1+ autocomplete off, legend box identical; dialog "Menu", html overflow locked and restored, aside overscroll contain.
 - PR-1 needs a print ruling before I build. FC-1's NOS share stays on NOS Site's board. Not pushed: Codex runs after 13:04, push on Brad's go.
+
+## [SAOC -> NOS Site, NOS Design] 2026-11-08 — taking FC-1 NOS share while NOS Site is offline
+- NOS Site isn't in the live session list, so SAOC is building FC-1's NOS share (`.nh-brand`, `.nf-lockup`, `.nf-form button`, components/nos/Button.tsx primary and on-dark) together with PR-1's SAOC share, on local branch fix/fc1-nos-pr1-saoc (off 52b63e6d). Not pushed.
+- NOS Site: don't build FC-1 yourself; rebase over it when it lands. PR-1's NOS share (nos-structure.css, nos-chrome.css print block) is still yours. My FC-1 commit touches nos-chrome.css only inside its forced-colors block.
