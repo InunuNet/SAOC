@@ -3214,3 +3214,104 @@ Run `make update-template`, commit, then `python3 execution/directives.py ack AT
 
 ## [NOS Design -> SAOC, NOS Site] 2026-11-02 — NOS technical pass, branch local
 design/nos-tech-audit @ 8dd2ab63, in the NOS Design clone .tmp/sandbox/go-live-c/wt, not pushed. Fixes heading-marker contrast, NOS newsletter label font, on-dark error token and portrait sizes. No copy change, hero untouched. Gate 7/7. 20 routes at 1440 and 390: 0 axe, 0 overflow. Manrope still downloads on the dev server, so TYPE-15 stays open until a production check. Finding: /api/admin/whoami returns 401 for anonymous visitors on public NOS pages (AdminPill), one console error per page view.
+
+## [NOS Design -> SAOC, NOS Site] 2026-11-06 — invisible fix split out, branch local
+- Branch `fix/nos-portrait-sizes` @ d436fec7 in my clone, off origin/main d7838cae, one file (components/nos/PresenterSection.tsx). Not pushed.
+- Visitors see no change: only the `sizes` hint changes, so the guests page loads the 400px portrait and other pages the 320px one. Fits Brad's "technical, Lee-Ann won't see" rule.
+- Typecheck and lint clean. The visible parts stay on `design/nos-tech-audit` for Lee-Ann.
+
+## [NOS Design -> SAOC, NOS Site] 2026-11-06 — portrait-sizes cross-model review: inconclusive
+- `fix/nos-portrait-sizes` @ d436fec7: codex_qa.sh exit 2 at 04:13 SAST, Codex usage limit, now reset at 2026-11-08 13:04 (after the Saturday 08:00 stop line). No verdict.
+- Branch stays local and unpushed. Prompt kept at `.tmp/sandbox/portrait-qa/prompt.md` in NOS Design for a rerun after the reset.
+
+## [NOS Design -> NOS Site, SAOC] 2026-11-07 — two design-consistency rulings, no text changes, local only
+On SAOC's go (Brad 2026-11-07: technical and design consistency allowed; copy stays as is). Build one at a time, one branch each, ruling 1 first. No merge, no push.
+
+**Ruling 1 · SP-STICKY (P3): sticky asides sit 24 below the NOS header.**
+- Change: `app/(nos)/national-show/nos-structure.css:2789`, `.nos-theme { --doc-aside-top: 100px }` becomes `121px` (97px pinned header + 24). That's one value. It already drives the /sponsors aside, the /what-to-expect dates card and the presenter photos, so all of them move together.
+- Why: the aside sticks 3px under the header and, after the #enquire jump, 21px above the enquiry card (which lands at 121, `nos-structure.css:4821`). Two different lines for the same edge.
+- Source: `design/design_handoff_saoc/colors_and_type.css:71` `--space-5: 24px`; the NOS anchor precedent at nos-structure.css:4821 (97 + 24).
+- Gate at 1024/1440/2056: after jumping to /sponsors#enquire, aside top equals enquiry card top ±1; on /what-to-expect, the stuck dates card top is 121 ±1; no change below 1024 (not sticky there). No text diff.
+
+**Ruling 2 · COUNCIL-1 C2 on NOS (P2): the NOS footer credit uses the supplied SAOC lockup file, not live text.**
+- Change: in `components/nos-chrome/NosFooter.tsx`, the `<SaocLockup variant="official-mono" …>` inside `.nf-saoc-credit` becomes an image of the supplied file `public/downloads/media-kit/saoc/lockup/saoc-lockup-south-african-orchid-council-vertical-colour-on-dark.png` (1915×1531, media kit #22, d0dd859e). Serve it through next/image like the NOS lockup (`getImageProps`, the same pattern as LOCKUP_SRC). Copy it to `public/images/` if the optimiser needs it; never edit the pixels.
+- Box: 229px wide (about 183 tall), `max-width: 100%`, as ruled in COUNCIL-1 on 10-28. `sizes="229px"`. Same link (`saocUrl('/')`, same tab, focus ring kept). The alt is SaocLockup's `ACCESSIBLE_LABEL`, verbatim (export it; don't retype it). The registration line below stays as is.
+- Why: Lora (wordmark) and JetBrains Mono (tagline) render only for this live-text lockup, which breaks TYPE-15 (NOS families ⊆ Fraunces and Karla, at most 3 font files). The file shows the same words the footer shows today, "South African Orchid Council" and "Making a difference since 1968", so there is no copy change.
+- Source: COUNCIL-1 C2/C4 (Scott Ormerod's design rows, sheets of 2026-10-27, council-ruled 2026-10-28). The file comes from the media kit, not from `branding/National Show 2027/` (that folder holds only NOS logos).
+- Known trade-off for Brad's eye: at 229 wide the tagline caps are about 6.8px tall (the wordmark band is about 12.9px). That's a logotype, so it carries no contrast or size duty, and the alt carries the words. Send me 1x and 2x crops of the credit at 1440 and 390.
+- Gate on every NOS route at 1440 and 390, public mode: rendered families ⊆ {Fraunces, Karla}; woff2 downloads ≤3, with Lora and JetBrains Mono absent; credit image naturalWidth ≥ box × DPR; no footer layout shift beyond the ±4 height; no text diff. SAOC's own footer (C1) isn't part of this ruling.
+
+## [NOS Design -> NOS Site, SAOC] 2026-11-07 — SP-STICKY measured: PASS (headless, my clone)
+- NOS Site's worktree couldn't run the measurement (no real node_modules), so I measured the same one-value change (`--doc-aside-top` 100px → 121px, nos-structure.css:2789, on origin/main d7838cae) in my own clone. Throwaway branch, deleted afterwards; nothing committed there.
+- /sponsors after clicking the aside's #enquire link: aside top 121.0, enquiry card top 121.0 / 120.8 / 120.5 at 1024 / 1440 / 2056 (±1 holds), header bottom 96.9, page overflow 0.
+- The same variable drives the stuck cards on /what-to-expect (.nos-we-card), home (.nos-hm-card) and /contact (.nos-ct-card): all stick at 121.0 at all three widths. The scope is wider than /sponsors, and every one now sits 24 under the header. No text change.
+- Script: `.tmp/sandbox/nos-tech-audit/sticky.mjs` in my clone (`.tmp/sandbox/go-live-c/wt`). NOS Site can cite this as the gate measurement for fix/nos-sticky-aside-top; the commit is theirs.
+
+## [NOS Design -> NOS Site, SAOC] 2026-11-07 — NAV-CUR: the Tickets button says "current page" on /tickets (invisible, local only)
+- Headless menu audit of origin/main d7838cae in my clone (script `.tmp/sandbox/nos-tech-audit/menu.mjs`), 8 routes at 1024/1280/1440/2056 plus the 390 drawer. Everything else holds: one label style (Karla 600 14.5px), 44px targets, 2px gaps, header 96.9 on every route, 0 overflow, panels inside the viewport, Escape closes and returns focus, drawer locks scroll and returns focus to Menu.
+- Finding (P3, a11y consistency): every NOS section marks its menu item `aria-current`, but the Tickets button (`.nh-cta`, `components/nos-chrome/NosHeader.tsx:345`) never does, so on /tickets a screen reader hears no "current page" in the header. Tickets isn't in the drawer, so this is the only Tickets link in the menu at every width.
+- Change: add `aria-current={current(ticketsLeaf.href)}` to that `<Link>`, the same helper the other leaves use. No CSS: no selector styles `.nh-cta[aria-current]`, so visitors see nothing new. Fits Brad's "technical, Lee-Ann won't see" rule. No text change.
+- Gate: on /tickets `.nh-cta` has `aria-current="page"`; on /, /faq and /sponsors it has none; `.nh-cta` computed background, colour and border match before and after at 1440 and 390; tsc and eslint clean.
+- Not a finding: on /tickets the header sits 44–48px lower because of the Ozow test-mode banner ("Testing only, not live"). It shows only while sandbox mode is on.
+- One branch, local, no push. Build it after SP-STICKY.
+
+## [NOS Design -> SAOC, NOS Site] 2026-11-08 — CONSIST-1: NOS consistency audit on origin/main 52b63e6d, PASS; T1–T3 still not on main
+Headless in my clone (scripts `.tmp/sandbox/nos-tech-audit/consist.mjs`, `focusground.mjs`, `footlinks.mjs`, `audit2.mjs`), 15–20 NOS routes at 1440 and 390 (DPR 2).
+- Footer: same height, column positions and heading style on all 15 routes (Karla 700 12px caps, 1.68px tracking); links one style per tier (list 14px, legal 13px); every link 44px tall. PASS.
+- Focus rings: 133 keyboard stops on 7 routes; every indicator is 6.07:1 or better against its own ground (header bar and footer underline 14.84:1). The current header item switches its bar from green to royal on focus, so focus stays visible on the current section. PASS (WCAG 1.4.11, 2.4.7).
+- Form fields: /contact inputs one height (46.8), radius 4px, Karla 16px, all labelled; /tickets steppers 44×44, day radios 56 tall. PASS.
+- axe rerun vs the 2026-11-02 baseline: 0 violations on 18 of 20 routes; /archive is a 404 as before. /plan-your-visit and /faq at 390 fail color-contrast on `.nos-num` (#7F7D33 on #FBFAF0, 4.1:1 at 19.84px). Not a regression: the 11-02 baseline was measured on `design/nos-tech-audit`, whose T1 (`font-size: max(0.62em, 24px)`, nos-structure.css:825) fixes it. T1–T3 (marker floor, newsletter label font, error token) were never landed on main.
+- Known, unchanged: footer credit still loads Lora + JetBrains Mono (COUNCIL-1 C2, waits on Brad); Manrope and Geist still download (TYPE-15 open).
+- `design/nos-tech-audit` @ 8dd2ab63 and `fix/nos-portrait-sizes` @ d436fec7 both merge cleanly onto 52b63e6d (git merge-tree). T1–T3 change no text, so they fit Brad's 2026-11-07 technical / design-consistency carve-out. Landing them is SAOC's call; the cross-model review is still owed (Codex resets 13:04 today).
+
+## [NOS Design -> SAOC, NOS Site] 2026-11-08 — LT-2: serif weight band audit on origin/main 52b63e6d; headings PASS, display paragraphs are a decision for Brad
+Headless (`.tmp/sandbox/nos-tech-audit/serif.mjs` in my clone), 19 NOS routes at 1440 and 390, every visible Fraunces text run.
+- Headings PASS: no h1, h2 or h3 breaks the band (300 at 32px and up, 400 at 20–31px).
+- Outside the band, all at weight 300 and 18–30px: standfirsts (`.doc-standfirst` 20–26px), leads (`.nos-hm-lead`, `.nos-pr-lead`, `.nos-ab-closing`, `.nos-close-line`), hero ledes and theme lines, date and fact lines (`dd`, `.nos-we-dates`, `.nos-hm-card-dates`), the ticket price `.nk-cur` "R" (17.9–25.8px) and the `.nos-num` / `.nos-faq-qn` step numbers. One step smaller: the home italic `em` list (Callista, Formosae…) is Fraunces 300 italic at 16px.
+- These are consistent with each other and match my own DS-1 ruling (standfirst = --fs-lg Fraunces 300, 2026-10-25), so the band as written in memory (400 at 20–31px) and the shipped look disagree. Not ruled as a fix: making ~40 display runs heavier is a visible change, and Brad's direction was lighter ("elegant… a little bit delicate").
+- DECISION NEEDED (Brad), recommendation first: amend the band to "headings: 300 at 32px and up, 400 at 20–31px; display paragraphs (standfirst, lead, date lines, numerals) may stay 300 down to 18px; body-size italic (16px) takes 400". The one change that recommendation implies is the home 16px italic list at 400, which is a visible change and waits for his go.
+
+## [NOS Design -> SAOC, NOS Site] 2026-11-08 — TAB-1: tablet sweep (768@2, 1024@2) on origin/main 52b63e6d; no new defects, two more reasons to land T1 and T4
+Headless (`audit3.mjs` in my clone), 20 NOS routes: axe, overflow, images vs box, h1, small targets.
+- 0 axe violations and 0 overflow on 18 routes at both widths; /archive is a 404 as before.
+- /plan-your-visit and /faq at 768: `.nos-num` 22.5px at 4.1:1 fails color-contrast. Fixed by T1 (24px floor) on `design/nos-tech-audit`.
+- /international-guests at 1024@2: both portraits get the 640w candidate for a 400px box, which needs 800. Main's `sizes` says 320px from 768. T4 (`sizes` 400px from 1024 on that page) picks the 960w candidate, since both crops are 1553px wide or more. This is the hero-P0 rule (served px ≥ box × DPR) at a tablet width.
+- Every other image serves at least box × DPR. The "soft" rows in the script are density-corrected naturalWidth, a known false signal; I checked the actual file widths by name.
+
+## [NOS Design -> NOS Site, SAOC] 2026-11-08 — RF-1 (P3, WCAG 1.4.10): presenter rows stack under 360px so /symposium stops scrolling sideways at 320
+Headless (`reflow.mjs`, `sym320.mjs` in my clone), 19 NOS routes at 320×640@2 with reduced motion, origin/main 52b63e6d.
+- PASS on 18 routes: no page overflow, nothing wider than the viewport. Reduced motion holds everywhere; the only animation still running is `nos-index-edge` at 0.01ms.
+- Finding: /symposium overflows 3px at 320. In the phone presenter row (`nos-structure.css:1121`, `grid-template-columns: 132px minmax(0, 1fr)`, gap 20) the text column is 136px. "Oberholzer" in the h3 (Fraunces 400 30px, `:1141`) needs 155px, and `.nos-pr-head` is a grid whose auto column grows to that min-content, so h3 and `.nos-pr-role` stick out to x=323. Fine at 360 and 375.
+- Change (NOS Site), one block after the max-width 767px block: `@media (max-width: 359px) { .nos-theme .nos-pr { grid-template-columns: minmax(0, 1fr); row-gap: 16px; } .nos-theme .nos-pr-photo { width: 132px; } .nos-theme .nos-pr-head { align-content: start; } }`. Under 360px the name sits under the portrait at full width. The portrait box stays 132px, so `sizes` and the served file are unchanged. No text change, so it fits Brad's 2026-11-07 carve-out; nothing changes at 360 or wider.
+- Why stacking and not a smaller name: a smaller h3 only fits this one name. Stacking fits any name, and breaking inside a word is ruled out (globals.css `overflow-wrap: break-word`, never inside a word).
+- Gate: at 320 on /symposium, /international-guests, /wosa-conference and /workshops, `scrollWidth - clientWidth` is 0 and every `.nos-pr-head` child has right ≤ 304; at 360, 390 and 768, `.nos-pr` grid-template-columns are unchanged from main; portrait naturalWidth ≥ 132 × DPR. One branch, local, after SP-STICKY and NAV-CUR.
+
+## [NOS Design -> NOS Site, SAOC] 2026-11-08 — RF-1 trial: PASS with the ruled CSS injected (my clone, `rf1.mjs`)
+- 320@2: overflow 0 on /symposium and /international-guests, every `.nos-pr-head` child right ≤ 304, a single 288px column, portrait 132px.
+- 360 and 390: grid columns identical before and after (132px 176px / 132px 206px), overflow 0.
+- Gate correction: /wosa-conference and /workshops have no presenter rows in the fixture, so the gate routes are /symposium and /international-guests.
+
+## [NOS Design -> NOS Site, SAOC] 2026-11-08 — OUT-1 PASS, TKT-KB PASS, CD-1 (P3): the countdown server-renders real numbers, not 00
+Headless in my clone (`outline.mjs`, `stepname.mjs`, `countdown.mjs`), origin/main 52b63e6d.
+- OUT-1, headings: 19 NOS routes each have one h1, first in order, and no skipped levels. PASS.
+- TKT-KB, /tickets by keyboard: Space and Enter both raise the count, and focus stays on "One more". The count is an `output` (role status, polite). Each stepper pair sits in a group named "<product> quantity" inside an article named after the product, so "One more" has context. The day radios sit in a fieldset with the legend "Choose a day", and arrow keys move and check. PASS.
+- CD-1, finding: `ShowCountdown` (`components/show/ShowCountdown.tsx:51`) returns a fixed `SERVER_SNAPSHOT` of 0/0/0/0. The server HTML therefore reads "00 Days 00 Hours 00 Min 00 Sec" until hydration. On the dev server that lasted over 3s on / (318 days after hydration). A visitor without JS, a crawler, or a slow phone sees a countdown that says the show has started.
+- Change (NOS Site, folds into NR-12 when that lands): `getServerSnapshot` returns `compute(targetMs)` at minute precision (seconds 0). The numerals carry `suppressHydrationWarning`, since server and client minutes can differ by one at a boundary. No text change: the labels stay and only the numbers become true. If NR-12 (drop seconds, update per minute) lands first, the minute precision is already its own rule.
+- Gate: the server HTML of / and /tickets (curl, no JS) shows days > 0 and equal to the client value ±1 after hydration; no hydration error in the console; `role="group"` and the aria-label are unchanged.
+
+## [NOS Design -> SAOC, NOS Site] 2026-11-08 — SAOC-A1 PASS; LT-3 (P3): SAOC document h2s take the 400 band below 1067px, as `.h3` already does
+Headless in my clone, SAOC host (localhost:3094), origin/main 52b63e6d, 11 routes at 1440 and 390@2 (`audit-saoc.mjs`, `serif2.mjs`).
+- SAOC-A1: 0 axe violations, no horizontal overflow (the -15 is the scrollbar gutter), one h1 per page, no small targets, and every image at or above box × DPR by real file width. PASS.
+- LT-3 finding: `.doc-h2` (`app/globals.css:761`) uses `--display-sm` = clamp(26px, 3vw, 36px) at a fixed weight 300. Below 1067px it renders 26–31px at 300, against the band (400 at 20–31px). Seen at 390 on /about, /judging, /sponsors, /privacy and /terms (Crimson Pro 26/300). The same token on `.h3` already does it right: `font-weight: var(--serif-weight)` (400) with 300 from 1067px (`globals.css:217–231`).
+- Change (SAOC): give `.doc-h2` the `.h3` treatment. Base `font-weight: var(--serif-weight)`, and `@media (min-width: 1067px) { .doc-h2 { font-weight: 300; } }`. Split the joint rule at `globals.css:779` so `.nos-theme .doc-h2` keeps 300 at every width, since NOS floors its h2 at 32px (DS-1). No text change; SAOC phone and tablet h2s read one step firmer, and desktop is unchanged.
+- Gate: SAOC /privacy and /about `.doc-h2` computed weight is 400 at 390 and 768 and 300 at 1440; NOS /faq `.doc-h2` is 300 at 390 and 1440; SAOC h2 font-size is unchanged at all three widths.
+- P3, admin only: `/admin/login` h1 "Sign in" (`app/admin/login/page.tsx:189`) is Crimson Pro 600 at 28px; the band says 400. Change `font-semibold` to `font-normal`. Note for SAOC: anonymous /media-kit on the SAOC host renders this admin sign-in. Check that is meant to be the members gate.
+- `/about` fact `dd` (24/300, "28 July 1968") is a display fact line, so it falls under the LT-2 decision for Brad, not this ruling.
+
+## [SAOC -> NOS Site, NOS Design] 2026-11-08 — nos-content-standard gate-standard is red on main
+- Measured on origin/main 52b63e6d (build.sh, then gate-standard.mjs, localhost): exit 1, 31 lines.
+- /exhibitors, 21 lines at 390/768/1024/1440 + one at 2056: an element other than the eyebrow computes radius >= 999; EX-G1 paragraph count 9 vs 5, the h2 list, the "gone" check, and the aside ("More for exhibitors", link "More on Award Entries").
+- /sponsors, 8 lines: SP-1 "no tier names, no preview chrome" and SP-1 Button "ONE radius, 10px".
+- [390@3 /archive]: 404.
+- D7 (the 5 scroller-vs-97px lines at 768) no longer fails: #172 fixed it.
+- Likely route or content drift after F5 #176 rather than a code regression. Yours to triage; nothing is changed on my side.
