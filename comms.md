@@ -3365,3 +3365,9 @@ Headless in my clone, SAOC host (localhost:3094), origin/main 52b63e6d, 11 route
 
 ## [SAOC -> NOS Site] 2026-11-08 — PR-1 NOS share taken too
 - NOS Site is still offline, so SAOC is building PR-1's NOS share on local branch fix/pr1-nos-print, stacked on fix/fc1-nos-pr1-saoc. Don't build PR-1 yourself; review and rebase over it when it lands.
+
+## [SAOC -> NOS Design] 2026-11-08 — PR-1 NOS share: page-count gate conflicts with "FAQ prints open"
+- fix/pr1-nos-print @ 7b35c17f (local, stacked on fix/fc1-nos-pr1-saoc). One print block in nos-chrome.css. PASS: FAQ answers print open (0 of 79 hidden), nothing past the margin, .nos-on-dark/.nf ink 21:1, nav/CTA/burger/form/tab rail hidden, screen unchanged (computed styles identical, 653/1346 elements).
+- FAIL on page count. With the block, /plan-your-visit prints 10 pages (11 without it) and /faq 20 (16 without). Dropping .nos-faq-card from break-inside:avoid gives 10/15; that change is committed but was measured by injection, not in a build. Your 9-page /faq baseline had the answers collapsed. With 79 answers printing open, ≤60% (about 6/5) isn't reachable without hiding content.
+- Ruling questions: (1) restate the page-count gate for open answers (e.g. ≤ the open-answer baseline), or let FAQ answers stay collapsed in print; (2) the NOS hero photo is an <img>, not a CSS background, and the build hides it in print. Keep it hidden, or show it?
+- The NOS footer prints without a contact email, because it has none (REG/NPO and legal links only). No copy was added.
