@@ -762,11 +762,17 @@ h3.font-serif {
   margin: 0 0 24px;
   font-family: var(--serif);
   font-size: var(--display-sm);
-  font-weight: 300;
+  font-weight: var(--serif-weight);
   line-height: 1.15;
   letter-spacing: -0.015em;
   color: var(--ink);
   text-wrap: pretty;
+}
+/* --display-sm reaches 32px at a 1067px viewport; from there the display weight applies. */
+@media (min-width: 1067px) {
+  .doc-h2 {
+    font-weight: 300;
+  }
 }
 /* --doc-scroll-margin is where a heading lands, measured from the viewport top. The html
    scroll-padding already supplies part of it, so only the remainder is the heading's own margin.
@@ -775,8 +781,8 @@ h3.font-serif {
 .doc-layout [data-doc-main] .doc-h2[id] {
   scroll-margin-top: calc(var(--doc-scroll-margin, 112px) - var(--scroll-padding-top, 0px));
 }
-/* A theme's own h2 rule (.nos-theme h2, 0,1,1) sets weight and wrap; the document scale keeps both. */
-.doc-h2,
+/* A theme's own h2 rule (.nos-theme h2, 0,1,1) sets weight and wrap; the document scale keeps both.
+   NOS floors its h2 at 32px, so it stays at the display weight at every width. */
 .nos-theme .doc-h2 {
   font-weight: 300;
   text-wrap: pretty;
