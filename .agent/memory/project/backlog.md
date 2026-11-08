@@ -64,7 +64,7 @@ _Last compacted: 2026-11-02 by backlog_trim.py. Full history: git log on this fi
 - [ ] (2026-10-28) **F1e glyph and font-fallback checks miss open-dialog states** — ch… → [details](data/2026-10-28-f1e-glyph-and-font-fallback-c.md)
 - [ ] (2026-10-28) **Newsletter footer: visible error copy needs a source** — NEWSLETT… → [details](data/2026-10-28-newsletter-footer-visible-err.md)
 - [ ] 2026-10-28 merge-when-green.sh merged #144 on state=UNSTABLE (build green, live-write-guard red) — it should require every check green, not only build. Fix the script before the next wave; meanwhile check `gh pr checks` before queuing a merge.
-- [ ] 2026-10-28 content/drive-source/ is gitignored on main (.gitignore:147) but CLAU… → [details](data/2026-10-28-content-drive-source-is-gitig.md)
+- [x] 2026-10-28 content/drive-source/ is gitignored on main (.gitignore:147) but CLAU… → [details](data/2026-10-28-content-drive-source-is-gitig.md) — closed 2026-11-08: no conflict left. CLAUDE.md no longer claims those files are tracked; PROJECT_GUIDE.md:130-142 describes content/drive-source/ as a local store re-derived on demand, matching .gitignore:145-147. The drive_docx_sync.py interpreter and slash-name issues are the upstream harness bug already filed.
 - [ ] 2026-10-28 Award entries (council WhatsApp): Sanity S1–S4 writes pending NOS Des… → [details](data/2026-10-28-award-entries-council-whatsap.md)
 - [ ] 2026-12-01 WOSA site booking button goes live (Brad scheduled; WOSA commit 0518873) → targets https://nos.saoc.co.za/tickets#ticket-wosa. Keep that anchor stable; re-check it resolves before 1 Dec.
 - [ ] Before 2026-12-01 (ticketing live on SAOC's Ozow account, Brad 2026-10-28): purg… → [details](data/before-2026-12-01-ticketing-live-on-saoc.md)
