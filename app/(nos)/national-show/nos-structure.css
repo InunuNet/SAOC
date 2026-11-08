@@ -1157,6 +1157,20 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     font-size: 1.1875rem;
   }
 }
+/* RF-1 (WCAG 1.4.10): at 320 the 132px portrait plus 20px gap leaves a 136px text column, narrower than
+   the 30px presenter name; stack the row so /symposium and /international-guests do not scroll sideways. */
+@media (max-width: 359px) {
+  .nos-theme .nos-pr {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 16px;
+  }
+  .nos-theme .nos-pr-photo {
+    width: 132px;
+  }
+  .nos-theme .nos-pr-head {
+    align-content: start;
+  }
+}
 /* IG-G1 / FS-1: /international-guests has no aside, so the layout stops being the 7/5 grid and each
    profile spans the full content width, with the 400px portrait (sticky, 4:5) and the text column beside it. */
 .nos-theme .nos-subnav + .nos-ig-page {
