@@ -38,10 +38,10 @@ import type { ComponentPropsWithoutRef, ElementType } from 'react';
 export type NosButtonVariant = 'primary' | 'ghost' | 'on-dark' | 'ghost-on-dark';
 
 const VARIANT_CLASSES: Record<NosButtonVariant, string> = {
-  primary: 'bg-primary text-ivory hover:bg-primary-800',
+  primary: 'bg-primary text-ivory hover:bg-primary-800 forced-colors:border forced-colors:border-[color:ButtonText]',
   ghost:
     'border-[length:var(--border-primary)] border-primary text-ink bg-transparent hover:bg-primary/5',
-  'on-dark': 'bg-bone text-primary hover:bg-white',
+  'on-dark': 'bg-bone text-primary hover:bg-white forced-colors:border forced-colors:border-[color:ButtonText]',
   'ghost-on-dark':
     'border-[length:var(--border-primary)] border-[var(--ivory)] text-ivory bg-transparent hover:bg-[var(--ivory)]/10',
 };
