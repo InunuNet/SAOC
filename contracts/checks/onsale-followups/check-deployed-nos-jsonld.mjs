@@ -7,6 +7,33 @@
 // Env: NOS_ORIGIN (default https://nos.saoc.co.za), EXPECT_VIP_PRICE (default 300, the Brad-settled live VIP price),
 // WRONG_SHOW_PRICE (default 999, the impostor price of the fixture), WRONG_SHOW_SLUG (default fictional-test-show-general-admission).
 // Exit 0 PASS, 1 FAIL (a real finding), 77 inconclusive (credentials missing or host unreachable): contract.py reads 77 as a skip.
+// `--self-test` runs the page-listable filter against synthetic rows only (no network, no env) and exits 0 or 1.
+// The page's filters, copied literally (this plain .mjs cannot import TS); keep them identical to their sources:
+// TICKET_CATEGORIES <- lib/data/ticket-hub-source.ts:24; an undefined category counts as admission <-
+// activeTicketTypesByCategoryQuery, sanity/queries.ts:157; DEMO_TICKET_TYPE_SLUG <- lib/demo-ticket-type.ts:15, and the
+// demo rule (flag OR reserved slug) <- isDemoTicketTypeDoc, lib/demo-ticket-type.ts:35-37.
+const TICKET_CATEGORIES = ['admission', 'conference', 'workshop-field-trip'];
+const DEMO_TICKET_TYPE_SLUG = 'demo-general-admission';
+const isPageListable = (t) =>
+  (t.category == null ? true : TICKET_CATEGORIES.includes(t.category)) && !(t.demo === true || t.slug === DEMO_TICKET_TYPE_SLUG);
+if (process.argv.includes('--self-test')) {
+  const cases = [
+    [{ slug: 'general-admission', category: 'admission', demo: false }, true],
+    [{ slug: 'conference-pass', category: 'conference', demo: null }, true],
+    [{ slug: 'field-trip', category: 'workshop-field-trip' }, true],
+    [{ slug: 'legacy-admission', category: null }, true],
+    [{ slug: 'orchid-mug', category: 'merch', demo: false }, false],
+    [{ slug: 'blank-category', category: '' }, false],
+    [{ slug: DEMO_TICKET_TYPE_SLUG, category: 'admission', demo: false }, false],
+    [{ slug: DEMO_TICKET_TYPE_SLUG, category: 'admission' }, false],
+    [{ slug: 'flagged-demo', category: 'admission', demo: true }, false],
+  ];
+  const wrong = cases.filter(([row, want]) => isPageListable(row) !== want);
+  for (const [row, want] of wrong) console.error(`FAIL: self-test ${row.slug} (category ${row.category}) listable ${!want}, want ${want}`);
+  if (wrong.length) process.exit(1);
+  console.log(`PASS: self-test, ${cases.length} synthetic rows classified as the page would`);
+  process.exit(0);
+}
 const ORIGIN = process.env.NOS_ORIGIN ?? 'https://nos.saoc.co.za';
 const EXPECT_VIP = Number(process.env.EXPECT_VIP_PRICE ?? 300);
 const WRONG_PRICE = Number(process.env.WRONG_SHOW_PRICE ?? 999);
@@ -33,13 +60,15 @@ const offers = nodes.filter((n) => n && n['@type'] === 'Event').flatMap((n) => (
 if (offers.length === 0) { console.error('FAIL: no Event JSON-LD offers on /national-show'); process.exit(1); }
 const slugOf = (o) => String(o.url ?? '').split('/').pop();
 // Expected offer set. EXPECT_OFFERS="slug:price,slug:price" selects EXACT mode (offer set must equal it). Without it the
-// set is derived from LIVE Sanity: the active show's (ACTIVE_SHOW_ID, default show-19-2027) active, non-demo ticketType
-// documents, slug -> price, read over the non-CDN query API (NEXT_PUBLIC_SANITY_PROJECT_ID, NEXT_PUBLIC_SANITY_DATASET,
+// set is derived from LIVE Sanity: the active show's (ACTIVE_SHOW_ID, default show-19-2027) active ticketType documents the
+// page can list (isPageListable above: the page's three categories, demo flag or reserved slug excluded), slug -> price, read over the non-CDN query API (NEXT_PUBLIC_SANITY_PROJECT_ID, NEXT_PUBLIC_SANITY_DATASET,
 // optional SANITY_API_READ_TOKEN as a Bearer header; read only, nothing printed). It is checked as a SUBSET: any offer
 // outside it, or with a different price, fails; an expected type that is absent does not (the hub collapses siblings).
 // The live query being unreachable is INCONCLUSIVE (77): no recorded fixture stands in, so stale data never decides a PASS.
 const ACTIVE_SHOW = process.env.ACTIVE_SHOW_ID ?? 'show-19-2027';
-const SANITY_QUERY = '*[_type == "ticketType" && active == true && show._ref == $show && demo != true]{"slug": slug.current, price}';
+// active/show mirror activeTicketTypesByCategoryQuery plus ticketTypeMatchesActiveShow (lib/ticket-on-sale.ts:57-63);
+// category and demo are filtered by isPageListable so --self-test exercises the same code.
+const SANITY_QUERY = '*[_type == "ticketType" && active == true && show._ref == $show]{"slug": slug.current, price, category, demo}';
 async function liveExpected() {
   const project = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
   const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET;
@@ -49,8 +78,9 @@ async function liveExpected() {
   try {
     const r = await fetch(url, { headers: token ? { authorization: `Bearer ${token}` } : {}, signal: AbortSignal.timeout(20000) });
     if (r.status !== 200) { console.error(`INCONCLUSIVE: live Sanity ticketType query returned ${r.status}`); process.exit(77); }
-    const rows = (await r.json()).result;
-    if (!Array.isArray(rows) || rows.length === 0) { console.error('INCONCLUSIVE: live Sanity returned no ticketType rows for the active show'); process.exit(77); }
+    const result = (await r.json()).result;
+    const rows = Array.isArray(result) ? result.filter(isPageListable) : [];
+    if (rows.length === 0) { console.error('INCONCLUSIVE: live Sanity returned no page-listable ticketType rows for the active show'); process.exit(77); }
     return rows.map((t) => [t.slug, t.price]);
   } catch (error) {
     console.error(`INCONCLUSIVE: could not reach live Sanity (${error.name})`);
