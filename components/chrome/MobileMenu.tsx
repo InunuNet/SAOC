@@ -58,6 +58,17 @@ export function MobileMenu({ open, onClose, onSearch, nav, triggerRef }: MobileM
     };
   }, [open]);
 
+  // Lock page scroll behind the open drawer; restore the previous inline value on close/unmount.
+  useEffect(() => {
+    if (!open) return;
+    const root = document.documentElement;
+    const previous = root.style.overflow;
+    root.style.overflow = 'hidden';
+    return () => {
+      root.style.overflow = previous;
+    };
+  }, [open]);
+
   useFocusTrap({
     active: open,
     containerRef,
@@ -78,11 +89,12 @@ export function MobileMenu({ open, onClose, onSearch, nav, triggerRef }: MobileM
       id={MOBILE_MENU_ID}
       role="dialog"
       aria-modal="true"
+      aria-label="Menu"
       className="fixed inset-0 z-50 bg-black/45"
       onClick={handleBackdrop}
     >
       <aside
-        className="ml-auto h-full w-full max-w-[360px] overflow-y-auto bg-parchment p-6"
+        className="ml-auto h-full w-full max-w-[360px] overflow-y-auto overscroll-contain bg-parchment p-6"
         style={{ animation: 'slideInFromRight 250ms cubic-bezier(0.4,0,0.2,1) both' }}
       >
         {/* Top row: lockup + close. Reverted to the raster combined lockup
