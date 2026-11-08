@@ -44,21 +44,15 @@ function compute(targetMs: number): Remain {
   };
 }
 
-// The server has no meaningful "now" to render a countdown against, so it
-// always renders this frozen placeholder. useSyncExternalStore guarantees the
-// client's first paint matches it exactly (no hydration mismatch), then
-// re-renders once mounted with the real, ticking value.
-const SERVER_SNAPSHOT: Remain = { days: 0, hours: 0, minutes: 0, seconds: 0 };
-
-function getServerSnapshot(): Remain {
-  return SERVER_SNAPSHOT;
-}
-
 // A tiny external store, one per component instance: it owns the interval
 // and a cached snapshot so getSnapshot() returns a stable reference between
 // ticks (required by useSyncExternalStore to avoid needless re-renders).
 function createCountdownStore(targetMs: number) {
   let snapshot = compute(targetMs);
+  // The server snapshot is the real remaining time at minute precision (seconds 0), so no-JS
+  // visitors and crawlers never read "00 Days" before hydration. It is computed once so the
+  // reference is stable; the numerals suppress the one-minute-boundary hydration mismatch.
+  const serverSnapshot: Remain = { ...compute(targetMs), seconds: 0 };
   const listeners = new Set<() => void>();
   let intervalId: ReturnType<typeof setInterval> | null = null;
 
@@ -83,7 +77,11 @@ function createCountdownStore(targetMs: number) {
     return snapshot;
   }
 
-  return { subscribe, getSnapshot };
+  function getServerSnapshot() {
+    return serverSnapshot;
+  }
+
+  return { subscribe, getSnapshot, getServerSnapshot };
 }
 
 export function ShowCountdown({ label, countdownDate, edition, pendingLabel }: ShowCountdownProps) {
@@ -92,7 +90,9 @@ export function ShowCountdown({ label, countdownDate, edition, pendingLabel }: S
   // Lazy initializer: the store (and its interval) is created once per
   // mounted instance, not on every render. Hooks stay unconditional — the
   // "no date" branch is taken after they have run.
-  const [{ subscribe, getSnapshot }] = useState(() => createCountdownStore(targetMs ?? Date.now()));
+  const [{ subscribe, getSnapshot, getServerSnapshot }] = useState(() =>
+    createCountdownStore(targetMs ?? Date.now())
+  );
 
   const remain = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
@@ -146,6 +146,7 @@ export function ShowCountdown({ label, countdownDate, edition, pendingLabel }: S
             {/* `data-nos-hero-text`: sampled by scripts/checks/nos-hero-contrast.mjs
               at that same one call site. */}
             <div
+              suppressHydrationWarning
               data-nos-hero-text={`countdown-${unit.toLowerCase()}-value`}
               className="nos-figure font-serif tracking-[-0.015em] font-light text-[42px] leading-none text-ivory"
             >
