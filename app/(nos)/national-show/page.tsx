@@ -120,7 +120,8 @@ const FACT_LABELS = ['Dates', 'Venue'] as const;
 const ABOUT_HEADING = '2027 South African National Orchid Show';
 const ABOUT_LINK_LABEL = 'About the show';
 const WTE_LINK_LABEL = 'What to expect';
-// The Exhibit band is links only (Brad 2026-11-09); the labels are home-page overrides, the nav keeps its own.
+// The Plant Entry and Vendors links close the plant-entry band (Brad 2026-11-09; the Exhibit band is gone).
+// The labels are home-page overrides; the nav keeps its own.
 const EXHIBIT_LINKS = [
   { id: 'exhibitors', label: 'Plant Entry' },
   { id: 'vendors', label: 'Vendors' },
@@ -416,6 +417,15 @@ export default async function NationalShowPage() {
           </div>
           <p className="nos-hm-foot-text">{LANDING_CTA.openingSentence}</p>
         </div>
+        <ul className="nos-hm-register" aria-label={EXHIBIT_ARIA_LABEL}>
+          {EXHIBIT_LINKS.map(({ id, label }) => (
+            <li key={id}>
+              <Link href={nosPath(leafFor(id).href)}>
+                {label} <span aria-hidden="true">&rarr;</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
       </NosSection>
 
       <NosSection data-hm-section="programme" aria-labelledby="hm-programme-h">
@@ -435,18 +445,6 @@ export default async function NationalShowPage() {
               </li>
             );
           })}
-        </ul>
-      </NosSection>
-
-      <NosSection data-hm-section="exhibit">
-        <ul className="nos-hm-register" aria-label={EXHIBIT_ARIA_LABEL}>
-          {EXHIBIT_LINKS.map(({ id, label }) => (
-            <li key={id}>
-              <Link href={nosPath(leafFor(id).href)}>
-                {label} <span aria-hidden="true">&rarr;</span>
-              </Link>
-            </li>
-          ))}
         </ul>
       </NosSection>
 
