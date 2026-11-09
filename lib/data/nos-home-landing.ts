@@ -7,8 +7,8 @@
 // to us are never copy and are not here. Nothing in this file is ours; add no words of your own
 // (docs/rules/no-invention.md). Two Brad-sanctioned exceptions (2026-10-31, Lee-Ann approved the
 // page): the judging heading reads "Thirteen judging groups" (her doc says "Ten"), and the visit
-// band is removed from the home (the sub-nav carries those links). The figures strip (3 Years, 13
-// Judging Groups, 18 National Show Editions) is removed too (Brad 2026-11-09, her note item 3). See docs/nos-home-restore.md.
+// band is removed from the home (the sub-nav carries those links). The figures strip (years, judging
+// groups and editions counts) is removed too (Brad 2026-11-09, her note item 3). See docs/nos-home-restore.md.
 // =============================================================
 
 export interface JudgingGroup {
