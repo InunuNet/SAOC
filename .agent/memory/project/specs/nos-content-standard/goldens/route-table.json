@@ -162,11 +162,17 @@
     "mustPresent": [
      "Designated Parking for the National Orchid Show will be provided at the Stellenbosch flying club.",
      "If you plan to use e-hailing services to get to the National Orchid Show please note that they will have a designated drop off and pick up point.",
+     "The Hangar, Stellenbosch Flying Club",
      "The show is held at the hangar at Stellenbosch Flying Club, on the R44 at Stellenbosch Airfield in the Cape Winelands.",
      "Police (national)",
      "Ambulance and fire (national)",
      "All emergencies, from a mobile phone",
      "Works from any mobile, including one with no airtime."
+    ],
+    "venueNote": "Brad 2026-11-09 (Lee-Ann's venue answer): the page renders 'Hangar 25, Orca Aero Solutions' where her frozen v1.0 says 'The Hangar, Stellenbosch Flying Club'; this pin depends on the Sanity venue patch (scripts/sanity-venue-name-1109.mjs) being applied for the Sanity-held copies.",
+    "edits": [
+     { "find": "The Hangar, Stellenbosch Flying Club", "replace": "Hangar 25, Orca Aero Solutions" },
+     { "find": "the hangar at Stellenbosch Flying Club", "replace": "Hangar 25, Orca Aero Solutions" }
     ],
     "strikeAbsence": "all",
     "strikeAbsenceExempt": [],
@@ -1140,9 +1146,9 @@
   "path": "/",
   "h2s": [
    "2027 South African National Orchid Show",
-   "Programme",
-   "Exhibit & trade"
+   "Programme"
   ],
+  "h1": "National Orchid Show - Western Cape 2027",
   "sections": [
    "intro",
    "about",
@@ -1178,13 +1184,19 @@
     "faq": 57
    }
   ],
-  "exhibitLead": 26,
-  "exhibitBody": 27,
   "exhibitLinks": [
-   "Award Entries",
-   "Exhibitors and vendors",
-   "International guests"
+   "Plant Entry",
+   "Vendors"
   ],
+  "exhibitHrefSuffix": [
+   "/award-entries",
+   "/vendors"
+  ],
+  "exhibitNavLabels": [
+   "Award Entries",
+   "Exhibitors and vendors"
+  ],
+  "exhibitAria": "Plant Entry and Vendors",
   "closingLinks": [
    "Tickets",
    "Plan your visit"

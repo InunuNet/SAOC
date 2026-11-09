@@ -64,7 +64,7 @@ await withServer(2, 'verbatim', async (server, c) => {
       }
       if (expected.length) c.check(`${tag} all ${expected.length} blocks rendered verbatim in order (${missing} missing)`, missing === 0);
       for (const m of d.mustAbsentText ?? []) c.check(`${tag} deleted or pending copy is not rendered: "${m}"`, !body.toLowerCase().includes(m.toLowerCase()));
-      for (const m of d.mustPresent ?? []) c.check(`${tag} renders: "${m.slice(0, 60)}"`, body.includes(unmd(m)));
+      for (const m of d.mustPresent ?? []) c.check(`${tag} renders: "${edit(m).slice(0, 60)}"`, body.includes(unmd(edit(m))));
 
       if (d.strikeAbsence === 'all') {
         const spans = [...st.text.matchAll(/~~([\s\S]*?)~~/g)].map((m) => unmd(m[1])).filter((s) => s.length >= 12 && !(d.strikeAbsenceExempt ?? []).some((x) => s.includes(x)));

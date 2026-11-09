@@ -1,9 +1,9 @@
 db4dc7ebe0a3e91cd2394fd972c79ee0f36d0bd2c276fa98ab0d6e762d728f1f  .agent/memory/project/specs/nos-home-restore/checks/landing-strings.mjs
-0c814b11c9c9087157d47533e35ad0a8d23ea96c3c008ab0166109b31004a05c  .agent/memory/project/specs/nos-home-restore/checks/home-restore-checks.mjs
-88601ce6607a4010976376b78aa299f0a04fd510d7c4d072e0f6007c9bde64c3  .agent/memory/project/specs/nos-home-restore/checks/check-home-restore-static.mjs
+7883c8646a52a40efe7ed8daffcaed6826c5daa74adebf7427e24a580c490ffc  .agent/memory/project/specs/nos-home-restore/checks/home-restore-checks.mjs
+1f0b105d9891b8a49d78808c6fda185865733a125e108d761349e147386825d7  .agent/memory/project/specs/nos-home-restore/checks/check-home-restore-static.mjs
 e365b992ec012da2ac3614afb22afd8beefc057e8d2d2292e933a0d29087ea3a  .agent/memory/project/specs/nos-home-restore/goldens/sources/landing-page-v1.0.md
 ca02740b96b5b4f27148c0aea065098d51de8c70cdcc606d7e759ab6eaaf309b  .agent/memory/project/specs/nos-home-restore/goldens/invented-copy.json
 7295d4f83eea32375347f9c23881fc7a7d3469694623211f449413ea84ddde7c  .agent/memory/project/specs/nos-home-restore/goldens/spec.md
 92e18586b11b93ac2f9512f1590082bddef76d039ceba421b7e12764b93c573d  .agent/memory/project/specs/nos-home-restore/goldens/codex-qa-prompt.md
-9aabdc1bfc785b5548fb238f658f2274c42116c21f26522d66f08ee84b51da00  .agent/memory/project/specs/nos-content-standard/checks/gate-standard.mjs
-54a2159dabc3990860faf62691000a2cb3276a83d3edfbce9ad75e3655eecadb  .agent/memory/project/specs/nos-content-standard/goldens/route-table.json
+759e82d0c27a6b8c3f27da8cbc03ad198be13b3fd8f175614ad6c4c483709067  .agent/memory/project/specs/nos-content-standard/checks/gate-standard.mjs
+95ed5521ee63715be42c879d53940e07bf5de227344635cfe2666842f683b8a1  .agent/memory/project/specs/nos-content-standard/goldens/route-table.json

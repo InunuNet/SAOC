@@ -10,9 +10,13 @@ check(`${MODULE} exists`, existsSync(MODULE)); if (!existsSync(MODULE)) process.
 const mod = readFileSync(MODULE, 'utf8'); const page = readFileSync(PAGE, 'utf8'); const flat = (s) => s.replace(/\s+/g, ' ');
 // Quote style is the dev's; match each string inside any of ' " ` literals, JSON-escaped or not.
 const inSrc = (src, s) => [s, s.replace(/'/g, "\\'"), s.replace(/"/g, '\\"'), JSON.stringify(s).slice(1, -1)].some((v) => flat(src).includes(flat(v)));
-const wanted = [L.tagline, L.para1, L.para2, ...L.figures.flatMap((f) => f.split(' ')[0] ? [f.split(' ')[0], f.slice(f.indexOf(' ') + 1)] : [f]), L.groupsHeading, L.plantEntryHeading, L.startPlanning, L.registerHere, L.cta,
+// The figures strip is removed (Brad 2026-11-09, her note item 3): L.figures is still parsed but no longer wanted; their absence is asserted below.
+const wanted = [L.tagline, L.para1, L.para2, L.groupsHeading, L.plantEntryHeading, L.startPlanning, L.registerHere, L.cta,
   ...L.groups.flatMap((g) => [g.name, ...(g.description ? [g.description] : []), ...g.italics]), ...L.stages.flatMap((s) => [s.title, s.description])];
 const missing = wanted.filter((s) => !inSrc(mod, s)); check(`module carries every restored string verbatim (${wanted.length} strings; missing: ${missing.slice(0, 3).join(' | ') || 'none'})`, missing.length === 0);
+const figLabels = L.figures.map((f) => f.slice(f.indexOf(' ') + 1)); const figLeft = figLabels.filter((t) => new RegExp(`(['"\`])${t}\\1`).test(mod));
+check(`the figures strip is gone from ${MODULE} (Brad 2026-11-09): no LANDING_FIGURES / LandingFigure, no quoted ${figLabels.join(' / ')} label (left: ${figLeft.join(' | ') || 'none'})`, !/LANDING_FIGURES|LandingFigure/.test(mod) && figLeft.length === 0);
+check('the page renders no [data-hm-figure] and does not import LANDING_FIGURES (Brad 2026-11-09)', !/data-hm-figure|LANDING_FIGURES/.test(page));
 const noDesc = L.groups.filter((g) => g.description === null).map((g) => g.name);
 check(`groups with no description in her doc (${noDesc.join(', ')}) carry null/absent, not filler`, noDesc.every((n) => !new RegExp(`${n}[^\\n]{0,80}description:\\s*['"\`][^'"\`]`).test(mod)));
 const notes = EDITORIAL_NOTES.filter((n) => flat(mod + page).includes(n)); check(`no editorial note in the module or the page (${notes.join(' | ') || 'none'})`, notes.length === 0);
