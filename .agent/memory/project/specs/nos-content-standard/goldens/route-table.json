@@ -1155,7 +1155,6 @@
    "judging",
    "plant-entry",
    "programme",
-   "exhibit",
    "closing"
   ],
   "factTerms": [
@@ -1197,6 +1196,7 @@
    "Exhibitors and vendors"
   ],
   "exhibitAria": "Plant Entry and Vendors",
+  "exhibitAfter": "The 19th National Orchid Show opens on 23rd September 2027 in Stellenbosch.",
   "closingLinks": [
    "Tickets",
    "Plan your visit"
@@ -1212,7 +1212,7 @@
    "judging classes"
   ],
   "bannedPattern": "\\bTBC\\b|to be confirmed|pending|PLACEHOLDER|cloakroom",
-  "hooks": "section[data-hm-section=\"about|programme|exhibit|closing\"] on each band; [data-hm-lede] on the hero lede; [data-hm-visit-card] on the compact card in the About band; [data-hm-exempt] on the hero countdown, price line and CTAs (unchanged, outside the sentence-provenance check); every other <p> in main must be a sentence of About v1.2, What to Expect v1.0 or FAQ v1.0. nos-home-restore adds data-hm-section=\"intro|judging|plant-entry\".",
+  "hooks": "section[data-hm-section=\"about|programme|closing\"] on each band; [data-hm-lede] on the hero lede; [data-hm-visit-card] on the compact card in the About band; [data-hm-exempt] on the hero countdown, price line and CTAs (unchanged, outside the sentence-provenance check); every other <p> in main must be a sentence of About v1.2, What to Expect v1.0 or FAQ v1.0. nos-home-restore adds data-hm-section=\"intro|judging|plant-entry\".",
   "note": "Every sentence is verbatim from the frozen About v1.2, What to Expect v1.0 or FAQ v1.0. Unsourced: the section h2s Programme and Exhibit & trade (nav group names), the register and link labels (nav labels), and the arrows. The home hero stays PG-1 exempt and unchanged apart from the lede, the TBC chip and the facts row. Owner item vvvv: FAQ 26 'who’s'. About keeps its hyphen ('Show - Western Cape'), What to Expect its en dash. The Visit band is retired (Brad 2026-10-31: the sub-nav replaces it).",
   "pendingMarkerScope": "[data-hm-section=\"plant-entry\"] [data-hm-register-marker]",
   "restoreAmendment": "nos-home-restore (Brad 2026-10-29, carve-out from the copy freeze): sections gains intro, judging, plant-entry (order: intro, about, visit, judging, plant-entry, programme, exhibit, closing); bannedText drops the three strings Lee-Ann's landing doc v1.0 now requires (\"Three years\", \"Ten judging\", \"Start planning your entry now\"); the one pending marker (Register Here) is exempt from bannedPattern only inside pendingMarkerScope; the sentence-provenance corpus gains landing-page-v1.0.md. See .agent/memory/project/specs/nos-home-restore/. Approved-page alignment (Brad 2026-10-31, Lee-Ann approved): the visit band is removed (sub-nav carries those links), so sections is intro, about, judging, plant-entry, programme, exhibit, closing and the Visit h2/register assertions are retired; the judging h2 is \"Thirteen judging groups\"; the show-dates card floats (its track is sticky)."
