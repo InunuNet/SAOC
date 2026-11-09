@@ -25,7 +25,15 @@ const DOC_IDS = ['nationalShow', 'show-19-2027'];
 const NEW_VENUE_NAME = 'Hangar 25, Orca Aero Solutions';
 const OLD_NOTE_PHRASE = 'the hangar at Stellenbosch Flying Club';
 const API_VERSION = '2024-01-01';
+const REVISION_CONFLICT_STATUS = 409;
 const APPLY = process.argv.includes('--apply');
+
+/** A fixed description for a client error; server-supplied text, headers and the token are never echoed. */
+function describeFailure(err) {
+  return err?.statusCode === REVISION_CONFLICT_STATUS
+    ? 'patch rejected (revision changed)'
+    : 'request failed';
+}
 
 function readEnvLocal() {
   const raw = readFileSync(path.resolve(process.cwd(), '.env.local'), 'utf8');
@@ -84,32 +92,54 @@ async function main() {
 
   console.log(`${APPLY ? 'APPLY' : 'DRY RUN'} against dataset "${dataset}" (project ${projectId})`);
 
-  const docs = await client.fetch('*[_id in $ids]{_id, _rev, venue}', { ids: DOC_IDS });
+  let docs;
+  try {
+    docs = await client.fetch('*[_id in $ids]{_id, _rev, venue}', { ids: DOC_IDS });
+  } catch (err) {
+    throw new Error(`read failed (${describeFailure(err)})`);
+  }
   const byId = new Map(docs.map((d) => [d._id, d]));
   const missing = DOC_IDS.filter((id) => !byId.has(id));
   if (missing.length > 0) {
     throw new Error(`Published doc(s) not found: ${missing.join(', ')}`);
   }
 
-  let patched = 0;
+  const written = [];
+  const failed = [];
   for (const id of DOC_IDS) {
     const doc = byId.get(id);
     const set = planPatch(doc);
+    report(id, doc, set ?? {});
     if (!set) {
-      console.log(`\n${id}: already carries the new venue name, nothing to do.`);
+      console.log('  no change needed');
       continue;
     }
-    report(id, doc, set);
-    if (APPLY) {
-      await client.patch(id).ifRevisionId(doc._rev).set(set).commit();
-      patched += 1;
+    if (!APPLY) continue;
+    try {
+      const updated = await client.patch(id).ifRevisionId(doc._rev).set(set).commit();
+      written.push({ id, rev: updated._rev });
+    } catch (err) {
+      failed.push({ id, status: err?.statusCode, description: describeFailure(err) });
     }
   }
 
-  console.log(APPLY ? `\nApplied: ${patched} doc(s) patched.` : '\nDry run only. Re-run with --apply to write.');
+  if (!APPLY) {
+    console.log('\nDry run only. Re-run with --apply to write.');
+    return;
+  }
+  console.log(`\nWritten: ${written.length} doc(s).`);
+  for (const { id, rev } of written) console.log(`  ${id} -> rev ${rev}`);
+  if (failed.length > 0) {
+    console.error(`Failed: ${failed.length} doc(s).`);
+    for (const { id, status, description } of failed) {
+      console.error(`  ${id}: HTTP ${status ?? 'n/a'}, ${description}`);
+    }
+    process.exitCode = 1;
+  }
 }
 
 main().catch((err) => {
-  console.error('Venue name patch failed:', err instanceof Error ? err.message : err);
+  // Only messages this script wrote reach here; client errors are reduced by describeFailure first.
+  console.error('Venue name patch failed:', err instanceof Error ? err.message : 'request failed');
   process.exit(1);
 });
