@@ -1,19 +1,15 @@
 // =============================================================
 // NOS — lib/data/nos-home-landing.ts
 // Sourced module for the /national-show home bands that mission nos-home-restore brings back
-// (intro + figures, judging groups, plant entry). Every string is Lee-Ann's text from the
+// (intro, judging groups, plant entry). Every string is Lee-Ann's text from the
 // National Orchid Show Website landing-page document v1.0 (Drive: National Show / 1. Home),
 // verbatim, typos included ("can be judges", no full stop after "12pm"). Her editorial notes
 // to us are never copy and are not here. Nothing in this file is ours; add no words of your own
 // (docs/rules/no-invention.md). Two Brad-sanctioned exceptions (2026-10-31, Lee-Ann approved the
 // page): the judging heading reads "Thirteen judging groups" (her doc says "Ten"), and the visit
-// band is removed from the home (the sub-nav carries those links). See docs/nos-home-restore.md.
+// band is removed from the home (the sub-nav carries those links). The figures strip (3 Years, 13
+// Judging Groups, 18 National Show Editions) is removed too (Brad 2026-11-09, her note item 3). See docs/nos-home-restore.md.
 // =============================================================
-
-export interface LandingFigure {
-  value: string;
-  label: string;
-}
 
 export interface JudgingGroup {
   n: number;
@@ -37,21 +33,6 @@ export const LANDING_INTRO = {
     'Every plant submitted for judging is assessed by accredited SAOC judges and if requested can be judges for an SAOC Award. The Show Grand Champion is selected from the best on show and chosen by secret ballot by the accredited SAOC Judges.',
   ],
 } as const;
-
-export const LANDING_FIGURES: readonly LandingFigure[] = [
-  {
-    value: '3',
-    label: 'Years',
-  },
-  {
-    value: '13',
-    label: 'Judging Groups',
-  },
-  {
-    value: '18',
-    label: 'National Show Editions',
-  },
-];
 
 // Departs from her doc v1.0 ("Ten judging groups") by Brad's instruction of 2026-10-31.
 export const JUDGING_GROUPS_HEADING = 'Thirteen judging groups';

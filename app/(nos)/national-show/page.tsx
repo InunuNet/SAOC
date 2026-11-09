@@ -26,7 +26,6 @@ import {
   JUDGING_GROUPS,
   JUDGING_GROUPS_HEADING,
   LANDING_CTA,
-  LANDING_FIGURES,
   LANDING_INTRO,
   PLANT_ENTRY_HEADING,
   PLANT_ENTRY_STAGES,
@@ -54,7 +53,7 @@ export const revalidate = 60;
 
 /** The hub's `<h1>` (R68, Brad): the show's plain name. nav-config keeps its own longer label
  *  as the mega-menu lead, so the two are deliberately separate. */
-const HUB_HEADING = 'National Orchid Show';
+const HUB_HEADING = 'National Orchid Show - Western Cape 2027';
 
 const HUB_MEGA = NOS_NAV.find((n) => n.type === 'mega');
 
@@ -110,20 +109,23 @@ const HOURS = [["Thursday VIP Ticket Holders", "14.00 to 19.00"], ["Friday & Sat
 const SYMPOSIUM_LINE = "The National Show Symposium will feature an outstanding programme of presentations by respected local and international speakers covering orchid cultivation, breeding, conservation, taxonomy, judging, sustainability and emerging scientific research.";
 const WOSA_LINE = "A Conference held by Wild Orchids Southern Africa (WOSA) will highlight the ecology and conservation of indigenous orchids, illustrating how research undertaken in natural habitats continues to influence cultivation practices, breeding programmes and the long-term future of orchids.";
 const WORKSHOPS_LINE = "Workshops are planned as part of the wider event programme.";
-const EXHIBIT_LEAD = "All South African Orchid Council members whose subscriptions are valid may enter orchids for judging. If you are unsure, please check with your society.";
-const EXHIBIT_BODY = "All submitted orchids will be placed in the Show display. Regional Societies may also have their own displays by booking a stand. They will also be able to sell society plants on behalf of their members.";
 const CLOSING = "Whether your passion lies in conservation, scientific discovery, judging, growing or simply enjoying the extraordinary beauty of orchids, the National Orchid Show – Western Cape 2027 offers an unforgettable experience that celebrates the complete journey of orchids and the people dedicated to their future.";
 
 // HM-G1 (NOS Design, comms.md): the home keeps its approved rhythm and takes Lee-Ann's words. Every
 // sentence below is verbatim from About v1.2, What to Expect v1.0 or FAQ v1.0 (docs/rules/no-invention.md):
-// her About keeps its hyphen ("Show - Western Cape"), What to Expect its en dash. The section h2s
-// Programme and Exhibit & trade are the nav group names; register and link labels are read from the nav.
+// her About keeps its hyphen ("Show - Western Cape"), What to Expect its en dash. The section h2
+// Programme is the nav group name; register and link labels are read from the nav.
 // "who\u2019s" in FAQ 26 is her spelling (owner item vvvv).
 const FACT_LABELS = ['Dates', 'Venue'] as const;
 const ABOUT_HEADING = '2027 South African National Orchid Show';
 const ABOUT_LINK_LABEL = 'About the show';
 const WTE_LINK_LABEL = 'What to expect';
-const EXHIBIT_IDS = ['exhibitors', 'vendors', 'international-guests'] as const;
+// The Exhibit band is links only (Brad 2026-11-09); the labels are home-page overrides, the nav keeps its own.
+const EXHIBIT_LINKS = [
+  { id: 'exhibitors', label: 'Plant Entry' },
+  { id: 'vendors', label: 'Vendors' },
+] as const;
+const EXHIBIT_ARIA_LABEL = `${EXHIBIT_LINKS[0].label} and ${EXHIBIT_LINKS[1].label}`;
 const PROGRAMME_ROWS = [
   { id: 'symposium', line: SYMPOSIUM_LINE },
   { id: 'wosa-conference', line: WOSA_LINE },
@@ -356,14 +358,6 @@ export default async function NationalShowPage() {
             {paragraph}
           </p>
         ))}
-        <ul className="nos-figures nos-figures-below">
-          {LANDING_FIGURES.map(({ value, label }) => (
-            <li key={label} data-hm-figure="">
-              <span className="nos-figure font-serif">{value}</span>
-              <span className="nos-figure-label">{label}</span>
-            </li>
-          ))}
-        </ul>
       </NosSection>
 
       <NosSection data-hm-section="about" aria-labelledby="hm-about-h">
@@ -444,23 +438,15 @@ export default async function NationalShowPage() {
         </ul>
       </NosSection>
 
-      <NosSection data-hm-section="exhibit" aria-labelledby="hm-exhibit-h">
-        <h2 id="hm-exhibit-h" className="nos-hm-h2">
-          Exhibit &amp; trade
-        </h2>
-        <p className="nos-hm-lead">{EXHIBIT_LEAD}</p>
-        <p className="nos-hm-body">{EXHIBIT_BODY}</p>
-        <ul className="nos-hm-register">
-          {EXHIBIT_IDS.map((id) => {
-            const leaf = leafFor(id);
-            return (
-              <li key={id}>
-                <Link href={nosPath(leaf.href)}>
-                  {leaf.label} <span aria-hidden="true">&rarr;</span>
-                </Link>
-              </li>
-            );
-          })}
+      <NosSection data-hm-section="exhibit">
+        <ul className="nos-hm-register" aria-label={EXHIBIT_ARIA_LABEL}>
+          {EXHIBIT_LINKS.map(({ id, label }) => (
+            <li key={id}>
+              <Link href={nosPath(leafFor(id).href)}>
+                {label} <span aria-hidden="true">&rarr;</span>
+              </Link>
+            </li>
+          ))}
         </ul>
       </NosSection>
 
