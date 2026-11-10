@@ -123,7 +123,7 @@ const WTE_LINK_LABEL = 'What to expect';
 // The Plant Entry and Vendors links close the plant-entry band (Brad 2026-11-09; the Exhibit band is gone).
 // The labels are home-page overrides; the nav keeps its own.
 const EXHIBIT_LINKS = [
-  { id: 'exhibitors', label: 'Plant Entry' },
+  { id: 'plant-entry', label: 'Plant Entry' },
   { id: 'vendors', label: 'Vendors' },
 ] as const;
 const EXHIBIT_ARIA_LABEL = `${EXHIBIT_LINKS[0].label} and ${EXHIBIT_LINKS[1].label}`;

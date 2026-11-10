@@ -80,18 +80,13 @@ const SECTION_LINKS: readonly SectionLink[] = [
     hint: 'Register for the Symposium and WOSA Conference',
   },
   {
-    href: '/national-show/international-guests',
-    label: 'International Guests',
-    hint: 'Guests and exhibitors from abroad',
-  },
-  {
     href: '/national-show/award-entries',
-    label: 'Award Entries',
+    label: 'Plant Entry',
     hint: 'Entry process, fees, classes and judging',
   },
   {
     href: '/national-show/vendors',
-    label: 'Exhibitors and Vendors',
+    label: 'Vendors',
     hint: 'The trade floor and how to exhibit',
   },
   { href: '/national-show/tickets', label: 'Tickets', hint: 'Buy admission tickets' },

@@ -108,7 +108,7 @@ function keyed<T extends object>(ownerId: string, prefix: string, items: T[]): A
 // ---------------------------------------------------------------------------
 
 const VENUE = {
-  name: 'The Hangar, Stellenbosch Flying Club',
+  name: 'Hangar 25, Orca Aero Solutions',
   addressLines: ['Stellenbosch Airfield', 'R44'],
   city: 'Stellenbosch',
   province: 'Western Cape',
@@ -244,7 +244,7 @@ async function seedVisitorInfo(): Promise<void> {
       'Everything you need to get to the National Orchid Show and make a day of it. ' +
       'Travel and accommodation guidance for the venue is still being put together; the show committee will confirm the final details.',
     gettingThereIntro:
-      'Travel, parking and accommodation guidance for the Stellenbosch Flying Club has not been worked out yet. It will be published here once it is ready.',
+      'Travel, parking and accommodation guidance for Hangar 25, Orca Aero Solutions has not been worked out yet. It will be published here once it is ready.',
     airportRoutes: keyed(VISITOR_INFO_ID, 'route', AIRPORT_ROUTES),
 
     parking: 'Parking arrangements have not been confirmed.',
@@ -316,7 +316,7 @@ const FAQS: SeedFaq[] = [
     status: 'pending',
     question: 'How do I get to the show from Cape Town International Airport?',
     answer:
-      'The show is at Stellenbosch Flying Club, on the R44 at Stellenbosch Airfield in the Cape ' +
+      'The show is at Hangar 25, Orca Aero Solutions, on the R44 at Stellenbosch Airfield in the Cape ' +
       'Winelands. Public transport options to the venue have not been confirmed. Detailed travel ' +
       'guidance for the venue will be added to the Plan your visit page once it is confirmed.',
   },
@@ -337,7 +337,7 @@ const FAQS: SeedFaq[] = [
     status: 'pending',
     question: 'Where exactly is the show being held?',
     answer:
-      'At the hangar at Stellenbosch Flying Club, Stellenbosch Airfield, on the R44 in the Cape ' +
+      'At Hangar 25, Orca Aero Solutions, Stellenbosch Airfield, on the R44 in the Cape ' +
       'Winelands. On-site details such as the entrance to use, parking and accessibility are ' +
       'still being worked out and will be published here as they are settled.',
   },

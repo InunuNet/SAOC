@@ -4,7 +4,7 @@
 // NOS — components/nos-chrome/NosHeader.tsx
 // The National Orchid Show site's own header (nos-site-split F3, NOS Design R1): the supplied
 // full-colour lockup (links the NOS home), a top row of three click-only disclosure panels
-// (Visit, Programme, Exhibit & trade), Show sponsors, Past shows (withheld in public until there is
+// (Visit, Programme, Vendors), Show sponsors, Past shows (withheld in public until there is
 // content, r64) and Contact (SAOC organises the show, so Contact is the SAOC contact), the Tickets
 // call to action, and below 1384px a menu panel that ends with the SAOC credit. Labels
 // and order come from nos-nav.ts, which the SAOC site's old show mega carried verbatim; hrefs are

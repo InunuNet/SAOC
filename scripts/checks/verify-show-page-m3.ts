@@ -413,7 +413,7 @@ function runC7(corpus: Array<{ file: string; doc: SeedPageDoc }>): void {
 // C8 — venue and theme sentences appear verbatim wherever reused
 // ===========================================================================
 
-const VENUE_SENTENCE = 'Stellenbosch Flying Club, R44 northbound to Stellenbosch';
+const VENUE_SENTENCE = 'Hangar 25, Orca Aero Solutions, Stellenbosch Airfield, R44 northbound to Stellenbosch';
 const THEME_SENTENCE = 'From Wild Origins to Cultivated Excellence: The Future of Orchids';
 
 function runC8(corpus: Array<{ file: string; doc: SeedPageDoc }>): void {

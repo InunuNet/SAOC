@@ -122,11 +122,11 @@ test.describe('NOS header — lockup and Tickets call to action', () => {
     await page.goto(`${nosBase(baseURL!)}/`);
 
     const header = page.locator('header#nh');
-    for (const group of ['Visit', 'Programme', 'Exhibit & trade']) {
+    for (const group of ['Visit', 'Programme', 'Vendors']) {
       await header.getByRole('button', { name: group, exact: true }).click();
       await expect(header.getByRole('heading')).toHaveCount(0);
     }
-    for (const name of ['Day Visitor', 'Weekend Pass', '19th National Orchid Show', 'Buy tickets']) {
+    for (const name of ['Day Visitor', 'Weekend Pass', 'National Orchid Show - Western Cape 2027', 'Buy tickets']) {
       await expect(header.getByRole('link', { name })).toHaveCount(0);
     }
   });

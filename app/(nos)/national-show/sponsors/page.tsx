@@ -57,7 +57,7 @@ const REACH = [
   },
   {
     href: '/national-show/vendors',
-    title: 'Exhibitors and vendors',
+    title: 'Vendors',
     text: 'Browse the extensive plant sales area, where specialist nurseries from across South Africa will be joined by selected international orchid vendors, offering an exceptional range of orchid species, hybrids, companion plants, growing media and specialist supplies.',
   },
 ] as const;

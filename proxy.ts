@@ -172,7 +172,13 @@ const PERMANENT_REDIRECT = 308; // 308, not 301: the method and body survive the
 // either host, so no one lands on a 404 and no chain of hops forms.
 const RETIRED_EXHIBITORS_ENTRY_PATHS = new Set<string>(['/exhibitors', '/national-show/exhibitors']);
 const AWARD_ENTRIES_PATH = '/award-entries';
-const RETIRED_SA_EXHIBITORS_PATHS = new Set<string>(['/sa-exhibitors', '/national-show/sa-exhibitors']);
+// International guests was removed too (Lee-Ann B8): the page is unlinked, its path 308s to the same page.
+const RETIRED_SA_EXHIBITORS_PATHS = new Set<string>([
+  '/sa-exhibitors',
+  '/national-show/sa-exhibitors',
+  '/international-guests',
+  '/national-show/international-guests',
+]);
 const MERGED_VENDORS_PATH = '/vendors';
 
 // The Constitution page is now the Memorandum of Incorporation (mission saoc-content-standard, F2).

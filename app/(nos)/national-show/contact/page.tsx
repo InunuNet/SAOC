@@ -28,7 +28,7 @@ const COMMITTEE: readonly { name: string; role: string }[] = [
   { name: 'Hendrik Schoeman', role: 'Chair of show' },
   { name: 'Barry Deutschmann', role: 'Vice Chair of show' },
   { name: 'Bernadette Smith', role: 'Co-ordinator of the SAOC Symposium and marketing' },
-  { name: 'Caral-Anne van der Merwe', role: 'Co-ordinator of Hospitality and assisting with finances' },
+  { name: 'Caral-Anne van der Westhuizen', role: 'Co-ordinator of Hospitality and assisting with finances' },
   { name: 'Scott Ormerod', role: 'Design and Advertising copy' },
   { name: 'Vic Heard', role: 'Representative of WOSA and assisting with marketing and outings' },
   { name: 'Lee-Ann McCleland', role: 'Show co-ordinator, website development and Treasurer' },
