@@ -70,8 +70,8 @@ interface SaocLockupProps {
   compact?: boolean;
   className?: string;
   priority?: boolean;
-  /** 'official-mono' reads only on vertical + dark (the NOS footer). */
-  variant?: 'standard' | 'official-mono';
+  /** 'official-mono' and 'official-colour' read only on vertical + dark (the NOS footer). */
+  variant?: 'standard' | 'official-mono' | 'official-colour';
   /** When set, the root is a plain <a href> (cross-site, same tab) instead of next/link. */
   href?: string;
   testId?: string;
@@ -89,6 +89,17 @@ export function SaocLockup({
 }: SaocLockupProps) {
   if (orientation === 'vertical' && tone === 'dark' && variant === 'official-mono') {
     return <OfficialMonoLockup href={href} testId={testId} className={className} priority={priority} />;
+  }
+  if (orientation === 'vertical' && tone === 'dark' && variant === 'official-colour') {
+    return (
+      <OfficialMonoLockup
+        emblemSrc={OFFICIAL_COLOUR_EMBLEM}
+        href={href}
+        testId={testId}
+        className={className}
+        priority={priority}
+      />
+    );
   }
 
   const col = TONE_COLOURS[tone];
@@ -230,15 +241,21 @@ export function SaocLockup({
 // scripts/extract-saoc-footer-lockup.py. The wordmark is sized in container-query units so the live text
 // is about as wide as the 768x490 emblem box (244px) it sits under.
 const OFFICIAL_MONO_EMBLEM = '/images/saoc-lockup-vertical-emblem.png';
+// 'official-colour' (NOS footer, Brad 2026-11-09): the same lockup with the approved full-colour Eulophia
+// speciosa emblem, tight-cropped by scripts/crop-saoc-emblem-colour.mjs. It is drawn in the same 206px box
+// (aspect 768/490, object-contain), so it spans the same width as the mono emblem and the wordmark, rule
+// and tagline sit exactly where they did.
+const OFFICIAL_COLOUR_EMBLEM = '/images/saoc-emblem-footer-colour.png';
 
 // The accessible name is the visible text (label-in-name): no aria-label, nothing aria-hidden inside.
 // The focus ring comes from the host's rule (nos-chrome.css, .nf-saoc-credit a:focus-visible).
 function OfficialMonoLockup({
+  emblemSrc = OFFICIAL_MONO_EMBLEM,
   href,
   testId,
   className,
   priority,
-}: Pick<SaocLockupProps, 'href' | 'testId' | 'className' | 'priority'>) {
+}: Pick<SaocLockupProps, 'href' | 'testId' | 'className' | 'priority'> & { emblemSrc?: string }) {
   const solid = { color: 'var(--ivory)' };
   return (
     <a
@@ -251,7 +268,7 @@ function OfficialMonoLockup({
     >
       <span className="flex w-full flex-col items-center">
         <span className="relative block w-full aspect-[768/490]">
-          <Image src={OFFICIAL_MONO_EMBLEM} alt="" fill sizes="206px" className="object-contain" priority={priority} />
+          <Image src={emblemSrc} alt="" fill sizes="206px" className="object-contain" priority={priority} />
         </span>
         <span
           className={[lora.className, 'block leading-[1.02] whitespace-nowrap'].join(' ')}

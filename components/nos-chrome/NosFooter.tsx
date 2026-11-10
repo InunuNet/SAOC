@@ -1,8 +1,8 @@
 // =============================================================
 // NOS — components/nos-chrome/NosFooter.tsx
 // The National Orchid Show's own footer (mission nos-site-split F3, NOS Design R2), on the NOS royal
-// ground: the supplied gold vertical lockup (links the NOS home), an "Explore" list from the show
-// nav, the SAOC credit (one link to the SAOC site: the organising body, its mark, name and
+// ground: the supplied full-colour reversed vertical lockup (links the NOS home), an "Explore" list from the show
+// nav, the SAOC credit (full-colour emblem, one link to the SAOC site: the organising body, its mark, name and
 // registration), the bulletin sign-up and the WOSA pointer, then the copyright and the legal row.
 // A server component: the credit's label placeholder is decided on the server
 // (withholdPlaceholderProse) and passed in.
@@ -41,7 +41,7 @@ import './nos-chrome.css';
 
 const HUB_HREF = '/';
 const LOCKUP_ALT = SHOW_TITLE_EXPANDED;
-const LOCKUP_SRC = '/images/NOS-2027-logo-reversed-gold-vertical.png';
+const LOCKUP_SRC = '/images/NOS-2027-logo-full-colour-reversed-vertical.png';
 const LOCKUP_WIDTH = 3272;
 const LOCKUP_HEIGHT = 2876;
 // The lockup's rendered box is 248px wide (nos-chrome.css). A width with no `sizes` gives a
@@ -106,7 +106,7 @@ export function NosFooter({ showPlaceholders }: NosFooterProps) {
             <SaocLockup
               orientation="vertical"
               tone="dark"
-              variant="official-mono"
+              variant="official-colour"
               href={saocUrl('/')}
               testId="nf-saoc-lockup"
             />
