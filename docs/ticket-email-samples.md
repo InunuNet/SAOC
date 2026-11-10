@@ -20,8 +20,9 @@ approves. It does not touch `TICKETING_PAYMENTS_LIVE` or `SITE_PUBLIC_LAUNCH`.
 - `lib/ticket-type-email.ts` — the one pure builder (subject and element), used by both
   `sendConfirmationEmail` and the sample script.
 - `lib/confirmation-email.ts` — `SendConfirmationEmailInput` gains optional `firstName`,
-  `quantity`, `amountPaid`, `paymentStatus` and `visitDate`. The ITN route does not pass the last
-  three yet, so until it does they render as `[To be confirmed]`.
+  `quantity`, `amountPaid`, `paymentStatus` and `visitDate`. The ITN route supplies `amountPaid`,
+  `paymentStatus` and `visitDate` (`lib/tickets-notification.ts`, from the stored order price and
+  the buyer's chosen day); any value it cannot supply still renders as `[To be confirmed]`.
 
 ## Samples
 
