@@ -152,7 +152,7 @@ export async function loadTicketTypeTraits(): Promise<Map<string, TicketTypeTrai
 /**
  * Per-ticket schedule (D11 rev, resolveTicketSchedule): a buyer-chosen day gives the numeral,
  * weekday and date, with the time from the matching Sanity opening-hours row; an event or pass
- * product prints its own date and meta line from TICKET_PRODUCTS (an event or programme also its stub numeral);
+ * product prints its own date and meta line from TICKET_PRODUCTS (an event also its stub numeral);
  * anything else is unconfirmed (null), which renders the pill. No date is ever invented.
  */
 export function buildPositionSchedule(
@@ -166,8 +166,7 @@ export function buildPositionSchedule(
     const product = productId ? TICKET_PRODUCTS[productId] : null;
     return {
       eyebrow: null,
-      numeral:
-        product?.kind === 'event' || product?.kind === 'programme' ? product.numeral || null : null,
+      numeral: product?.kind === 'event' ? product.numeral || null : null,
       dateText: resolved.dateText,
       timeText: resolved.metaText,
     };

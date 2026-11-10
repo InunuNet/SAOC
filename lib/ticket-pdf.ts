@@ -7,12 +7,7 @@ import {
   PDFFont,
   PDFImage,
   PDFPage,
-  clip,
   degrees,
-  endPath,
-  popGraphicsState,
-  pushGraphicsState,
-  rectangle,
   rgb,
   setCharacterSpacing,
   type Color,
@@ -162,6 +157,9 @@ const MIN_SMALL_CAPS_SIZE = 7; // smallest caps/pill text printed
 const PILL_HEIGHT = 4.4;
 const PILL_LINE_PITCH = 3;
 const ROW_PITCH = 7;
+const PILL_AFTER_GAP = 3.2; // clear space under a pill before the next label
+const TIME_ROW_PITCH = 11.5; // opening times: date line, then its hours on the next line
+const TIME_VALUE_DROP = 4.6;
 const PILL_PAD_X = 2.4;
 const FOOTNOTE_SIZE = 9;
 const FOOTNOTE_Y = 256;
@@ -173,16 +171,24 @@ const FOOTER_LINE_PITCH = 4.6;
 const HEADER_LOGO_LEFT_PAD = 192 / 4108; // transparent left margin of the logo file, as a fraction of its width
 const FOOTER_MARK_HEIGHT = 16;
 const FONT_DIR = 'lib/ticket-pdf-assets';
-// The XIX stub (the 19th show): numeral, short label and a faint orchid flourish behind the name.
+// The XIX stub (the 19th show) on every ticket: the numeral and a short label as one mark on the
+// right of the stub, the date and time on the left, and one faint orchid below the mark.
 const STUB_NUMERAL = 'XIX';
 const STUB_LABEL = 'National Orchid Show';
+const STUB_MARK_RIGHT_X = PERFORATION_X - 6;
+const STUB_NUMERAL_Y = 88;
+const STUB_NUMERAL_SIZE = 44;
 const STUB_LABEL_Y = 96;
 const STUB_LABEL_SIZE = 8;
+const STUB_DATE_ROOM = 46; // the date/time column ends clear of the XIX mark
+const STUB_DATE_Y = 80;
+const STUB_DATE_SIZE = 10.5;
+const STUB_DATE_PITCH = 4.8;
+const STUB_DATE_MAX_LINES = 3;
+const STUB_TIME_GAP = 5.6;
 const ORCHID_OPACITY = 0.18;
-const ORCHID_SIZE_MM = 60;
-const ORCHID_LEFT_MM = 44; // right edge stays 2 mm short of the perforation, bottom bleeds off the card
-const ORCHID_TOP_MM = 98;
-const ORCHID_CLIP_GAP_MM = 2;
+const ORCHID_SIZE_MM = 34;
+const ORCHID_TOP_MM = 107;
 
 interface Fonts {
   display: PDFFont;
@@ -193,7 +199,7 @@ interface Fonts {
 interface Logos {
   horizontal: PDFImage;
   vertical: PDFImage;
-  orchid: PDFImage | null; // embedded only when a ticket prints the XIX stub
+  orchid: PDFImage;
 }
 
 interface Ctx {
@@ -440,53 +446,52 @@ function drawHeader(ctx: Ctx, index: number, total: number): void {
 
 function drawSchedule(ctx: Ctx, schedule: TicketPdfSchedule | null | undefined, x: number): void {
   const { fonts } = ctx;
-  if (schedule?.numeral && schedule.dateText) {
-    const numeralWidth = drawText(ctx, schedule.numeral, {
-      x,
-      y: 88,
-      font: fonts.display,
-      size: 44,
-      color: ROYAL,
-    });
-    const textX = x + numeralWidth + 4;
-    const room = PERFORATION_X - 6 - textX;
-    drawText(ctx, schedule.dateText, {
-      x: textX,
-      y: 86.9,
-      font: fonts.bold,
-      size: 10.5,
-      color: ROYAL,
-      maxWidth: room,
-    });
-    if (schedule.timeText) {
-      drawText(ctx, schedule.timeText, {
-        x: textX,
-        y: 92,
-        font: fonts.body,
-        size: 10,
-        color: INK,
-        maxWidth: room,
-      });
-    } else {
-      drawPill(ctx, textX, 88.6, PERFORATION_X - 6 - textX);
-    }
+  drawText(ctx, STUB_NUMERAL, {
+    x: STUB_MARK_RIGHT_X,
+    y: STUB_NUMERAL_Y,
+    font: fonts.display,
+    size: STUB_NUMERAL_SIZE,
+    color: ROYAL,
+    align: 'right',
+  });
+  drawText(ctx, STUB_LABEL, {
+    x: STUB_MARK_RIGHT_X,
+    y: STUB_LABEL_Y,
+    font: fonts.bold,
+    size: STUB_LABEL_SIZE,
+    color: ROYAL,
+    align: 'right',
+  });
+  if (!schedule?.dateText) {
+    drawPill(ctx, x, STUB_DATE_Y - 3.2, STUB_DATE_ROOM);
     return;
   }
-  if (schedule?.dateText) {
-    drawText(ctx, schedule.dateText, {
+  const lines = wrap(schedule.dateText, fonts.bold, STUB_DATE_SIZE, STUB_DATE_ROOM).slice(
+    0,
+    STUB_DATE_MAX_LINES
+  );
+  lines.forEach((line, i) =>
+    drawText(ctx, line, {
       x,
-      y: 86.9,
+      y: STUB_DATE_Y + i * STUB_DATE_PITCH,
       font: fonts.bold,
-      size: 10.5,
+      size: STUB_DATE_SIZE,
       color: ROYAL,
-      maxWidth: PERFORATION_X - 6 - x,
+    })
+  );
+  const timeY = STUB_DATE_Y + (lines.length - 1) * STUB_DATE_PITCH + STUB_TIME_GAP;
+  if (schedule.timeText) {
+    drawText(ctx, schedule.timeText, {
+      x,
+      y: timeY,
+      font: fonts.body,
+      size: 10,
+      color: INK,
+      maxWidth: STUB_DATE_ROOM,
     });
-    if (schedule.timeText) {
-      drawText(ctx, schedule.timeText, { x, y: 92, font: fonts.body, size: 10, color: INK });
-    }
-    return;
+  } else {
+    drawPill(ctx, x, timeY - 3, STUB_DATE_ROOM);
   }
-  drawPill(ctx, x, 79, 100 - x);
 }
 
 /** Greedy word wrap that hard-breaks a word wider than the line, so no line ever exceeds `maxMm`. */
@@ -555,39 +560,22 @@ function drawAttendeeName(ctx: Ctx, name: string, x: number, room: number): void
   }
 }
 
-function hasXixStub(position: TicketPdfPosition): boolean {
-  return position.schedule?.numeral === STUB_NUMERAL;
-}
-
-/** One faint orchid behind the stub text, clipped to the stub so it never reaches the perforation. */
+/** One faint orchid in the stub's lower right, wholly inside the panel and clear of the name. */
 function drawStubOrchid(ctx: Ctx): void {
-  const { orchid } = ctx.logos;
-  if (!orchid) return;
-  const left = mm(MARGIN_X);
-  const right = mm(PERFORATION_X - ORCHID_CLIP_GAP_MM);
-  const bottom = PAGE_HEIGHT - mm(CARD_BOTTOM);
-  const top = PAGE_HEIGHT - mm(ORCHID_TOP_MM);
-  ctx.page.pushOperators(
-    pushGraphicsState(),
-    rectangle(left, bottom, right - left, top - bottom),
-    clip(),
-    endPath()
-  );
-  ctx.page.drawImage(orchid, {
-    x: mm(ORCHID_LEFT_MM),
+  ctx.page.drawImage(ctx.logos.orchid, {
+    x: mm(STUB_MARK_RIGHT_X - ORCHID_SIZE_MM),
     y: PAGE_HEIGHT - mm(ORCHID_TOP_MM + ORCHID_SIZE_MM),
     width: mm(ORCHID_SIZE_MM),
     height: mm(ORCHID_SIZE_MM),
     opacity: ORCHID_OPACITY,
   });
-  ctx.page.pushOperators(popGraphicsState());
 }
 
 function drawStub(ctx: Ctx, position: TicketPdfPosition): void {
   const { fonts } = ctx;
   const x = STUB_TEXT_X;
   const room = 100 - x;
-  if (hasXixStub(position)) drawStubOrchid(ctx);
+  drawStubOrchid(ctx);
   if (position.schedule?.eyebrow) caps(ctx, position.schedule.eyebrow, x, 50.4, MUTED, 7.5);
   drawText(ctx, position.ticketType, {
     x,
@@ -599,15 +587,6 @@ function drawStub(ctx: Ctx, position: TicketPdfPosition): void {
   });
   fillRect(ctx, x, 71.6, room, 0.5, OLIVE);
   drawSchedule(ctx, position.schedule, x);
-  if (hasXixStub(position)) {
-    drawText(ctx, STUB_LABEL, {
-      x,
-      y: STUB_LABEL_Y,
-      font: fonts.bold,
-      size: STUB_LABEL_SIZE,
-      color: ROYAL,
-    });
-  }
   caps(ctx, 'Attendee', x, 110.4, MUTED);
   drawAttendeeName(ctx, position.attendeeName, x, room);
 }
@@ -690,7 +669,7 @@ function heading(ctx: Ctx, text: string, x: number, y: number): void {
 
 function rowOrPill(ctx: Ctx, value: string | null, x: number, y: number, maxWidth: number): number {
   if (!value) {
-    return y - 3.2 + drawPill(ctx, x, y - 3.2, maxWidth) + 1.4;
+    return y - 3.2 + drawPill(ctx, x, y - 3.2, maxWidth) + PILL_AFTER_GAP;
   }
   return drawWrapped(ctx, value, { x, y, maxWidth, maxLines: 3, lineHeight: 4.6 }, 9) + 5;
 }
@@ -718,14 +697,13 @@ function drawTimesColumn(ctx: Ctx, position: TicketPdfPosition, visit: TicketPdf
   }
   let y = 164 + VISIT_OFFSET;
   for (const time of times.slice(0, 5)) {
-    drawText(ctx, time.label, { x, y, font: ctx.fonts.bold, size: 9, color: ROYAL });
+    drawText(ctx, time.label, { x, y, font: ctx.fonts.bold, size: 9, color: ROYAL, maxWidth: TIMES_VALUE_WIDTH + 16 });
     if (time.value) {
-      drawText(ctx, time.value, { x: x + 16, y, font: ctx.fonts.body, size: 9, color: INK, maxWidth: 40 });
-      y += ROW_PITCH;
+      drawText(ctx, time.value, { x, y: y + TIME_VALUE_DROP, font: ctx.fonts.body, size: 9, color: INK, maxWidth: TIMES_VALUE_WIDTH + 16 });
     } else {
-      const height = drawPill(ctx, x + 16, y - 3.2, TIMES_VALUE_WIDTH);
-      y += Math.max(ROW_PITCH, height + 2.6);
+      drawPill(ctx, x, y + 1.4, TIMES_VALUE_WIDTH);
     }
+    y += TIME_ROW_PITCH;
   }
 }
 
@@ -877,17 +855,14 @@ function drawPage(
   if (ctx.testMode) drawTestWatermark(ctx);
 }
 
-async function loadAssets(
-  pdf: PDFDocument,
-  withOrchid: boolean
-): Promise<{ fonts: Fonts; logos: Logos }> {
+async function loadAssets(pdf: PDFDocument): Promise<{ fonts: Fonts; logos: Logos }> {
   const [display, bold, body, horizontal, vertical, orchid] = await Promise.all([
     readAsset('Fraunces-Light.ttf'),
     readAsset('Karla-Bold.ttf'),
     readAsset('fonts/Karla-Regular.woff'),
     readAsset('nos-full-colour-reversed-horizontal-1600.png'),
     readAsset('nos-ink-purple-vertical-500.png'),
-    withOrchid ? readAsset('disa-graminifolia-600.png') : Promise.resolve(null),
+    readAsset('disa-graminifolia-600.png'),
   ]);
   return {
     fonts: {
@@ -898,7 +873,7 @@ async function loadAssets(
     logos: {
       horizontal: await pdf.embedPng(horizontal),
       vertical: await pdf.embedPng(vertical),
-      orchid: orchid ? await pdf.embedPng(orchid) : null,
+      orchid: await pdf.embedPng(orchid),
     },
   };
 }
@@ -912,7 +887,7 @@ export async function buildTicketPdf(
   }
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
-  const { fonts, logos } = await loadAssets(pdf, input.positions.some(hasXixStub));
+  const { fonts, logos } = await loadAssets(pdf);
   const ctx = {
     testMode: options.testMode ?? isTicketingTestMode(),
     fonts,

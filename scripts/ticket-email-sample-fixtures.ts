@@ -40,14 +40,9 @@ export interface SampleOrder {
 }
 
 const HOLDER = 'Thandi Nkosi';
-const STUB_NUMERAL = 'XIX'; // the 19th show: printed on the two programme tickets only
-const dateOnly = (
-  dateText: string,
-  timeText: string | null = null,
-  numeral: string | null = null
-): TicketPdfSchedule => ({
+const dateOnly = (dateText: string, timeText: string | null = null): TicketPdfSchedule => ({
   eyebrow: null,
-  numeral,
+  numeral: null,
   dateText,
   timeText,
 });
@@ -111,7 +106,7 @@ export const SAMPLE_ORDERS: readonly SampleOrder[] = [
     quantity: 1,
     bookingReference: 'NOS-SAMPLE-0006',
     chosenDay: null,
-    schedule: dateOnly('Friday, 24 September 2027', null, STUB_NUMERAL),
+    schedule: dateOnly('Friday, 24 September 2027'),
   },
   {
     key: 'wosa-conference',
@@ -121,7 +116,7 @@ export const SAMPLE_ORDERS: readonly SampleOrder[] = [
     quantity: 1,
     bookingReference: 'NOS-SAMPLE-0007',
     chosenDay: null,
-    schedule: dateOnly('Saturday, 25 September 2027', null, STUB_NUMERAL),
+    schedule: dateOnly('Saturday, 25 September 2027'),
   },
   {
     key: 'saoc-wosa-joint',
