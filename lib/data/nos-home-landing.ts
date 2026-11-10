@@ -3,7 +3,7 @@
 // Sourced module for the /national-show home bands that mission nos-home-restore brings back
 // (intro, judging groups, plant entry). Every string is Lee-Ann's text from the
 // National Orchid Show Website landing-page document v1.0 (Drive: National Show / 1. Home),
-// verbatim, typos included ("can be judges", no full stop after "12pm"). Her editorial notes
+// verbatim, typos included (no full stop after "12pm"; "can be judges" corrected to "can be judged" on Brad's instruction, 2026-11-10). Her editorial notes
 // to us are never copy and are not here. Nothing in this file is ours; add no words of your own
 // (docs/rules/no-invention.md). Two Brad-sanctioned exceptions (2026-10-31, Lee-Ann approved the
 // page): the judging heading reads "Thirteen judging groups" (her doc says "Ten"), and the visit
@@ -30,7 +30,7 @@ export const LANDING_INTRO = {
   tagline: 'Three years in the making, four days on the bench',
   paragraphs: [
     'The National Orchid Show is the country’s premier orchid event. Held every three years, it brings together growers, hybridisers, judges and collectors for four days of Orchid exhibits, sales, education, and community.',
-    'Every plant submitted for judging is assessed by accredited SAOC judges and if requested can be judges for an SAOC Award. The Show Grand Champion is selected from the best on show and chosen by secret ballot by the accredited SAOC Judges.',
+    'Every plant submitted for judging is assessed by accredited SAOC judges and if requested can be judged for an SAOC Award. The Show Grand Champion is selected from the best on show and chosen by secret ballot by the accredited SAOC Judges.',
   ],
 } as const;
 
