@@ -7,7 +7,12 @@ import {
   PDFFont,
   PDFImage,
   PDFPage,
+  clip,
   degrees,
+  endPath,
+  popGraphicsState,
+  pushGraphicsState,
+  rectangle,
   rgb,
   setCharacterSpacing,
   type Color,
@@ -168,6 +173,16 @@ const FOOTER_LINE_PITCH = 4.6;
 const HEADER_LOGO_LEFT_PAD = 192 / 4108; // transparent left margin of the logo file, as a fraction of its width
 const FOOTER_MARK_HEIGHT = 16;
 const FONT_DIR = 'lib/ticket-pdf-assets';
+// The XIX stub (the 19th show): numeral, short label and a faint orchid flourish behind the name.
+const STUB_NUMERAL = 'XIX';
+const STUB_LABEL = 'National Orchid Show';
+const STUB_LABEL_Y = 96;
+const STUB_LABEL_SIZE = 8;
+const ORCHID_OPACITY = 0.18;
+const ORCHID_SIZE_MM = 60;
+const ORCHID_LEFT_MM = 44; // right edge stays 2 mm short of the perforation, bottom bleeds off the card
+const ORCHID_TOP_MM = 98;
+const ORCHID_CLIP_GAP_MM = 2;
 
 interface Fonts {
   display: PDFFont;
@@ -178,6 +193,7 @@ interface Fonts {
 interface Logos {
   horizontal: PDFImage;
   vertical: PDFImage;
+  orchid: PDFImage | null; // embedded only when a ticket prints the XIX stub
 }
 
 interface Ctx {
@@ -539,10 +555,39 @@ function drawAttendeeName(ctx: Ctx, name: string, x: number, room: number): void
   }
 }
 
+function hasXixStub(position: TicketPdfPosition): boolean {
+  return position.schedule?.numeral === STUB_NUMERAL;
+}
+
+/** One faint orchid behind the stub text, clipped to the stub so it never reaches the perforation. */
+function drawStubOrchid(ctx: Ctx): void {
+  const { orchid } = ctx.logos;
+  if (!orchid) return;
+  const left = mm(MARGIN_X);
+  const right = mm(PERFORATION_X - ORCHID_CLIP_GAP_MM);
+  const bottom = PAGE_HEIGHT - mm(CARD_BOTTOM);
+  const top = PAGE_HEIGHT - mm(ORCHID_TOP_MM);
+  ctx.page.pushOperators(
+    pushGraphicsState(),
+    rectangle(left, bottom, right - left, top - bottom),
+    clip(),
+    endPath()
+  );
+  ctx.page.drawImage(orchid, {
+    x: mm(ORCHID_LEFT_MM),
+    y: PAGE_HEIGHT - mm(ORCHID_TOP_MM + ORCHID_SIZE_MM),
+    width: mm(ORCHID_SIZE_MM),
+    height: mm(ORCHID_SIZE_MM),
+    opacity: ORCHID_OPACITY,
+  });
+  ctx.page.pushOperators(popGraphicsState());
+}
+
 function drawStub(ctx: Ctx, position: TicketPdfPosition): void {
   const { fonts } = ctx;
   const x = STUB_TEXT_X;
   const room = 100 - x;
+  if (hasXixStub(position)) drawStubOrchid(ctx);
   if (position.schedule?.eyebrow) caps(ctx, position.schedule.eyebrow, x, 50.4, MUTED, 7.5);
   drawText(ctx, position.ticketType, {
     x,
@@ -554,6 +599,15 @@ function drawStub(ctx: Ctx, position: TicketPdfPosition): void {
   });
   fillRect(ctx, x, 71.6, room, 0.5, OLIVE);
   drawSchedule(ctx, position.schedule, x);
+  if (hasXixStub(position)) {
+    drawText(ctx, STUB_LABEL, {
+      x,
+      y: STUB_LABEL_Y,
+      font: fonts.bold,
+      size: STUB_LABEL_SIZE,
+      color: ROYAL,
+    });
+  }
   caps(ctx, 'Attendee', x, 110.4, MUTED);
   drawAttendeeName(ctx, position.attendeeName, x, room);
 }
@@ -823,13 +877,17 @@ function drawPage(
   if (ctx.testMode) drawTestWatermark(ctx);
 }
 
-async function loadAssets(pdf: PDFDocument): Promise<{ fonts: Fonts; logos: Logos }> {
-  const [display, bold, body, horizontal, vertical] = await Promise.all([
+async function loadAssets(
+  pdf: PDFDocument,
+  withOrchid: boolean
+): Promise<{ fonts: Fonts; logos: Logos }> {
+  const [display, bold, body, horizontal, vertical, orchid] = await Promise.all([
     readAsset('Fraunces-Light.ttf'),
     readAsset('Karla-Bold.ttf'),
     readAsset('fonts/Karla-Regular.woff'),
     readAsset('nos-full-colour-reversed-horizontal-1600.png'),
     readAsset('nos-ink-purple-vertical-500.png'),
+    withOrchid ? readAsset('disa-graminifolia-600.png') : Promise.resolve(null),
   ]);
   return {
     fonts: {
@@ -840,6 +898,7 @@ async function loadAssets(pdf: PDFDocument): Promise<{ fonts: Fonts; logos: Logo
     logos: {
       horizontal: await pdf.embedPng(horizontal),
       vertical: await pdf.embedPng(vertical),
+      orchid: orchid ? await pdf.embedPng(orchid) : null,
     },
   };
 }
@@ -853,7 +912,7 @@ export async function buildTicketPdf(
   }
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
-  const { fonts, logos } = await loadAssets(pdf);
+  const { fonts, logos } = await loadAssets(pdf, input.positions.some(hasXixStub));
   const ctx = {
     testMode: options.testMode ?? isTicketingTestMode(),
     fonts,
