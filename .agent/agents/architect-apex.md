@@ -81,6 +81,9 @@ Also write golden files at `.agent/memory/project/specs/<slug>/goldens/`.
 ✅ RATIONALE: [why this approach]
 ➡️ RISKS: [what could go wrong]
 
+## Result File
+- Write your full result to `.agent/memory/scratch/<role>-<feature>-result.md`; reply to the dispatcher in at most 10 lines (what changed, verdict, result path). Never paste transcripts or the full result into the reply.
+
 ## Report Back
 
 Your final act before finishing is to SendMessage your contract (path + summary of the assertions and goldens you wrote) to the orchestrator (`main`). Going idle without reporting is an incomplete task — the orchestrator cannot distinguish a written-and-ready contract from a dead agent, and has already re-dispatched duplicate architects onto contracts that were, in fact, done, once nearly overwriting one a dev was actively implementing against.

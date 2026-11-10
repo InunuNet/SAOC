@@ -21,7 +21,8 @@ Usage:
     python3 execution/brain.py wrap-up --summary "Session summary" --blockers "tauri-popup,webview-rendering"
     python3 execution/brain.py scan-blockers            # Detect recurring issues
 
-Requires: pip install chromadb (installed in ~/.athanor-env)
+Semantic recall needs: pip install chromadb (re-exec into ~/.athanor-env when it holds it).
+Without chromadb, memories go to a plain JSONL store (.agent/memory/brain/memories.jsonl).
 Database: .agent/memory/brain/ (project-local, persistent)
 """
 from __future__ import annotations
@@ -45,8 +46,8 @@ from pathlib import Path
 VENV_PATH = os.path.expanduser(os.environ.get("ATHANOR_BRAIN_VENV", "~/.athanor-env"))
 MIN_PYTHON = (3, 10)
 _REEXEC_FLAG = "ATHANOR_BRAIN_REEXEC"
-_PY_CANDIDATES = ("python3.14", "python3.13", "python3.12", "python3.11", "python3.10",
-                  "/opt/homebrew/bin/python3", "/usr/local/bin/python3", "python3")
+FALLBACK_WARNING = ("brain: chromadb is not installed; using the plain JSONL store "
+                    "(keyword recall). For semantic recall run: pip install chromadb")
 
 
 LOCK_DEADLINE_SECONDS = 120
@@ -115,31 +116,22 @@ def _python_ok(exe):
     return r.returncode == 0
 
 
-def _python_version(exe):
-    try:
-        return subprocess.run([exe, "-V"], capture_output=True, text=True,
-                              timeout=30).stdout.strip() or "unknown"
-    except (OSError, subprocess.TimeoutExpired):
-        return "unrunnable"
-
-
-def _die(msg):
-    # Loud on purpose: a brain that cannot load must never look alive (GH #1437).
-    print("BRAIN UNAVAILABLE: " + msg, file=sys.stderr)
-    sys.exit(3)
-
-
 def _reexec(venv_python):
     os.environ[_REEXEC_FLAG] = "1"
-    os.execv(venv_python, [venv_python] + sys.argv)
+    argv = sys.argv
+    if os.name == "nt":
+        # Windows execv re-joins argv with spaces and no quoting, so an
+        # argument holding a space is split in two. Quote each one first.
+        argv = [subprocess.list2cmdline([a]) for a in sys.argv]
+    os.execv(venv_python, [venv_python] + argv)
 
 
 def _ensure_chromadb():
-    """Auto-bootstrap: create shared venv + install chromadb if needed.
+    """Return the chromadb module, or None when it is not importable.
 
-    Every interpreter is version-checked before it is trusted. A venv built
-    from macOS's Xcode python (3.9) used to be re-exec'd blindly and died at
-    import with a TypeError naming syntax the caller supports (GH #1437).
+    Re-execs once into an existing, version-checked shared venv that may hold
+    chromadb. Never creates a venv and never runs pip: without chromadb the
+    caller falls back to the plain JSONL store (see _JsonlCollection).
     """
     try:
         import chromadb
@@ -147,43 +139,119 @@ def _ensure_chromadb():
     except ImportError:
         pass
 
-    need = ".".join(map(str, MIN_PYTHON))
     venv_python = _venv_exe("python3")
-    if os.environ.get(_REEXEC_FLAG):
-        _die("re-exec'd into %s but chromadb still does not import. Run: %s -m pip install chromadb"
-             % (venv_python, venv_python))
-    if os.path.exists(venv_python):
-        if not _python_ok(venv_python):
-            _die("%s is %s; brain.py needs Python %s+. Rebuild it from a newer interpreter: "
-                 "move %s aside, then run /opt/homebrew/bin/python3 -m venv %s && %s install chromadb"
-                 % (venv_python, _python_version(venv_python), need, VENV_PATH, VENV_PATH, _venv_exe("pip")))
+    if (not os.environ.get(_REEXEC_FLAG) and os.path.exists(venv_python)
+            and _python_ok(venv_python)):
         _reexec(venv_python)
+    return None
 
-    # Create the venv from an interpreter that satisfies MIN_PYTHON -- not
-    # blindly from sys.executable, which on macOS is often the 3.9 Xcode python.
-    base = sys.executable if _python_ok(sys.executable) else None
-    if base is None:
-        base = next((shutil.which(c) for c in _PY_CANDIDATES
-                     if shutil.which(c) and _python_ok(shutil.which(c))), None)
-    if base is None:
-        _die("no Python %s+ interpreter found to build %s (this one is %s)"
-             % (need, VENV_PATH, sys.version.split()[0]))
-    print("🧠 First run — setting up brain environment (%s)..." % base, file=sys.stderr)
-    subprocess.run([base, "-m", "venv", VENV_PATH], check=True)
-    pip = _venv_exe("pip")
-    subprocess.run([pip, "install", "-q", "chromadb"], check=True)
-    print("✅ Brain environment ready.", file=sys.stderr)
-    _reexec(venv_python)
 
-_ensure_chromadb()
-import chromadb
+chromadb = _ensure_chromadb()
 
 BRAIN_DIR = ".agent/memory/brain"
 
 
+JSONL_STORE = "memories.jsonl"
+_WORD_RE = re.compile(r"\w+")
+_fallback_warned = False
+
+
+def _matches(meta: dict, where: dict) -> bool:
+    """Chroma-style filter subset: {key: value} equality and {key: {"$ne": value}}."""
+    for key, cond in where.items():
+        if isinstance(cond, dict):
+            if "$ne" in cond and meta.get(key) == cond["$ne"]:
+                return False
+        elif meta.get(key) != cond:
+            return False
+    return True
+
+
+class _JsonlCollection:
+    """Append-only JSONL stand-in for the chromadb collection (no chromadb installed).
+
+    Lines are {"op": "add"|"update"|"delete", "id": ...}. State is the replay of
+    the file, so nothing is ever rewritten: forget and update append a line.
+    """
+
+    def __init__(self, path: Path):
+        self.path = path
+
+    def _append(self, rows: list):
+        with open(self.path, "a", encoding="utf-8") as fh:
+            for row in rows:
+                fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+    def _state(self) -> dict:
+        state = {}
+        if not self.path.is_file():
+            return state
+        with open(self.path, encoding="utf-8") as fh:
+            for number, line in enumerate(fh, 1):
+                if not line.strip():
+                    continue
+                try:
+                    row = json.loads(line)
+                except ValueError:
+                    print("brain: skipping corrupt line %d of %s" % (number, self.path),
+                          file=sys.stderr)
+                    continue
+                op, mem_id = row.get("op"), row.get("id")
+                if op == "add":
+                    state[mem_id] = {"doc": row.get("doc", ""), "meta": row.get("meta", {})}
+                elif op == "update" and mem_id in state:
+                    state[mem_id]["meta"] = row.get("meta", {})
+                elif op == "delete":
+                    state.pop(mem_id, None)
+        return state
+
+    def add(self, ids, documents, metadatas):
+        self._append([{"op": "add", "id": i, "doc": d, "meta": m}
+                      for i, d, m in zip(ids, documents, metadatas)])
+
+    def update(self, ids, metadatas):
+        self._append([{"op": "update", "id": i, "meta": m} for i, m in zip(ids, metadatas)])
+
+    def delete(self, ids):
+        self._append([{"op": "delete", "id": i} for i in ids])
+
+    def count(self) -> int:
+        return len(self._state())
+
+    def get(self, ids=None, where=None, include=None):
+        rows = [(i, e) for i, e in self._state().items()
+                if (ids is None or i in ids) and (not where or _matches(e["meta"], where))]
+        return {"ids": [i for i, _ in rows],
+                "documents": [e["doc"] for _, e in rows],
+                "metadatas": [e["meta"] for _, e in rows]}
+
+    def query(self, query_texts, n_results):
+        """Rank by keyword overlap; with no overlap, the most recent entries."""
+        words = set(_WORD_RE.findall(query_texts[0].lower()))
+        scored = []
+        for order, (mem_id, entry) in enumerate(self._state().items()):
+            haystack = (entry["doc"] + " " + str(entry["meta"].get("tags", ""))).lower()
+            hits = len(words & set(_WORD_RE.findall(haystack)))
+            hits += sum(1 for w in words if w in haystack) / (len(words) or 1)
+            scored.append((hits, order, mem_id, entry))
+        scored.sort(key=lambda t: (-t[0], -t[1]))
+        top = scored[:n_results]
+        peak = max((t[0] for t in top), default=0) or 1
+        return {"ids": [[t[2] for t in top]],
+                "documents": [[t[3]["doc"] for t in top]],
+                "metadatas": [[t[3]["meta"] for t in top]],
+                "distances": [[round(1 - t[0] / peak, 4) if t[0] else 1.0 for t in top]]}
+
+
 def get_collection():
     """Get or create the project memory collection."""
+    global _fallback_warned
     Path(BRAIN_DIR).mkdir(parents=True, exist_ok=True)
+    if chromadb is None:
+        if not _fallback_warned:
+            print(FALLBACK_WARNING, file=sys.stderr)
+            _fallback_warned = True
+        return _JsonlCollection(Path(BRAIN_DIR) / JSONL_STORE)
     client = chromadb.PersistentClient(path=BRAIN_DIR)
     return client.get_or_create_collection(
         name="project_memory",
@@ -367,7 +435,7 @@ def _write_never_clobber(target: Path, content: str) -> Path:
     while candidate.exists():
         candidate = target.with_name(f"{target.stem}-{n}{target.suffix}")
         n += 1
-    candidate.write_text(content)
+    candidate.write_text(content, encoding="utf-8")
     return candidate
 
 
@@ -413,7 +481,7 @@ def write_reboot(summary: str, next_items: list = None, facts: list = None, do_n
     content = "\n".join(lines)
     path.parent.mkdir(parents=True, exist_ok=True)
 
-    existing_text = path.read_text() if path.exists() else None
+    existing_text = path.read_text(encoding="utf-8") if path.exists() else None
     is_provenanced = existing_text is not None and bool(REBOOT_AUTO_HEADER_RE.match(existing_text))
 
     if existing_text is not None and not is_provenanced and not force_reboot:
@@ -448,14 +516,14 @@ def write_reboot(summary: str, next_items: list = None, facts: list = None, do_n
     if existing_text is not None and not is_provenanced and force_reboot:
         preserved = _write_never_clobber(
             path.parent / f"reboot.preserved-{_reboot_utc_stamp()}.md", existing_text)
-        path.write_text(content)
+        path.write_text(content, encoding="utf-8")
         print(f"⚠️  WARN: --force-reboot overwrote {path}; prior content preserved to {preserved}")
         return
 
     # existing_text is None (absent), or the existing file already carries our own
     # provenance header (the everyday wrap-up-to-wrap-up path) — write in place,
     # exactly as before, with no sidecar and no WARN.
-    path.write_text(content)
+    path.write_text(content, encoding="utf-8")
     print(f"📝 Reboot context written to {path}")
 
 
@@ -482,6 +550,7 @@ def _main_worktree_root(cwd: Path = None) -> Path:
         result = subprocess.run(
             ["git", "-C", str(cwd), "rev-parse", "--path-format=absolute", "--git-common-dir"],
             capture_output=True, text=True, timeout=5,
+            encoding="utf-8", errors="replace", env=dict(os.environ, PYTHONUTF8="1"),
         )
         if result.returncode != 0 or not result.stdout.strip():
             return cwd
@@ -507,14 +576,14 @@ def _should_skip_scratch_purge(cwd: Path = None) -> tuple:
     if not active_path.exists():
         return False, None
     try:
-        active_data = json.loads(active_path.read_text())
+        active_data = json.loads(active_path.read_text(encoding="utf-8"))
         mission_rel = active_data.get("mission", "")
         if not mission_rel:
             return False, None
         mission_file = root / mission_rel
         if not mission_file.exists():
             return False, None
-        mission_text = mission_file.read_text()
+        mission_text = mission_file.read_text(encoding="utf-8")
         m = re.search(r'^status:\s*(\S+)', mission_text, re.MULTILINE)
         if m and m.group(1) in ("in_progress", "pending"):
             return True, f"active mission in progress: {mission_rel}"
@@ -656,7 +725,7 @@ def export_memories():
 
 def import_memories(filepath: str):
     """Import memories from a JSON file."""
-    with open(filepath) as f:
+    with open(filepath, encoding="utf-8") as f:
         memories = json.load(f)
 
     collection = get_collection()
@@ -914,4 +983,9 @@ def main():
 
 
 if __name__ == "__main__":
+    for _stream in (sys.stdout, sys.stderr):
+        try:
+            _stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
     main()

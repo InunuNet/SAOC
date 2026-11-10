@@ -10,21 +10,21 @@
 # unknown mode is an ERROR, never a silent skip — a pair that appears covered
 # and is not is worse than an uncovered one.
 #
-# Adding a row requires NO code change. template/ mirrors and generated
-# provider configs are the wider paired-copy class this schema is shaped for,
-# and are deliberately NOT listed yet: template/ copies are allowed to diverge
-# in places, so `enforce: clone` cannot express them.
+# Adding a row requires NO code change. `enforce: mirror` pairs two
+# DIRECTORIES: every file present under both must be byte-identical, and a
+# file on one side only is allowed (template/ carries a subset). Mirrors bind
+# the harness checkout only. Registered 2026-09-29 after the execution/ ->
+# template/execution/ copy was missed at least 7 times, each caught by chance.
 schema: athanor.paired-copies/v1
 pairs:
   - copy: CLAUDE.md
     source: AGENTS.md
     enforce: clone
-  - copy: GEMINI.md
-    source: AGENTS.md
-    enforce: clone
-  # rules.md does NOT point at AGENTS.md. The Windows session recorded that the
-  # original porting brief got this wrong, and a materialiser written to that
-  # assumption would have overwritten rules.md with the wrong content.
-  - copy: rules.md
-    source: .agent/memory/project/rules.md
-    enforce: clone
+  # Root rules.md pair retired 2026-09-18 (make-audit-restore F2): the root
+  # copy was an orphaned stale-partial duplicate, not a real clone target —
+  # deleted along with the other stray root files. No paired copy remains
+  # to register; the canonical file lives only at
+  # .agent/memory/project/rules.md.
+  - copy: template/execution
+    source: execution
+    enforce: mirror

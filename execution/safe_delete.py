@@ -20,7 +20,9 @@ is removed, and the sandbox root itself is refused.
 Exit 0 when every target was removed or already absent; 1 if any was refused.
 """
 
+import os
 import shutil
+import stat
 import sys
 from pathlib import Path
 
@@ -29,6 +31,23 @@ SANDBOX = Path(".tmp") / "sandbox"
 
 def sandbox_root() -> Path:
     return (Path.cwd() / SANDBOX).resolve()
+
+
+def _retry_writable(func, path, _exc) -> None:
+    """rmtree error handler: clear the read-only bit, retry once.
+
+    Windows refuses to delete a read-only file (.git packs); POSIX refuses to
+    unlink inside a read-only directory, so the parent is made writable too. A
+    failure on the retry is reported on stderr; safe_delete then sees the path
+    still exists and returns False.
+    """
+    try:
+        parent = os.path.dirname(path)
+        os.chmod(parent, os.stat(parent).st_mode | stat.S_IWRITE | stat.S_IEXEC)
+        os.chmod(path, os.stat(path).st_mode | stat.S_IWRITE | stat.S_IEXEC)
+        func(path)
+    except OSError as exc:
+        print(f"safe_delete: cannot remove {path}: {type(exc).__name__}", file=sys.stderr)
 
 
 def safe_delete(target: Path, root: Path) -> bool:
@@ -41,13 +60,26 @@ def safe_delete(target: Path, root: Path) -> bool:
         )
         return False
     if resolved.is_dir() and not resolved.is_symlink():
-        shutil.rmtree(resolved, ignore_errors=True)
+        try:
+            if sys.version_info >= (3, 12):
+                shutil.rmtree(resolved, onexc=_retry_writable)
+            else:
+                shutil.rmtree(resolved, onerror=_retry_writable)
+        except OSError as exc:
+            print(f"safe_delete: rmtree failed: {type(exc).__name__}", file=sys.stderr)
+        if resolved.exists():
+            print(f"safe_delete: left behind: {resolved}", file=sys.stderr)
+            return False
     else:
         resolved.unlink(missing_ok=True)
     return True
 
 
 def main(argv: list[str]) -> int:
+    if argv and argv[0] in ("--help", "-h"):
+        print(__doc__.strip().splitlines()[0])
+        print(f"usage: {sys.argv[0]} <path-inside-{SANDBOX}> ...")
+        return 0
     if not argv:
         print(__doc__.strip().splitlines()[0], file=sys.stderr)
         print(f"usage: {sys.argv[0]} <path-inside-{SANDBOX}> ...", file=sys.stderr)

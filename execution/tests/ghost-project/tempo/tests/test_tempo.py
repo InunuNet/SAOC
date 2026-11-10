@@ -102,7 +102,7 @@ proc_c = subprocess.run(
     capture_output=True,
     text=True,
 )
-with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as out_f:
+with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False, newline="\n") as out_f:
     out_f.write(proc_c.stdout)
     out_path = out_f.name
 
@@ -134,7 +134,7 @@ proc_d = subprocess.run(
     capture_output=True,
     text=True,
 )
-with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as out_f:
+with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False, newline="\n") as out_f:
     out_f.write(proc_d.stdout)
     out_path = out_f.name
 

@@ -33,7 +33,7 @@ fi
 
 # Enumerate "<provider>\t<rules_dir>" for every provider declaring one.
 # Providers with no rules_dir (they read AGENTS.md natively) are not targets.
-TARGETS=$(python3 - "$PROVIDERS_DIR" <<'PYEOF'
+TARGETS=$(python3 - "$PROVIDERS_DIR" <<'PYEOF' | tr -d '\r'
 import json
 import pathlib
 import sys
@@ -67,6 +67,28 @@ overlay_dir_for() {
     esac
 }
 
+# Mirror the top-level *.md files of $1 into $2 ("delete": also drop files in $2
+# that $1 no longer has). rsync is absent from Git Bash on Windows, so fall back
+# to cp; the result is the same either way.
+sync_md() {
+    local src="$1" dest="$2" mode="$3" f
+    if command -v rsync >/dev/null 2>&1; then
+        if [ "$mode" = delete ]; then
+            rsync -a --delete --include="*.md" --exclude="*" "$src/" "$dest/"
+        else
+            rsync -a --include="*.md" --exclude="*" "$src/" "$dest/"
+        fi
+        return
+    fi
+    if [ "$mode" = delete ]; then
+        for f in "$dest"/*.md; do
+            [ -e "$f" ] || continue
+            [ -e "$src/$(basename "$f")" ] || rm -f "$f"
+        done
+    fi
+    cp -f "$src"/*.md "$dest"/
+}
+
 synced=0
 # Here-string, not a scratch file: .agent/rules/_core/sandbox.md forbids the
 # /tmp location a mktemp target would land in, and a pipeline into `while`
@@ -77,11 +99,11 @@ while IFS=$'\t' read -r provider dest; do
 
     # --delete on EVERY target. Filter order matters: rsync applies filters
     # first-match-wins, so --include="*.md" must precede --exclude="*".
-    rsync -a --delete --include="*.md" --exclude="*" "$CORE_RULES_DIR/" "$dest/"
+    sync_md "$CORE_RULES_DIR" "$dest" delete
 
     overlay=$(overlay_dir_for "$provider")
     if [ -d "$overlay" ] && ls "$overlay"/*.md >/dev/null 2>&1; then
-        rsync -a --include="*.md" --exclude="*" "$overlay/" "$dest/"
+        sync_md "$overlay" "$dest" keep
     fi
 
     synced=$((synced + 1))

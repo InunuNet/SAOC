@@ -32,6 +32,9 @@ When triggered by `/boot` scan-blockers:
 ✅ CONCLUSION: [recommendation with confidence level]
 ➡️ NEXT: [what to investigate further]
 
+## Result File
+- Write your full result to `.agent/memory/scratch/<role>-<feature>-result.md`; reply to the dispatcher in at most 10 lines (what changed, verdict, result path). Never paste transcripts or the full result into the reply.
+
 ## Report Back
 
 Your final act before finishing is to SendMessage your findings to the orchestrator (`main`) — the structured output above, not a placeholder saying you're done. Going idle without reporting is an incomplete task: the orchestrator cannot tell "findings delivered" from "agent died," and will re-dispatch the research from scratch, wasting a round-trip on work you already finished.

@@ -136,6 +136,10 @@ for path in sorted(SPECS_ROOT.glob("**/contract*.yaml")):
             failures.append((path, err))
 
 if checked == 0:
+    if BOOT_MODE:
+        # A freshly onboarded workspace has no specs yet; that is not a defect.
+        print(f"no contract*.yaml files under {SPECS_ROOT} (fresh workspace)")
+        sys.exit(0)
     print(f"FAIL: no contract*.yaml files found under {SPECS_ROOT}", file=sys.stderr)
     sys.exit(1)
 

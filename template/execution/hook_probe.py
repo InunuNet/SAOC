@@ -91,8 +91,10 @@ HANDOFFS_REL = ".agent/handoffs.yaml"
 SANDBOX_REL = ".tmp/sandbox/hook-probe"
 
 # Bound on ONE probed invocation. Two invocations (deny + allow) per script,
-# so a hanging hook returns control well inside a boot's patience.
-RUN_TIMEOUT_SECONDS = 10
+# so a hanging hook returns control well inside a boot's patience. Windows
+# (Git Bash, python and jq spawns) runs check_autonomy.sh several times slower,
+# and a loaded VM tripped 10 s and marked the floor dead (Athanor Win 2026-11-07).
+RUN_TIMEOUT_SECONDS = 30 if os.name == "nt" else 10
 # After the bound expires the process GROUP is killed, not just the direct
 # child: `bash -c 'bash X'` puts the hook in a grandchild, and killing only
 # the wrapper leaves the hook running against a box that is about to vanish.
@@ -367,6 +369,41 @@ def _stdout_decision(text):
     return None
 
 
+def _bash():
+    """The bash that runs a registration string.
+
+    Bare "bash" is wrong on Windows: CreateProcess looks in System32 before
+    PATH, and on a host with WSL that is the WSL launcher, which exits 1 for
+    every command (no distro) -- every hook then probes dead. Claude Code runs
+    hooks under Git Bash, so prefer that: ATHANOR_BASH, then the first PATH
+    bash that is not System32, then bash beside git.
+    """
+    override = os.environ.get("ATHANOR_BASH")
+    if override and Path(override).exists():
+        return override
+    if os.name != "nt":
+        return "bash"
+
+    def _is_wsl(path):
+        return "system32" in str(path).lower().replace("/", "\\")
+
+    for entry in os.environ.get("PATH", "").split(os.pathsep):
+        if not entry or _is_wsl(entry):
+            continue
+        for name in ("bash.exe", "bash"):
+            cand = Path(entry) / name
+            if cand.is_file():
+                return str(cand)
+    git = shutil.which("git")
+    if git:
+        root = Path(git).resolve().parent.parent
+        for rel in (("bin", "bash.exe"), ("usr", "bin", "bash.exe")):
+            cand = root.joinpath(*rel)
+            if cand.is_file():
+                return str(cand)
+    return "bash"
+
+
 def _run_once(command, box, payload):
     """Execute the REGISTRATION STRING verbatim via `bash -c`, inside the box.
 
@@ -375,9 +412,10 @@ def _run_once(command, box, payload):
     """
     try:
         proc = subprocess.Popen(
-            ["bash", "-c", command], cwd=str(box),
+            [_bash(), "-c", command], cwd=str(box),
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL, env=_box_env(box), text=True,
+            encoding="utf-8", errors="replace",
             start_new_session=True)
     except OSError:
         return None

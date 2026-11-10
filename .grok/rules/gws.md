@@ -1,5 +1,8 @@
 ---
 description: Google Workspace goes through the gws CLI, never the claude.ai Google connectors.
+paths:
+  - ".agent/skills/gws-*.md"
+  - "execution/*gws*"
 ---
 
 # Google Workspace (gws)

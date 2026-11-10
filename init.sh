@@ -15,6 +15,9 @@
 # the script with the trap never firing, which is the silent-death this trap
 # exists to end.
 set -Eeuo pipefail
+# Windows: every child python reads, writes and prints UTF-8 (a cp1252 console cannot
+# print the check marks; scaffold failed 0/6 without this, Athanor Win 2026-11-07).
+export PYTHONUTF8=1
 
 # ── Colors (skip if not a terminal) ──────────────────────────────────────────
 if [ -t 1 ]; then
@@ -1409,6 +1412,10 @@ scaffold_core() {
     # silently-skipped copy here scaffolds a workspace whose audit is broken.
     mkdir -p "$PROJECT_PATH/execution/checks"
     deliver_file "$SCRIPT_DIR/execution/checks/verify_no_symlink_stubs.py" "$PROJECT_PATH/execution/checks/verify_no_symlink_stubs.py"
+    # mission.py resume and contract.py main() run this boot-context warning on
+    # every call; without it a fresh scaffold prints "can't open file" instead of
+    # the warning (Athanor Omarchy project-e2e, 2026-11-07).
+    deliver_file "$SCRIPT_DIR/execution/checks/verify_boot_ran.py" "$PROJECT_PATH/execution/checks/verify_boot_ran.py"
 
     # onboarding-rework F2: the pre-push guard's entry point. git_guard.py
     # itself ships in the execution/ list above; this shim is what git actually
@@ -1581,11 +1588,11 @@ import os
 import sys
 
 path = sys.argv[1]
-with open(path, "r") as fh:
+with open(path, "r", encoding="utf-8") as fh:
     text = fh.read()
 for key in ("PROJECT_NAME", "HARNESS_NAME", "TEMPLATE_VERSION"):
     text = text.replace("%s%s%s" % ("{{", key, "}}"), os.environ["FILL_" + key])
-with open(path, "w") as fh:
+with open(path, "w", encoding="utf-8") as fh:
     fh.write(text)
 PYFILL
         install_preserving "$staging" "AGENTS.md" "root/AGENTS.md" \

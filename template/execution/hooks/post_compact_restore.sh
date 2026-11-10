@@ -22,19 +22,6 @@ def safe_read(p, max_lines=None):
     except Exception:
         return '(not found)'
 
-# Resolve agent identity from soul.md (project-specific), fall back gracefully
-agent_name = 'the primary agent'
-try:
-    soul = pathlib.Path('.agent/identity/soul.md').read_text()
-    m = re.search(r'\*\*Name\*\*:\s*(.+)', soul)
-    if m:
-        candidate = m.group(1).strip()
-        # Skip unfilled placeholders
-        if candidate and '[' not in candidate and '{{' not in candidate:
-            agent_name = candidate
-except Exception:
-    pass
-
 # Active mission
 mission_info = 'No active mission.'
 try:
@@ -124,7 +111,26 @@ except Exception:
 pathlib.Path('.agent/memory/scratch').mkdir(parents=True, exist_ok=True)
 pathlib.Path('.agent/memory/scratch/.post_compact_proceed').write_text('yes' if proceed else 'no')
 
-goals = safe_read('.agent/memory/project/goals.md', max_lines=15)
+def goals_slice():
+    """goals.md sections whose '## heading' the mission's goals_refs names; '' when none."""
+    try:
+        mtext = (pathlib.Path('.agent/memory/project/missions') / pathlib.Path(m).name).read_text()
+        front = re.match(r'(?s)---\n(.*?)\n---', mtext).group(1)
+        block = re.search(r'(?ms)^goals_refs:[ \t]*\n((?:[ \t]*-[^\n]*\n?)+)', front + '\n')
+        refs = [re.sub(r'^\s*-\s*|[\'"]', '', ln).strip().lower()
+                for ln in block.group(1).splitlines()] if block else []
+        parts = re.split(r'(?m)^(?=## )', pathlib.Path('.agent/memory/project/goals.md').read_text())
+        return '\n'.join(p.strip() for p in parts
+                         if p.startswith('## ') and p[3:].splitlines()[0].strip().lower() in refs)
+    except Exception:
+        return ''
+
+
+GOALS_MAX_BYTES = 4000  # keeps pointer + checkpoint + slice under the 2k-token restore budget
+goals = goals_slice()
+if len(goals.encode('utf-8')) > GOALS_MAX_BYTES:
+    goals = goals.encode('utf-8')[:GOALS_MAX_BYTES].decode('utf-8', 'ignore').rstrip()
+    goals += '\n[goals slice truncated to fit the restore budget; read goals.md for the rest]'
 
 # Loop-mode prefix: only when the PROCEED condition holds
 loop_prefix = ''
@@ -135,40 +141,18 @@ try:
 except Exception:
     pass
 
+goals_block = f'\n## GOALS (named by the mission)\n{goals}\n' if goals else ''
+
 context = loop_prefix + f"""
 ╔══ POST-COMPACTION CONTEXT RESTORE ══════════════════════════╗
 ║ Context was just compacted. The following rules and state   ║
 ║ MUST govern the rest of this session without exception.     ║
 ╚═════════════════════════════════════════════════════════════╝
 
-## ORCHESTRATOR ROLE — NON-NEGOTIABLE
-
-You are {agent_name}, the DISPATCHER. You do NOT implement anything directly.
-
-CRITICAL RULES:
-1. The primary session NEVER writes code, tests, or docs — delegate to agents.
-2. Mandatory chain (skip nothing): classify → [mission|spec] → @architect
-   (contract + golden files) → @dev → @qa → @docs → contract.py gate
-   → @maintainer → commit
-3. No contract.yaml → no @dev dispatch. No golden files → no @dev dispatch.
-4. Trivial tasks (read, status, single command) are handled directly — chain
-   does not apply. Everything else goes through the chain.
-
-Agents and their roles:
-  @lead      → planner/researcher, returns spec/plan. Never spawns agents.
-  @dev       → code only, against golden files. Never writes QA inputs.
-  @qa        → adversarial. Inputs from Codi/@architect, NOT from @dev.
-  @architect → contract.yaml + golden files. Blocks @dev until done.
-  @docs      → README + docs/<feature>.md. Runs before contract gate.
-  @analyst   → research/analysis. Read-only.
-  @maintainer→ learned.md + brain wrap-up. Mandatory at session close.
-
 ## CURRENT STATE
 
 {mission_info}
-
-## GOALS
-{goals}
+{goals_block}
 
 ## NEXT ACTION
 If an active mission is shown above: run `python3 execution/mission.py resume`

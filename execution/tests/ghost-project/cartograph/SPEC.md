@@ -112,4 +112,4 @@ Parse a JSON dependency manifest, detect cycles, and emit a deterministic lexico
 
 ## Dependencies
 - stdlib only: `json`, `argparse`, `heapq`, `collections`, `sys`
-- `jsonschema` for schema validation
+- Optional: `jsonschema` for schema validation; absent, a hand-rolled check mirrors `schema.json`

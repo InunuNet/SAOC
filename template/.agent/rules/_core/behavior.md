@@ -1,3 +1,10 @@
+---
+description: Behavioral rules.
+paths:
+  - "execution/**"
+  - "**/*.{py,sh}"
+---
+
 # Behavioral Rules
 
 - Surgical fixes only: the smallest change that fixes the actual bug. Never delete, gut or
@@ -38,3 +45,7 @@ commit, pause; at 100% stop and checkpoint. Read the `left` figure (`python3 exe
 status`). Codex and Antigravity native displays show % LEFT, counting down: establish direction
 before acting. Never narrow scope, decline work or announce quota short on a reading whose
 direction you have not checked.
+
+## Voice and desktop
+Speech goes only through `python3 execution/voice_say.py --text "..."`; never macOS `say`, `afplay` or the Voice backend directly, the floor denies them. One natural sentence that names the project once inside it, under 160 characters, never `--event` together with `--text`. A project owns its own entry in `~/ai/Voice/MacOS/voices.json` and changes its voice there when the operator says so; `--voice NAME` auditions one (Brad 2026-11-05). Brad saying "voice on" or "voice off" in a project toggles that project's own voice, even while the fleet is asleep.
+Any action that touches the shared screen (opening or focusing a GUI app, screenshots, mouse or keyboard driving, browser automation, computer-use) runs under `python3 execution/desktop_turn.py run --reason "..." -- <command>` or between `acquire` and `release`; one holder at a time, ten minutes max; headless work needs no turn.

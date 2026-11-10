@@ -184,6 +184,15 @@ def test_07_max_attempts_dead():
         # One more failure should push it to dead
         q = os.path.join(d, "queue.jsonl")
         shutil.copy(fixture("exhausted_retries.jsonl"), q)
+        # /proc/... is writable on Windows (C:\proc); a path beneath a regular file fails everywhere.
+        blocker = os.path.join(d, "blocker.txt")
+        with open(blocker, "w") as bf:
+            bf.write("x")
+        with open(q, encoding="utf-8") as qf:
+            qtext = qf.read().replace("/proc/impossible-path-that-cannot-be-written",
+                                      blocker.replace(os.sep, "/"))
+        with open(q, "w", encoding="utf-8", newline="\n") as qf:
+            qf.write(qtext)
         out = os.path.join(d, "out.jsonl")
         run(["--queue", q, "--output", out])
         if not os.path.exists(out):

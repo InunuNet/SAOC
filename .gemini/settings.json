@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash execution/hooks/full_boot.sh && echo \"\\n\ud83e\udd16 ATHANOR FRAMEWORK (Athanor v$(cat .agent/version 2>/dev/null || echo '?'))\\nIdentity: $(python3 -c \\\"import json; p=json.load(open('.agent/profile.json')); print(p.get('identity',{}).get('agent_name', p.get('project_name','Agent')))\\\" 2>/dev/null || echo 'Agent') | Boot: OK\\nRead the boot context above before starting.\""
+            "command": "bash execution/hooks/full_boot.sh && echo \"\\n🤖 ATHANOR FRAMEWORK (Athanor v$(cat .agent/version 2>/dev/null || echo '?'))\\nIdentity: $(python3 -c \\\"import json; p=json.load(open('.agent/profile.json')); print(p.get('identity',{}).get('agent_name', p.get('project_name','Agent')))\\\" 2>/dev/null || echo 'Agent') | Boot: OK\\nRead the boot context above before starting.\""
           }
         ]
       }
@@ -17,75 +17,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '\\n\ud83d\udcbe Wrap up: python3 execution/brain.py wrap-up -s \"summary\" -t \"tags\"'"
+            "command": "echo '\\n💾 Wrap up: python3 execution/brain.py wrap-up -s \"summary\" -t \"tags\"'"
           }
         ]
       }
     ],
     "BeforeTool": [
-      {
-        "matcher": "analyst|architect|designer|dev|docs|lead|maintainer|qa",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash execution/hooks/subagent_start.sh"
-          }
-        ]
-      },
-      {
-        "matcher": "analyst|architect",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash execution/hooks/require_research.sh"
-          }
-        ]
-      },
-      {
-        "matcher": "dev",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash execution/hooks/require_contract.sh"
-          }
-        ]
-      },
-      {
-        "matcher": "qa",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash execution/hooks/require_dev_result.sh"
-          }
-        ]
-      },
-      {
-        "matcher": "docs",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash execution/hooks/require_qa_report.sh"
-          }
-        ]
-      },
-      {
-        "matcher": "maintainer",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash execution/hooks/require_docs.sh"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash execution/hooks/require_maintainer.sh"
-          }
-        ]
-      },
       {
         "matcher": "Write|Edit|Bash",
         "hooks": [

@@ -17,6 +17,7 @@ import fnmatch
 import hashlib
 import json
 import os
+import posixpath
 import re
 import shlex
 import shutil
@@ -26,6 +27,14 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+try:
+    from pydeps import require
+except ImportError:  # the updater can run before pydeps.py has been delivered
+    pass
+else:
+    require("yaml")
 
 
 # Baseline hash store for the HARNESS overwrite guard (GitHub issue #104).
@@ -103,9 +112,20 @@ DELIVERY_COMPLETE = "complete"
 DELIVERY_PARTIAL = "partial"
 
 
+def _lf_text(data: bytes) -> bytes:
+    """Fold CRLF to LF in text content before hashing.
+
+    With git core.autocrlf=true (the Windows default) every checked-out file is
+    CRLF while the upstream and historical blobs are LF, so raw-byte hashes
+    never matched and the whole tree was withheld as hand-edited. Binary
+    content (any NUL byte) is left alone.
+    """
+    return data if b"\x00" in data else data.replace(b"\r\n", b"\n")
+
+
 def _sha256_of_file(path: Path) -> str:
-    """Return the sha256 hex digest of a file's current byte content."""
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    """Return the sha256 hex digest of a file's content, line endings folded."""
+    return hashlib.sha256(_lf_text(path.read_bytes())).hexdigest()
 
 
 def load_template_baselines(store_path: Path = TEMPLATE_BASELINES_PATH) -> dict:
@@ -118,7 +138,7 @@ def load_template_baselines(store_path: Path = TEMPLATE_BASELINES_PATH) -> dict:
     if not store_path.exists():
         return {}
     try:
-        data = json.loads(store_path.read_text())
+        data = json.loads(store_path.read_text(encoding="utf-8"))
     except Exception:
         return {}
     if not isinstance(data, dict):
@@ -229,7 +249,7 @@ def _load_allowed_symlinks(path: Path = ALLOWED_SYMLINKS_PATH) -> list[str]:
     """
     patterns: list[str] = []
     if path.exists():
-        for line in path.read_text().splitlines():
+        for line in path.read_text(encoding="utf-8").splitlines():
             line = line.strip()
             if line and not line.startswith("#"):
                 patterns.append(line)
@@ -334,7 +354,7 @@ def _open_fd_nofollow(path: Path, label: str, stop_at: Path | None = None) -> in
                 f"{target_desc} — proceeding (allow-listed via "
                 f"{ALLOWED_SYMLINKS_PATH} or --allow-symlink)."
             )
-            return os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644)
+            return os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC | getattr(os, "O_BINARY", 0), 0o644)
         print(
             f"  WARN  {label} is reached through a symlink at {offending} -> "
             f"{target_desc} — REFUSING to write through a symlinked "
@@ -347,7 +367,7 @@ def _open_fd_nofollow(path: Path, label: str, stop_at: Path | None = None) -> in
 
     try:
         return os.open(
-            str(path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o644
+            str(path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0), 0o644
         )
     except OSError as e:
         if e.errno == errno.ELOOP:
@@ -367,7 +387,7 @@ def _write_text_nofollow(path: Path, text: str, label: str, stop_at: Path | None
     fd = _open_fd_nofollow(path, label, stop_at=stop_at)
     if fd is None:
         return False
-    with os.fdopen(fd, "w") as f:
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
         f.write(text)
     return True
 
@@ -405,7 +425,7 @@ def _write_text_atomic_nofollow(path: Path, text: str, label: str,
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp_name = tempfile.mkstemp(dir=str(path.parent), prefix=".", suffix=".tmp")
     try:
-        with os.fdopen(fd, "w") as f:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
             f.write(text)
             f.flush()
             os.fsync(f.fileno())
@@ -436,8 +456,15 @@ def _copy2_nofollow(src: Path, dst: Path, label: str, stop_at: Path | None = Non
         with open(src, "rb") as sf:
             shutil.copyfileobj(sf, f)
         f.flush()
-        os.fchmod(f.fileno(), stat.S_IMODE(src_stat.st_mode))
-        os.utime(f.fileno(), ns=(src_stat.st_atime_ns, src_stat.st_mtime_ns))
+        # Windows has no os.fchmod and (before 3.13) no fd-based os.utime
+        if hasattr(os, "fchmod"):
+            os.fchmod(f.fileno(), stat.S_IMODE(src_stat.st_mode))
+        if os.utime in os.supports_fd:
+            os.utime(f.fileno(), ns=(src_stat.st_atime_ns, src_stat.st_mtime_ns))
+    if not hasattr(os, "fchmod"):
+        os.chmod(dst, stat.S_IMODE(src_stat.st_mode))
+    if os.utime not in os.supports_fd:
+        os.utime(dst, ns=(src_stat.st_atime_ns, src_stat.st_mtime_ns))
     return True
 
 
@@ -448,6 +475,18 @@ class BackupDirRefused(Exception):
     aborts the whole run over it; cmd_reconcile_from_history() degrades to
     "delivery deferred" for this run, same as an unavailable live tree.
     """
+
+
+def remove_if_no_files(root: Path) -> None:
+    """Remove `root` and its subdirectories when the tree holds no file, so a
+    run that backed nothing up leaves no directory behind."""
+    if root.is_symlink() or not root.is_dir():
+        return
+    if any(not p.is_dir() or p.is_symlink() for p in root.rglob("*")):
+        return
+    for directory in sorted((p for p in root.rglob("*") if p.is_dir()), reverse=True):
+        directory.rmdir()
+    root.rmdir()
 
 
 def _create_guarded_backup_dir(prefix: str) -> Path:
@@ -469,12 +508,20 @@ def _create_guarded_backup_dir(prefix: str) -> Path:
     if any component of the resulting path's ancestor chain, up to the
     workspace root, is a symlink.
     """
-    ts = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
-    backup_dir = Path(f".agent/memory/scratch/{prefix}-{ts}")
-    if _refuse_symlinked_write(backup_dir, f"{prefix} directory"):
-        raise BackupDirRefused(str(backup_dir))
-    backup_dir.mkdir(parents=True, exist_ok=True)
-    return backup_dir
+    # Unique per pass: a pass never reuses a directory another pass created,
+    # even within the same second (an updater that re-execs into a newer one).
+    while True:
+        now = time.time()
+        ts = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime(now))
+        micro = int((now % 1) * 1_000_000)
+        backup_dir = Path(f".agent/memory/scratch/{prefix}-{ts}-{micro:06d}-{os.getpid()}")
+        if _refuse_symlinked_write(backup_dir, f"{prefix} directory"):
+            raise BackupDirRefused(str(backup_dir))
+        try:
+            backup_dir.mkdir(parents=True, exist_ok=False)
+        except FileExistsError:
+            continue
+        return backup_dir
 
 
 def _sync_file_with_guard(
@@ -622,7 +669,12 @@ def _sync_file_with_guard(
         except OSError:
             current_hash = None
 
-        if baseline_hash:
+        if baseline_key == VERSION_FILE_KEY:
+            # Delivered by update_profile_version() by design, never judged
+            # here; a baseline poisoned by an older updater must not hold it.
+            diverged = False
+            no_record = False
+        elif baseline_hash:
             diverged = current_hash is not None and current_hash != baseline_hash
             no_record = False
         else:
@@ -647,6 +699,21 @@ def _sync_file_with_guard(
             # skip this mission already closed).
             diverged = current_hash is not None
             no_record = True
+            # ...unless the local bytes are a blob the harness itself shipped
+            # under this path: that is proof the file was never edited, so
+            # there is nothing to protect and the update is delivered. Without
+            # this, a workspace whose recorded release postdates its files
+            # (SAOC, 2026-10-25: 12 provably-unedited files) is withheld on
+            # every run, because only the bootstrap reconcile read the ledger.
+            if diverged and _INCOMING_SHIPPED_LEDGER:
+                try:
+                    blob_id = _git_blob_id(dst_file)
+                    if any(f"{blob_id} {candidate}" in _INCOMING_SHIPPED_LEDGER
+                           for candidate in _shipped_path_candidates(baseline_key)):
+                        diverged = False
+                        no_record = False
+                except OSError:
+                    pass
 
         if diverged:
             if not force:
@@ -839,7 +906,7 @@ def _harness_name(workspace: Path) -> str:
     compared against for its whole life, so behaviour there is unchanged.
     """
     try:
-        profile = json.loads((workspace / ".agent" / "profile.json").read_text())
+        profile = json.loads((workspace / ".agent" / "profile.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return HARNESS_NAME_FALLBACK
     if not isinstance(profile, dict):
@@ -874,7 +941,7 @@ def is_harness_checkout(workspace: str | Path = ".") -> bool:
     """
     root = Path(workspace)
     try:
-        marker = (root / "WORKSPACE").read_text().strip()
+        marker = (root / "WORKSPACE").read_text(encoding="utf-8").strip()
     except OSError:
         return False
     return bool(marker) and marker == _harness_name(root)
@@ -897,6 +964,15 @@ def _paths_have_identical_content(src: Path, dst: Path) -> bool:
         return _sha256_of_file(src) == _sha256_of_file(dst)
     except OSError:
         return False
+
+
+def _is_interpreter_cache(rel: Path) -> bool:
+    """True for compiled Python bytecode: anything under a __pycache__/ directory, or a stray
+    *.pyc/*.pyo file. It is the interpreter's own cache of a sibling .py, regenerated with no
+    human involvement, so it is never delivered, guarded or baselined. Without this, a
+    --source checkout's bytecode differs from the project's and trips the no-baseline skip
+    gate (exit 1) on a fresh scaffold (Athanor Win, 2026-11-07)."""
+    return "__pycache__" in rel.parts or rel.suffix in (".pyc", ".pyo")
 
 
 def copy_harness(
@@ -998,6 +1074,8 @@ def copy_harness(
             if src_file.is_dir():
                 continue
             rel = src_file.relative_to(src)
+            if _is_interpreter_cache(rel):
+                continue
             dst_file = dst / rel
             file_key = f"{base_key}/{rel.as_posix()}"
             status = _sync_file_with_guard(
@@ -1109,6 +1187,8 @@ def predict_harness(
             if src_file.is_dir():
                 continue
             rel = src_file.relative_to(src)
+            if _is_interpreter_cache(rel):
+                continue
             dst_file = dst / rel
             file_key = f"{base_key}/{rel.as_posix()}"
             status = _sync_file_with_guard(
@@ -1124,6 +1204,178 @@ def predict_harness(
         return [(path_key, status)]
 
 
+def adopt_delivered_baselines(source: Path, manifest: dict) -> int:
+    """Record a baseline for every HARNESS file whose bytes now equal the
+    payload's, and return how many were recorded.
+
+    Called only after a run that withheld, refused and failed nothing, so the
+    workspace provably holds what was delivered. Without it a file the guard
+    never reached stays baseline-less and the next update withholds it again.
+    Only byte-identical files are recorded; a locally edited file never is.
+    """
+    baselines = load_template_baselines()
+    recorded = 0
+    for entry in manifest.get("paths", []):
+        if not (isinstance(entry, dict) and entry.get("category") == "HARNESS"
+                and entry.get("path")) or _is_project_owned(entry["path"]):
+            continue
+        key = entry["path"].rstrip("/")
+        src = source / key
+        files = [(key, src)] if src.is_file() else [
+            (f"{key}/{f.relative_to(src).as_posix()}", f)
+            for f in sorted(src.rglob("*"))
+            if f.is_file() and not _is_interpreter_cache(f.relative_to(src))
+        ] if src.is_dir() else []
+        for file_key, src_file in files:
+            dst_file = Path(file_key)
+            if dst_file.is_symlink() or not dst_file.is_file():
+                continue
+            digest = _sha256_of_file(dst_file)
+            if digest == _sha256_of_file(src_file) and baselines.get(file_key) != digest:
+                baselines[file_key] = digest
+                recorded += 1
+    if recorded:
+        save_template_baselines(baselines)
+    return recorded
+
+
+# Project-owned documents the updater never writes, whatever the manifest it
+# runs with says. A pre-3.8.27 manifest declares README.md as MERGE line_union,
+# which appends Athanor's own README to the project's (GH #1464).
+PROJECT_OWNED_PATHS = frozenset({"README.md", "CHANGELOG.md", "comms.md"})
+PROJECT_OWNED_PREFIXES = ("docs/", ".agent/memory/", ".agent/identity/")
+
+
+def _is_project_owned(path: str) -> bool:
+    """True when a manifest path names project-owned content, however spelled:
+    `./README.md`, a case variant on a case-insensitive filesystem, or a
+    symlinked spelling that resolves to a project-owned file in the workspace.
+    """
+    def fold(p: str) -> str:
+        p = posixpath.normpath(p)
+        return p.casefold() if sys.platform == "darwin" else p
+
+    def owned(p: str) -> bool:
+        p = fold(p)
+        return p in {fold(o) for o in PROJECT_OWNED_PATHS} or any(
+            (p + "/").startswith(fold(pre)) for pre in PROJECT_OWNED_PREFIXES)
+
+    if owned(path):
+        return True
+    try:
+        root = Path.cwd().resolve()
+        return owned((root / path).resolve().relative_to(root).as_posix())
+    except (OSError, ValueError, RuntimeError):
+        return False
+LINE_UNION_RESTORE_PATH = "README.md"
+SELF_HEAL_REEXEC_ENV = "ATHANOR_UPDATER_SELF_HEAL_REEXEC"
+# The pass that re-exec'd into this one wrote the newest backup dir, and only
+# the newest: an older dir belongs to an earlier update.
+BACKUP_SCAN_LIMIT = 1
+
+
+MIN_README_TAIL_LINES = 3
+VERSION_FILE_KEY = ".agent/version"
+# Mirrors check_autonomy.sh floor_glob_match: a pin can never satisfy these.
+FLOOR_PIN_GLOBS = (
+    "init.sh", "full_boot.sh", ".claude/settings.json", ".claude/settings.local.json",
+    ".claude/hooks/*", "execution/hooks/*", "CLAUDE.md", "AGENTS.md", "GEMINI.md",
+    ".agent/autonomy_matrix.json", ".agent/enforcement_breakglass.json",
+    ".git/*", ".env", ".sops.yaml", "*.pem", "*.key", "secrets/*",
+    ".ssh/*", ".aws/*", ".gnupg/*",
+)
+
+
+def _is_floor_protected(key: str) -> bool:
+    return any(fnmatch.fnmatch(key, g) or fnmatch.fnmatch(key, "*/" + g)
+               for g in FLOOR_PIN_GLOBS)
+
+
+def _pinned_line(key: str) -> str:
+    return (f"  PINNED  {key}  (.agent/no-update) -- declared pin, kept local, "
+            "not counted as withheld")
+
+
+def _rerecord_version_baseline(version_path: Path | None) -> None:
+    """Keep the .agent/version baseline equal to what the hold-restore left on
+    disk (or drop it when the file was removed), so a held run never leaves a
+    baseline for content that was not kept."""
+    try:
+        baselines = load_template_baselines()
+        if version_path is None:
+            baselines.pop(VERSION_FILE_KEY, None)
+        else:
+            baselines[VERSION_FILE_KEY] = _sha256_of_file(version_path)
+        save_template_baselines(baselines)
+    except OSError as e:
+        print(f"  WARN  could not re-record the {VERSION_FILE_KEY} baseline "
+              f"({e.__class__.__name__}): {e}")
+
+
+def _readme_append_split(lines: list[str], payload_lines: list[str]) -> int | None:
+    """Smallest k such that lines[k:] is exactly what a line_union of the
+    payload README appended to lines[:k] (None when no such split exists).
+    Smallest k = longest tail: every suffix of a true tail also satisfies the
+    equation, so only the longest one strips the whole append."""
+    first = max(1, len(lines) - len(payload_lines))
+    for k in range(first, len(lines) - MIN_README_TAIL_LINES + 1):
+        seen = set(lines[:k])
+        if lines[k:] == [ln for ln in payload_lines if ln not in seen]:
+            # A head made only of payload/blank lines is a copy of Athanor's
+            # own README, not a project README an append was made to.
+            payload_set = set(payload_lines)
+            if any(ln.strip() and ln not in payload_set for ln in lines[:k]):
+                return k
+            return None
+    return None
+
+
+def restore_line_union_readme(source: Path, current_backup: Path | None = None) -> str | None:
+    """Undo a README.md line_union an older updater applied earlier, and
+    return a report line (None when nothing was undone).
+
+    The old updater has no project-owned guard: it appends Athanor's README
+    lines to the project's. Two proofs, each exact, never a heuristic:
+    1. a recent backup dir (other than `current_backup`) holds the original and
+       the README equals the line_union of it with the payload README;
+    2. stateless: the README is `P + tail` where tail is exactly the payload
+       README lines absent from P (see _readme_append_split), tail >= 3 lines.
+    A README with no proven appended tail is never touched. The pre-heal file
+    is copied into `current_backup` before it is rewritten.
+    """
+    src, dst = source / LINE_UNION_RESTORE_PATH, Path(LINE_UNION_RESTORE_PATH)
+    if not (src.is_file() and dst.is_file()) or dst.is_symlink():
+        return None
+    payload_lines = src.read_text(encoding="utf-8").splitlines()
+    current = dst.read_text(encoding="utf-8")
+    backups = sorted((b for b in Path(".agent/memory/scratch").glob("update-backup-*")
+                      if b != current_backup), reverse=True)
+    for backup_dir in backups[:BACKUP_SCAN_LIMIT]:
+        backup = backup_dir / LINE_UNION_RESTORE_PATH
+        if not backup.is_file() or backup.is_symlink():
+            continue
+        original = backup.read_text(encoding="utf-8").splitlines()
+        seen = set(original)
+        appended = [ln for ln in payload_lines if ln not in seen]
+        if appended and current == "\n".join(original + appended) + "\n":
+            _write_text_nofollow(dst, backup.read_text(encoding="utf-8"), f"{dst} (restore)")
+            return (f"  RESTORED  {dst}: undid {len(appended)} line(s) an older updater "
+                    f"appended earlier in this update (project-owned, from {backup})")
+    lines = current.splitlines()
+    split = _readme_append_split(lines, payload_lines)
+    if split is None:
+        return None
+    if current_backup is not None:
+        pre_heal = current_backup / dst
+        if _refuse_symlinked_write(pre_heal, f"{dst} pre-heal backup"):
+            return None
+        pre_heal.parent.mkdir(parents=True, exist_ok=True)
+        _copy2_nofollow(dst, pre_heal, f"{dst} pre-heal backup")
+    _write_text_nofollow(dst, "\n".join(lines[:split]) + "\n", f"{dst} (restore)")
+    return (f"  RESTORED  {dst}: undid {len(lines) - split} line(s) an older updater "
+            "appended (proved from the payload README; project-owned)")
+
+
 def merge_line_union(src: Path, dst: Path, backup_dir: Path) -> str:
     """Merge strategy: union of lines (src lines added if not already in dst)."""
     if not src.exists():
@@ -1137,8 +1389,8 @@ def merge_line_union(src: Path, dst: Path, backup_dir: Path) -> str:
     if _refuse_symlinked_write(dst, f"{dst} (MERGE destination)"):
         return f"  SKIP  (symlinked destination) {dst}"
 
-    src_lines = src.read_text().splitlines()
-    dst_lines = dst.read_text().splitlines() if dst.exists() else []
+    src_lines = src.read_text(encoding="utf-8").splitlines()
+    dst_lines = dst.read_text(encoding="utf-8").splitlines() if dst.exists() else []
 
     dst_set = set(dst_lines)
     new_lines = [line for line in src_lines if line not in dst_set]
@@ -1528,10 +1780,10 @@ def merge_json_deep(src: Path, dst: Path, backup_dir: Path) -> str:
     if _refuse_symlinked_write(dst, f"{dst} (MERGE destination)"):
         return f"  SKIP  (symlinked destination) {dst}"
 
-    src_data = json.loads(src.read_text())
+    src_data = json.loads(src.read_text(encoding="utf-8"))
     if dst.exists():
         try:
-            dst_data = json.loads(dst.read_text())
+            dst_data = json.loads(dst.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
             # Corrupt destination degrades gracefully to "no existing
             # content" (mirrors load_template_baselines()'s corrupt-JSON
@@ -1699,6 +1951,116 @@ def apply_retired_paths(
     return removed
 
 
+def retired_already_gone(manifest: dict, project_root: Path) -> list[str]:
+    """Retired paths an EARLIER update already deleted (absent from disk now).
+
+    apply_retired_paths reports only what it removes this run, so a project that
+    lost the scripts to a pre-fix update kept their registrations forever (Acrux
+    Accounting, 2026-11-11: test_hook_integrity red after updating). A
+    registration naming a retired path that does not exist is dead for certain;
+    a path still on disk (a local edit apply_retired_paths kept) is not listed.
+    """
+    entries = manifest.get("retired_paths") or []
+    if not isinstance(entries, list):
+        return []
+    gone = []
+    for entry in entries:
+        rel = entry.get("path") if isinstance(entry, dict) else None
+        if not rel or Path(rel).is_absolute() or ".." in Path(rel).parts:
+            continue
+        target = project_root / rel
+        if not target.exists() and not target.is_symlink():
+            gone.append(rel)
+    return gone
+
+
+def _names_live_script(entry, retired: set, project_root: Path) -> bool:
+    """True when the command also names a non-retired .sh/.py that exists on disk.
+
+    A compound registration (`bash scripts/x.sh; [ -f <retired> ] || true`) still
+    runs a live hook, so it is never pruned for merely mentioning a retired path.
+    """
+    command = str(entry.get("command", "")) if isinstance(entry, dict) else ""
+    for tok in command.replace("'", " ").replace('"', " ").replace("\\", "/").replace(";", " ").split():
+        tok = tok.replace("$CLAUDE_PROJECT_DIR/", "").replace("${CLAUDE_PROJECT_DIR}/", "")
+        if tok.startswith("./"):
+            tok = tok[2:]
+        if tok in retired or not tok.endswith((".sh", ".py")):
+            continue
+        if not Path(tok).is_absolute() and ".." not in Path(tok).parts and (project_root / tok).is_file():
+            return True
+    return False
+
+
+def _names_retired_path(entry, retired: set) -> bool:
+    """True when the registration's command names one of the retired paths exactly."""
+    command = str(entry.get("command", "")) if isinstance(entry, dict) else ""
+    for tok in command.replace("'", " ").replace('"', " ").replace("\\", "/").split():
+        tok = tok.replace("$CLAUDE_PROJECT_DIR/", "").replace("${CLAUDE_PROJECT_DIR}/", "")
+        if tok.startswith("./"):
+            tok = tok[2:]
+        if tok in retired:
+            return True
+    return False
+
+
+def prune_retired_hook_registrations(project_root: Path, backup_dir: Path | None,
+                                     dry_run: bool, retired: list) -> int:
+    """Drop hook registrations naming a script apply_retired_paths deleted this run.
+
+    The settings merge runs in the manifest loop, BEFORE retired scripts are
+    removed, so it still sees them on disk and keeps their registrations as
+    dead references (Acrux Accounting, 3.8.88: test_hook_integrity failed on
+    quota_death_checkpoint.sh). Only an exact path match against the files
+    removed in THIS run drops an entry: a project hook whose path merely
+    cannot be resolved (cd-then-relative, quoted spaces) is preserved.
+    """
+    if dry_run or not retired:
+        return 0
+    retired_set = set(retired)
+    settings = project_root / ".claude" / "settings.json"
+    if (_refuse_symlinked_write(settings, "retired-hook prune settings", stop_at=project_root)
+            or not settings.is_file()):
+        return 0
+    try:
+        data = json.loads(settings.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return 0
+    hooks = data.get("hooks") if isinstance(data, dict) else None
+    if not isinstance(hooks, dict):
+        return 0
+    dropped = 0
+    for event, groups in hooks.items():
+        if not isinstance(groups, list):
+            continue
+        kept_groups = []
+        for group in groups:
+            entries = group.get("hooks") if isinstance(group, dict) else None
+            if not isinstance(entries, list):
+                kept_groups.append(group)
+                continue
+            kept = [e for e in entries if not (_names_retired_path(e, retired_set)
+                                               and not _names_live_script(e, retired_set, project_root))]
+            dropped += len(entries) - len(kept)
+            if kept or not entries:
+                kept_groups.append({**group, "hooks": kept})
+        hooks[event] = kept_groups
+    if not dropped:
+        return 0
+    if backup_dir is not None:
+        backup_path = backup_dir / settings.relative_to(project_root)
+        if _refuse_symlinked_write(backup_path, "retired-hook prune backup target"):
+            return 0
+        if not backup_path.exists():
+            # Never replace the pre-update copy merge_json_deep already took.
+            backup_path.parent.mkdir(parents=True, exist_ok=True)
+            _copy2_nofollow(settings, backup_path, "retired-hook prune backup target")
+    _write_text_nofollow(settings, json.dumps(data, indent=2) + "\n",
+                         f"{settings} (retired-hook prune)")
+    print(f"  PRUNE {dropped} hook registration(s) naming retired scripts in {settings}")
+    return dropped
+
+
 def apply_retractions(
     manifest: dict,
     project_root: Path,
@@ -1790,7 +2152,7 @@ def apply_retractions(
             continue
 
         try:
-            data = json.loads(dst.read_text())
+            data = json.loads(dst.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError) as e:
             print(f"  retraction SKIP   {rel_path} (unreadable/invalid JSON: {e})")
             continue
@@ -1879,7 +2241,7 @@ def apply_retractions(
             print("  WARN  retraction(s) applied above, but the audit log write was refused (symlinked ancestor)")
         else:
             try:
-                existing = json.loads(log_path.read_text()) if log_path.exists() else []
+                existing = json.loads(log_path.read_text(encoding="utf-8")) if log_path.exists() else []
                 if not isinstance(existing, list):
                     existing = []
             except Exception:
@@ -1906,7 +2268,7 @@ def update_profile_version(source: Path, profile_path: Path) -> str:
     if not version_file.exists():
         return "  SKIP  template_version update (source .agent/version not found)"
 
-    new_version = version_file.read_text().strip()
+    new_version = version_file.read_text(encoding="utf-8").strip()
     if not new_version:
         return "  SKIP  template_version update (source .agent/version is empty)"
 
@@ -1926,7 +2288,7 @@ def update_profile_version(source: Path, profile_path: Path) -> str:
         changes.append("WARN local .agent/version is symlinked — skipping local version sync")
     else:
         old_local_version = (
-            local_version_path.read_text().strip() if local_version_path.exists() else None
+            local_version_path.read_text(encoding="utf-8").strip() if local_version_path.exists() else None
         )
         if old_local_version != new_version:
             local_version_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1941,7 +2303,7 @@ def update_profile_version(source: Path, profile_path: Path) -> str:
         return "  SKIP  template_version update (profile.json not found)"
 
     try:
-        profile = json.loads(profile_path.read_text())
+        profile = json.loads(profile_path.read_text(encoding="utf-8"))
     except Exception as e:
         if changes:
             return f"  updated: {'; '.join(changes)}; WARN template_version update failed (bad profile.json): {e}"
@@ -1950,6 +2312,10 @@ def update_profile_version(source: Path, profile_path: Path) -> str:
     profile_changed = False
     old_version = profile.get("template_version", "unknown")
     if old_version != new_version:
+        if old_version != "unknown" and not profile.get("scaffold_version"):
+            # First move off the scaffold release: remember it so directives.py can
+            # tell which directives the project's own scaffold already contained.
+            profile["scaffold_version"] = old_version
         profile["template_version"] = new_version
         changes.append(f"template_version: {old_version} → {new_version}")
         profile_changed = True
@@ -1960,7 +2326,7 @@ def update_profile_version(source: Path, profile_path: Path) -> str:
     if not (isinstance(autonomy, dict) and autonomy.get("level")):
         matrix_path = profile_path.parent.parent / ".agent" / "autonomy_matrix.json"
         try:
-            matrix = json.loads(matrix_path.read_text())
+            matrix = json.loads(matrix_path.read_text(encoding="utf-8"))
             seed_level = matrix.get("onboarding_default", "low")
         except Exception:
             seed_level = "medium"
@@ -1990,6 +2356,7 @@ def write_template_state(
     untracked: list[str] | None = None,
     prior_local_version: str | None = None,
     bootstrap_unresolved: dict | None = None,
+    version_held: bool = False,
 ) -> str:
     """Persist the applied template_version to .agent/.template_state.
 
@@ -2070,7 +2437,7 @@ def write_template_state(
     if not version_file.exists():
         return "  SKIP  .template_state update (source .agent/version not found)"
 
-    new_version = version_file.read_text().strip()
+    new_version = version_file.read_text(encoding="utf-8").strip()
     if not new_version:
         return "  SKIP  .template_state update (source .agent/version is empty)"
 
@@ -2082,7 +2449,7 @@ def write_template_state(
     current: dict = {}
     if state_path.exists():
         try:
-            current = json.loads(state_path.read_text())
+            current = json.loads(state_path.read_text(encoding="utf-8"))
         except Exception:
             current = {}
         if not isinstance(current, dict):
@@ -2137,8 +2504,15 @@ def write_template_state(
         # worse than no anchor at all.
         reconcile_from = candidate if candidate and candidate != new_version else None
 
+    # A held run printed "template_version NOT bumped", so the stamp keeps the
+    # version this workspace was last fully at; writing the new version here
+    # would contradict that and move the reconcile_from anchor with it.
+    stamp_version: str | None = new_version
+    if version_held:
+        stamp_version = current.get("template_version") or prior_local_version
+
     if (
-        current.get("template_version") == new_version
+        current.get("template_version") == stamp_version
         and current.get("delivery") == delivery
         and list(current.get("withheld") or []) == withheld
         and list(current.get("untracked") or []) == untracked
@@ -2163,11 +2537,10 @@ def write_template_state(
 
     applied_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     state_path.parent.mkdir(parents=True, exist_ok=True)
-    record = {
-        "template_version": new_version,
-        "applied_at": applied_at,
-        "delivery": delivery,
-    }
+    record = {"applied_at": applied_at, "delivery": delivery}
+    if stamp_version:
+        # A held run that never knew a prior version claims none.
+        record = {"template_version": stamp_version, **record}
     # Provenance (F4b): records WHERE this delivery happened, so a clone that
     # inherits this file through git cannot present it as its own receipt.
     record.update(_stamp_identity_fields())
@@ -2192,7 +2565,7 @@ def write_template_state(
         ".agent/.template_state",
     )
     return (
-        f"  updated .template_state: template_version → {new_version} "
+        f"  updated .template_state: template_version → {stamp_version or "unrecorded"} "
         f"(delivery={delivery}"
         + (f", withheld={len(withheld)}" if withheld else "")
         + (f", failed={len(failed)}" if failed else "")
@@ -2271,6 +2644,47 @@ def apply_missing_file_backstop(
     return copied, warnings
 
 
+LOCAL_MANIFEST = Path(".agent/update-manifest.local.yaml")
+
+
+def local_manifest_owned() -> list[str]:
+    """Paths the project classified itself in .agent/update-manifest.local.yaml.
+
+    WORKSPACE/DERIVED only (validate_manifest.sh rejects anything else). Each
+    is returned in both its bare and its "/" form, so an entry written "src"
+    still overlaps an upstream "src/" or "src/new.py" whether or not the
+    directory exists yet. Alembic 2026-10-20: a project had to edit the
+    HARNESS manifest to classify src/, and the updater then refused it.
+
+    Raises ValueError when the file exists but is not a YAML mapping with a
+    paths list: an update that ignored it would deliver into exactly the
+    paths the project meant to own.
+    """
+    import yaml
+    try:
+        data = yaml.safe_load(LOCAL_MANIFEST.read_text(encoding="utf-8")) or {}
+    except FileNotFoundError:
+        return []
+    except Exception as e:
+        raise ValueError(f"{LOCAL_MANIFEST} is unreadable ({type(e).__name__})") from e
+    entries = data.get("paths") if isinstance(data, dict) else None
+    if not isinstance(entries, list):
+        raise ValueError(f"{LOCAL_MANIFEST} needs a 'paths:' list")
+    owned: list[str] = []
+    for e in entries:
+        if (isinstance(e, dict) and isinstance(e.get("path"), str) and e["path"].strip("/")
+                and e.get("category") in ("WORKSPACE", "DERIVED")):
+            bare = e["path"].rstrip("/")
+            owned += [bare, bare + "/"]
+    return owned
+
+
+def overlaps_owned(path: str, owned: list[str]) -> bool:
+    """True when manifest path PATH equals, contains or sits inside an owned path."""
+    return any(path == o or (o.endswith("/") and path.startswith(o))
+               or (path.endswith("/") and o.startswith(path)) for o in owned)
+
+
 def apply_fresh_manifest_backstop(
     manifest_path: Path,
     source: Path,
@@ -2320,15 +2734,23 @@ def apply_fresh_manifest_backstop(
     fresh_source = source_manifest_path if source_manifest_path.exists() else manifest_path
 
     try:
-        fresh_manifest = yaml.safe_load(fresh_source.read_text())
+        fresh_manifest = yaml.safe_load(fresh_source.read_text(encoding="utf-8"))
     except Exception as e:
         print(f"  WARN  fresh-manifest backstop: failed to re-read manifest ({fresh_source}): {e}")
         return delivered
 
+    try:
+        project_owned = local_manifest_owned()
+    except ValueError as e:
+        print(f"  WARN  fresh-manifest backstop: {e} -- nothing delivered")
+        return delivered
     for entry in fresh_manifest.get("paths", []):
         if entry.get("category") != "HARNESS":
             continue
         path = entry["path"]
+        if overlaps_owned(path, project_owned):
+            print(f"  note  {path} belongs to {LOCAL_MANIFEST} -- the upstream HARNESS entry is not delivered")
+            continue
         # Isolate-and-continue per entry (template-update-actually-updates F8
         # EDGE 3): this loop runs OUTSIDE the main manifest loop in main(),
         # which already wraps each entry in its own try/except so one bad
@@ -2369,6 +2791,8 @@ def apply_fresh_manifest_backstop(
                     if src_file.is_dir():
                         continue
                     rel = src_file.relative_to(src_dir)
+                    if _is_interpreter_cache(rel):
+                        continue
                     dst_file = dst_dir / rel
                     dst_key = f"{path.rstrip('/')}/{rel.as_posix()}"
                     if dst_file.exists():
@@ -2503,6 +2927,8 @@ def _collect_valid_harness_keys(manifest: dict, source: Path) -> dict[str, list[
                 if src_file.is_dir():
                     continue
                 rel = src_file.relative_to(src_dir)
+                if _is_interpreter_cache(rel):
+                    continue
                 key = f"{base_key}/{rel.as_posix()}"
                 dst = Path(base_key) / rel
                 valid.setdefault(key, []).append(dst)
@@ -2661,9 +3087,7 @@ def _walk_harness_manifest_files(manifest: dict, root: Path = Path(".")) -> list
             for f in sorted(dst_dir.rglob("*")):
                 if f.is_symlink() or f.is_dir() or not f.is_file():
                     continue
-                if "__pycache__" in f.relative_to(dst_dir).parts:
-                    continue
-                if f.suffix in (".pyc", ".pyo"):
+                if _is_interpreter_cache(f.relative_to(dst_dir)):
                     continue
                 if f.name == ".DS_Store":
                     # macOS Finder junk, not harness content -- no exclusion
@@ -2704,7 +3128,7 @@ def _enumerate_no_baseline_harness_paths(manifest_path: Path) -> list[str]:
     if not manifest_path.exists():
         return []
     try:
-        manifest = yaml.safe_load(manifest_path.read_text())
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
     except Exception:
         return []
 
@@ -2717,6 +3141,11 @@ def _enumerate_no_baseline_harness_paths(manifest_path: Path) -> list[str]:
         seen.add(key)
         unbaselined.append(key)
     return unbaselined
+
+
+# Names the comparison a negative-cache record was drawn with. Bump it when the
+# provenance test widens, so records from the narrower test are re-attempted.
+BOOTSTRAP_PROOF_METHOD = "shipped-history-v2"
 
 
 def _bootstrap_settled_paths(cached, anchor: str | None) -> set[str]:
@@ -2752,6 +3181,10 @@ def _bootstrap_settled_paths(cached, anchor: str | None) -> set[str]:
     if not anchor or not isinstance(cached, dict):
         return set()
     if cached.get("anchor") != anchor:
+        return set()
+    if cached.get("method") != BOOTSTRAP_PROOF_METHOD:
+        # Drawn by an updater that compared against one snapshot path only; it
+        # proved nothing about template/<path> or the rest of git history.
         return set()
     paths = cached.get("paths")
     if not isinstance(paths, dict):
@@ -2794,7 +3227,7 @@ def _bootstrap_proof_record(anchor: str, keys) -> dict:
             proofs[key] = _sha256_of_file(local_path)
         except OSError:
             continue
-    return {"anchor": anchor, "paths": proofs}
+    return {"anchor": anchor, "method": BOOTSTRAP_PROOF_METHOD, "paths": proofs}
 
 
 def _bootstrap_should_run(unbaselined: list[str], anchor: str | None,
@@ -2853,7 +3286,7 @@ def cmd_record_scaffold_baselines(project_path: str) -> int:
         return 0
     try:
         import yaml
-        manifest = yaml.safe_load(manifest_path.read_text())
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
     except Exception as e:
         print(f"--record-scaffold-baselines: could not parse {manifest_path}: {e} -- nothing recorded")
         return 0
@@ -2985,7 +3418,7 @@ def _read_recorded_template_version() -> str | None:
     """
     if TEMPLATE_STATE_PATH.exists():
         try:
-            data = json.loads(TEMPLATE_STATE_PATH.read_text())
+            data = json.loads(TEMPLATE_STATE_PATH.read_text(encoding="utf-8"))
             v = data.get("template_version")
             if v:
                 return str(v)
@@ -2994,7 +3427,7 @@ def _read_recorded_template_version() -> str | None:
     profile_path = Path(".agent/profile.json")
     if profile_path.exists():
         try:
-            data = json.loads(profile_path.read_text())
+            data = json.loads(profile_path.read_text(encoding="utf-8"))
             v = data.get("template_version")
             if v:
                 return str(v)
@@ -3027,7 +3460,7 @@ def _read_reconcile_from_version() -> tuple[str | None, bool]:
     """
     if TEMPLATE_STATE_PATH.exists():
         try:
-            data = json.loads(TEMPLATE_STATE_PATH.read_text())
+            data = json.loads(TEMPLATE_STATE_PATH.read_text(encoding="utf-8"))
             v = data.get("reconcile_from")
             if v:
                 return str(v), True
@@ -3108,7 +3541,7 @@ def _read_template_state_record() -> dict:
     if not TEMPLATE_STATE_PATH.exists():
         return {}
     try:
-        data = json.loads(TEMPLATE_STATE_PATH.read_text())
+        data = json.loads(TEMPLATE_STATE_PATH.read_text(encoding="utf-8"))
     except Exception:
         return {}
     return data if isinstance(data, dict) else {}
@@ -3246,7 +3679,7 @@ def _classify_version_and_guard(payload_version, force) -> str:
     local_version = None
     if local_version_path.is_file():
         try:
-            local_version = local_version_path.read_text().strip() or None
+            local_version = local_version_path.read_text(encoding="utf-8").strip() or None
         except OSError:
             local_version = None
 
@@ -3428,7 +3861,7 @@ def _resolve_version_to_commit(version: str, repo: str = ATHANOR_REPO) -> str | 
             ["gh", "api", f"repos/{repo}/commits", "--method", "GET",
              "-f", "path=.agent/version", "-f", "per_page=100",
              "--paginate", "--jq", ".[].sha"],
-            capture_output=True, text=True, timeout=60,
+            capture_output=True, text=True, timeout=60, encoding="utf-8", errors="replace",
         )
         if result.returncode != 0:
             print(f"  [reconcile] WARN: gh api commit history lookup failed: {result.stderr.strip()[:200]}")
@@ -3448,7 +3881,7 @@ def _resolve_version_to_commit(version: str, repo: str = ATHANOR_REPO) -> str | 
             result = subprocess.run(
                 ["gh", "api", f"repos/{repo}/contents/.agent/version", "--method", "GET",
                  "-f", f"ref={sha}", "--jq", ".content"],
-                capture_output=True, text=True, timeout=30,
+                capture_output=True, text=True, timeout=30, encoding="utf-8", errors="replace",
             )
             if result.returncode != 0:
                 continue
@@ -3547,7 +3980,7 @@ def _resolve_version_to_commit_local(version: str, checkout: Path) -> str | None
     try:
         result = subprocess.run(
             ["git", "-C", str(checkout), "log", "--format=%H", "--", ".agent/version"],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True, text=True, timeout=30, encoding="utf-8", errors="replace",
         )
         if result.returncode != 0:
             return None
@@ -3559,7 +3992,7 @@ def _resolve_version_to_commit_local(version: str, checkout: Path) -> str | None
         try:
             result = subprocess.run(
                 ["git", "-C", str(checkout), "show", f"{sha}:.agent/version"],
-                capture_output=True, text=True, timeout=15,
+                capture_output=True, text=True, timeout=15, encoding="utf-8", errors="replace",
             )
         except (subprocess.TimeoutExpired, OSError):
             continue
@@ -3708,6 +4141,138 @@ def _resolve_historical_tree(version: str, tmpdir: Path) -> tuple[Path | None, s
             "expanded to no files (empty or truncated archive)"
         )
     return tmpdir, f"gh + network (commit {sha})"
+
+
+GIT_RAW_ZERO_ID = "0" * 40
+SHIPPED_BLOB_LEDGER = "execution/shipped_blobs.txt"
+# The incoming release's ledger lines, set once by main() after the source
+# resolves; empty means the no-baseline guard has no shipped-history proof.
+_INCOMING_SHIPPED_LEDGER: set[str] = set()
+ATHANOR_REPO_SLUG = "InunuNet/Athanor"
+PROVIDER_RULES_DIRS = (".claude/rules/", ".grok/rules/")
+CORE_RULES_DIR = ".agent/rules/_core/"
+
+
+def _shipped_path_candidates(key: str) -> list[str]:
+    """Every path the harness has shipped the bytes of `key` under.
+
+    init.sh delivers template/<key>, which differs from the repo-root <key>
+    for Makefile, paired-copies.yaml and the rule files; and a provider rules
+    copy is rendered from .agent/rules/_core/, so its bytes live under that
+    name in history, not under its own.
+    """
+    candidates = [key, "template/" + key]
+    for rules_dir in PROVIDER_RULES_DIRS:
+        if key.startswith(rules_dir):
+            core = CORE_RULES_DIR + key[len(rules_dir):]
+            candidates += [core, "template/" + core]
+    return candidates
+
+
+def _git_blob_id(path: Path) -> str:
+    data = _lf_text(path.read_bytes())
+    return hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()
+
+
+def _historical_blob_ids(checkout: Path, ref: str, paths: list[str]) -> set[str]:
+    """Blob ids git history holds for `paths`, over commits reachable from `ref`."""
+    proc = subprocess.run(
+        ["git", "-C", str(checkout), "log", ref, "--no-abbrev", "--raw",
+         "--no-renames", "--format=", "--"] + paths,
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+    )
+    if proc.returncode != 0:
+        return set()
+    ids: set[str] = set()
+    for line in proc.stdout.splitlines():
+        fields = line.split()
+        if line.startswith(":") and len(fields) >= 4:
+            ids.update(f for f in fields[2:4] if f != GIT_RAW_ZERO_ID)
+    return ids
+
+
+def _verified_athanor_checkout() -> tuple[Path, str] | None:
+    """(checkout, ref) for ATHANOR_LOCAL_CHECKOUT, only when it really is an
+    Athanor checkout that is not this workspace. `ref` is the remote-tracking
+    main of the remote naming InunuNet/Athanor: only history reachable from it
+    counts as shipped, never local branches or unpushed commits. A downstream repo pointed at here would make its own
+    committed edits look like shipped history.
+    """
+    raw = os.environ.get(ATHANOR_LOCAL_CHECKOUT_ENV)
+    if not raw:
+        return None
+    checkout = Path(raw).resolve()
+    if not (checkout / ".git").exists() or checkout == Path.cwd().resolve():
+        return None
+    if not (checkout / "template").is_dir() or not (checkout / "execution" / "update_template.py").is_file():
+        return None
+
+    def git(root: Path, *args: str) -> str | None:
+        proc = subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True,
+                              encoding="utf-8", errors="replace")
+        return proc.stdout.strip() if proc.returncode == 0 else None
+
+    remote = None
+    for line in (git(checkout, "remote", "-v") or "").splitlines():
+        fields = line.split()
+        if len(fields) > 1 and ATHANOR_REPO_SLUG.lower() in fields[1].lower():
+            remote = fields[0]
+            break
+    if remote is None:
+        return None
+    ref = f"refs/remotes/{remote}/main"
+    if git(checkout, "rev-parse", "--verify", "--quiet", ref) is None:
+        return None
+    mine, theirs = (git(r, "rev-parse", "--path-format=absolute", "--git-common-dir")
+                    for r in (Path.cwd(), checkout))
+    if mine is not None and mine == theirs:
+        return None
+    return checkout, ref
+
+
+def _load_shipped_blob_ledger(new_tree: Path | None = None) -> set[str]:
+    """"<blob id> <path>" lines of the INCOMING release's
+    execution/shipped_blobs.txt. Only `new_tree` is trusted: a workspace's own
+    copy is operator-editable and proves nothing. No tree, no ledger, or an
+    unreadable one is an empty set, never an error.
+    """
+    if new_tree is None:
+        return set()
+    try:
+        return set((new_tree / SHIPPED_BLOB_LEDGER).read_text(encoding="utf-8").splitlines())
+    except OSError:
+        return set()
+
+
+def _matches_shipped_history(
+    local_path: Path, key: str, old_tree: Path, new_tree: Path | None = None,
+) -> bool:
+    """True iff `local_path`'s bytes equal ANY blob the harness ever shipped
+    for `key`: the recorded-version snapshot (`old_tree`) under every name the
+    path ships under, a (blob id, path) pair in the incoming release's
+    shipped-blob ledger (`new_tree`/execution/shipped_blobs.txt) for any name
+    the path ships under, or a blob anywhere in the local checkout's git
+    history (ATHANOR_LOCAL_CHECKOUT). A match is proof the file was never
+    edited; no match proves nothing and the file stays withheld.
+    """
+    try:
+        local_hash = _sha256_of_file(local_path)
+        candidates = _shipped_path_candidates(key)
+        for candidate in candidates:
+            snapshot = old_tree / candidate
+            if snapshot.is_file() and _sha256_of_file(snapshot) == local_hash:
+                return True
+        ledger = _load_shipped_blob_ledger(new_tree)
+        blob_id = _git_blob_id(local_path)
+        if any(f"{blob_id} {candidate}" in ledger for candidate in candidates):
+            return True
+        verified = _verified_athanor_checkout()
+        if verified is not None:
+            blobs = _historical_blob_ids(verified[0], verified[1], candidates)
+            return blob_id in blobs
+    except OSError:
+        return False
+    return False
 
 
 def _reconcile_targets(
@@ -3926,6 +4491,9 @@ def _reconcile_targets(
                     "still be recorded where resolvable."
                 )
 
+        # The git-history proof ran only against a verified Athanor checkout;
+        # without one a miss is missing evidence and must not be cached.
+        history_checked = _verified_athanor_checkout() is not None
         baselines = load_template_baselines()
         reconciled: list[str] = []
         already_current: list[str] = []
@@ -3946,7 +4514,8 @@ def _reconcile_targets(
                 continue
 
             historical_path = old_tree / key
-            if not historical_path.exists():
+            shipped_proof = _matches_shipped_history(local_path, key, old_tree, new_tree)
+            if not historical_path.exists() and not shipped_proof:
                 print(f"  UNRESOLVED  {key}: did not exist in the historical tree ({old_tree_desc})")
                 unreconciled.append(key)
                 # CACHEABLE VERDICT 1 of 2 (F33). The tree resolved and the
@@ -3955,17 +4524,24 @@ def _reconcile_targets(
                 # iterates SOURCE files, so nothing has ever recorded a
                 # baseline for it and nothing ever can). This is a real
                 # conclusion drawn from real evidence, not a degrade.
-                if unresolved_out is not None and key not in unresolved_out:
+                if (unresolved_out is not None and history_checked
+                        and key not in unresolved_out):
                     unresolved_out.append(key)
                 continue
 
             try:
                 local_hash = _sha256_of_file(local_path)
-                historical_hash = _sha256_of_file(historical_path)
+                historical_hash = (
+                    _sha256_of_file(historical_path) if historical_path.exists()
+                    else local_hash
+                )
             except OSError as e:
                 print(f"  UNRESOLVED  {key}: could not read for comparison ({e})")
                 unreconciled.append(key)
                 continue
+
+            if local_hash != historical_hash and shipped_proof:
+                historical_hash = local_hash
 
             if local_hash != historical_hash:
                 # Does not match the OLD snapshot either -- check the NEW
@@ -4008,7 +4584,7 @@ def _reconcile_targets(
                 # stale local template/ mirror caches nothing either --
                 # live_compared tests PRESENCE of a live tree, which the
                 # template/ fallback satisfies while not being live at all.
-                if (unresolved_out is not None and live_compared
+                if (unresolved_out is not None and live_compared and history_checked
                         and new_tree_is_authoritative
                         and key not in unresolved_out):
                     unresolved_out.append(key)
@@ -4090,8 +4666,8 @@ def cmd_reconcile_from_history(targets: list[str]) -> int:
 
 # Ship-time content hash of THIS file, written by execution/bump_version.sh
 # at every version bump (updater-self-check F1). Independent of the
-# 587b1896 self-heal below (updater_self_stale / updater_disk_hash_before /
-# updater_had_baseline), which only detects drift during a real --apply
+# 587b1896 self-heal below (updater_self_stale /
+# updater_disk_hash_before), which only detects drift during a real --apply
 # fetch -- this answers "does the code I am running match what my own
 # version number claims" on ANY invocation, no fetch or prior run required.
 UPDATER_HASH_PATH = Path("execution/update_template.sha256.json")
@@ -4117,8 +4693,8 @@ def _self_check_updater_staleness() -> str | None:
     pure diagnostic output that must never affect a normal run's exit code.
     """
     try:
-        version = Path(".agent/version").read_text().strip()
-        record = json.loads(UPDATER_HASH_PATH.read_text())
+        version = Path(".agent/version").read_text(encoding="utf-8").strip()
+        record = json.loads(UPDATER_HASH_PATH.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
     if not isinstance(record, dict) or record.get("version") != version:
@@ -4184,6 +4760,69 @@ def _warn_if_self_replaced(before: str) -> bool:
     print("  " + "!" * 68)
     print("")
     return True
+
+
+
+# Mirrors the Makefile `sync:` target (called directly: make is often missing on Windows Git Bash).
+POST_APPLY_SYNC_STEPS = (
+    ("sync_autonomy", "python", "execution/sync_autonomy.py", ()),
+    ("sync_agents", "bash", "execution/sync_agents.sh", ()),
+    ("paired_copies", "python", "execution/paired_copies.py", ("--sync",)),
+    ("sync_skills", "bash", "execution/sync_skills.sh", ()),
+    ("sync_rules", "bash", "execution/sync_rules.sh", ()),
+)
+POST_APPLY_SYNC_TIMEOUT_S = 300
+SYNC_OUTPUT_TAIL_CHARS = 1500
+DERIVED_DIRS = (".claude/agents", ".claude/skills", ".claude/rules", ".codex/agents")
+
+
+def _warn_stray_cr_dirs(root):
+    """Old Windows sync_agents.sh printed a CR into the path; name any leftover dir, never delete."""
+    # Git Bash maps a CR in a filename to U+F00D on NTFS, so check both spellings.
+    for rel in DERIVED_DIRS:
+        stray = next((s for s in (root / (rel + "\r"), root / (rel + "\uf00d")) if s.exists()), None)
+        if stray is not None:
+            print(f"[sync] WARNING: stray directory {rel!r}+CR exists ({stray.name!r}) next to the "
+                  f"DERIVED dir {rel}; left untouched, remove it by hand after checking it.")
+
+
+def run_post_apply_sync(root, dry_run=False):
+    """Regenerate every DERIVED output from the freshly delivered scripts. True when all steps ran ok."""
+    steps = [(n, k, root / rel, a) for n, k, rel, a in POST_APPLY_SYNC_STEPS if (root / rel).exists()]
+    if dry_run:
+        for name, _kind, path, args in steps:
+            print(f"  would run {path.relative_to(root).as_posix()} {' '.join(args)}".rstrip())
+        return True
+    _warn_stray_cr_dirs(root)
+    env = dict(os.environ, PYTHONUTF8="1")
+    ok = True
+    for name, kind, path, args in steps:
+        cmd = ([sys.executable] if kind == "python" else ["bash"]) + [str(path), *args]
+        try:
+            res = subprocess.run(cmd, cwd=str(root), capture_output=True, text=True, env=env,
+                                 encoding="utf-8", errors="replace",
+                                 timeout=POST_APPLY_SYNC_TIMEOUT_S)
+            code, out = res.returncode, (res.stdout or "") + (res.stderr or "")
+        except (OSError, subprocess.TimeoutExpired) as e:
+            code, out = 1, f"{type(e).__name__}: {e}"
+        if code != 0:
+            ok = False
+            print(f"[sync] step {name} FAILED (exit {code}):\n{out[-SYNC_OUTPUT_TAIL_CHARS:]}")
+    if ok:
+        print("[sync] derived files regenerated")
+    else:
+        print("[sync] derived files may be stale -- run `make sync`")
+    return ok
+
+
+def _console_safe_streams():
+    """A Windows console is cp1252: printing an arrow or em dash raised UnicodeEncodeError
+    mid-update (Win11 Tweaks 2026-11-07). Replace unencodable characters instead."""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
 
 
 def main():
@@ -4395,7 +5034,7 @@ def main():
             print(_self_check_warning, file=sys.stderr)
             sys.exit(1)
         try:
-            _self_check_version = Path(".agent/version").read_text().strip()
+            _self_check_version = Path(".agent/version").read_text(encoding="utf-8").strip()
         except OSError:
             _self_check_version = "unknown"
         print(
@@ -4515,6 +5154,14 @@ def main():
             print(f"ERROR: source directory not found: {source}", file=sys.stderr)
             sys.exit(1)
 
+        # The guard's no-baseline branch consults the incoming release's
+        # shipped-blob ledger; the local template/ fallback is workspace-
+        # editable and proves nothing, so it supplies no ledger.
+        global _INCOMING_SHIPPED_LEDGER
+        _INCOMING_SHIPPED_LEDGER = (
+            _load_shipped_blob_ledger(source) if source_is_authoritative else set()
+        )
+
         # updater-self-staleness F1: does the RUNNING update_template.py
         # (this process, already loaded into memory) differ from the
         # payload's own copy? Captured HERE, before the manifest loop below
@@ -4533,19 +5180,6 @@ def main():
         # "stale but HEALED this run" (a fresh updater is now on disk and a
         # re-run would behave differently). Only the second may re-exec.
         updater_disk_hash_before: str | None = None
-        # ...and whether the updater carried a recorded baseline BEFORE this
-        # run. This is what separates the two populations that both arrive at
-        # `updater_self_stale`, and they must not be treated alike:
-        #
-        #   * baseline RECORDED -- an ordinary workspace that is simply behind.
-        #     The updater-self-staleness contract governs it: refuse, hold the
-        #     stamp, exit 1, so the operator re-runs deliberately with the new
-        #     updater. Unchanged by this feature.
-        #   * NO baseline -- the fleet-heal population (onboarded before
-        #     HARNESS baseline coverage). Its documented single command cannot
-        #     ever complete, because every run half-heals and exits 1 with the
-        #     stamp held. Only this population may re-exec.
-        updater_had_baseline = True
         if dry_run:
             print("[dry-run] No changes will be written. Pass --apply to apply changes.")
         else:
@@ -4563,14 +5197,6 @@ def main():
                     # check treats as "cannot prove a heal" and so never
                     # re-execs. Degrading to today's exit 1 is always safe.
                     updater_disk_hash_before = None
-                # Read the store ONCE, here, before the loop can write to it:
-                # the bootstrap-reconcile and the manifest loop both record
-                # baselines as they deliver, so the same question asked at
-                # exit time would answer "recorded" for every healed path and
-                # tell the two populations apart never.
-                updater_had_baseline = bool(
-                    load_template_baselines().get("execution/update_template.py")
-                )
 
             # Pre-apply version-regression guard: refuse to install a payload
             # whose declared template version is older than what's already
@@ -4579,7 +5205,7 @@ def main():
             # there's nothing to regress.
             payload_version_file = source / ".agent" / "version"
             payload_version = (
-                payload_version_file.read_text().strip()
+                payload_version_file.read_text(encoding="utf-8").strip()
                 if payload_version_file.exists()
                 else None
             )
@@ -4597,13 +5223,63 @@ def main():
 
         try:
             import yaml
-            manifest = yaml.safe_load(manifest_path.read_text())
+            manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
         except ImportError:
             print("ERROR: PyYAML not available. Install with: pip install pyyaml", file=sys.stderr)
             sys.exit(1)
         except Exception as e:
             print(f"ERROR: Failed to parse .agent/update-manifest.yaml: {e}", file=sys.stderr)
             sys.exit(1)
+
+        # Upstream HARNESS paths the local manifest never listed are added.
+        # The loop runs off the LOCAL manifest, and a downstream copy that
+        # predates its own self-listing never refreshes: SAOC's May manifest
+        # (23 paths, 2026-10-08) never received paired-copies.yaml or any
+        # later harness path. A local entry for the same path still wins, and
+        # an existing file with no recorded baseline is WITHHELD by the guard,
+        # never overwritten.
+        try:
+            _upstream_paths = yaml.safe_load(
+                (source / ".agent" / "update-manifest.yaml").read_text(encoding="utf-8")).get("paths", [])
+        except Exception:
+            _upstream_paths = []
+        _local_paths = {e.get("path") for e in manifest.get("paths", []) if isinstance(e, dict)}
+        # A path the project declared non-HARNESS is never brought back under
+        # an added entry: an upstream directory containing it, or an upstream
+        # file inside a directory it declared, is skipped whole.
+        _local_owned = [str(e.get("path")) for e in manifest.get("paths", [])
+                        if isinstance(e, dict) and e.get("category") != "HARNESS" and e.get("path")]
+        # The project's own classifications (.agent/update-manifest.local.yaml)
+        # are project-owned too. A HARNESS entry over one -- an upstream claim
+        # that already reached the local manifest on an earlier run -- leaves
+        # this run entirely; validate_manifest.sh reports the conflict.
+        try:
+            _project_owned = local_manifest_owned()
+        except ValueError as e:
+            print(f"ERROR: {e}. Fix or remove it, then re-run; updating without it "
+                  "could overwrite the paths it claims.", file=sys.stderr)
+            sys.exit(1)
+        _local_owned += _project_owned
+        _kept = []
+        for _entry in manifest.get("paths", []):
+            if (isinstance(_entry, dict) and _entry.get("category") == "HARNESS"
+                    and isinstance(_entry.get("path"), str)
+                    and overlaps_owned(_entry["path"], _project_owned)):
+                print(f"  note  {_entry['path']} belongs to {LOCAL_MANIFEST} -- "
+                      "the HARNESS entry is not delivered")
+                continue
+            _kept.append(_entry)
+        if _project_owned:
+            manifest["paths"] = _kept
+        def _overlaps(a, b):
+            return a == b or (a.endswith("/") and b.startswith(a)) or (b.endswith("/") and a.startswith(b))
+        for _entry in _upstream_paths:
+            if (isinstance(_entry, dict) and _entry.get("category") == "HARNESS"
+                    and _entry.get("path") and _entry["path"] not in _local_paths
+                    and not any(_overlaps(_entry["path"], o) for o in _local_owned)):
+                manifest.setdefault("paths", []).append(dict(_entry))
+                _local_paths.add(_entry["path"])
+                print(f"  note  {_entry['path']} is HARNESS upstream, absent from the local manifest -- added")
 
         # Upstream DERIVED wins. The loop runs off the LOCAL manifest, so a
         # path upstream reclassified HARNESS -> DERIVED was still delivered
@@ -4612,7 +5288,7 @@ def main():
         # stop a write, never start one. (WOSA 2026-09-28: generated autonomy
         # policies, which carry each project's own level.)
         try:
-            _upstream = yaml.safe_load((source / ".agent" / "update-manifest.yaml").read_text())
+            _upstream = yaml.safe_load((source / ".agent" / "update-manifest.yaml").read_text(encoding="utf-8"))
             _upstream_derived = {e.get("path") for e in (_upstream or {}).get("paths", [])
                                  if isinstance(e, dict) and e.get("category") == "DERIVED"}
         except Exception:
@@ -4638,7 +5314,7 @@ def main():
         no_update_path = Path(".agent/no-update")
         protected_patterns: list[str] = []
         if no_update_path.exists():
-            for line in no_update_path.read_text().splitlines():
+            for line in no_update_path.read_text(encoding="utf-8").splitlines():
                 line = line.strip()
                 if line and not line.startswith("#"):
                     protected_patterns.append(line)
@@ -4650,6 +5326,12 @@ def main():
                 if fnmatch.fnmatch(path, pattern) or path == pattern:
                     return True
             return False
+
+        def is_pinned(path: str) -> bool:
+            return is_protected(path) or any(
+                pattern.endswith("/") and path.startswith(pattern)
+                for pattern in protected_patterns
+            )
 
         paths_changed = []
         paths_skipped = []
@@ -4704,7 +5386,7 @@ def main():
             local_version_file = profile_file.parent / "version"
             try:
                 if local_version_file.is_file():
-                    prior_local_version = local_version_file.read_text().strip() or None
+                    prior_local_version = local_version_file.read_text(encoding="utf-8").strip() or None
             except OSError:
                 prior_local_version = None
 
@@ -4841,6 +5523,11 @@ def main():
                 "on-disk HARNESS files to reconcile"
             )
 
+        if not dry_run:
+            restored_readme = restore_line_union_readme(source, backup_dir)
+            if restored_readme:
+                print(restored_readme)
+
         for entry in manifest.get("paths", []):
             path = entry["path"]
             category = entry["category"]
@@ -4851,7 +5538,11 @@ def main():
             # "behind" state (issue #1295/#1312). Isolate each entry's
             # processing instead of letting it propagate out of main().
             try:
-                if category == "WORKSPACE":
+                if category in ("HARNESS", "MERGE") and _is_project_owned(path):
+                    print(f"  WARN  {path} is project-owned -- not written, whatever "
+                          f"the manifest says ({category})")
+                    paths_skipped.append(path)
+                elif category == "WORKSPACE":
                     print(f"  skip  {path} (WORKSPACE — project-owned, never overwritten)")
                     paths_skipped.append(path)
 
@@ -4997,7 +5688,7 @@ def main():
         upstream_manifest_path = source / ".agent" / "update-manifest.yaml"
         if upstream_manifest_path.exists():
             try:
-                upstream_manifest = yaml.safe_load(upstream_manifest_path.read_text())
+                upstream_manifest = yaml.safe_load(upstream_manifest_path.read_text(encoding="utf-8"))
                 if isinstance(upstream_manifest, dict):
                     retraction_manifest = upstream_manifest
             except Exception as e:
@@ -5012,16 +5703,36 @@ def main():
             backup_dir=backup_dir,
             dry_run=dry_run,
         )
-        apply_retired_paths(
+        retired_now = apply_retired_paths(
             manifest=retraction_manifest,
             project_root=Path.cwd(),
             backup_dir=backup_dir,
             dry_run=dry_run,
         )
+        prune_retired_hook_registrations(
+            Path.cwd(), backup_dir, dry_run,
+            retired_now + retired_already_gone(retraction_manifest, Path.cwd()))
         migrate_seeded_identity(Path.cwd(), dry_run)
 
         # After applying all HARNESS/MERGE updates AND backstop,
         # bump template_version in profile.json
+        # A path declared in .agent/no-update is a satisfied pin, not an
+        # undelivered one: the guard already skipped it, so only its
+        # accounting moves out of withheld/untracked into the PINNED report.
+        paths_pinned = []
+        for key in paths_withheld:
+            if not is_pinned(key):
+                continue
+            if _is_floor_protected(key):
+                print(f"  WARN  {key} is declared in .agent/no-update but is a "
+                      "floor-protected path -- a pin cannot satisfy it; it stays withheld")
+            else:
+                paths_pinned.append(key)
+        paths_withheld = [key for key in paths_withheld if key not in paths_pinned]
+        paths_untracked = [key for key in paths_untracked if key in paths_withheld]
+        for key in paths_pinned:
+            print(_pinned_line(key))
+
         stamp_divergent = False
         if not dry_run:
             # security-floor-hardening F2 (#1405): a HARNESS file the
@@ -5053,7 +5764,8 @@ def main():
                 if key != ".agent/version"
                 and not _paths_have_identical_content(source / key, Path(key))
             ]
-            if stale_withheld or updater_self_stale:
+            version_held = bool(stale_withheld or updater_self_stale)
+            if version_held:
                 if updater_self_stale:
                     # .agent/version is an ordinary HARNESS manifest entry --
                     # the loop above already delivered it (it isn't
@@ -5103,9 +5815,11 @@ def main():
                                 local_version_path, prior_local_version + "\n",
                                 "local .agent/version",
                             )
+                            _rerecord_version_baseline(local_version_path)
                         elif local_version_path.exists() and not local_version_path.is_symlink() \
                                 and local_version_path.is_file():
                             local_version_path.unlink()
+                            _rerecord_version_baseline(None)
                     except Exception as e:
                         print(
                             "  WARN  could not restore .agent/version to its "
@@ -5175,6 +5889,7 @@ def main():
                     refused=paths_refused, untracked=paths_untracked,
                     prior_local_version=prior_local_version,
                     bootstrap_unresolved=bootstrap_unresolved_out,
+                    version_held=version_held,
                 )
             except OSError as e:
                 state_msg = (
@@ -5183,12 +5898,17 @@ def main():
                 )
             print(state_msg)
 
+            if delivery_status == DELIVERY_COMPLETE:
+                adopted = adopt_delivered_baselines(source, manifest)
+                if adopted:
+                    print(f"  adopted {adopted} baseline(s) for delivered HARNESS file(s)")
+
             # The stamp is what every downstream drift check reads. If it did
             # not actually record the version this run applied, the workspace
             # is left with divergent version records -- say so here, at the
             # moment it happens, and never exit 0 on it.
             recorded = _read_template_state_record().get("template_version")
-            if payload_version and recorded != payload_version:
+            if payload_version and recorded != payload_version and not version_held:
                 stamp_divergent = True
                 print(
                     "  WARN  .agent/.template_state does not record the applied "
@@ -5197,11 +5917,19 @@ def main():
                     file=sys.stderr,
                 )
 
+        if backup_dir is not None:
+            remove_if_no_files(backup_dir)
+            if not backup_dir.exists():
+                backup_dir = None
+
         print()
         print("Summary:")
         print(f"  paths_changed:    {len(paths_changed)}")
         print(f"  paths_skipped:    {len(paths_skipped)}")
         print(f"  paths_withheld:   {len(paths_withheld)}")
+        print(f"  paths_pinned:     {len(paths_pinned)}")
+        for key in paths_pinned:
+            print(_pinned_line(key))
         print(f"  paths_refused:    {len(paths_refused)}")
         print(f"  paths_failed:     {len(paths_failed)}")
         if paths_failed:
@@ -5340,10 +6068,20 @@ def main():
                 print(f"[hooks] repair_hooks.py exited {heal.returncode} -- run "
                       "`python3 execution/repair_hooks.py` and check .claude/settings.json.")
 
+        # Retired providers (.gemini, .grok) keep a settings.json whose hooks
+        # name scripts the harness has since deleted; prune them once per apply.
+        if not dry_run and not is_template_repo:
+            from post_update import prune_retired_provider_hooks
+            prune_retired_provider_hooks(Path.cwd())
+
         # exit 0 for every --dry-run: a preview writes nothing, so it cannot
         # deliver partially. backstop_warns stays deliberately out of the
         # exit code -- it describes an incomplete SOURCE payload, not a
         # withheld local delivery.
+        sync_ok = True
+        if dry_run and not is_template_repo:
+            print("would regenerate derived files:")
+            run_post_apply_sync(Path.cwd(), dry_run=True)
         if not dry_run:
             if stamp_divergent:
                 sys.exit(1)
@@ -5375,23 +6113,23 @@ def main():
                 #      hop only: if the child still reports staleness, that
                 #      is a real defect and must surface as exit 1, never as
                 #      another hop.
-                #   4. The updater carried NO recorded baseline before this
-                #      run. A workspace that HAS one is an ordinary behind-
-                #      by-a-version install, and the updater-self-staleness
-                #      contract deliberately refuses it: hold the stamp, exit
-                #      1, let the operator re-run with the new updater. This
-                #      feature narrows to the population that contract leaves
-                #      with no way through at all -- it does not overrule it.
-                _REEXEC_ENV = "ATHANOR_UPDATER_SELF_HEAL_REEXEC"
+                #   Baseline or not, the heal re-execs: one `make update-
+                #   template` takes an older install to the current one.
+                _REEXEC_ENV = SELF_HEAL_REEXEC_ENV
                 updater_path = Path(__file__).resolve()
                 healed = False
-                if (updater_disk_hash_before is not None
-                        and not updater_had_baseline
-                        and os.environ.get(_REEXEC_ENV) != "1"):
+                disk_changed = False
+                if updater_disk_hash_before is not None:
+                    try:
+                        disk_changed = (
+                            _sha256_of_file(updater_path) != updater_disk_hash_before
+                        )
+                    except OSError:
+                        disk_changed = False
+                if disk_changed and os.environ.get(_REEXEC_ENV) != "1":
                     try:
                         healed = (
-                            _sha256_of_file(updater_path) != updater_disk_hash_before
-                            and _paths_have_identical_content(
+                            _paths_have_identical_content(
                                 source / "execution" / "update_template.py",
                                 updater_path,
                             )
@@ -5416,6 +6154,14 @@ def main():
                     child_env[_REEXEC_ENV] = "1"
                     sys.stdout.flush()
                     sys.stderr.flush()
+                    if os.name == "nt":
+                        # Windows has no exec: os.execve starts a new process and ends this
+                        # one at once, so the caller saw an early exit and asked for a manual
+                        # re-run (Athanor Win 2026-11-07). Wait for the child instead.
+                        sys.exit(subprocess.run(
+                            [sys.executable, str(updater_path)] + sys.argv[1:],
+                            env=child_env,
+                        ).returncode)
                     try:
                         os.execve(
                             sys.executable,
@@ -5432,10 +6178,39 @@ def main():
                             "to complete this update",
                             file=sys.stderr,
                         )
+                if os.environ.get(_REEXEC_ENV) == "1":
+                    not_finished = (
+                        "the refreshed updater re-ran once and is still behind "
+                        "the payload, so upstream changed during this update. "
+                        "Run `make update-template` again."
+                    )
+                elif not disk_changed:
+                    not_finished = (
+                        "the updater was not replaced (withheld, pinned in "
+                        ".agent/no-update, or locally modified), so the version "
+                        "was held and a re-run will repeat this. To update it, "
+                        "unpin it or run `python3 execution/update_template.py "
+                        "--apply --force-path execution/update_template.py`."
+                    )
+                else:
+                    not_finished = (
+                        "this run replaced the updater itself but could not "
+                        "re-run the new copy, so the version was held. Run "
+                        "`make update-template` once more to complete it."
+                    )
+                print(
+                    "UPDATE NOT FINISHED (exit 1 is expected here): "
+                    + not_finished,
+                    file=sys.stderr,
+                )
                 sys.exit(1)
+            if not is_template_repo:
+                sync_ok = run_post_apply_sync(Path.cwd())
             # --allow-skips acknowledges CONTENT the operator knowingly keeps;
             # it may not mute a compromised write path (F4c-2 C12).
             if paths_refused:
+                sys.exit(1)
+            if not sync_ok:
                 sys.exit(1)
             if (paths_withheld or paths_failed) and not args.allow_skips:
                 sys.exit(1)
@@ -5446,6 +6221,7 @@ def main():
 
 
 if __name__ == "__main__":
+    _console_safe_streams()
     # Digest taken BEFORE main() so the comparison spans the whole run,
     # including the overlay that may rewrite this very file partway through.
     # main() exits via sys.exit on most paths, so the check lives in `finally`

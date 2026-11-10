@@ -1,15 +1,16 @@
 ---
-description: Structured agent dispatch names and the retry effort ladder.
+description: Agent dispatch names by convention and the retry effort ladder.
+paths:
+  - ".agent/agents/*.md"
+  - ".claude/agents/*.md"
 ---
 
-# Structured Agent Dispatch Names
+# Agent Dispatch Names
 
-Before every Agent-tool dispatch render the name with `python3 execution/dispatch_name.py
---role <role> --model <model> --mission <slug> --milestone <id> --feature <id>` and use its
-stdout verbatim as the Agent tool's `name:` (e.g. `Dev_Son5_M1-F1_HomeScaffolding`). Never
-hand-render one; `--help` lists the arguments. It is a pure function of its inputs and reads no
-mission state, so a wrong milestone silently yields a wrong name.
+Name every Agent-tool dispatch by convention, in text: `Role_Model_Mn-Fn_Slug`, for example
+`Dev_Son5_M1-F1_HomeScaffolding`. Role is Dev, QA, Arch or Docs; Model is a short tier tag
+(Son5, Opu5, Fab5); Mn-Fn is the milestone and feature id; Slug is the mission or feature in
+PascalCase. No subprocess renders it.
 
 Retry after a QA FAIL on the same feature+role climbs one rung: first dispatch sonnet5, retry 1
-opus5, retry 2+ fable5 (ceiling). `--retry N` only prints an advisory on stderr; if you take
-it, pass the tier as both `--model` and the Agent tool's `model:`.
+opus5, retry 2+ fable5 (ceiling). Pass the tier as the Agent tool's `model:`.

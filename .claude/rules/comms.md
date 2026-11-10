@@ -1,5 +1,8 @@
 ---
 description: The one comms board, append-only protocol, and the cross-project write exception.
+paths:
+  - "comms.md"
+  - "execution/comms_inbox.py"
 ---
 
 # Comms

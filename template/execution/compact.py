@@ -6,6 +6,7 @@ Usage:
     python3 execution/compact.py now
     python3 execution/compact.py delay [--by N]
     python3 execution/compact.py restore
+    python3 execution/compact.py trigger
 
 The statusline mirrors the live context reading to
 ``.agent/memory/scratch/.context_now.json`` on every render. This script moves
@@ -39,12 +40,18 @@ from pathlib import Path
 CONTEXT_NOW_DIR = Path(".agent/memory/scratch/context_now")
 NO_PID = "nopid"
 NO_INJECT_ENV = "ATHANOR_COMPACT_NO_INJECT"
+WINDOW_ENV = "CLAUDE_CODE_AUTO_COMPACT_WINDOW"
 DECIDER = Path(__file__).resolve().parent / "hooks" / "lib" / "autocompact_decider.py"
 HERDR_TIMEOUT_SECONDS = 5
+# /compact typed mid-turn is queued and never runs, so a detached waiter sends it
+# once the pane's agent is idle or done; "blocked" is a permission prompt, never idle.
+HERDR_IDLE_WAIT_MS = 30 * 60 * 1000
+WAITER_DIR = Path(".agent/memory/scratch")
+WAITER_LOG = WAITER_DIR / "compact_waiter.log"
 READING_MAX_AGE_SECONDS = 10 * 60
 # Claude Code accepts autoCompactWindow between 100000 and 1000000.
 WINDOW_MIN = 100000
-NOW_MIN_TOKENS = 120000
+NOW_MIN_TOKENS = 60000
 NOW_WINDOW_FRACTION = 0.6
 DEFAULT_DELAY_TOKENS = 150000
 
@@ -87,6 +94,31 @@ def current_override() -> str:
         return "none"
     value = settings.get("autoCompactWindow") if isinstance(settings, dict) else None
     return str(value) if value is not None else "none"
+
+
+def effective_trigger() -> int | None:
+    """The autoCompactWindow Claude Code uses: env, then settings.local.json, then settings.json."""
+    raw = os.environ.get(WINDOW_ENV)
+    if raw is not None:
+        return int(raw) if raw.strip().isdigit() else None
+    for name in ("settings.local.json", "settings.json"):
+        try:
+            data = json.loads(Path(".claude", name).read_text())
+        except (OSError, ValueError):
+            continue
+        value = data.get("autoCompactWindow") if isinstance(data, dict) else None
+        if isinstance(value, int) and not isinstance(value, bool):
+            return value
+    return None
+
+
+def cmd_trigger(_args) -> int:
+    value = effective_trigger()
+    if value is None:
+        print("compact: no autoCompactWindow set in env or settings", file=sys.stderr)
+        return 1
+    print(value)
+    return 0
 
 
 def cmd_status(_args, _decider, reading) -> int:
@@ -144,14 +176,105 @@ def inject_herdr(claude_pid) -> str | None:
         return None
     if not pane_owned_by(binary, pane, claude_pid):
         return f"not injected (herdr pane {pane} not verified as this session's)"
+    if live_waiter(pane):
+        return f"/compact already queued for herdr pane {pane}; it is sent when this turn ends"
+    detach = {"start_new_session": True} if os.name != "nt" else {}
     try:
-        done = subprocess.run([binary, "pane", "run", pane, "/compact"],
+        subprocess.Popen([sys.executable, str(Path(__file__).resolve()), "inject-when-idle",
+                          "--pane", pane, "--pid", str(claude_pid)],
+                         stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                         stderr=subprocess.DEVNULL, **detach)
+    except (OSError, ValueError) as exc:
+        return f"not injected (herdr waiter failed to start: {type(exc).__name__})"
+    return (f"queued /compact for herdr pane {pane}; it is sent when this turn ends "
+            f"(outcome in {WAITER_LOG})")
+
+
+def waiter_lock(pane: str) -> Path:
+    return WAITER_DIR / f"compact_waiter_{pane.replace(':', '_').replace('/', '_')}.pid"
+
+
+def live_waiter(pane: str) -> bool:
+    """True while a waiter process for this pane is still alive."""
+    try:
+        pid = int(waiter_lock(pane).read_text().strip())
+        os.kill(pid, 0)
+    except (OSError, ValueError):
+        return False
+    return True
+
+
+def log_waiter(pane: str, outcome: str) -> None:
+    try:
+        WAITER_DIR.mkdir(parents=True, exist_ok=True)
+        with WAITER_LOG.open("a", encoding="utf-8") as f:
+            f.write(f"{time.strftime('%Y-%m-%dT%H:%M:%S')} {pane} {outcome}\n")
+    except OSError:
+        pass
+
+
+def wait_idle(binary: str, pane: str, timeout_ms: int) -> bool:
+    try:
+        waited = subprocess.run([binary, "agent", "wait", pane, "--until", "idle",
+                                 "--until", "done", "--timeout", str(timeout_ms)],
+                                capture_output=True, text=True, timeout=timeout_ms / 1000 + 60)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return waited.returncode == 0
+
+
+def cmd_inject_when_idle(args) -> int:
+    """Detached waiter: send /compact once the pane's agent is idle or done, still ours.
+
+    One waiter per pane (pid lock); outcomes go to WAITER_LOG.
+    """
+    lock = waiter_lock(args.pane)
+    try:
+        WAITER_DIR.mkdir(parents=True, exist_ok=True)
+        fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError:
+        if live_waiter(args.pane):
+            log_waiter(args.pane, "skipped: another waiter is queued")
+            return 0
+        lock.unlink(missing_ok=True)
+        try:
+            fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        except OSError:
+            return 1
+    except OSError:
+        return 1
+    with os.fdopen(fd, "w") as f:
+        f.write(str(os.getpid()))
+    try:
+        return _inject_when_idle(args)
+    finally:
+        lock.unlink(missing_ok=True)
+
+
+def _inject_when_idle(args) -> int:
+    binary = herdr_binary()
+    if not binary:
+        log_waiter(args.pane, "not sent: herdr not found")
+        return 1
+    if not wait_idle(binary, args.pane, HERDR_IDLE_WAIT_MS):
+        log_waiter(args.pane, "not sent: agent never went idle (timeout or herdr error)")
+        return 1
+    if not pane_owned_by(binary, args.pane, args.pid):
+        log_waiter(args.pane, "not sent: pane no longer this session's")
+        return 1
+    # Re-check right before typing: the agent may have hit a permission prompt.
+    if not wait_idle(binary, args.pane, 1000):
+        log_waiter(args.pane, "not sent: agent left idle before send")
+        return 1
+    try:
+        done = subprocess.run([binary, "pane", "run", args.pane, "/compact"],
                               capture_output=True, text=True, timeout=HERDR_TIMEOUT_SECONDS)
     except (OSError, subprocess.SubprocessError) as exc:
-        return f"not injected (herdr failed: {type(exc).__name__})"
-    if done.returncode != 0:
-        return f"not injected (herdr pane run exited {done.returncode})"
-    return f"injected /compact via herdr pane {pane}; it runs at the next turn boundary"
+        log_waiter(args.pane, f"not sent: herdr pane run failed ({type(exc).__name__})")
+        return 1
+    log_waiter(args.pane, "sent /compact" if done.returncode == 0
+               else f"not sent: herdr pane run exited {done.returncode}")
+    return done.returncode
 
 
 def inject_compact(decider, claude_pid) -> str:
@@ -232,9 +355,17 @@ def main(argv: list[str]) -> int:
     delay.add_argument("--by", type=int, default=DEFAULT_DELAY_TOKENS,
                        help="tokens of headroom above current context")
     sub.add_parser("restore")
+    sub.add_parser("trigger")
+    waiter = sub.add_parser("inject-when-idle")
+    waiter.add_argument("--pane", required=True)
+    waiter.add_argument("--pid", type=int, required=True)
     args = parser.parse_args(argv)
 
     os.chdir(find_root())
+    if args.command == "trigger":
+        return cmd_trigger(args)
+    if args.command == "inject-when-idle":
+        return cmd_inject_when_idle(args)
     decider = load_decider()
     claude_pid = decider.find_claude_ancestor_pid()
     reading = read_reading(claude_pid)

@@ -108,7 +108,8 @@ else:
     data["mission"] = str(latest_path)
     active_json.write_text(json.dumps(data, indent=2))
     print(str(latest_path))
-PYEOF)
+PYEOF
+)
 [[ "$ACTIVE" == "reconciled" ]] && RECONCILED=true && ACTIVE="null"
 
 # If no active mission, try to activate next from mission queue
@@ -184,7 +185,8 @@ for mf in sorted(missions_dir.glob("*.md"), reverse=True):
         active_json.write_text(json.dumps(data, indent=2))
         print(str(mf)); raise SystemExit(0)
 print("null")
-PYEOF)
+PYEOF
+)
     if [[ "$FOUND" != "null" && -n "$FOUND" ]]; then
       echo "[pulse-loop] Repaired stale active.json → $FOUND"
       ACTIVE="$FOUND"
@@ -252,7 +254,8 @@ fm = _load_fm_text(t.split("---", 2)[1])
 slug = fm.get("slug", "")
 if slug:
     print(slug)
-PYEOF)
+PYEOF
+)
     if [[ -n "$SLUG" ]]; then
       mkdir -p ".agent/pulse/registry/completed/missions"
       touch ".agent/pulse/registry/completed/missions/$SLUG.done"

@@ -78,4 +78,4 @@ Merge config values from three sources (defaults/env/flags) using deep-merge sem
 
 ## Dependencies
 - stdlib only: `json`, `argparse`, `sys`, `os`
-- Optional: `jsonschema` (for `--schema` flag)
+- Optional: `jsonschema` (for `--schema` flag); absent, a built-in draft-07 subset check validates instead

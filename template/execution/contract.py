@@ -1659,10 +1659,10 @@ DELETION_IGNORED_PREFIXES = (
 )
 
 
-def _git_lines(args_list: list[str]) -> list[str]:
+def _git_lines(args_list: list[str], cwd: "str | None" = None) -> list[str]:
     try:
         proc = subprocess.run(["git"] + args_list, capture_output=True,
-                              text=True, timeout=30)
+                              text=True, timeout=30, cwd=cwd)
     except Exception:
         return []
     if proc.returncode != 0:
@@ -1670,23 +1670,81 @@ def _git_lines(args_list: list[str]) -> list[str]:
     return [ln.strip() for ln in proc.stdout.splitlines() if ln.strip()]
 
 
-def _deleted_paths(contract_path: str) -> list[str]:
-    """Files this feature's work deleted, from the spec's first commit to now.
+def _contract_birth_commit(path: Path, repo: str) -> "str | None":
+    """The commit that created this contract, following true renames only.
 
-    The spec directory's introducing commit is the feature's own start marker:
-    it is written before @dev is dispatched, so everything after it is this
-    feature's diff. Uncommitted and staged deletions are included, because a
-    gate run before the commit must see them too.
+    Walks `git log --follow --name-status` newest first. A copy (C) is a birth:
+    return it, since older history belongs to the copy's source. An add (A) is
+    not final: a contract deleted and re-added would otherwise hide every
+    deletion made before the re-add, so the walk continues and the oldest add
+    wins. A rename (R) continues to the older name. None when the file has no
+    committed history.
     """
-    spec_dir = str(Path(contract_path).parent)
+    lines = _git_lines(["log", "--follow", "--name-status", "--format=@%H", "--", str(path)], cwd=repo)
+    commit = None
+    followed = None
+    for ln in lines:
+        if ln.startswith("@"):
+            commit = ln[1:]
+        elif commit and ln[:1] == "C":
+            followed = commit
+            break
+        elif commit and ln[:1] == "A":
+            followed = commit
+    followed = followed or commit
+    # A re-add in the same commit as an edit to a near-identical sibling
+    # contract is reported as a copy (C100 f1 -> f2), which would stop the walk
+    # at the re-add. The exact path's own oldest add is the floor: take the
+    # older of the two.
+    exact = _git_lines(["log", "--diff-filter=A", "--format=%H", "--", str(path)], cwd=repo)
+    exact_first = exact[-1] if exact else None
+    if not followed or not exact_first or followed == exact_first:
+        return followed or exact_first
+    try:
+        exact_is_older = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", exact_first, followed],
+            cwd=repo, capture_output=True, timeout=30).returncode == 0
+    except Exception:
+        exact_is_older = True  # unknown: prefer the earlier-dated, stricter marker
+    return exact_first if exact_is_older else followed
+
+
+def _deleted_paths(contract_path: str) -> list[str]:
+    """Files this feature's work deleted, from the contract's first commit to now.
+
+    The contract file's introducing commit is the feature's own start marker:
+    it is written before @dev is dispatched, so everything from it on is this
+    feature's diff. The file, not its directory: a project that keeps many
+    contracts in one shared directory (Alembic: .agent/contracts/) would
+    otherwise have every deletion since that directory's first commit charged
+    to each new contract (Alembic, 2026-11-07).
+
+    - The range includes the marker commit itself (`first^..HEAD`, or all of
+      history for a root commit): the lean lane commits contract and code
+      together.
+    - The marker follows a true rename (contract.yaml -> contract-f1.yaml)
+      but stops at an add or a copy: `--follow` alone links a new contract
+      to a near-identical older one in the same directory as a copy (C).
+    - A contract with no history of its own (not committed yet) falls back to
+      its directory's first commit, so already-committed work stays visible.
+    - git runs in the contract's own directory, so gating a contract in another
+      repository reads that repository's history, not the caller's.
+    Uncommitted and staged deletions are included, because a gate run before
+    the commit must see them too.
+    """
+    path = Path(contract_path).resolve()
+    repo = str(path.parent)
     deleted: list[str] = []
-    if spec_dir and spec_dir != ".":
-        first = _git_lines(["log", "--reverse", "--format=%H", "--", spec_dir])
-        if first:
-            deleted += _git_lines(
-                ["log", "--diff-filter=D", "--name-only", "--format=",
-                 f"{first[0]}..HEAD"])
-    deleted += _git_lines(["diff", "--diff-filter=D", "--name-only", "HEAD"])
+    first = _contract_birth_commit(path, repo)
+    if not first:
+        history = _git_lines(["log", "--format=%H", "--", str(path.parent)], cwd=repo)
+        first = history[-1] if history else None
+    if first:
+        has_parent = _git_lines(["rev-parse", "--verify", "-q", f"{first}^"], cwd=repo)
+        rev_range = f"{first}^..HEAD" if has_parent else "HEAD"
+        deleted += _git_lines(
+            ["log", "--diff-filter=D", "--name-only", "--format=", rev_range], cwd=repo)
+    deleted += _git_lines(["diff", "--diff-filter=D", "--name-only", "HEAD"], cwd=repo)
     seen, out = set(), []
     for path in deleted:
         if path in seen or path.startswith(DELETION_IGNORED_PREFIXES):

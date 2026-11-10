@@ -152,7 +152,7 @@ def cmd_recover(log_path, output_path=None):
     output = "\n".join(lines)
 
     if output_path is not None:
-        with open(output_path, "w", encoding="utf-8") as fh:
+        with open(output_path, "w", encoding="utf-8", newline="\n") as fh:
             if output:
                 fh.write(output + "\n")
     else:

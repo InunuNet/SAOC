@@ -57,7 +57,7 @@ The distilled body is still returned in both cases, and `X-Alembic-Upstream-Stat
 - **PDF extraction** — text-based PDFs are extracted via pypdf (`pdf-text`); encrypted/scanned/oversized PDFs get a dedicated `pdf-unsupported` result rather than a silent failure.
 - **Docs-platform adapters** — a registry-driven adapter tier (currently Stoplight) fetches structured content directly from a docs platform's own JSON API instead of extracting hydrated HTML, for SPA doc sites whose article body isn't in the raw page.
 - **Hydration-state extraction** — pre-rendered content is pulled from client-side SSR state blobs (Next.js, Nuxt 3, Remix) without needing a JS-rendering browser at all.
-- **Camoufox stealth engine** — when a page is blocked or scores very low quality, and `ALEMBIC_STEALTH=1` + `proxy_url` are configured, Alembic retries the fetch through a stealth browser (Patchright) and re-runs extraction against the freshly rendered HTML.
+- **Camoufox stealth engine** — when a page is blocked or scores very low quality, and `ALEMBIC_STEALTH=1` is set, Alembic retries the fetch through a stealth browser (Patchright) and re-runs extraction against the freshly rendered HTML. `proxy_url` is optional (unset means a direct fetch); with stealth on, persona retry is skipped, so a block escalates straight to the stealth browser.
 - **Confidence signalling** — every result carries a post-hoc high/medium/low confidence classification with machine-readable reason codes. See the dedicated section below — read it before trusting a low-confidence result.
 - **Batch endpoint** — `POST /batch` distills up to 10 URLs in one parallel request.
 

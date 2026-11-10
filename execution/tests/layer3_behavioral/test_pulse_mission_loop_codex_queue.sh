@@ -16,6 +16,9 @@ cd "$SB" || exit 1
 python3 - <<'PY'
 import json
 from pathlib import Path
+# The pulse loop runs in downstream projects. The sandbox copies the harness's own WORKSPACE,
+# which makes mission.py refuse harness self-work (CLAUDE.md section 5), so name a downstream one.
+Path("WORKSPACE").write_text("PulseLoopTestWS\n", encoding="utf-8")
 Path(".agent/memory/project/missions").mkdir(parents=True, exist_ok=True)
 Path(".agent/memory/project/missions/active.json").write_text(json.dumps({
     "mission": None,

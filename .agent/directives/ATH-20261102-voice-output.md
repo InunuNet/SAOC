@@ -8,7 +8,7 @@ priority: p2
 supersedes: null
 superseded_by: null
 platforms: [all]
-summary: Spoken notice on gate-green and needs-input, one voice at a time, off by default, described in docs/harness/voice.md
+summary: v3.8.83 — Spoken notice on gate-green and needs-input, one voice at a time, off by default
 verify: python3 execution/voice_say.py --help
 ---
 

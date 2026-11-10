@@ -113,6 +113,53 @@ def head_blob_text(root, relpath):
     return norm(proc.stdout)
 
 
+def was_clone_of(root, text, source):
+    """True if `text` equals the source at HEAD or at any committed revision.
+
+    "Unchanged since HEAD" does not make a copy a clone. SAOC's committed
+    18KB developer guide CLAUDE.md was never a copy of its AGENTS.md (an agent
+    definition), and the stale-clone branch overwrote it (2026-10-08). A copy
+    is only a stale clone if its bytes once WERE the source. Returns None when
+    git cannot answer.
+    """
+    # --follow so a clone of a since-renamed source still matches: each
+    # revision is paired with the path the source had at that revision.
+    try:
+        log = subprocess.run(["git", "log", "--follow", "--name-only", "--format=%x00%H",
+                              "HEAD", "--", source], cwd=root,
+                             capture_output=True, text=True, timeout=GIT_TIMEOUT_SECONDS)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if log.returncode != 0:
+        return None
+    specs = ""
+    for entry in log.stdout.split("\0")[1:]:
+        lines = [l for l in entry.splitlines() if l]
+        if len(lines) >= 2:
+            specs += "%s:%s\n" % (lines[0], lines[-1])
+    if not specs:
+        return False
+    try:
+        cat = subprocess.run(["git", "cat-file", "--batch"], cwd=root, input=specs.encode(),
+                             capture_output=True, timeout=GIT_TIMEOUT_SECONDS)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if cat.returncode != 0:
+        return None
+    out, pos = cat.stdout, 0
+    while pos < len(out):
+        eol = out.index(b"\n", pos)
+        header = out[pos:eol].split()
+        pos = eol + 1
+        if len(header) < 3:          # "<spec> missing": no payload follows
+            continue
+        size = int(header[2])
+        if header[1] == b"blob" and norm(out[pos:pos + size]) == text:
+            return True
+        pos += size + 1              # consume every payload, blob or not
+    return False
+
+
 # Never compared by a mirror: build and OS residue, not source.
 MIRROR_IGNORED_NAMES = ("__pycache__", ".DS_Store")
 
@@ -272,6 +319,19 @@ def sync_one(root, row, force):
                     "CLONE-EDITED-BLOCKED %s -- it differs from HEAD:%s, so "
                     "these bytes exist nowhere else. Move the edit into %s and "
                     "re-run, or discard it with --force." % (copy, copy, source))
+            provenance = was_clone_of(root, current, source)
+            if provenance is None:
+                raise PairProblem(
+                    "CLONE-UNVERIFIABLE %s -- git could not list the history of %s, "
+                    "so nothing proves these bytes were ever a copy of it. Re-run, "
+                    "or regenerate with --force if %s is only a clone." % (copy, source, copy))
+            if provenance is False:
+                raise PairProblem(
+                    "CLONE-FOREIGN-BLOCKED %s -- it was never a copy of %s: no "
+                    "committed version of %s matches it, so it is its own file, "
+                    "not a stale clone. Decide which one is the real content, "
+                    "make %s hold it, and re-run -- or discard %s with --force."
+                    % (copy, source, source, source, copy))
 
     parent = os.path.dirname(copy_path)
     if parent and not os.path.isdir(parent):
