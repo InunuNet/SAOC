@@ -9,6 +9,8 @@ import {
 } from '@/lib/orders';
 import { deliverConfirmationEmailAfterCommit, sendConfirmationEmail } from '@/lib/confirmation-email';
 import { saocUrl } from '@/lib/site-hosts';
+import { loadChosenDays } from '@/lib/ticket-pdf-data';
+import { buildOrderEmailFields } from '@/lib/ticket-order-fields';
 import { sendTicketSaleAdminNotice } from '@/lib/ticket-sale-admin-notice';
 
 /**
@@ -317,15 +319,21 @@ export async function POST(
   // failure from this response: the payment is already committed above and must never be rolled
   // back, retried, or hidden behind a 5xx because a delivery receipt failed to send.
   await deliverConfirmationEmailAfterCommit(
-    () =>
-      sendConfirmationEmail({
+    async () => {
+      // Per-ticket-type email facts (used only once TICKET_TYPE_EMAILS_LIVE is on): the stored
+      // order price, and the buyer's chosen day read back from the paid order (never throws).
+      const chosenDays = await loadChosenDays(reference);
+      const firstChosenDay = chosenDays.get(outcome.positions[0]?.bookingRef) ?? null;
+      await sendConfirmationEmail({
         orderId: outcome.orderId,
         buyerEmail: outcome.buyerEmail,
         buyerName: outcome.buyerName,
         recoveryToken: outcome.recoveryToken,
         orderReference: reference,
         positions: outcome.positions,
-      }),
+        ...buildOrderEmailFields(lookup.amount, firstChosenDay),
+      });
+    },
     (error) => {
       console.error('[tickets/itn] Confirmation email failed — payment already committed, not rolled back', {
         provider: paymentProvider.id,

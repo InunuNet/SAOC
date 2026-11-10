@@ -8,8 +8,7 @@ import type { TicketPdfSchedule } from '@/lib/ticket-pdf';
  */
 
 export const SAMPLE_FIRST_NAME = 'Thandi';
-export const SAMPLE_AMOUNT_PAID = 'R100.00';
-export const SAMPLE_PAYMENT_STATUS = 'Paid';
+export const SAMPLE_PRICE_RAND = 100;
 export const SAMPLE_VENUE_NAME = 'Hangar 25, Orca Aero Solutions';
 export const SAMPLE_SHOW_DATES = '23–26 September 2027';
 export const SAMPLE_SHOW_URL = 'nos.saoc.co.za';
@@ -34,8 +33,8 @@ export interface SampleOrder {
   visitorName: string;
   quantity: number;
   bookingReference: string;
-  /** Display string for the email's "Valid for" row; only day-based tickets have one. */
-  visitDate: string | null;
+  /** The visit day the buyer chose (YYYY-MM-DD); only day-based tickets have one. */
+  chosenDay: string | null;
   /** What the ticket PDF prints as its date; null renders the "To be confirmed" pill. */
   schedule: TicketPdfSchedule | null;
 }
@@ -56,7 +55,7 @@ export const SAMPLE_ORDERS: readonly SampleOrder[] = [
     visitorName: HOLDER,
     quantity: 1,
     bookingReference: 'NOS-SAMPLE-0001',
-    visitDate: 'Saturday, 25 September 2027',
+    chosenDay: '2027-09-25',
     schedule: dateOnly('Saturday, 25 September 2027'),
   },
   {
@@ -66,7 +65,7 @@ export const SAMPLE_ORDERS: readonly SampleOrder[] = [
     visitorName: HOLDER,
     quantity: 1,
     bookingReference: 'NOS-SAMPLE-0002',
-    visitDate: 'Friday, 24 September 2027',
+    chosenDay: '2027-09-24',
     schedule: dateOnly('Friday, 24 September 2027'),
   },
   {
@@ -76,7 +75,7 @@ export const SAMPLE_ORDERS: readonly SampleOrder[] = [
     visitorName: HOLDER,
     quantity: 1,
     bookingReference: 'NOS-SAMPLE-0003',
-    visitDate: null,
+    chosenDay: null,
     schedule: dateOnly('Friday 24, Saturday 25 and Sunday 26 September 2027'),
   },
   {
@@ -86,7 +85,7 @@ export const SAMPLE_ORDERS: readonly SampleOrder[] = [
     visitorName: HOLDER,
     quantity: 1,
     bookingReference: 'NOS-SAMPLE-0004',
-    visitDate: null,
+    chosenDay: null,
     schedule: dateOnly('Thursday, 23 September 2027', '16:00–18:30'),
   },
   {
@@ -96,7 +95,7 @@ export const SAMPLE_ORDERS: readonly SampleOrder[] = [
     visitorName: HOLDER,
     quantity: 1,
     bookingReference: 'NOS-SAMPLE-0005',
-    visitDate: null,
+    chosenDay: null,
     schedule: null,
   },
   {
@@ -106,7 +105,7 @@ export const SAMPLE_ORDERS: readonly SampleOrder[] = [
     visitorName: HOLDER,
     quantity: 1,
     bookingReference: 'NOS-SAMPLE-0006',
-    visitDate: null,
+    chosenDay: null,
     schedule: dateOnly('Friday, 24 September 2027'),
   },
   {
@@ -116,7 +115,7 @@ export const SAMPLE_ORDERS: readonly SampleOrder[] = [
     visitorName: HOLDER,
     quantity: 1,
     bookingReference: 'NOS-SAMPLE-0007',
-    visitDate: null,
+    chosenDay: null,
     schedule: dateOnly('Saturday, 25 September 2027'),
   },
   {
@@ -126,7 +125,7 @@ export const SAMPLE_ORDERS: readonly SampleOrder[] = [
     visitorName: HOLDER,
     quantity: 1,
     bookingReference: 'NOS-SAMPLE-0008',
-    visitDate: null,
+    chosenDay: null,
     schedule: dateOnly('Friday, 24 and Saturday, 25 September 2027'),
   },
 ];

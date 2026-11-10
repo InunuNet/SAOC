@@ -17,15 +17,15 @@ import { chromium, type Browser } from 'playwright';
 import { buildTicketTypeEmail } from '@/lib/ticket-type-email';
 import { generateBookingRefQrDataUri } from '@/lib/qr';
 import { buildTicketPdf } from '@/lib/ticket-pdf';
+import { buildOrderEmailFields } from '@/lib/ticket-order-fields';
 
 import { COVER_INTRO, COVER_QUESTIONS, COVER_TITLE } from './ticket-email-sample-cover';
 import {
-  SAMPLE_AMOUNT_PAID,
+  SAMPLE_PRICE_RAND,
   SAMPLE_EMERGENCY,
   SAMPLE_FIRST_NAME,
   SAMPLE_OPENING_TIMES,
   SAMPLE_ORDERS,
-  SAMPLE_PAYMENT_STATUS,
   SAMPLE_QUESTIONS_EMAIL,
   SAMPLE_SHOW_DATES,
   SAMPLE_SHOW_URL,
@@ -61,6 +61,7 @@ async function inlineEmailImages(html: string): Promise<string> {
 
 async function renderEmailHtml(order: SampleOrder): Promise<string> {
   const contentId = `${CONTENT_ID_PREFIX}${order.bookingReference}`;
+  const fields = buildOrderEmailFields(SAMPLE_PRICE_RAND, order.chosenDay);
   const email = buildTicketTypeEmail({
     key: order.key,
     values: {
@@ -68,9 +69,9 @@ async function renderEmailHtml(order: SampleOrder): Promise<string> {
       visitorName: order.visitorName,
       quantity: String(order.quantity),
       bookingReference: order.bookingReference,
-      amountPaid: SAMPLE_AMOUNT_PAID,
-      paymentStatus: SAMPLE_PAYMENT_STATUS,
-      visitDate: order.visitDate,
+      amountPaid: fields.amountPaid,
+      paymentStatus: fields.paymentStatus,
+      visitDate: fields.visitDate ?? null,
     },
     positions: [
       {
@@ -83,7 +84,7 @@ async function renderEmailHtml(order: SampleOrder): Promise<string> {
     recoveryUrl: null,
   });
   const qrUri = await generateBookingRefQrDataUri(order.bookingReference);
-  const html = (await render(email.react)).replace(`cid:${contentId}`, qrUri);
+  const html = (await render(email.react)).replaceAll(`cid:${contentId}`, qrUri);
   const header =
     '<div style="font:600 15px Arial,sans-serif;padding:12px 16px;border-bottom:1px solid #999;' +
     `color:#222">Subject: ${escapeHtml(email.subject)}</div>`;

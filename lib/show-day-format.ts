@@ -62,6 +62,28 @@ export function formatShowDay(iso: string): string {
   return `${WEEKDAYS_SHORT[parsed.weekday]} ${parsed.day} ${MONTHS_SHORT[parsed.month - 1]} ${parsed.year}`;
 }
 
+const MONTHS_LONG = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+] as const;
+
+/** "2027-09-25" -> "Saturday, 25 September 2027" (the per-ticket-type confirmation email). */
+export function formatShowDayLong(iso: string): string {
+  const parsed = parseCalendarDay(iso);
+  if (!parsed) return iso;
+  return `${WEEKDAYS_LONG[parsed.weekday]}, ${parsed.day} ${MONTHS_LONG[parsed.month - 1]} ${parsed.year}`;
+}
+
 /** "2027-09-24" -> "Fri 24" (the day-pass cell label). */
 export function formatShowDayShort(iso: string): string {
   const parsed = parseCalendarDay(iso);
