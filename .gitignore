@@ -159,3 +159,6 @@ content/drive-watch/
 .agent/.privilege_permit.*.tmp
 .agent/memory/project/privileged_command_audit.log
 .agent/memory/scratch/escalation/
+
+# ticket-email-samples generated PDFs
+samples/
