@@ -1,0 +1,17 @@
+{
+  "note": "Sample-only order data. Not real people, bookings or prices; the cover page says so.",
+  "first_name": "Thandi",
+  "amount_paid": "R100.00",
+  "payment_status": "Paid",
+  "venue_from_sanity": "Hangar 25, Orca Aero Solutions",
+  "types": {
+    "early-bird":      {"slug": "early-bird", "title": "Early Bird Exhibition Ticket", "visitor_name": "Thandi Nkosi", "quantity": 1, "booking_reference": "NOS-SAMPLE-0001", "selected_visit_date": "Saturday, 25 September 2027"},
+    "day-visitor":     {"slug": "day-visitor", "title": "Day Visitor Ticket", "visitor_name": "Thandi Nkosi", "quantity": 1, "booking_reference": "NOS-SAMPLE-0002", "selected_visit_date": "Friday, 24 September 2027"},
+    "weekend-pass":    {"slug": "weekend-pass", "title": "Weekend Pass", "visitor_name": "Thandi Nkosi", "quantity": 1, "booking_reference": "NOS-SAMPLE-0003"},
+    "vip":             {"slug": "vip", "title": "VIP Ticket", "visitor_name": "Thandi Nkosi", "quantity": 1, "booking_reference": "NOS-SAMPLE-0004"},
+    "sunset-cocktails":{"slug": "sunset-cocktails-single", "title": "Sunset Cocktails", "visitor_name": "Thandi Nkosi", "quantity": 1, "booking_reference": "NOS-SAMPLE-0005"},
+    "saoc-symposium":  {"slug": "saoc-symposium", "title": "SAOC Symposium", "visitor_name": "Thandi Nkosi", "quantity": 1, "booking_reference": "NOS-SAMPLE-0006"},
+    "wosa-conference": {"slug": "wosa-conference", "title": "WOSA Conference", "visitor_name": "Thandi Nkosi", "quantity": 1, "booking_reference": "NOS-SAMPLE-0007"},
+    "saoc-wosa-joint": {"slug": "saoc-wosa-joint", "title": "SAOC/WOSA Joint Ticket", "visitor_name": "Thandi Nkosi", "quantity": 1, "booking_reference": "NOS-SAMPLE-0008"}
+  }
+}

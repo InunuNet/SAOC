@@ -18,6 +18,9 @@ import OrderConfirmation, {
   type OrderConfirmationVisit,
 } from '@/emails/OrderConfirmation';
 import { loadOrderVisit } from '@/lib/order-visit-info';
+import { ticketEmailKeyForSlug, type TicketEmailKey } from '@/lib/ticket-email-copy';
+import { buildTicketTypeEmail } from '@/lib/ticket-type-email';
+import { isTicketTypeEmailsLive } from '@/lib/ticket-type-emails-switch';
 import { logFailureSafely } from '@/lib/safe-log';
 import { withTestSubjectPrefix } from '@/lib/ticketing-test-mode';
 import type { TicketType } from '@/types/index';
@@ -49,6 +52,16 @@ export interface SendConfirmationEmailInput {
   recoveryToken: string | null;
   /** Order reference (`m_payment_id`): names the PDF file and prints in its footer. Optional. */
   orderReference?: string;
+  /** Per-ticket-type email only (ticket-email-samples). Defaults to the buyer's first word. */
+  firstName?: string;
+  /** Number of tickets bought. Defaults to positions.length. */
+  quantity?: number;
+  /** Display string, e.g. "R100.00". Absent renders as "[To be confirmed]". */
+  amountPaid?: string;
+  /** Display word, e.g. "Paid". Absent renders as "[To be confirmed]". */
+  paymentStatus?: string;
+  /** Display string of the chosen visit day. Absent renders as "[To be confirmed]". */
+  visitDate?: string;
 }
 
 export interface TicketPdfEmailInput {
@@ -79,6 +92,8 @@ export interface SendConfirmationEmailDeps {
   loadTicketTypeTraits?: () => Promise<ReadonlyMap<string, TicketTypeTraits>>;
   /** Injectable for tests; the default loads the visit info and renders the real PDF. */
   buildTicketPdf?: (input: TicketPdfEmailInput) => Promise<Uint8Array>;
+  /** Overrides the TICKET_TYPE_EMAILS_LIVE switch; used by tests and nothing else. */
+  perTypeEmails?: boolean;
 }
 
 async function defaultBuildTicketPdf(input: TicketPdfEmailInput): Promise<Uint8Array> {
@@ -121,6 +136,13 @@ async function buildPdfAttachment(
     );
     return null;
   }
+}
+
+/** The per-type email key when every position is the same mapped ticket type, else null. */
+function perTypeEmailKey(input: SendConfirmationEmailInput): TicketEmailKey | null {
+  const keys = new Set(input.positions.map((position) => ticketEmailKeyForSlug(position.ticketType)));
+  const [only] = keys;
+  return keys.size === 1 && only !== null ? only : null;
 }
 
 /**
@@ -180,10 +202,31 @@ export async function sendConfirmationEmail(
   const recoveryUrl = buildRecoveryUrl(input.recoveryToken, siteUrl);
   const visit = await loadVisit();
 
+  const perTypeKey = (deps.perTypeEmails ?? isTicketTypeEmailsLive()) ? perTypeEmailKey(input) : null;
+  const email = perTypeKey
+    ? buildTicketTypeEmail({
+        key: perTypeKey,
+        values: {
+          firstName: input.firstName ?? input.buyerName.trim().split(/\s+/)[0] ?? null,
+          visitorName: input.positions[0].attendeeName,
+          quantity: String(input.quantity ?? input.positions.length),
+          bookingReference: input.positions[0].bookingRef,
+          amountPaid: input.amountPaid ?? null,
+          paymentStatus: input.paymentStatus ?? null,
+          visitDate: input.visitDate ?? null,
+        },
+        positions,
+        recoveryUrl,
+      })
+    : {
+        subject: withTestSubjectPrefix('Your National Orchid Show order is confirmed'),
+        react: OrderConfirmation({ buyerName: input.buyerName, positions, recoveryUrl, visit }),
+      };
+
   await mailer.send({
     to: input.buyerEmail,
-    subject: withTestSubjectPrefix('Your National Orchid Show order is confirmed'),
-    react: OrderConfirmation({ buyerName: input.buyerName, positions, recoveryUrl, visit }),
+    subject: email.subject,
+    react: email.react,
     from: NOS_TICKETS_FROM_ADDRESS,
     site: 'nos',
     attachments,
