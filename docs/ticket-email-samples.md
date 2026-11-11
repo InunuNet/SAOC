@@ -31,3 +31,13 @@ approves. It does not touch `TICKETING_PAYMENTS_LIVE` or `SITE_PUBLIC_LAUNCH`.
 `ticket-emails-combined.pdf`. The data is made up and the cover page says so. The sample path has
 no send, network, Firestore, Sanity or payment calls; the browser is blocked from every request
 that is not an inline `data:` URI.
+
+## Ticket stub (F4)
+
+Every ticket prints the same stub, whatever its product:
+
+- The decorative XIX numeral and the "National Orchid Show" label sit on the right of the stub. XIX is a design mark and is not replaced (Brad's ruling).
+- A faint *Disa graminifolia* orchid sits in the lower right of the stub, wholly inside the panel and clear of the attendee name. `lib/ticket-pdf.ts` loads it from `lib/ticket-pdf-assets/disa-graminifolia-600.png`, sourced from `branding/National Show 2027/emblem/`.
+- Opening times print the date on one line and its hours on the next line.
+- `lib/ticket-pdf-data.ts` now sets a stub numeral only for event products. The stub draws XIX regardless, so that value no longer decides whether the mark appears.
+- Files: `lib/ticket-pdf.ts`, `lib/ticket-pdf-data.ts`, `scripts/ticket-email-sample-fixtures.ts` (commit `a80e0380`).
