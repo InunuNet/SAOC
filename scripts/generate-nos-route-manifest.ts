@@ -227,7 +227,7 @@ const ROUTE_TABLE: RouteRow[] = [
     order: 2,
     listed: true,
     dynamic: false,
-    indexable: true,
+    indexable: false,
     status: 'created',
     owner: 'nos-design',
     archetype: 'listing',
@@ -238,7 +238,7 @@ const ROUTE_TABLE: RouteRow[] = [
   },
   {
     slug: '/national-show/award-entries',
-    label: 'Award Entries',
+    label: 'Plant Entry',
     group: 'exhibit-trade',
     parent: '/national-show',
     order: 3,
