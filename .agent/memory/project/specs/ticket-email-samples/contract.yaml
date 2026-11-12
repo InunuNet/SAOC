@@ -1,0 +1,119 @@
+schema: athanor.contract/v1
+slug: ticket-email-samples
+goal: Per-ticket-type confirmation emails and ticket PDFs built from Lee-Ann's copy through the real email code, rendered as sample PDFs for her approval, behind a default-off switch, with nothing sent.
+created_at: '2026-11-10'
+autonomy: high
+
+# Sources the work must trace to (docs/rules/no-invention.md): Lee-Ann's Drive doc "Ticket information
+# for purchasers.docx" (frozen in goldens/source-text.txt), the design handoff in
+# design/design_handoff_saoc/ and branding/National Show 2027/ (existing EmailShell family A and
+# ticket-pdf layout only; no new visual design), and Brad's instruction of 2026-11-10.
+#
+# Design decisions for @dev (names are binding; the checks import them):
+#  - Switch: lib/ticket-type-emails-switch.ts exports const TICKET_TYPE_EMAILS_LIVE = false and
+#    isTicketTypeEmailsLive(). Same reviewed-code-change convention as lib/ticketing-test-mode.ts.
+#    Flipped by one edit after Lee-Ann approves. TICKETING_PAYMENTS_LIVE and SITE_PUBLIC_LAUNCH are
+#    not touched.
+#  - lib/ticket-email-copy.ts: pure table of the 8 emails keyed by
+#    early-bird | day-visitor | weekend-pass | vip | sunset-cocktails | saoc-symposium |
+#    wosa-conference | saoc-wosa-joint, plus slug mapping: early-bird, day-visitor, weekend-pass and
+#    weekend-pass-early-bird, vip, sunset-cocktails-single, saoc-symposium, wosa-conference,
+#    saoc-wosa-joint (the joint slug is provisional: no joint ticket type exists in the repo yet).
+#    Unmapped slug returns null and the generic email is sent. Her text is verbatim; her soft line
+#    breaks (VIP date/time, sign-off) render as two lines. A missing item renders the visible text
+#    "[To be confirmed]", never invented copy. Her hard-coded venue string stays as written.
+#  - emails/TicketTypeConfirmation.tsx on EmailShell family A, with the existing per-position QR card.
+#    lib/ticket-type-email.ts is the one pure builder (subject + element) used by BOTH
+#    sendConfirmationEmail and the sample script.
+#  - SendConfirmationEmailInput gains optional firstName, quantity (defaults to positions.length),
+#    amountPaid, paymentStatus, visitDate (display string). SendConfirmationEmailDeps gains optional
+#    perTypeEmails (boolean, overrides the switch; used by tests and nothing else).
+#  - scripts/generate-ticket-email-samples.ts (pnpm samples:ticket-emails): fixture data from
+#    goldens/fixtures.json content (copied into code, production code never reads specs/), renders
+#    HTML with @react-email render, swaps cid: QR refs for data URIs, prints a "Subject: ..." header
+#    above each email, converts to PDF with Playwright chromium, builds ticket PDFs with
+#    lib/ticket-pdf buildTicketPdf from fixture visit data, and merges with pdf-lib. Output:
+#    samples/ticket-emails/00-cover.pdf, email-<key>.pdf x8, ticket-<key>.pdf x8,
+#    ticket-emails-combined.pdf (cover first). It must not import lib/email, lib/confirmation-email,
+#    lib/ticket-pdf-data, Sanity, Firebase or any payment module.
+
+features:
+  - id: F1
+    name: Per-type email copy, template, input fields and default-off switch wired into sendConfirmationEmail
+    status: pending
+  - id: F2
+    name: Sample generator producing 8 email PDFs and 8 ticket PDFs from fixture data
+    status: pending
+  - id: F3
+    name: Questions for Lee-Ann cover page and combined PDF
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/ticket-email-samples/goldens/source-text.txt
+  - .agent/memory/project/specs/ticket-email-samples/goldens/source-text.sha256
+  - .agent/memory/project/specs/ticket-email-samples/goldens/fixtures.json
+  - .agent/memory/project/specs/ticket-email-samples/goldens/cover-questions.txt
+  - .agent/memory/project/specs/ticket-email-samples/goldens/generic-email-baseline.json
+  - .agent/memory/project/specs/ticket-email-samples/goldens/emails/early-bird.txt
+  - .agent/memory/project/specs/ticket-email-samples/goldens/emails/day-visitor.txt
+  - .agent/memory/project/specs/ticket-email-samples/goldens/emails/weekend-pass.txt
+  - .agent/memory/project/specs/ticket-email-samples/goldens/emails/vip.txt
+  - .agent/memory/project/specs/ticket-email-samples/goldens/emails/sunset-cocktails.txt
+  - .agent/memory/project/specs/ticket-email-samples/goldens/emails/saoc-symposium.txt
+  - .agent/memory/project/specs/ticket-email-samples/goldens/emails/wosa-conference.txt
+  - .agent/memory/project/specs/ticket-email-samples/goldens/emails/saoc-wosa-joint.txt
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Frozen source text matches its sha256 and every golden email line is verbatim from it or a declared marker
+      command: python3 scripts/checks/verify_ticket_email_goldens.py source .agent/memory/project/specs/ticket-email-samples/goldens
+    - id: A2
+      description: Switch exists and defaults to off
+      command: grep -q "TICKET_TYPE_EMAILS_LIVE = false" lib/ticket-type-emails-switch.ts
+    - id: A3
+      description: sendConfirmationEmail consults the switch
+      command: grep -q "isTicketTypeEmailsLive" lib/confirmation-email.ts
+    - id: A4
+      description: Payment-live and public-launch files are untouched
+      command: git diff --quiet HEAD -- lib/ticketing-test-mode.ts lib/beta-public-launch.ts
+    - id: A5
+      description: With the switch off the generic email (subject and HTML) is byte-identical to the frozen baseline
+      command: pnpm exec tsx scripts/checks/generic-confirmation-snapshot.mts --compare .agent/memory/project/specs/ticket-email-samples/goldens/generic-email-baseline.json
+    - id: A6
+      description: With the switch on, all 8 types send their golden subject and body; an unmapped type falls back to generic
+      command: pnpm exec tsx scripts/checks/per-type-confirmation-send.mts .agent/memory/project/specs/ticket-email-samples/goldens
+    - id: A7
+      description: Sample generator runs to completion
+      command: pnpm exec tsx scripts/generate-ticket-email-samples.ts
+    - id: A8
+      description: Output has cover, 8 email PDFs, 8 ticket PDFs and the combined PDF
+      command: python3 -c "import glob,os;d='samples/ticket-emails/';ok=len(glob.glob(d+'email-*.pdf'))==8 and len(glob.glob(d+'ticket-*.pdf'))==8 and os.path.isfile(d+'00-cover.pdf') and os.path.isfile(d+'ticket-emails-combined.pdf');raise SystemExit(0 if ok else 1)"
+    - id: A9
+      description: Each email PDF contains its golden subject and body in order, plus the visible [To be confirmed] marker rows
+      command: for k in early-bird day-visitor weekend-pass vip sunset-cocktails saoc-symposium wosa-conference saoc-wosa-joint; do python3 scripts/checks/verify_ticket_email_goldens.py pdf samples/ticket-emails/email-$k.pdf .agent/memory/project/specs/ticket-email-samples/goldens/emails/$k.txt || exit 1; done
+    - id: A10
+      description: Each ticket PDF shows its booking reference and ticket type title
+      command: python3 scripts/checks/verify_ticket_email_goldens.py ticket samples/ticket-emails/ticket-early-bird.pdf NOS-SAMPLE-0001 "Early Bird Exhibition Ticket" && python3 scripts/checks/verify_ticket_email_goldens.py ticket samples/ticket-emails/ticket-day-visitor.pdf NOS-SAMPLE-0002 "Day Visitor Ticket" && python3 scripts/checks/verify_ticket_email_goldens.py ticket samples/ticket-emails/ticket-weekend-pass.pdf NOS-SAMPLE-0003 "Weekend Pass" && python3 scripts/checks/verify_ticket_email_goldens.py ticket samples/ticket-emails/ticket-vip.pdf NOS-SAMPLE-0004 "VIP Ticket" && python3 scripts/checks/verify_ticket_email_goldens.py ticket samples/ticket-emails/ticket-sunset-cocktails.pdf NOS-SAMPLE-0005 "Sunset Cocktails" && python3 scripts/checks/verify_ticket_email_goldens.py ticket samples/ticket-emails/ticket-saoc-symposium.pdf NOS-SAMPLE-0006 "SAOC Symposium" && python3 scripts/checks/verify_ticket_email_goldens.py ticket samples/ticket-emails/ticket-wosa-conference.pdf NOS-SAMPLE-0007 "WOSA Conference" && python3 scripts/checks/verify_ticket_email_goldens.py ticket samples/ticket-emails/ticket-saoc-wosa-joint.pdf NOS-SAMPLE-0008 "SAOC/WOSA Joint Ticket"
+    - id: A11
+      description: Cover PDF carries every Questions for Lee-Ann line
+      command: python3 scripts/checks/verify_ticket_email_goldens.py pdf samples/ticket-emails/00-cover.pdf .agent/memory/project/specs/ticket-email-samples/goldens/cover-questions.txt
+    - id: A12
+      description: Combined PDF opens with the cover and has exactly the pages of cover + 8 emails + 8 tickets
+      command: python3 scripts/checks/verify_ticket_email_goldens.py combined samples/ticket-emails .agent/memory/project/specs/ticket-email-samples/goldens
+    - id: A13
+      description: Sample path has no send, network, Firestore, Sanity, payment or Resend reference
+      command: "! grep -nEi \"sendEmail|lib/email|lib/confirmation-email|ticket-pdf-data|firebase|firestore|ozow|payfast|sanity|resend|fetch\\(\" scripts/generate-ticket-email-samples.ts lib/ticket-type-email.ts lib/ticket-email-copy.ts emails/TicketTypeConfirmation.tsx"
+    - id: A14
+      description: Sample script is exposed as a package script
+      command: grep -q "samples:ticket-emails" package.json
+    - id: A15
+      description: Typecheck passes
+      command: pnpm type-check
+    - id: A16
+      description: Production build passes
+      command: pnpm build
+    - id: A17
+      description: Docs name the switch and say nothing is live until Lee-Ann approves
+      command: grep -q "TICKET_TYPE_EMAILS_LIVE" docs/ticket-email-samples.md
