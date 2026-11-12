@@ -82,6 +82,10 @@ import sys
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+_EXEC_DIR = os.path.dirname(os.path.abspath(__file__))
+if _EXEC_DIR not in sys.path:
+    sys.path.insert(0, _EXEC_DIR)
+from bash_exe import bash_exe  # noqa: E402  Windows: Git Bash, never System32 WSL
 
 SCHEMA = "athanor.hookprobes/v1"
 DECLARATIONS_REL = ".agent/config/hook_probes.json"
@@ -91,8 +95,10 @@ HANDOFFS_REL = ".agent/handoffs.yaml"
 SANDBOX_REL = ".tmp/sandbox/hook-probe"
 
 # Bound on ONE probed invocation. Two invocations (deny + allow) per script,
-# so a hanging hook returns control well inside a boot's patience.
-RUN_TIMEOUT_SECONDS = 10
+# so a hanging hook returns control well inside a boot's patience. Windows
+# (Git Bash, python and jq spawns) runs check_autonomy.sh several times slower,
+# and a loaded VM tripped 10 s and marked the floor dead (Athanor Win 2026-11-07).
+RUN_TIMEOUT_SECONDS = 30 if os.name == "nt" else 10
 # After the bound expires the process GROUP is killed, not just the direct
 # child: `bash -c 'bash X'` puts the hook in a grandchild, and killing only
 # the wrapper leaves the hook running against a box that is about to vanish.
@@ -251,6 +257,18 @@ def _write_seed(box, files):
         target.write_text(_expand(str(content), box))
 
 
+def _link_execution(target, link):
+    """Point link at the real execution/ tree. Windows refuses unprivileged
+    directory symlinks, so there a junction (no privilege needed) stands in."""
+    try:
+        os.symlink(str(target), str(link))
+    except (OSError, NotImplementedError):
+        if os.name != "nt":
+            raise
+        import _winapi  # Windows-only stdlib module
+        _winapi.CreateJunction(str(target), str(link))
+
+
 def _make_box(root, decl, files):
     """Build one throwaway workspace and return its path.
 
@@ -265,7 +283,7 @@ def _make_box(root, decl, files):
     for rel in (".agent/memory/scratch", ".agent/memory/project/specs",
                 ".agent/memory/project/missions", ".agent/config", "docs", ".tmp"):
         (box / rel).mkdir(parents=True, exist_ok=True)
-    os.symlink(str(root / "execution"), str(box / "execution"))
+    _link_execution(root / "execution", box / "execution")
     handoffs = root / HANDOFFS_REL
     if handoffs.is_file():
         shutil.copyfile(str(handoffs), str(box / HANDOFFS_REL))
@@ -307,13 +325,19 @@ def _box_env(box):
 
 def _scrub(box):
     if box is not None:
+        if os.name == "nt":
+            # a junction must be removed as a link, never walked into
+            try:
+                os.rmdir(str(box / "execution"))
+            except OSError:
+                pass
         shutil.rmtree(str(box), ignore_errors=True)
 
 
 def _kill_group(proc):
     try:
         os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
-    except (OSError, ProcessLookupError):
+    except (OSError, ProcessLookupError, AttributeError):  # AttributeError: no killpg on Windows
         try:
             proc.kill()
         except OSError:
@@ -349,6 +373,11 @@ def _stdout_decision(text):
     return None
 
 
+def _bash():
+    """The bash that runs a registration string (see bash_exe.py)."""
+    return bash_exe()
+
+
 def _run_once(command, box, payload):
     """Execute the REGISTRATION STRING verbatim via `bash -c`, inside the box.
 
@@ -357,9 +386,10 @@ def _run_once(command, box, payload):
     """
     try:
         proc = subprocess.Popen(
-            ["bash", "-c", command], cwd=str(box),
+            [_bash(), "-c", command], cwd=str(box),
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL, env=_box_env(box), text=True,
+            encoding="utf-8", errors="replace",
             start_new_session=True)
     except OSError:
         return None

@@ -2,6 +2,18 @@
 # full_boot.sh — SessionStart command hook
 # Executes the full Athanor boot sequence and injects context into the session.
 # Runs from project root. All steps are non-fatal (|| true).
+# Windows Git Bash: native jq.exe emits CRLF for -r output; -b strips it.
+case "$(uname -s 2>/dev/null)" in
+  MINGW*|MSYS*|CYGWIN*)
+    if type -P jq >/dev/null 2>&1; then
+      # jq 1.6 has no -b: probe, else strip the CR from the output instead.
+      if command jq -b -n 1 >/dev/null 2>&1; then
+        jq() { command jq -b "$@"; }
+      else
+        jq() { command jq "$@" | tr -d '\r'; return "${PIPESTATUS[0]}"; }
+      fi
+    fi ;;
+esac
 
 WORKSPACE_FILE="WORKSPACE"
 PROFILE_FILE=".agent/profile.json"
@@ -53,10 +65,7 @@ else
   echo "$_BOOT_PROJECT | scaffolded by $_BOOT_HARNESS harness v$_BOOT_VERSION"
   echo "════ BOOT CONTEXT ($_BOOT_PROJECT) ════"
 fi
-echo "Core Mandates: Specialized agents, Tiered memory, Autonomous self-improvement, Alembic (URL distilling), gws (Google Workspace)."
-# Quota is read backwards fleet-wide after every reset (operator 2026-10-07):
-# state the direction in the one place every session and every compaction sees.
-echo "QUOTA COUNTS UP in Athanor: every Athanor figure (statusline, python3 execution/quota.py status) is % USED, 0% = fresh window, 100% = exhausted. Codex and Antigravity native displays are the opposite (% LEFT). Check which one you are reading. After a reset you have a FULL window (~2% used = ~98% left): keep working at full scope."
+echo "Quota figures count UP (% used); the full rule is in .agent/rules/_core/behavior.md."
 # Draft lane (operator-adopted 2026-10-08, rule: workflow.md "Draft lane"):
 # announced here so an active draft survives compaction.
 # A symlink is refused (a link to .env would print secrets into context), and
@@ -65,7 +74,7 @@ if [ -L .agent/DRAFT_LANE ]; then
   echo "DRAFT LANE: .agent/DRAFT_LANE is a symlink -- ignored. Recreate it as a plain file."
 elif [ -f .agent/DRAFT_LANE ]; then
   echo "DRAFT LANE ACTIVE: $(head -c 300 .agent/DRAFT_LANE | tr '\n' ' ' | LC_ALL=C tr -cd '[:print:]')"
-  echo "  No per-change chain: apply each tweak, screenshot it, commit nothing. At approval: build + screenshot + one Codex review, delete .agent/DRAFT_LANE, then commit (workflow.md \"Draft lane\")."
+  echo "  Rules: workflow.md \"Draft lane\"."
 fi
 echo ""
 
@@ -287,13 +296,7 @@ if [ "$_WS_STATE" != "ESTABLISHED" ]; then
   echo ""
   echo "   python3 execution/onboard_headless.py --project-name \"$_BOOT_PROJECT\" --agent-name <name> --role <role> --mission \"<mission>\""
   echo ""
-  if [ -f .agent/skills/onboard.md ]; then
-    echo "════ ONBOARDING SKILL (.agent/skills/onboard.md) ════"
-    cat .agent/skills/onboard.md
-    echo "════ END ONBOARDING SKILL ════"
-  else
-    echo "⚠️  .agent/skills/onboard.md is missing — use the headless command above."
-  fi
+  echo "Onboarding incomplete: run /onboard (skill: .agent/skills/onboard.md) or the command above."
   echo ""
   echo "════ BOOT HALTED AT THE ONBOARDING GATE ════"
   exit 0
@@ -651,7 +654,7 @@ if [ -n "$ACTIVE_MISSION_SLUG" ]; then
       # resume order is issued only once autonomy is DECIDED for this mission
       # (a decided_at stamp in active.json) at a level above interactive.
       if [ "$_BOOT_AUTONOMY_DECIDED" = "yes" ] && [ "$_BOOT_LEVEL" != "interactive" ]; then
-        echo "⚡ PROCEED: Run 'python3 execution/mission.py resume' NOW and continue the chain immediately. Do not wait for confirmation."
+        echo "PROCEED: run 'python3 execution/mission.py resume' now; do not wait for confirmation."
       elif [ "$_BOOT_AUTONOMY_DECIDED" = "yes" ]; then
         echo "→ Autonomy DECIDED at 'interactive' — run 'python3 execution/mission.py resume' and ask before each step."
       elif [ "$_BOOT_LEVEL" = "unknown" ]; then
@@ -717,7 +720,6 @@ fi
 # hygiene) is intentionally NOT printed here: CEO Directive v2 L1 puts boot on
 # one screen — identity, active mission, latest directive, hard blockers, and
 # nothing else. The full context stays on disk under .agent/memory/.
-echo "--- IDENTITY ---"
 python3 -c "
 import json
 with open('.agent/profile.json') as f:
@@ -732,15 +734,12 @@ echo ""
 
 # Hard blockers — the one section of the old dump that survives: a real
 # blocker is one of the four things boot must always surface.
-echo "--- BLOCKERS ---"
 BLOCKER_OUTPUT=$(python3 execution/brain.py scan-blockers 2>&1)
-if echo "$BLOCKER_OUTPUT" | grep -q "No recurring blockers detected."; then
-  echo "No recurring blockers detected."
-else
+if ! echo "$BLOCKER_OUTPUT" | grep -q "No recurring blockers detected."; then
+  echo "--- BLOCKERS ---"
   echo "$BLOCKER_OUTPUT"
-  echo "⚠️  Recurring blockers detected! Run /pain-point-monitor for root cause analysis."
+  echo "Recurring blockers detected: run /pain-point-monitor."
 fi
-echo ""
 fi  # ── end INHERITED CONTEXT ────────────────────────────────────────────────
 
 # Machinery status (pulse, alembic, github auth, git remotes, git identity)
@@ -764,7 +763,7 @@ date +%s > .agent/memory/scratch/.last_full_boot_ts 2>/dev/null || true
 # run to the end — but it never claims "all context loaded" on a boot that
 # deliberately withheld some.
 if [ -n "${_ID_UNVERIFIED:-}" ]; then
-  echo "════ BOOT COMPLETE — INHERITED CONTEXT WITHHELD (workspace identity unverifiable) ════"
+  echo "BOOT COMPLETE — INHERITED CONTEXT WITHHELD (workspace identity unverifiable)"
 else
-  echo "════ BOOT COMPLETE — all context loaded ════"
+  echo "BOOT COMPLETE"
 fi

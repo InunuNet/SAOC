@@ -1,3 +1,12 @@
+---
+description: Credential and destructive-command detail.
+paths:
+  - "**/.env*"
+  - ".sops.yaml"
+  - "secrets/**"
+  - "execution/env_keys.py"
+---
+
 # Security Rules
 
 Confirm before running, however routine: `rm -rf` with a broad path, `git push --force`,

@@ -34,6 +34,11 @@ import sys
 import tempfile
 from pathlib import Path
 
+_EXEC_DIR = os.path.dirname(os.path.abspath(__file__))
+if _EXEC_DIR not in sys.path:
+    sys.path.insert(0, _EXEC_DIR)
+from bash_exe import bash_exe  # noqa: E402  Windows: Git Bash, never System32 WSL
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import autonomy as autonomy_dialect  # noqa: E402  (path fixed up above)
 
@@ -101,6 +106,9 @@ MARKER_FRESH_FALLBACK_SECONDS = 3600
 STAMP_MAX_CHARS = 120
 COMPACT_MAX_FAIL_LINES = 10
 COMPACT_MAX_WARN_LINES = 3
+# Degraded (warn / non-blocking) essentials: one `<check>: <reason> — fix: <cmd>` line each up
+# to this many, the overflow folded into one line, so a degraded boot stays inside the budget.
+COMPACT_MAX_DEGRADED_LINES = 3
 BACKLOG_TOP_N = 3
 # An estimate is only offered once the corpus can actually support one, and it
 # is never a point estimate: measured over this repo's mission corpus the mean
@@ -157,6 +165,11 @@ HOOK_SCRIPT_RE = re.compile(r"execution/hooks/([\w.-]+\.sh)")
 
 
 # ---------------------------------------------------------------- utilities --
+def _utf8_env():
+    """Environment for a python child: it prints UTF-8, matching how we decode it."""
+    return dict(os.environ, PYTHONUTF8="1")
+
+
 def _now():
     return datetime.datetime.now(datetime.timezone.utc)
 
@@ -181,7 +194,7 @@ def _parse_iso(value):
 def _load_json(path):
     """Return (data, error). Never raises — a broken file is a reportable fact."""
     try:
-        return json.loads(Path(path).read_text()), None
+        return json.loads(Path(path).read_text(encoding="utf-8")), None
     except FileNotFoundError:
         return None, "missing"
     except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
@@ -190,7 +203,7 @@ def _load_json(path):
 
 def _read_text(path):
     try:
-        return Path(path).read_text().strip()
+        return Path(path).read_text(encoding="utf-8").strip()
     except (OSError, UnicodeDecodeError):
         return None
 
@@ -263,10 +276,16 @@ def _read_mission(root):
 
 def _run(argv, cwd=None, timeout=PROBE_TIMEOUT_SECONDS, shell=False, env=None):
     """Run a command; return (rc, first_line_of_output). Never raises."""
+    env = dict(os.environ if env is None else env, PYTHONUTF8="1")
+    if shell and os.name == "nt":
+        # cmd.exe cannot run a POSIX probe, and a bare `bash` inside it is the
+        # System32 WSL launcher: hand the string to Git Bash instead.
+        argv, shell = [bash_exe(), "-c", argv], False
     try:
         proc = subprocess.run(
             argv, cwd=str(cwd) if cwd else None, shell=shell, timeout=timeout,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env,
+            encoding="utf-8", errors="replace",
         )
     except (OSError, subprocess.SubprocessError):
         return 127, "command could not be executed"
@@ -425,7 +444,7 @@ def _expected_email(project_name, folder):
     stem = re.sub(r"[^0-9A-Za-z]", "", project_name or folder)
     pattern = None
     try:
-        with open(PROFILE_REL) as f:
+        with open(PROFILE_REL, encoding="utf-8") as f:
             pattern = (json.load(f) or {}).get("git_email_pattern")
     except Exception:
         pattern = None
@@ -495,7 +514,8 @@ def _collect_quota(root, checks):
             [sys.executable, str(script), "status", "--json",
              "--mirror-path", str(root / QUOTA_MIRROR_REL)],
             cwd=str(root), timeout=NETWORK_TIMEOUT_SECONDS,
-            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
+            encoding="utf-8", errors="replace", env=_utf8_env())
         status = json.loads(proc.stdout)
     except subprocess.TimeoutExpired:
         _check_quota_oracle(
@@ -967,9 +987,10 @@ def _python_deps_entry(root):
     still runs on whatever PATH resolves.
     """
     python = shutil.which("python3")
-    entry = {"name": "python-deps", "kind": "tool", "blocking": False}
+    entry = {"name": "python-deps", "kind": "tool", "blocking": False,
+             "fix_short": "python3 -m pip install pyyaml jsonschema"}
     if not python:
-        entry.update(status="unknown", detail="python3 not on PATH",
+        entry.update(status="unknown", detail="python3 not on PATH", short="python3 not on PATH",
                      fix="install python3, then pip install pyyaml jsonschema")
         return entry
     probe = ("import sys\nmissing = []\n"
@@ -979,7 +1000,8 @@ def _python_deps_entry(root):
              "print(' '.join(missing) + '|' + sys.version.split()[0])" % (PYTHON_DEPS,))
     rc, out = _run([python, "-c", probe], cwd=root, timeout=NETWORK_TIMEOUT_SECONDS)
     if rc != 0 or "|" not in (out or ""):
-        entry.update(status="fail", detail=f"{python} could not run the dependency probe",
+        entry.update(status="fail", short="probe failed",
+                     detail=f"{python} could not run the dependency probe",
                      fix=f"{python} -m pip install pyyaml jsonschema")
         return entry
     missing_text, pyver = out.rsplit("|", 1)
@@ -989,6 +1011,7 @@ def _python_deps_entry(root):
         return entry
     entry.update(
         status="fail",
+        short="cannot import " + ", ".join(missing),
         detail=f"{python} (Python {pyver}) cannot import {', '.join(missing)}",
         fix=(f"{python} -m pip install pyyaml jsonschema -- or rebuild ~/.athanor-env "
              "(scripts re-exec into it automatically when it has them)"))
@@ -1004,9 +1027,10 @@ def _collect_essential(root, version, checks):
     rc, _out = _run(["curl", "-s", "--max-time", "2", "-o", "/dev/null", ALEMBIC_URL],
                     cwd=root, timeout=NETWORK_TIMEOUT_SECONDS)
     essential.append({
-        "name": "Alembic", "kind": "service", "status": "ok" if rc == 0 else "fail",
+        "name": "Alembic", "kind": "service", "status": "ok" if rc == 0 else "warn",
         "detail": f"{ALEMBIC_URL} responds" if rc == 0 else f"{ALEMBIC_URL} unreachable",
-        "blocking": True, "fix": f"start Alembic (it must answer on {ALEMBIC_URL}, or set ALEMBIC_URL)"})
+        "blocking": False, "short": "unreachable", "fix_short": "start Alembic or set ALEMBIC_URL",
+        "fix": f"start Alembic (it must answer on {ALEMBIC_URL}, or set ALEMBIC_URL)"})
 
     # gws is default stack (rule gws.md), but a project that never touches
     # Google Workspace must still boot: report it, never block on it. Missing
@@ -1016,9 +1040,17 @@ def _collect_essential(root, version, checks):
     essential.append({
         "name": "gws", "kind": "tool", "status": "ok" if version else "unknown",
         "detail": version or "gws not on PATH (Google Workspace CLI)",
-        "blocking": False, "fix": "install gws (github.com/googleworkspace/cli), then gws auth login"})
+        "blocking": False, "short": "not on PATH", "fix_short": "install gws, then gws auth login",
+        "fix": "install gws (github.com/googleworkspace/cli), then gws auth login"})
 
     essential.append(_python_deps_entry(root))
+
+    # The autonomy floor refuses every tool call when jq is missing, so boot halts on it.
+    has_jq = shutil.which("jq") is not None
+    essential.append({
+        "name": "jq", "kind": "tool", "status": "ok" if has_jq else "fail",
+        "detail": "jq on PATH" if has_jq else "jq not on PATH (the autonomy floor needs it)",
+        "blocking": True, "fix": "install jq (brew install jq / apt install jq)"})
 
     rc, _out = _run(["gh", "auth", "status"], cwd=root, timeout=NETWORK_TIMEOUT_SECONDS)
     essential.append({
@@ -1027,9 +1059,9 @@ def _collect_essential(root, version, checks):
         "blocking": True, "fix": "gh auth login"})
 
     for item in essential:
-        if item["status"] == "fail":
+        if item["status"] in ("fail", "warn"):
             checks.append(_check(
-                f"essential.{item['name'].lower()}", "essential", "fail",
+                f"essential.{item['name'].lower()}", "essential", item["status"],
                 f"{item['name']}: {item['detail']}", item["blocking"], item["fix"],
                 basis="executed"))
     return essential
@@ -1049,7 +1081,7 @@ def _write_stack_cache(root, cache):
         path.parent.mkdir(parents=True, exist_ok=True)
         descriptor, temp_name = tempfile.mkstemp(
             prefix=".stack_probes.", suffix=".tmp", dir=str(path.parent))
-        handle = os.fdopen(descriptor, "w")
+        handle = os.fdopen(descriptor, "w", encoding="utf-8")
         handle.write(json.dumps(cache, indent=2) + "\n")
         handle.close()
         handle = None
@@ -1655,6 +1687,45 @@ def _line_services(label, entries):
     return f"{label}: " + " · ".join(rendered)
 
 
+def _essential_lines(entries):
+    """One line per essential that needs attention: name, state, fix command.
+
+    Healthy essentials (and the informational update check) collapse into one
+    line, so a degraded boot stays inside the token budget."""
+    if not entries:
+        return ["ESSENTIAL: (none declared)"]
+    healthy, lines, degraded = [], [], []
+    for entry in entries:
+        status = entry.get("status")
+        if status == "ok" or entry.get("kind") == "update":
+            healthy.append(str(entry.get("name")))
+        elif entry.get("blocking"):
+            state = GLYPH.get(status) or str(entry.get("detail"))
+            fix = f" - fix: {entry['fix']}" if entry.get("fix") else ""
+            lines.append(f"{entry.get('name')} {state}{fix}")
+        else:
+            degraded.append(entry)
+    lines.extend(_degraded_lines(degraded))
+    if healthy:
+        lines.insert(0, "ESSENTIAL ok: " + " · ".join(healthy))
+    return lines
+
+
+def _degraded_lines(degraded):
+    """`<check>: <short reason> — fix: <command>` per degraded essential, overflow folded."""
+    lines = []
+    for entry in degraded[:COMPACT_MAX_DEGRADED_LINES]:
+        reason = entry.get("short") or str(entry.get("detail"))
+        fix = entry.get("fix_short") or entry.get("fix")
+        lines.append(f"{entry.get('name')}: {reason}" + (f" — fix: {fix}" if fix else ""))
+    overflow = degraded[COMPACT_MAX_DEGRADED_LINES:]
+    if overflow:
+        lines.append(f"+{len(overflow)} more degraded: "
+                     + ", ".join(str(e.get("name")) for e in overflow)
+                     + " — run python3 execution/boot_panel.py --format report")
+    return lines
+
+
 def _line_mission(doc):
     mission, aut = doc.get("mission") or {}, doc.get("autonomy") or {}
     decided = "decided" if aut.get("decided") else "UNDECIDED"
@@ -1677,14 +1748,13 @@ def render_compact(doc):
         f"{_id(workspace.get('project_role'))} · archetype "
         f"{_id(workspace.get('archetype'))} · onboarding "
         f"{'complete' if workspace.get('onboarding_complete') else 'INCOMPLETE'}",
-        f"counts_scope: {_s(doc.get('counts_scope'))}",
         _line_git(doc.get("git") or {}),
         f"quota: used {_s(quota.get('used_pct'))}% · available "
         f"{_s(quota.get('available_pct'))}% · resets_in {_s(quota.get('resets_in'))} · band "
         f"{_s(quota.get('band'))}",
         _line_context(doc.get("context") or {}),
         _line_delivery(doc.get("delivery") or {}),
-        _line_services("ESSENTIAL", doc.get("essential") or []),
+        *_essential_lines(doc.get("essential") or []),
         _line_services("TECH STACK", doc.get("tech_stack") or []),
         _line_mission(doc),
         "backlog: " + (" · ".join((doc.get("backlog") or {}).get("top") or []) or "(empty)"),
@@ -1722,10 +1792,14 @@ def _render_verdict(doc):
         if len(reasons) > COMPACT_MAX_FAIL_LINES:
             lines.append(f"  … and {len(reasons) - COMPACT_MAX_FAIL_LINES} more "
                          "blocking check(s)")
-    for check in warns[:COMPACT_MAX_WARN_LINES]:
-        lines.append(f"  {GLYPH['warn']} {check.get('id')}: {check.get('detail')}")
-    if len(warns) > COMPACT_MAX_WARN_LINES:
-        lines.append(f"  … and {len(warns) - COMPACT_MAX_WARN_LINES} more warning(s)")
+    essential_names = [str(e.get("name")).lower() for e in doc.get("essential") or []]
+    shown = [c for c in warns
+             if not any(n in str(c.get("id")).lower() for n in essential_names)]
+    for check in shown[:COMPACT_MAX_WARN_LINES]:
+        fix = f" — fix: {check['fix']}" if check.get("fix") else ""
+        lines.append(f"  {GLYPH['warn']} {check.get('id')}: {check.get('detail')}{fix}")
+    if len(shown) > COMPACT_MAX_WARN_LINES:
+        lines.append(f"  … and {len(shown) - COMPACT_MAX_WARN_LINES} more warning(s)")
     if problems:
         lines.append(f"{GLYPH['fail']} DOCUMENT INCONSISTENT — this panel cannot be "
                      "trusted: " + "; ".join(problems))
@@ -1923,7 +1997,7 @@ def write_marker(root, doc):
         path.parent.mkdir(parents=True, exist_ok=True)
         descriptor, temp_name = tempfile.mkstemp(
             prefix=".boot_panel.", suffix=".tmp", dir=str(path.parent))
-        handle = os.fdopen(descriptor, "w")
+        handle = os.fdopen(descriptor, "w", encoding="utf-8")
         handle.write(json.dumps(marker, indent=2) + "\n")
         handle.close()
         handle = None
@@ -2056,4 +2130,9 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
+    for _stream in (sys.stdout, sys.stderr):
+        try:
+            _stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
     sys.exit(main())

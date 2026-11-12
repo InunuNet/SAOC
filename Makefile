@@ -11,7 +11,7 @@ VERSION := $(shell cat .agent/version 2>/dev/null || echo "UNKNOWN")
 # `make directives`. Without this target the published channel cannot be
 # confirmed as specified.
 
-.PHONY: help sync-clones sync-agents sync-skills sync-rules check test commit mission-new mission-status update-template sync bump-version pulse-status backlog-trim onboard directives audit boot-report
+.PHONY: help sync-clones sync-agents sync-skills sync-rules check test commit mission-new mission-status update-template sync bump-version pulse-status backlog-trim onboard directives audit boot-report gate-all
 
 help:
 	@echo "🏭 Athanor v$(VERSION)"
@@ -19,6 +19,7 @@ help:
 	@echo "  make check           Fast pre-flight: syntax + lint (changed files),"
 	@echo "                       unit tests, and the touched spec's contract gate."
 	@echo "  make test            Full validation suite (stress + 3-layer factory)."
+	@echo "  make gate-all        Re-run every spec's Phase 4 gate (JOBS=N; harness checkout only)."
 	@echo "  make sync            Sync agents, skills, rules, and clones → providers."
 	@echo "  make sync-clones     Regenerate the generated clone files only (FORCE=1 to overwrite)."
 	@echo "  make commit          Semantic commit (TYPE=feat MSG='...')."
@@ -185,3 +186,9 @@ audit:
 	@bash execution/validate_manifest.sh || (echo "  FAIL: manifest coverage gaps found" && exit 1)
 	@echo "  OK: manifest coverage complete"
 	@python3 execution/audit_gates.py
+
+# Restored 2026-11-07: CLAUDE.md and docs/harness/GATE_SWEEP.md name this target, and
+# it existed only in Makefile.archive. gate_sweep.py ships with the harness checkout only.
+gate-all:
+	@[ -f execution/gate_sweep.py ] || { echo "gate-all: execution/gate_sweep.py is not here (it ships with the Athanor harness checkout only)"; exit 1; }
+	@python3 execution/gate_sweep.py --jobs $(or $(JOBS),1)

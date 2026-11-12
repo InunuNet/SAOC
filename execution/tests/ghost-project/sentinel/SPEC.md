@@ -133,6 +133,6 @@ The validation contract will grep SPEC.md for these strings before allowing Phas
 ---
 
 ## External Dependencies
-- **stdlib only**: `argparse`, `json`, `os`, `hashlib`, `time`, `tempfile`, `jsonschema`
-- jsonschema must be available (`pip install jsonschema` if missing)
+- **stdlib only**: `argparse`, `json`, `os`, `hashlib`, `time`, `tempfile`; `jsonschema` is optional
+- jsonschema is optional: when absent, a hand-rolled check mirroring `schema.json` gives the same exit codes (`pip install jsonschema` to use the package)
 - No click, typer, requests, or other frameworks

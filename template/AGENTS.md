@@ -34,14 +34,6 @@ cat WORKSPACE 2>/dev/null || echo "MISSING — run bash init.sh"
 python3 -c "import json; p=json.load(open('.agent/profile.json')); print('Project:', p.get('project_name','UNKNOWN'), '| Harness:', p.get('harness_name','UNKNOWN'), '| Onboarded:', p.get('onboarding_complete'))"
 ```
 
-### 0.1 Session start (once onboarding is complete)
-
-1. Run `python3 execution/brain.py last-session --quiet`
-2. Read `.agent/memory/project/goals.md`
-3. Consult `.agent/memory/project/learned.md` by `tail -n 60` and, on demand, `grep -n -i <topic>` or `brain.py recall` (never read it whole; it can run to hundreds of KB)
-4. Check for an active mission: `python3 execution/mission.py resume` — if a mission is active, follow its current checkpoint
-5. If no active mission AND `.agent/memory/project/backlog.md` exists, scan the mission queue (the backlog is the mission queue — pull from it only when no mission is active)
-
 ## 1. Identity
 
 <!-- IDENTITY:BEGIN — rewritten by execution/onboard_fill.py; do not edit by hand -->
@@ -52,93 +44,68 @@ python3 -c "import json; p=json.load(open('.agent/profile.json')); print('Projec
 Your persona and domain expertise are defined in `.agent/identity/soul.md`.
 Your user's preferences are in `.agent/identity/user.md`.
 
-## 2. Memory System (never write to provider-specific global paths)
+Codex CLI, OpenCode, Antigravity and Grok read this file as AGENTS.md and get no boot hook: on
+your first turn run `bash execution/hooks/full_boot.sh` and read its output. Claude Code also
+loads the path-scoped files in `.claude/rules/` when you touch a matching file; the others read
+`.agent/rules/_core/` on demand.
 
-```bash
-python3 execution/brain.py remember --summary "what happened" --tags "relevant,tags"
-python3 execution/brain.py recall "search query" --n 5
-python3 execution/brain.py wrap-up --summary "session summary" --tags "tags"
-python3 execution/brain.py last-session
-python3 execution/brain.py scan-blockers
-```
+## 2. Memory: read on demand, never whole
 
-Memory lives in this project's `.agent/memory/` and brain, never in a provider-specific location: learnings in `learned.md`, summaries via `brain.py wrap-up`, working notes in `.agent/memory/scratch/`, goals and backlog in `.agent/memory/project/*.md`.
+Memory lives in this project's `.agent/memory/` and the brain, never in a provider-specific
+location. None of it is loaded at session start.
+- `project/goals.md`, `project/backlog.md` (the mission queue, pulled only when no mission is
+  active), `project/rules.md` (project rules, they take precedence): read when the task needs
+  them.
+- `project/learned.md` is large: `tail -n 60`, then `grep -n -i <topic>` or
+  `python3 execution/brain.py recall "<query>" --n 5`. Never read it whole.
+- Working notes go in `.agent/memory/scratch/`. Store each distinct topic, decision and root
+  cause as its own tagged `brain.py remember --summary ... --tags ...`; run `brain.py wrap-up`
+  once at session end.
 
-**Non-Claude providers (Codex, OpenCode, Antigravity, Grok): read every file in `.agent/rules/_core/` before substantive work.** Claude Code loads them natively.
+## 3. Hard rules
 
-## 3. Rules
+1. **Scope**: nothing outside this project folder is read, written or modified without permission
+   asked and granted first. The one standing exception is appending a finding to another
+   project's root `comms.md`. Blocked at the boundary: stop, name the path and operation, ask.
+2. **Security**: confirm before `rm -rf` on a broad path, `git push --force`, `chmod 777`,
+   `curl | sh`. Never read `~/.ssh`, `~/.aws/credentials`, `~/.gnupg` or another project's
+   `.env`. Never commit a `.env`, log a credential, or put one in source; use
+   `python3 execution/env_keys.py`.
+3. **Sandbox**: scratch work goes in `.tmp/sandbox/<purpose>/`, never `/tmp` or a bare `mktemp`.
+   Never `cd`: use relative paths inside the project, absolute only outside it. Never put a
+   variable in an `rm` argument; use `python3 execution/safe_delete.py`. Quote every glob.
+4. **Chain Continuous**: never pause between chain steps; stop only at a mission boundary or a
+   BLOCKED verdict.
+5. **Context-Lean**: about 100k tokens working context per session, 300k hard ceiling. The
+   orchestrator never does grunt work, each spawned agent gets ONE narrow self-contained
+   mission, and on-disk scratch/specs/memory is the transfer channel. Agents reply in at most 10
+   lines and the lead reads scratch results head/tail capped, never the whole file
+   ([detail](docs/harness/CONTEXT_LEAN_ORCHESTRATION.md)).
+6. **Native first, real code, least tokens**: platform features before custom code, no
+   placeholders, BLUF and bullets. Writers serial, readers parallel: one writer per feature.
+7. **Self-anneal**: error, fix, record the lesson in `learned.md`.
+8. **Harness updates are mandatory**: Brad improves Athanor so every project works better, and
+   each harness release is his direct instruction to update. When boot, a directive or Athanor
+   reports a newer harness, commit in-flight work, run `make update-template`, commit the result
+   and restart when convenient. Never ask Brad first; your `settings.local.json` overrides stay
+   yours (Brad 2026-11-11).
 
-1. **Writers Serial, Readers Parallel** — run analyst/architect/grep/recall concurrently; run only one writer (dev, designer, docs, maintainer) at a time per feature to avoid conflicts and duplicated work
-2. **Native First** — use platform features before custom code
-3. **Least Tokens** — BLUF. Bullets over prose.
-4. **No Placeholders** — write real implementations
-5. **Read Before Write** — check goals.md first; consult learned.md by tail/recall/grep, never whole
-6. **Self-Anneal** — error → fix → update learned.md
-7. **Wrap Up** — store summary in brain at session end
-8. **Chain Continuous** — never pause between chain steps; stop only at mission boundaries or a BLOCKED verdict (see `workflow.md`)
-9. **Google Workspace = the `gws` CLI** — skills `gws-*`, rule `gws.md`; never the claude.ai Google MCP connectors
+## 4. Workflow
 
-Project-specific rules in `.agent/memory/project/rules.md` take precedence over these.
+**Mission = goal = purpose**: the outcome the work is for. A green gate whose goal state is not
+true is a failed mission, so every assertion tests the outcome itself, executed, never a proxy.
 
-## 4. Agents
+Classify every request before substantive work, then run the lean lane: contract + dev + gate,
+with docs inline in the commit and the maintainer step one `brain.py remember`. @architect only
+when the feature declares a design decision; cross-model @qa only when blast radius says so
+(credentials, floor-protected files, hooks, production config). Classification is by blast
+radius, not file count. Decision tree, draft lane and cross-model QA rule:
+`.agent/rules/_core/workflow.md`. DONE = the goal is verifiably true, docs verified, brain
+wrapped. `contract.py gate` runs the current spec's assertions only; read
+[docs/harness/GATE_SWEEP.md](docs/harness/GATE_SWEEP.md) before `make gate-all`.
 
-8 canonical agents in `.agent/agents/` (`make sync` generates platform configs): **lead** plans and delegates, never writes code; **dev** implements; **designer** UI/UX, never implements; **analyst** read-only research; **architect** decisions, not code; **qa** testing and review; **docs** documentation; **maintainer** memory and backlog.
+## 5. Reference
 
-## 5. Workflows
-
-Classify every request before substantive work, then run the fixed chain: spec/mission → @architect → @dev → @qa → @docs → `contract.py gate` → @maintainer → commit. Classification is by blast radius (credentials, production config, shared/enforcement files, design decisions → `/spec` first), not file count. Full rules: `.agent/rules/_core/workflow.md`.
-
-Name every Agent-tool dispatch with `python3 execution/dispatch_name.py` (rule `dispatch-naming.md`). Handoffs between agents are gated by `execution/handoff_check.py` against `.agent/handoffs.yaml`.
-
-## 6. Harness commands
-
-The machinery below is provided by the {{HARNESS_NAME}} harness (`harness_name` in
-`.agent/profile.json`); the harness is not this project. Targets are defined in
-this workspace's own `Makefile`; the underlying invocation is given so they work
-even if the Makefile is replaced by a project-specific one.
-
-| Task | Make target | Underlying invocation |
-|------|-------------|-----------------------|
-| List available targets | `make help` | — |
-| Sync agents/skills/rules to provider configs | `make sync` | `bash execution/sync_agents.sh`, `bash execution/sync_skills.sh`, `bash execution/sync_rules.sh` |
-| Regenerate CLAUDE.md from AGENTS.md | `make sync-clones` | `python3 execution/paired_copies.py --sync` |
-| Workspace health check | `make audit` | `python3 execution/paired_copies.py --check` |
-| List harness directives addressed to this project | `make directives` | `python3 execution/directives.py list` |
-| Print the compact boot panel | `make boot-report` | `python3 execution/boot_panel.py --format report` |
-| Run the validation suite | `make test` | — |
-| Onboard this project | `make onboard` | see `.agent/skills/onboard.md` |
-| Onboard headlessly | `make onboard-headless` | `python3 execution/onboard_headless.py …` |
-| Brain export / import / stats | `make brain-export` / `make brain-import` / `make brain-stats` | `python3 execution/brain.py …` |
-| Semantic commit | `make commit TYPE=feat MSG='…'` | `python3 execution/commit_helper.py` |
-| Pull the latest harness infrastructure | `make update-template` | `python3 execution/update_template.py --apply` |
-
-## 7. Service Mapping
-
-Alembic (URL distilling): [https://github.com/InunuNet/Alembic](https://github.com/InunuNet/Alembic)
-
-gws (Google Workspace CLI): [https://github.com/googleworkspace/cli](https://github.com/googleworkspace/cli)
-
-🛡️ **Alembic Active:** Use `@search` for web queries.
-
-## 8. Provider Notes
-
-### Claude Code
-- Hooks in `.claude/settings.json`; agents `.claude/agents/`, skills `.claude/skills/`, rules `.claude/rules/`
-- Continue: `claude -c` | Headless: `claude -p "prompt"`
-
-### OpenCode
-- Reads this file natively as AGENTS.md; no hook system, run `/boot` and `/wrap-up` manually
-- Headless: `opencode run "prompt"`
-
-### Antigravity
-- Reads this file natively as AGENTS.md
-- Subagents are NOT auto-discovered; register them at session start using the manifest:
-  1. Read `.anti/agents.json` (auto-generated by `make sync-agents`)
-  2. For each entry, call the `define_subagent` **LLM tool** with `name`, `description`, `system_prompt`
-- Regenerate the manifest after editing `.agent/agents/*.md`: `make sync-agents`
-- Dispatch via `invoke_subagent(TypeName, Prompt)` once agents are registered
-- Continue: `agy -c` | Headless: `agy -p "prompt"`
-
-### Grok CLI
-- Reads this file natively as AGENTS.md
-- No hook output reaches you: on your first turn run `bash execution/hooks/full_boot.sh` and read its output before any substantive work.
+Agent roster, harness commands, service mapping (Alembic, gws) and per-provider notes:
+[docs/harness/AGENT_REFERENCE.md](docs/harness/AGENT_REFERENCE.md). Web fetches go through
+Alembic and Google Workspace through `gws`; both have scoped rules and skills.

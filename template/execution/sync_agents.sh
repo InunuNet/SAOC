@@ -17,6 +17,9 @@
 # Never overwrites an existing provider agent file — those are authoritative.
 
 set -euo pipefail
+# Windows: every child python reads, writes and prints UTF-8 (a cp1252 console cannot
+# print the check marks; scaffold failed 0/6 without this, Athanor Win 2026-11-07).
+export PYTHONUTF8=1
 
 CANONICAL_DIR=".agent/agents"
 PROVIDERS_DIR=".agent/providers"
@@ -28,7 +31,7 @@ fi
 
 # Enumerate "<provider>\t<value>" for every provider declaring the given key.
 enumerate_key() {
-  python3 - "$PROVIDERS_DIR" "$1" <<'PYEOF'
+  python3 - "$PROVIDERS_DIR" "$1" <<'PYEOF' | tr -d '\r'
 import json
 import pathlib
 import sys
@@ -37,7 +40,7 @@ providers_dir = pathlib.Path(sys.argv[1])
 key = sys.argv[2]
 for path in sorted(providers_dir.glob("*.json")):
     try:
-        cfg = json.loads(path.read_text())
+        cfg = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         continue
     if not isinstance(cfg, dict):
@@ -199,7 +202,7 @@ import sys
 path = sys.argv[1]
 provider = None
 name = None
-with open(path) as f:
+with open(path, encoding="utf-8") as f:
     for line in f:
         stripped = line.strip()
         if stripped.startswith('- provider:'):
@@ -351,7 +354,7 @@ agents_dir = pathlib.Path('.agent/agents')
 result = []
 for md_file in sorted(agents_dir.glob('*.md')):
     name = md_file.stem
-    content = md_file.read_text()
+    content = md_file.read_text(encoding="utf-8")
     # Strip YAML frontmatter (between first and second --- delimiters)
     if content.startswith('---'):
         parts = content.split('---', 2)
@@ -373,8 +376,8 @@ if short:
 # Atomic write — tempfile + rename so a failed run never leaves stale JSON
 target.parent.mkdir(parents=True, exist_ok=True)
 tmp = target.with_suffix('.json.tmp')
-tmp.write_text(json.dumps(result, indent=2))
-tmp.rename(target)
+tmp.write_text(json.dumps(result, indent=2), encoding="utf-8")
+tmp.replace(target)
 
 print(f'✅ sync-agents: {target} ({len(result)} agents)')
 PYEOF
@@ -408,7 +411,7 @@ providers_dir, provider, toml_dir = sys.argv[1], sys.argv[2], pathlib.Path(sys.a
 cfg = {}
 for path in sorted(pathlib.Path(providers_dir).glob('*.json')):
     try:
-        candidate = json.loads(path.read_text())
+        candidate = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         continue  # same tolerance as enumerate_key: one bad file never aborts sync
     if isinstance(candidate, dict) and candidate.get('provider', path.stem) == provider:
@@ -432,7 +435,7 @@ for md_file in sorted(pathlib.Path('.agent/agents').glob('*.md')):
     name = md_file.stem
     if roles.get(name, {}).get('supported') is False:
         continue
-    content = md_file.read_text()
+    content = md_file.read_text(encoding="utf-8")
     parts = content.split('---', 2) if content.startswith('---') else []
     front, body = (parts[1], parts[2].lstrip('\n')) if len(parts) == 3 else ('', content)
     m = re.search(r'^model_tier:\s*(\S+)', front, re.M)
@@ -464,11 +467,11 @@ for md_file in sorted(pathlib.Path('.agent/agents').glob('*.md')):
     if qa_role:
         # claude -p must reach the Anthropic API from inside the Codex sandbox.
         lines += ['', '[sandbox_workspace_write]', 'network_access = true']
-    (toml_dir / f'{name}.toml').write_text('\n'.join(lines) + '\n')
+    (toml_dir / f'{name}.toml').write_text('\n'.join(lines) + '\n', encoding='utf-8')
     written.append(name)
 
 for stale in toml_dir.glob('*.toml'):
-    if stale.stem not in written and stale.read_text().startswith(GENERATED):
+    if stale.stem not in written and stale.read_text(encoding="utf-8").startswith(GENERATED):
         stale.unlink()
 print(f'✅ sync-agents: {toml_dir} ({len(written)} agents)')
 PYEOF

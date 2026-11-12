@@ -435,6 +435,21 @@ def step_git(answers, root, name):
              "actually configured.\n" % applied.returncode)
 
 
+def voice_note(root):
+    """NOTE. Voice is chosen per project; say how, so the operator picks one at first boot."""
+    try:
+        import voice_say
+    except ImportError:
+        return
+    folder = os.path.basename(os.path.abspath(root))
+    emit("\nVoice: this project can speak gate-green and needs-input notices aloud "
+         "(docs/harness/voice.md). Without a choice it uses %s. To choose, audition one with\n"
+         "  python3 execution/voice_say.py --voice NAME --text \"%s here, testing my voice.\"\n"
+         "then tell your agent which one to keep; it records it under \"%s\" in "
+         "~/.athanor/voice/voices.json.\nVoices: %s\n"
+         % (voice_say.hash_voice(folder), folder, folder, ", ".join(voice_say.POOL)))
+
+
 def step_panel(root):
     """ACT. The shipped panel's own bytes, and the last bytes of the run."""
     marker("panel")
@@ -494,6 +509,7 @@ def cmd_run(args):
         step_quarantine(root)
         step_write_identity(root, identity, mission, scale, stack, user_profile)
         step_git(answers, root, identity["project"])
+        voice_note(root)
         step_panel(root)
     except Refusal as exc:
         sys.stderr.write(

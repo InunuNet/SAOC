@@ -99,6 +99,11 @@
           },
           {
             "type": "command",
+            "command": "[ -f execution/voice_say.py ] || exit 0; python3 execution/voice_say.py --hook --event prompt >/dev/null 2>&1 || exit 0",
+            "timeout": 5
+          },
+          {
+            "type": "command",
             "command": "[ -f execution/timesheet.py ] || exit 0; python3 execution/timesheet.py hook || exit 0",
             "timeout": 5
           }
@@ -142,6 +147,22 @@
             "type": "command",
             "command": "[ -f execution/hooks/permission_gate.sh ] || exit 0; bash execution/hooks/permission_gate.sh notify",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "[ -f execution/voice_say.py ] || exit 0; (python3 execution/voice_say.py --hook --event input-needed </dev/null >/dev/null 2>&1 &)",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/lib/autocompact_decider.py ] || exit 0; python3 execution/hooks/lib/autocompact_decider.py end >/dev/null 2>&1 || true",
+            "timeout": 15
           }
         ]
       }
@@ -171,7 +192,7 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Bash|Edit|Write",
+        "matcher": "Bash|Edit|Write|Agent|Task",
         "hooks": [
           {
             "type": "command",
@@ -190,9 +211,11 @@
       }
     ]
   },
+  "autoCompactWindow": 235000,
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
-    "BASH_DEFAULT_TIMEOUT_MS": "300000"
+    "BASH_DEFAULT_TIMEOUT_MS": "300000",
+    "PYTHONUTF8": "1"
   },
   "sandbox": {
     "enabled": false,

@@ -36,6 +36,10 @@ from typing import NamedTuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from pydeps import require  # noqa: E402
+_EXEC_DIR = os.path.dirname(os.path.abspath(__file__))
+if _EXEC_DIR not in sys.path:
+    sys.path.insert(0, _EXEC_DIR)
+from bash_exe import bash_exe  # noqa: E402  Windows: Git Bash, never System32 WSL
 
 require("yaml")
 
@@ -59,6 +63,11 @@ SUGGESTED_COMPACT_PCT = 45
 
 LOCK_DEADLINE_SECONDS = 120
 LOCK_POLL_SECONDS = 0.05
+
+
+def _utf8_env():
+    """Environment for a python child: it prints UTF-8, matching how we decode it."""
+    return dict(os.environ, PYTHONUTF8="1")
 
 
 def _lock_fd(fd, blocking=True, label="lock"):
@@ -167,7 +176,7 @@ def parse_mission_file(path: str) -> tuple[dict, str]:
     if not p.exists():
         print(f"ERROR: mission file not found: {path}", file=sys.stderr)
         sys.exit(1)
-    content = p.read_text()
+    content = p.read_text(encoding="utf-8")
     if not content.startswith("---"):
         print(f"ERROR: {path} has no YAML frontmatter", file=sys.stderr)
         sys.exit(1)
@@ -219,7 +228,7 @@ def write_mission_file(path: str, fm: dict, body: str):
     """Atomically write mission file."""
     content = _dump_frontmatter(fm) + "\n" + body.lstrip("\n")
     tmp = path + ".tmp"
-    Path(tmp).write_text(content)
+    Path(tmp).write_text(content, encoding="utf-8")
     os.replace(tmp, path)
 
 
@@ -231,7 +240,7 @@ def read_active() -> dict | None:
     if not ACTIVE_JSON.exists():
         return None
     try:
-        return json.loads(ACTIVE_JSON.read_text())
+        return json.loads(ACTIVE_JSON.read_text(encoding="utf-8"))
     except Exception:
         return None
 
@@ -314,7 +323,7 @@ def write_active(mission_path: str, checkpoint: dict | None = None):
     }
     _inherit_workspace_autonomy(data)
     tmp = str(ACTIVE_JSON) + ".tmp"
-    Path(tmp).write_text(json.dumps(data, indent=2))
+    Path(tmp).write_text(json.dumps(data, indent=2), encoding="utf-8")
     os.replace(tmp, str(ACTIVE_JSON))
 
 
@@ -336,7 +345,7 @@ def clear_active(mission_path: str | None = None):
         return False
     if mission_path is not None:
         try:
-            active = json.loads(ACTIVE_JSON.read_text())
+            active = json.loads(ACTIVE_JSON.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError) as e:
             print(
                 f"WARNING: active.json exists but is corrupted ({e}) -- "
@@ -375,7 +384,7 @@ def emit_compaction_hint(trigger: str, reason: str) -> None:
                "suggested_override_pct": SUGGESTED_COMPACT_PCT, "ts": now_iso()}
     try:
         COMPACTION_HINT_FILE.parent.mkdir(parents=True, exist_ok=True)
-        COMPACTION_HINT_FILE.write_text(json.dumps(payload))
+        COMPACTION_HINT_FILE.write_text(json.dumps(payload), encoding="utf-8")
     except Exception:
         pass
     print("COMPACTION_HINT: " + json.dumps(payload))
@@ -392,6 +401,23 @@ def arm_autocompact(slug: str, mission_file) -> None:
         spec.loader.exec_module(decider)
         decider.write_arm_flag(slug, mission_file)
     except Exception:
+        pass
+
+
+CONTEXT_AUDIT = Path(__file__).resolve().parent / "context_audit.py"
+CONTEXT_AUDIT_TIMEOUT_SECONDS = 30
+
+
+def run_context_triage_tick() -> None:
+    """Count this close-out for the 7th-close-out context triage. Never raises."""
+    try:
+        result = subprocess.run([sys.executable, str(CONTEXT_AUDIT), "tick"],
+                                capture_output=True, text=True,
+                                timeout=CONTEXT_AUDIT_TIMEOUT_SECONDS,
+                                encoding="utf-8", errors="replace", env=_utf8_env())
+        if result.stdout:
+            print(result.stdout, end="")
+    except (OSError, subprocess.SubprocessError):
         pass
 
 
@@ -423,8 +449,62 @@ def _slug_looks_like_injection(slug: str) -> bool:
 TERMINAL_MISSION_STATUS = {"done", "abandoned"}
 
 
+ACCEPTANCE_LAST_JSON = Path(".agent/memory/project/telemetry/fleet_acceptance_last.json")
+ACCEPTANCE_TOTAL_STEPS = 6
+LEAN_HARNESS_SLUG = "lean-harness"
+FREEZE_RULE = (
+    "REFUSED: CLAUDE.md section 8, Athanor is maintenance-only: harness work needs a blocked "
+    "downstream project or a red `python3 execution/fleet_acceptance.py`.",
+    "Pass --blocked-by <PROJECT> --reason <TEXT>, or --operator-override \"<operator words>\".",
+)
+
+
+def _is_harness_checkout() -> bool:
+    try:
+        workspace = Path("WORKSPACE").read_text(encoding="utf-8").strip()
+        harness = json.loads(PROFILE_JSON.read_text(encoding="utf-8")).get("harness_name")
+    except (OSError, ValueError):
+        return False
+    return bool(harness) and workspace == harness
+
+
+def _acceptance_is_red() -> bool:
+    try:
+        passed = json.loads(ACCEPTANCE_LAST_JSON.read_text(encoding="utf-8")).get("passed")
+    except (OSError, ValueError):
+        return False
+    return isinstance(passed, int) and passed < ACCEPTANCE_TOTAL_STEPS
+
+
+def _lean_harness_open() -> bool:
+    active = read_active()
+    path = Path(active["mission"]) if active and active.get("mission") else None
+    if not path or not path.exists():
+        return False
+    try:
+        fm, _ = parse_mission_file(str(path))
+    except SystemExit:
+        return False
+    return fm.get("slug") == LEAN_HARNESS_SLUG and fm.get("status") not in TERMINAL_MISSION_STATUS
+
+
+def _enforce_self_work_freeze(args) -> None:
+    if not _is_harness_checkout():
+        return
+    if getattr(args, "blocked_by", None) and getattr(args, "reason", None):
+        return
+    if (getattr(args, "operator_override", None) or "").strip():
+        return
+    if _acceptance_is_red() or _lean_harness_open():
+        return
+    for line in FREEZE_RULE:
+        print(line, file=sys.stderr)
+    sys.exit(1)
+
+
 def cmd_new(args):
     MISSIONS_DIR.mkdir(parents=True, exist_ok=True)
+    _enforce_self_work_freeze(args)
 
     active = read_active()
     if active and active.get("mission"):
@@ -782,7 +862,8 @@ def _quota_admission_check() -> tuple[bool, dict]:
     if mirror_path:
         cmd += ["--mirror-path", mirror_path]
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10,
+            encoding="utf-8", errors="replace", env=_utf8_env())
         data = json.loads(result.stdout)
     except Exception:
         # quota.py missing, crashed, timed out, or emitted malformed JSON --
@@ -858,7 +939,7 @@ def _read_handoff_reasoning(handoff_path):
     if not handoff_path:
         return None
     try:
-        return json.loads(Path(handoff_path).read_text())
+        return json.loads(Path(handoff_path).read_text(encoding="utf-8"))
     except Exception:
         return None
 
@@ -927,6 +1008,8 @@ def _write_checkpoint_memory(slug: str, milestone_id, fid: str, old_status: str,
         result = subprocess.run(
             [sys.executable, str(_brain_py_path()), "remember", "--summary", summary, "--tags", tags],
             capture_output=True, text=True, timeout=_brain_timeout(),
+            encoding="utf-8", errors="replace",
+            env=_utf8_env(),
         )
         if result.returncode != 0:
             print(f"WARNING: checkpoint memory: brain.py remember exited "
@@ -976,7 +1059,7 @@ def _refresh_session_state(slug: str, milestone_id, fid: str, old_status: str,
         existing_entries: list[str] = []
         if path.exists():
             try:
-                raw = path.read_text()
+                raw = path.read_text(encoding="utf-8")
                 _, _, tail = raw.partition(SESSION_STATE_HEADER_MARK)
                 if tail:
                     existing_entries = [e for e in tail.split(SESSION_STATE_ENTRY_SEP) if e.strip()]
@@ -1007,7 +1090,7 @@ def _refresh_session_state(slug: str, milestone_id, fid: str, old_status: str,
             prefix=path.name + ".", suffix=".tmp", dir=str(path.parent),
         )
         try:
-            with os.fdopen(fd, "w") as f:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
                 f.write(content)
             os.replace(tmp_path, str(path))
             tmp_path = None
@@ -1061,10 +1144,12 @@ def _contract_precondition_problems(fm: dict, feature: dict, root: Path) -> list
     result = subprocess.run(
         [sys.executable, str(Path(__file__).parent / "contract.py"), "validate", str(path)],
         capture_output=True, text=True,
+        encoding="utf-8", errors="replace",
+        env=_utf8_env(),
     )
     if result.returncode != 0:
         return [f"contract fails to validate: {contract}"]
-    data = _load_yaml().safe_load(path.read_text()) or {}
+    data = _load_yaml().safe_load(path.read_text(encoding="utf-8")) or {}
     goldens = data.get("goldens") or []
     if not goldens:
         return [f"contract {contract} lists no goldens"]
@@ -1204,6 +1289,7 @@ def cmd_checkpoint(args):
     _refresh_session_state(slug, milestone_id, fid, old_status, new_status, handoff_data, ts)
 
     if new_status == "done":
+        _write_benchmark(slug, feature, args)
         emit_compaction_hint("checkpoint", fid)
     print(f"Checkpoint: {fid} {old_status} → {new_status}")
 
@@ -1220,7 +1306,7 @@ def _read_touched_ledger(slug: str) -> dict:
     if not path.exists():
         return {"schema": TOUCHED_LEDGER_SCHEMA, "slug": slug, "pending_baselines": {}, "paths": []}
     try:
-        data = json.loads(path.read_text())
+        data = json.loads(path.read_text(encoding="utf-8"))
     except Exception:
         return {"schema": TOUCHED_LEDGER_SCHEMA, "slug": slug, "pending_baselines": {}, "paths": []}
     data.setdefault("schema", TOUCHED_LEDGER_SCHEMA)
@@ -1234,7 +1320,7 @@ def _write_touched_ledger(slug: str, ledger: dict) -> None:
     path = _touched_ledger_path(slug)
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = str(path) + ".tmp"
-    Path(tmp).write_text(json.dumps(ledger, indent=2) + "\n")
+    Path(tmp).write_text(json.dumps(ledger, indent=2) + "\n", encoding="utf-8")
     os.replace(tmp, str(path))
 
 
@@ -1253,6 +1339,7 @@ def _git_status_porcelain() -> list[str]:
         result = subprocess.run(
             ["git", "status", "--porcelain", "-z"],
             capture_output=True, text=True, check=True,
+            encoding="utf-8", errors="replace", env=_utf8_env(),
         )
     except Exception:
         return []
@@ -1307,6 +1394,65 @@ def _record_feature_completion(slug: str, fid: str) -> None:
     _write_touched_ledger(slug, ledger)
 
 
+BENCHMARK_PATH = Path(".agent/memory/project/telemetry/benchmark.jsonl")
+USAGE_PATH = Path(".agent/memory/project/telemetry/session_usage.jsonl")
+BENCHMARK_SCHEMA = "athanor.benchmark/v1"
+
+
+def _parse_iso(value) -> datetime | None:
+    try:
+        dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+
+
+def _usage_tokens(since: datetime | None) -> tuple:
+    """Sum input/output tokens logged at or after `since`; (None, None) when no data."""
+    tin = tout = None
+    try:
+        lines = USAGE_PATH.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return None, None
+    for line in lines:
+        try:
+            rec = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(rec, dict):
+            continue
+        when = _parse_iso(rec.get("ts"))
+        if since and (when is None or when < since):
+            continue
+        if "input_tokens" in rec or "output_tokens" in rec:
+            tin = (tin or 0) + int(rec.get("input_tokens") or 0)
+            tout = (tout or 0) + int(rec.get("output_tokens") or 0)
+    return tin, tout
+
+
+def _write_benchmark(slug: str, feature: dict, args) -> None:
+    """Append one provider-neutral benchmark line for a done feature. A write failure
+    warns on stderr and never fails the checkpoint."""
+    try:
+        started = _parse_iso(feature.get("started_at"))
+        wall = round((datetime.now(timezone.utc) - started).total_seconds()) if started else None
+        tin, tout = _usage_tokens(started)
+        record = {
+            "schema": BENCHMARK_SCHEMA, "ts": now_iso(), "mission": slug,
+            "feature": feature["id"],
+            "provider": args.provider or os.environ.get("ATHANOR_PROVIDER") or "unknown",
+            "model": args.model or os.environ.get("ATHANOR_MODEL") or "unknown",
+            "dispatches": args.dispatches, "qa_reruns": args.qa_reruns,
+            "gate": args.gate_result or "unrecorded", "wall_seconds": wall,
+            "tokens_in": tin, "tokens_out": tout,
+        }
+        BENCHMARK_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with BENCHMARK_PATH.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(record) + "\n")
+    except (OSError, ValueError, TypeError) as exc:
+        print(f"WARNING: benchmark: not recorded ({type(exc).__name__}: {exc})", file=sys.stderr)
+
+
 def _find_milestone_for_feature(fm: dict, fid: str) -> str | None:
     for m in fm.get("milestones", []):
         if fid in m.get("features", []):
@@ -1331,6 +1477,23 @@ def cmd_attach_spec(args):
 
     write_mission_file(args.mission, fm, body)
     print(f"Attached spec={args.spec} contract={args.contract} to {fid}")
+
+
+def announce_gate_green(slug):
+    """Start the voice speaker in the background; a gate pass must never wait on or fail for it."""
+    try:
+        execution = Path(__file__).resolve().parent
+        speaker = execution / "voice_say.py"
+        if not speaker.exists():
+            return
+        subprocess.Popen(
+            [sys.executable, str(speaker), "--hook", "--project-dir", str(execution.parent),
+             "--event", "gate-green", "--mission", str(slug or "")],
+            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    except Exception:  # the speaker is optional, the gate verdict is not
+        pass
 
 
 def cmd_gate(args):
@@ -1437,7 +1600,8 @@ def cmd_gate(args):
                    "--phase", phase, "--run-checks"]
             if args.allow_skips:
                 cmd.append("--allow-skips")
-            result = subprocess.run(cmd, capture_output=True, text=True)
+            result = subprocess.run(cmd, capture_output=True, text=True,
+                encoding="utf-8", errors="replace", env=_utf8_env())
             label = f"{fid}" if phase == "all" else f"{fid} phase {phase}"
             print(f"  {'PASS' if result.returncode == 0 else 'FAIL'} {label} (contract gate exit={result.returncode}):")
             for line in (result.stdout + result.stderr).strip().splitlines():
@@ -1474,6 +1638,7 @@ def cmd_gate(args):
         emit_compaction_hint("gate_pass", mid)
         unverified_note = f", {unverified} unverified (--allow-skips)" if unverified else ""
         print(f"\nPASS Milestone {mid} gate passed ({ran} ran, {skipped} skipped{unverified_note}).")
+        announce_gate_green(fm.get("slug"))
         if all_done:
             print(
                 "All milestones complete. Mission status → close_out. "
@@ -1516,6 +1681,8 @@ def _existing_contract_for_feature(fm: dict, fid: str,
         result = subprocess.run(
             [sys.executable, str(contract_script), "validate", str(contract_path)],
             capture_output=True, text=True,
+            encoding="utf-8", errors="replace",
+            env=_utf8_env(),
         )
         if result.returncode == 0:
             return ContractLookup(str(contract_path), None)
@@ -1531,6 +1698,8 @@ def _existing_contract_for_feature(fm: dict, fid: str,
     result = subprocess.run(
         [sys.executable, str(contract_script), "validate", str(shared_path)],
         capture_output=True, text=True,
+        encoding="utf-8", errors="replace",
+        env=_utf8_env(),
     )
     if result.returncode != 0:
         return ContractLookup(None, None)
@@ -1748,6 +1917,8 @@ def _secret_guard_preflight(mission_path: str) -> list[str]:
     dry_run = subprocess.run(
         ["python3", "execution/skills/lib/scoped_stage.py", "--mission", mission_path, "--dry-run"],
         capture_output=True, text=True,
+        encoding="utf-8", errors="replace",
+        env=_utf8_env(),
     )
     if dry_run.returncode != 0:
         raise RuntimeError(
@@ -1757,7 +1928,8 @@ def _secret_guard_preflight(mission_path: str) -> list[str]:
         )
     would_stage = {p for p in dry_run.stdout.splitlines() if p.strip()}
     already_staged = subprocess.run(
-        ["git", "diff", "--cached", "--name-only"], capture_output=True, text=True
+        ["git", "diff", "--cached", "--name-only"], capture_output=True, text=True,
+        encoding="utf-8", errors="replace", env=_utf8_env(),
     )
     already_staged_paths = {p for p in already_staged.stdout.splitlines() if p.strip()}
     paths = sorted(would_stage | already_staged_paths)
@@ -1768,6 +1940,8 @@ def _secret_guard_preflight(mission_path: str) -> list[str]:
         input="\n".join(paths),
         capture_output=True,
         text=True,
+        encoding="utf-8", errors="replace",
+        env=_utf8_env(),
     )
     if guard.returncode == 0:
         return []
@@ -1835,11 +2009,13 @@ def cmd_close_out(args):
     # shared remote -- pushing stays a deliberate, separately-run step.
     env = dict(os.environ)
     env["WRAP_NO_PUSH"] = "1"
+    env["PYTHONUTF8"] = "1"
     result = subprocess.run(
-        ["bash", "execution/skills/wrap_mission.sh", f"{slug}: {goal}", f"mission,{slug},complete"],
+        [bash_exe(), "execution/skills/wrap_mission.sh", f"{slug}: {goal}", f"mission,{slug},complete"],
         capture_output=True,
         text=True,
         env=env,
+        encoding="utf-8", errors="replace",
     )
     if result.returncode != 0:
         # Roll back the premature status write so an immediate retry passes
@@ -1856,6 +2032,7 @@ def cmd_close_out(args):
         sys.exit(1)
     emit_compaction_hint("close_out", slug)
     arm_autocompact(slug, args.mission)
+    run_context_triage_tick()
     print("DONE: mission closed. Commit now.")
 
 
@@ -1941,6 +2118,9 @@ def main():
     p_new.add_argument("--slug", help="Override auto-generated slug")
     p_new.add_argument("--force", action="store_true",
                         help="Override the unresolved-active-mission refusal (still warns)")
+    p_new.add_argument("--blocked-by", help="Downstream project blocked by the harness (needs --reason)")
+    p_new.add_argument("--reason", help="Why that project is blocked (needs --blocked-by)")
+    p_new.add_argument("--operator-override", help="Quoted operator words authorising harness work")
 
     # validate
     p_val = sub.add_parser("validate", help="Validate mission schema")
@@ -1967,6 +2147,11 @@ def main():
     p_cp.add_argument("--handoff", help="Path to handoff JSON file")
     p_cp.add_argument("--ignore-quota", action="store_true", default=False,
                        help="Bypass the quota admission check for this checkpoint")
+    p_cp.add_argument("--gate-result", default=None, help="Gate verdict for the benchmark line")
+    p_cp.add_argument("--dispatches", type=int, default=0, help="Agent dispatches this feature")
+    p_cp.add_argument("--qa-reruns", type=int, default=0, help="QA retries after a FAIL")
+    p_cp.add_argument("--provider", default=None, help="Provider (default $ATHANOR_PROVIDER)")
+    p_cp.add_argument("--model", default=None, help="Model (default $ATHANOR_MODEL)")
     p_cp.add_argument("--no-contract-reason", default=None,
                        help="Start a feature with no contract/goldens; recorded on the feature "
                             "(min 20 chars)")
@@ -2051,4 +2236,9 @@ def main():
 
 
 if __name__ == "__main__":
+    for _stream in (sys.stdout, sys.stderr):
+        try:
+            _stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
     main()

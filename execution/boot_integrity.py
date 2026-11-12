@@ -142,7 +142,15 @@ def build_parser():
     return parser
 
 
+def _tolerate_narrow_console():
+    """Keep the encoding but never raise UnicodeEncodeError (Windows cp1252)."""
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
+
 def main(argv=None):
+    _tolerate_narrow_console()
     args = build_parser().parse_args(argv)
     root = os.path.abspath(args.root)
     if not os.path.isdir(root):

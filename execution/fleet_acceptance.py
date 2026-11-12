@@ -25,6 +25,10 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+_EXEC_DIR = os.path.dirname(os.path.abspath(__file__))
+if _EXEC_DIR not in sys.path:
+    sys.path.insert(0, _EXEC_DIR)
+from bash_exe import bash_exe  # noqa: E402  Windows: Git Bash, never System32 WSL
 
 HARNESS_ROOT = Path(__file__).resolve().parent.parent
 SANDBOX_ROOT = HARNESS_ROOT / ".tmp" / "sandbox" / "fleet-acceptance"
@@ -42,7 +46,12 @@ WS = RUN_ROOT / WS_NAME
 # explicit timeout on every subprocess"). Checked between steps so a step that
 # cannot start within budget SKIPs with a named reason rather than starting
 # and then being killed mid-way.
-TOTAL_TIMEOUT_SECONDS = 300
+#
+# Raised 300 -> 450 on 2026-11-07: Git Bash on Windows forks slowly and init.sh
+# alone takes 88-93 s there, so the scaffold cap grew and the total grew with it
+# to leave the other five steps their room.
+TOTAL_TIMEOUT_SECONDS = 450
+SCAFFOLD_TIMEOUT_SECONDS = 240
 
 STEP_NAMES = {
     1: "scaffold",
@@ -97,6 +106,17 @@ class _TimedOut:
         self.stderr = stderr + f"\n[TIMEOUT after {timeout}s waiting for: {' '.join(cmd)}]"
 
 
+LAST_RESULT_REL = ".agent/memory/project/telemetry/fleet_acceptance_last.json"
+TOTAL_STEPS = 6
+
+
+def write_last_result(passed, path=None):
+    """Record the latest verdict where mission.py's self-work freeze reads it."""
+    target = Path(path) if path else HARNESS_ROOT / LAST_RESULT_REL
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps({"passed": passed, "total": TOTAL_STEPS}) + "\n")
+
+
 def run(cmd, cwd, timeout, verbose):
     if verbose:
         print(f"    $ {' '.join(cmd)}  (cwd={cwd})", file=sys.stderr)
@@ -133,10 +153,10 @@ def fail_reason(cmd, proc):
 def step_scaffold(verbose):
     RUN_ROOT.mkdir(parents=True, exist_ok=True)
     cmd = [
-        "bash", str(HARNESS_ROOT / "init.sh"),
+        bash_exe(), str(HARNESS_ROOT / "init.sh"),
         "--path", str(WS), "--name", WS_NAME, "--no-pulse",
     ]
-    proc = run(cmd, HARNESS_ROOT, 90, verbose)
+    proc = run(cmd, HARNESS_ROOT, SCAFFOLD_TIMEOUT_SECONDS, verbose)
     if proc.returncode != 0:
         return "FAIL", fail_reason(cmd, proc)
     profile_path = WS / ".agent" / "profile.json"
@@ -393,8 +413,9 @@ def step_idempotence(verbose, ctx):
     }
     before = {name: fn() for name, fn in targets.items()}
 
-    cmd = ["bash", str(HARNESS_ROOT / "init.sh"), "--path", str(WS), "--no-pulse"]
-    proc = run(cmd, HARNESS_ROOT, 90, verbose)
+    cmd = [bash_exe(), str(HARNESS_ROOT / "init.sh"), "--path", str(WS), "--no-pulse"]
+    # Same cap as the scaffold run: a Win11 ARM VM's init.sh takes ~94 s (Athanor Win 2026-11-07).
+    proc = run(cmd, HARNESS_ROOT, SCAFFOLD_TIMEOUT_SECONDS, verbose)
 
     after = {name: fn() for name, fn in targets.items()}
     changed = [name for name in targets if before[name] != after[name]]
@@ -455,7 +476,20 @@ STEPS = {
 }
 
 
+def _utf8_streams():
+    """Report glyphs from child output without a cp1252 console crash. Children are NOT
+    given PYTHONUTF8: their own encoding failures are what this test must expose."""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
+
 def main():
+    _utf8_streams()
+    # Children inherit this: an empty sandbox VOICE_HOME (no .enabled) keeps the throwaway project silent.
+    os.environ["VOICE_HOME"] = str(RUN_ROOT / "voice-off")
     parser = argparse.ArgumentParser(
         description="Fleet acceptance test — six steps in a throwaway scaffold; "
                     "exit 0 iff all six pass.",
@@ -491,6 +525,7 @@ def main():
         for n in (2, 3, 4, 5, 6):
             record(n, "SKIP", "sandbox could not be cleared before step 1")
         print("FLEET ACCEPTANCE: FAIL (0/6)")
+        write_last_result(0)
         sys.exit(1)
 
     try:
@@ -524,6 +559,7 @@ def main():
             print(f"WARNING: failed to clean up sandbox at {RUN_ROOT}: {exc!r}", file=sys.stderr)
 
     passed = sum(1 for _, s in results if s == "PASS")
+    write_last_result(passed)
     if passed == 6:
         print("FLEET ACCEPTANCE: PASS")
         sys.exit(0)

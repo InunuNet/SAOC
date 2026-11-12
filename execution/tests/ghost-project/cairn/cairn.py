@@ -68,7 +68,7 @@ def main():
     tmp_path = state_file + ".tmp"
     payload = json.dumps({"processed": merged, "version": 1},
                          sort_keys=True, separators=(",", ":")) + "\n"
-    with open(tmp_path, "w") as f:
+    with open(tmp_path, "w", newline="\n") as f:
         f.write(payload)
     os.replace(tmp_path, state_file)
 

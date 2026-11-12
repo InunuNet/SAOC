@@ -15,9 +15,52 @@ def load_schema():
         return json.load(f)
 
 
+def _validate_without_jsonschema(manifest):
+    """Hand-rolled check mirroring schema.json for hosts without the jsonschema package.
+
+    Returns an error message, or None when the manifest is valid.
+    """
+    if not isinstance(manifest, dict):
+        return "manifest is not an object"
+    extra = set(manifest) - {"packages"}
+    if extra:
+        return "Additional properties are not allowed (%s)" % ", ".join(sorted(repr(k) for k in extra))
+    if "packages" not in manifest:
+        return "'packages' is a required property"
+    packages = manifest["packages"]
+    if not isinstance(packages, dict):
+        return "'packages' is not an object"
+    for name, entry in packages.items():
+        if not isinstance(entry, dict):
+            return "package %r is not an object" % name
+        for key in ("deps", "version"):
+            if key not in entry:
+                return "%r is a required property" % key
+        extra = set(entry) - {"deps", "version"}
+        if extra:
+            return "Additional properties are not allowed (%s)" % ", ".join(sorted(repr(k) for k in extra))
+        if not isinstance(entry["deps"], list) or not all(isinstance(d, str) for d in entry["deps"]):
+            return "package %r: 'deps' must be an array of strings" % name
+        if not isinstance(entry["version"], str):
+            return "package %r: 'version' must be a string" % name
+    return None
+
+
 def validate_manifest(manifest):
-    """Validate manifest against schema.json. Exits 5 on failure."""
-    import jsonschema
+    """Validate manifest against schema.json. Exits 5 on failure.
+
+    Uses the jsonschema package when installed; otherwise the equivalent
+    hand-rolled check, so the ghost test runs on hosts without it (Linux
+    port proof, 2026-11-07).
+    """
+    try:
+        import jsonschema
+    except ImportError:
+        error = _validate_without_jsonschema(manifest)
+        if error:
+            print(error, file=sys.stderr)
+            sys.exit(5)
+        return
     schema = load_schema()
     try:
         jsonschema.validate(manifest, schema)

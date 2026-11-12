@@ -191,8 +191,71 @@ def _format_layer_value(value: Any) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Schema validation (optional, requires jsonschema)
+# Schema validation (jsonschema when installed, else a draft-07 subset)
 # ---------------------------------------------------------------------------
+
+_JSON_TYPES = {
+    "object": lambda v: isinstance(v, dict),
+    "array": lambda v: isinstance(v, list),
+    "string": lambda v: isinstance(v, str),
+    "boolean": lambda v: isinstance(v, bool),
+    "null": lambda v: v is None,
+    "integer": lambda v: isinstance(v, int) and not isinstance(v, bool),
+    "number": lambda v: isinstance(v, (int, float)) and not isinstance(v, bool),
+}
+
+
+def _subset_error(instance: Any, schema: Any, path: str = "$") -> str | None:
+    """Check ``instance`` against the draft-07 keywords Lodestar schemas use.
+
+    Supports type, enum, const, required, properties, additionalProperties (bool),
+    items (single schema), minimum, maximum, minLength, maxLength. Returns an error
+    message, or None when valid. Used only when the jsonschema package is absent.
+    """
+    if not isinstance(schema, dict):
+        return None
+    types = schema.get("type")
+    if types is not None:
+        names = types if isinstance(types, list) else [types]
+        if not any(_JSON_TYPES.get(n, lambda v: False)(instance) for n in names):
+            return f"{path}: {instance!r} is not of type {types!r}"
+    if "enum" in schema and instance not in schema["enum"]:
+        return f"{path}: {instance!r} is not one of {schema['enum']!r}"
+    if "const" in schema and instance != schema["const"]:
+        return f"{path}: {instance!r} was expected to be {schema['const']!r}"
+    if _JSON_TYPES["number"](instance):
+        if "minimum" in schema and instance < schema["minimum"]:
+            return f"{path}: {instance!r} is less than the minimum of {schema['minimum']!r}"
+        if "maximum" in schema and instance > schema["maximum"]:
+            return f"{path}: {instance!r} is greater than the maximum of {schema['maximum']!r}"
+    if isinstance(instance, str):
+        if "minLength" in schema and len(instance) < schema["minLength"]:
+            return f"{path}: {instance!r} is too short"
+        if "maxLength" in schema and len(instance) > schema["maxLength"]:
+            return f"{path}: {instance!r} is too long"
+    if isinstance(instance, dict):
+        return _subset_object_error(instance, schema, path)
+    if isinstance(instance, list) and isinstance(schema.get("items"), dict):
+        for i, item in enumerate(instance):
+            error = _subset_error(item, schema["items"], f"{path}[{i}]")
+            if error:
+                return error
+    return None
+
+
+def _subset_object_error(instance: dict, schema: dict, path: str) -> str | None:
+    for key in schema.get("required", []):
+        if key not in instance:
+            return f"{path}: {key!r} is a required property"
+    props = schema.get("properties", {})
+    for key, value in instance.items():
+        if key in props:
+            error = _subset_error(value, props[key], f"{path}.{key}")
+            if error:
+                return error
+        elif schema.get("additionalProperties") is False:
+            return f"{path}: Additional properties are not allowed ({key!r} was unexpected)"
+    return None
 
 
 def _validate_schema(document: Any, schema_path: str) -> None:
@@ -201,11 +264,11 @@ def _validate_schema(document: Any, schema_path: str) -> None:
     try:
         import jsonschema  # type: ignore
     except ImportError:
-        print(
-            "error: --schema requires the 'jsonschema' package",
-            file=sys.stderr,
-        )
-        sys.exit(10)
+        error = _subset_error(document, schema)
+        if error:
+            print(f"schema validation failed: {error}", file=sys.stderr)
+            sys.exit(10)
+        return
     try:
         jsonschema.validate(instance=document, schema=schema)
     except jsonschema.ValidationError as exc:  # type: ignore[attr-defined]

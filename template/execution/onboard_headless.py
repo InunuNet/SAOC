@@ -65,6 +65,11 @@ SCALE_DEFAULT = (
 )
 
 
+def _utf8_env():
+    """Environment for a python child: it prints UTF-8, matching how we decode it."""
+    return dict(os.environ, PYTHONUTF8="1")
+
+
 def build_soul_content(agent_name: str, role: str, archetype: str,
                        soul_persona: str) -> str:
     """Render soul.md: who the agent is, plus §4.1's communication contract.
@@ -298,7 +303,7 @@ def _write_profile(profile_path: str, data: dict) -> None:
             f"atomically. onboarding_complete stays false."
         )
     try:
-        with os.fdopen(fd, "w") as fh:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
             json.dump(data, fh, indent=2, sort_keys=True)
             fh.write("\n")
             fh.flush()
@@ -405,7 +410,7 @@ def confirm_gate_open(profile_path: str) -> None:
 
 def patch_goals(goals_path: str, mission_text: str) -> None:
     if os.path.exists(goals_path):
-        with open(goals_path, "r") as fh:
+        with open(goals_path, "r", encoding="utf-8") as fh:
             content = fh.read()
     else:
         content = "# Goals\n\n## Mission\n\n"
@@ -427,7 +432,7 @@ def patch_goals(goals_path: str, mission_text: str) -> None:
         if not new_content.endswith("\n"):
             new_content += "\n"
 
-    with open(goals_path, "w") as fh:
+    with open(goals_path, "w", encoding="utf-8") as fh:
         fh.write(new_content)
 
 
@@ -445,7 +450,7 @@ def patch_scale(goals_path: str, scale_text: str) -> None:
     file does not have one yet.
     """
     if os.path.exists(goals_path):
-        with open(goals_path, "r") as fh:
+        with open(goals_path, "r", encoding="utf-8") as fh:
             content = fh.read()
     else:
         content = "# Goals\n\n"
@@ -458,7 +463,7 @@ def patch_scale(goals_path: str, scale_text: str) -> None:
     elif not new_content.endswith("\n"):
         new_content += "\n"
 
-    with open(goals_path, "w") as fh:
+    with open(goals_path, "w", encoding="utf-8") as fh:
         fh.write(new_content)
 
 
@@ -503,7 +508,7 @@ ONBOARD_FILL_TIMEOUT_SECONDS = 120
 def identity_is_present(agents_path: str, agent_name: str) -> bool:
     """True if AGENTS.md now carries this agent's identity sentence."""
     try:
-        with open(agents_path, "r") as fh:
+        with open(agents_path, "r", encoding="utf-8") as fh:
             return ("**You are %s**" % agent_name) in fh.read()
     except OSError:
         return False
@@ -532,6 +537,8 @@ def run_onboard_fill(agents_path: str, agent_name: str) -> None:
         capture_output=True,
         text=True,
         timeout=ONBOARD_FILL_TIMEOUT_SECONDS,
+        encoding="utf-8", errors="replace",
+        env=_utf8_env(),
     )
     if proc.stdout:
         sys.stdout.write(proc.stdout)
@@ -785,7 +792,7 @@ def main() -> None:
     # not a downstream project) and the requested project name differs.
     # Must run before any writes. See GH #1369.
     if not args.allow_harness_rewrite and os.path.exists(args.workspace_path):
-        with open(args.workspace_path, "r") as fh:
+        with open(args.workspace_path, "r", encoding="utf-8") as fh:
             current_workspace = fh.read().strip()
 
         effective_harness_name = (
@@ -821,12 +828,12 @@ def main() -> None:
     # 2. Write soul.md.
     soul_content = build_soul_content(args.agent_name, args.role,
                                       args.archetype, args.soul_persona)
-    with open(args.soul_path, "w") as fh:
+    with open(args.soul_path, "w", encoding="utf-8") as fh:
         fh.write(soul_content)
 
     # 3. Write user.md.
     user_content = build_user_content(args.user_context)
-    with open(args.user_path, "w") as fh:
+    with open(args.user_path, "w", encoding="utf-8") as fh:
         fh.write(user_content)
 
     # 4. Patch goals.md — the mission verbatim, then its scale as its own
@@ -837,7 +844,7 @@ def main() -> None:
     patch_scale(args.goals_path, scale_text)
 
     # 5. Write WORKSPACE file.
-    with open(args.workspace_path, "w") as fh:
+    with open(args.workspace_path, "w", encoding="utf-8") as fh:
         fh.write(args.project_name + "\n")
 
     # 6. Write the identity into AGENTS.md and re-sync its clones.
@@ -862,4 +869,9 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    for _stream in (sys.stdout, sys.stderr):
+        try:
+            _stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
     main()

@@ -54,6 +54,9 @@ architect decisions — you never implement backend logic.
 ➡️ HANDOFF: [what dev needs to implement this]
 ```
 
+## Result File
+- Write your full result to `.agent/memory/scratch/<role>-<feature>-result.md`; reply to the dispatcher in at most 10 lines (what changed, verdict, result path). Never paste transcripts or the full result into the reply.
+
 ## Report Back
 
 Your final act before finishing is to SendMessage your handoff — the spec above, in deliverable terms — to the orchestrator (`main`). Going idle without reporting is an incomplete task: dev cannot implement a handoff it never received, and the orchestrator will assume the design never happened and re-dispatch it.

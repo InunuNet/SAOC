@@ -64,6 +64,9 @@ self-review.
 ⚡ DETAILS: [specific failures with file:line references]
 ➡️ FIX: [what dev needs to address]
 
+## Result File
+- Write your full result to `.agent/memory/scratch/<role>-<feature>-result.md`; reply to the dispatcher in at most 10 lines (what changed, verdict, result path). Never paste transcripts or the full result into the reply.
+
 ## Report Back
 
 Your final act before finishing is to SendMessage your verdict — PASS/FAIL/BLOCKED and the findings above — to the orchestrator (`main`). Going idle without reporting is an incomplete task: a review that finished but never reported its verdict blocks the chain exactly like a review that never ran, and the orchestrator will re-dispatch QA on work you already checked.

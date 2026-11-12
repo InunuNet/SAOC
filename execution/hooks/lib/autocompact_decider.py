@@ -79,19 +79,25 @@ def _record_path(settings_path, record_path):
     return Path(str(settings_path) + ".autocompact-prior")
 
 
-def arm_route_a(settings_path=SETTINGS_LOCAL, window=AUTOCOMPACT_FLOOR, record_path=None):
+def arm_route_a(settings_path=SETTINGS_LOCAL, window=AUTOCOMPACT_FLOOR, record_path=None,
+                claude_pid="auto"):
     """Merge autoCompactWindow into the settings file, preserving every other key.
 
     The prior value (or its absence) is saved on the first arm only so disarm can
     restore it exactly; every arm records the value it wrote, so disarm can tell a
-    manual edit made since from its own window.
+    manual edit made since from its own window, and the claude session that armed
+    it, so the Stop hook can restore the window once that session is gone.
     """
+    if claude_pid == "auto":
+        claude_pid = find_claude_ancestor_pid()
     settings_path = Path(settings_path)
     record = _record_path(settings_path, record_path)
     data = _read_json(settings_path)
     saved = _read_record(record) if record.exists() else None
     if saved is not None:
         saved["written"] = window
+        saved["claude_pid"] = claude_pid
+        saved["ts"] = time.time()  # the age rule counts from the latest arm, not the first
         record.write_text(json.dumps(saved))
     else:
         record.parent.mkdir(parents=True, exist_ok=True)
@@ -100,6 +106,7 @@ def arm_route_a(settings_path=SETTINGS_LOCAL, window=AUTOCOMPACT_FLOOR, record_p
             "prior": data.get("autoCompactWindow"),
             "written": window,
             "ts": time.time(),
+            "claude_pid": claude_pid,
         }))
     data["autoCompactWindow"] = window
     settings_path.parent.mkdir(parents=True, exist_ok=True)
@@ -144,12 +151,41 @@ def disarm_route_a(settings_path=SETTINGS_LOCAL, record_path=None):
     return outcome
 
 
+def _owner_gone(saved):
+    """True when the claude session that armed Route A has exited (or its pid was reused).
+
+    A record without an owner pid, or a host where ps cannot answer, is never called
+    gone: the ROUTE_A_MAX_AGE_SECONDS rule still covers it.
+    """
+    pid = saved.get("claude_pid")
+    if not isinstance(pid, int) or isinstance(pid, bool) or pid <= 1:
+        return False
+    try:
+        comm = _run(["ps", "-o", "comm=", "-p", str(pid)]).strip()
+    except subprocess.CalledProcessError:
+        # ps exits non-zero for a missing pid, but also for an unsupported -o (Git Bash):
+        # only a ps that can describe this very process proves the owner is gone.
+        try:
+            return bool(_run(["ps", "-o", "comm=", "-p", str(os.getpid())]).strip())
+        except (OSError, subprocess.SubprocessError):
+            return False
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return not os.path.basename(comm).startswith(CLAUDE_COMM_PREFIX)
+
+
 def expire_route_a(settings_path=SETTINGS_LOCAL, record_path=None):
-    """Restore a Route-A window that outlived ROUTE_A_MAX_AGE_SECONDS."""
+    """Restore a Route-A window whose session is gone or that outlived ROUTE_A_MAX_AGE_SECONDS.
+
+    The window is read by every session that starts in this project, so one armed by
+    `compact.py now` whose compaction never ran made each restart compact at 100k
+    until the age rule fired (Mlilo Savant, 2026-11-12).
+    """
     record = _record_path(Path(settings_path), record_path)
     if not record.exists():
         return
-    if time.time() - _read_json(record).get("ts", 0) > ROUTE_A_MAX_AGE_SECONDS:
+    saved = _read_json(record)
+    if time.time() - saved.get("ts", 0) > ROUTE_A_MAX_AGE_SECONDS or _owner_gone(saved):
         disarm_route_a(settings_path, record_path)
 
 
@@ -430,6 +466,21 @@ def run_hook():
         return "noop"
 
 
+def end_route_a(settings_path=SETTINGS_LOCAL, record_path=None):
+    """SessionEnd: restore the window this ending session armed before any restart reads it.
+
+    Claude Code reads autoCompactWindow only at session start, so the Stop-hook rules
+    alone let the next session inherit it. A record owned by another live session is
+    left to that session; one with no owner pid is restored.
+    """
+    record = _record_path(Path(settings_path), record_path)
+    if not record.exists():
+        return
+    owner = _read_json(record).get("claude_pid")
+    if not isinstance(owner, int) or owner == find_claude_ancestor_pid() or _owner_gone({"claude_pid": owner}):
+        disarm_route_a(settings_path, record_path)
+
+
 def main(argv):
     logging.basicConfig(level=logging.WARNING, stream=sys.stderr)
     command = argv[1] if len(argv) > 1 else ""
@@ -440,7 +491,10 @@ def main(argv):
         disarm_route_a()
         drop_own_flag()
         return 0
-    LOG.error("usage: autocompact_decider.py run|disarm")
+    if command == "end":
+        end_route_a()
+        return 0
+    LOG.error("usage: autocompact_decider.py run|disarm|end")
     return 2
 
 

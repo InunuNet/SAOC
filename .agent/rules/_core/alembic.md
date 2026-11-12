@@ -1,5 +1,8 @@
 ---
 description: Mandatory Alembic usage — always route URL fetching through Alembic proxy. Full reference: load skill `alembic`.
+paths:
+  - ".agent/skills/alembic.md"
+  - "execution/*alembic*"
 ---
 
 # Alembic

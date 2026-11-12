@@ -29,7 +29,11 @@ if [[ "$SLUG" == *[\*\?\[]* ]]; then
   exit 1
 fi
 
-mapfile -t CONTRACT_MATCHES < <(find .agent/memory/project/specs -ipath "*/specs/${SLUG}/contract-f*.yaml" 2>/dev/null || true)
+# while-read, not mapfile: stock macOS bash is 3.2
+CONTRACT_MATCHES=()
+while IFS= read -r _m; do
+  [ -n "$_m" ] && CONTRACT_MATCHES+=("$_m")
+done < <(find .agent/memory/project/specs -ipath "*/specs/${SLUG}/contract-f*.yaml" 2>/dev/null || true)
 
 if [[ ${#CONTRACT_MATCHES[@]} -eq 0 ]]; then
   CONTRACT=""

@@ -58,6 +58,10 @@ from datetime import datetime, timezone
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import name_sanitize  # noqa: E402  (path fixed up above)
 import workspace_state  # noqa: E402
+_EXEC_DIR = os.path.dirname(os.path.abspath(__file__))
+if _EXEC_DIR not in sys.path:
+    sys.path.insert(0, _EXEC_DIR)
+from bash_exe import bash_exe  # noqa: E402  Windows: Git Bash, never System32 WSL
 
 CLEAR = "CLEAR"
 AMBIGUOUS = "AMBIGUOUS"
@@ -642,7 +646,7 @@ def affirm_copy(workspace, typed):
     #    the tree is complete. The TREE is re-read below instead.
     try:
         proc = subprocess.run(
-            ["bash", "init.sh", "--path", workspace_realpath(workspace), "--no-pulse"],
+            [bash_exe(), "init.sh", "--path", workspace_realpath(workspace), "--no-pulse"],
             cwd=workspace_realpath(workspace), timeout=INIT_TIMEOUT_SECONDS,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         init_output = proc.stdout or ""
