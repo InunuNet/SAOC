@@ -41,8 +41,8 @@ const NARRATIVE = [
   "Explore breathtaking displays showcasing thousands of flowering orchids, from rare species found in nature to award-winning cultivated hybrids that demonstrate decades of careful breeding and horticultural achievement. Watch South Africa's leading judges evaluate exceptional plants as growers compete for prestigious national awards that recognise excellence in orchid cultivation.",
   "Browse the extensive plant sales area, where specialist nurseries from across South Africa will be joined by selected international orchid vendors, offering an exceptional range of orchid species, hybrids, companion plants, growing media and specialist supplies. Whether you are purchasing your very first orchid or searching for a rare collector's specimen, knowledgeable growers from around the world will be on hand to share their expertise and passion.",
   "The National Show Symposium will feature an outstanding programme of presentations by respected local and international speakers covering orchid cultivation, breeding, conservation, taxonomy, judging, sustainability and emerging scientific research. A Conference held by Wild Orchids Southern Africa (WOSA) will highlight the ecology and conservation of indigenous orchids, illustrating how research undertaken in natural habitats continues to influence cultivation practices, breeding programmes and the long-term future of orchids.",
-  "Visitors can further develop their knowledge through practical workshops, meet members of the orchid societies from across the country, engage with researchers and conservationists, and discover how every aspect of the National Show reflects this year's theme - ***“From Wild Origins to Cultivated Excellence: The Future of Orchids.”***",
-  "The 2027 National Show is made possible through the generous support of our headline sponsors, donors and partners, whose commitment to horticulture, conservation, education and scientific advancement enables the South African Orchid Council to present a truly world-class event.",
+  "Visitors can further develop their knowledge through practical workshops, meet orchid societies from across the country, engage with researchers and conservationists, and discover how every aspect of the National Show reflects this year's theme - ***“From Wild Origins to Cultivated Excellence: The Future of Orchids.”***",
+  "The National Orchid Show - Western Cape 2027 is made possible through the generous support of our headline sponsors, donors and partners, whose commitment to horticulture, conservation, education and scientific advancement enables the South African Orchid Council to present a truly world-class event.",
   "Whether your passion lies in conservation, scientific discovery, judging, growing or simply enjoying the extraordinary beauty of orchids, the National Orchid Show – Western Cape 2027 offers an unforgettable experience that celebrates the complete journey of orchids and the people dedicated to their future.",
 ];
 const DATES_HEADING = "Show dates – for public entrance";
@@ -52,7 +52,7 @@ const HOURS = [
   "Friday & Saturday – 9.00 to 17.00",
   "Sunday – 9.00 to 16.00",
 ];
-const FOOD = "There is a restaurant on site as well as food vendors will be available.";
+const FOOD = "There will be several options for food and beverages.";
 const PHOTOGRAPHY = [
   "Photography of all plants and exhibition stands are allowed. Should you take photographs of attendees or the public, please ensure that you get their express permission should you wish to publish these on or in any public content.",
   "All rights are reserved by the management committee to use photographs of the event that are publicly available.",
@@ -64,7 +64,7 @@ const ACCESSIBILITY = [
 ];
 
 const THEME = '“From Wild Origins to Cultivated Excellence: The Future of Orchids.”';
-const THEME_LEAD = "Visitors can further develop their knowledge through practical workshops, meet members of the orchid societies from across the country, engage with researchers and conservationists, and discover how every aspect of the National Show reflects this year's theme - ";
+const THEME_LEAD = "Visitors can further develop their knowledge through practical workshops, meet orchid societies from across the country, engage with researchers and conservationists, and discover how every aspect of the National Show reflects this year's theme - ";
 const THEME_INDEX = 4;
 
 // Her four admission lines by name and in her order, each keyed to its ticketType _id; the card is
@@ -74,6 +74,7 @@ const ADMISSION_ROWS = [
   { id: 'ticketType-sunset-cocktails-single', slug: 'sunset-cocktails-single', name: 'Sunset Cocktails (Single)' },
   { id: 'ticketType-weekend-pass-early-bird', slug: 'weekend-pass-early-bird', name: 'Weekend Pass (Early Bird)' },
   { id: 'ticketType-early-bird', slug: 'early-bird', name: 'Early-Bird Exhibition Ticket' },
+  { id: 'ticketType-day-visitor', slug: 'day-visitor', name: 'Day Pass Ticket' },
 ] as const;
 const HOURS_SEPARATOR = ' – ';
 const NO_PRICE_STATES: ReadonlySet<string> = new Set(['salesClosed', 'pricePending', 'soldOut']);
