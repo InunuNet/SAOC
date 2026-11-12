@@ -14,3 +14,6 @@ export const HOME_FOREWORD_PARAGRAPHS = [
   `Time has demonstrated that all the goals the SAOC set out to accomplish have come to fruition and as a senior foundation member my confidence is enhanced by the input of younger orchid enthusiasts who have taken on the responsibility. This positive knowledge leaves me satisfied and assured that they will ensure the permanence of the SAOC for succeeding generations.`,
   `Douglas McMurtry.`,
 ] as const;
+
+/** Number of leading paragraphs shown while the foreword is collapsed. */
+export const HOME_FOREWORD_INTRO_COUNT = 1;
