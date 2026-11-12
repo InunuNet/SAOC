@@ -2,6 +2,18 @@
 set +e
 
 # Read stdin JSON
+# Windows Git Bash: native jq.exe emits CRLF for -r output; -b strips it.
+case "$(uname -s 2>/dev/null)" in
+  MINGW*|MSYS*|CYGWIN*)
+    if type -P jq >/dev/null 2>&1; then
+      # jq 1.6 has no -b: probe, else strip the CR from the output instead.
+      if command jq -b -n 1 >/dev/null 2>&1; then
+        jq() { command jq -b "$@"; }
+      else
+        jq() { command jq "$@" | tr -d '\r'; return "${PIPESTATUS[0]}"; }
+      fi
+    fi ;;
+esac
 INPUT=$(cat)
 
 # Debug: dump input to .tmp inside the workspace

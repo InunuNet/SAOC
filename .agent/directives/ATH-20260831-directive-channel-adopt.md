@@ -8,7 +8,7 @@ priority: p2
 supersedes: null
 superseded_by: null
 platforms: [all]
-summary: Pull the harness update, confirm `make directives` works, then ack this directive
+summary: v3.7.152 — Pull the harness update, confirm `make directives` works, then ack this directive
 verify: python3 execution/directives.py list
 ---
 

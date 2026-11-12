@@ -112,9 +112,40 @@ DELIVERY_COMPLETE = "complete"
 DELIVERY_PARTIAL = "partial"
 
 
+def _lf_text(data: bytes) -> bytes:
+    """Fold CRLF to LF in text content before hashing.
+
+    With git core.autocrlf=true (the Windows default) every checked-out file is
+    CRLF while the upstream and historical blobs are LF, so raw-byte hashes
+    never matched and the whole tree was withheld as hand-edited. Binary
+    content (any NUL byte) is left alone.
+    """
+    return data if b"\x00" in data else data.replace(b"\r\n", b"\n")
+
+
+def _heal_crlf_checkout(src_file: Path, dst_file: Path, label: str) -> None:
+    """Give an autocrlf=true checkout upstream's LF bytes back.
+
+    The hashes above fold CRLF, so a harness .sh checked out as CRLF reads as
+    "unchanged" and was never rewritten -- and bash dies on $'\\r'. Content is
+    identical once folded, so this is not a delivery and takes no backup.
+    execution/.gitattributes (eol=lf) keeps it LF from here on. Never raises.
+    """
+    try:
+        raw = dst_file.read_bytes()
+        if b"\r\n" not in raw or b"\x00" in raw:
+            return
+        want = src_file.read_bytes()
+        if b"\r\n" in want or _lf_text(raw) != want:
+            return
+        _copy2_nofollow(src_file, dst_file, label)
+    except OSError:
+        pass
+
+
 def _sha256_of_file(path: Path) -> str:
-    """Return the sha256 hex digest of a file's current byte content."""
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    """Return the sha256 hex digest of a file's content, line endings folded."""
+    return hashlib.sha256(_lf_text(path.read_bytes())).hexdigest()
 
 
 def load_template_baselines(store_path: Path = TEMPLATE_BASELINES_PATH) -> dict:
@@ -127,7 +158,7 @@ def load_template_baselines(store_path: Path = TEMPLATE_BASELINES_PATH) -> dict:
     if not store_path.exists():
         return {}
     try:
-        data = json.loads(store_path.read_text())
+        data = json.loads(store_path.read_text(encoding="utf-8"))
     except Exception:
         return {}
     if not isinstance(data, dict):
@@ -238,7 +269,7 @@ def _load_allowed_symlinks(path: Path = ALLOWED_SYMLINKS_PATH) -> list[str]:
     """
     patterns: list[str] = []
     if path.exists():
-        for line in path.read_text().splitlines():
+        for line in path.read_text(encoding="utf-8").splitlines():
             line = line.strip()
             if line and not line.startswith("#"):
                 patterns.append(line)
@@ -343,7 +374,7 @@ def _open_fd_nofollow(path: Path, label: str, stop_at: Path | None = None) -> in
                 f"{target_desc} — proceeding (allow-listed via "
                 f"{ALLOWED_SYMLINKS_PATH} or --allow-symlink)."
             )
-            return os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644)
+            return os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC | getattr(os, "O_BINARY", 0), 0o644)
         print(
             f"  WARN  {label} is reached through a symlink at {offending} -> "
             f"{target_desc} — REFUSING to write through a symlinked "
@@ -356,7 +387,7 @@ def _open_fd_nofollow(path: Path, label: str, stop_at: Path | None = None) -> in
 
     try:
         return os.open(
-            str(path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o644
+            str(path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0), 0o644
         )
     except OSError as e:
         if e.errno == errno.ELOOP:
@@ -376,7 +407,7 @@ def _write_text_nofollow(path: Path, text: str, label: str, stop_at: Path | None
     fd = _open_fd_nofollow(path, label, stop_at=stop_at)
     if fd is None:
         return False
-    with os.fdopen(fd, "w") as f:
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
         f.write(text)
     return True
 
@@ -414,7 +445,7 @@ def _write_text_atomic_nofollow(path: Path, text: str, label: str,
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp_name = tempfile.mkstemp(dir=str(path.parent), prefix=".", suffix=".tmp")
     try:
-        with os.fdopen(fd, "w") as f:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
             f.write(text)
             f.flush()
             os.fsync(f.fileno())
@@ -445,8 +476,15 @@ def _copy2_nofollow(src: Path, dst: Path, label: str, stop_at: Path | None = Non
         with open(src, "rb") as sf:
             shutil.copyfileobj(sf, f)
         f.flush()
-        os.fchmod(f.fileno(), stat.S_IMODE(src_stat.st_mode))
-        os.utime(f.fileno(), ns=(src_stat.st_atime_ns, src_stat.st_mtime_ns))
+        # Windows has no os.fchmod and (before 3.13) no fd-based os.utime
+        if hasattr(os, "fchmod"):
+            os.fchmod(f.fileno(), stat.S_IMODE(src_stat.st_mode))
+        if os.utime in os.supports_fd:
+            os.utime(f.fileno(), ns=(src_stat.st_atime_ns, src_stat.st_mtime_ns))
+    if not hasattr(os, "fchmod"):
+        os.chmod(dst, stat.S_IMODE(src_stat.st_mode))
+    if os.utime not in os.supports_fd:
+        os.utime(dst, ns=(src_stat.st_atime_ns, src_stat.st_mtime_ns))
     return True
 
 
@@ -640,6 +678,7 @@ def _sync_file_with_guard(
                             save_template_baselines(baselines)
                     except OSError:
                         pass
+                    _heal_crlf_checkout(src_file, dst_file, baseline_key)
                 return "unchanged"
         except OSError:
             pass
@@ -888,7 +927,7 @@ def _harness_name(workspace: Path) -> str:
     compared against for its whole life, so behaviour there is unchanged.
     """
     try:
-        profile = json.loads((workspace / ".agent" / "profile.json").read_text())
+        profile = json.loads((workspace / ".agent" / "profile.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return HARNESS_NAME_FALLBACK
     if not isinstance(profile, dict):
@@ -923,7 +962,7 @@ def is_harness_checkout(workspace: str | Path = ".") -> bool:
     """
     root = Path(workspace)
     try:
-        marker = (root / "WORKSPACE").read_text().strip()
+        marker = (root / "WORKSPACE").read_text(encoding="utf-8").strip()
     except OSError:
         return False
     return bool(marker) and marker == _harness_name(root)
@@ -946,6 +985,15 @@ def _paths_have_identical_content(src: Path, dst: Path) -> bool:
         return _sha256_of_file(src) == _sha256_of_file(dst)
     except OSError:
         return False
+
+
+def _is_interpreter_cache(rel: Path) -> bool:
+    """True for compiled Python bytecode: anything under a __pycache__/ directory, or a stray
+    *.pyc/*.pyo file. It is the interpreter's own cache of a sibling .py, regenerated with no
+    human involvement, so it is never delivered, guarded or baselined. Without this, a
+    --source checkout's bytecode differs from the project's and trips the no-baseline skip
+    gate (exit 1) on a fresh scaffold (Athanor Win, 2026-11-07)."""
+    return "__pycache__" in rel.parts or rel.suffix in (".pyc", ".pyo")
 
 
 def copy_harness(
@@ -1047,6 +1095,8 @@ def copy_harness(
             if src_file.is_dir():
                 continue
             rel = src_file.relative_to(src)
+            if _is_interpreter_cache(rel):
+                continue
             dst_file = dst / rel
             file_key = f"{base_key}/{rel.as_posix()}"
             status = _sync_file_with_guard(
@@ -1158,6 +1208,8 @@ def predict_harness(
             if src_file.is_dir():
                 continue
             rel = src_file.relative_to(src)
+            if _is_interpreter_cache(rel):
+                continue
             dst_file = dst / rel
             file_key = f"{base_key}/{rel.as_posix()}"
             status = _sync_file_with_guard(
@@ -1192,7 +1244,8 @@ def adopt_delivered_baselines(source: Path, manifest: dict) -> int:
         src = source / key
         files = [(key, src)] if src.is_file() else [
             (f"{key}/{f.relative_to(src).as_posix()}", f)
-            for f in sorted(src.rglob("*")) if f.is_file()
+            for f in sorted(src.rglob("*"))
+            if f.is_file() and not _is_interpreter_cache(f.relative_to(src))
         ] if src.is_dir() else []
         for file_key, src_file in files:
             dst_file = Path(file_key)
@@ -1314,19 +1367,19 @@ def restore_line_union_readme(source: Path, current_backup: Path | None = None) 
     src, dst = source / LINE_UNION_RESTORE_PATH, Path(LINE_UNION_RESTORE_PATH)
     if not (src.is_file() and dst.is_file()) or dst.is_symlink():
         return None
-    payload_lines = src.read_text().splitlines()
-    current = dst.read_text()
+    payload_lines = src.read_text(encoding="utf-8").splitlines()
+    current = dst.read_text(encoding="utf-8")
     backups = sorted((b for b in Path(".agent/memory/scratch").glob("update-backup-*")
                       if b != current_backup), reverse=True)
     for backup_dir in backups[:BACKUP_SCAN_LIMIT]:
         backup = backup_dir / LINE_UNION_RESTORE_PATH
         if not backup.is_file() or backup.is_symlink():
             continue
-        original = backup.read_text().splitlines()
+        original = backup.read_text(encoding="utf-8").splitlines()
         seen = set(original)
         appended = [ln for ln in payload_lines if ln not in seen]
         if appended and current == "\n".join(original + appended) + "\n":
-            _write_text_nofollow(dst, backup.read_text(), f"{dst} (restore)")
+            _write_text_nofollow(dst, backup.read_text(encoding="utf-8"), f"{dst} (restore)")
             return (f"  RESTORED  {dst}: undid {len(appended)} line(s) an older updater "
                     f"appended earlier in this update (project-owned, from {backup})")
     lines = current.splitlines()
@@ -1357,8 +1410,8 @@ def merge_line_union(src: Path, dst: Path, backup_dir: Path) -> str:
     if _refuse_symlinked_write(dst, f"{dst} (MERGE destination)"):
         return f"  SKIP  (symlinked destination) {dst}"
 
-    src_lines = src.read_text().splitlines()
-    dst_lines = dst.read_text().splitlines() if dst.exists() else []
+    src_lines = src.read_text(encoding="utf-8").splitlines()
+    dst_lines = dst.read_text(encoding="utf-8").splitlines() if dst.exists() else []
 
     dst_set = set(dst_lines)
     new_lines = [line for line in src_lines if line not in dst_set]
@@ -1748,10 +1801,10 @@ def merge_json_deep(src: Path, dst: Path, backup_dir: Path) -> str:
     if _refuse_symlinked_write(dst, f"{dst} (MERGE destination)"):
         return f"  SKIP  (symlinked destination) {dst}"
 
-    src_data = json.loads(src.read_text())
+    src_data = json.loads(src.read_text(encoding="utf-8"))
     if dst.exists():
         try:
-            dst_data = json.loads(dst.read_text())
+            dst_data = json.loads(dst.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
             # Corrupt destination degrades gracefully to "no existing
             # content" (mirrors load_template_baselines()'s corrupt-JSON
@@ -1870,6 +1923,7 @@ def apply_retired_paths(
     project_root: Path,
     backup_dir: Path | None,
     dry_run: bool,
+    is_pinned=None,
 ) -> list[str]:
     """Remove harness files the harness itself has deleted.
 
@@ -1895,6 +1949,10 @@ def apply_retired_paths(
         target = project_root / rel
         if not target.exists() and not target.is_symlink():
             continue
+        if is_pinned is not None and is_pinned(rel):
+            # A .agent/no-update pin keeps the file local, retired upstream or not.
+            print(_pinned_line(rel))
+            continue
         if _refuse_symlinked_write(target, f"retired path {rel}", stop_at=project_root):
             continue
         if not target.is_file():
@@ -1917,6 +1975,116 @@ def apply_retired_paths(
         print(f"  RETIRE {rel} -- {entry.get('reason', '')}")
         removed.append(rel)
     return removed
+
+
+def retired_already_gone(manifest: dict, project_root: Path) -> list[str]:
+    """Retired paths an EARLIER update already deleted (absent from disk now).
+
+    apply_retired_paths reports only what it removes this run, so a project that
+    lost the scripts to a pre-fix update kept their registrations forever (Acrux
+    Accounting, 2026-11-11: test_hook_integrity red after updating). A
+    registration naming a retired path that does not exist is dead for certain;
+    a path still on disk (a local edit apply_retired_paths kept) is not listed.
+    """
+    entries = manifest.get("retired_paths") or []
+    if not isinstance(entries, list):
+        return []
+    gone = []
+    for entry in entries:
+        rel = entry.get("path") if isinstance(entry, dict) else None
+        if not rel or Path(rel).is_absolute() or ".." in Path(rel).parts:
+            continue
+        target = project_root / rel
+        if not target.exists() and not target.is_symlink():
+            gone.append(rel)
+    return gone
+
+
+def _names_live_script(entry, retired: set, project_root: Path) -> bool:
+    """True when the command also names a non-retired .sh/.py that exists on disk.
+
+    A compound registration (`bash scripts/x.sh; [ -f <retired> ] || true`) still
+    runs a live hook, so it is never pruned for merely mentioning a retired path.
+    """
+    command = str(entry.get("command", "")) if isinstance(entry, dict) else ""
+    for tok in command.replace("'", " ").replace('"', " ").replace("\\", "/").replace(";", " ").split():
+        tok = tok.replace("$CLAUDE_PROJECT_DIR/", "").replace("${CLAUDE_PROJECT_DIR}/", "")
+        if tok.startswith("./"):
+            tok = tok[2:]
+        if tok in retired or not tok.endswith((".sh", ".py")):
+            continue
+        if not Path(tok).is_absolute() and ".." not in Path(tok).parts and (project_root / tok).is_file():
+            return True
+    return False
+
+
+def _names_retired_path(entry, retired: set) -> bool:
+    """True when the registration's command names one of the retired paths exactly."""
+    command = str(entry.get("command", "")) if isinstance(entry, dict) else ""
+    for tok in command.replace("'", " ").replace('"', " ").replace("\\", "/").split():
+        tok = tok.replace("$CLAUDE_PROJECT_DIR/", "").replace("${CLAUDE_PROJECT_DIR}/", "")
+        if tok.startswith("./"):
+            tok = tok[2:]
+        if tok in retired:
+            return True
+    return False
+
+
+def prune_retired_hook_registrations(project_root: Path, backup_dir: Path | None,
+                                     dry_run: bool, retired: list) -> int:
+    """Drop hook registrations naming a script apply_retired_paths deleted this run.
+
+    The settings merge runs in the manifest loop, BEFORE retired scripts are
+    removed, so it still sees them on disk and keeps their registrations as
+    dead references (Acrux Accounting, 3.8.88: test_hook_integrity failed on
+    quota_death_checkpoint.sh). Only an exact path match against the files
+    removed in THIS run drops an entry: a project hook whose path merely
+    cannot be resolved (cd-then-relative, quoted spaces) is preserved.
+    """
+    if dry_run or not retired:
+        return 0
+    retired_set = set(retired)
+    settings = project_root / ".claude" / "settings.json"
+    if (_refuse_symlinked_write(settings, "retired-hook prune settings", stop_at=project_root)
+            or not settings.is_file()):
+        return 0
+    try:
+        data = json.loads(settings.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return 0
+    hooks = data.get("hooks") if isinstance(data, dict) else None
+    if not isinstance(hooks, dict):
+        return 0
+    dropped = 0
+    for event, groups in hooks.items():
+        if not isinstance(groups, list):
+            continue
+        kept_groups = []
+        for group in groups:
+            entries = group.get("hooks") if isinstance(group, dict) else None
+            if not isinstance(entries, list):
+                kept_groups.append(group)
+                continue
+            kept = [e for e in entries if not (_names_retired_path(e, retired_set)
+                                               and not _names_live_script(e, retired_set, project_root))]
+            dropped += len(entries) - len(kept)
+            if kept or not entries:
+                kept_groups.append({**group, "hooks": kept})
+        hooks[event] = kept_groups
+    if not dropped:
+        return 0
+    if backup_dir is not None:
+        backup_path = backup_dir / settings.relative_to(project_root)
+        if _refuse_symlinked_write(backup_path, "retired-hook prune backup target"):
+            return 0
+        if not backup_path.exists():
+            # Never replace the pre-update copy merge_json_deep already took.
+            backup_path.parent.mkdir(parents=True, exist_ok=True)
+            _copy2_nofollow(settings, backup_path, "retired-hook prune backup target")
+    _write_text_nofollow(settings, json.dumps(data, indent=2) + "\n",
+                         f"{settings} (retired-hook prune)")
+    print(f"  PRUNE {dropped} hook registration(s) naming retired scripts in {settings}")
+    return dropped
 
 
 def apply_retractions(
@@ -2010,7 +2178,7 @@ def apply_retractions(
             continue
 
         try:
-            data = json.loads(dst.read_text())
+            data = json.loads(dst.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError) as e:
             print(f"  retraction SKIP   {rel_path} (unreadable/invalid JSON: {e})")
             continue
@@ -2099,7 +2267,7 @@ def apply_retractions(
             print("  WARN  retraction(s) applied above, but the audit log write was refused (symlinked ancestor)")
         else:
             try:
-                existing = json.loads(log_path.read_text()) if log_path.exists() else []
+                existing = json.loads(log_path.read_text(encoding="utf-8")) if log_path.exists() else []
                 if not isinstance(existing, list):
                     existing = []
             except Exception:
@@ -2126,7 +2294,7 @@ def update_profile_version(source: Path, profile_path: Path) -> str:
     if not version_file.exists():
         return "  SKIP  template_version update (source .agent/version not found)"
 
-    new_version = version_file.read_text().strip()
+    new_version = version_file.read_text(encoding="utf-8").strip()
     if not new_version:
         return "  SKIP  template_version update (source .agent/version is empty)"
 
@@ -2146,7 +2314,7 @@ def update_profile_version(source: Path, profile_path: Path) -> str:
         changes.append("WARN local .agent/version is symlinked — skipping local version sync")
     else:
         old_local_version = (
-            local_version_path.read_text().strip() if local_version_path.exists() else None
+            local_version_path.read_text(encoding="utf-8").strip() if local_version_path.exists() else None
         )
         if old_local_version != new_version:
             local_version_path.parent.mkdir(parents=True, exist_ok=True)
@@ -2161,7 +2329,7 @@ def update_profile_version(source: Path, profile_path: Path) -> str:
         return "  SKIP  template_version update (profile.json not found)"
 
     try:
-        profile = json.loads(profile_path.read_text())
+        profile = json.loads(profile_path.read_text(encoding="utf-8"))
     except Exception as e:
         if changes:
             return f"  updated: {'; '.join(changes)}; WARN template_version update failed (bad profile.json): {e}"
@@ -2170,6 +2338,10 @@ def update_profile_version(source: Path, profile_path: Path) -> str:
     profile_changed = False
     old_version = profile.get("template_version", "unknown")
     if old_version != new_version:
+        if old_version != "unknown" and not profile.get("scaffold_version"):
+            # First move off the scaffold release: remember it so directives.py can
+            # tell which directives the project's own scaffold already contained.
+            profile["scaffold_version"] = old_version
         profile["template_version"] = new_version
         changes.append(f"template_version: {old_version} → {new_version}")
         profile_changed = True
@@ -2180,7 +2352,7 @@ def update_profile_version(source: Path, profile_path: Path) -> str:
     if not (isinstance(autonomy, dict) and autonomy.get("level")):
         matrix_path = profile_path.parent.parent / ".agent" / "autonomy_matrix.json"
         try:
-            matrix = json.loads(matrix_path.read_text())
+            matrix = json.loads(matrix_path.read_text(encoding="utf-8"))
             seed_level = matrix.get("onboarding_default", "low")
         except Exception:
             seed_level = "medium"
@@ -2291,7 +2463,7 @@ def write_template_state(
     if not version_file.exists():
         return "  SKIP  .template_state update (source .agent/version not found)"
 
-    new_version = version_file.read_text().strip()
+    new_version = version_file.read_text(encoding="utf-8").strip()
     if not new_version:
         return "  SKIP  .template_state update (source .agent/version is empty)"
 
@@ -2303,7 +2475,7 @@ def write_template_state(
     current: dict = {}
     if state_path.exists():
         try:
-            current = json.loads(state_path.read_text())
+            current = json.loads(state_path.read_text(encoding="utf-8"))
         except Exception:
             current = {}
         if not isinstance(current, dict):
@@ -2516,7 +2688,7 @@ def local_manifest_owned() -> list[str]:
     """
     import yaml
     try:
-        data = yaml.safe_load(LOCAL_MANIFEST.read_text()) or {}
+        data = yaml.safe_load(LOCAL_MANIFEST.read_text(encoding="utf-8")) or {}
     except FileNotFoundError:
         return []
     except Exception as e:
@@ -2588,7 +2760,7 @@ def apply_fresh_manifest_backstop(
     fresh_source = source_manifest_path if source_manifest_path.exists() else manifest_path
 
     try:
-        fresh_manifest = yaml.safe_load(fresh_source.read_text())
+        fresh_manifest = yaml.safe_load(fresh_source.read_text(encoding="utf-8"))
     except Exception as e:
         print(f"  WARN  fresh-manifest backstop: failed to re-read manifest ({fresh_source}): {e}")
         return delivered
@@ -2645,6 +2817,8 @@ def apply_fresh_manifest_backstop(
                     if src_file.is_dir():
                         continue
                     rel = src_file.relative_to(src_dir)
+                    if _is_interpreter_cache(rel):
+                        continue
                     dst_file = dst_dir / rel
                     dst_key = f"{path.rstrip('/')}/{rel.as_posix()}"
                     if dst_file.exists():
@@ -2779,6 +2953,8 @@ def _collect_valid_harness_keys(manifest: dict, source: Path) -> dict[str, list[
                 if src_file.is_dir():
                     continue
                 rel = src_file.relative_to(src_dir)
+                if _is_interpreter_cache(rel):
+                    continue
                 key = f"{base_key}/{rel.as_posix()}"
                 dst = Path(base_key) / rel
                 valid.setdefault(key, []).append(dst)
@@ -2937,9 +3113,7 @@ def _walk_harness_manifest_files(manifest: dict, root: Path = Path(".")) -> list
             for f in sorted(dst_dir.rglob("*")):
                 if f.is_symlink() or f.is_dir() or not f.is_file():
                     continue
-                if "__pycache__" in f.relative_to(dst_dir).parts:
-                    continue
-                if f.suffix in (".pyc", ".pyo"):
+                if _is_interpreter_cache(f.relative_to(dst_dir)):
                     continue
                 if f.name == ".DS_Store":
                     # macOS Finder junk, not harness content -- no exclusion
@@ -2980,7 +3154,7 @@ def _enumerate_no_baseline_harness_paths(manifest_path: Path) -> list[str]:
     if not manifest_path.exists():
         return []
     try:
-        manifest = yaml.safe_load(manifest_path.read_text())
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
     except Exception:
         return []
 
@@ -3138,7 +3312,7 @@ def cmd_record_scaffold_baselines(project_path: str) -> int:
         return 0
     try:
         import yaml
-        manifest = yaml.safe_load(manifest_path.read_text())
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
     except Exception as e:
         print(f"--record-scaffold-baselines: could not parse {manifest_path}: {e} -- nothing recorded")
         return 0
@@ -3270,7 +3444,7 @@ def _read_recorded_template_version() -> str | None:
     """
     if TEMPLATE_STATE_PATH.exists():
         try:
-            data = json.loads(TEMPLATE_STATE_PATH.read_text())
+            data = json.loads(TEMPLATE_STATE_PATH.read_text(encoding="utf-8"))
             v = data.get("template_version")
             if v:
                 return str(v)
@@ -3279,7 +3453,7 @@ def _read_recorded_template_version() -> str | None:
     profile_path = Path(".agent/profile.json")
     if profile_path.exists():
         try:
-            data = json.loads(profile_path.read_text())
+            data = json.loads(profile_path.read_text(encoding="utf-8"))
             v = data.get("template_version")
             if v:
                 return str(v)
@@ -3312,7 +3486,7 @@ def _read_reconcile_from_version() -> tuple[str | None, bool]:
     """
     if TEMPLATE_STATE_PATH.exists():
         try:
-            data = json.loads(TEMPLATE_STATE_PATH.read_text())
+            data = json.loads(TEMPLATE_STATE_PATH.read_text(encoding="utf-8"))
             v = data.get("reconcile_from")
             if v:
                 return str(v), True
@@ -3393,7 +3567,7 @@ def _read_template_state_record() -> dict:
     if not TEMPLATE_STATE_PATH.exists():
         return {}
     try:
-        data = json.loads(TEMPLATE_STATE_PATH.read_text())
+        data = json.loads(TEMPLATE_STATE_PATH.read_text(encoding="utf-8"))
     except Exception:
         return {}
     return data if isinstance(data, dict) else {}
@@ -3531,7 +3705,7 @@ def _classify_version_and_guard(payload_version, force) -> str:
     local_version = None
     if local_version_path.is_file():
         try:
-            local_version = local_version_path.read_text().strip() or None
+            local_version = local_version_path.read_text(encoding="utf-8").strip() or None
         except OSError:
             local_version = None
 
@@ -3713,7 +3887,7 @@ def _resolve_version_to_commit(version: str, repo: str = ATHANOR_REPO) -> str | 
             ["gh", "api", f"repos/{repo}/commits", "--method", "GET",
              "-f", "path=.agent/version", "-f", "per_page=100",
              "--paginate", "--jq", ".[].sha"],
-            capture_output=True, text=True, timeout=60,
+            capture_output=True, text=True, timeout=60, encoding="utf-8", errors="replace",
         )
         if result.returncode != 0:
             print(f"  [reconcile] WARN: gh api commit history lookup failed: {result.stderr.strip()[:200]}")
@@ -3733,7 +3907,7 @@ def _resolve_version_to_commit(version: str, repo: str = ATHANOR_REPO) -> str | 
             result = subprocess.run(
                 ["gh", "api", f"repos/{repo}/contents/.agent/version", "--method", "GET",
                  "-f", f"ref={sha}", "--jq", ".content"],
-                capture_output=True, text=True, timeout=30,
+                capture_output=True, text=True, timeout=30, encoding="utf-8", errors="replace",
             )
             if result.returncode != 0:
                 continue
@@ -3832,7 +4006,7 @@ def _resolve_version_to_commit_local(version: str, checkout: Path) -> str | None
     try:
         result = subprocess.run(
             ["git", "-C", str(checkout), "log", "--format=%H", "--", ".agent/version"],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True, text=True, timeout=30, encoding="utf-8", errors="replace",
         )
         if result.returncode != 0:
             return None
@@ -3844,7 +4018,7 @@ def _resolve_version_to_commit_local(version: str, checkout: Path) -> str | None
         try:
             result = subprocess.run(
                 ["git", "-C", str(checkout), "show", f"{sha}:.agent/version"],
-                capture_output=True, text=True, timeout=15,
+                capture_output=True, text=True, timeout=15, encoding="utf-8", errors="replace",
             )
         except (subprocess.TimeoutExpired, OSError):
             continue
@@ -4022,7 +4196,7 @@ def _shipped_path_candidates(key: str) -> list[str]:
 
 
 def _git_blob_id(path: Path) -> str:
-    data = path.read_bytes()
+    data = _lf_text(path.read_bytes())
     return hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()
 
 
@@ -4031,7 +4205,7 @@ def _historical_blob_ids(checkout: Path, ref: str, paths: list[str]) -> set[str]
     proc = subprocess.run(
         ["git", "-C", str(checkout), "log", ref, "--no-abbrev", "--raw",
          "--no-renames", "--format=", "--"] + paths,
-        capture_output=True, text=True,
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
     )
     if proc.returncode != 0:
         return set()
@@ -4060,7 +4234,8 @@ def _verified_athanor_checkout() -> tuple[Path, str] | None:
         return None
 
     def git(root: Path, *args: str) -> str | None:
-        proc = subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True)
+        proc = subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True,
+                              encoding="utf-8", errors="replace")
         return proc.stdout.strip() if proc.returncode == 0 else None
 
     remote = None
@@ -4090,7 +4265,7 @@ def _load_shipped_blob_ledger(new_tree: Path | None = None) -> set[str]:
     if new_tree is None:
         return set()
     try:
-        return set((new_tree / SHIPPED_BLOB_LEDGER).read_text().splitlines())
+        return set((new_tree / SHIPPED_BLOB_LEDGER).read_text(encoding="utf-8").splitlines())
     except OSError:
         return set()
 
@@ -4544,8 +4719,8 @@ def _self_check_updater_staleness() -> str | None:
     pure diagnostic output that must never affect a normal run's exit code.
     """
     try:
-        version = Path(".agent/version").read_text().strip()
-        record = json.loads(UPDATER_HASH_PATH.read_text())
+        version = Path(".agent/version").read_text(encoding="utf-8").strip()
+        record = json.loads(UPDATER_HASH_PATH.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
     if not isinstance(record, dict) or record.get("version") != version:
@@ -4611,6 +4786,101 @@ def _warn_if_self_replaced(before: str) -> bool:
     print("  " + "!" * 68)
     print("")
     return True
+
+
+
+# Mirrors the Makefile `sync:` target (called directly: make is often missing on Windows Git Bash).
+POST_APPLY_SYNC_STEPS = (
+    ("sync_autonomy", "python", "execution/sync_autonomy.py", ()),
+    ("sync_agents", "bash", "execution/sync_agents.sh", ()),
+    ("paired_copies", "python", "execution/paired_copies.py", ("--sync",)),
+    ("sync_skills", "bash", "execution/sync_skills.sh", ()),
+    ("sync_rules", "bash", "execution/sync_rules.sh", ()),
+)
+POST_APPLY_SYNC_TIMEOUT_S = 300
+SYNC_OUTPUT_TAIL_CHARS = 1500
+DERIVED_DIRS = (".claude/agents", ".claude/skills", ".claude/rules", ".codex/agents")
+
+
+def _bash_exe():
+    """Git Bash on Windows, never the System32 WSL launcher (see bash_exe.py).
+    Lazy: this updater must run in a tree that does not ship bash_exe.py yet."""
+    try:
+        from bash_exe import bash_exe
+        return bash_exe()
+    except ImportError:
+        pass
+    # Inline copy of bash_exe(): first PATH bash outside System32, then bash
+    # beside git. Bare "bash" only when neither exists (non-Windows, or no Git).
+    override = os.environ.get("ATHANOR_BASH")
+    if override and os.path.exists(override):
+        return override
+    if os.name != "nt":
+        return "bash"
+    for entry in os.environ.get("PATH", "").split(os.pathsep):
+        if not entry or "system32" in entry.lower().replace("/", "\\"):
+            continue
+        for name in ("bash.exe", "bash"):
+            cand = os.path.join(entry, name)
+            if os.path.isfile(cand):
+                return cand
+    git = shutil.which("git")
+    if git:
+        root = os.path.dirname(os.path.dirname(os.path.realpath(git)))
+        for rel in (("bin", "bash.exe"), ("usr", "bin", "bash.exe")):
+            cand = os.path.join(root, *rel)
+            if os.path.isfile(cand):
+                return cand
+    return "bash"
+
+
+def _warn_stray_cr_dirs(root):
+    """Old Windows sync_agents.sh printed a CR into the path; name any leftover dir, never delete."""
+    # Git Bash maps a CR in a filename to U+F00D on NTFS, so check both spellings.
+    for rel in DERIVED_DIRS:
+        stray = next((s for s in (root / (rel + "\r"), root / (rel + "\uf00d")) if s.exists()), None)
+        if stray is not None:
+            print(f"[sync] WARNING: stray directory {rel!r}+CR exists ({stray.name!r}) next to the "
+                  f"DERIVED dir {rel}; left untouched, remove it by hand after checking it.")
+
+
+def run_post_apply_sync(root, dry_run=False):
+    """Regenerate every DERIVED output from the freshly delivered scripts. True when all steps ran ok."""
+    steps = [(n, k, root / rel, a) for n, k, rel, a in POST_APPLY_SYNC_STEPS if (root / rel).exists()]
+    if dry_run:
+        for name, _kind, path, args in steps:
+            print(f"  would run {path.relative_to(root).as_posix()} {' '.join(args)}".rstrip())
+        return True
+    _warn_stray_cr_dirs(root)
+    env = dict(os.environ, PYTHONUTF8="1")
+    ok = True
+    for name, kind, path, args in steps:
+        cmd = ([sys.executable] if kind == "python" else [_bash_exe()]) + [str(path), *args]
+        try:
+            res = subprocess.run(cmd, cwd=str(root), capture_output=True, text=True, env=env,
+                                 encoding="utf-8", errors="replace",
+                                 timeout=POST_APPLY_SYNC_TIMEOUT_S)
+            code, out = res.returncode, (res.stdout or "") + (res.stderr or "")
+        except (OSError, subprocess.TimeoutExpired) as e:
+            code, out = 1, f"{type(e).__name__}: {e}"
+        if code != 0:
+            ok = False
+            print(f"[sync] step {name} FAILED (exit {code}):\n{out[-SYNC_OUTPUT_TAIL_CHARS:]}")
+    if ok:
+        print("[sync] derived files regenerated")
+    else:
+        print("[sync] derived files may be stale -- run `make sync`")
+    return ok
+
+
+def _console_safe_streams():
+    """A Windows console is cp1252: printing an arrow or em dash raised UnicodeEncodeError
+    mid-update (Win11 Tweaks 2026-11-07). Replace unencodable characters instead."""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
 
 
 def main():
@@ -4822,7 +5092,7 @@ def main():
             print(_self_check_warning, file=sys.stderr)
             sys.exit(1)
         try:
-            _self_check_version = Path(".agent/version").read_text().strip()
+            _self_check_version = Path(".agent/version").read_text(encoding="utf-8").strip()
         except OSError:
             _self_check_version = "unknown"
         print(
@@ -4993,7 +5263,7 @@ def main():
             # there's nothing to regress.
             payload_version_file = source / ".agent" / "version"
             payload_version = (
-                payload_version_file.read_text().strip()
+                payload_version_file.read_text(encoding="utf-8").strip()
                 if payload_version_file.exists()
                 else None
             )
@@ -5011,7 +5281,7 @@ def main():
 
         try:
             import yaml
-            manifest = yaml.safe_load(manifest_path.read_text())
+            manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
         except ImportError:
             print("ERROR: PyYAML not available. Install with: pip install pyyaml", file=sys.stderr)
             sys.exit(1)
@@ -5028,7 +5298,7 @@ def main():
         # never overwritten.
         try:
             _upstream_paths = yaml.safe_load(
-                (source / ".agent" / "update-manifest.yaml").read_text()).get("paths", [])
+                (source / ".agent" / "update-manifest.yaml").read_text(encoding="utf-8")).get("paths", [])
         except Exception:
             _upstream_paths = []
         _local_paths = {e.get("path") for e in manifest.get("paths", []) if isinstance(e, dict)}
@@ -5076,7 +5346,7 @@ def main():
         # stop a write, never start one. (WOSA 2026-09-28: generated autonomy
         # policies, which carry each project's own level.)
         try:
-            _upstream = yaml.safe_load((source / ".agent" / "update-manifest.yaml").read_text())
+            _upstream = yaml.safe_load((source / ".agent" / "update-manifest.yaml").read_text(encoding="utf-8"))
             _upstream_derived = {e.get("path") for e in (_upstream or {}).get("paths", [])
                                  if isinstance(e, dict) and e.get("category") == "DERIVED"}
         except Exception:
@@ -5102,7 +5372,7 @@ def main():
         no_update_path = Path(".agent/no-update")
         protected_patterns: list[str] = []
         if no_update_path.exists():
-            for line in no_update_path.read_text().splitlines():
+            for line in no_update_path.read_text(encoding="utf-8").splitlines():
                 line = line.strip()
                 if line and not line.startswith("#"):
                     protected_patterns.append(line)
@@ -5174,7 +5444,7 @@ def main():
             local_version_file = profile_file.parent / "version"
             try:
                 if local_version_file.is_file():
-                    prior_local_version = local_version_file.read_text().strip() or None
+                    prior_local_version = local_version_file.read_text(encoding="utf-8").strip() or None
             except OSError:
                 prior_local_version = None
 
@@ -5476,7 +5746,7 @@ def main():
         upstream_manifest_path = source / ".agent" / "update-manifest.yaml"
         if upstream_manifest_path.exists():
             try:
-                upstream_manifest = yaml.safe_load(upstream_manifest_path.read_text())
+                upstream_manifest = yaml.safe_load(upstream_manifest_path.read_text(encoding="utf-8"))
                 if isinstance(upstream_manifest, dict):
                     retraction_manifest = upstream_manifest
             except Exception as e:
@@ -5491,12 +5761,16 @@ def main():
             backup_dir=backup_dir,
             dry_run=dry_run,
         )
-        apply_retired_paths(
+        retired_now = apply_retired_paths(
             manifest=retraction_manifest,
             project_root=Path.cwd(),
             backup_dir=backup_dir,
             dry_run=dry_run,
+            is_pinned=is_pinned,
         )
+        prune_retired_hook_registrations(
+            Path.cwd(), backup_dir, dry_run,
+            retired_now + retired_already_gone(retraction_manifest, Path.cwd()))
         migrate_seeded_identity(Path.cwd(), dry_run)
 
         # After applying all HARNESS/MERGE updates AND backstop,
@@ -5863,6 +6137,10 @@ def main():
         # deliver partially. backstop_warns stays deliberately out of the
         # exit code -- it describes an incomplete SOURCE payload, not a
         # withheld local delivery.
+        sync_ok = True
+        if dry_run and not is_template_repo:
+            print("would regenerate derived files:")
+            run_post_apply_sync(Path.cwd(), dry_run=True)
         if not dry_run:
             if stamp_divergent:
                 sys.exit(1)
@@ -5935,6 +6213,14 @@ def main():
                     child_env[_REEXEC_ENV] = "1"
                     sys.stdout.flush()
                     sys.stderr.flush()
+                    if os.name == "nt":
+                        # Windows has no exec: os.execve starts a new process and ends this
+                        # one at once, so the caller saw an early exit and asked for a manual
+                        # re-run (Athanor Win 2026-11-07). Wait for the child instead.
+                        sys.exit(subprocess.run(
+                            [sys.executable, str(updater_path)] + sys.argv[1:],
+                            env=child_env,
+                        ).returncode)
                     try:
                         os.execve(
                             sys.executable,
@@ -5977,9 +6263,13 @@ def main():
                     file=sys.stderr,
                 )
                 sys.exit(1)
+            if not is_template_repo:
+                sync_ok = run_post_apply_sync(Path.cwd())
             # --allow-skips acknowledges CONTENT the operator knowingly keeps;
             # it may not mute a compromised write path (F4c-2 C12).
             if paths_refused:
+                sys.exit(1)
+            if not sync_ok:
                 sys.exit(1)
             if (paths_withheld or paths_failed) and not args.allow_skips:
                 sys.exit(1)
@@ -5990,6 +6280,7 @@ def main():
 
 
 if __name__ == "__main__":
+    _console_safe_streams()
     # Digest taken BEFORE main() so the comparison spans the whole run,
     # including the overlay that may rewrite this very file partway through.
     # main() exits via sys.exit on most paths, so the check lives in `finally`

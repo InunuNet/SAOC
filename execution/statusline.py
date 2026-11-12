@@ -38,6 +38,8 @@ try:
     import fcntl
 except ImportError:  # Windows: no flock; the locked paths below degrade to no-ops
     fcntl = None
+import contextlib
+import io
 import json
 import os
 import re
@@ -73,6 +75,7 @@ CONTEXT_NOW_PRUNE_SECONDS = 24 * 3600
 DECIDER_PATH = Path(__file__).resolve().parent / "hooks" / "lib" / "autocompact_decider.py"
 QUOTA_WINDOWS = ("five_hour", "seven_day")
 ISO_UTC_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+QUOTA_HISTORY_KEEP_SECONDS = 20 * 60
 HEARTBEAT_REFRESH_SECONDS = 3600
 HEARTBEAT_PRUNE_SECONDS = 24 * 3600
 
@@ -92,7 +95,8 @@ MAGENTA = "\033[38;5;176m"
 
 # Global shared state. Common to every agent on this machine, maintained
 # outside Athanor, and read here without ever being written.
-GLOBAL_STATE = Path.home() / ".claude" / "MEMORY" / "STATE"
+GLOBAL_STATE = Path(os.environ.get("QUOTA_GLOBAL_STATE")
+                    or Path.home() / ".claude" / "MEMORY" / "STATE")
 
 
 # ── Rendering primitives — omission is enforced here, once ────────────────────
@@ -461,36 +465,49 @@ def refresh_usage_cache() -> None:
         return
 
 
-def mirror_quota(root: Path, block) -> None:
+def _window_reading(block):
+    """Return (used_pct, resets_at, seconds) for a live window block, else None."""
+    if not isinstance(block, dict) or not isinstance(block.get("utilization"), (int, float)):
+        return None
+    resets = block.get("resets_at")
+    seconds = None
+    if isinstance(resets, str):
+        when = datetime.fromisoformat(resets.replace("Z", "+00:00"))
+        seconds = int((when - datetime.now(timezone.utc)).total_seconds())
+        if seconds <= 0:
+            # Rolled over: the old figure describes a window that no longer exists.
+            return None
+    else:
+        resets = None
+    return block["utilization"], resets, seconds
+
+
+def mirror_quota_all(root: Path, cache) -> None:
     """Write the project quota mirror (read by quota.py) from the global cache.
 
     quota.py never reads the home dir, so this is the only path by which a live
-    figure reaches it. captured_at is the cache file's mtime, never now(): the
-    mirror must say when the reading was taken. Best-effort, nothing escapes.
+    figure reaches it. One mirror holds every live window under "windows"; the
+    legacy top-level fields follow five_hour, else seven_day. captured_at is the
+    cache file's mtime, never now(). No live window removes the mirror.
+    Best-effort, nothing escapes.
     """
     try:
-        if not isinstance(block, dict) or not isinstance(block.get("utilization"), (int, float)):
+        target = root / ".agent" / "memory" / "scratch" / ".quota_status.json"
+        windows = {}
+        for name in QUOTA_WINDOWS:
+            reading = _window_reading(cache.get(name)) if isinstance(cache, dict) else None
+            if reading:
+                windows[name] = {"used_pct": reading[0], "resets_at": reading[1],
+                                 "seconds_to_reset": reading[2]}
+        if not windows:
+            target.unlink(missing_ok=True)
             return
-        resets = block.get("resets_at")
-        seconds = None
-        if isinstance(resets, str):
-            when = datetime.fromisoformat(resets.replace("Z", "+00:00"))
-            seconds = int((when - datetime.now(timezone.utc)).total_seconds())
-            if seconds <= 0:
-                # Rolled over: the old figure describes a window that no longer exists.
-                (root / ".agent" / "memory" / "scratch" / ".quota_status.json").unlink(
-                    missing_ok=True)
-                return
-        else:
-            resets = None
+        primary = windows.get("five_hour") or windows["seven_day"]
         captured = datetime.fromtimestamp(
             (GLOBAL_STATE / USAGE_CACHE_NAME).stat().st_mtime, timezone.utc).isoformat()
-        target = root / ".agent" / "memory" / "scratch" / ".quota_status.json"
         target.parent.mkdir(parents=True, exist_ok=True)
         tmp = target.with_suffix(".json.tmp")
-        tmp.write_text(json.dumps({
-            "used_pct": block["utilization"], "resets_at": resets,
-            "seconds_to_reset": seconds, "captured_at": captured}))
+        tmp.write_text(json.dumps({**primary, "captured_at": captured, "windows": windows}))
         tmp.replace(target)
     except Exception:
         return
@@ -513,7 +530,7 @@ def quota(root: Path) -> str:
     cache = global_json(USAGE_CACHE_NAME)
     if isinstance(cache, dict):
         age = global_age(USAGE_CACHE_NAME)
-        mirror_quota(root, cache.get("five_hour"))
+        mirror_quota_all(root, cache)
         live = join(quota_window(cache.get("five_hour"), "5H"),
                     quota_window(cache.get("seven_day"), "WK"))
         if live:
@@ -769,6 +786,66 @@ def record_exhaustion(payload: dict, root: Path) -> None:
         "recorded_at": iso_utc(now), "source": "statusline"})
 
 
+def record_quota_mirror(payload: dict, root: Path) -> None:
+    """Feed quota.py from the payload's live 5h reading, the one source that is always current.
+
+    The shared usage cache's writer is not ours and goes stale, which left quota.py at
+    state=unknown and every quota gate blind. captured_at is now: the payload is this render's.
+    """
+    brake = load_burn_brake()
+    with contextlib.redirect_stdout(io.StringIO()):
+        brake.release_if_reset(root)
+    limits = payload.get("rate_limits")
+    block = limits.get("five_hour") if isinstance(limits, dict) else None
+    used = block.get("used_percentage") if isinstance(block, dict) else None
+    if not isinstance(used, (int, float)) or isinstance(used, bool):
+        return
+    now = time.time()
+    resets = epoch_of(block.get("resets_at"))
+    if resets is not None and resets <= now:
+        return
+    write_json_atomic(root / ".agent" / "memory" / "scratch" / ".quota_status.json", {
+        "used_pct": float(used), "resets_at": iso_utc(resets) if resets is not None else None,
+        "seconds_to_reset": int(resets - now) if resets is not None else None,
+        "captured_at": iso_utc(now)})
+    record_quota_history(float(used), now, resets, root, brake)
+
+
+def load_burn_brake():
+    """burn_brake.py loaded from beside this file, so the render needs no subprocess."""
+    import importlib.util
+
+    path = Path(__file__).resolve().parent / "burn_brake.py"
+    spec = importlib.util.spec_from_file_location("burn_brake", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def record_quota_history(used: float, now: float, resets: float | None, root: Path,
+                         brake) -> None:
+    """Keep the last 20 minutes of readings and let the burn-rate brake judge them."""
+    scratch = root / ".agent" / "memory" / "scratch"
+    history = scratch / ".quota_history.jsonl"
+    cutoff = now - QUOTA_HISTORY_KEEP_SECONDS
+    kept = []
+    try:
+        lines = history.read_text().splitlines()
+    except OSError:
+        lines = []
+    for line in lines:
+        try:
+            if float(json.loads(line)["t"]) >= cutoff:
+                kept.append(line)
+        except (ValueError, KeyError, TypeError):
+            continue
+    kept.append(json.dumps({"t": now, "used_pct": used, "w": resets}))
+    scratch.mkdir(parents=True, exist_ok=True)
+    history.write_text("\n".join(kept) + "\n")
+    with contextlib.redirect_stdout(io.StringIO()):
+        brake.check(root, voice=True)
+
+
 def record_heartbeat(payload: dict, root: Path) -> None:
     """Move activity_at only when some session did work since it was last seen.
 
@@ -825,7 +902,7 @@ def update_heartbeat(target: Path, session: str, fingerprint: str,
 
 def record_quota_state(payload: dict, root: Path) -> None:
     """Best-effort: a recording failure must never cost the operator the panel."""
-    for record in (record_exhaustion, record_heartbeat, record_context_now):
+    for record in (record_quota_mirror, record_exhaustion, record_heartbeat, record_context_now):
         try:
             record(payload, root)
         except Exception:
@@ -893,6 +970,14 @@ def header(title: str) -> str:
     return f'{RULE}— |{R} {BLUE}{title}{R} {RULE}| {"─" * dashes}{R}'
 
 
+def athanor_version(root: Path) -> str:
+    """The harness version this project carries, from .agent/version; empty when absent."""
+    try:
+        return (root / ".agent" / "version").read_text(encoding="utf-8").strip()
+    except OSError:
+        return ""
+
+
 def build(payload: dict, root: Path) -> list[str]:
     """Assemble the panel, dropping every line that has nothing to say."""
     name = project_name(root)
@@ -905,7 +990,7 @@ def build(payload: dict, root: Path) -> list[str]:
     env = join(
         seg("CC", str(payload.get("version") or "")),
         seg("Model", session_model(payload)),
-        seg("Style", str(dig(payload, "output_style", "name") or "")),
+        seg("Athanor", athanor_version(root)),
         seg("SK", count_dir(root / ".claude" / "skills", "*")),
         seg("WF", count_dir(root / ".agent" / "workflows", "*.md")),
         seg("Hooks", hook_count(root)),
@@ -969,7 +1054,17 @@ def build(payload: dict, root: Path) -> list[str]:
     return panel
 
 
+def force_utf8_streams() -> None:
+    """The panel uses non-ASCII glyphs; a cp1252 Windows console would raise on them."""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
+
 def main() -> int:
+    force_utf8_streams()
     payload = read_payload()
     root = project_root(payload)
     record_quota_state(payload, root)

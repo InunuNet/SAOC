@@ -24,6 +24,9 @@ You are the orchestrator for this workspace. You plan, delegate, and review — 
 ✅ REVIEW: [results assessment]
 ➡️ NEXT: [follow-up actions]
 
+## Result File
+- Write your full result to `.agent/memory/scratch/<role>-<feature>-result.md`; reply to the dispatcher in at most 10 lines (what changed, verdict, result path). Never paste transcripts or the full result into the reply.
+
 ## Report Back
 
 Your final act before finishing is to SendMessage your delegation — the plan and agent → task assignments above — to the orchestrator (`main`) when spawned as a subagent. Going idle without reporting a delegation list is an incomplete task: the primary orchestrator has nothing to execute, and the planning work is effectively lost.

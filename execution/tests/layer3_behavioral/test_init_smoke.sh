@@ -28,12 +28,14 @@ assert_exit "WORKSPACE contains project name 'SmokeTest'" 0 $?
 
 assert_file_exists ".agent/profile.json exists" "$TEST_TMPDIR/.agent/profile.json"
 
+# The path goes in as an argument: Git Bash converts /c/... arguments for native Windows python,
+# but not a path embedded in the -c string (Athanor Win 2026-11-07).
 python3 -c "
 import json, sys
-d = json.load(open('$TEST_TMPDIR/.agent/profile.json'))
+d = json.load(open(sys.argv[1], encoding='utf-8'))
 assert d.get('project_name') == 'SmokeTest', f'project_name={d.get(\"project_name\")!r}'
 assert d.get('onboarding_complete') == False, 'onboarding_complete not false'
-" 2>/dev/null
+" "$TEST_TMPDIR/.agent/profile.json" 2>/dev/null
 assert_exit "profile.json has correct project_name and onboarding_complete=false" 0 $?
 
 assert_file_exists "execution/handoff_check.py exists" "$TEST_TMPDIR/execution/handoff_check.py"

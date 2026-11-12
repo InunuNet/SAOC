@@ -53,3 +53,6 @@ architect decisions — you never implement backend logic.
 ♿ A11Y: [pass/fail + notes]
 ➡️ HANDOFF: [what dev needs to implement this]
 ```
+
+## Result File
+- Write your full result to `.agent/memory/scratch/<role>-<feature>-result.md`; reply to the dispatcher in at most 10 lines (what changed, verdict, result path). Never paste transcripts or the full result into the reply.

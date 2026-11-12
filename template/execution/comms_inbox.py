@@ -23,9 +23,7 @@ from pathlib import Path
 BOARD = Path("comms.md")
 SEEN = Path(".agent/memory/project/comms_seen.json")
 SHOWN = Path(".agent/memory/project/comms_shown.json")
-HEADER_MAX = 200
 PROFILE = Path(".agent/profile.json")
-BOOT_HEADERS = 5
 HEADER = re.compile(r"^## \[(?P<frm>[^\]]*?)\s*(?:->|→)\s*(?P<to>[^\]]*)\]")
 
 
@@ -94,16 +92,8 @@ def unread() -> list[dict]:
 def cmd_boot() -> int:
     new = unread()
     if new:
-        print(f"--- COMMS: {len(new)} unread on comms.md ---")
-        if len(new) > BOOT_HEADERS:
-            print(f"  ... {len(new) - BOOT_HEADERS} older not listed")
-        for m in new[-BOOT_HEADERS:]:
-            h = m["header"]
-            print(f"  {h if len(h) <= HEADER_MAX else h[:HEADER_MAX] + '…'}")
-        print("Read them: python3 execution/comms_inbox.py show  "
-              "then mark read: python3 execution/comms_inbox.py ack")
-        print("---")
-        print("")
+        print(f"COMMS: {len(new)} unread on comms.md. Read: python3 execution/comms_inbox.py show,"
+              " then ack.")
     return 0
 
 
@@ -144,4 +134,11 @@ def main(argv) -> int:
 
 
 if __name__ == "__main__":
+    # A cp1252 console (Windows without UTF-8 mode) cannot encode message glyphs such as
+    # U+2192; replace them instead of crashing the boot inbox (Athanor Win, 2026-11-05).
+    for _stream in (sys.stdout, sys.stderr):
+        try:
+            _stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
     sys.exit(main(sys.argv))

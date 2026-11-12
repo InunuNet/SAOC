@@ -66,7 +66,7 @@ for c in cmds:
     m = re.search(r'bash\s+(execution/hooks/\S+\.sh)', c)
     if m: paths.add(m.group(1))
 for p in sorted(paths): print(p)
-" 2>/dev/null)
+" 2>/dev/null | tr -d '\r')
 
 if [ -z "$SETTINGS_REFS" ]; then
   assert_exit "settings.json hook-script extraction produced results" 0 1

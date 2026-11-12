@@ -16,10 +16,19 @@ from datetime import datetime, timezone
 # ── optional dependency ──────────────────────────────────────────────────────
 try:
     import jsonschema
-    from jsonschema import validate, ValidationError
 except ImportError:
-    print("ERROR: jsonschema not installed. Run: pip install jsonschema", file=sys.stderr)
-    sys.exit(1)
+    jsonschema = None
+
+TASK_TYPES = ("write_file", "compute_hash", "sleep")
+TASK_STATES = ("pending", "in_progress", "done", "failed", "dead")
+TASK_KEYS = ("id", "type", "payload", "attempts", "max_attempts", "state")
+# Per-type payload shape: field -> kind ("str" = non-empty string, "text" = any string,
+# "int" = integer >= 0). Mirrors the if/then/else blocks in schema.json.
+PAYLOAD_SHAPES = {
+    "write_file": {"path": "str", "content": "text"},
+    "compute_hash": {"input_path": "str", "output_path": "str"},
+    "sleep": {"ms": "int"},
+}
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -64,17 +73,78 @@ def load_queue(queue_path: str) -> list[dict]:
     return tasks
 
 
+def _is_int(value, minimum: int) -> bool:
+    """JSON Schema integer: bool is not an integer."""
+    return isinstance(value, int) and not isinstance(value, bool) and value >= minimum
+
+
+def _check_payload(task_type: str, payload) -> str | None:
+    """Return an error message when payload violates the per-type shape, else None."""
+    shape = PAYLOAD_SHAPES[task_type]
+    if not isinstance(payload, dict):
+        return "payload is not an object"
+    for field in shape:
+        if field not in payload:
+            return f"{field!r} is a required property"
+    extra = sorted(set(payload) - set(shape))
+    if extra:
+        return f"Additional properties are not allowed ({', '.join(repr(k) for k in extra)})"
+    for field, kind in shape.items():
+        value = payload[field]
+        if kind == "int":
+            ok = _is_int(value, 0)
+        elif kind == "str":
+            ok = isinstance(value, str) and len(value) >= 1
+        else:
+            ok = isinstance(value, str)
+        if not ok:
+            return f"payload {field!r} is invalid: {value!r}"
+    return None
+
+
+def _task_errors_without_jsonschema(task) -> list[str]:
+    """Hand-rolled check mirroring schema.json for hosts without the jsonschema package."""
+    if not isinstance(task, dict):
+        return ["task is not an object"]
+    for key in TASK_KEYS:
+        if key not in task:
+            return [f"{key!r} is a required property"]
+    extra = sorted(set(task) - set(TASK_KEYS))
+    if extra:
+        return [f"Additional properties are not allowed ({', '.join(repr(k) for k in extra)})"]
+    errors = []
+    if not isinstance(task["id"], str) or not task["id"]:
+        errors.append(f"id is invalid: {task['id']!r}")
+    if task["type"] not in TASK_TYPES:
+        errors.append(f"{task['type']!r} is not one of {list(TASK_TYPES)}")
+    if not _is_int(task["attempts"], 0):
+        errors.append(f"{task['attempts']!r} is not a valid attempts value")
+    if not _is_int(task["max_attempts"], 1):
+        errors.append(f"{task['max_attempts']!r} is not a valid max_attempts value")
+    if task["state"] not in TASK_STATES:
+        errors.append(f"{task['state']!r} is not one of {list(TASK_STATES)}")
+    if not errors:
+        payload_error = _check_payload(task["type"], task["payload"])
+        if payload_error:
+            errors.append(payload_error)
+    return errors
+
+
 def validate_queue(tasks: list[dict], schema: dict) -> None:
     """
     Validate ALL tasks against schema before any execution.
+    Uses jsonschema when installed, else the equivalent hand-rolled check.
     Exit 2 on first violation (no side effects).
     """
-    validator = jsonschema.Draft7Validator(schema)
+    validator = jsonschema.Draft7Validator(schema) if jsonschema else None
     for i, task in enumerate(tasks):
-        errors = list(validator.iter_errors(task))
-        if errors:
-            task_id = task.get("id", f"<index {i}>")
-            msgs = "; ".join(e.message for e in errors[:3])
+        if validator:
+            msgs_list = [e.message for e in validator.iter_errors(task)]
+        else:
+            msgs_list = _task_errors_without_jsonschema(task)
+        if msgs_list:
+            task_id = task.get("id", f"<index {i}>") if isinstance(task, dict) else f"<index {i}>"
+            msgs = "; ".join(msgs_list[:3])
             print(
                 f"ERROR: schema validation failed for task {task_id!r}: {msgs}",
                 file=sys.stderr,

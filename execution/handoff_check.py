@@ -31,6 +31,9 @@ from pydeps import require  # noqa: E402
 
 require("yaml")
 
+BYPASS_LOCK_DEADLINE_SECONDS = 30
+BYPASS_LOCK_POLL_SECONDS = 0.05
+
 # ---------------------------------------------------------------------------
 # Path resolution helpers
 # ---------------------------------------------------------------------------
@@ -528,17 +531,47 @@ def append_bypass_entry(from_agent: str, to_agent: str, gate_id: str, mission_id
     mission_field = f"{gate_id}/{mission_id}" if gate_id and gate_id not in mission_id else mission_id
     entry = f'- `{ts}` | `{pair}` | `{mission_field}` | reason: "{reason}"\n'
 
-    import fcntl
+    try:
+        import fcntl
+    except ImportError:
+        fcntl = None
+        try:
+            import msvcrt
+        except ImportError:
+            msvcrt = None
     learned_path.parent.mkdir(parents=True, exist_ok=True)
     with open(learned_path, "a+", encoding="utf-8") as fh:
-        fcntl.flock(fh, fcntl.LOCK_EX)
-        fh.seek(0)
-        content = fh.read()
-        if "## Gate Bypasses" not in content:
-            if content and not content.endswith("\n"):
-                fh.write("\n")
-            fh.write("\n## Gate Bypasses\n\n")
-        fh.write(entry)
+        locked_msvcrt = False
+        if fcntl is not None:
+            fcntl.flock(fh, fcntl.LOCK_EX)
+        elif msvcrt is not None:
+            deadline = time.monotonic() + BYPASS_LOCK_DEADLINE_SECONDS
+            while True:
+                fh.seek(0)
+                try:
+                    msvcrt.locking(fh.fileno(), msvcrt.LK_NBLCK, 1)
+                    locked_msvcrt = True
+                    break
+                except OSError:
+                    if time.monotonic() >= deadline:
+                        raise TimeoutError(
+                            "could not lock %s within %ds"
+                            % (learned_path, BYPASS_LOCK_DEADLINE_SECONDS)
+                        )
+                    time.sleep(BYPASS_LOCK_POLL_SECONDS)
+        try:
+            fh.seek(0)
+            content = fh.read()
+            if "## Gate Bypasses" not in content:
+                if content and not content.endswith("\n"):
+                    fh.write("\n")
+                fh.write("\n## Gate Bypasses\n\n")
+            fh.write(entry)
+            fh.flush()
+        finally:
+            if locked_msvcrt:
+                fh.seek(0)
+                msvcrt.locking(fh.fileno(), msvcrt.LK_UNLCK, 1)
 
 
 def main():

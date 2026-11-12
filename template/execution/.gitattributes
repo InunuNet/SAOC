@@ -1,0 +1,8 @@
+# Harness files are LF on every platform, whatever the project's root
+# .gitattributes or the machine's core.autocrlf says (Git for Windows defaults
+# to autocrlf=true, which makes bash die on $'\r'). Shipped by the harness.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+# A fixture that is CRLF on purpose.
+tests/ghost-project/sieve/tests/fixtures/sieve_boundary.txt -text

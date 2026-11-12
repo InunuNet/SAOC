@@ -132,7 +132,7 @@ def test_11_byte_exact_canonical_output():
     """Output is byte-exact match against golden_merged.json."""
     result = run_merge()
     assert result.returncode == 0, f"Expected exit 0, got {result.returncode}"
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False, newline="\n") as f:
         f.write(result.stdout)
         tmp_path = f.name
     try:

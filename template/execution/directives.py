@@ -348,8 +348,37 @@ def _sort_key(meta: dict):
     return (rank, str(meta.get("issued_at") or ""), str(meta.get("id") or ""))
 
 
-def pending_for(project_token: str, metas, applied) -> list:
+_RELEASE_RE = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)(?:-(\d+))?\b")
+MAX_LISTED = 3
+
+
+def _version_tuple(text) -> tuple:
+    """'3.8.57' -> (3, 8, 57); () when it is not a plain dotted version."""
+    match = re.match(r"^v?(\d+)\.(\d+)\.(\d+)$", str(text or "").strip())
+    return tuple(int(g) for g in match.groups()) if match else ()
+
+
+def directive_release(meta: dict) -> tuple:
+    """The release a directive announces: the leading `vX.Y.Z[-W]` of its summary.
+
+    A range (`v3.8.38-47`) means the highest patch. Read from the summary, not a
+    new frontmatter key: validate_directive fails closed on unknown keys, so a
+    new key would make every older downstream drop the directive. () when the
+    summary carries no version, which means the directive always applies.
+    """
+    match = _RELEASE_RE.match(str(meta.get("summary") or "").strip())
+    if not match:
+        return ()
+    major, minor, patch, end = match.groups()
+    return (int(major), int(minor), int(end) if end else int(patch))
+
+
+def pending_for(project_token: str, metas, applied, baseline: tuple = ()) -> list:
     """Active + addressed to me + un-acked, sorted by (priority, issued_at, id). Pure.
+
+    `baseline` is the release the project was scaffolded at: a directive whose
+    release is <= baseline describes code the project already contains, so it
+    is not pending. () disables the filter.
 
     A malformed entry is SKIPPED, never fatal: one bad file must not blind a
     downstream to the other nine.
@@ -370,6 +399,9 @@ def pending_for(project_token: str, metas, applied) -> list:
         if meta.get("status") != "active":
             continue
         if not matches_target(meta.get("targets"), project_token):
+            continue
+        release = directive_release(meta)
+        if baseline and release and release <= baseline:
             continue
         entry = entries.get(did)
         if isinstance(entry, dict) and entry.get("result") in ("applied", "declined", "failed"):
@@ -690,6 +722,27 @@ def _harness_version(root: Path) -> str:
         return "unknown"
 
 
+def _boot_order(rows: list) -> list:
+    """p1 first, then newest first: the few lines boot has room for matter most."""
+    newest = sorted(rows, key=lambda row: (row[0]["issued_at"], row[0]["id"]), reverse=True)
+    return sorted(newest, key=lambda row: _sort_key(row[0])[0])
+
+
+def scaffold_baseline(root: Path) -> tuple:
+    """The release this project was scaffolded at, (): unknown, filter nothing.
+
+    profile.scaffold_version is stamped by the updater the first time it moves
+    template_version; until then template_version IS the scaffold release.
+    """
+    try:
+        data = json.loads((root / ".agent" / "profile.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return ()
+    if not isinstance(data, dict):
+        return ()
+    return _version_tuple(data.get("scaffold_version") or data.get("template_version"))
+
+
 def cmd_list(args) -> int:
     root = workspace_root()
     me = project_token(root)
@@ -701,7 +754,7 @@ def cmd_list(args) -> int:
         # spends section 4 avoiding. `make directives-lint` is the author view.
         return 0
 
-    rows = pending_for(me, metas, load_applied(root))
+    rows = pending_for(me, metas, load_applied(root), scaffold_baseline(root))
 
     clean, blocked = [], []
     for meta in rows:
@@ -713,10 +766,13 @@ def cmd_list(args) -> int:
 
     if clean:
         print(f"--- PENDING DIRECTIVES ({len(clean)}) — a request, never an authorization ---")
-        for meta, _ in clean:
+        shown = clean if args.all else _boot_order(clean)[:MAX_LISTED]
+        for meta, _ in shown:
             print(
                 f"  [{meta['priority']}] {meta['id']}  {meta['issued_at']}  {meta['summary']}"
             )
+        if len(shown) < len(clean):
+            print(f"  +{len(clean) - len(shown)} more pending — python3 execution/directives.py list --all")
         print("  read one with: python3 execution/directives.py show <id>")
         print("  then record:   python3 execution/directives.py ack <id> "
               "--result applied|declined|failed --note '...'")
@@ -839,6 +895,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_list = sub.add_parser("list", help="pending directives addressed to this project")
     p_list.add_argument("--verbose", action="store_true",
                         help="also report directives that failed to parse")
+    p_list.add_argument("--all", action="store_true",
+                        help="list every pending directive (default caps at %d)" % MAX_LISTED)
     p_list.set_defaults(func=cmd_list)
 
     p_show = sub.add_parser("show", help="print one directive inside the untrusted envelope")

@@ -431,4 +431,738 @@ retired_paths:
   reason: RETIRED - replaced by execution/quota_auto_resume.py (per-project launchd tick, quota-auto-resume F1); its input checkpoint writer was already dead
   sha256:
   - 7714146698ec7bd98fead77340c04b38eccb1f91f21b6f612458afa7a558aae2
+- path: execution/checks/f4_live_test_target.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - c494eb217f26961034f8c5d592e2a074f702522fcc85d0d8b590871b34d4fa1d
+- path: execution/checks/json_equal.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 7c9d76ca87751e238522a24627caaac97ddfec064f635c3d7d91a3f3e34fe235
+- path: execution/checks/no_glob_in_excludes.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - e5c7f79be70adfd2ffe2d1504b0cf7eb1484c3dd31e3b4cd248d78fb343c641c
+- path: execution/checks/no_update_styles.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - a8b38d11c827af916f9ac3651d047b2925f1a7d215b539eeea726f9eb4175f77
+- path: execution/checks/test_audit_wiring.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 6e5734e83ff8838f05a3ee5e8a357e9cf4eb4688d693a03e2a474adb51fd6a19
+  - b7df96b1e61281d02c6d2fd340e43efa649443a28cc131c2fa44cd199d5dbe18
+- path: execution/checks/test_force_path_remediation.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 70533d920e51845cb4f8b90116e7a09e80db22f62ae4fa9afd26a9cdecdc1616
+  - a184e1a60b4efdea326798f31763d3d523f5c8c7144a766def864297c34b2486
+  - fbc4c3cc0941cd3e6256e25304e3f8524f570680f7373bfdb0a22546fbc15b04
+- path: execution/checks/test_force_path_traversal.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 5b5d301403779785b3cc57d5056e861d516b9040f749134e49b07f23dc666942
+- path: execution/checks/test_repo_info_fallback_reachable.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - e9fa21561679f1c41856fe680a3767602cc4e6d53f767699dae55310cc0e40cf
+- path: execution/checks/test_set_e_fallback_reachable.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 47558e1a7e793900ad058aadb6b89ff6fb9df3dcc9d673c2ef303c4c09984285
+- path: execution/checks/test_skill_drift.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 502ba16a42b32b74484792f644c1218ab52e9f52b719293feb8f3bf68b491afd
+  - d05c19b47b0c88704acbca16f338962982cd8667a604863453bd21a9857eb852
+- path: execution/checks/test_skill_drift_contract_integration.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 14d1d69579567ff4e02f268a3da75c0c08a15fbb408d05a9deac75e3ba4ffab6
+- path: execution/checks/test_skill_link_depth.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 7e6fbd3fad3b833e66655ddeb418deb339f8df48283c0ab69a0be5df6d19771a
+- path: execution/checks/test_skill_propagation.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 094ec9b78d731988657c2e464b121691ed42a001371661adc398441bc3610301
+- path: execution/checks/verify_agent_model_frontmatter.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 50d7e43fe3cd08929f32db385327d950c9ea440258d3f94b4afeb17298260d03
+- path: execution/checks/verify_agent_tier_matrix.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - abaf8b253ff7fc93fac533445eabcdf54a01943df3afd4b41141a36e3caec7b9
+- path: execution/checks/verify_agent_tier_selftest.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - fc2a4e3ef39375e7d09b9958a05b7eda773b7f70df1a84a95927814ccb98e164
+- path: execution/checks/verify_all_contracts_validate.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 83433ab1afb7b81013bb146bc13456685fb0d6937d8e3d6e620ec5ac56a18950
+  - e4233ff56407a30624f5f3525ba338b51763445c32a3828f91c455b6b5873d43
+- path: execution/checks/verify_all_declared_timeouts_normalize.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 1ff7e353285ea177b1011c7bb1f2f0e8e7dc1590fe57baa9e6673eb8a9bfc580
+- path: execution/checks/verify_anti_manifest_agents.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 36dd8088cd8eeff08a9ae0b4c0593352c08a8a2a01f030610ca788bd5b0d361f
+- path: execution/checks/verify_autonomy_type_guard_1288.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 7370525e10a6f1438a4cdc1fffde8fc5d7528e532c017cc9ecf6c44ae9773a5a
+- path: execution/checks/verify_backlog_hygiene_gate_blocks_stale.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - eb2cd803a41e43c28d5f45bcdb2b7101575c529a69585e477cbe26b4083a6a3a
+- path: execution/checks/verify_backlog_hygiene_gate_passes_clean.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 2bef2645c88ae29c7d5ececc42c970d0274ac79ec7751789d8bc3ced354db60a
+- path: execution/checks/verify_backlog_slim.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 7947ff520f87508bf8d46439802725929dbb731c899fba04587096f697b7c95a
+- path: execution/checks/verify_backlog_trim_env_override.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - edd2a08f8625795529e60c4bbed826984739411a2cc199b34220d2af0b1f75e1
+- path: execution/checks/verify_backlog_trim_first_run_guard.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - c5cea92c6685c68094c46818f7958fd3a82c45a709f4f7b0057506e0b737e712
+- path: execution/checks/verify_backlog_trim_no_truncate_real_backlog.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 93c4874cee321e1d689cb8e73e97c2acfd8649efd020f6bd28e1f942b824927b
+- path: execution/checks/verify_backstop.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - ef3befa4b582a7b972b7451e8cc030005ef78575cbf8e7d8b4e1704c213c2fb1
+- path: execution/checks/verify_backstop_accounting.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - d80462266912e5c8fb960fa17a011905097e25d9ae3a0a84b1e14ad91ebcc046
+- path: execution/checks/verify_baseline_reconciliation.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 6f23eafe443b31f8baf37c639deea5e97e1ff5429f3b363d55788076ace9b275
+- path: execution/checks/verify_block_contains.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 9716c3b330d9c7a781e3d5cc24c8ed9c9803196ef7dd331fb2769809000890ef
+- path: execution/checks/verify_boot_context_dedup_1287.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 6bf0792c7b60689d1c5c4439ba57030f80445a403d0a35d078223ff6d99d47d7
+- path: execution/checks/verify_boot_no_false_success.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 9b4d131d29456f42c10d887c474ad5623e81469731f5ba1be8ac9e48adaee3a0
+- path: execution/checks/verify_boot_wires_contract_parse_canary.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 22a7fa9ab963ffde9e9e573e3d890b14b4502c56feb9fa71a0dd47f65fd78b34
+- path: execution/checks/verify_check_rejects_bad_timeout.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 17a6f015ee60964f1cf931b5d10db9f460fd1a56aefb85b3cf1e5292a695f7e9
+- path: execution/checks/verify_check_zero_timeout_not_truthy.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 6370092e2fd8ecfd755c32b227eef5209a346795e789317b008bb03ed17ade9b
+- path: execution/checks/verify_codex_ordering.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - ad03272dcf22aeb734bbc2f81b2d5ac19db985e53a42e0bab78081e6d58da5d2
+- path: execution/checks/verify_codex_qa_exit_mapping.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - f77226c1c538ce2d69a535c9b725e364b67d1ebfee7fa0b4b958d8ed1f360b1e
+- path: execution/checks/verify_codi_last_match_template.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - cacffff7d9382847b366715172d84f99c11fbc67e38232e6a8cdbe64834f943a
+- path: execution/checks/verify_contract_cwd_anchor.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - d7cf2ed43efb9823f3a58703a5c4225776640bfd48e905e0f8f88522cd23bad4
+- path: execution/checks/verify_contract_naming.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 8be687b8beabf3dbb7cc2e13b01541be62968f69a26ca7f85bb7b3f5fbcf56ff
+- path: execution/checks/verify_contract_naming_fixtures.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - b720093235337b542b6422e1f08fe9abdfb8889719b5397f82a0161a539a86df
+- path: execution/checks/verify_directive_applied_scope.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 7ccd280ed03a7494c053a0da6063c048f419eba5352358b3cc8a8f51efbed194
+- path: execution/checks/verify_directive_boot_guard.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 2ed3bbde62054d9991da20dc6b068345878b531caeef62bdd348a18ee37299ba
+- path: execution/checks/verify_directives_valid.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - cb842437a0ee1e968e8bb27115fcb2456cffa0a2d0cc774cbb114b704caa99ad
+- path: execution/checks/verify_double_apply_idempotent.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 29fee1f4b6a76cc9bed6efc9775ec45633b0641cabd43c335e8742bd1e79a24f
+  - 5933bbf360071199b938926c26695a9c58284458d0a91bf7268ca8d7825bdb3d
+- path: execution/checks/verify_dry_run_apply_parity.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - dc963045191ef8ea39e0dd7ad416516c827cf68a849467f060591f864ea5a263
+- path: execution/checks/verify_e2e_delivery.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - bac7d78491ca529259fa5cfa25985414b14f50eb8c2d80447cd05d78ca49f427
+- path: execution/checks/verify_edge_cases.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 16e973225eeedebc1972ba7b69592a64b72fbfd287fcdc9c68a6a3932bd8d074
+- path: execution/checks/verify_env_literal_sweep.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 3d9cdc1226934a6fcd5c089bb04f5505ce5213ab2954c59068a72944a98cfb49
+- path: execution/checks/verify_f1_1311_boot_harness_incomplete.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - b7de7a71e521098422366a8fd98578d99d5eaa01b9773236b7795a49682923f7
+- path: execution/checks/verify_f1_dispatch_docs.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 550f80797be4807b17081d3af8bc745ce86e5fdf6fdb5b1baad47c6194ce8c90
+- path: execution/checks/verify_f1_handoff_purge.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - f38813b866b30fa1906ff4969c4ccdaf7bfabba7232d6a3cdf9f0a7d98f9175f
+- path: execution/checks/verify_f1_no_regression.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 3faed83d7d0cb8a3c9b9af9f70db7e1054ebac555f8dfa27032838062cfe31fd
+- path: execution/checks/verify_f1_purge_exempt_shape.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - c2ec21727f8ba598725ded9c5f00f4b8860abc860adb0abfbcfd9cf1f541e1c5
+- path: execution/checks/verify_f1_quota_mirror_partial_write.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 08466c74f607acda60b2593918459c9617d031944817390d811e0df3c55610f7
+  - d691079f7f12627e21627e890abfbdba9d7912f9ed313084f043d66ce203cf7a
+- path: execution/checks/verify_f1_quota_oracle.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 9868734bead325b853eafa0797eeb8167f8d52036c8cef0db103d8bcb94d3d99
+- path: execution/checks/verify_f1_session_token_log.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 0b33c5ff544800f5302b8863409683f51559a82c239c1279b7b698be9fc55a84
+- path: execution/checks/verify_f1_skip_detection.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 832504569eeb7a2b8e4e9703eeeb0bcd7d4a896ca525e6e135851e9a4204fefd
+- path: execution/checks/verify_f2_1295_version_guard.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 537ac78655479cff251353740cba99fc7d46d376c6be8263bfd63558842a93f5
+- path: execution/checks/verify_f2_admission_control.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 995b28a6cd56795ee4054b4c24c21f3e282dc2f8877135ce9e78dfaa5d5ea4ed
+  - c82147c9962146ba9d5e00bf95aba7808fc266d3c65f3c97edd7d143a81649ef
+- path: execution/checks/verify_f2_close_out_gate.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - de01496399b78c61d9f1d4ae88942dd46cd3479e36b021f708ab1b5d5a78a95d
+  - f215e23e5363e458b4e265ef6e457135dff3fb71f3df945c6fc512eecd9365ee
+- path: execution/checks/verify_f2_dedupe_ttl.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - a092f9101890a95785e37e250dd12832c90c36e52661a4fc92d8d2da22282e32
+- path: execution/checks/verify_f2_scratch_purge_exempt.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 5df24e94bfac4e8d4f55ad88e577739920b84c10156464c454df42f353cd8fc9
+- path: execution/checks/verify_f2_token_report.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 96824c4ccc5752c529b1119bc0734f0facec960426b22a421340685dc6bb51bd
+- path: execution/checks/verify_f3_checkpoint.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 8d8ef33c88bacdc97d2c25d83f5e76c5b8719364e454d77ec88686c05327ad35
+- path: execution/checks/verify_f3_close_out_single_wrapup.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 63569b915ea970b00c1554f913c9dbe5305d850c4a047268927e7def9dfb5b8c
+  - a03958fb6041d240d02c5da2d373d8fabc60ce78b787e36d1348cb198f336c14
+- path: execution/checks/verify_f3_death_detection.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 5e231eb1dedcd259fa43412303824bce1f15c13cc0017f680aa0d55b9fddf192
+- path: execution/checks/verify_f3_dispatch_wiring.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 0713c7a793fe0da717a4d6c3d8ab0852c1d9423139c59f9eebf9d7989de8c745
+  - bc55b6b33643dcde635305652c7e9267bf1cbdb85397dba926bfd7ca574f0693
+- path: execution/checks/verify_f3_no_direct_brain_call.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - e9149bbae90098181d46525a36c81f0f4f850df91bcaf4d5930851cb90c6bedf
+- path: execution/checks/verify_f3_token_cap.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 3203ce87b407bd7bd38d6c8c45652f95cccd2d3f2037d011bd31484a3bb03add
+- path: execution/checks/verify_f4_catalog_audit_wiring.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - d766e4f44f32486c6df99f75d4412c3bb126ebf01c95a169ed9ab9b36edad47f
+- path: execution/checks/verify_f4_concurrency.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 51f6376599efabd89a4e25c624818e04ffb45dfbb7b9498a7c8fbdad4160054e
+- path: execution/checks/verify_f4_quota_resume.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 0a34684a733b741d56876b41ef7b3dc8c16ab84ac9572760b278f6288db083f3
+  - 809ab4ce2ce7bcb6f09e6b1a977080ff5ea177218cfb1aa4b8cc5c4ed680607e
+  - 8a7082356af4a013309d1310ad56e6e62052b161e2d2ca3befd68b68d9b1ba63
+  - fe2c5fe6c0a6ea067b9791d46b5cf7fb3a9ba49e52392929c547e58fea6332d3
+- path: execution/checks/verify_f4_scope_guard.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - e25b18ea83de3641bca827e2eb473a99ea70bfa1addaec4f13192785d8eed34b
+- path: execution/checks/verify_f5_boot_no_autoapply.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 10bab04117bbd5e68151e760aa49a4664f198474dacd5d784105f6ce758f1be7
+- path: execution/checks/verify_f5_dep_check.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 4946a9a98f31a9489026d8298f43aa531b67909fb2deed779ef4e0c0b065b9f3
+- path: execution/checks/verify_f5_model_env_boot_wiring.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 97b95beaa0aa186688ac47037ffbf66695cbef7e742269fc917d8c040c8107dc
+- path: execution/checks/verify_f5_quota_doctrine.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - d48307126d9dc8bad83f5ba460a44e5a9dfffc51c3792466e5222d6631641999
+- path: execution/checks/verify_f6_phase_routing.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 8e026f397ff4400323fb3e792b77c8188666f4931a21954e158b4be7068b6f3b
+- path: execution/checks/verify_f7_milestone_gate_verifies.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 389374a2d655962f450f95165388da1265c3017af805c8d591bed3c24204cc7b
+- path: execution/checks/verify_f8_agent_report_back.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - d7805c94a204a1b0ad6c6d45122ea6807ad70dd7b1f8183b58d0aef3008cb59b
+- path: execution/checks/verify_f8_projects_array.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - f7849beab75dd350ff683753435914d65288d53e5f2d498be4a3c9073da38a75
+- path: execution/checks/verify_fleet_pulse.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 87e8acff69d4540f30a48a3b1c9a0633dbca95198eb7630bedb91e7cc8cf59ff
+- path: execution/checks/verify_free_model_catalog.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - c49f0b5a981475d16ea0fa02d4c6f44b5da2f7ade7a8307cac773534aff3389f
+  - ec420261623aad4e097507d70ad8e5cbed5b1986452eabaf0c1c10214d94b568
+- path: execution/checks/verify_gate_all_timeout_threading.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 8f5b6b4c9b853035aad710bc98b85d1a86e6226d6daafeee1d15fbbb44dccf49
+- path: execution/checks/verify_gate_rejects_bad_timeout.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - bf08a914e65fc71afebd4f30c143438f60e174f1512401c5d9eb4cd80e12a2d2
+  - c563c137c6d67e9262ebefb5411d4245f328a75da5d1647d7ef370215fe7f23a
+- path: execution/checks/verify_gh_closure_scan.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - e051a5246398948d92f26411a3717772c7ec1d95ba6505fb26fdf2fb8134b1c3
+- path: execution/checks/verify_guard_hardened.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 981a984629fd8f05616ebb9cddacad2c8098b193d4a9d0a99a6a9def8ea2b036
+  - b0284968a5234ec1394cfcb4b7ec1aad115024700c497efea15f3164750968ed
+- path: execution/checks/verify_harness_overwrite_guard_104.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 32c4e9e6bc2c9f732f1596d8e4e050af0b368834a49f9170059049fdbe568303
+  - 95ad91357e72f1c82711d9089bc76f2b829e0e624164543ff2c311335cb49edc
+  - ed0e9a5924626ba7bee9523cfba5d4d91ce6937d99f06e512937b5a477595f6d
+- path: execution/checks/verify_hotfix1297_args_passthrough.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 8986252272313ab353c3718291e484932eff9426d2736a288e00e814ca784ccd
+- path: execution/checks/verify_hotfix1297_clean_teardown.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 214f93e295ff72837e0b35ddadfd50702f04e1453ea23a050bddcd2c45b64a4f
+- path: execution/checks/verify_hotfix1297_exitcode_passthrough.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - da241ce7aef4e3bf2d8128618eb8af4db4ee328f8979474f9ca3f01ce741bbe8
+- path: execution/checks/verify_hotfix1297_frequent_output_no_hang.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 4e24bc263d0f730656b56f039928f66e3a8f82c0c7c8f2c7cd016cce9922392f
+- path: execution/checks/verify_hotfix1297_heartbeat_emitted.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - d772105557f6e8042fc9de63c4c7c5b3b942accfc364403869226172bb48d099
+- path: execution/checks/verify_hotfix1297_stdio_passthrough.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 1c7106a67e1d830527c5ea59a95c16220dccc31fca3386ce9d2d074680362b68
+- path: execution/checks/verify_hotfix1298_resume_prefers_existing_contract.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 0d70dda2e4978b7d2035da9fdeed7482100579bc2544d27126dad6f9c44dd13b
+  - 49b8ac7400ebc1e2cd53de0ff578d19cf17717cab7c632ee6ead3328c8ff5ed1
+- path: execution/checks/verify_hotfix1298_resume_still_says_run_spec.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 9b7eae6c751185d7ddd61a1da789bf2df72de6c7d00bc4092c2aed7fe306b005
+- path: execution/checks/verify_hotfix1299_checkpoint_defaults_to_active.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 6ac667747094522ffb88f78719a80cae3c1a769888d6aeb266f40b8c8fc9f371
+- path: execution/checks/verify_hotfix1299_checkpoint_explicit_path_override.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 582c306a6604d962928e8a245b7a1fdaa69402561f1770b75e8ee92f5d79f64f
+- path: execution/checks/verify_hotfix1299_checkpoint_no_path_no_active_fails_cleanly.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 7b2da6b16e475c025e35d75f08535434d83466342635b7f978375f826c9b9bd3
+- path: execution/checks/verify_hotfix1300_gate_clears_active_json.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 856e631cf993324a60ffeae21b06320b0fdfb007d87049437409058f63b14b58
+  - e3b71562e641eca3eaeaeaf661a8dc07d6f351c45a11edac25761874ab0a9787
+- path: execution/checks/verify_hotfix1300_real_active_still_blocks.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 698db28f59fbb1285d52c11e6b5dffb12268f66aba752dfeb5ce08c31479a99a
+- path: execution/checks/verify_hotfix1300_terminal_status_allows_write.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 610b58a1a2e09fb1dd493e607f1c507029ebebad7c8db435198f5e2771b934b3
+- path: execution/checks/verify_hotfix1300_tmp_scratchpad_always_allowed.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 8ff5b775578a54b7fbcd8c2e6399912e3663feec18f24d5df61cc2e439cb1c95
+- path: execution/checks/verify_identical_content_records_baseline.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 15a30dbf17b36b6e0a53c5e2e933c3727f97331256d02828c1d5ebdcf18779a4
+- path: execution/checks/verify_init_idempotent.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 35b0075e21c3504522f5c0b01092992d66495a79374a9db56e88f9f5cfee5880
+- path: execution/checks/verify_invocation_helpers_selftest.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 1d488b87bbc495b4c3e72c302ea50cbeeafac7951d76346141da63fcc0dd50f2
+- path: execution/checks/verify_merge.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 50ad59285a49ff7ee71f6db2443b3b703c5599fd20e4ec4729e469ad59155e40
+- path: execution/checks/verify_mirror_sync.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 05ea61a23d790394fb498ff2e74d46c79fac1a64b604ef919b6451d88aaf20d2
+  - 1928c7e1dcb1db9213679694698cc013afd4acf3685b4bd737a984c959e3b3a6
+  - 1c6f674f7f75cf084f72aa005796095a59a18d08ece4d115eed810a5597ca9eb
+  - 26a389077f5a5ea9a07b00ca39fbe85ebca6480478035574996f32c67dc6a305
+  - 31f960c88ebbc75ae9d17c93e4daffff8f3267dd56b9cfb0ee61980b71057abd
+  - 455f2abb8de8bdd035dd1b53e66f6fbdea5ce75035ccd06a7d18185430652946
+  - 566298605ded190f75a2662b11f6a134f95542ecd8d020b29fccaa4efc244210
+  - 6905199a0fb8d57f381293e008ab1f9c9733060ab93cfb17bffd9a7ef666edfa
+  - 7b501dc6f8e6124cfb5b90a7f50b45c3030766ec18d18fca3530c266d927dfe6
+  - 7f95ac35a5f9c86e80adb3a384011f2ce6e56917b72fe8e8f6d87b16bd3e0c70
+  - 805bd40b75cc85b481300a7fa2309fd49e47995328a1e6e03c2da55ddc0ec499
+  - da784d8187d9f2db62e5ba961fde9a4196c18ac01b102c40cc132344669d55be
+  - eb9fbf75b36747ce10e74a60c154a60849187f9bfa940477e4b17cfcb4cda57e
+  - f7450bf4c60c663514d770d473c8a54ffeac157abe4354e0cc40242109d96634
+  - ff46cf3532c2731210fc86b2236cbfb34820f2434e972030fafc18d1fe41b759
+- path: execution/checks/verify_mission_close_stub_happy.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - e5aa963e49fae47a11e7268350fbce425be1ec168b0b97d54cfcf53be6ddc98b
+- path: execution/checks/verify_mission_close_stub_not_active.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 12a9086f06724f20b9c9098c34657322b5c770156923b14489e7c0ac9013f76c
+- path: execution/checks/verify_mission_close_stub_refuses_real.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 1d09a2a397382a4b8534e0a5ffbd3112703ee4408abb426bf4e33e07fd7a7ad5
+- path: execution/checks/verify_mission_gate_phase_coverage.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 8d39dc836a89fdd2902ef9c5ee1f7fb0653f8e11dac17e1229f17d40a5b273dd
+- path: execution/checks/verify_mission_resume_guidance.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 29f16bb0110c0a3a361ccbf7655df8971bec8ed99fca97da9b5eb8c1e1a6d268
+- path: execution/checks/verify_mission_state_integrity.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 59ee9df77a1120a570e86bdd601637cd4e2bfbf6f6d87f5e2f0ca28b9684301f
+  - 6eac41ee54947e7b444001ebc70ace9bcf74ffca34465c03f00d40f93035135e
+  - f851169455251dc4a7d79878a450f721625e233b374d8a75b9f4d152fdfa28bc
+- path: execution/checks/verify_no_baseline_data_loss.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 075dfb4d8f9b2a6ee91db87bf295ac152e0f15b5ee1d1c9e9c2c0d52e117d173
+  - 1981b84d951ab6fd70080ce1464c423027c04a3588651ae3234a113424b4f5e6
+  - 36613200f01e68c2b2387cbcef3ae23dcabba0840c5a3d15803e5f5a48ddcd6e
+- path: execution/checks/verify_no_baseline_pycache_filter.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - a2715f9d7f7ed89fe4d590a566dd26e25b3de1cf64ffbe7f7f2d90ed92cd951c
+- path: execution/checks/verify_no_literal_model_in_canonical.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 38108de187dec32144e78ad51031706869337fc730cc6b4a7ed8a9e09aba8062
+- path: execution/checks/verify_no_traversing_find_delete.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 49eb2f38059d67153c003c025783b59ea6f0db77814af07deec7e1ed9ab72aa1
+- path: execution/checks/verify_no_update_provenance_matrix.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 8a95b2dc7f12f45a778c918714ab68ec62afb2df1cfeac8a3acd7fcadaa16124
+  - 9f3ff38700607f5ffc6c04ab82af98324098c112f788e08f93b61f7e622e961f
+  - a8481465fe452346d3a0c50c4c259f926c1787d2fe98c5c069220c1285ca1dcb
+- path: execution/checks/verify_onboarding_flag_reset_1286.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 061dcdf4127c2b4bc71db13f9c194f632c916f12d0da170d26f924c27ea19d7c
+- path: execution/checks/verify_openrouter.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - af1628292d79e49f9527b40b91903ff03e47fe2294ba3597ab75bb5926b5b22d
+- path: execution/checks/verify_partial_failure_no_state_write.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - e3992cd340213aeb19a8fa868c08bfb555a81eaf3760938462cc6c1215c7b9d6
+- path: execution/checks/verify_partial_failure_stamps_partial.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - a347e8f82d7c7814f9f4547925e808ee6d3430870e3f7c917efbcb2daf69951b
+- path: execution/checks/verify_phase_id.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - d1a4c33d35f4e474b05d04e1ee3cd85437c44bec16053a14a45db1b456eba63a
+- path: execution/checks/verify_platform_attestation.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 0150867b04520e544ddbde74fec1f35695b43d5bd8e8e848e0500093e9654933
+  - 42be73a2676631eb9c97b2d3111979c4a055d796a83417319f27d27837e95c86
+  - e5eea7be5b90f16c2fc8052252db4ec66f601ad4d5b6d995a50bb821d1f6e88c
+- path: execution/checks/verify_post_update_boot.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 02daa6c2ad6c37090e24f5b0d4bd4eb094f0a32770030311f57bcb8cde765623
+- path: execution/checks/verify_preserve_local_hooks.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 6b1ca7a94a923a5cf4293d0263220c71666834dfb2e864c8a6ae4474aac25798
+- path: execution/checks/verify_provenance_protection.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - d9e6f7f39bf1608d474ed8f7173aea3b9cde918b1cacb19680ee13459440dcf5
+- path: execution/checks/verify_pulse_backoff_behavior.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 84989f52fe57af1e3834acf28e2bfa46c25f39e4bfa485d72791167faa276bbd
+- path: execution/checks/verify_pulse_label_collision_refusal.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - ae6ec6bb54df6edb74306c5f37f7c1e9a11dcacbf2337338cbe35bbaeacfe592
+- path: execution/checks/verify_pulse_label_scoping.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - d34e97f91c821e623d72a4ab1029c00b0fc0f829675899c110c4baa205083eaf
+- path: execution/checks/verify_pulse_legacy_label_visibility.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 762fb98b2f14c64b2033b5e7410915378aa399af4c720ddb5ace8cb87cd089b7
+- path: execution/checks/verify_pulse_register_guarded.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 2a038c7a70dd23a4183880a7aa1177365b435e1abc120b4927e9fea2b52e848c
+- path: execution/checks/verify_pulse_status_health.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 8b1df0f491695cbd057bb01ed989423e5691ec45618944470bb72ce34793d366
+- path: execution/checks/verify_pulse_status_spacing_91.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - d55209a964dad683b44db810d31b875a7121616c8c81fb318caa2872cc5a61c0
+- path: execution/checks/verify_quick_gate_contract_glob.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - d11d55f92982a6b427a3a7d2e0c4c9d8e989605e0690bbe94bf7c63543d5c5ba
+- path: execution/checks/verify_reboot_boot_wiring_112.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - fdd1fc7bcb052a6f046647d8177705bfc478b2e4cd9a80cca96def1dc96dd6a3
+- path: execution/checks/verify_reboot_closure_section.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 71e8bae5d481e9c4ae9672f9f29935e69ad24bfb3bc160b0266f40bf255f7d5c
+- path: execution/checks/verify_reboot_generated.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 422b6d1188564a0f5261fd25ed1ef6efa990f74a5c19fab0fd69947331b7c634
+- path: execution/checks/verify_reconciliation_guarantees.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 7c882b2bebd34ec596425cc07162ba519efc92b33589e2ce9148bf33085a4277
+  - d12390e3da4d59100e3e03b02e828b9597160073cb1a3b246a03a9d230c0cc5e
+- path: execution/checks/verify_retraction_live_env_untouched.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - d2d84f0033db09ecd6f849db916e26911490e553af86f1e4543cfc6b49553443
+- path: execution/checks/verify_retraction_mechanism.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 2bd67052ecea9f67eabbb1a9a010011d15e77efed498b31eb36d65f9a69864c9
+  - fa536d13c079ea7b2176c5d83714895dd317533a61caf84cd5bc16f0d1c501f6
+- path: execution/checks/verify_retraction_restart_warning.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - fa603944767f1042b8e42ceba941dfde026facdd93546189de1354f739c8c7e2
+- path: execution/checks/verify_scoped_staging_regression.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - e24cf50ba4c1837cb5be7ee9cf55992739b081758ed522c679df821aba30c040
+- path: execution/checks/verify_secrets_gate_e2e.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 99560c13fdda1ce7838d7e4d27ed91b6dd694a7f151d509789b0e768483a0adf
+- path: execution/checks/verify_selftest_coverage.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 17999f823a137e92ab0a9062790b2b8917cfb1caf5bb042186f0545336e6b7c1
+- path: execution/checks/verify_set_e_fallback_reachable.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 3bc6c5376c3f87665ae265ad24c06d344be98ac8cf28d50bbcef8e3ab7af2616
+  - 81ed31104d6e3b779ad9363bfc91e844279e022354eaa10252b7bb327a3e1bae
+  - 90bf36d448306cd13d6c3a396dff20d4644dc1c90065731f02b398ecfd1d9fd0
+- path: execution/checks/verify_shell_invocation_line.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - d22bbc0aa84d5741e3a5b611eb4ec8d56262463fa32ba4fac20be48c571339a9
+- path: execution/checks/verify_skill_drift.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 35381b1d7d29a20c4568e06cb3e7db62a3c5ddf79a3e350c29779637aadc0cb1
+  - 3c57e2b2d2f4fc4bdf845940534f23408fdef090e99e39d8d714407666be0353
+- path: execution/checks/verify_skill_link_depth.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - b57668ad2e8ab0ea3d601d710290ff741f2d5f6e63a2fada6a21f29d1ce8ab34
+- path: execution/checks/verify_skill_propagation.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - ebbf75526c425c0204d032c1815f77da01e3fcad7b49afed87934e3046beeba1
+- path: execution/checks/verify_slug_sanitization.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - a5442fc9de11ae8d0eab7afdbb7ae74aed029e3a0206f1faad8df19f0ca4f6b7
+- path: execution/checks/verify_summary_accounting.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - f0c8c062c3dd53fb10b00a32e3036bd44791aaefba843d5a26259ce73626a692
+- path: execution/checks/verify_symlink_full_path_refusal.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - f6e39346c31c3ae0e2101dbfe1d256f0c23846675febc9d9f3db2e398bf292f9
+- path: execution/checks/verify_sync_agents_idempotent.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 704610488468de0531abdc8f437fe9621dd5223b312bdd2e456a8b3dfa917fbb
+  - 84a1d1098fd589228f60132300b05ffb11925d77537828a32f4199eb767fe6bf
+- path: execution/checks/verify_sync_materialised_apex.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - e5ac95b8372fe5cf7d220bb361bdf512075ac54bec0cb29e9a91966c92fd4262
+- path: execution/checks/verify_target_missing.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 653e7211f127663db38671e4b7674c24f1a20f5e364f2e5b689d5e5b05c4bd59
+- path: execution/checks/verify_timeout_kill_fires.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - da6475692427cd46e7164b7efd9debc5ea77e6a9b8dd9f3e4415304b0c7dd5cb
+- path: execution/checks/verify_timeout_reaches_subprocess.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - ebb50a47fdd7c10bb00227ce056c278f7d703bdc5724429b7a816679855f69d4
+- path: execution/checks/verify_turn_end_readonly.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 42fef18aae3d12130cf3773567a57551f8686cdb22dcace4aff60270796146bf
+- path: execution/checks/verify_validate_rejects_bad_timeout.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 309c6977dcef6b0eccb7b28a8a141f31ce45003c97dbcd22aafce208a5d7ad13
+- path: execution/checks/verify_venv_python_resolution_1289.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 10b80c82c89919e4659b5830c2330ab6cd21dfa79c665c8b9cfe8229a293ca3f
+- path: execution/checks/verify_version_fields_match.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 1eeea4af0c8bc70fcd9bebd44fbf34f8793e764df24553768227ffa138c706e1
+- path: execution/checks/verify_version_regression_guard.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - e8513a3d53e68b7fc4dd366687b40b5a0ed8daaf27c0efaa93a4d7f4dc3219be
+- path: execution/checks/verify_version_sync_1285.sh  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - b4f8d95ec122d048243b26b144b815c204cbcaad9d7e57ab545b9780af81a251
+- path: execution/checks/verify_write_primitive_gaps.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 27015c698e062eb752f4e4dd108ddd6d3c1bb109c9e0275c7e3ad097f9dbf92b
+  - 6d7b7b0c90199e36bc2cf4b702b05c574945f9153948bc5eac857e97a9fefcda
+- path: execution/checks/verify_writegate_no_interpreter_spawn.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - d16ee443e3f486d55c9efc2a9eb01fba42d5d85e6e4a740976d8f1438304cb88
+- path: execution/checks/verify_yaml_check_command_contains.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - f05ad99ac22339e3c855d776bb93c9894a098abfccf25b7a173b4e209fd1ac4e
+- path: execution/checks/verify_yaml_safe.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - 2768c08dfc261b8b5989a0e5945ed4a882fd424f68016f886ef9d67070eef783
+- path: execution/checks/verify_yaml_validate_hint.py  # RETIRED
+  reason: RETIRED - harness check moved to execution/checks/_archive/ or deleted (lobotomy-l1); the stale top-level copy failed downstream bash32/argv lints (Mumbl AI, 2026-11-12)
+  sha256:
+  - e616c898e22ac948feb712e33d40a8963ace38053d3e03afed28d5cc674ce830
 schema: athanor.manifest/v1

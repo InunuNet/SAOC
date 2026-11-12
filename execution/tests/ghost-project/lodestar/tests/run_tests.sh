@@ -12,8 +12,8 @@ echo "=== Lodestar Test Suite ==="
 echo "Script: $LODESTAR_DIR/lodestar.py"
 echo ""
 
-output=$(python3 "$TEST_PY" 2>&1)
-exit_code=$?
+# set -e would abort on a failing run before the output is shown.
+output=$(python3 "$TEST_PY" 2>&1) && exit_code=0 || exit_code=$?
 
 echo "$output"
 

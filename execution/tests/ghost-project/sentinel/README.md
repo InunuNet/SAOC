@@ -144,4 +144,4 @@ The `--inject-fault` flag is only available when `SENTINEL_TEST_MODE=1` is set. 
 ## Dependencies
 
 - Python 3.10+ (stdlib only: `argparse`, `json`, `os`, `hashlib`, `time`, `tempfile`)
-- `jsonschema` — `pip install jsonschema`
+- Optional: `jsonschema` (`pip install jsonschema`); absent, an equivalent hand-rolled check mirrors `schema.json` with the same exit codes

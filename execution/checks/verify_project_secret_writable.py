@@ -21,6 +21,10 @@ grades on its exit code.
 import json
 import subprocess
 from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from bash_exe import bash_exe  # noqa: E402  Windows: Git Bash, never System32 WSL
 
 R = Path("/Users/vetus/ai/Athanor")
 # Assembled rather than written literally: this file is itself scanned by the
@@ -30,7 +34,7 @@ E = "." + "env"
 
 
 def run(payload) -> bool:
-    p = subprocess.run(["bash", "execution/hooks/check_autonomy.sh"], cwd=R,
+    p = subprocess.run([bash_exe(), "execution/hooks/check_autonomy.sh"], cwd=R,
                        input=json.dumps(payload), capture_output=True, text=True)
     return p.returncode == 0
 
