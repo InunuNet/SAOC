@@ -1,10 +1,6 @@
 import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import { isUnsourced } from '@/components/ui/provenance';
 
-// The Council's About copy sources the founding year only. Lee-Ann asked for the other figures to be
-// left out (24 Oct 2026), so this is the one stat.
-const STATS = [{ value: '1968', label: 'Founding Year' }] as const;
-
 export interface MissionBlockProps {
   missionText?: string | null;
   /** True on the public build: facts the Council has not supplied are not rendered. */
@@ -15,26 +11,11 @@ export function MissionBlock({ missionText, withhold = false }: MissionBlockProp
   const hasCms = typeof missionText === 'string' && missionText.trim().length > 0;
   const cmsUnsourced = typeof missionText === 'string' && hasCms && isUnsourced(missionText);
 
-  const statList = (
-    <dl className="grid w-full grid-cols-2 gap-x-8 gap-y-8 border-t border-rule pt-10 md:grid-cols-4">
-      {STATS.map((stat) => (
-        <div key={stat.label}>
-          <dt className="font-serif tracking-[-0.015em] font-light text-[clamp(36px,4vw,56px)] text-primary leading-none">
-            {stat.value}
-          </dt>
-          <dd className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted mt-2">
-            {stat.label}
-          </dd>
-        </div>
-      ))}
-    </dl>
-  );
-
   return (
     <section className="py-24 bg-parchment">
       <div className="saoc-container">
         {/* Two-column editorial split: heading left, body right */}
-        <div className="grid md:grid-cols-[5fr_7fr] gap-x-16 gap-y-10 mb-16">
+        <div className="grid md:grid-cols-[5fr_7fr] gap-x-16 gap-y-10">
           {/* Left: eyebrow + headline */}
           <div>
             <div className="mb-5">
@@ -71,8 +52,6 @@ export function MissionBlock({ missionText, withhold = false }: MissionBlockProp
             {!withhold && cmsUnsourced ? <PlaceholderMarker /> : null}
           </div>
         </div>
-
-        {statList}
       </div>
     </section>
   );
