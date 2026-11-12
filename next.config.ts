@@ -130,6 +130,12 @@ const nextConfig: NextConfig = {
         destination: '/api/events.ics',
         permanent: false,
       },
+      {
+        // Lee-Ann (B8): International guests is removed; vendors, local and international, are on /vendors.
+        source: '/national-show/international-guests',
+        destination: '/national-show/vendors',
+        permanent: true,
+      },
     ];
   },
 };

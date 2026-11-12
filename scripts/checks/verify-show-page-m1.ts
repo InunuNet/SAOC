@@ -863,7 +863,7 @@ function runDriveRecoveryChecks(): void {
   // the exact string, and any seed section that quotes the venue by name must reproduce
   // the whole sentence character-for-character rather than paraphrase around it (the
   // defect this check exists to catch directly, per verifier-contract.golden.md).
-  const VENUE_SENTENCE = 'Stellenbosch Flying Club, R44 northbound to Stellenbosch.';
+  const VENUE_SENTENCE = 'Hangar 25, Orca Aero Solutions, Stellenbosch Airfield, R44 northbound to Stellenbosch.';
   const recoveryHasVenueSentence = recoveryTreeText.includes(VENUE_SENTENCE);
 
   let seedVenueOk = true;

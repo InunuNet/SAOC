@@ -317,8 +317,8 @@ const OPEN_QUESTIONS = [
 const EXHIBITOR_INFO_FIELDS: Record<string, unknown> = {
   title: 'Exhibitor Information',
   intro:
-    'Everything we currently know about entering plants in the 19th South African National ' +
-    'Orchid Show — and, just as importantly, everything that is not settled yet. Most of what ' +
+    'Everything we currently know about entering plants in the National Orchid Show - Western Cape 2027 ' +
+    '— and, just as importantly, everything that is not settled yet. Most of what ' +
     'follows is established practice at orchid shows internationally, offered so the show ' +
     'committee has something to correct rather than a blank page. None of it is SAOC policy ' +
     'until the committee says so.',
@@ -338,7 +338,7 @@ const EXHIBITOR_INFO_FIELDS: Record<string, unknown> = {
 
   entryFormHeading: 'Entry form',
   entryFormPendingNote:
-    'The entry form for the 19th National Show has not been published yet. When the show ' +
+    'The entry form for the National Orchid Show - Western Cape 2027 has not been published yet. When the show ' +
     'committee releases it, it will be available for download here. In the meantime, contact ' +
     'the council if you intend to exhibit.',
 
@@ -360,12 +360,12 @@ const EXHIBITOR_INFO_FIELDS: Record<string, unknown> = {
           'shows publish a genus-to-class cross-reference to help with this.',
       },
     ],
-    "SAOC's own entry process for the 19th National Show has not been published yet.",
+    "SAOC's own entry process for the National Orchid Show - Western Cape 2027 has not been published yet.",
   ]),
 
   // --- research section 1, fee structuring ---
   fees: section('fees', 'Entry fees', [
-    'Entry fees for the 19th National Show have not been set. Shows structure them differently ' +
+    'Entry fees for the National Orchid Show - Western Cape 2027 have not been set. Shows structure them differently ' +
       '— some charge per plant entered, some a flat fee per exhibitor, and shows affiliated to ' +
       'an accredited judging body sometimes add a separate fee for formal award judging on top ' +
       'of the show entry itself. Which of these SAOC will use is for the show committee to decide.',
@@ -584,8 +584,8 @@ const STEPS: StepSeed[] = [
     status: 'pending',
     body: [
       'Almost every show has a cut-off after which entries are no longer accepted, but how far ' +
-        'ahead of the show it falls varies enormously. SAOC has not set one for the 19th National ' +
-        'Show. It will be published here and on the key-dates table above.',
+        'ahead of the show it falls varies enormously. SAOC has not set one for the National Orchid Show - Western Cape 2027. ' +
+        'It will be published here and on the key-dates table above.',
     ],
   },
   {

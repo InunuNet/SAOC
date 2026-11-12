@@ -1,6 +1,6 @@
 // =============================================================
 // NOS — components/nos-chrome/nos-nav.ts
-// The National Orchid Show site's menu: the Visit / Programme / Exhibit & trade groups, the
+// The National Orchid Show site's menu: the Visit / Programme / Vendors groups, the
 // "The show" links and the Tickets destinations. Labels and order are the ones the
 // SAOC site's old National Show mega carried (mission menu-system-layout4, Brad's approved Layout 4)
 // - moved here verbatim when the show became its own site (mission nos-site-split F3), never
@@ -32,7 +32,7 @@ export const NOS_NAV: readonly NavItem[] = [
     href: NOS_HUB,
     lead: {
       eyebrow: 'The National Show',
-      leadLabel: '19th National Orchid Show',
+      leadLabel: 'National Orchid Show - Western Cape 2027',
       leadHref: NOS_HUB,
       theShow: {
         id: 'the-show',
@@ -115,26 +115,21 @@ export const NOS_NAV: readonly NavItem[] = [
             label: 'Conference registration',
             href: showPath('/conferences'),
           },
+          {
+            id: 'plant-entry',
+            label: 'Plant Entry',
+            href: showPath('/award-entries'),
+          },
         ],
       },
       {
         id: 'exhibit-trade',
-        heading: 'Exhibit & trade',
+        heading: 'Vendors',
         headingHref: null,
         links: [
           {
-            id: 'international-guests',
-            label: 'International guests',
-            href: showPath('/international-guests'),
-          },
-          {
-            id: 'exhibitors',
-            label: 'Award Entries',
-            href: showPath('/award-entries'),
-          },
-          {
             id: 'vendors',
-            label: 'Exhibitors and vendors',
+            label: 'Vendors',
             href: showPath('/vendors'),
           },
         ],

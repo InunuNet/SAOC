@@ -15,7 +15,7 @@
     },
     {
       "id": "exhibit-trade",
-      "label": "Exhibit & Trade",
+      "label": "Vendors",
       "order": 3
     },
     {
@@ -191,9 +191,9 @@
       "group": "exhibit-trade",
       "parent": "/national-show",
       "order": 2,
-      "listed": true,
+      "listed": false,
       "dynamic": false,
-      "indexable": true,
+      "indexable": false,
       "status": "created",
       "owner": "nos-design",
       "archetype": "listing",
@@ -203,10 +203,10 @@
     },
     {
       "slug": "/national-show/award-entries",
-      "label": "Award Entries",
-      "group": "exhibit-trade",
+      "label": "Plant Entry",
+      "group": "programme",
       "parent": "/national-show",
-      "order": 3,
+      "order": 6,
       "listed": true,
       "dynamic": false,
       "indexable": true,
@@ -219,7 +219,7 @@
     },
     {
       "slug": "/national-show/vendors",
-      "label": "Exhibitors and Vendors",
+      "label": "Vendors",
       "group": "exhibit-trade",
       "parent": "/national-show",
       "order": 4,

@@ -2,7 +2,7 @@
 // SAOC — e2e/utils/nos-nav-hrefs.ts
 // Mission nos-site-split F3 — what the National Orchid Show header (components/nos-chrome/
 // NosHeader.tsx, NOS Design R1.2) must render, derived from NOS_NAV so a spec can never drift from
-// the nav data: three disclosure groups (Visit, Programme, Exhibit & trade), then the plain links
+// the nav data: three disclosure groups (Visit, Programme, Vendors), then the plain links
 // Show sponsors and Past shows, Contact (a SAOC URL), and the Tickets call to action. Hrefs are the
 // public clean paths (nosPath), which is what the NOS host renders.
 // =============================================================

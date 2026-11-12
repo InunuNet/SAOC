@@ -173,5 +173,5 @@ export const PLANT_ENTRY_STAGES: readonly PlantEntryStage[] = [
 export const LANDING_CTA = {
   startPlanning: 'Start planning your entry now.',
   registerHere: 'Register Here',
-  openingSentence: 'The 19th National Orchid Show opens on 23rd September 2027 in Stellenbosch.',
+  openingSentence: 'The National Orchid Show - Western Cape 2027 opens on 23rd September 2027 in Stellenbosch.',
 } as const;

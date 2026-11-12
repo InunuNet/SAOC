@@ -24,7 +24,7 @@ export const revalidate = 60;
 // copy. Her list of 21 invited vendors is not rendered (D-SX1: it waits on her answer); confirmed
 // nurseries from the CMS appear below the introduction. No Event or Offer markup on any vendor
 // route: the flow is invitation-gated, which Google excludes from the event experience (M6/B8c).
-const PAGE_TITLE = 'Exhibitors and vendors';
+const PAGE_TITLE = 'Vendors';
 const APPLY_HREF = '/vendors/apply';
 const APPLY_LABEL = 'Vendor application';
 const FACTS_LABELS = ['Dates', 'Venue', 'Host'] as const;
@@ -50,7 +50,7 @@ const AVAILABLE_ITEMS = [
 
 export const metadata: Metadata = buildPageMetadata({
   title: PAGE_TITLE,
-  image: nosOgImage('Exhibitors and vendors — National Show'),
+  image: nosOgImage('Vendors — National Show'),
   description: STANDFIRST,
   path: '/national-show/vendors',
 });

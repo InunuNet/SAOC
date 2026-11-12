@@ -4,7 +4,7 @@
 // this repo's own coding.md accessibility rule ("every interactive element needs
 // a label, role, and keyboard handler"), a dropdown that only opens on `:hover`
 // is broken for keyboard and touch users. Exercises the National Orchid Show
-// header's three disclosure groups (Visit / Programme / Exhibit & trade, NOS Design R1.2) via a
+// header's three disclosure groups (Visit / Programme / Vendors, NOS Design R1.2) via a
 // real keyboard press — never `.hover()` as the only way a panel opens — and checks for a REAL
 // visible-focus computed-style change (getComputedStyle), never a class-name proxy, matching F7's
 // own A7 standard: "real geometry, not a class-name standing in for verification."

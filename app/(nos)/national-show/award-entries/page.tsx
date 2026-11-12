@@ -21,10 +21,10 @@ export const revalidate = 60;
 // FAQ 29 (photography) lives on What to expect. Her own entry guide (schedule, classes, entry form)
 // is still owed (owner item iiii); the Sanity showExhibitorInfo and showExhibitorStep schemas stay
 // in place for when it arrives. The gateway beside the text is nav labels only.
-const PAGE_TITLE = 'Award Entries';
+const PAGE_TITLE = 'Plant Entry';
 const FACTS_LABELS = ['Dates', 'Venue'] as const;
-const GATEWAY_LABEL = 'More on Award Entries';
-const GATEWAY_IDS = ['programme', 'vendors', 'international-guests', 'faq'] as const;
+const GATEWAY_LABEL = 'More on Plant Entry';
+const GATEWAY_IDS = ['programme', 'vendors', 'faq'] as const;
 const CONTACT_LABEL = 'Contact';
 
 const STANDFIRST = [
