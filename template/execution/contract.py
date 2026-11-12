@@ -66,6 +66,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).parent / "checks"))
 from pydeps import require  # noqa: E402
+from bash_exe import bash_exe  # noqa: E402  Windows: Git Bash, never System32 WSL
 
 require("yaml")
 
@@ -997,7 +998,7 @@ def _run_check_windows(argv, env, cwd, timeout):
     outlives a check that finished on its own is NOT reaped (a documented limit)."""
     # The check is a temp .sh with a shebang; Windows cannot execute it directly
     if isinstance(argv, (str, os.PathLike)):
-        argv = ["bash", os.fspath(argv)]
+        argv = [bash_exe(), os.fspath(argv)]
     proc = subprocess.Popen(argv, env=env, cwd=cwd, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE, text=True)
     try:

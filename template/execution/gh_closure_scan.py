@@ -16,6 +16,11 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+import os
+_EXEC_DIR = os.path.dirname(os.path.abspath(__file__))
+if _EXEC_DIR not in sys.path:
+    sys.path.insert(0, _EXEC_DIR)
+from bash_exe import bash_exe  # noqa: E402  Windows: Git Bash, never System32 WSL
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 ISSUE_RE = re.compile(r"#(\d+)")
@@ -52,7 +57,7 @@ def _resolve_repo(repo: str | None) -> str:
     if repo:
         return repo
     result = subprocess.run(
-        ["bash", str(REPO_ROOT / "execution" / "get_repo_info.sh")],
+        [bash_exe(), str(REPO_ROOT / "execution" / "get_repo_info.sh")],
         capture_output=True, text=True, cwd=str(REPO_ROOT),
     )
     if result.returncode != 0 or not result.stdout.strip():

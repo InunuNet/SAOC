@@ -82,6 +82,10 @@ import sys
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+_EXEC_DIR = os.path.dirname(os.path.abspath(__file__))
+if _EXEC_DIR not in sys.path:
+    sys.path.insert(0, _EXEC_DIR)
+from bash_exe import bash_exe  # noqa: E402  Windows: Git Bash, never System32 WSL
 
 SCHEMA = "athanor.hookprobes/v1"
 DECLARATIONS_REL = ".agent/config/hook_probes.json"
@@ -370,38 +374,8 @@ def _stdout_decision(text):
 
 
 def _bash():
-    """The bash that runs a registration string.
-
-    Bare "bash" is wrong on Windows: CreateProcess looks in System32 before
-    PATH, and on a host with WSL that is the WSL launcher, which exits 1 for
-    every command (no distro) -- every hook then probes dead. Claude Code runs
-    hooks under Git Bash, so prefer that: ATHANOR_BASH, then the first PATH
-    bash that is not System32, then bash beside git.
-    """
-    override = os.environ.get("ATHANOR_BASH")
-    if override and Path(override).exists():
-        return override
-    if os.name != "nt":
-        return "bash"
-
-    def _is_wsl(path):
-        return "system32" in str(path).lower().replace("/", "\\")
-
-    for entry in os.environ.get("PATH", "").split(os.pathsep):
-        if not entry or _is_wsl(entry):
-            continue
-        for name in ("bash.exe", "bash"):
-            cand = Path(entry) / name
-            if cand.is_file():
-                return str(cand)
-    git = shutil.which("git")
-    if git:
-        root = Path(git).resolve().parent.parent
-        for rel in (("bin", "bash.exe"), ("usr", "bin", "bash.exe")):
-            cand = root.joinpath(*rel)
-            if cand.is_file():
-                return str(cand)
-    return "bash"
+    """The bash that runs a registration string (see bash_exe.py)."""
+    return bash_exe()
 
 
 def _run_once(command, box, payload):

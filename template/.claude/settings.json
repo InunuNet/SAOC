@@ -156,6 +156,17 @@
         ]
       }
     ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/lib/autocompact_decider.py ] || exit 0; python3 execution/hooks/lib/autocompact_decider.py end >/dev/null 2>&1 || true",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [

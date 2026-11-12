@@ -123,6 +123,26 @@ def _lf_text(data: bytes) -> bytes:
     return data if b"\x00" in data else data.replace(b"\r\n", b"\n")
 
 
+def _heal_crlf_checkout(src_file: Path, dst_file: Path, label: str) -> None:
+    """Give an autocrlf=true checkout upstream's LF bytes back.
+
+    The hashes above fold CRLF, so a harness .sh checked out as CRLF reads as
+    "unchanged" and was never rewritten -- and bash dies on $'\\r'. Content is
+    identical once folded, so this is not a delivery and takes no backup.
+    execution/.gitattributes (eol=lf) keeps it LF from here on. Never raises.
+    """
+    try:
+        raw = dst_file.read_bytes()
+        if b"\r\n" not in raw or b"\x00" in raw:
+            return
+        want = src_file.read_bytes()
+        if b"\r\n" in want or _lf_text(raw) != want:
+            return
+        _copy2_nofollow(src_file, dst_file, label)
+    except OSError:
+        pass
+
+
 def _sha256_of_file(path: Path) -> str:
     """Return the sha256 hex digest of a file's content, line endings folded."""
     return hashlib.sha256(_lf_text(path.read_bytes())).hexdigest()
@@ -658,6 +678,7 @@ def _sync_file_with_guard(
                             save_template_baselines(baselines)
                     except OSError:
                         pass
+                    _heal_crlf_checkout(src_file, dst_file, baseline_key)
                 return "unchanged"
         except OSError:
             pass
@@ -4776,6 +4797,38 @@ SYNC_OUTPUT_TAIL_CHARS = 1500
 DERIVED_DIRS = (".claude/agents", ".claude/skills", ".claude/rules", ".codex/agents")
 
 
+def _bash_exe():
+    """Git Bash on Windows, never the System32 WSL launcher (see bash_exe.py).
+    Lazy: this updater must run in a tree that does not ship bash_exe.py yet."""
+    try:
+        from bash_exe import bash_exe
+        return bash_exe()
+    except ImportError:
+        pass
+    # Inline copy of bash_exe(): first PATH bash outside System32, then bash
+    # beside git. Bare "bash" only when neither exists (non-Windows, or no Git).
+    override = os.environ.get("ATHANOR_BASH")
+    if override and os.path.exists(override):
+        return override
+    if os.name != "nt":
+        return "bash"
+    for entry in os.environ.get("PATH", "").split(os.pathsep):
+        if not entry or "system32" in entry.lower().replace("/", "\\"):
+            continue
+        for name in ("bash.exe", "bash"):
+            cand = os.path.join(entry, name)
+            if os.path.isfile(cand):
+                return cand
+    git = shutil.which("git")
+    if git:
+        root = os.path.dirname(os.path.dirname(os.path.realpath(git)))
+        for rel in (("bin", "bash.exe"), ("usr", "bin", "bash.exe")):
+            cand = os.path.join(root, *rel)
+            if os.path.isfile(cand):
+                return cand
+    return "bash"
+
+
 def _warn_stray_cr_dirs(root):
     """Old Windows sync_agents.sh printed a CR into the path; name any leftover dir, never delete."""
     # Git Bash maps a CR in a filename to U+F00D on NTFS, so check both spellings.
@@ -4797,7 +4850,7 @@ def run_post_apply_sync(root, dry_run=False):
     env = dict(os.environ, PYTHONUTF8="1")
     ok = True
     for name, kind, path, args in steps:
-        cmd = ([sys.executable] if kind == "python" else ["bash"]) + [str(path), *args]
+        cmd = ([sys.executable] if kind == "python" else [_bash_exe()]) + [str(path), *args]
         try:
             res = subprocess.run(cmd, cwd=str(root), capture_output=True, text=True, env=env,
                                  encoding="utf-8", errors="replace",

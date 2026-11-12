@@ -1241,6 +1241,10 @@ scaffold_core() {
             name="$(basename -- "$entry")"
             install_preserving "$entry" ".agent/pulse/registry/$name" "pulse/registry/$name"
         done
+        # The glob skips dotfiles: keep pulse jobs LF under autocrlf=true.
+        [ -f "$TEMPLATE_DIR/.agent/pulse/registry/.gitattributes" ] && \
+            install_preserving "$TEMPLATE_DIR/.agent/pulse/registry/.gitattributes" \
+                ".agent/pulse/registry/.gitattributes" "pulse/registry/.gitattributes"
     fi
 
     # Identity templates (filled in during /onboard). Per-file and named, never a
@@ -1388,6 +1392,9 @@ scaffold_core() {
     done
     shopt -u nullglob
     cp "$SCRIPT_DIR/execution/com.athanor.pulse.plist" "$PROJECT_PATH/execution/com.athanor.pulse.plist" 2>/dev/null || true
+    # Harness files stay LF on every platform: Git for Windows defaults to
+    # autocrlf=true, which turns every .sh to CRLF and bash dies on $'\r'.
+    cp "$SCRIPT_DIR/execution/.gitattributes" "$PROJECT_PATH/execution/.gitattributes" 2>/dev/null || true
 
     # Tier-3, host-only (platform-scoped-delivery D1/ruling-1): deliver
     # execution/platform/<host>/ ONLY -- never the other two. A freshly

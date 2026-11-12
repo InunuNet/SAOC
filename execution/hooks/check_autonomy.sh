@@ -4,6 +4,16 @@
 # Uses bash/jq only — no python3 startup cost per hooks.md rule
 # Session cache: <repo>/.tmp/athanor_autonomy_$PPID (cleared on new session)
 
+# The floor is bash 3.2 native (stock macOS): no associative arrays, mapfile
+# or ${x,,}; execution/tests/layer1_static/test_bash32_compat.sh keeps it so.
+# It used to need bash 4 and, under 3.2, errored its way to exit 0: the floor
+# FAILED OPEN (CI macos-latest, 2026-11-11). Anything older than 3.2 is denied.
+if [ "${BASH_VERSINFO[0]:-0}" -lt 3 ] \
+    || { [ "${BASH_VERSINFO[0]}" -eq 3 ] && [ "${BASH_VERSINFO[1]:-0}" -lt 2 ]; }; then
+  echo "⛔ AUTONOMY FLOOR: bash 3.2+ is required (running ${BASH_VERSION:-unknown}). Denying." >&2
+  exit 2
+fi
+
 # Windows Git Bash: native jq.exe emits CRLF for -r output; -b strips it.
 case "$(uname -s 2>/dev/null)" in
   MINGW*|MSYS*|CYGWIN*)
@@ -1071,7 +1081,7 @@ permit_paths_covered() {
     Write|Edit|NotebookEdit|Read)
       p=$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // .tool_input.notebook_path // .tool_input.path // ""' 2>/dev/null)
       [ -n "$p" ] || return 1
-      declare -A VARS=()
+      local VARS_OFF=1
       p=$(expand_target "$p")
       path_in_project "$p" && return 1
       targets=("$p") ;;
@@ -1173,7 +1183,7 @@ floor_glob_match() {
 # protected-path regexes. The raw form is still tested first so that no
 # denial that worked before can stop working.
 if [ -n "$FILE_PATH" ]; then
-  declare -A VARS=()
+  vars_reset
   FLOOR_RESOLVED=$(expand_target "$FILE_PATH")
   if ! nm_credential_exempt "$FLOOR_RESOLVED" && { floor_glob_match "$FILE_PATH" \
      || floor_glob_match "$FLOOR_RESOLVED" \
@@ -1448,7 +1458,8 @@ recursive_reach() {
   done
 
   if [ "$follow" = 1 ] && [ "$depth" -lt "$RR_LINK_DEPTH" ]; then
-    mapfile -t hits < <(find -P "$rd" -name .git -prune -o -type l -print 2>/dev/null | head -n "$RR_CAP")
+    hits=(); while IFS= read -r _ln || [ -n "$_ln" ]; do hits+=("$_ln"); done \
+      < <(find -P "$rd" -name .git -prune -o -type l -print 2>/dev/null | head -n "$RR_CAP")
     for entry in "${hits[@]}"; do
       [ -z "$entry" ] && continue
       rr_check read "$entry" "$dir"
@@ -1462,7 +1473,7 @@ recursive_reach() {
 
   pf="$RR_PREFILTER_READ"
   [ "$kind" = copy ] && pf="$RR_PREFILTER_WRITE"
-  mapfile -t hits < <(find -P "$rd" -name .git -prune -o -print 2>/dev/null \
+  hits=(); while IFS= read -r _ln || [ -n "$_ln" ]; do hits+=("$_ln"); done < <(find -P "$rd" -name .git -prune -o -print 2>/dev/null \
     | awk -v cap="$RR_CAP" -v re="$pf" 'NR > cap { print "\001TOOBIG"; exit } tolower($0) ~ re { print }')
   for entry in "${hits[@]}"; do
     [ -z "$entry" ] && continue
@@ -1652,7 +1663,7 @@ recursive_dispatch() {
       if [ -n "$rtdir" ]; then
         rdest="$rtdir"; rsrcs=("${rops[@]}")
       elif [ "${#rops[@]}" -ge 2 ]; then
-        rdest="${rops[-1]}"; rsrcs=("${rops[@]:0:${#rops[@]}-1}")
+        rdest="${rops[${#rops[@]}-1]}"; rsrcs=("${rops[@]:0:${#rops[@]}-1}")
       fi
       # an rsync destination on another host is not a local write
       [[ "$rdest" == *:* && "$rdest" != /* ]] && rdest=""
@@ -1813,7 +1824,8 @@ ssh_code_values() {
     val="${opt#"$key"}"
     val="${val#"${val%%[![:space:]]*}"}"; val="${val#=}"
     val="${val#"${val%%[![:space:]]*}"}"
-    case "${key,,}" in
+    lc_ascii _key_lc "$key"
+    case "$_key_lc" in
       proxycommand|localcommand|remotecommand) [ -n "$val" ] && SSH_CODE+=("$val") ;;
     esac
   done
@@ -1821,7 +1833,7 @@ ssh_code_values() {
 }
 
 if [ -n "$COMMAND" ]; then
-  declare -A VARS=()
+  vars_reset
 
   # scan_rw <command-string> <depth> — the whole SEC-P1-4a read/write scan,
   # made recursive (R19/R24, #1407). It used to run once over $COMMAND with
@@ -1884,7 +1896,8 @@ if [ -n "$COMMAND" ]; then
     done
 
     local -a TOKS
-    mapfile -t TOKS < <(printf '%s\n' "$STRIPPED" | awk -v oldlex="$(tr_oldlex_flag "$RW_SRC")" "$TOKENIZE_AWK")
+    TOKS=(); while IFS= read -r _ln || [ -n "$_ln" ]; do TOKS+=("$_ln"); done \
+      < <(printf '%s\n' "$STRIPPED" | awk -v oldlex="$(tr_oldlex_flag "$RW_SRC")" "$TOKENIZE_AWK")
     TOKS=("${TOKS[@]//$'\001'/$'\n'}")
 
     local -a cur_words=()
@@ -1899,7 +1912,7 @@ if [ -n "$COMMAND" ]; then
     # simple two-step assignment: NAME=VALUE as the whole simple command
     if [ "$n" -eq 1 ] && [[ "${cur_words[0]}" =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]] && [ -z "$redir_gt" ] && [ -z "$redir_lt" ]; then
       local vn="${BASH_REMATCH[1]}" vv="${BASH_REMATCH[2]}"
-      VARS[$vn]=$(expand_target "$vv")
+      vars_set "$vn" "$(expand_target "$vv")"
       return
     fi
     check_target "write" "$redir_gt"
@@ -1980,7 +1993,7 @@ if [ -n "$COMMAND" ]; then
         local is_i=0
         for a in "${args[@]}"; do case "$a" in -i|-i*) is_i=1 ;; esac; done
         if [ "$is_i" = 1 ]; then
-          [ "${#nonflag[@]}" -gt 0 ] && check_target "write" "${nonflag[-1]}"
+          [ "${#nonflag[@]}" -gt 0 ] && check_target "write" "${nonflag[${#nonflag[@]}-1]}"
         else
           for a in "${nonflag[@]:1}"; do check_target "read" "$a"; done
         fi ;;
@@ -2007,8 +2020,8 @@ if [ -n "$COMMAND" ]; then
           dest="$tdir"
           for s in "${nonflag[@]}"; do [ "$s" != "$tdir" ] && srcs+=("$s"); done
         elif [ "${#nonflag[@]}" -gt 0 ]; then
-          check_target "write" "${nonflag[-1]}"
-          dest="${nonflag[-1]}"
+          check_target "write" "${nonflag[${#nonflag[@]}-1]}"
+          dest="${nonflag[${#nonflag[@]}-1]}"
           srcs=("${nonflag[@]:0:${#nonflag[@]}-1}")
         fi
         # Copying INTO a directory writes <dir>/<basename of each source>:
@@ -2039,9 +2052,9 @@ if [ -n "$COMMAND" ]; then
       # `truncate` and friends create or clobber a file exactly as `cp` does,
       # and every one of them was a silent path to a floor-protected file.
       install)
-        [ "${#nonflag[@]}" -gt 1 ] && check_target "write" "${nonflag[-1]}" ;;
+        [ "${#nonflag[@]}" -gt 1 ] && check_target "write" "${nonflag[${#nonflag[@]}-1]}" ;;
       ln)
-        [ "${#nonflag[@]}" -gt 0 ] && check_target "write" "${nonflag[-1]}" ;;
+        [ "${#nonflag[@]}" -gt 0 ] && check_target "write" "${nonflag[${#nonflag[@]}-1]}" ;;
       truncate|touch|shred|unlink|rmdir|mkdir|sponge|patch)
         for a in "${nonflag[@]}"; do check_target "write" "$a"; done ;;
       rm)
@@ -2405,7 +2418,8 @@ if [ -n "$COMMAND" ]; then
   FL_CRED_SHAPES=(id_rsa id_dsa id_ecdsa id_ed25519 .pem .key .p12 .pfx .env
     credentials .netrc .npmrc .pgpass .ssh .aws .gnupg secrets)
   fl_cred_shaped() {
-    local v="${1,,}" s
+    local v s
+    lc_ascii v "$1"
     for s in "${FL_CRED_SHAPES[@]}"; do
       [[ "$v" == *"$s"* ]] && return 0
     done
@@ -2526,7 +2540,7 @@ if [ -n "$COMMAND" ]; then
   # fl_data_target <path> — true when the path has a data-file extension.
   fl_data_target() {
     local b="${1##*/}"
-    b="${b,,}"
+    lc_ascii b "$b"
     [[ "$b" == *.* ]] || return 1
     [[ "$FL_DATA_EXTS" == *" ${b##*.} "* ]]
   }
@@ -2670,7 +2684,7 @@ if [ -n "$COMMAND" ]; then
   # hopped, repeatedly, until the path stops changing.
   fl_find_root() {
     local p="$1" r prev k
-    local -A VARS=()
+    local VARS_OFF=1
     FL_ROOT_IN=0; FL_ROOT_TMP=0
     [ "$FL_CWD_OK" = 1 ] && [ -n "$TR_CWD" ] && [ -n "$TR_PROJECT_ROOT" ] || return
     while [[ "$p" == */ && "$p" != / ]]; do p="${p%/}"; done
@@ -3012,7 +3026,8 @@ if [ -n "$COMMAND" ]; then
       fl_classify "$csp" $((FL_DEPTH + 1))
       [ "$_blk" = 1 ] && return
     done
-    mapfile -t toks < <(printf '%s\n' "$stripped" | awk -v oldlex="$(tr_oldlex_flag "$src")" "$TOKENIZE_AWK")
+    toks=(); while IFS= read -r _ln || [ -n "$_ln" ]; do toks+=("$_ln"); done \
+      < <(printf '%s\n' "$stripped" | awk -v oldlex="$(tr_oldlex_flag "$src")" "$TOKENIZE_AWK")
     toks=("${toks[@]//$'\001'/$'\n'}")
 
     # The data relaxations (curl | script, data download then script) apply only

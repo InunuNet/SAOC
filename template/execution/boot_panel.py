@@ -34,6 +34,11 @@ import sys
 import tempfile
 from pathlib import Path
 
+_EXEC_DIR = os.path.dirname(os.path.abspath(__file__))
+if _EXEC_DIR not in sys.path:
+    sys.path.insert(0, _EXEC_DIR)
+from bash_exe import bash_exe  # noqa: E402  Windows: Git Bash, never System32 WSL
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import autonomy as autonomy_dialect  # noqa: E402  (path fixed up above)
 
@@ -272,6 +277,10 @@ def _read_mission(root):
 def _run(argv, cwd=None, timeout=PROBE_TIMEOUT_SECONDS, shell=False, env=None):
     """Run a command; return (rc, first_line_of_output). Never raises."""
     env = dict(os.environ if env is None else env, PYTHONUTF8="1")
+    if shell and os.name == "nt":
+        # cmd.exe cannot run a POSIX probe, and a bare `bash` inside it is the
+        # System32 WSL launcher: hand the string to Git Bash instead.
+        argv, shell = [bash_exe(), "-c", argv], False
     try:
         proc = subprocess.run(
             argv, cwd=str(cwd) if cwd else None, shell=shell, timeout=timeout,

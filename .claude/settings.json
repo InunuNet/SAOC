@@ -272,6 +272,15 @@
             "command": "CHANGED=$(git diff --stat HEAD 2>/dev/null | wc -l | tr -d ' '); if [ \"$CHANGED\" -gt 0 ]; then echo 'Session had uncommitted changes \u2014 run /wrap-up at start of next session.'; fi"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/lib/autocompact_decider.py ] || exit 0; python3 execution/hooks/lib/autocompact_decider.py end >/dev/null 2>&1 || true",
+            "timeout": 15
+          }
+        ]
       }
     ],
     "SubagentStart": [

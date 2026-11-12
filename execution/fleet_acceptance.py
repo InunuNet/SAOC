@@ -25,6 +25,10 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+_EXEC_DIR = os.path.dirname(os.path.abspath(__file__))
+if _EXEC_DIR not in sys.path:
+    sys.path.insert(0, _EXEC_DIR)
+from bash_exe import bash_exe  # noqa: E402  Windows: Git Bash, never System32 WSL
 
 HARNESS_ROOT = Path(__file__).resolve().parent.parent
 SANDBOX_ROOT = HARNESS_ROOT / ".tmp" / "sandbox" / "fleet-acceptance"
@@ -149,7 +153,7 @@ def fail_reason(cmd, proc):
 def step_scaffold(verbose):
     RUN_ROOT.mkdir(parents=True, exist_ok=True)
     cmd = [
-        "bash", str(HARNESS_ROOT / "init.sh"),
+        bash_exe(), str(HARNESS_ROOT / "init.sh"),
         "--path", str(WS), "--name", WS_NAME, "--no-pulse",
     ]
     proc = run(cmd, HARNESS_ROOT, SCAFFOLD_TIMEOUT_SECONDS, verbose)
@@ -409,7 +413,7 @@ def step_idempotence(verbose, ctx):
     }
     before = {name: fn() for name, fn in targets.items()}
 
-    cmd = ["bash", str(HARNESS_ROOT / "init.sh"), "--path", str(WS), "--no-pulse"]
+    cmd = [bash_exe(), str(HARNESS_ROOT / "init.sh"), "--path", str(WS), "--no-pulse"]
     # Same cap as the scaffold run: a Win11 ARM VM's init.sh takes ~94 s (Athanor Win 2026-11-07).
     proc = run(cmd, HARNESS_ROOT, SCAFFOLD_TIMEOUT_SECONDS, verbose)
 

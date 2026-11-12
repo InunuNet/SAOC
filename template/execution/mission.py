@@ -36,6 +36,10 @@ from typing import NamedTuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from pydeps import require  # noqa: E402
+_EXEC_DIR = os.path.dirname(os.path.abspath(__file__))
+if _EXEC_DIR not in sys.path:
+    sys.path.insert(0, _EXEC_DIR)
+from bash_exe import bash_exe  # noqa: E402  Windows: Git Bash, never System32 WSL
 
 require("yaml")
 
@@ -2007,7 +2011,7 @@ def cmd_close_out(args):
     env["WRAP_NO_PUSH"] = "1"
     env["PYTHONUTF8"] = "1"
     result = subprocess.run(
-        ["bash", "execution/skills/wrap_mission.sh", f"{slug}: {goal}", f"mission,{slug},complete"],
+        [bash_exe(), "execution/skills/wrap_mission.sh", f"{slug}: {goal}", f"mission,{slug},complete"],
         capture_output=True,
         text=True,
         env=env,
