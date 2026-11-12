@@ -4,6 +4,7 @@ import type { SanityImageSource } from '@sanity/image-url';
 import {
   Hero,
   MissionBlock,
+  ForewordSection,
   NavCards,
   ShowBand,
   EventsStrip,
@@ -76,6 +77,7 @@ export default async function HomePage() {
       <JsonLd data={organizationJsonLd()} />
       <Hero images={home?.heroImages} show={show} />
       <MissionBlock missionText={home?.missionText} withhold={withhold} />
+      <ForewordSection />
       <NavCards show={show} withhold={withhold} />
       <ShowBand show={show} />
       <EventsStrip events={eventsData} />
