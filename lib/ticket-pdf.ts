@@ -171,16 +171,16 @@ const FOOTER_LINE_PITCH = 4.6;
 const HEADER_LOGO_LEFT_PAD = 192 / 4108; // transparent left margin of the logo file, as a fraction of its width
 const FOOTER_MARK_HEIGHT = 16;
 const FONT_DIR = 'lib/ticket-pdf-assets';
-// The XIX stub (the 19th show) on every ticket: the numeral and a short label as one mark on the
+// The 19th stub on every ticket: the numeral and a short label as one mark on the
 // right of the stub, the date and time on the left, and one faint orchid below the mark.
-const STUB_NUMERAL = 'XIX';
+const STUB_NUMERAL = '19th';
 const STUB_LABEL = 'National Orchid Show';
 const STUB_MARK_RIGHT_X = PERFORATION_X - 6;
 const STUB_NUMERAL_Y = 88;
 const STUB_NUMERAL_SIZE = 44;
 const STUB_LABEL_Y = 96;
 const STUB_LABEL_SIZE = 8;
-const STUB_DATE_ROOM = 46; // the date/time column ends clear of the XIX mark
+const STUB_DATE_ROOM = 46; // the date/time column ends clear of the 19th mark
 const STUB_DATE_Y = 80;
 const STUB_DATE_SIZE = 10.5;
 const STUB_DATE_PITCH = 4.8;
