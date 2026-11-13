@@ -1,0 +1,66 @@
+schema: athanor.contract/v1
+slug: xix-to-19th
+goal: Replace the rendered ticket-stub numeral XIX with 19th on the NOS ticket stubs, emails and ticket PDF, per Brad's verbatim instruction, with no overlap in the PDF stub.
+created_at: '2026-11-13'
+autonomy: high
+
+features:
+  - id: F1
+    name: Ticket stub numeral XIX to 19th (ticket-presentation, ticket PDF)
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/xix-to-19th/goldens/expected-strings.md
+  - .agent/memory/project/specs/xix-to-19th/goldens/check_stub_geometry.mts
+  - .agent/memory/project/specs/xix-to-19th/goldens/check_qa_out.sh
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: no XIX left in rendered source (app, components, lib, emails)
+      command: "! grep -rqw 'XIX' \"${CHECK_ROOT:-.}/app\" \"${CHECK_ROOT:-.}/components\" \"${CHECK_ROOT:-.}/lib\" \"${CHECK_ROOT:-.}/emails\" --include='*.ts' --include='*.tsx'"
+    - id: A2
+      description: both ticket-presentation stubs read 19th
+      command: "test $(grep -cF \"numeral: '19th',\" \"${CHECK_ROOT:-.}/lib/data/ticket-presentation.ts\") -eq 2"
+    - id: A3
+      description: ticket PDF numeral constant reads 19th
+      command: "grep -qF \"const STUB_NUMERAL = '19th';\" \"${CHECK_ROOT:-.}/lib/ticket-pdf.ts\""
+    - id: A4
+      description: caption National Orchid Show unchanged
+      command: "grep -qF \"const STUB_LABEL = 'National Orchid Show';\" \"${CHECK_ROOT:-.}/lib/ticket-pdf.ts\""
+    - id: A5
+      description: date/time column keeps at least 3mm clear of the 19th mark (measured in the real font)
+      command: pnpm --dir "${CHECK_ROOT:-.}" exec tsx .agent/memory/project/specs/xix-to-19th/goldens/check_stub_geometry.mts
+    - id: A6
+      description: existing ticket PDF renders (all pages rasterise)
+      command: pnpm --dir "${CHECK_ROOT:-.}" exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts render
+    - id: A7
+      description: rendered PDF text layer contains 19th and no XIX
+      command: "pnpm --dir \"${CHECK_ROOT:-.}\" exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts render && pdftotext -raw \"${CHECK_ROOT:-.}/.tmp/sandbox/ticket-pdf/fixture.pdf\" - | grep -qF '19th' && ! pdftotext -raw \"${CHECK_ROOT:-.}/.tmp/sandbox/ticket-pdf/fixture.pdf\" - | grep -qw 'XIX'"
+    - id: A8
+      description: existing PDF copy-baseline check still passes (allowed-strings.txt may gain 19th)
+      command: pnpm --dir "${CHECK_ROOT:-.}" exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts copy
+    - id: A9
+      description: Typecheck passes
+      command: pnpm --dir "${CHECK_ROOT:-.}" type-check
+    - id: A10
+      description: Lint passes on the touched files
+      command: pnpm --dir "${CHECK_ROOT:-.}" exec eslint lib/data/ticket-presentation.ts lib/ticket-pdf.ts
+    - id: A11
+      description: Cross-model review (codex_qa) returned PASS; reads the saved verdict in .tmp/sandbox/codex-xix-to-19th/qa.out
+      type: codex_qa
+      script: .agent/memory/project/specs/xix-to-19th/goldens/check_qa_out.sh
+      target: .tmp/sandbox/codex-xix-to-19th/qa.out
+      timeout_seconds: 60
+      required: true
+    - id: A12
+      description: PENDING DEPLOY - BrowserAgent on beta confirms the stubs on /tickets and /national-show pages show 19th and no XIX. Expected to fail until the push to beta; not faked.
+      type: browser_deployed_check
+      target: .agent/memory/scratch/xix-to-19th-browser-manifest.json
+      required: true
+    - id: A13
+      description: gws inbox check is not applicable (no new email is sent); declared non-required only to satisfy the triad coverage linter, expected to skip
+      type: gws_inbox_check
+      target: .agent/memory/scratch/xix-to-19th-gws-manifest.json
+      required: false

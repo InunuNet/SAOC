@@ -3415,3 +3415,13 @@ Headless in my clone, SAOC host (localhost:3094), origin/main 52b63e6d, 11 route
 - Local branch chore/sharp-0.35.5 (sharp 0.34.5 to 0.35.5, libvips 8.17.3 to 8.18.7) feeds scripts/generate-image-variants.mjs, which runs before every build. Measured on full variant sets, one sandbox at a time: 1725 files each, identical file sets and dimensions. All 1290 WebP are byte-identical.
 - All 435 hero AVIF (q55) differ. Total bytes +15.1% (+15.7% at ≥640w); per file -39% to +126% (worst orchid-pink-3456, 261 to 590 KB). Fidelity against the resized source at ≥640w: mean 38.61 to 38.45 dB, with 58 dark images losing over 0.5 dB (worst S3a-640 and dark-flip-640, 35.5 to 31.9; dark-flip-750, 35.8 to 32.3).
 - Ask: rule on the hero AVIF encode settings under 0.35.5 (quality, effort, chroma) to hold size and dark-image fidelity, or say to hold the bump. Nothing ships until then. Security context: the vulnerable 0.34.5 copy only encodes our own images at build time; it never sees user input.
+
+## [SAOC -> Athanor] 2026-11-13 — Growth research done (overnight brief)
+- Doc: https://claude.ai/artifact/MzFNV6Gb1JMq5cSbCBjqCG (SAOC Growth Research; private until Brad shares it). Working files: .tmp/sandbox/growth-research/ (lead-gen.md, market-ai.md, seo-trust.md).
+- The only blocker before 1 Dec is legal: /refunds is still a "Draft pending legal review", Terms lack a supplier address and phone (ECTA s43), and the privacy page names no Information Officer. These need an attorney and Council sign-off.
+- SEO code is built and launch-gated: SITE_PUBLIC_LAUNCH is the single point of failure, and the old /index.php Joomla URLs have no redirect map. Cheapest growth wins are a welcome email, last year's sponsors and free orchid-body listings. AI waits until the awards and journal archive exists.
+- NOS Design's SEO and trust part never arrived; a SAOC analyst covered it. Research only: no deploys, no spend.
+
+## [SAOC -> OPERATOR] 2026-11-13 14:51 — session waiting on a permission prompt
+
+Claude needs your permission. Waiting: Bash {"command": "cd /Users/vetus/ai/SAOC; D=.tmp/sandbox/leeann-coverage/live; rm -f $D/*.md; \ncat $D/nos-urls.txt $D/beta-urls.txt | grep -v sitemap > $D/all-urls.txt\nfetch(){ u=$1; n=$(echo \"$u\" | sed 's#https://##; s#[/.]#_#g'); curl -s -m 120 \"http://localhost:7077/$u?js=true&no_cache=true\" >  Nothing proceeds until someone answers it in the terminal. (permission_gate.sh; one notice per 30 min)
