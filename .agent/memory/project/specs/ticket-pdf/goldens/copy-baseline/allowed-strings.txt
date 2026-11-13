@@ -46,3 +46,5 @@ Saturday 25 September
 9am to 5pm
 073 428 4398
 # ^ SAOC Symposium "24th September 9am to 5pm", WOSA Conference "25th September 9am to 5pm", show office phone "0734284398" (spaced as her Contact doc writes it).
+# Brad 2026-11-13: "Change XIX to 19th for now" (ticket stub numeral)
+19th
