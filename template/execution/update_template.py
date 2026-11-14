@@ -1312,6 +1312,24 @@ def _is_floor_protected(key: str) -> bool:
                for g in FLOOR_PIN_GLOBS)
 
 
+NO_UPDATE_PATH = Path(".agent/no-update")
+
+
+def _load_no_update_patterns(no_update_path: Path = NO_UPDATE_PATH) -> list[str]:
+    """The project's .agent/no-update patterns: one per line, '#' comments and blanks dropped."""
+    if not no_update_path.exists():
+        return []
+    return [line.strip() for line in no_update_path.read_text(encoding="utf-8").splitlines()
+            if line.strip() and not line.strip().startswith("#")]
+
+
+def _matches_no_update(path: str, patterns: list[str]) -> bool:
+    """True when a .agent/no-update pattern pins path: fnmatch, exact, or a directory prefix
+    ('dir/' or bare 'dir' both pin every file beneath it)."""
+    return any(fnmatch.fnmatch(path, p) or path == p or path.startswith(p.rstrip("/") + "/")
+               for p in patterns)
+
+
 def _pinned_line(key: str) -> str:
     return (f"  PINNED  {key}  (.agent/no-update) -- declared pin, kept local, "
             "not counted as withheld")
@@ -1437,7 +1455,6 @@ def merge_line_union(src: Path, dst: Path, backup_dir: Path) -> str:
 
 
 HARNESS_HOOK_DIR = "execution/" + "hooks/"
-HOOK_SCRIPT_RE = re.compile(r"execution/hooks/([A-Za-z0-9_.-]+\.sh)")
 
 
 def _hook_entry_identity(entry):
@@ -1457,8 +1474,8 @@ def _hook_entry_identity(entry):
     """
     if not isinstance(entry, dict):
         return None
-    scripts = set(HOOK_SCRIPT_RE.findall(entry.get("command") or ""))
-    if len(scripts) == 1:
+    scripts = _hook_scripts_in(entry)
+    if len(scripts) == 1 and UNRESOLVABLE_REF not in scripts:
         return ("script", scripts.pop())
     return None
 
@@ -1500,27 +1517,66 @@ def _dedupe_value_key(entry):
 
 def _is_hook_config(value) -> bool:
     """True for a settings.json `hooks` value: event name -> list of matcher
-    groups, each {"matcher": ..., "hooks": [...]}. Shape-checked rather than
+    groups, each {"matcher": ..., "hooks": [...]}; "matcher" is optional (Claude
+    Code allows SessionEnd/Stop groups without one). Shape-checked rather than
     name-checked alone, so an unrelated key called "hooks" is never caught."""
     if not isinstance(value, dict) or not value:
         return False
     for groups in value.values():
         if not isinstance(groups, list) or not groups:
             return False
-        if not all(isinstance(g, dict) and "matcher" in g and "hooks" in g
+        if not all(isinstance(g, dict) and isinstance(g.get("hooks"), list)
                    for g in groups):
             return False
     return True
 
 
-HOOK_SCRIPT_RE = re.compile(r"[\w./-]*hooks/([\w.-]+\.(?:sh|py))")
+PROJECT_DIR_PREFIXES = ("$CLAUDE_PROJECT_DIR/", "${CLAUDE_PROJECT_DIR}/")
+SCRIPT_SUFFIXES = (".sh", ".py")
+SHELL_OPERATOR_CHARS = ";&|"
+# Never equals a template path and is not a plain relative path, so an entry
+# carrying it is PRESERVED by both drop branches.
+UNRESOLVABLE_REF = "$unresolvable"
+PLAIN_PATH_RE = re.compile(r"[A-Za-z0-9_./-]+")
+FD_REDIRECT_RE = re.compile(r"^\d*[<>]&\d+-?$")  # 2>&1 is not a glued operator
 
 
 def _hook_scripts_in(entry) -> set:
-    """Basenames of hook scripts a registration's command references."""
+    """Normalised paths of every script a registration's command references.
+
+    Ownership is by EXACT normalised path, wherever the script lives: the
+    command is tokenised with shlex (so "scripts/my hook.sh" is one path),
+    $CLAUDE_PROJECT_DIR/ is stripped from each token, and every token ending
+    .sh or .py is normalised with posixpath.normpath. No other prefix is
+    stripped. Only a token fully matching PLAIN_PATH_RE (no escape, not
+    absolute) is a script ref; an unparseable command, a glued operator
+    (a.sh&&b.sh), a backtick, or any other token mentioning .sh/.py adds
+    UNRESOLVABLE_REF so the entry is preserved rather than judged."""
     if not isinstance(entry, dict):
         return set()
-    return set(HOOK_SCRIPT_RE.findall(str(entry.get("command", ""))))
+    try:
+        tokens = shlex.split(str(entry.get("command", "")), posix=True)
+    except ValueError:
+        return {UNRESOLVABLE_REF}
+    refs = set()
+    for tok in tokens:
+        for prefix in PROJECT_DIR_PREFIXES:
+            if tok.startswith(prefix):
+                tok = tok[len(prefix):]
+        if FD_REDIRECT_RE.match(tok):
+            continue
+        core = tok.strip(SHELL_OPERATOR_CHARS)
+        if "`" in tok or any(c in core for c in SHELL_OPERATOR_CHARS):
+            refs.add(UNRESOLVABLE_REF)
+        elif core.endswith(SCRIPT_SUFFIXES) and PLAIN_PATH_RE.fullmatch(core):
+            norm = posixpath.normpath(core)
+            if posixpath.isabs(norm) or norm == ".." or norm.startswith("../"):
+                refs.add(UNRESOLVABLE_REF)
+            else:
+                refs.add(norm)
+        elif any(suffix in tok for suffix in SCRIPT_SUFFIXES):
+            refs.add(UNRESOLVABLE_REF)  # a script mention we cannot resolve
+    return refs
 
 
 def _harness_hook_scripts(override_hooks: dict) -> set:
@@ -1533,30 +1589,39 @@ def _harness_hook_scripts(override_hooks: dict) -> set:
             if isinstance(group, dict):
                 for entry in group.get("hooks", []):
                     scripts |= _hook_scripts_in(entry)
+    scripts.discard(UNRESOLVABLE_REF)  # never a path the template owns
     return scripts
 
 
-def _hook_scripts_exist(entry, target_root) -> bool:
-    """True when at least one script this registration names is on disk.
+HOOK_DIRS = ("execution/" + "hooks", ".claude/" + "hooks",
+             ".gemini/" + "hooks", ".grok/" + "hooks")
 
-    The path AS WRITTEN is checked first (#1453): a project hook registered
-    as `bash scripts/hooks/x.sh` was reduced to its basename and looked for in
-    the four harness hook directories only, so it read as retired and was
-    deregistered on every update while the file sat on disk.
-    """
+
+def _plain_relative(ref: str) -> bool:
+    """A ref the updater can resolve against the project root: no variable,
+    no ~, not absolute, no `..` climbing out of the root."""
+    if "$" in ref or "~" in ref or posixpath.isabs(ref):
+        return False
+    return ref != ".." and not ref.startswith("../")
+
+
+def _hook_scripts_retired(entry, target_root) -> bool:
+    """True only when the registration is PROVABLY a dead reference: every
+    script ref is a plain relative path, none exists at that path, and the
+    basename fallback finds none in the four hook directories (#1453). Any
+    unresolvable ref ($PWD, ~, absolute, ..) is preserved, never retired."""
     if target_root is None:
-        return True
-    command = str(entry.get("command", "")) if isinstance(entry, dict) else ""
-    for tok in command.replace("'", " ").replace('"', " ").split():
-        tok = tok.replace("$CLAUDE_PROJECT_DIR/", "").replace("${CLAUDE_PROJECT_DIR}/", "")
-        if tok.endswith((".sh", ".py")) and (Path(target_root) / tok).is_file():
-            return True
-    for name in _hook_scripts_in(entry):
-        for base in ("execution/" + "hooks", ".claude/" + "hooks",
-                     ".gemini/" + "hooks", ".grok/" + "hooks"):
-            if (Path(target_root) / base / name).exists():
-                return True
-    return False
+        return False
+    refs = _hook_scripts_in(entry)
+    if not refs or not all(_plain_relative(ref) for ref in refs):
+        return False
+    root = Path(target_root)
+    for ref in refs:
+        if (root / ref).exists():
+            return False
+        if any((root / base / posixpath.basename(ref)).exists() for base in HOOK_DIRS):
+            return False
+    return True
 
 
 def _drop_existing_registration(entry, harness_scripts: set, target_root) -> bool:
@@ -1573,7 +1638,8 @@ def _drop_existing_registration(entry, harness_scripts: set, target_root) -> boo
 
     Two narrow reasons to drop, and PRESERVE for everything else:
 
-    1. The current template ships this script. The template's own groups
+    1. The current template ships EVERY script the entry names (by path; a
+       compound command that also names a project script is preserved). The template's own groups
        supply it, so keeping the old registration duplicates it -- and this is
        what collapses three old check_autonomy registrations (Bash, Write,
        Edit) into the one `Bash|Edit|Write` group (#1394).
@@ -1590,13 +1656,13 @@ def _drop_existing_registration(entry, harness_scripts: set, target_root) -> boo
     referenced = _hook_scripts_in(entry)
     if not referenced:
         return False
-    if referenced & harness_scripts:
+    if referenced <= harness_scripts:  # non-empty: checked above
         return True
-    return not _hook_scripts_exist(entry, target_root)
+    return _hook_scripts_retired(entry, target_root)
 
 
 def replace_hook_config(override_hooks: dict, existing_hooks=None,
-                        target_root=None) -> dict:
+                        target_root=None, label: str = "settings") -> dict:
     """The `hooks` key of a settings file is REPLACED wholesale, never unioned.
 
     THE DEFECT (#1394). Unioning hook registrations by (event, matcher) let
@@ -1650,8 +1716,21 @@ def replace_hook_config(override_hooks: dict, existing_hooks=None,
 
     Still idempotent: replacing harness registrations and preserving the same
     local ones twice gives the same file.
+
+    Matcher-less groups (2026-11-14 incident): the template's SessionEnd and
+    Stop groups carry no "matcher", which Claude Code allows. _is_hook_config()
+    demanded the key, so this function was never reached, the merge fell back
+    to merge_list_union and legacy harness registrations were never pruned
+    (Omarchy ARM: "hooks: 30 -> 30 / unchanged"). A missing matcher is now its
+    own key (None) and only matches other matcher-less groups.
     """
     harness_scripts = _harness_hook_scripts(override_hooks)
+    if existing_hooks is not None and not isinstance(existing_hooks, dict):
+        # Malformed destination (e.g. "hooks": [...]): never crash the update.
+        # merge_json_deep has already backed the file up.
+        print(f"  WARN: {label}: existing 'hooks' is not an object "
+              f"({type(existing_hooks).__name__}); ignored, template hooks installed")
+        existing_hooks = {}
 
     out = {}
     for event, groups in override_hooks.items():
@@ -1673,7 +1752,10 @@ def replace_hook_config(override_hooks: dict, existing_hooks=None,
         for group in groups:
             if not isinstance(group, dict):
                 continue
-            local = [h for h in group.get("hooks", [])
+            held = group.get("hooks", [])
+            if not isinstance(held, list):
+                continue
+            local = [h for h in held
                      if not _drop_existing_registration(
                          h, harness_scripts, target_root)]
             if not local:
@@ -1690,6 +1772,28 @@ def replace_hook_config(override_hooks: dict, existing_hooks=None,
                 out[event].append(target)
             target["hooks"] = merge_hook_entries(target.get("hooks", []), local)
     return out
+
+
+def _hook_key(entry):
+    ident = _hook_entry_identity(entry)
+    return ident if ident is not None else ("literal", _dedupe_value_key(entry))
+
+
+def _merge_into_groups(groups: list, new_hooks: list) -> None:
+    """Merge hook entries into a set of same-matcher groups: an entry already
+    present in any group is refreshed in place there, a novel one is appended
+    to the first group only."""
+    for hook in new_hooks:
+        key = _hook_key(hook)
+        placed = False
+        for group in groups:
+            hooks = group.setdefault("hooks", [])
+            for i, held in enumerate(hooks):
+                if _hook_key(held) == key:
+                    hooks[i] = hook
+                    placed = True
+        if not placed:
+            groups[0].setdefault("hooks", []).append(hook)
 
 
 def merge_list_union(base_list: list, override_list: list) -> list:
@@ -1712,26 +1816,27 @@ def merge_list_union(base_list: list, override_list: list) -> list:
 
     def _is_hook_group_list(lst):
         return len(lst) > 0 and all(
-            isinstance(e, dict) and "matcher" in e and "hooks" in e for e in lst
+            isinstance(e, dict) and isinstance(e.get("hooks"), list) for e in lst
         )
 
     if _is_hook_group_list(base_list) and _is_hook_group_list(override_list):
         result = [dict(e) for e in base_list]
-        by_matcher = {e["matcher"]: e for e in result}
+        by_matcher: dict = {}
+        for e in result:
+            by_matcher.setdefault(e.get("matcher"), []).append(e)
         for entry in override_list:
-            matcher = entry["matcher"]
+            matcher = entry.get("matcher")  # absent matcher is its own key (None)
             if matcher in by_matcher:
-                existing = by_matcher[matcher]
+                # Every base group sharing the key is deduped against, so
+                # several matcher-less groups never gain a duplicate.
                 # Hook registrations dedup by SCRIPT, not by command string --
                 # see merge_hook_entries() and #1394.
-                existing["hooks"] = merge_hook_entries(
-                    existing.get("hooks", []), entry.get("hooks", [])
-                )
+                _merge_into_groups(by_matcher[matcher], entry.get("hooks", []))
             else:
                 new_entry = dict(entry)
                 new_entry["hooks"] = merge_hook_entries([], entry.get("hooks", []))
                 result.append(new_entry)
-                by_matcher[matcher] = new_entry
+                by_matcher[matcher] = [new_entry]
         return result
 
     # Generic order-preserving dedup union. dict/list elements are compared
@@ -1747,7 +1852,7 @@ def merge_list_union(base_list: list, override_list: list) -> list:
     return result
 
 
-def deep_merge(base: dict, override: dict, target_root=None) -> dict:
+def deep_merge(base: dict, override: dict, target_root=None, label: str = "settings") -> dict:
     """Deep merge: override values take priority; nested dicts are merged
     recursively; lists present on both sides are unioned (see
     merge_list_union) instead of replaced."""
@@ -1758,9 +1863,9 @@ def deep_merge(base: dict, override: dict, target_root=None) -> dict:
             # hook or reconciles a changed matcher set); project-local ones are
             # preserved. See replace_hook_config().
             result[key] = replace_hook_config(val, result.get(key),
-                                              target_root)
+                                              target_root, label)
         elif key in result and isinstance(result[key], dict) and isinstance(val, dict):
-            result[key] = deep_merge(result[key], val, target_root)
+            result[key] = deep_merge(result[key], val, target_root, label)
         elif key in result and isinstance(result[key], list) and isinstance(val, list):
             result[key] = merge_list_union(result[key], val)
         else:
@@ -1787,6 +1892,34 @@ def _count_hook_registrations(hooks_value) -> int:
                 if isinstance(hooks_list, list):
                     total += len(hooks_list)
     return total
+
+
+COMPACT_WINDOW_KEY = "autoCompactWindow"
+
+
+def _int_window(value):
+    return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+
+def _keep_compact_window_floor(dst_data: dict, src_data: dict, merged: dict, dst: Path) -> None:
+    """autoCompactWindow only ever rises to the template value, never falls.
+
+    A window near the boot load (the old 100000) makes Claude Code compact at
+    ~68k and refill in three turns ("Autocompact is thrashing"). A project value
+    below the template's is lifted; a higher project value (e.g. 400000) is kept.
+    """
+    tpl = _int_window(src_data.get(COMPACT_WINDOW_KEY))
+    if tpl is None or dst.name != "settings.json":
+        return
+    cur = _int_window(dst_data.get(COMPACT_WINDOW_KEY))
+    if cur is None:
+        return
+    if cur < tpl:
+        merged[COMPACT_WINDOW_KEY] = tpl
+        print(f"  autoCompactWindow lifted {cur} -> {tpl} in {dst} "
+              "(a window near the boot load makes Claude Code thrash on autocompact)")
+    else:
+        merged[COMPACT_WINDOW_KEY] = cur
 
 
 def merge_json_deep(src: Path, dst: Path, backup_dir: Path) -> str:
@@ -1817,7 +1950,8 @@ def merge_json_deep(src: Path, dst: Path, backup_dir: Path) -> str:
     # (.claude/settings.json), so its grandparent is that root --
     # needed to tell a retired hook from a project hook by asking
     # whether the script is still on disk.
-    merged = deep_merge(dst_data, src_data, dst.parent.parent)
+    merged = deep_merge(dst_data, src_data, dst.parent.parent, str(dst))
+    _keep_compact_window_floor(dst_data, src_data, merged, dst)
 
     # Hook-reconciliation telemetry (delivery-and-truth F1, #1410). Only
     # emitted for a file that actually carries a `hooks` key on either side
@@ -1923,6 +2057,7 @@ def apply_retired_paths(
     project_root: Path,
     backup_dir: Path | None,
     dry_run: bool,
+    is_pinned=None,
 ) -> list[str]:
     """Remove harness files the harness itself has deleted.
 
@@ -1947,6 +2082,10 @@ def apply_retired_paths(
             continue
         target = project_root / rel
         if not target.exists() and not target.is_symlink():
+            continue
+        if is_pinned is not None and is_pinned(rel):
+            # A .agent/no-update pin keeps the file local, retired upstream or not.
+            print(_pinned_line(rel))
             continue
         if _refuse_symlinked_write(target, f"retired path {rel}", stop_at=project_root):
             continue
@@ -3314,7 +3453,11 @@ def cmd_record_scaffold_baselines(project_path: str) -> int:
 
     baselines: dict = {}
     hash_failures = 0
+    pins = _load_no_update_patterns(root / NO_UPDATE_PATH)
     for key, f in _walk_harness_manifest_files(manifest, root=root):
+        if _matches_no_update(key, pins):
+            print(f"  SKIP  {key}: pinned in .agent/no-update -- no baseline recorded")
+            continue
         try:
             baselines[key] = _sha256_of_file(f)
         except OSError as e:
@@ -3369,7 +3512,17 @@ def cmd_adopt_baseline(targets: list[str]) -> int:
     baselines = load_template_baselines()
     adopted: list[str] = []
     skipped: list[str] = []
+    # A .agent/no-update pin declares a deliberate local edit. Adopting it as
+    # pristine is what let the next --apply overwrite Mumbl AI's pinned
+    # contract.py sign-off code (3.8.2, 2026-09-17). Only the bulk form skips
+    # pins; naming the path explicitly remains the operator's own choice.
+    pins = _load_no_update_patterns() if targets == ["all"] else []
     for key in paths:
+        if _matches_no_update(key, pins):
+            print(f"  SKIP  {key}: pinned in .agent/no-update -- a declared local edit is never "
+                  "adopted as pristine by 'all'; name the path to adopt it deliberately")
+            skipped.append(key)
+            continue
         p = Path(key)
         if p.is_symlink():
             print(f"  SKIP  {key}: is a symlink — refusing to adopt a baseline through a symlink (F8 EDGE 1)")
@@ -4784,6 +4937,74 @@ def _warn_if_self_replaced(before: str) -> bool:
 
 
 
+# Max ignored harness files listed in the post-apply warning; the rest is a count.
+IGNORED_WARN_LIMIT = 10
+
+
+def _shipped_ignore_patterns(source):
+    """Non-comment lines of the update SOURCE's .gitignore: rules the harness itself
+    ships, so a hit on one is the harness's decision, not a project misconfiguration.
+    Unreadable source .gitignore: empty set."""
+    try:
+        text = (Path(source) / ".gitignore").read_text(encoding="utf-8")
+    except (OSError, ValueError):
+        return set()
+    return {ln.strip() for ln in text.splitlines()
+            if ln.strip() and not ln.lstrip().startswith("#")}
+
+
+def warn_gitignored_harness_files(manifest, source, root=Path(".")):
+    """Warn for each HARNESS file the project gitignores and does not track.
+
+    A fresh clone lacks such a file, so the harness is broken there (Alembic's
+    `lib/` rule hid execution/skills/lib/). One `git check-ignore -v --stdin`
+    call without --no-index: tracked files are never reported. Hits on a rule the
+    harness's own shipped .gitignore contains are skipped. Not a git repo,
+    git missing or any error: print nothing. Never changes the exit code.
+    """
+    # template/ is the payload mirror of the live dirs checked here: same files, same
+    # fix, so listing it would only double every line.
+    keys = [key for key, _f in _walk_harness_manifest_files(manifest, root=root)
+            if not key.startswith("template/")]
+    if not keys:
+        return
+    try:
+        r = subprocess.run(
+            ["git", "check-ignore", "-v", "--stdin", "-z"],
+            cwd=str(root), input="\0".join(keys) + "\0", capture_output=True,
+            text=True, timeout=60,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return
+    if r.returncode != 0:  # 1 = nothing ignored, 128 = not a repo / error
+        return
+    shipped = _shipped_ignore_patterns(source)
+    hits = []
+    fields = r.stdout.split("\0")
+    # -z -v output: source, linenum, pattern, pathname per record.
+    for i in range(0, len(fields) - 3, 4):
+        source, line, pattern, path = fields[i:i + 4]
+        if not pattern.startswith("!") and pattern not in shipped:
+            hits.append((path, f"{source}:{line}:{pattern}", pattern))
+    if not hits:
+        return
+    print(
+        f"WARN: {len(hits)} harness file(s) are gitignored and untracked; a fresh "
+        "clone will lack them and the harness will break there:",
+        file=sys.stderr,
+    )
+    for path, rule, pattern in hits[:IGNORED_WARN_LIMIT]:
+        print(f"  {path}  (ignored by {rule})", file=sys.stderr)
+    if len(hits) > IGNORED_WARN_LIMIT:
+        print(f"  ... and {len(hits) - IGNORED_WARN_LIMIT} more", file=sys.stderr)
+    dirs = sorted({posixpath.dirname(p) for p, _r, _p in hits})
+    print(
+        "  Fix: add a re-include rule to .gitignore, e.g. "
+        + ", ".join(f"`!{d}/`" for d in dirs[:3]) + ", then `git add` the files.",
+        file=sys.stderr,
+    )
+
+
 # Mirrors the Makefile `sync:` target (called directly: make is often missing on Windows Git Bash).
 POST_APPLY_SYNC_STEPS = (
     ("sync_autonomy", "python", "execution/sync_autonomy.py", ()),
@@ -5364,27 +5585,15 @@ def main():
             print(f"--force-path requested for: {sorted(force_paths)}")
 
         # Load .agent/no-update protected file list (optional)
-        no_update_path = Path(".agent/no-update")
-        protected_patterns: list[str] = []
-        if no_update_path.exists():
-            for line in no_update_path.read_text(encoding="utf-8").splitlines():
-                line = line.strip()
-                if line and not line.startswith("#"):
-                    protected_patterns.append(line)
-            if protected_patterns:
-                print(f"Protected patterns from .agent/no-update: {protected_patterns}")
+        protected_patterns = _load_no_update_patterns()
+        if protected_patterns:
+            print(f"Protected patterns from .agent/no-update: {protected_patterns}")
 
         def is_protected(path: str) -> bool:
-            for pattern in protected_patterns:
-                if fnmatch.fnmatch(path, pattern) or path == pattern:
-                    return True
-            return False
+            return any(fnmatch.fnmatch(path, p) or path == p for p in protected_patterns)
 
         def is_pinned(path: str) -> bool:
-            return is_protected(path) or any(
-                pattern.endswith("/") and path.startswith(pattern)
-                for pattern in protected_patterns
-            )
+            return _matches_no_update(path, protected_patterns)
 
         paths_changed = []
         paths_skipped = []
@@ -5761,6 +5970,7 @@ def main():
             project_root=Path.cwd(),
             backup_dir=backup_dir,
             dry_run=dry_run,
+            is_pinned=is_pinned,
         )
         prune_retired_hook_registrations(
             Path.cwd(), backup_dir, dry_run,
@@ -6259,6 +6469,7 @@ def main():
                 sys.exit(1)
             if not is_template_repo:
                 sync_ok = run_post_apply_sync(Path.cwd())
+            warn_gitignored_harness_files(manifest, source)
             # --allow-skips acknowledges CONTENT the operator knowingly keeps;
             # it may not mute a compromised write path (F4c-2 C12).
             if paths_refused:

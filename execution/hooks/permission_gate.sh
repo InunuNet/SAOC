@@ -174,7 +174,28 @@ pending.write_text(json.dumps(record))
 PY
     ;;
 attended)
-    rm -f "$UNATTENDED" "$PENDING" "$PENDING.lock" "$REQUEST"
+    # Peer messages, task notifications and loop ticks arrive as UserPromptSubmit too, but
+    # the operator did not type them: leave the state files alone. Any doubt clears, as before.
+    KEEP="$(HOOK_INPUT="$INPUT" python3 - <<'PY' 2>/dev/null || true
+import json, os
+# Must equal execution/timesheet.py NOT_OPERATOR. Duplicated on purpose: importing timesheet
+# from a fail-safe hook would silently fall back to clearing the files if the import broke.
+NOT_OPERATOR = ("<cross-session-message", "<task-notification",
+                "[SYSTEM NOTIFICATION", "<<autonomous-loop", "<system-reminder")
+try:
+    data = json.loads(os.environ["HOOK_INPUT"])
+except Exception:  # malformed or absurdly nested: treat as an operator prompt
+    data = {}
+if not isinstance(data, dict):
+    data = {}
+prompt = data.get("prompt")
+if isinstance(prompt, str) and prompt.lstrip().startswith(NOT_OPERATOR):
+    print("keep")
+PY
+)"
+    if [ "$KEEP" != "keep" ]; then
+        rm -f "$UNATTENDED" "$PENDING" "$PENDING.lock" "$REQUEST"
+    fi
     ;;
 esac
 exit 0

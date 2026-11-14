@@ -159,3 +159,6 @@ content/drive-watch/
 .agent/.privilege_permit.*.tmp
 .agent/memory/project/privileged_command_audit.log
 .agent/memory/scratch/escalation/
+# Per-checkout runtime state (clone-hygiene): never tracked
+/.agent/memory/project/hook_watermark.json
+/.agent/memory/project/missions/active.json

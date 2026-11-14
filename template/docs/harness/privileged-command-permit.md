@@ -19,8 +19,9 @@ paths behave exactly as before (Claude Code's own prompt decides) unless a path 
        --reason "edit the Omarchy config outside the workspace" --ttl 30m
    ```
 
-   `--kind command`: scope is a comma list of bare command names the agent wants to elevate, or
-   `*` for any. `--kind path`: scope is one absolute file or directory outside the project.
+   `--kind command`: scope is a comma list of bare names of the INNER command run under
+   `sudo`/`doas`/`pkexec`/`run0` (`apt` for `sudo apt ...`), or `*` for any. Naming the elevator
+   itself (`sudo`, `doas`, `su`, `systemd-run` ...) is refused with that explanation. `--kind path`: scope is one absolute file or directory outside the project.
    Reason is at least 20 characters. TTL is `5m` to `24h` (cap), default `4h`, and `4h` is the
    recommended length. The command writes a pending request under
    `.agent/memory/scratch/escalation/` and prints one `ASKUSERQUESTION: {...}` line.
@@ -31,8 +32,13 @@ paths behave exactly as before (Claude Code's own prompt decides) unless a path 
 3. **Grant.** A PostToolUse(AskUserQuestion) hook runs `python3 execution/escalate.py
    grant-from-answer`. It writes a grant into `.agent/privilege_permit.json` only when the answer
    is exactly `Grant` to that exact question (id, scope and duration lines unchanged, options
-   exactly Grant and Deny), the request is under 15 minutes old and untampered (digest), and the
+   exactly Grant and Deny), the request is under 60 minutes old and untampered (digest), and the
    scope passes the never-grantable list. The request is single use: any answer consumes it.
+   Free text (anything but exactly `Grant` or `Deny`, e.g. "yes, grant it") never grants and is
+   refused visibly, not treated as a silent deny. A stale request is refused with a hint to run
+   `escalate.py request` again. Every result except `ignored` (not an escalation question) is
+   returned to the agent as PostToolUse `additionalContext` ("escalation: granted|denied|refused
+   ..."), so a refusal is never invisible.
 
 4. **Act.** Elevated commands and covered paths run until the grant expires. `python3
    execution/escalate.py status` lists live grants and pending requests; `python3
@@ -117,6 +123,24 @@ delete the file.
 - `systemd-run`, `machinectl` and `sudoedit` are payload-opaque: under an open permit they are
   granted wholesale. `.agent/autonomy_matrix.json floor_denials.commands` is inert, enforcement-owned
   and not read by the hook; the hook's verb set is authoritative.
+
+## Agent-owned host
+
+A host the operator hands to the agents entirely (the ThinkPad P52s) can carry a marker file instead of a per-session permit. While the marker is valid, `sudo` (the first token, with any options such as `-n`) is admitted without a grant. Nothing else changes: `doas`, `pkexec`, `run0`, `su` and the rest still need a permit, and what sudo runs is judged like any command, so `sudo rm -rf /`, a sudo read of a credential store, `sudo chmod 777`, `sudo curl | sh`, an interactive `sudo sh` / `sudo -i` and writes to enforcement files stay denied.
+
+The marker is `/etc/athanor/agent-owned-host`. It counts only when all of these hold, checked on every use (`agent_owned_host()` in `execution/hooks/lib/privilege_permit.py`):
+
+- a regular file, not a symlink, with no symlink in any path component, opened without following links, and the opened file is the one that was checked;
+- owned by uid 0 and gid 0, and neither the file nor `/etc/athanor` is group- or other-writable;
+- its first line is exactly `host: <hostname>`, compared with `uname -n`, so a copied disk image does not carry the grant.
+
+The marker never admits `sudo -D/--chdir` or `-R/--chroot` (they move where the inner command's relative paths resolve, so the floor could not judge them); those still need a permit. Agents cannot create it (that needs sudo, which is denied without it), and no environment variable or option moves the path. Windows never honours it; the Mac has no such file and behaves as before. The operator creates it once:
+
+```
+sudo install -d -m 755 /etc/athanor && echo "host: $(uname -n)" | sudo tee /etc/athanor/agent-owned-host >/dev/null && sudo chmod 644 /etc/athanor/agent-owned-host
+```
+
+Remove it with `sudo rm /etc/athanor/agent-owned-host`. Each admitted sudo is audited as a `used` line with grant id `agent-owned-host`. Golden: `.agent/memory/project/specs/agent-owned-host/goldens/check_agent_owned_host.py`.
 
 ## Passwords
 

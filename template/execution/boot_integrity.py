@@ -19,7 +19,9 @@ IT NEVER REPAIRS, for either condition. Silent repair at boot would restore
 exactly the invisibility this feature removes: the agent would be handed
 corrected instructions and nobody would ever learn that a clone had been edited
 or a `make sync-clones` skipped. Drift belongs to the gate; boot only tells the
-truth about it.
+truth about it. The remedy it NAMES, `verify_no_symlink_stubs.py
+--materialise`, is the repair: the operator runs it and commits. It fixes every
+tracked symlink, not only the paired-copies registry.
 
 Three states:
   clean        -- prints NOTHING (every boot pays for this output).
@@ -50,7 +52,7 @@ BANNER = "ATHANOR-STUB-DAMAGE"
 RULE = "=" * 72
 BEGIN_MARKER = "--- BEGIN AGENTS.md FALLBACK ---"
 END_MARKER = "--- END AGENTS.md FALLBACK ---"
-REMEDY = "python3 execution/paired_copies.py --sync"
+REMEDY = "python3 execution/checks/verify_no_symlink_stubs.py --materialise"
 DRIFT_REMEDY = "make sync-clones"
 DETECTOR_TIMEOUT_SECONDS = 120
 
