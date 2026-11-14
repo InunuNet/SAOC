@@ -41,10 +41,11 @@ HOOK_DIR = Path("execution/hooks")
 # High-water mark of every registration this workspace has ever held. See
 # high_water() for why it only ever grows.
 WATERMARK_REL = Path(".agent/memory/project/hook_watermark.json")
+MANIFEST_REL = Path(".agent/update-manifest.yaml")
 
 
-def high_water(root: Path, actual: dict[str, set[str]]) -> list[str]:
-    """Names registrations this workspace once had and no longer has.
+def high_water(root: Path, actual: dict[str, set[str]]) -> tuple[list[str], list[str]]:
+    """Returns (lost, excused): registrations this workspace once had and no longer has.
 
     The template inventory is not the whole answer, and mumbl-ai-f0 proved it
     on 2026-09-22: an update deleted their project-owned `block_cd.sh`
@@ -61,12 +62,27 @@ def high_water(root: Path, actual: dict[str, set[str]]) -> list[str]:
     ratify the damage on the very next run and reintroduce the original bug.
     A registration removed deliberately stays reported until someone edits it
     out of this file by hand, and that edit is the record of the decision.
+
+    One kind of entry may leave without a hand edit: a hook the HARNESS retired.
+    `retired_paths` in the workspace update-manifest is a recorded decision too,
+    made upstream and applied by the updater, so a script listed there as
+    `execution/hooks/<name>` and absent from execution/hooks/ is not a loss. It
+    is dropped from the watermark and counted in `excused` instead (Alembic saw
+    "LOST 13", all 13 retired). A retired script still on disk is a local edit
+    the updater kept, and stays LOST if unregistered.
+
+    The file is rewritten only when its content changes, so a steady-state
+    audit leaves git clean.
     """
     path = root / WATERMARK_REL
     try:
         known = {e: set(v) for e, v in json.loads(path.read_text()).items()}
     except Exception:
         known = {}
+
+    retired = {n for n in retired_hooks(root) if not (root / HOOK_DIR / n).exists()}
+    excused = sorted({s for scripts in known.values() for s in scripts if s in retired})
+    known = {e: {s for s in v if s not in retired} for e, v in known.items()}
 
     lost = [f"{event}: {script}"
             for event, scripts in sorted(known.items())
@@ -76,12 +92,33 @@ def high_water(root: Path, actual: dict[str, set[str]]) -> list[str]:
     merged = {e: sorted(set(v) | known.get(e, set())) for e, v in actual.items()}
     for event, scripts in known.items():
         merged.setdefault(event, sorted(scripts))
+    text = json.dumps(merged, indent=2, sort_keys=True) + "\n"
     try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(merged, indent=2, sort_keys=True) + "\n")
+        if not path.is_file() or path.read_text() != text:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text)
     except Exception:
         pass  # reporting is the job; a read-only tree must not fail the check
-    return lost
+    return lost, excused
+
+
+def retired_hooks(root: Path) -> set[str]:
+    """Basenames of execution/hooks/<name> entries in the manifest's retired_paths.
+
+    yaml is loaded lazily: this script runs on bare interpreters, and without
+    yaml or a readable manifest the answer is the empty set, which is exactly
+    the behaviour before retired_paths was consulted.
+    """
+    try:
+        import yaml
+        doc = yaml.safe_load((root / MANIFEST_REL).read_text())
+        paths = doc.get("retired_paths") or []
+    except Exception:
+        return set()
+    prefix = HOOK_DIR.as_posix() + "/"
+    names = (p.get("path") if isinstance(p, dict) else p for p in paths)
+    return {Path(p).name for p in names
+            if isinstance(p, str) and p.startswith(prefix)}
 
 
 def scripts_named(command: str) -> set[str]:
@@ -131,12 +168,15 @@ def check(root: Path, expected_source: Path) -> int:
                 continue  # the harness no longer ships it; not a gap
             missing.append(f"{event}: {script}")
 
-    lost = high_water(root, actual)
+    lost, excused = high_water(root, actual)
 
     exp_total = sum(len(v) for v in expected.values())
     act_total = sum(len(v) for v in actual.values())
     print(f"  hooks: {act_total} registered, {exp_total} expected by the "
           f"template")
+    if excused:
+        print(f"  {len(excused)} retired by the harness (update-manifest "
+              f"retired_paths), not counted as lost")
 
     if not missing and not lost:
         print("  ok every template hook is registered, and nothing this "

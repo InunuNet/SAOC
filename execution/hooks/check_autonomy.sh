@@ -133,6 +133,143 @@ if [ "$TOOL" = "Bash" ]; then
   fi
 fi
 
+# Credential-store raw scan (P52s queue item 20). The tokenizer-based scanners below each closed
+# one spelling of a home store path and left the next open (quote splits, backslashes, heredoc
+# bodies, `$HOME`, `${HOME}`, `~user`, /Users/<u>, wrappers): the denylist history is a
+# whack-a-mole of 33 leaks in the golden. So before ANY unwrapping or parsing this scans the whole
+# raw command text, heredoc bodies included, fail closed. Normalise (join backslash-newline continuations, drop $ before a quote, drop quote characters and
+# backslashes, collapse // and /./, lowercase), then deny (1) a path COMPONENT named .ssh, .aws
+# or .gnupg anywhere (the same component rule the resolved-path check already applies to
+# */.ssh/*; `.ssh-fixture` and `foo.aws.json` are not components), or (2) a home-ish anchor
+# (~, ~user, $HOME, ${HOME}, the HOME value, /Users/u, /home/u, /root; NOT $PWD, ~+ or $( here,
+# so ordinary project globs pass; rule (1) still denies those anchors before a store name) followed by a first component (dotted or not) with a glob, brace or extglob char ( ( | ), which can
+# expand to a store. The project-credential exemption (nm_credential_exempt, a project's own
+# .env) does not apply here. Prose that merely names a store is denied too; use Edit/Write.
+# Known limit of a text scan: runtime-built strings (d=.ssh, $'\x2e', printf or base64 piped to
+# sh, file-fed paths) are out of scope.
+if [ "$TOOL" = "Bash" ]; then
+  _cr_t='~'
+  _cr_c="${COMMAND//$'\\\n'/}"
+  _cr_c="${_cr_c//\$[\'\"]/}"
+  _cr_s=$(printf '%s' "${_cr_c//[\'\"\\]/}" | tr '[:upper:]' '[:lower:]')
+  if [ "${#HOME}" -gt 1 ]; then
+    _cr_h=$(printf '%s' "$HOME" | tr '[:upper:]' '[:lower:]')
+    _cr_s="${_cr_s//"$_cr_h"/$_cr_t}"
+  fi
+  while [[ "$_cr_s" == *//* ]]; do _cr_s="${_cr_s//\/\///}"; done
+  while [[ "$_cr_s" == */./* ]]; do _cr_s="${_cr_s//\/.\///}"; done
+  _cr_b='[/[:space:];&|()<>`]'
+  _cr_comp="(^|${_cr_b}|=)(\.ssh|\.aws|\.gnupg)(${_cr_b}|\$)"
+  _cr_anchor='(~[a-z0-9._$-]*|\$home|\$\{home\}|/users/[^/[:space:]]+|/home/[^/[:space:]]+|/root)'
+  _cr_glob='/[^/[:space:]]*[*?[{(|]'
+  if [[ "$_cr_s" =~ $_cr_comp ]] || [[ "$_cr_s" =~ ${_cr_anchor}${_cr_glob} ]]; then
+    echo "⛔ AUTONOMY FLOOR: credential store path in command text (raw scan, fail-closed); name it without the home anchor, rephrase (search for ssh without the leading dot, or use the Grep tool), or use Edit/Write for prose" >&2
+    exit 2
+  fi
+fi
+
+# Transparent command wrappers (env, nice, timeout, xargs, ...) only prefix the command they run.
+# Every scanner judges that command, never the wrapper. uw_split WORD...: when WORD[0] is a
+# wrapper, set UW_REM to the words after the wrapper's own options and operands, UW_STR to a
+# payload the wrapper itself parses as a command line (env -S, flock -c, watch), and UW_FUZZY=1
+# when an option was not understood (then UW_REM holds every word after the wrapper and the caller
+# must judge each suffix of it as a command: fail closed, never skip). Returns 1 for a non-wrapper.
+UW_WRAPPERS=" env command builtin exec nice nohup time timeout stdbuf ionice chrt taskset setsid xargs busybox flock watch caffeinate "
+UW_MAX_DEPTH=12
+FL_UW_N=0
+UW_REM=(); UW_STR=""; UW_FUZZY=0
+uw_valopts() {
+  case "$1" in
+    env) echo " -u -C -P -a --unset --chdir --argv0 --default-signal --ignore-signal --block-signal " ;;
+    nice) echo " -n --adjustment " ;;
+    timeout) echo " -s -k --signal --kill-after " ;;
+    stdbuf) echo " -i -o -e --input --output --error " ;;
+    ionice) echo " -c -n -p -P -u --class --classdata --pid --pgid --uid " ;;
+    taskset) echo " -c --cpu-list " ;;
+    time) echo " -f -o --format --output " ;;
+    exec) echo " -a " ;;
+    flock) echo " -w -E --timeout --conflict-exit-code " ;;
+    watch) echo " -n --interval " ;;
+    caffeinate) echo " -t -w " ;;
+    xargs) echo " -I -n -L -P -s -d -E -a -R -S --max-args --max-lines --max-procs --max-chars --delimiter --eof --arg-file --replace " ;;
+    *) echo " " ;;
+  esac
+}
+uw_split() {
+  UW_REM=(); UW_STR=""; UW_FUZZY=0
+  [ "$#" -eq 0 ] && return 1
+  local -a w=("$@")
+  local n=${#w[@]} i=1 name="${w[0]##*/}" a vo letter k bad
+  while [ "${name#\\}" != "$name" ]; do name="${name#\\}"; done
+  [[ "$UW_WRAPPERS" == *" $name "* ]] || return 1
+  vo=$(uw_valopts "$name")
+  local posn=0
+  case "$name" in timeout|chrt|taskset|flock) posn=1 ;; esac
+  while [ "$i" -lt "$n" ]; do
+    a="${w[$i]}"
+    case "$a" in
+      --) i=$((i + 1)); break ;;
+      -S|--split-string)
+        if [ "$name" = env ]; then UW_STR="${w[$((i + 1))]:-}"; i=$((i + 2)); break; fi
+        UW_FUZZY=1; i=$((i + 1)) ;;
+      --split-string=*) UW_STR="${a#*=}"; i=$((i + 1)); break ;;
+      -S?*)
+        if [ "$name" = env ]; then UW_STR="${a#-S}"; i=$((i + 1)); break; fi
+        UW_FUZZY=1; i=$((i + 1)) ;;
+      -c|--command)
+        if [ "$name" = flock ]; then UW_STR="${w[$((i + 1))]:-}"; UW_REM=(); return 0; fi
+        if [ "$name" = taskset ] || [ "$name" = ionice ]; then posn=0; i=$((i + 2)); continue; fi
+        UW_FUZZY=1; i=$((i + 1)) ;;
+      --command=*|-c?*)
+        if [ "$name" = flock ]; then UW_STR="${a#*=}"; [ "${a:0:2}" = -c ] && [ "${a:0:3}" != --c ] && UW_STR="${a#-c}"; UW_REM=(); return 0; fi
+        case "$a" in --command=*) UW_FUZZY=1 ;; esac
+        if [ "$name" = taskset ]; then posn=0; fi
+        i=$((i + 1)) ;;
+      --cpu-list=*) posn=0; i=$((i + 1)) ;;
+      --*=*) i=$((i + 1)) ;;
+      --*) if [[ "$vo" == *" $a "* ]]; then i=$((i + 2)); else UW_FUZZY=1; i=$((i + 1)); fi ;;
+      -[0-9]*|-) i=$((i + 1)) ;;
+      -?*)
+        letter="-${a:1:1}"
+        if [[ "$vo" == *" $letter "* ]]; then
+          [ "${#a}" -eq 2 ] && i=$((i + 2)) || i=$((i + 1))
+        else
+          bad=0
+          for ((k = 2; k < ${#a}; k++)); do
+            [[ "$vo" == *" -${a:$k:1} "* ]] && bad=1
+          done
+          [ "$bad" = 1 ] && UW_FUZZY=1
+          i=$((i + 1))
+        fi ;;
+      *)
+        if [ "$posn" -gt 0 ]; then posn=$((posn - 1)); i=$((i + 1)); continue; fi
+        break ;;
+    esac
+  done
+  case "$name" in
+    command) for a in "${w[@]:1:$((i - 1))}"; do
+        case "$a" in -v|-V|-pv|-pV) return 0 ;; esac
+      done ;;
+    watch) UW_FUZZY=1; UW_STR="${w[*]:$i}" ;;
+    busybox) i=1; UW_FUZZY=0 ;;
+  esac
+  if [ "$UW_FUZZY" = 1 ]; then UW_REM=("${w[@]:1}"); else UW_REM=("${w[@]:$i}"); fi
+  # A plain payload (no quoting or expansion) is just more words of the command: splice it in
+  # so the caller keeps the pipeline context (`printf 'cmd' | env -S sh`).
+  if [ -n "$UW_STR" ] && [ "$name" = env ] && [[ "$UW_STR" != *[\'\"\\\$\`]* ]]; then
+    local -a uw_pw=()
+    read -r -a uw_pw <<< "$UW_STR"
+    UW_REM=("${uw_pw[@]}" "${UW_REM[@]}"); UW_STR=""
+  fi
+  return 0
+}
+# uw_quote WORD...: the words as one single-quoted command-line string.
+uw_quote() {
+  local q="" a
+  for a in "$@"; do q="$q '${a//\'/\'\\\'\'}'"; done
+  printf '%s' "$q"
+}
+
 # TR_CWD_KNOWN (lib/target_resolve.sh): a wildcard is judged against the
 # real filesystem only when the filesystem the hook sees IS the one the
 # command's glob will see:
@@ -1278,7 +1415,7 @@ scan_write_token() {
 #      string literals instead. Prose is still safe in both: a token or
 #      literal containing whitespace is skipped.
 scan_code_blob() {
-  local code="$1" sub lit rest m0 m1 want_write=0
+  local code="$1" lang="${2:-}" sub lit rest m0 m1 want_write=0
   [ -z "$code" ] && return
 
   # Reads: every open() literal in the blob, not just the first. BASH_REMATCH
@@ -1317,6 +1454,9 @@ scan_code_blob() {
     case "$sub" in W:*)
       [ "$want_write" = 1 ] && scan_write_token "${sub#W:}"
       [ "$_target_blk" = 1 ] && break
+      # In python/ruby/node code a bare identifier (`import secrets`) is a language word,
+      # not a path: real file operands arrive as open() literals, scanned above.
+      [ -n "$lang" ] && [[ "${sub#W:}" =~ ^[A-Za-z_][A-Za-z0-9_]*\;?$ ]] && continue
       scan_read_token "${sub#W:}" ;;
     esac
     [ "$_target_blk" = 1 ] && break
@@ -1902,7 +2042,7 @@ if [ -n "$COMMAND" ]; then
 
     local -a cur_words=()
     local prev_op="" redir_gt="" redir_lt="" RW_LEAD_SEP="" RW_PIPE_SRC="" tok w
-    local RW_FIND_SEEN=0
+    local RW_FIND_SEEN=0 RW_UW_DEPTH=0
     local -a RW_FIND_ROOTS=()
 
     process_simple_cmd() {
@@ -1953,6 +2093,36 @@ if [ -n "$COMMAND" ]; then
           case "$a" in -*) ;; *) nonflag+=("$a") ;; esac
         done
       fi
+    fi
+
+    # A transparent wrapper (env, nice, timeout, xargs, ...) is judged as the command it runs:
+    # every word after its own options is re-scanned as a simple command, and an option that
+    # cannot be parsed makes every later suffix a candidate (fail closed).
+    local -a uw_in=("$cmdname" "${args[@]}")
+    if uw_split "${uw_in[@]}"; then
+      local -a uw_rem=("${UW_REM[@]}") uw_save=("${cur_words[@]}")
+      local uw_str="$UW_STR" uw_fuzzy="$UW_FUZZY" uw_i uw_from=0
+      redir_gt=""; redir_lt=""
+      RW_UW_DEPTH=$((RW_UW_DEPTH + 1))
+      if [ "$RW_UW_DEPTH" -gt "$UW_MAX_DEPTH" ]; then
+        _target_blk=1; _target_why="wrapper nesting exceeded depth limit ($UW_MAX_DEPTH)"
+      else
+        if [ -n "$uw_str" ]; then
+          scan_rw "$uw_str$(uw_quote "${uw_rem[@]}")" $((RW_DEPTH + 1))
+        fi
+        [ "$uw_fuzzy" = 1 ] && [ "${#uw_rem[@]}" -gt 0 ] \
+          && scan_rw "${uw_rem[*]}" $((RW_DEPTH + 1))
+        for ((uw_i = 0; uw_i <= ${#uw_rem[@]}; uw_i++)); do
+          [ "$_target_blk" = 1 ] && break
+          cur_words=("${uw_rem[@]:$uw_i}")
+          RW_PIPE_SRC_KEEP="$RW_PIPE_SRC"
+          process_simple_cmd
+          [ "$uw_fuzzy" = 1 ] || break
+        done
+      fi
+      RW_UW_DEPTH=$((RW_UW_DEPTH - 1))
+      cur_words=("${uw_save[@]}")
+      return
     fi
 
     # Pipe-into-shell recursion (R24, #1407): `printf 'cat ~/.ssh/id_rsa' | sh`
@@ -2087,7 +2257,7 @@ if [ -n "$COMMAND" ]; then
         local i seen_c=0
         for i in "${!args[@]}"; do
           if [ "$seen_c" = 1 ]; then
-            scan_code_blob "${args[$i]}"
+            scan_code_blob "${args[$i]}" lang
             break
           fi
           [ "${args[$i]}" = "-c" ] && seen_c=1
@@ -2101,10 +2271,21 @@ if [ -n "$COMMAND" ]; then
         local i seen_sc=0
         for i in "${!args[@]}"; do
           if [ "$seen_sc" = 1 ]; then
-            scan_code_blob "${args[$i]}"
+            case "$cmdname" in
+              sh|bash|zsh|dash|ksh|su|runuser) scan_code_blob "${args[$i]}" ;;
+              *) scan_code_blob "${args[$i]}" lang ;;
+            esac
+            # A shell's -c string is itself a command line: judge it as one, so a nested
+            # `sh -c '...'` or wrapper inside it is unwrapped too.
+            case "$cmdname" in
+              sh|bash|zsh|dash|ksh) scan_rw "${args[$i]}" $((RW_DEPTH + 1)) ;;
+            esac
             break
           fi
-          case "${args[$i]}" in -c|-e|-E|--eval) seen_sc=1 ;; esac
+          case "${args[$i]}" in
+            -c|-e|-E|--eval) seen_sc=1 ;;
+            -[!-]*c*) case "$cmdname" in sh|bash|zsh|dash|ksh) seen_sc=1 ;; esac ;;
+          esac
         done ;;
       eval)
         # `eval "cat ~/.ssh/id_rsa"` (R19, #1407) builds its program out of
@@ -2706,7 +2887,7 @@ if [ -n "$COMMAND" ]; then
     [ "$_blk" = 1 ] && return
     local sep="$1"; shift
     local -a w=("$@")
-    local n=${#w[@]} i=0 j m a name sub wrap rec=0 frc=0 seen_c=0 guard=0
+    local n=${#w[@]} i=0 j m a name sub rec=0 frc=0 seen_c=0
     # A curl's pipeline wrote a file if any later stage redirects to one; the
     # stage's command name is judged below once it is known.
     if [ "$sep" != "|" ]; then FL_NET_PIPE=0
@@ -2741,34 +2922,33 @@ if [ -n "$COMMAND" ]; then
     done
     # Leading inline assignments (FOO=bar cmd …) are not the command.
     while [ "$i" -lt "$n" ] && [[ "${w[$i]}" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; do i=$((i + 1)); done
-    # Wrapper commands only prefix the real one: `xargs rm -rf`, `env rm -rf`
-    # and `exec rm -rf` delete recursively though their own first word does
-    # not say so.
-    while [ "$i" -lt "$n" ] && [ "$guard" -lt 8 ]; do
-      guard=$((guard + 1))
-      wrap="${w[$i]##*/}"
-      while [ "${wrap#\\}" != "$wrap" ]; do wrap="${wrap#\\}"; done
-      case "$wrap" in
-        xargs|env|nohup|command|nice|time|timeout|stdbuf|ionice|setsid|exec|builtin|watch|flock) ;;
-        *) break ;;
-      esac
-      i=$((i + 1))
-      while [ "$i" -lt "$n" ]; do
-        case "${w[$i]}" in
-          -*)
-            # `command -v sudo` only looks the name up; nothing runs.
-            case "$wrap:${w[$i]}" in command:-v|command:-V|command:-pv|command:-pV) return ;; esac
-            i=$((i + 1)) ;;
-          [0-9]*) case "$wrap" in timeout|nice|ionice|watch) i=$((i + 1)) ;; *) break ;; esac ;;
-          *) break ;;
-        esac
-      done
-      # flock takes the lock file as its first operand, then the command.
-      [ "$wrap" = flock ] && [ "$i" -lt "$n" ] && i=$((i + 1))
-    done
-    # `env NAME=value cmd`: the assignments after a wrapper are not the command.
-    while [ "$i" -lt "$n" ] && [[ "${w[$i]}" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; do i=$((i + 1)); done
+    # Wrapper commands only prefix the real one: `xargs <cmd>`, `env -u X <cmd>` and
+    # `timeout -s KILL 5 <cmd>` run <cmd> though their own first word does not say so.
+    # uw_split strips the wrapper; an option it cannot parse makes every later suffix a
+    # candidate command (fail closed).
     [ "$i" -ge "$n" ] && return
+    if uw_split "${w[@]:$i}"; then
+      local -a uw_rem=("${UW_REM[@]}")
+      local uw_str="$UW_STR" uw_fuzzy="$UW_FUZZY" uw_i
+      FL_TWO=0
+      FL_UW_N=$((FL_UW_N + 1))
+      if [ "$FL_UW_N" -gt "$UW_MAX_DEPTH" ]; then
+        _blk=1; _why="wrapper nesting exceeded depth limit ($UW_MAX_DEPTH)"
+      else
+        if [ -n "$uw_str" ]; then
+          fl_classify "$uw_str$(uw_quote "${uw_rem[@]}")" $((FL_DEPTH + 1))
+        fi
+        [ "$uw_fuzzy" = 1 ] && [ "${#uw_rem[@]}" -gt 0 ] \
+          && fl_classify "${uw_rem[*]}" $((FL_DEPTH + 1))
+        for ((uw_i = 0; uw_i < ${#uw_rem[@]}; uw_i++)); do
+          [ "$_blk" = 1 ] && break
+          fl_check_cmd "$sep" "${uw_rem[@]:$uw_i}"
+          [ "$uw_fuzzy" = 1 ] || break
+        done
+      fi
+      FL_UW_N=$((FL_UW_N - 1))
+      return
+    fi
 
     name="${w[$i]##*/}"
     while [ "${name#\\}" != "$name" ] || [ "${name#\$}" != "$name" ]; do name="${name#?}"; done
@@ -3107,6 +3287,10 @@ if [ -n "$COMMAND" ]; then
   [ "$_blk" = 1 ] && {
     floor_log_denial "command denied at all levels ($_why)"
     echo "⛔ AUTONOMY FLOOR: command denied at all levels ($_why)" >&2
+    case "$_why" in
+      "curl/wget piped to shell"|"download-then-exec")
+        echo "   Allowed instead: pipe to jq or python3 -I -m json.tool, or download with curl -o <file>.json and parse it in a separate Bash call." >&2 ;;
+    esac
     exit 2
   }
   # A permitted elevation is audited only now that the whole command is allowed; an

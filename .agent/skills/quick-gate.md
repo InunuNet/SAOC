@@ -15,7 +15,9 @@ bash execution/skills/quick_gate.sh
 ```
 
 ## What it does
-Reads `active.json` → derives slug → finds matching `contract-f1.yaml` → runs `contract.py gate --phase 4 --run-checks`
+Reads `active.json` → derives slug → finds matching `contract-f*.yaml` or plain `contract.yaml` → runs `contract.py gate --phase 4 --run-checks`
+
+Note: a bare `contract.py gate <contract>` defaults to `--phase all`, grading every assertion.
 
 ## Token cost
 One line vs ~20 tokens of path construction reasoning per mission.

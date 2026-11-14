@@ -164,7 +164,10 @@ def active_mission_slug() -> str | None:
     """Slug of the active mission from missions/active.json, or None."""
     try:
         data = json.loads((_project_mem_dir() / "missions" / "active.json").read_text())
-        name = os.path.basename(str(data["mission"]))
+        mission = data["mission"]
+        if mission is None or str(mission).strip() in ("", "None"):
+            return None
+        name = os.path.basename(str(mission))
     except (OSError, ValueError, KeyError, TypeError):
         return None
     if name.endswith(".md"):

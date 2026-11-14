@@ -14,7 +14,7 @@
 
 ESCALATE_OPERATOR_ONLY: `grant` and `grant-from-answer` are never an agent's commands. The
 PreToolUse floor denies an agent that runs either one, and this file is floor-write-protected.
-Design and threat model: docs/privileged-command-permit.md.
+Design and threat model: docs/harness/privileged-command-permit.md.
 """
 import argparse
 import json
@@ -38,6 +38,10 @@ ASK_PREFIX = "ASKUSERQUESTION: "
 FALLBACK_PREFIX = "! python3 execution/escalate.py grant "
 MAX_STDIN_BYTES = 1024 * 1024
 TTY_PATH = "/dev/tty"
+ANSWER_NOTES = {
+    "granted": "the permit is live; retry the privileged command",
+    "denied": "the operator said Deny; do not retry without asking again",
+}
 
 
 def refuse(message):
@@ -157,8 +161,15 @@ def cmd_revoke(_args):
 
 
 def cmd_grant_from_answer(_args):
-    raw = sys.stdin.read(MAX_STDIN_BYTES)
-    print("escalate: %s" % grant_from_answer(raw, ROOT))
+    raw = sys.stdin.buffer.read(MAX_STDIN_BYTES).decode("utf-8", errors="replace")
+    result = grant_from_answer(raw, ROOT)
+    if result == "ignored":
+        return EXIT_OK
+    context = "escalation: %s, %s" % (result, ANSWER_NOTES.get(
+        result, "the request was refused (%s); run escalate.py request again if still needed"
+        % result.partition(":")[2]))
+    print(json.dumps({"hookSpecificOutput": {"hookEventName": "PostToolUse",
+                                             "additionalContext": context}}))
     return EXIT_OK
 
 
@@ -189,10 +200,15 @@ def build_parser():
     parser = argparse.ArgumentParser(prog="escalate.py", description=__doc__.split("\n\n")[0])
     sub = parser.add_subparsers(dest="cmd", required=True)
     req = sub.add_parser("request", help="write a pending request and print the AskUserQuestion")
-    req.add_argument("--kind")
-    req.add_argument("--scope")
-    req.add_argument("--reason")
-    req.add_argument("--ttl", default=DEFAULT_TTL)
+    req.add_argument("--kind", help="command (run privileged commands) or path (write outside "
+                     "the project)")
+    req.add_argument("--scope", help="command scope: comma-separated bare names of the INNER "
+                     "command run under sudo/doas/pkexec/run0 (e.g. apt,rsync, never sudo), or * "
+                     "for any; path scope: an absolute path")
+    req.add_argument("--reason", help="why the escalation is needed, %d to %d characters, one "
+                     "line" % (pp.MIN_REASON, MAX_REASON))
+    req.add_argument("--ttl", default=DEFAULT_TTL, help="how long the grant lasts, e.g. 30m or "
+                     "4h (default %s, range 5m to 24h)" % DEFAULT_TTL)
     req.set_defaults(func=cmd_request)
     sub.add_parser("status", help="show live grants and pending requests").set_defaults(
         func=cmd_status)

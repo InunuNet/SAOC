@@ -566,6 +566,42 @@ def _collect_env_shadows(checks):
             basis="parsed"))
 
 
+COMPACT_WINDOW_FLOOR = 200000
+
+
+def _effective_compact_window(root):
+    """(value, source): env, then settings.local.json, then settings.json."""
+    raw = os.environ.get(ENV_SHADOWS["autoCompactWindow"])
+    if raw is not None:
+        return (int(raw), "env CLAUDE_CODE_AUTO_COMPACT_WINDOW") if raw.strip().isdigit() \
+            else (None, None)
+    for name in ("settings.local.json", "settings.json"):
+        try:
+            data = json.loads((Path(root) / ".claude" / name).read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        value = data.get("autoCompactWindow") if isinstance(data, dict) else None
+        if isinstance(value, int) and not isinstance(value, bool):
+            return value, f".claude/{name}"
+    return None, None
+
+
+def _collect_compact_window(root, checks):
+    """Warn when the effective autoCompactWindow sits near the boot load."""
+    value, source = _effective_compact_window(root)
+    if value is None or value >= COMPACT_WINDOW_FLOOR:
+        return
+    fix = (f"unset the variable in your shell startup file" if source.startswith("env")
+           else f"set \"autoCompactWindow\" to 235000 in {source} (or run "
+                "make update-template, which lifts it)")
+    checks.append(_check(
+        "settings.compact_window", "delivery", "warn",
+        f"autoCompactWindow is {value} (from {source}), below {COMPACT_WINDOW_FLOOR}: "
+        "sessions compact near the boot load and Claude Code stops with "
+        "'Autocompact is thrashing'",
+        False, fix, basis="parsed"))
+
+
 def _check_quota_oracle(checks, detail):
     """The oracle itself is broken — a quota nobody can read is not a healthy one."""
     checks.append(_check(
@@ -1540,6 +1576,7 @@ def collect(root, refresh=False):
         "autonomy": _collect_autonomy(root, profile, active, mission, checks),
     }
     _collect_env_shadows(checks)
+    _collect_compact_window(root, checks)
     doc["checks"] = checks
     return _finalize(doc)
 

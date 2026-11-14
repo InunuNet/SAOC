@@ -61,6 +61,9 @@ paths:
   path: .agent/contract_kinds.json
 - category: WORKSPACE
   path: WORKSPACE
+- category: WORKSPACE
+  comment: Athanor-root LF policy from da08b2e9; projects get execution/.gitattributes
+  path: .gitattributes
 - category: DERIVED
   comment: "Claude Code agent persona files, rendered from .agent/agents by make sync-agents; they exist in no commit as delivered, so a provenance check cannot prove them"
   path: .claude/agents/

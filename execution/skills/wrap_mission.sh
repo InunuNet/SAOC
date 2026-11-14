@@ -130,11 +130,31 @@ echo "[wrap-mission] Staging backlog hygiene changes..."
 git add -- .agent/memory/project/backlog.md .agent/memory/project/data/ 2>/dev/null || true
 
 echo "[wrap-mission] Checking for secret-looking files..."
-SECRETS="$(git diff --cached --name-only | "$PY" execution/skills/lib/secret_guard.py --stdin || true)"
-if [ -n "$SECRETS" ]; then
+SECRET_GUARD="execution/skills/lib/secret_guard.py"
+secret_scan_abort() {
+    git reset -q HEAD --
+    echo "[wrap-mission] ABORT: secret scan could not run ($1); nothing committed." >&2
+    exit 1
+}
+[ -f "$SECRET_GUARD" ] || secret_scan_abort "$SECRET_GUARD is missing"
+STAGED_NAMES=""
+STAGED_RC=0
+STAGED_NAMES="$(git diff --cached --name-only)" || STAGED_RC=$?
+[ "$STAGED_RC" -eq 0 ] || secret_scan_abort "git diff --cached failed, rc=$STAGED_RC"
+SCAN_RC=0
+SECRETS="$(printf '%s\n' "$STAGED_NAMES" | "$PY" "$SECRET_GUARD" --stdin)" || SCAN_RC=$?
+case "$SCAN_RC" in
+    0|1) ;;
+    *) secret_scan_abort "secret_guard.py exited rc=$SCAN_RC" ;;
+esac
+if [ -n "$SECRETS" ] || [ "$SCAN_RC" -eq 1 ]; then
     git reset -q HEAD --
     echo "[wrap-mission] ABORT: secret-looking files staged:" >&2
-    echo "$SECRETS" >&2
+    if [ -n "$SECRETS" ]; then
+        echo "$SECRETS" >&2
+    else
+        echo "secret_guard.py reported secrets but listed none" >&2
+    fi
     echo "Add them to .gitignore or remove before wrapping." >&2
     exit 1
 fi

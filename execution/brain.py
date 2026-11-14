@@ -537,6 +537,38 @@ def write_reboot(summary: str, next_items: list = None, facts: list = None, do_n
 # gates and lost handoffs (GH #1403).
 SCRATCH_PURGE_EXEMPT = {"template_baselines.json", "compaction-hint.json", "autocompact-armed.json", "autocompact-route-a.json",".quota_status.json",
                         ".last_activity.json", "contract-results", "handoffs"}
+# Operator markers read by hooks (permission gate, voice, quota resume); never moved.
+SCRATCH_OPERATOR_MARKERS = {"UNATTENDED", ".archive"}
+SCRATCH_ARCHIVE_RETENTION_DAYS = 14
+SECONDS_PER_DAY = 86400
+
+
+def _purge_scratch(scratch_dir: Path, archive_root: Path, now: float) -> int:
+    """Move scratch entries into archive_root/<UTC stamp>/, prune old archives.
+
+    Keeps .keep, SCRATCH_PURGE_EXEMPT and SCRATCH_OPERATOR_MARKERS in place. Returns the
+    number of entries moved.
+    """
+    keep = {".keep", archive_root.name} | SCRATCH_PURGE_EXEMPT | SCRATCH_OPERATOR_MARKERS
+    entries = [f for f in scratch_dir.iterdir() if f.name not in keep]
+    moved = 0
+    if entries:
+        stamp = datetime.fromtimestamp(now, timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        dest = archive_root / stamp
+        n = 1
+        while dest.exists():
+            n += 1
+            dest = archive_root / f"{stamp}-{n}"
+        dest.mkdir(parents=True)
+        for f in entries:
+            shutil.move(str(f), str(dest / f.name))
+            moved += 1
+    if archive_root.is_dir():
+        cutoff = now - SCRATCH_ARCHIVE_RETENTION_DAYS * SECONDS_PER_DAY
+        for d in archive_root.iterdir():
+            if d.is_dir() and d.stat().st_mtime < cutoff:
+                shutil.rmtree(d)
+    return moved
 
 
 def _main_worktree_root(cwd: Path = None) -> Path:
@@ -595,7 +627,7 @@ def _should_skip_scratch_purge(cwd: Path = None) -> tuple:
 def wrap_up(summary: str, tags: str = "", blockers: str = "", force: bool = False,
             next_items: list = None, facts: list = None, do_not_touch: list = None,
             closure_candidates: list = None, force_reboot: bool = False):
-    """End-of-session wrap-up: store summary + clear scratch."""
+    """End-of-session wrap-up: store summary + archive scratch (14 days)."""
     # Write lightweight reboot context for next session
     write_reboot(summary, next_items=next_items, facts=facts, do_not_touch=do_not_touch,
                  closure_candidates=closure_candidates, force_reboot=force_reboot)
@@ -626,16 +658,9 @@ def wrap_up(summary: str, tags: str = "", blockers: str = "", force: bool = Fals
     # .agent/skills/write-handoff.md (Durable class) for the convention.
     scratch_dir = Path(".agent/memory/scratch")
     if scratch_dir.exists():
-        cleared = 0
-        for f in scratch_dir.iterdir():
-            if f.name != ".keep" and f.name not in SCRATCH_PURGE_EXEMPT:
-                if f.is_dir():
-                    shutil.rmtree(f)
-                else:
-                    f.unlink()
-                cleared += 1
+        cleared = _purge_scratch(scratch_dir, scratch_dir / ".archive", time.time())
         if cleared:
-            print(f"🧹 Cleared {cleared} scratch files.")
+            print(f"🧹 Archived {cleared} scratch entries to .archive/ (kept 14 days).")
 
     return mem_id
 
@@ -900,7 +925,7 @@ def main():
     p_wrap.add_argument("--tags", "-t", default="", help="Comma-separated tags")
     p_wrap.add_argument("--blockers", "-b", default="", help="Comma-separated blocker tags")
     p_wrap.add_argument("--force", action="store_true",
-                        help="Bypass active-mission guard and purge scratch unconditionally")
+                        help="Bypass active-mission guard and archive scratch unconditionally")
     p_wrap.add_argument("--force-reboot", action="store_true", dest="force_reboot",
                         help="Overwrite reboot.md even if it looks hand-authored "
                              "(prior content is preserved to reboot.preserved-*.md first)")

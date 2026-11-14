@@ -4,7 +4,7 @@ contract.py — Validation Contract CLI for Athanor.
 Usage:
   contract.py validate <contract.yaml>          — validate schema
   contract.py check <contract.yaml> --assertion A1 [--handoff <file>]
-  contract.py gate <contract.yaml> --phase N [--run-checks]  — exit 0 iff all phase-N assertions pass; --run-checks auto-runs any missing checks first
+  contract.py gate <contract.yaml> [--phase N] [--run-checks]  — (--phase defaults to all); exit 0 iff all phase-N assertions pass; --run-checks auto-runs any missing checks first
   contract.py report <contract.yaml>            — print coverage table
   contract.py clear <contract.yaml>             — delete result files for this contract
 
@@ -1755,9 +1755,64 @@ def _deleted_paths(contract_path: str) -> list[str]:
     return out
 
 
+def _git_bytes(spec: str, cwd: str) -> "bytes | None":
+    try:
+        proc = subprocess.run(["git", "show", spec], capture_output=True, timeout=30, cwd=cwd)
+    except Exception:
+        return None
+    return proc.stdout if proc.returncode == 0 else None
+
+
+def _updater_retired(deleted: list[str], contract_path: str) -> set[str]:
+    """Deleted paths the harness updater retired: listed in retired_paths of the project's
+    .agent/update-manifest.yaml AND whose last bytes before deletion match a shipped sha256.
+
+    Such a file was an unedited harness copy, so its removal is the update's, not this
+    feature's (Mumbl AI, 2026-11-12: v3.8.92 pruned 168 checks and every in-flight gate was
+    refused). A locally edited copy fails the hash and stays graded.
+    """
+    import hashlib
+    import yaml
+
+    repo = str(Path(contract_path).resolve().parent)
+    top = _git_lines(["rev-parse", "--show-toplevel"], cwd=repo)
+    root = _project_root(contract_path)
+    if not top or root is None:
+        return set()
+    try:
+        manifest = yaml.safe_load((root / ".agent/update-manifest.yaml").read_text(encoding="utf-8"))
+        shipped = {e["path"]: set(e.get("sha256") or [])
+                   for e in (manifest or {}).get("retired_paths") or [] if isinstance(e, dict)}
+    except Exception:
+        return set()
+    # Paths are compared as strings, never resolved: a deleted path may run through a symlink.
+    prefix = Path(os.path.relpath(root.resolve(), Path(top[0]).resolve())).as_posix()
+    prefix = "" if prefix == "." else prefix + "/"
+    uncommitted = set(_git_lines(["diff", "--diff-filter=D", "--name-only", "HEAD"], cwd=top[0]))
+    retired = set()
+    for path in deleted:
+        if not path.startswith(prefix) or not shipped.get(path[len(prefix):]):
+            continue
+        sums = shipped[path[len(prefix):]]
+        # Every removal must have taken shipped bytes: each committed deletion's parent copy,
+        # plus HEAD's copy for a deletion not yet committed. One local edit among them, or a
+        # removal whose bytes cannot be read, keeps the path graded.
+        specs = [f"{c}^:{path}" for c in _git_lines(
+            ["log", "--diff-filter=D", "--format=%H", "--", path], cwd=top[0])]
+        if path in uncommitted:
+            specs.append(f"HEAD:{path}")
+        blobs = [_git_bytes(s, top[0]) for s in specs]
+        if blobs and all(b is not None and hashlib.sha256(b).hexdigest() in sums for b in blobs):
+            retired.add(path)
+    return retired
+
+
 def _uncovered_deletions(contract: dict, contract_path: str) -> list[str]:
     """Deleted files that no assertion mentions and no waiver approves."""
     deleted = _deleted_paths(contract_path)
+    if deleted:
+        retired = _updater_retired(deleted, contract_path)
+        deleted = [d for d in deleted if d not in retired]
     if not deleted:
         return []
     haystack = []
@@ -2264,8 +2319,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     g = sub.add_parser("gate", help="Exit 0 iff all phase-N assertions pass. Runs every assertion live by default; --cached trusts prior results.")
     g.add_argument("contract")
-    g.add_argument("--phase", type=str, required=True, choices=['all', 'max'] + [str(i) for i in range(1, 10)],
-                   help="Phase id (integer), 'max' for highest phase, or 'all' for all phases in contract")
+    g.add_argument("--phase", type=str, default="all", choices=['all', 'max'] + [str(i) for i in range(1, 10)],
+                   help="Phase id (integer), 'max' for highest phase, or 'all' for all phases in "
+                        "contract (default: all, so a bare gate grades every assertion)")
     g.add_argument("--run-checks", action="store_true", default=True,
                    help="(default, kept for back-compat) re-run every assertion live before evaluating the gate")
     g.add_argument("--cached", action="store_true", default=False,

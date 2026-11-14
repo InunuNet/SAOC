@@ -94,17 +94,12 @@
           },
           {
             "type": "command",
-            "command": "[ -f execution/timesheet.py ] || exit 0; python3 execution/timesheet.py boot-check",
+            "command": "[ -f execution/timesheet.py ] || exit 0; python3 execution/timesheet.py boot-check || exit 0",
             "timeout": 5
           },
           {
             "type": "command",
             "command": "echo \"You are now operating within the $(jq -r '.project_name // \"Athanor\"' .agent/profile.json) Agentic Workspace (v$(cat .agent/version)). Identity: $(jq -r '.identity.agent_name // \"Athanor Agent\"' .agent/profile.json) | Identity Status: Active. A full boot context was just injected above \u2014 framework identity (AGENTS.md), workspace, last session, project rules, goals, learned, backlog, brain recall, blockers, and git remotes. Read the injected BOOT CONTEXT carefully. You have 8 specialized agents at your disposal (@lead, @dev, @designer, etc.). Your primary goal is autonomous self-improvement for this project. Report boot status using this exact format: \u2705 ATHANOR: [name] | \ud83e\udd16 Agents: 8 roles active | Last session: [1-line summary] | Goals: [count] active | Backlog: [count] open items | Rules loaded: yes | \u27a1\ufe0f Ready.\""
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/timesheet.py ] || exit 0; python3 execution/timesheet.py boot-check || exit 0",
-            "timeout": 5
           }
         ]
       }
@@ -164,12 +159,7 @@
           },
           {
             "type": "command",
-            "command": "[ -f execution/timesheet.py ] || exit 0; python3 execution/timesheet.py hook",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "[ -f docs/rules/inject_no_invention.sh ] || exit 0; bash docs/rules/inject_no_invention.sh",
+            "command": "[ -f execution/voice_say.py ] || exit 0; python3 execution/voice_say.py --hook --event prompt >/dev/null 2>&1 || exit 0",
             "timeout": 5
           },
           {
@@ -179,7 +169,7 @@
           },
           {
             "type": "command",
-            "command": "[ -f execution/voice_say.py ] || exit 0; python3 execution/voice_say.py --hook --event prompt >/dev/null 2>&1 || exit 0",
+            "command": "[ -f docs/rules/inject_no_invention.sh ] || exit 0; bash docs/rules/inject_no_invention.sh",
             "timeout": 5
           }
         ]
@@ -189,11 +179,6 @@
       {
         "matcher": "AskUserQuestion",
         "hooks": [
-          {
-            "type": "command",
-            "command": "[ -f execution/timesheet.py ] || exit 0; python3 execution/timesheet.py hook",
-            "timeout": 5
-          },
           {
             "type": "command",
             "command": "[ -f execution/timesheet.py ] || exit 0; python3 execution/timesheet.py hook || exit 0",
@@ -236,6 +221,37 @@
         ]
       }
     ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/lib/autocompact_decider.py ] || exit 0; python3 execution/hooks/lib/autocompact_decider.py end >/dev/null 2>&1 || true",
+            "timeout": 15
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "CHANGED=$(git diff --stat HEAD 2>/dev/null | wc -l | tr -d ' '); if [ \"$CHANGED\" -gt 0 ]; then echo 'Session had uncommitted changes \u2014 run /wrap-up at start of next session.'; fi"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/autocompact_after_mission.sh ] || exit 0; bash execution/hooks/autocompact_after_mission.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
     "SubagentStop": [
       {
         "matcher": "analyst|architect|designer|dev|docs|lead|maintainer|qa",
@@ -250,7 +266,7 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Bash|Edit|Write",
+        "matcher": "Bash|Edit|Write|Agent|Task",
         "hooks": [
           {
             "type": "command",
@@ -284,35 +300,6 @@
             "command": "fp=$(cat | python3 -c \"import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))\" 2>/dev/null); case \"$fp\" in */.claude/MEMORY/*|*/MEMORY/LEARNING/*|*/.claude/PAI/*) exit 2 ;; esac"
           }
         ]
-      },
-      {
-        "matcher": "Bash|Edit|Write|Agent|Task",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/check_autonomy.sh ] || exit 0; bash execution/hooks/check_autonomy.sh"
-          }
-        ]
-      }
-    ],
-    "SessionEnd": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "CHANGED=$(git diff --stat HEAD 2>/dev/null | wc -l | tr -d ' '); if [ \"$CHANGED\" -gt 0 ]; then echo 'Session had uncommitted changes \u2014 run /wrap-up at start of next session.'; fi"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/lib/autocompact_decider.py ] || exit 0; python3 execution/hooks/lib/autocompact_decider.py end >/dev/null 2>&1 || true",
-            "timeout": 15
-          }
-        ]
       }
     ],
     "SubagentStart": [
@@ -323,17 +310,6 @@
             "type": "command",
             "command": "[ -f docs/rules/inject_no_invention.sh ] || exit 0; bash docs/rules/inject_no_invention.sh",
             "timeout": 5
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/autocompact_after_mission.sh ] || exit 0; bash execution/hooks/autocompact_after_mission.sh",
-            "timeout": 30
           }
         ]
       }
