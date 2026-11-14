@@ -63,6 +63,22 @@ function rasterise(pdf: string, page: number, name: string): string {
   return `${prefix}.png`;
 }
 
+// pdftotext reads the diagonal "Testing only, not live" watermark as loose single letters. Per page, drop at most as many
+// single-letter tokens as the phrase holds of that letter; any further stray single letter still reaches the copy check.
+const WATERMARK_PHRASE = 'testing only not live';
+function stripWatermarkLetters(raw: string): string {
+  return raw.split('\f').map((page) => {
+    const budget = new Map<string, number>();
+    for (const ch of WATERMARK_PHRASE.replace(/\s/g, '')) budget.set(ch, (budget.get(ch) ?? 0) + 1);
+    return page.replace(/(^|\s)(\p{L})(?=\s|$)/gu, (whole, lead: string, ch: string) => {
+      const left = budget.get(ch) ?? 0;
+      if (left === 0) return whole;
+      budget.set(ch, left - 1);
+      return lead;
+    });
+  }).join(' ');
+}
+
 const cmd = process.argv[2];
 
 if (cmd === 'render') {
@@ -132,7 +148,7 @@ if (cmd === 'render') {
   }
 } else if (cmd === 'copy') {
   const pdf = await ensureFixturePdf();
-  let text = tool('pdftotext', ['-raw', pdf, '-']).toLowerCase().replace(/\s+/g, ' ');
+  let text = stripWatermarkLetters(tool('pdftotext', ['-raw', pdf, '-']).toLowerCase()).replace(/\s+/g, ' ');
   const allowedWords = new Set<string>();
   const words = (s: string) => s.toLowerCase().split(/\s+/).map((w) => w.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '')).filter(Boolean);
   for (const line of readFileSync(ALLOWED_PATH, 'utf8').split('\n')) {
