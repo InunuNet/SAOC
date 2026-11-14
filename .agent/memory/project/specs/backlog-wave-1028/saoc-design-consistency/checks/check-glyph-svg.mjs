@@ -8,9 +8,11 @@
 // The STATUS MARK is NOT 1em: its extent is the label's measured T cap height plus 4% overshoot (NOS Design ruling), gated by check-status-mark-geometry.mjs (A27).
 // Status badges ([data-exhibitor-marker], [data-confirmation-badge]) render on the SAOC host too (PlaceholderMarker, Home NavCards and ShowBand "To be confirmed"): Home at 390 and 1440 must show
 // at least one, and each must lead with the status-mark SVG (a text U+203B only if a shipped face has it), never nothing and never a system glyph.
+// Every route is probed closed and again with each reachable chrome dialog open (search overlay, mobile menu; lib-dialogs.mjs): the route-presence rules apply to the closed page only.
 import { withSite, check, finish, tenRoutes, societyDetail } from './lib.mjs';
 import { readFileSync } from 'node:fs';
 import { woff2Cmap } from './lib-woff2.mjs';
+import { walkDialogStates } from './lib-dialogs.mjs';
 const STATUS_MARKER = 'components/show/_shared/StatusMarker.tsx';
 const PROBE = `() => {
   const svgs = [...document.querySelectorAll('svg[data-glyph]')].map((s) => { const cs = getComputedStyle(s); const r = s.getBoundingClientRect(); const fs = parseFloat(cs.fontSize);
@@ -50,9 +52,10 @@ await withSite(async (site) => {
   const detail = await societyDetail(site.base); check(Boolean(detail), '/societies links no society detail route, so the mirrored back-arrow page is not walked');
   for (const width of [390, 1440]) for (const path of [...tenRoutes(site), ...(detail ? [detail] : [])]) {
     const ctx = await browser.newContext(ctxOpts({ width, height: 900 })); const page = await ctx.newPage(); await page.goto(base + path, { waitUntil: 'networkidle', timeout: 120000 }); await page.waitForTimeout(400);
-    const w = `${path}@${width}`; const { svgs, sites } = await page.evaluate(`(${PROBE})()`);
-    if (['/societies', '/judging', '/'].includes(path)) check(svgs.filter((v) => v.shown && v.kind === 'arrow').length > 0, `${w}: no svg[data-glyph=arrow] on a route whose links carry arrows (still the text glyph?)`);
-    if (path === detail) check(svgs.some((v) => v.shown && v.kind === 'arrow' && v.arrow && v.arrow.mirrored), `${w}: no mirrored svg[data-glyph=arrow] (scaleX(-1)) for the "\u2190 All societies" back link (still the text glyph?)`);
+    const w0 = `${path}@${width}`;
+    const walk = async (state) => { const w = state ? `${w0} [${state}]` : w0; const { svgs, sites } = await page.evaluate(`(${PROBE})()`);
+    if (!state && ['/societies', '/judging', '/'].includes(path)) check(svgs.filter((v) => v.shown && v.kind === 'arrow').length > 0, `${w}: no svg[data-glyph=arrow] on a route whose links carry arrows (still the text glyph?)`);
+    if (!state && path === detail) check(svgs.some((v) => v.shown && v.kind === 'arrow' && v.arrow && v.arrow.mirrored), `${w}: no mirrored svg[data-glyph=arrow] (scaleX(-1)) for the "\u2190 All societies" back link (still the text glyph?)`);
     for (const s of svgs.filter((v) => v.shown)) {
       check(s.hidden === 'true', `${w}: svg[data-glyph=${s.kind}] lacks aria-hidden="true"`);
       if (s.kind === 'arrow') { const A = s.arrow; const t = `${w}: svg[data-glyph=arrow]`; const em = (v) => (v / A.em).toFixed(2) + 'em';
@@ -65,8 +68,10 @@ await withSite(async (site) => {
           check(H.sw >= 0.08 * A.em && H.sw <= 0.12 * A.em, `${t} head stroke ${em(H.sw)}, want ~0.1em`); check(H.cap === 'round' && H.join === 'round', `${t} head caps/joins are ${H.cap}/${H.join}, want round/round`); check(H.fill === 'none', `${t} head fill is ${H.fill}, want none (open chevron)`); }
         if (A.shaft) { check(A.shaft.sw >= 0.08 * A.em && A.shaft.sw <= 0.12 * A.em, `${t} shaft stroke ${em(A.shaft.sw)}, want ~0.1em`); check(A.shaft.cap === 'round', `${t} shaft cap is ${A.shaft.cap}, want round`); } }
     }
-    if (path === '/') check(sites.length > 0, `${w}: no status badge on Home (the DOM half of the mark rule needs one)`);
-    for (const t of sites) check(t.hasSvg || (faceHasMark && t.text === '※'), `${w}: status marker leads with "${t.text}"${faceHasMark ? '' : ' (no shipped face has U+203B)'}, want the status-mark SVG${faceHasMark ? ' or a text mark set in a shipped face' : ''}`);
+    if (!state && path === '/') check(sites.length > 0, `${w}: no status badge on Home (the DOM half of the mark rule needs one)`);
+    for (const t of sites) check(t.hasSvg || (faceHasMark && t.text === '※'), `${w}: status marker leads with "${t.text}"${faceHasMark ? '' : ' (no shipped face has U+203B)'}, want the status-mark SVG${faceHasMark ? ' or a text mark set in a shipped face' : ''}`); };
+    await walk(null); const opened = await walkDialogStates(page, walk);
+    check(opened.length > 0, `${w0}: no chrome dialog could be opened (search or menu trigger missing), so no dialog state was walked`);
     await ctx.close();
   }
 });
