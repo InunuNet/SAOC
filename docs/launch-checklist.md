@@ -117,7 +117,7 @@ After seeding, open `/studio` locally (or at your Firebase App Hosting URL) to v
 
 In Sanity → API → Webhooks → create new:
 
-- **URL:** `https://saoc.co.za/api/revalidate` (route: `app/api/revalidate/route.ts`)
+- **URL:** `https://beta.saoc.co.za/api/revalidate` (route: `app/api/revalidate/route.ts`). Use the beta origin until the apex DNS cutover lands (the bare `saoc.co.za` still serves the old site; see `apphosting.yaml` `SITE_URL`), then change it to `https://saoc.co.za/api/revalidate`.
 - **Dataset:** `production`
 - **Trigger on:** Create, Update, Delete
 - **HTTP method:** POST
@@ -133,12 +133,15 @@ This triggers Next.js ISR revalidation whenever Sanity content changes.
 # Wrong header value: must return 401 {"ok":false,"error":"Invalid secret"}
 curl -s -o /dev/null -w '%{http_code}\n' -X POST \
   -H 'x-sanity-secret: wrong' -H 'content-type: application/json' \
-  -d '{"_type":"event"}' https://saoc.co.za/api/revalidate
+  -d '{"_type":"event"}' https://beta.saoc.co.za/api/revalidate
 
 # Real secret from the env var: must return {"ok":true,"revalidated":true,"type":"event"}
+# The header comes from a printf (a shell builtin) via curl's @file form, so the secret
+# never appears in curl's argument list or in `ps`.
 curl -s -X POST \
-  -H "x-sanity-secret: ${SANITY_REVALIDATE_SECRET}" -H 'content-type: application/json' \
-  -d '{"_type":"event"}' https://saoc.co.za/api/revalidate
+  -H @<(printf 'x-sanity-secret: %s\n' "$SANITY_REVALIDATE_SECRET") \
+  -H 'content-type: application/json' \
+  -d '{"_type":"event"}' https://beta.saoc.co.za/api/revalidate
 ```
 
 Then use the webhook's "Attempts" log in Sanity to confirm a real publish returns 200.
