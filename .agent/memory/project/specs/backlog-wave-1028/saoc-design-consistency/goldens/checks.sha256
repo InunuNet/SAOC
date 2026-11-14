@@ -42,7 +42,7 @@ d1b9967089a75e1853faaf8fc21583a34e51a39cedd05d17bb2c277ea27eec11  .agent/memory/
 58bb2e284d02d6186e2274709717861392e83b92b91372aa79b2e17750c0cf3e  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-preload-order.mjs
 410c5cb61730c82993f5cc0153b5328b3cf9326963a27f1799c5250ce0fffc1b  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-status-mark-geometry.mjs
 a04b81e57c4cf2c7a8bfe176deb586bb2c94f2b3e362e0565c701800e82929d5  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-status-tokens.mjs
-52477f3284cb6c02652b85a9d07bf6c2bf5eb6d3b10347b55a8475588c66c194  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/lib-dialogs.mjs
+75fde764bf3cb41d0451d19702cde86db59400215c0267ad646cbc0297c027cc  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/lib-dialogs.mjs
 1f6fcd96b186152bf509baf8fb993eda877c9261740ee7f7c822499dcb30fe2b  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/lib-arrow-links.mjs
 856a3114382eeca7cee4ee4fd0371a7f1413818deedbb8364bcab3bc88b374c4  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/lib-ico.mjs
 55cf0cfe3afc920958b867c02b2a1db0403a5dd3ad58116f8d234ea16ea646e6  .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/lib-lcp-lighthouse.mjs
