@@ -99,11 +99,11 @@ def current_override() -> str:
     return str(value) if value is not None else "none"
 
 
-def effective_trigger() -> int | None:
-    """The autoCompactWindow Claude Code uses: env, then settings.local.json, then settings.json."""
+def effective_trigger_source() -> tuple[int | None, str]:
+    """(autoCompactWindow Claude Code uses, where it came from): env, then settings.local.json, then settings.json."""
     raw = os.environ.get(WINDOW_ENV)
     if raw is not None:
-        return int(raw) if raw.strip().isdigit() else None
+        return (int(raw) if raw.strip().isdigit() else None), WINDOW_ENV
     for name in ("settings.local.json", "settings.json"):
         try:
             data = json.loads(Path(".claude", name).read_text())
@@ -111,8 +111,19 @@ def effective_trigger() -> int | None:
             continue
         value = data.get("autoCompactWindow") if isinstance(data, dict) else None
         if isinstance(value, int) and not isinstance(value, bool):
-            return value
-    return None
+            return value, f".claude/{name}"
+    return None, "none set"
+
+
+def effective_trigger() -> int | None:
+    return effective_trigger_source()[0]
+
+
+def trigger_line() -> str:
+    value, source = effective_trigger_source()
+    shown = value if value is not None else "none"
+    return (f"effective autoCompactWindow: {shown} ({source}); a running session keeps "
+            "the value it read at start, so restart it after a change")
 
 
 def cmd_trigger(_args) -> int:
@@ -127,11 +138,13 @@ def cmd_trigger(_args) -> int:
 def cmd_status(_args, _decider, reading) -> int:
     if reading is None:
         print("compact: no context reading yet (the statusline writes one each render)")
+        print(trigger_line())
         return 1
     age = int(time.time() - reading["captured_at"])
     print(f"tokens {int(reading['tokens'])} of window {int(reading['window_size'])} "
           f"({reading.get('used_pct')}%), reading {age}s old; "
           f"autoCompactWindow in settings.local.json: {current_override()}")
+    print(trigger_line())
     return 0
 
 

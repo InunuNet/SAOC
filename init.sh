@@ -840,6 +840,33 @@ dispose_memory() {
         done
     fi
 
+    # The root comms.md board travels with the memory too (queue item 35,
+    # Quest 2026-11-10). A copy of the harness carries the harness's own board,
+    # and comms_inbox.py then lists every FLEET broadcast on it as unread at the
+    # new project's first boot. Moved, never deleted; a symlink is moved as the
+    # link itself, its target untouched. It lands in a FRESH subdirectory: the
+    # quarantine root mirrors .agent/memory/, which may itself carry a comms.md
+    # (or COMMS.md on a case-insensitive filesystem) that a plain mv would
+    # overwrite. mkdir without -p fails on an existing name; mktemp then picks
+    # an unused one. Accepted residual (Codex QA): a board the operator wrote
+    # into a harness copy before the first init.sh run is quarantined too —
+    # the same safe direction the memory ruling takes, an inspection, no loss.
+    local board="$PROJECT_PATH/comms.md" bdir
+    if [ -e "$board" ] || [ -h "$board" ]; then
+        bdir="$qdir/inherited-root"
+        if ! mkdir -- "$bdir" 2>/dev/null; then
+            bdir="$(mktemp -d "$qdir/inherited-root.XXXXXX")" || bdir=""
+        fi
+        if [ -z "$bdir" ] || ! mv -- "$board" "$bdir/comms.md"; then
+            printf "${YELLOW}❌ Could not quarantine the inherited comms.md board: %s${NC}\n" "$board" >&2
+            printf "${DIM}   Nothing was deleted. Fix the permissions on %s and re-run init.sh.${NC}\n" \
+                "$PROJECT_PATH" >&2
+            exit 1
+        fi
+        printf "${YELLOW}   ⚠ Inherited comms.md board QUARANTINED, not deleted: .agent/%s/%s/comms.md${NC}\n" \
+            "$QUARANTINE_BASENAME" "$(basename -- "$bdir")"
+    fi
+
     mkdir -p "$mem"
 
     # LOUD, or it is a purge the operator never gets to reverse. The basename is

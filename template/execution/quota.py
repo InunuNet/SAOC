@@ -6,6 +6,10 @@ Reads the project-local mirror file (default
 mirror missing or stale it asks execution/statusline.py to rewrite the mirror
 from the global usage cache, but only if that cache is itself fresh; the only
 reader of the global cache is statusline.py's own loader, never this file.
+When the global cache is missing or older than STALE_SECONDS, quota.py first
+calls statusline.refresh_usage_cache() once (token from the macOS Keychain or
+<config dir>/.credentials.json), so Linux and Windows sessions with no
+statusline render still get a real reading.
 
 Provider-aware (GH #1368): the mirror is only ever trusted inside a genuine
 Claude Code session (CLAUDECODE=1, set by the real CLI binary itself). In any
@@ -26,6 +30,7 @@ import datetime
 import importlib.util
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -34,6 +39,7 @@ STALE_SECONDS = 900
 DEFAULT_MIRROR_PATH = ".agent/memory/scratch/.quota_status.json"
 MIRROR_SCRATCH_PARTS = (".agent", "memory", "scratch")
 MIRROR_FILENAME = ".quota_status.json"
+REASON_MAX_CHARS = 64
 REFRESHABLE_REASONS = ("missing_mirror", "stale")
 REQUIRED_FIELDS = ("used_pct", "resets_at", "seconds_to_reset", "captured_at")
 
@@ -195,7 +201,10 @@ def _format_legacy(status):
             f"quota: state=partial used={status['used_pct']}% left={_left(status['used_pct'])}% "
             f"resets_in=unknown band={band}"
         )
-    return f"quota: state=unknown reason={status['reason']} band={band}"
+    line = f"quota: state=unknown reason={status['reason']} band={band}"
+    if status.get("refresh_error"):
+        line += f" refresh_error={status['refresh_error']}"
+    return line
 
 
 def _load_statusline():
@@ -225,6 +234,9 @@ def refresh_from_global(mirror_path):
     try:
         sl = _load_statusline()
         age = sl.global_age(sl.USAGE_CACHE_NAME)
+        if age is None or age > STALE_SECONDS:
+            sl.refresh_usage_cache()
+            age = sl.global_age(sl.USAGE_CACHE_NAME)
         if age is None:
             return "missing_cache"
         cache = sl.global_json(sl.USAGE_CACHE_NAME)
@@ -236,13 +248,29 @@ def refresh_from_global(mirror_path):
     return None
 
 
+def _refresh_error(mirror_path):
+    """Last failed-refresh reason token from the attempt stamp, else None. Never raises."""
+    try:
+        sl = _load_statusline()
+        text = (sl.GLOBAL_STATE / sl.USAGE_ATTEMPT_STAMP_NAME).read_text()
+    except Exception:
+        return None
+    reason = re.sub(r"[^A-Za-z0-9_]", "", text)[:REASON_MAX_CHARS]
+    return None if reason in ("", "ok") else reason
+
+
 def current_status(mirror_path):
     status = read_status(mirror_path)
     if status["state"] != "unknown" or status["reason"] not in REFRESHABLE_REASONS:
         return status
     failure = refresh_from_global(mirror_path)
     if failure is not None:
-        return _unknown(failure)
+        unknown = _unknown(failure)
+        if failure == "missing_cache":
+            reason = _refresh_error(mirror_path)
+            if reason:
+                unknown["refresh_error"] = reason
+        return unknown
     return read_status(mirror_path)
 
 

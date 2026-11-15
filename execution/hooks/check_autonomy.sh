@@ -1357,7 +1357,16 @@ fi
 re_pyopen=$'open\\([[:space:]]*[\'\"]([^\'\"]+)[\'\"]'
 # re_code_open: open() WITH a mode argument. [2] is the mode; a mode carrying
 # w/a/x/+ opens for writing. A bare open('x') is a read and stays a read.
-re_code_open=$'open[[:space:]]*\\([[:space:]]*[\'\"]([^\'\"]+)[\'\"][[:space:]]*,[[:space:]]*[\'\"]([^\'\"]*)[\'\"]'
+# 2026-11-14 (P52s item 19): the first argument is ANY expression (`open(p,'w')`,
+# `open(sys.argv[1],'w')`) and the mode may be a keyword (`mode='w'`); [3] is the mode.
+# Which path is written is stage 2's job, as before.
+# Item 19 Codex r1: the first argument may hold one level of nested call (`Path('x')`) and
+# keywords may precede `mode=`. The mode literal is the LAST capture group (read via
+# ${BASH_REMATCH[-1]} semantics in scan_code_blob; POSIX ERE has no non-capturing groups).
+re_code_open=$'open[[:space:]]*\\([[:space:]]*(([^,()]|\\([^()]*\\))+)(,[[:space:]]*[A-Za-z_][A-Za-z0-9_]*[[:space:]]*=[^,)]*)*,[[:space:]]*(mode[[:space:]]*=[[:space:]]*)?[\'\"]([^\'\"]*)[\'\"]'
+# re_code_pathopen: pathlib's Path(...).open('w'), mode first. Anchored on a mode-shaped
+# literal so `.open('notes.txt')` stays a read.
+re_code_pathopen=$'\\.open[[:space:]]*\\([[:space:]]*(mode[[:space:]]*=[[:space:]]*)?[\'\"][rbt]*[waxWAX+][rwaxbtWAX+]*[\'\"]'
 # re_code_wverb: named write verbs an interpreter blob may use instead of
 # open() -- the classifier's vocabulary, not a substring scan of the command.
 # Presence of one of these decides that the blob WRITES; which path it writes
@@ -1368,6 +1377,8 @@ re_code_open=$'open[[:space:]]*\\([[:space:]]*[\'\"]([^\'\"]+)[\'\"][[:space:]]*
 re_code_wverb=$'(write_text|write_bytes|writelines|writeFileSync|appendFileSync|createWriteStream|rmtree|makedirs|copyfile|copytree|copy2)[[:space:]]*\\(|(os|shutil|fs|FileUtils)\\.(write|copy|move|rename|replace|remove|unlink|truncate|mkdir|symlink|link)[A-Za-z_]*[[:space:]]*\\(|File\\.(write|delete|rename)|IO\\.write|(^|[[:space:];&|])(install|truncate|shred|sponge|tee|dd)[[:space:]]'
 
 _target_blk=0; _target_why=""; _target_path=""
+# _code_write: set by scan_code_blob, 1 when the blob it just classified WRITES.
+_code_write=0
 
 # scan_read_token: the INVERTED read rule (SEC-P1-4c). The read direction no
 # longer asks "is this a known reader command?" — that allowlist can never be
@@ -1396,6 +1407,68 @@ scan_write_token() {
   case "$t" in *[[:space:]]*) case "$t" in */*) PERMIT_PATH_BAD=1 ;; esac; return ;; esac
   check_target "write" "$t"
 }
+
+# ASSIGNED_RHS_AWK: prints the right-hand side of every `NAME = ...` statement (split on
+# `;`) whose NAME is in the -v names list (space-delimited): scan_code_blob's variable
+# write targets.
+read -r -d '' ASSIGNED_RHS_AWK <<'EOF'
+{
+  n = split($0, S, ";")
+  for (i = 1; i <= n; i++) {
+    s = S[i]
+    if (match(s, /^[ \t]*[A-Za-z_][A-Za-z0-9_]*[ \t]*(:[^=]*)?=[^=]/)) {
+      nm = substr(s, RSTART, RLENGTH)
+      sub(/^[ \t]+/, "", nm); sub(/[ \t]*[:=].*$/, "", nm)
+      if (index(names, " " nm " ")) print substr(s, index(s, "=") + 1)
+    }
+  }
+}
+EOF
+
+# HEREDOC_BODIES_AWK: HEREDOC_CODE_AWK with every heredoc kept apart. Each heredoc ends in a
+# marker line, \034I (fed to an interpreter, the lines above it are its program) or \034D
+# (data, no lines), so the caller can tell WHICH invocation's blob wrote.
+read -r -d '' HEREDOC_BODIES_AWK <<'EOF'
+BEGIN { state = 0; nq = 0; qi = 0 }
+{
+  line = $0
+  if (state == 1) {
+    t = line
+    gsub(/^[ \t]+|[ \t]+$/, "", t)
+    if (t == qd[qi]) {
+      printf "\034%s\n", (qe[qi] ? "I" : "D")
+      qi++
+      if (qi >= nq) { state = 0; nq = 0; qi = 0 }
+      next
+    }
+    if (qe[qi]) print line
+    next
+  }
+  # Every heredoc operator on the line is queued, in order; their bodies follow in order.
+  rest = line; consumed = 0
+  while (match(rest, /<<-?["\047]?[A-Za-z_][A-Za-z0-9_]*["\047]?/)) {
+    pre = substr(line, 1, consumed + RSTART - 1)
+    d = substr(rest, RSTART, RLENGTH)
+    consumed += RSTART + RLENGTH - 1
+    rest = substr(rest, RSTART + RLENGTH)
+    gsub(/^<<-?/, "", d)
+    gsub(/["\047]/, "", d)
+    qd[nq] = d
+    qe[nq] = (pre ~ /(^|[ \t;&|(])(python3?|perl|ruby|node|deno|php|sh|bash|zsh|dash|ksh)([ \t]|$)/) ? 1 : 0
+    nq++
+    state = 1
+  }
+}
+EOF
+
+# HEREDOC_STRIP_MARK_AWK: HEREDOC_STRIP_AWK that leaves a bare `<<` where each heredoc
+# operator was, so scan_rw can bind a heredoc to the command that introduced it. If the
+# library awk ever stops matching the pattern the copy is unchanged and the counts
+# disagree, which scan_rw already treats as "unbound" (fail closed).
+_hd_pat='    queue[nq] = d'
+_hd_rep='    out = out " << "; queue[nq] = d'
+HEREDOC_STRIP_MARK_AWK="${HEREDOC_STRIP_AWK/"$_hd_pat"/$_hd_rep}"
+unset _hd_pat _hd_rep
 
 # scan_code_blob <code> -- classifies one blob of interpreter code: the
 # argument of `python3 -c` / `ruby -e` / `sh -c`, or the body of a heredoc fed
@@ -1431,28 +1504,47 @@ scan_code_blob() {
     [ "$_target_blk" = 1 ] && return
   done
 
-  # Stage 1 — write intent.
+  # Stage 1 — write intent. `sweep` = every string literal is a candidate target (a
+  # literal opened directly, or a named write verb). A write whose target is a variable
+  # (`open(p,'w')`) nominates only the literals ASSIGNED to that variable, so a read-only
+  # literal elsewhere in the blob is not mistaken for the write target.
+  local sweep=0 arg wnames=" " id
   rest="$code"
-  while [ "$want_write" = 0 ] && [[ "$rest" =~ $re_code_open ]]; do
-    m0="${BASH_REMATCH[0]}"; m1="${BASH_REMATCH[2]}"
+  while [[ "$rest" =~ $re_code_open ]]; do
+    m0="${BASH_REMATCH[0]}"; m1="${BASH_REMATCH[${#BASH_REMATCH[@]}-1]}"; arg="${BASH_REMATCH[1]}"
     [ -z "$m0" ] && break
     rest="${rest#*"$m0"}"
-    case "$m1" in *[waxWAX+]*) want_write=1 ;; esac
+    case "$m1" in *[waxWAX+]*)
+      want_write=1
+      case "$arg" in
+        *[\'\"]*) sweep=1 ;;
+        *) while IFS= read -r id; do wnames+="$id "; done \
+             < <(printf '%s\n' "$arg" | grep -oE '[A-Za-z_][A-Za-z0-9_]*') ;;
+      esac ;;
+    esac
   done
-  [ "$want_write" = 0 ] && [[ "$code" =~ $re_code_wverb ]] && want_write=1
+  [[ "$code" =~ $re_code_pathopen ]] && want_write=1 && sweep=1
+  [[ "$code" =~ $re_code_wverb ]] && want_write=1 && sweep=1
+  _code_write="$want_write"
 
   # Stage 2 — which path.
-  if [ "$want_write" = 1 ]; then
+  if [ "$sweep" = 1 ]; then
     while IFS= read -r lit; do
       scan_write_token "$lit"
       [ "$_target_blk" = 1 ] && return
     done < <(printf '%s\n' "$code" | awk "$QUOTED_LITERAL_AWK")
+  elif [ "$want_write" = 1 ]; then
+    while IFS= read -r lit; do
+      scan_write_token "$lit"
+      [ "$_target_blk" = 1 ] && return
+    done < <(printf '%s\n' "$code" | awk -v names="$wnames" "$ASSIGNED_RHS_AWK" \
+               | awk "$QUOTED_LITERAL_AWK")
   fi
 
   while IFS= read -r sub; do
     sub="${sub//$'\001'/$'\n'}"
     case "$sub" in W:*)
-      [ "$want_write" = 1 ] && scan_write_token "${sub#W:}"
+      [ "$sweep" = 1 ] && scan_write_token "${sub#W:}"
       [ "$_target_blk" = 1 ] && break
       # In python/ruby/node code a bare identifier (`import secrets`) is a language word,
       # not a path: real file operands arrive as open() literals, scanned above.
@@ -2011,12 +2103,37 @@ if [ -n "$COMMAND" ]; then
     # it as a target list is precisely the D24 false positive. A heredoc fed to
     # an INTERPRETER is not data, it is the program. HEREDOC_CODE_AWK emits
     # exactly those bodies and nothing else; they are classified as code blobs.
-    local CODE_HEREDOC STRIPPED
-    CODE_HEREDOC=$(printf '%s\n' "$RW_SRC" | awk "$HEREDOC_CODE_AWK")
-    [ -n "$CODE_HEREDOC" ] && scan_code_blob "$CODE_HEREDOC"
+    # 2026-11-14 (P52s item 19): when such a blob WRITES, RW_CODE_WRITES makes the
+    # interpreter's own positional operands write targets (`python3 - FILE <<PY`,
+    # where the blob opens sys.argv[1]); see the python3|python arm below.
+    # Item 19 Codex r2: write intent is scoped to its OWN invocation. Each heredoc is
+    # classified apart (HD_WRITES, in source order) and bound to the `<<` operator that
+    # introduces it; HD_ANY is the fail-closed fallback when the two counts disagree.
+    local CODE_HEREDOC STRIPPED RW_CODE_WRITES=0 HD_ANY=0 HD_IDX=0 hd_body="" hd_ln
+    local -a HD_WRITES=()
+    CODE_HEREDOC=$(printf '%s\n' "$RW_SRC" | awk "$HEREDOC_BODIES_AWK")
+    if [ -n "$CODE_HEREDOC" ]; then
+      while IFS= read -r hd_ln; do
+        case "$hd_ln" in
+          $'\034'D) HD_WRITES+=(0); hd_body="" ;;
+          $'\034'I)
+            _code_write=0
+            scan_code_blob "$hd_body"
+            HD_WRITES+=("$_code_write"); [ "$_code_write" = 1 ] && HD_ANY=1
+            hd_body="" ;;
+          *) hd_body+="$hd_ln"$'\n' ;;
+        esac
+        [ "$_target_blk" = 1 ] && return
+      done <<< "$CODE_HEREDOC"
+      if [ -n "$hd_body" ]; then
+        _code_write=0
+        scan_code_blob "$hd_body"
+        [ "$_code_write" = 1 ] && HD_ANY=1
+      fi
+    fi
     [ "$_target_blk" = 1 ] && return
 
-    STRIPPED=$(printf '%s\n' "$RW_SRC" | awk "$HEREDOC_STRIP_AWK")
+    STRIPPED=$(printf '%s\n' "$RW_SRC" | awk "$HEREDOC_STRIP_MARK_AWK")
 
     # Command substitution (R19-adjacent, #1407 follow-up): find and erase
     # every $(...) / `...` span in STRIPPED (see cmdsub_scan()'s own
@@ -2257,11 +2374,19 @@ if [ -n "$COMMAND" ]; then
         local i seen_c=0
         for i in "${!args[@]}"; do
           if [ "$seen_c" = 1 ]; then
+            _code_write=0
             scan_code_blob "${args[$i]}" lang
+            [ "$_code_write" = 1 ] && RW_CODE_WRITES=1
             break
           fi
           [ "${args[$i]}" = "-c" ] && seen_c=1
-        done ;;
+        done
+        # 2026-11-14 (P52s item 19): a writing blob makes the operands after the program
+        # write targets. A prose operand (the -c blob itself) is skipped by the token guard;
+        # an unresolvable $VAR expands to nothing protected, as for any other write.
+        if [ "$RW_CODE_WRITES" = 1 ]; then
+          for a in "${nonflag[@]}"; do scan_write_token "$a"; done
+        fi ;;
       sh|bash|zsh|dash|ksh|perl|ruby|node|deno|php|su|runuser)
         # `sh -c "cat ~/.ssh/id_rsa"` and `ruby -e 'File.read("…/.ssh/id_rsa")'`
         # hide the path inside one quoted word that the whitespace guard would
@@ -2443,11 +2568,13 @@ if [ -n "$COMMAND" ]; then
     done
   }
 
+    local HD_OPS=0
+    for tok in "${TOKS[@]}"; do [ "$tok" = "OP:<<" ] && HD_OPS=$((HD_OPS + 1)); done
     for tok in "${TOKS[@]}"; do
       case "$tok" in
         "OP:;"|"OP:&&"|"OP:||"|"OP:|"|"OP:NL")
           process_simple_cmd
-          cur_words=(); redir_gt=""; redir_lt=""; prev_op=""
+          cur_words=(); redir_gt=""; redir_lt=""; prev_op=""; RW_CODE_WRITES=0
           # RW_LEAD_SEP is the separator that leads into the NEXT command —
           # only "|" makes that next command eligible to consume RW_PIPE_SRC.
           case "$tok" in
@@ -2457,7 +2584,14 @@ if [ -n "$COMMAND" ]; then
           ;;
         "OP:>>"|"OP:>") prev_op="gt" ;;
         "OP:<") prev_op="lt" ;;
-        "OP:<<") prev_op="" ;;
+        "OP:<<")
+          prev_op=""
+          if [ "$HD_OPS" = "${#HD_WRITES[@]}" ]; then
+            [ "${HD_WRITES[$HD_IDX]:-0}" = 1 ] && RW_CODE_WRITES=1
+          else
+            [ "$HD_ANY" = 1 ] && RW_CODE_WRITES=1
+          fi
+          HD_IDX=$((HD_IDX + 1)) ;;
         W:*)
           w="${tok#W:}"
           if [ "$prev_op" = "gt" ]; then redir_gt="$w"

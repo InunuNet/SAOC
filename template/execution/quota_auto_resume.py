@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """Resume a checkpointed mission after a Claude Code quota reset, exactly once.
 
-An opted-in project gets one per-project launchd unit (macOS) that runs
-``tick`` every TICK_INTERVAL_SECONDS. ``execution/statusline.py`` records each
+An opted-in project gets one per-project scheduled job that runs ``tick`` every
+TICK_INTERVAL_SECONDS: a launchd agent (macOS), a systemd user timer (Linux) or a Task
+Scheduler task via schtasks (Windows). ``execution/statusline.py`` records each
 exhaustion in ``.agent/memory/scratch/quota_resume/exhausted.json``; the tick
 starts one fresh headless ``claude -p`` session once that window has reset, and
 only when every gate below passes.
 
-    install     write the plist, load it, record the opt-in
-    uninstall   unload it, delete the plist, record the opt-out
+    install     write the unit, load it, record the opt-in
+    uninstall   unload it, delete the unit, record the opt-out
     status      what is installed, pending and last resumed (--json for tools)
     tick        one idempotent pass; always exits 0
 
@@ -17,10 +18,13 @@ Safety, in the order it matters:
     one resume and never repeats one;
   * the child never inherits an API key, auth token or provider switch: this
     spends the subscription or nothing;
-  * one run at a time, behind an O_EXCL lock with a pid-liveness check;
-  * a run is killed at MAX_RUN_SECONDS;
-  * ATHANOR_LAUNCHCTL / ATHANOR_LAUNCH_AGENTS_DIR / ATHANOR_CLAUDE_BIN let a
-    test drive every path without the real launchd domain or a paid session.
+  * one run at a time, behind a kernel lock (flock, msvcrt on Windows) with a
+    pid-liveness check;
+  * a run is killed at MAX_RUN_SECONDS (process group, or taskkill /T on Windows);
+  * ATHANOR_QUOTA_RESUME_PLATFORM / ATHANOR_LAUNCHCTL / ATHANOR_SYSTEMCTL /
+    ATHANOR_SCHTASKS / ATHANOR_LAUNCH_AGENTS_DIR / ATHANOR_SYSTEMD_USER_DIR /
+    ATHANOR_CLAUDE_BIN let a test drive every path without a real scheduler or a
+    paid session.
 
 Design: .agent/memory/project/specs/quota-auto-resume/DECISIONS.md
 """
@@ -29,7 +33,7 @@ from __future__ import annotations
 import argparse
 try:
     import fcntl
-except ImportError:  # Windows: no flock; the locked paths below degrade to no-ops
+except ImportError:  # Windows: no flock; the lock below uses msvcrt.locking
     fcntl = None
 import hashlib
 import json
@@ -60,6 +64,14 @@ UNINSTALL_POLL_SECONDS = 0.1
 NOTIFY_TIMEOUT_SECONDS = 10
 BANNER_MAX_RUNS = 5
 MS_EPOCH_THRESHOLD = 10 ** 12
+SECONDS_PER_MINUTE = 60
+TIMER_FIRST_FIRE = "1s"
+WIN_LOCK_OFFSET = 1 << 30  # byte locked on Windows, far past the pid record so it stays readable
+WIN_PROCESS_QUERY_LIMITED = 0x1000
+WIN_STILL_ACTIVE = 259
+LOCK_READ_BYTES = 4096
+SCHTASKS_TR_MAX = 261
+WIN_ACCESS_DENIED = 5
 
 EXIT_USAGE = 2
 ISO_UTC_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
@@ -72,6 +84,10 @@ WINDOWS = ("five_hour", "seven_day")
 
 ENV_AGENTS_DIR = "ATHANOR_LAUNCH_AGENTS_DIR"
 ENV_LAUNCHCTL = "ATHANOR_LAUNCHCTL"
+ENV_SYSTEMCTL = "ATHANOR_SYSTEMCTL"
+ENV_SCHTASKS = "ATHANOR_SCHTASKS"
+ENV_SYSTEMD_DIR = "ATHANOR_SYSTEMD_USER_DIR"
+ENV_PLATFORM = "ATHANOR_QUOTA_RESUME_PLATFORM"
 ENV_CLAUDE_BIN = "ATHANOR_CLAUDE_BIN"
 ENV_MAX_RUN = "ATHANOR_QUOTA_RESUME_MAX_RUN_SECONDS"
 ENV_NOTIFY = "ATHANOR_QUOTA_RESUME_NOTIFY"
@@ -82,6 +98,10 @@ TELEMETRY_REL = Path(".agent/memory/project/telemetry/quota_resume.jsonl")
 QR_REL = Path(".agent/memory/scratch/quota_resume")
 UNATTENDED_REL = Path(".agent/memory/scratch/UNATTENDED")
 BANNER_REL = Path(".agent/memory/scratch/.quota_death_checkpoint.json")
+
+SCHEDULER_LAUNCHD = "launchd"
+SCHEDULER_SYSTEMD = "systemd"
+SCHEDULER_SCHTASKS = "schtasks"
 
 log = logging.getLogger("quota_auto_resume")
 
@@ -123,6 +143,8 @@ def write_json_atomic(path: Path, data) -> None:
 def pid_alive(pid) -> bool:
     if not isinstance(pid, int) or pid <= 0:
         return False
+    if sys.platform == "win32":
+        return win_pid_alive(pid)
     try:
         os.kill(pid, 0)
     except ProcessLookupError:
@@ -130,6 +152,24 @@ def pid_alive(pid) -> bool:
     except PermissionError:
         return True
     return True
+
+
+def win_pid_alive(pid: int) -> bool:
+    """OpenProcess + GetExitCodeProcess: os.kill(pid, 0) would terminate it on Windows."""
+    import ctypes
+    from ctypes import wintypes
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.OpenProcess.restype = wintypes.HANDLE
+    handle = kernel.OpenProcess(WIN_PROCESS_QUERY_LIMITED, False, pid)
+    if not handle:
+        return ctypes.get_last_error() == WIN_ACCESS_DENIED  # denied means it exists
+    try:
+        code = wintypes.DWORD()
+        if not kernel.GetExitCodeProcess(handle, ctypes.byref(code)):
+            return True
+        return code.value == WIN_STILL_ACTIVE
+    finally:
+        kernel.CloseHandle(handle)
 
 
 def label_for(root: Path) -> str:
@@ -149,6 +189,47 @@ def launchctl_bin() -> str:
 
 def launchctl(*args: str) -> subprocess.CompletedProcess:
     return subprocess.run([launchctl_bin(), *args], capture_output=True, text=True)
+
+
+def scheduler_for_platform() -> str | None:
+    """ATHANOR_QUOTA_RESUME_PLATFORM (test hook), else sys.platform; None when unsupported."""
+    platform = os.environ.get(ENV_PLATFORM) or sys.platform
+    if platform == "darwin":
+        return SCHEDULER_LAUNCHD
+    if platform.startswith("linux"):
+        return SCHEDULER_SYSTEMD
+    if platform == "win32":
+        return SCHEDULER_SCHTASKS
+    return None
+
+
+def systemd_dir() -> Path:
+    told = os.environ.get(ENV_SYSTEMD_DIR)
+    if told:
+        return Path(told).expanduser()
+    config_home = os.environ.get("XDG_CONFIG_HOME")
+    base = Path(config_home).expanduser() if config_home else Path.home() / ".config"
+    return base / "systemd" / "user"
+
+
+def run_tool(binary: str, *args: str) -> str | None:
+    """Run a scheduler tool; None on success, else one line describing the failure."""
+    name = Path(binary).name
+    try:
+        done = subprocess.run([binary, *args], capture_output=True, text=True)
+    except OSError as exc:
+        return f"{name} failed: {exc}"
+    if done.returncode != 0:
+        return f"{name} rc={done.returncode}: {(done.stderr or done.stdout).strip()}"
+    return None
+
+
+def systemctl(*args: str) -> str | None:
+    return run_tool(os.environ.get(ENV_SYSTEMCTL) or "systemctl", "--user", *args)
+
+
+def schtasks(*args: str) -> str | None:
+    return run_tool(os.environ.get(ENV_SCHTASKS) or "schtasks", *args)
 
 
 def executable(path) -> bool:
@@ -183,6 +264,19 @@ class Project:
     def plist_path(self, config: dict | None = None) -> Path:
         recorded = (config or {}).get("plist_path")
         return Path(recorded) if recorded else agents_dir() / f"{self.label}.plist"
+
+    def unit_paths(self, config: dict | None = None) -> list[Path]:
+        """Files the recorded (else current) scheduler owns for this project."""
+        scheduler = (config or {}).get("scheduler") or scheduler_for_platform()
+        recorded = (config or {}).get("unit_paths")
+        if isinstance(recorded, list) and recorded:
+            return [Path(p) for p in recorded]
+        if scheduler == SCHEDULER_SYSTEMD:
+            return [systemd_dir() / f"{self.label}.service",
+                    systemd_dir() / f"{self.label}.timer"]
+        if scheduler == SCHEDULER_LAUNCHD:
+            return [self.plist_path(config)]
+        return []
 
     def opted_in(self, config: dict | None) -> bool:
         return bool(config and config.get("enabled") is True
@@ -280,66 +374,212 @@ def mission_slug(mission_file: Path) -> str:
 
 # ── install / uninstall / status ──────────────────────────────────────────────
 
-def build_plist(project: Project, claude_bin: str) -> dict:
-    path_dirs = []
+def path_dirs(claude_bin: str) -> list[str]:
+    dirs = []
     for entry in (os.path.dirname(claude_bin), os.path.dirname(sys.executable), *SAFE_PATH):
-        if entry and entry not in path_dirs:
-            path_dirs.append(entry)
+        if entry and entry not in dirs:
+            dirs.append(entry)
+    return dirs
+
+
+def script_path(project: Project) -> str:
+    return str(project.root / "execution" / "quota_auto_resume.py")
+
+
+def build_plist(project: Project, claude_bin: str) -> dict:
     return {
         "Label": project.label,
-        "ProgramArguments": [sys.executable,
-                             str(project.root / "execution" / "quota_auto_resume.py"),
+        "ProgramArguments": [sys.executable, script_path(project),
                              "tick", "--project", str(project.root)],
         "WorkingDirectory": str(project.root),
         "StartInterval": TICK_INTERVAL_SECONDS,
         "RunAtLoad": True,
-        "EnvironmentVariables": {"PATH": ":".join(path_dirs)},
+        "EnvironmentVariables": {"PATH": ":".join(path_dirs(claude_bin))},
         "StandardOutPath": str(project.qr / "launchd.log"),
         "StandardErrorPath": str(project.qr / "launchd.log"),
     }
 
 
-def cmd_install(project: Project) -> int:
-    if sys.platform != "darwin":
-        print("quota_auto_resume: install needs macOS (launchd)", file=sys.stderr)
-        return EXIT_USAGE
-    claude_bin = resolve_claude(project.config)
-    if not claude_bin:
-        print("quota_auto_resume: claude not found (ATHANOR_CLAUDE_BIN or PATH); "
-              "nothing installed", file=sys.stderr)
-        return EXIT_USAGE
+def systemd_escape(value: str, expand_env: bool = False) -> str:
+    """Escape %spec (every setting) and $VAR (ExecStart words only) for a unit file."""
+    value = value.replace("%", "%%")
+    return value.replace("$", "$$") if expand_env else value
+
+
+def systemd_quote(value: str, expand_env: bool = False) -> str:
+    """Escape, then double-quote a word holding whitespace, quotes or backslashes."""
+    value = systemd_escape(value, expand_env)
+    if not re.search(r'[\s"\\]', value):
+        return value
+    return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def build_service(project: Project, claude_bin: str) -> str:
+    exec_start = " ".join(systemd_quote(a, expand_env=True) for a in (
+        sys.executable, script_path(project), "tick", "--project", str(project.root)))
+    path = systemd_quote("PATH=" + ":".join(path_dirs(claude_bin)))
+    log_file = systemd_escape(str(project.qr / "launchd.log"))
+    return "\n".join([
+        "[Unit]", f"Description=Athanor quota auto-resume tick "
+        f"({systemd_escape(project.root.name)})", "",
+        "[Service]", "Type=oneshot", f"ExecStart={exec_start}",
+        f"WorkingDirectory={systemd_escape(str(project.root))}", f"Environment={path}",
+        f"StandardOutput=append:{log_file}", f"StandardError=append:{log_file}", ""])
+
+
+def build_timer(project: Project) -> str:
+    return "\n".join([
+        "[Unit]", f"Description=Athanor quota auto-resume timer "
+        f"({systemd_escape(project.root.name)})", "",
+        "[Timer]", f"OnActiveSec={TIMER_FIRST_FIRE}",
+        f"OnUnitActiveSec={TICK_INTERVAL_SECONDS}", f"Unit={project.label}.service", "",
+        "[Install]", "WantedBy=timers.target", ""])
+
+
+def install_launchd(project: Project, claude_bin: str) -> tuple[dict, str | None]:
     plist = project.plist_path()
     plist.parent.mkdir(parents=True, exist_ok=True)
-    project.qr.mkdir(parents=True, exist_ok=True)
     plist.write_bytes(plistlib.dumps(build_plist(project, claude_bin)))
     domain = f"gui/{os.getuid()}"
     try:
         launchctl("bootout", f"{domain}/{project.label}")
         loaded = launchctl("bootstrap", domain, str(plist))
     except OSError as exc:
-        print(f"quota_auto_resume: launchctl failed: {exc}", file=sys.stderr)
-        return 1
+        return {}, f"launchctl failed: {exc}"
     if loaded.returncode != 0:
-        print(f"quota_auto_resume: launchctl bootstrap rc={loaded.returncode}: "
-              f"{loaded.stderr.strip()}", file=sys.stderr)
+        return {}, f"launchctl bootstrap rc={loaded.returncode}: {loaded.stderr.strip()}"
+    return {"plist_path": str(plist), "unit_paths": [str(plist)]}, None
+
+
+def install_systemd(project: Project, claude_bin: str) -> tuple[dict, str | None]:
+    service, timer = project.unit_paths({"scheduler": SCHEDULER_SYSTEMD})
+    service.parent.mkdir(parents=True, exist_ok=True)
+    service.write_text(build_service(project, claude_bin))
+    timer.write_text(build_timer(project))
+    failure = systemctl("daemon-reload") or systemctl("enable", "--now", timer.name)
+    if failure:
+        systemctl("disable", "--now", timer.name)  # a partial enable must not stay armed
+        service.unlink(missing_ok=True)
+        timer.unlink(missing_ok=True)
+        systemctl("daemon-reload")
+        return {}, failure
+    return {"unit_paths": [str(service), str(timer)]}, None
+
+
+def windows_wrapper_dir() -> Path:
+    base = os.environ.get("LOCALAPPDATA")
+    root = Path(base) if base else Path.home() / "AppData" / "Local"
+    return root / "Athanor" / "quota-resume"
+
+
+def windows_wrapper_path(project: Project) -> Path:
+    return windows_wrapper_dir() / f"{project.label}.cmd"
+
+
+def install_schtasks(project: Project, claude_bin: str) -> tuple[dict, str | None]:
+    command = f'"{sys.executable}" "{script_path(project)}" tick --project "{project.root}"'
+    unit_paths = []
+    wrapper = windows_wrapper_path(project)
+    if len(command) > SCHTASKS_TR_MAX:
+        wrapper.parent.mkdir(parents=True, exist_ok=True)
+        # cmd expands %VAR% inside a .cmd file: a literal % must be doubled
+        wrapper.write_text(f"@echo off\r\n{command.replace('%', '%%')}\r\n")
+        command, unit_paths = f'"{wrapper}"', [str(wrapper)]
+    else:
+        wrapper.unlink(missing_ok=True)  # a stale wrapper from an earlier, deeper install
+    failure = schtasks("/Create", "/TN", project.label, "/SC", "MINUTE", "/MO",
+                       str(TICK_INTERVAL_SECONDS // SECONDS_PER_MINUTE), "/TR", command, "/F")
+    if failure:
+        for path in unit_paths:
+            Path(path).unlink(missing_ok=True)
+        return {}, failure
+    return {"unit_paths": unit_paths}, None
+
+
+INSTALLERS = {SCHEDULER_LAUNCHD: install_launchd, SCHEDULER_SYSTEMD: install_systemd,
+              SCHEDULER_SCHTASKS: install_schtasks}
+
+
+def rollback_install(project: Project, scheduler: str, recorded: dict) -> None:
+    """Undo an enabled job whose opt-in could not be recorded."""
+    unload_scheduler(project, scheduler)
+    for path in recorded.get("unit_paths", []):
+        Path(path).unlink(missing_ok=True)
+    if scheduler == SCHEDULER_SCHTASKS:
+        windows_wrapper_path(project).unlink(missing_ok=True)
+    if scheduler == SCHEDULER_SYSTEMD:
+        systemctl("daemon-reload")
+
+
+def cmd_install(project: Project) -> int:
+    scheduler = scheduler_for_platform()
+    if scheduler is None:
+        print(f"quota_auto_resume: install does not support {sys.platform} (needs macOS "
+              "launchd, Linux systemd or Windows Task Scheduler)", file=sys.stderr)
+        return EXIT_USAGE
+    claude_bin = resolve_claude(project.config)
+    if not claude_bin:
+        print("quota_auto_resume: claude not found (ATHANOR_CLAUDE_BIN or PATH); "
+              "nothing installed", file=sys.stderr)
+        return EXIT_USAGE
+    project.qr.mkdir(parents=True, exist_ok=True)
+    recorded, failure = INSTALLERS[scheduler](project, claude_bin)
+    if failure:
+        print(f"quota_auto_resume: {failure}", file=sys.stderr)
+        previous = project.config
+        if previous is not None:  # a failed (re)install must not keep an old opt-in
+            write_json_atomic(project.root / CONFIG_REL, {**previous, "enabled": False})
         return 1
-    write_json_atomic(project.root / CONFIG_REL, {
-        "schema": CONFIG_SCHEMA, "enabled": True, "project_root": str(project.root),
-        "label": project.label, "plist_path": str(plist), "claude_bin": claude_bin,
-        "python_bin": sys.executable, "installed_at": iso(now_epoch())})
+    try:
+        write_json_atomic(project.root / CONFIG_REL, {
+            "schema": CONFIG_SCHEMA, "enabled": True, "project_root": str(project.root),
+            "label": project.label, "scheduler": scheduler, **recorded,
+            "claude_bin": claude_bin, "python_bin": sys.executable,
+            "installed_at": iso(now_epoch())})
+    except OSError as exc:
+        rollback_install(project, scheduler, recorded)
+        print(f"quota_auto_resume: could not record the opt-in ({type(exc).__name__}: "
+              f"{exc}); scheduler job rolled back", file=sys.stderr)
+        return 1
     print(f"installed {project.label}")
     return 0
 
 
-def disable(project: Project) -> None:
+def unload_scheduler(project: Project, scheduler: str | None) -> str | None:
+    """Stop the scheduled job; returns the failure line (also logged), never raises."""
+    failure = None
+    if scheduler == SCHEDULER_LAUNCHD:
+        try:
+            launchctl("bootout", f"gui/{os.getuid()}/{project.label}")
+        except OSError as exc:
+            failure = f"launchctl bootout failed: {exc}"
+    elif scheduler == SCHEDULER_SYSTEMD:
+        failure = systemctl("disable", "--now", f"{project.label}.timer")
+    elif scheduler == SCHEDULER_SCHTASKS:
+        failure = schtasks("/Delete", "/TN", project.label, "/F")
+    if failure:
+        log.warning("%s", failure)
+    return failure
+
+
+def disable(project: Project) -> str | None:
+    """Opt out and remove the unit files; returns the scheduler failure, if any."""
     config = project.config
-    try:
-        launchctl("bootout", f"gui/{os.getuid()}/{project.label}")
-    except OSError as exc:
-        log.warning("launchctl bootout failed: %s", exc)
-    project.plist_path(config).unlink(missing_ok=True)
+    scheduler = (config or {}).get("scheduler") or (
+        SCHEDULER_LAUNCHD if config else scheduler_for_platform())
+    # No config means nothing was ever installed: there is no job to remove.
+    removal_failure = unload_scheduler(project, scheduler) if config else None
+    for path in project.unit_paths({**(config or {}), "scheduler": scheduler}):
+        path.unlink(missing_ok=True)
+    if scheduler == SCHEDULER_SCHTASKS:
+        windows_wrapper_path(project).unlink(missing_ok=True)  # deterministic, even if unlisted
+    if scheduler == SCHEDULER_SYSTEMD and config:
+        failure = systemctl("daemon-reload")
+        if failure:
+            log.warning("%s", failure)
     if config is not None:
         write_json_atomic(project.root / CONFIG_REL, {**config, "enabled": False})
+    return removal_failure
 
 
 def lock_record(project: Project) -> dict:
@@ -350,26 +590,31 @@ def lock_record(project: Project) -> dict:
 def cmd_uninstall(project: Project) -> int:
     """Opt out, serialised with a tick's check-then-spawn window; never kills a run."""
     deadline = now_epoch() + UNINSTALL_WAIT_SECONDS
+    failure = None
     while True:
         fd = acquire_flock(project)
         if fd is not None:
             try:
-                disable(project)
+                failure = disable(project)
             finally:
                 release_lock(project, fd)
             break
         child = lock_record(project).get("child_pid")
         if child:
-            disable(project)
+            failure = disable(project)
             print(f"a resume run started before uninstall is still running (pid {child}); "
                   f"it finishes on its own, or stop it with: kill -TERM -{child}")
             break
         if now_epoch() >= deadline:
-            disable(project)
+            failure = disable(project)
             print("uninstall: a tick held the lock for "
                   f"{UNINSTALL_WAIT_SECONDS}s; opted out anyway, a run may have started")
             break
         time.sleep(UNINSTALL_POLL_SECONDS)
+    if failure:
+        print(f"quota_auto_resume: opted out, but the scheduler still holds the job: "
+              f"{failure}", file=sys.stderr)
+        return 1
     print(f"uninstalled {project.label}")
     return 0
 
@@ -387,15 +632,27 @@ def last_resume(project: Project) -> dict | None:
             "exit_code": last.get("exit_code"), "timed_out": last.get("timed_out")}
 
 
+def unit_present(project: Project, scheduler: str | None, units: list[Path]) -> bool:
+    if scheduler == SCHEDULER_SCHTASKS:
+        return schtasks("/Query", "/TN", project.label) is None
+    return bool(units) and all(path.is_file() for path in units)
+
+
 def status_of(project: Project) -> dict:
     config = project.config
     claude_bin = resolve_claude(config)
     record = project.record()
     pending = record if record and not project.spent(record["event_id"]) else None
     resets = parse_iso(pending["resets_at"]) if pending else None
+    scheduler = (config or {}).get("scheduler") or (
+        SCHEDULER_LAUNCHD if config else scheduler_for_platform())
+    units = project.unit_paths({**(config or {}), "scheduler": scheduler})
     return {
         "opted_in": project.opted_in(config),
         "label": project.label,
+        "scheduler": scheduler,
+        "unit_path": str(units[-1]) if units else None,
+        "unit_present": unit_present(project, scheduler, units),
         "plist_path": str(project.plist_path(config)),
         "plist_present": project.plist_path(config).is_file(),
         "claude_bin": claude_bin,
@@ -420,25 +677,54 @@ def cmd_status(project: Project, as_json: bool) -> int:
 # ── tick ──────────────────────────────────────────────────────────────────────
 
 def notify(message: str) -> None:
-    """Best-effort macOS notification; never raises."""
-    if os.environ.get(ENV_NOTIFY) == "0" or not shutil.which("osascript"):
+    """Best-effort notification (osascript on macOS, notify-send on Linux); never raises."""
+    if os.environ.get(ENV_NOTIFY) == "0":
         return
-    script = ["-e", "on run argv", "-e",
-              'display notification (item 1 of argv) with title "Athanor quota resume"',
-              "-e", "end run"]
+    scheduler = scheduler_for_platform()
+    if scheduler == SCHEDULER_LAUNCHD and shutil.which("osascript"):
+        script = ["-e", "on run argv", "-e",
+                  'display notification (item 1 of argv) with title "Athanor quota resume"',
+                  "-e", "end run"]
+        argv = ["osascript", *script, message]
+    elif scheduler == SCHEDULER_SYSTEMD and shutil.which("notify-send"):
+        argv = ["notify-send", "Athanor quota resume", message]
+    else:
+        return
     try:
-        subprocess.run(["osascript", *script, message], capture_output=True,
-                       timeout=NOTIFY_TIMEOUT_SECONDS)
+        subprocess.run(argv, capture_output=True, timeout=NOTIFY_TIMEOUT_SECONDS)
     except (OSError, subprocess.SubprocessError):
         return
 
 
+def msvcrt_lock_byte(fd: int, mode: int) -> None:
+    """Lock or unlock the one byte at WIN_LOCK_OFFSET, restoring the file position."""
+    import msvcrt
+    pos = os.lseek(fd, 0, os.SEEK_CUR)
+    try:
+        os.lseek(fd, WIN_LOCK_OFFSET, os.SEEK_SET)
+        msvcrt.locking(fd, mode, 1)
+    finally:
+        os.lseek(fd, pos, os.SEEK_SET)
+
+
+def acquire_msvcrt(path: Path) -> int | None:
+    """Windows: LK_NBLCK on a byte past the pid record, so the record stays readable."""
+    import msvcrt
+    fd = os.open(path, os.O_CREAT | os.O_RDWR | getattr(os, "O_BINARY", 0))
+    try:
+        msvcrt_lock_byte(fd, msvcrt.LK_NBLCK)
+    except OSError:
+        os.close(fd)
+        return None
+    return fd
+
+
 def acquire_flock(project: Project) -> int | None:
-    """flock(LOCK_EX|LOCK_NB) run.lock, or None when another process holds it."""
-    if fcntl is None:
-        return None  # no flock, no safe single-run guarantee: never run
+    """flock(LOCK_EX|LOCK_NB) run.lock (msvcrt byte lock on Windows), else None when held."""
     project.qr.mkdir(parents=True, exist_ok=True)
     path = project.qr / "run.lock"
+    if fcntl is None:
+        return acquire_msvcrt(path)
     for _ in range(2):
         fd = os.open(path, os.O_CREAT | os.O_RDWR)
         try:
@@ -472,14 +758,18 @@ def take_lock(project: Project) -> int | None:
         os.close(fd)
         return None
     os.ftruncate(fd, 0)
+    os.lseek(fd, 0, os.SEEK_SET)
     os.write(fd, json.dumps({"pid": os.getpid(), "started_at": iso(now_epoch())}).encode())
     return fd
 
 
 def foreign_run_recorded(fd: int) -> bool:
     try:
-        data = json.loads(os.pread(fd, 4096, 0) or b"{}")
+        os.lseek(fd, 0, os.SEEK_SET)  # no os.pread on Windows
+        data = json.loads(os.read(fd, LOCK_READ_BYTES) or b"{}")
     except ValueError:
+        return False
+    if not isinstance(data, dict):
         return False
     pid, started = data.get("pid"), parse_iso(data.get("started_at"))
     return (pid_alive(pid) and pid != os.getpid() and started is not None
@@ -487,9 +777,26 @@ def foreign_run_recorded(fd: int) -> bool:
 
 
 def release_lock(project: Project, fd: int) -> None:
-    """Unlink while still holding it; acquirers re-check the inode after flock."""
-    (project.qr / "run.lock").unlink(missing_ok=True)
+    """POSIX: unlink while still holding it; acquirers re-check the inode after flock.
+
+    Windows cannot unlink an open file: unlock, close, then unlink, tolerating a
+    racing acquirer that already holds it open.
+    """
+    path = project.qr / "run.lock"
+    if fcntl is not None:
+        path.unlink(missing_ok=True)
+        os.close(fd)
+        return
+    import msvcrt
+    try:
+        msvcrt_lock_byte(fd, msvcrt.LK_UNLCK)
+    except OSError as exc:
+        log.warning("run.lock unlock failed: %s", exc)
     os.close(fd)
+    try:
+        path.unlink(missing_ok=True)
+    except PermissionError:
+        pass
 
 
 def gate(project: Project, record: dict, now: float) -> tuple[str, str | None]:
@@ -543,29 +850,46 @@ def record_child_pid(project: Project, pid: int) -> None:
 
 
 def run_child(project: Project, argv: list[str], log_path: Path) -> tuple[int, bool]:
-    """Run the child in its own process group, killing the group at the cap."""
+    """Run the child in its own process group (tree on Windows), killing it at the cap."""
     timed_out = False
+    if sys.platform == "win32":
+        group = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
+    else:
+        group = {"start_new_session": True}
     with open(log_path, "wb") as sink:
         proc = subprocess.Popen(argv, cwd=project.root, env=child_env(), stdout=sink,
-                                stderr=subprocess.STDOUT, start_new_session=True)
+                                stderr=subprocess.STDOUT, **group)
         record_child_pid(project, proc.pid)
         try:
             code = proc.wait(timeout=max_run_seconds())
         except subprocess.TimeoutExpired:
             timed_out = True
-            os.killpg(proc.pid, signal.SIGTERM)
-            try:
-                proc.wait(timeout=KILL_GRACE_SECONDS)
-            except subprocess.TimeoutExpired:
-                pass
-            # The parent may exit on SIGTERM while its children linger: the
-            # group is killed regardless, so nothing outlives the cap.
-            try:
-                os.killpg(proc.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
+            kill_run(proc)
             code = proc.wait()
     return code, timed_out
+
+
+def kill_run(proc: subprocess.Popen) -> None:
+    """Kill the run and everything it spawned: killpg on POSIX, taskkill /T on Windows."""
+    if sys.platform == "win32":
+        taskkill = ["taskkill", "/PID", str(proc.pid), "/T", "/F"]
+        try:
+            subprocess.run(taskkill, capture_output=True, timeout=KILL_GRACE_SECONDS)
+        except (OSError, subprocess.SubprocessError) as exc:
+            log.warning("taskkill failed: %s", exc)
+        proc.kill()
+        return
+    os.killpg(proc.pid, signal.SIGTERM)
+    try:
+        proc.wait(timeout=KILL_GRACE_SECONDS)
+    except subprocess.TimeoutExpired:
+        pass
+    # The parent may exit on SIGTERM while its children linger: the
+    # group is killed regardless, so nothing outlives the cap.
+    try:
+        os.killpg(proc.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
 
 
 def rejected_reset(log_path: Path, now: float) -> tuple[str, float] | None:

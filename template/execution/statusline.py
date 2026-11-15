@@ -43,7 +43,6 @@ import io
 import json
 import os
 import re
-import sqlite3
 import time
 import subprocess
 import sys
@@ -54,7 +53,6 @@ from pathlib import Path
 WIDTH = 66
 BAR_WIDTH = 46
 GIT_TIMEOUT_SECONDS = 1.5
-BRAIN_TIMEOUT_SECONDS = 0.5
 QUOTA_STALE_AFTER_SECONDS = 30 * 60
 # Past this, a shared-cache reading is dated in the render rather than
 # presented as the current figure.
@@ -62,6 +60,7 @@ QUOTA_FRESH_SECONDS = 3 * 60
 USAGE_CACHE_NAME = "usage-cache.json"
 # LifeOS uses 60s; the usage API asks for no more than one poll a minute.
 USAGE_CACHE_TTL_SECONDS = 60
+USAGE_ATTEMPT_STAMP_NAME = "usage-refresh-attempt"
 # Context-bar heat thresholds.
 HEAT_AMBER_PCT = 60
 HEAT_RED_PCT = 85
@@ -373,7 +372,7 @@ def quota_window(block, label: str) -> str:
         # five_hour while seven_day was at 95%). Show the gap rather than
         # silently dropping the segment, which read as the statusline
         # having lost it.
-        return f"{DIM}{label}: --{R}"
+        return ""  # a window the API no longer reports is omitted, not shown as "--"
     if not isinstance(block, dict):
         return ""
     used = block.get("utilization")
@@ -417,6 +416,38 @@ def quota_window(block, label: str) -> str:
     return out
 
 
+def _token_from_credentials_json(text: str) -> str:
+    """accessToken out of a Claude Code credentials JSON blob, '' on any defect."""
+    try:
+        return json.loads(text).get("claudeAiOauth", {}).get("accessToken", "") or ""
+    except (ValueError, AttributeError):
+        return ""
+
+
+def _oauth_token() -> str:
+    """OAuth token: macOS Keychain first, else <config dir>/.credentials.json.
+
+    Linux and Windows keep the same JSON in the file; the config dir is
+    $CLAUDE_CONFIG_DIR or ~/.claude. Never printed, logged or cached.
+    """
+    try:
+        cred = subprocess.run(
+            ["security", "find-generic-password",
+             "-s", "Claude Code-credentials", "-w"],
+            capture_output=True, text=True, timeout=3)
+        token = _token_from_credentials_json(cred.stdout) if cred.returncode == 0 else ""
+        if token:
+            return token
+    except (OSError, subprocess.SubprocessError):
+        pass
+    config_dir = os.environ.get("CLAUDE_CONFIG_DIR") or str(Path.home() / ".claude")
+    try:
+        return _token_from_credentials_json(
+            (Path(config_dir) / ".credentials.json").read_text())
+    except (OSError, ValueError):
+        return ""
+
+
 def refresh_usage_cache() -> None:
     """Refresh the shared usage cache when it is older than its TTL.
 
@@ -434,35 +465,64 @@ def refresh_usage_cache() -> None:
     if age is not None and age <= USAGE_CACHE_TTL_SECONDS:
         return
     try:
-        cred = subprocess.run(
-            ["security", "find-generic-password",
-             "-s", "Claude Code-credentials", "-w"],
-            capture_output=True, text=True, timeout=3)
-        token = (json.loads(cred.stdout).get("claudeAiOauth", {})
-                 .get("accessToken", "")) if cred.returncode == 0 else ""
-        if not token:
+        GLOBAL_STATE.mkdir(parents=True, exist_ok=True)
+        # Failure backoff, ahead of the Keychain lookup: stamp (mtime drives it; the
+        # text is the last failure reason) and skip while the last attempt is younger
+        # than the TTL. A future-dated stamp (clock skew) has a negative age and counts as expired.
+        attempt_age = global_age(USAGE_ATTEMPT_STAMP_NAME)
+        if attempt_age is not None and 0 <= attempt_age <= USAGE_CACHE_TTL_SECONDS:
             return
-        fetched = subprocess.run(
-            ["curl", "-s", "--max-time", "3",
-             "-H", f"Authorization: Bearer {token}",
-             "-H", "Content-Type: application/json",
-             "-H", "anthropic-beta: oauth-2025-04-20",
-             "https://api.anthropic.com/api/oauth/usage"],
-            capture_output=True, text=True, timeout=5)
+        stamp = GLOBAL_STATE / USAGE_ATTEMPT_STAMP_NAME
+        stamp.write_text("")
+        reason = _refresh_and_cache()
+        stamp.write_text(reason)
+    except Exception as exc:
+        _record_refresh_reason(re.sub(r"[^A-Za-z0-9_]", "", type(exc).__name__)[:64] or "error")
+
+
+def _record_refresh_reason(reason: str) -> None:
+    """Best-effort: store the one-token failure reason as the attempt stamp's text."""
+    try:
+        (GLOBAL_STATE / USAGE_ATTEMPT_STAMP_NAME).write_text(reason)
+    except OSError:
+        return
+
+
+def _refresh_and_cache() -> str:
+    """Fetch usage and cache it. Returns 'ok' or one short failure token (never token/body)."""
+    token = _oauth_token()
+    if not token:
+        return "no_token"
+    fetched = subprocess.run(
+        ["curl", "-s", "--max-time", "3",
+         "-H", f"Authorization: Bearer {token}",
+         "-H", "Content-Type: application/json",
+         "-H", "anthropic-beta: oauth-2025-04-20",
+         "https://api.anthropic.com/api/oauth/usage"],
+        capture_output=True, text=True, timeout=5)
+    if fetched.returncode != 0:
+        return f"curl_rc_{fetched.returncode}"
+    if not fetched.stdout.strip():
+        return "empty_response"
+    try:
         data = json.loads(fetched.stdout)
-        if not isinstance(data, dict) or "five_hour" not in data:
-            return
-        # workspace_cost is populated by a slow admin-API call elsewhere; keep
-        # whatever the cache already holds rather than dropping it.
-        existing = global_json(USAGE_CACHE_NAME)
-        if isinstance(existing, dict) and existing.get("workspace_cost"):
-            data["workspace_cost"] = existing["workspace_cost"]
-        target = GLOBAL_STATE / USAGE_CACHE_NAME
-        tmp = target.with_suffix(".json.tmp")
+    except ValueError:
+        return "bad_json"
+    if not isinstance(data, dict) or not ("five_hour" in data or "seven_day" in data):
+        return "no_usage_windows"
+    # workspace_cost is populated by a slow admin-API call elsewhere; keep
+    # whatever the cache already holds rather than dropping it.
+    existing = global_json(USAGE_CACHE_NAME)
+    if isinstance(existing, dict) and existing.get("workspace_cost"):
+        data["workspace_cost"] = existing["workspace_cost"]
+    target = GLOBAL_STATE / USAGE_CACHE_NAME
+    tmp = target.with_suffix(".json.tmp")
+    try:
         tmp.write_text(json.dumps(data, indent=2))
         tmp.replace(target)
-    except Exception:
-        return
+    except OSError:
+        return "write_failed"
+    return "ok"
 
 
 def _window_reading(block):
@@ -513,6 +573,11 @@ def mirror_quota_all(root: Path, cache) -> None:
         return
 
 
+def _mirror_segment(label: str, used) -> str:
+    return (f"{DIM}{label}:{R}{pressure(used)}{int(used)}% used↑{R}"
+            f" {DIM}·{R} {max(0, 100 - int(used))}% left")
+
+
 def quota(root: Path) -> str:
     """Quota from shared state, with the project mirror as a guarded fallback.
 
@@ -556,8 +621,15 @@ def quota(root: Path) -> str:
         return ""
     if age > QUOTA_STALE_AFTER_SECONDS:
         return ""
-    return (f"{DIM}WK:{R}{pressure(used)}{int(used)}% used↑{R}"
-            f" {DIM}·{R} {max(0, 100 - int(used))}% left")
+    segments = []
+    windows = data.get("windows")
+    if isinstance(windows, dict):
+        for name, label in (("five_hour", "5H"), ("seven_day", "WK")):
+            figure = (windows.get(name) or {}).get("used_pct")
+            if isinstance(figure, (int, float)):
+                segments.append(_mirror_segment(label, figure))
+    # No windows dict: the top-level reading is the five-hour one.
+    return join(*segments) if segments else _mirror_segment("5H", used)
 
 
 # ── Source 3: the project tree ────────────────────────────────────────────────
@@ -666,22 +738,6 @@ def p0_count(root: Path) -> str:
     except Exception:
         return ""
     return str(sum(1 for line in text.splitlines() if BACKLOG_ITEM_RE.match(line)))
-
-
-def brain_sessions(root: Path) -> str:
-    db = root / ".agent" / "memory" / "brain" / "chroma.sqlite3"
-    if not db.is_file():
-        return ""
-    try:
-        con = sqlite3.connect(f"file:{db}?mode=ro&immutable=1", uri=True,
-                              timeout=BRAIN_TIMEOUT_SECONDS)
-        try:
-            row = con.execute("SELECT COUNT(*) FROM embeddings").fetchone()
-            return str(row[0]) if row else ""
-        finally:
-            con.close()
-    except Exception:
-        return ""
 
 
 def mission(root: Path) -> tuple[str, bool]:
@@ -989,11 +1045,11 @@ def build(payload: dict, root: Path) -> list[str]:
 
     env = join(
         seg("CC", str(payload.get("version") or "")),
-        seg("Model", session_model(payload)),
-        seg("Athanor", athanor_version(root)),
+        seg("MDL", session_model(payload)),
+        seg("ATH", athanor_version(root)),
         seg("SK", count_dir(root / ".claude" / "skills", "*")),
         seg("WF", count_dir(root / ".agent" / "workflows", "*.md")),
-        seg("Hooks", hook_count(root)),
+        seg("HK", hook_count(root)),
     )
     if env:
         lines.append(f'{DIM}ENV:{R} {env}')
@@ -1017,9 +1073,9 @@ def build(payload: dict, root: Path) -> list[str]:
 
     where = join(
         f"{CYAN}{name}{R}" if name else "",
-        seg("Branch", branch, MAGENTA),
-        seg("Age", age),
-        seg("Sync", f"↑{ahead}" if ahead else ""),
+        seg("BR", branch, MAGENTA),
+        seg("Commit", f"{age} ago" if age else ""),
+        seg("Unpushed", ahead),
         session_diff(payload),
     )
     if where:
@@ -1027,14 +1083,13 @@ def build(payload: dict, root: Path) -> list[str]:
 
     p0 = p0_count(root)
     memory = join(
-        seg("Sessions", brain_sessions(root)),
-        seg("P0", p0, RED if p0 not in ("", "0") else GREEN),
-        seg("Mission", mission_name),
+        seg("Mission", mission_name or "none"),
+        seg("Urgent", p0, RED if p0 not in ("", "0") else GREEN),
         seg("AUTO-RESUME", auto_resume_running(root), YELLOW),
     )
     if memory:
         warn = f' {RED}⚠ autonomy undecided{R}' if undecided else ""
-        lines.append(f'{GREEN}◎{R} {DIM}MEMORY:{R} {memory}{warn}')
+        lines.append(f'{GREEN}◎{R} {DIM}WORK:{R} {memory}{warn}')
 
     local = join(
         f"{CYAN}{location()}{R}" if location() else "",
