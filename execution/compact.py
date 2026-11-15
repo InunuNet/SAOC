@@ -8,6 +8,11 @@ Usage:
     python3 execution/compact.py restore
     python3 execution/compact.py trigger
 
+`trigger` prints the window Claude Code uses, found in this order: the
+CLAUDE_CODE_AUTO_COMPACT_WINDOW env var, the project's settings.local.json, the project's
+settings.json, then the user-level ~/.claude/settings.json that /autocompact writes. With
+none set it prints `auto` (Claude Code picks) and exits 0. The harness pins no window itself.
+
 The statusline mirrors the live context reading to
 ``.agent/memory/scratch/.context_now.json`` on every render. This script moves
 ``autoCompactWindow`` in ``.claude/settings.local.json`` relative to that reading:
@@ -41,6 +46,7 @@ CONTEXT_NOW_DIR = Path(".agent/memory/scratch/context_now")
 NO_PID = "nopid"
 NO_INJECT_ENV = "ATHANOR_COMPACT_NO_INJECT"
 WINDOW_ENV = "CLAUDE_CODE_AUTO_COMPACT_WINDOW"
+USER_SETTINGS_LABEL = "~/.claude/settings.json"
 DECIDER = Path(__file__).resolve().parent / "hooks" / "lib" / "autocompact_decider.py"
 HERDR_TIMEOUT_SECONDS = 5
 # /compact typed mid-turn is queued and never runs, so a detached waiter sends it
@@ -62,7 +68,7 @@ DEFAULT_DELAY_TOKENS = 150000
 def find_root() -> Path:
     here = Path.cwd().resolve()
     for candidate in (here, *here.parents):
-        if (candidate / ".agent").is_dir():
+        if (candidate / ".agent").is_dir() or (candidate / ".claude").is_dir():
             return candidate
     return here
 
@@ -100,18 +106,25 @@ def current_override() -> str:
 
 
 def effective_trigger_source() -> tuple[int | None, str]:
-    """(autoCompactWindow Claude Code uses, where it came from): env, then settings.local.json, then settings.json."""
+    """(autoCompactWindow Claude Code uses, where it came from).
+
+    Order: env, project settings.local.json, project settings.json, then the user-level
+    file /autocompact writes. None means Claude Code picks the window itself.
+    """
     raw = os.environ.get(WINDOW_ENV)
     if raw is not None:
         return (int(raw) if raw.strip().isdigit() else None), WINDOW_ENV
-    for name in ("settings.local.json", "settings.json"):
+    candidates = [(Path(".claude", name), f".claude/{name}")
+                  for name in ("settings.local.json", "settings.json")]
+    candidates.append((Path.home() / ".claude" / "settings.json", USER_SETTINGS_LABEL))
+    for path, label in candidates:
         try:
-            data = json.loads(Path(".claude", name).read_text())
+            data = json.loads(path.read_text())
         except (OSError, ValueError):
             continue
         value = data.get("autoCompactWindow") if isinstance(data, dict) else None
         if isinstance(value, int) and not isinstance(value, bool):
-            return value, f".claude/{name}"
+            return value, label
     return None, "none set"
 
 
@@ -121,17 +134,14 @@ def effective_trigger() -> int | None:
 
 def trigger_line() -> str:
     value, source = effective_trigger_source()
-    shown = value if value is not None else "none"
-    return (f"effective autoCompactWindow: {shown} ({source}); a running session keeps "
+    shown = f"{value} ({source})" if value is not None else "auto (Claude Code picks)"
+    return (f"effective autoCompactWindow: {shown}; a running session keeps "
             "the value it read at start, so restart it after a change")
 
 
 def cmd_trigger(_args) -> int:
     value = effective_trigger()
-    if value is None:
-        print("compact: no autoCompactWindow set in env or settings", file=sys.stderr)
-        return 1
-    print(value)
+    print(value if value is not None else "auto")
     return 0
 
 

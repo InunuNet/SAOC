@@ -1,0 +1,3 @@
+# Pulse jobs are bash: keep them LF on every platform (Git for Windows
+# defaults to autocrlf=true, and bash dies on $'\r').
+*.sh text eol=lf

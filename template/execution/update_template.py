@@ -1897,29 +1897,24 @@ def _count_hook_registrations(hooks_value) -> int:
 COMPACT_WINDOW_KEY = "autoCompactWindow"
 
 
-def _int_window(value):
-    return value if isinstance(value, int) and not isinstance(value, bool) else None
+# Every window the harness itself ever shipped in a project's settings.json.
+HARNESS_SHIPPED_WINDOWS = (100000, 235000, 300000, 500000)
 
 
-def _keep_compact_window_floor(dst_data: dict, src_data: dict, merged: dict, dst: Path) -> None:
-    """autoCompactWindow only ever rises to the template value, never falls.
+def _drop_harness_compact_window(dst_data: dict, src_data: dict, merged: dict, dst: Path) -> None:
+    """Remove a harness-shipped autoCompactWindow; the operator's own value stays.
 
-    A window near the boot load (the old 100000) makes Claude Code compact at
-    ~68k and refill in three turns ("Autocompact is thrashing"). A project value
-    below the template's is lifted; a higher project value (e.g. 400000) is kept.
+    A project-level key outranks the value /autocompact saves at user level, so the
+    harness no longer pins one. Only a value the harness itself shipped is removed.
     """
-    tpl = _int_window(src_data.get(COMPACT_WINDOW_KEY))
-    if tpl is None or dst.name != "settings.json":
+    if dst.name != "settings.json" or COMPACT_WINDOW_KEY in src_data:
         return
-    cur = _int_window(dst_data.get(COMPACT_WINDOW_KEY))
-    if cur is None:
+    cur = dst_data.get(COMPACT_WINDOW_KEY)
+    if isinstance(cur, bool) or cur not in HARNESS_SHIPPED_WINDOWS:
         return
-    if cur < tpl:
-        merged[COMPACT_WINDOW_KEY] = tpl
-        print(f"  autoCompactWindow lifted {cur} -> {tpl} in {dst} "
-              "(a window near the boot load makes Claude Code thrash on autocompact)")
-    else:
-        merged[COMPACT_WINDOW_KEY] = cur
+    merged.pop(COMPACT_WINDOW_KEY, None)
+    print(f"  autoCompactWindow {cur} removed from {dst}: the harness no longer pins it; "
+          "set your own with /autocompact")
 
 
 def merge_json_deep(src: Path, dst: Path, backup_dir: Path) -> str:
@@ -1951,7 +1946,7 @@ def merge_json_deep(src: Path, dst: Path, backup_dir: Path) -> str:
     # needed to tell a retired hook from a project hook by asking
     # whether the script is still on disk.
     merged = deep_merge(dst_data, src_data, dst.parent.parent, str(dst))
-    _keep_compact_window_floor(dst_data, src_data, merged, dst)
+    _drop_harness_compact_window(dst_data, src_data, merged, dst)
 
     # Hook-reconciliation telemetry (delivery-and-truth F1, #1410). Only
     # emitted for a file that actually carries a `hooks` key on either side

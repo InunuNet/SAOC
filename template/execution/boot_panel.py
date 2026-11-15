@@ -570,19 +570,22 @@ COMPACT_WINDOW_FLOOR = 200000
 
 
 def _effective_compact_window(root):
-    """(value, source): env, then settings.local.json, then settings.json."""
+    """(value, source): env, project settings.local.json, project settings.json, user level."""
     raw = os.environ.get(ENV_SHADOWS["autoCompactWindow"])
     if raw is not None:
         return (int(raw), "env CLAUDE_CODE_AUTO_COMPACT_WINDOW") if raw.strip().isdigit() \
             else (None, None)
-    for name in ("settings.local.json", "settings.json"):
+    candidates = [(Path(root) / ".claude" / name, f".claude/{name}")
+                  for name in ("settings.local.json", "settings.json")]
+    candidates.append((Path.home() / ".claude" / "settings.json", "~/.claude/settings.json"))
+    for path, label in candidates:
         try:
-            data = json.loads((Path(root) / ".claude" / name).read_text(encoding="utf-8"))
+            data = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             continue
         value = data.get("autoCompactWindow") if isinstance(data, dict) else None
         if isinstance(value, int) and not isinstance(value, bool):
-            return value, f".claude/{name}"
+            return value, label
     return None, None
 
 
@@ -592,8 +595,8 @@ def _collect_compact_window(root, checks):
     if value is None or value >= COMPACT_WINDOW_FLOOR:
         return
     fix = (f"unset the variable in your shell startup file" if source.startswith("env")
-           else f"set \"autoCompactWindow\" to 500000 in {source} (or run "
-                "make update-template, which lifts it)")
+           else "raise it with /autocompact (recommended 500000), or set "
+                f"\"autoCompactWindow\" in {source}")
     checks.append(_check(
         "settings.compact_window", "delivery", "warn",
         f"autoCompactWindow is {value} (from {source}), below {COMPACT_WINDOW_FLOOR}: "
