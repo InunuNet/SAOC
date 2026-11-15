@@ -31,6 +31,8 @@
       "designer": {"supported": true, "dispatch": "llm-tool", "reason": "Antigravity can register and invoke the designer subagent through LLM tools after reading .anti/agents.json."}
     }
   },
+  "model_map": {"apex": "gemini-4-argon-high", "pro": "gemini-4-argon-high", "flash": "gemini-4-hydrogen-high", "local": "gemini-4-hydrogen-high"},
+  "allowed_models": ["gemini-4-hydrogen-high", "gemini-4-argon-high"],
   "native_instruction_file": "AGENTS.md",
   "agents_manifest": ".anti/agents.json",
   "notes": "Subagents require LLM tool registration from .anti/agents.json; no shell CLI adapter is assumed.",

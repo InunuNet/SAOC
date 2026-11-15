@@ -30,10 +30,11 @@ The lean lane is contract + dev + gate. A feature costs at most those three step
   writes the contract and goldens.
 - @qa only when blast radius says so: credentials, floor-protected or enforcement files,
   provider event scripts or production config. It is adversarial, fed by the orchestrator or @architect, never
-  @dev, and cross-model: in Claude Code run `execution/codex_qa.sh` (`--apex` gpt-6-astra); in
-  Codex run `execution/claude_qa.sh` (`--apex` Opus 5.5). Fall back to the same-vendor @qa
-  persona only when the other CLI is missing from PATH (script exits 2), and say so in the
-  verdict. Anything else is covered by the gate.
+  @dev, and cross-model: in Claude Code run `execution/qa.sh` (alternates Codex and
+  Antigravity; `--both` on difficult or blast-radius features; `--apex` gpt-6-astra and Argon
+  high); in Codex run `execution/qa.sh` too (pairs Claude and Antigravity, `--apex` Opus 5.5).
+  Fall back to the same-vendor @qa persona only when no reviewer is available (qa.sh exits 2),
+  and say so in the verdict. Anything else is covered by the gate.
 - Docs inline in the commit: README and docs/<feature>.md change in the same commit as the code.
 - Maintainer is one `brain.py remember` call recording the learning; no agent.
 - On done, `mission.py checkpoint --feature F --status done --gate-result pass --dispatches N
