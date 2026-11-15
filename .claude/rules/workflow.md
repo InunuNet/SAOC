@@ -38,6 +38,10 @@ The lean lane is contract + dev + gate. A feature costs at most those three step
 - Maintainer is one `brain.py remember` call recording the learning; no agent.
 - On done, `mission.py checkpoint --feature F --status done --gate-result pass --dispatches N
   --qa-reruns N --provider P --model M` appends the benchmark line.
+- The lead runs any gate, golden or QA that can exceed about 30 seconds in the background and
+  stays available to the operator; never pipe a gate's exit code through `tail`/`grep` in an `&&` chain.
+- A feature checkpointed done with `--dispatches 0` is flagged `LEAD IMPLEMENTED` and recorded
+  in the benchmark; it warns, never blocks.
 - No step depends on a provider feature that only one CLI has; the lane runs the same in
   Claude Code, Codex, Grok and Antigravity.
 

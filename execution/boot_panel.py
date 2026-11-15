@@ -592,7 +592,7 @@ def _collect_compact_window(root, checks):
     if value is None or value >= COMPACT_WINDOW_FLOOR:
         return
     fix = (f"unset the variable in your shell startup file" if source.startswith("env")
-           else f"set \"autoCompactWindow\" to 235000 in {source} (or run "
+           else f"set \"autoCompactWindow\" to 500000 in {source} (or run "
                 "make update-template, which lifts it)")
     checks.append(_check(
         "settings.compact_window", "delivery", "warn",

@@ -665,7 +665,10 @@ def cmd_validate(args):
         if has_spec and has_brief:
             errors.append(f"Feature {fid}: cannot have both spec and inline_brief")
         if not has_spec and not has_brief:
-            errors.append(f"Feature {fid}: must have either spec or inline_brief")
+            if f.get("contract"):
+                errors.append(f"Feature {fid}: uses `contract:`; the key is `spec:`, not `contract:`")
+            else:
+                errors.append(f"Feature {fid}: must have either spec or inline_brief")
 
         # Feature status
         fstatus = f.get("status", "")
@@ -736,6 +739,24 @@ def _milestone_summary(fm: dict) -> list[dict]:
     return out
 
 
+def _lead_implemented_count(fm: dict) -> int:
+    """Done features of this mission whose last benchmark line says the lead implemented them."""
+    done_ids = {f["id"] for f in fm.get("features", []) if f.get("status") == "done"}
+    latest = {}
+    try:
+        lines = BENCHMARK_PATH.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return 0
+    for line in lines:
+        try:
+            rec = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(rec, dict) and rec.get("mission") == fm.get("slug"):
+            latest[rec.get("feature")] = rec.get("lead_implemented") is True
+    return sum(1 for fid in done_ids if latest.get(fid))
+
+
 def cmd_status(args):
     if not args.mission:
         active = read_active()
@@ -776,6 +797,9 @@ def cmd_status(args):
     for f in fm.get("features", []):
         icon = {"done": "✓", "in_progress": "→", "blocked": "✗", "skipped": "~"}.get(f["status"], "·")
         print(f"  {icon} {f['id']} [{f['status']:<12}] {f.get('title', f.get('name', ''))}")
+    if done_features:
+        lead_n = _lead_implemented_count(fm)
+        print(f"Lead-implemented: {lead_n} of {done_features} done features")
     print()
     print("Milestones:")
     for m in ms_summary:
@@ -1433,17 +1457,21 @@ def _usage_tokens(since: datetime | None) -> tuple:
 def _write_benchmark(slug: str, feature: dict, args) -> None:
     """Append one provider-neutral benchmark line for a done feature. A write failure
     warns on stderr and never fails the checkpoint."""
+    lead_implemented = args.dispatches == 0
+    if lead_implemented:
+        print(f"LEAD IMPLEMENTED {feature['id']}: no agent dispatch recorded; "
+              "the lead orchestrates, it does not implement")
     try:
         started = _parse_iso(feature.get("started_at"))
-        wall = round((datetime.now(timezone.utc) - started).total_seconds()) if started else None
+        wall =round((datetime.now(timezone.utc) - started).total_seconds()) if started else None
         tin, tout = _usage_tokens(started)
         record = {
             "schema": BENCHMARK_SCHEMA, "ts": now_iso(), "mission": slug,
             "feature": feature["id"],
             "provider": args.provider or os.environ.get("ATHANOR_PROVIDER") or "unknown",
             "model": args.model or os.environ.get("ATHANOR_MODEL") or "unknown",
-            "dispatches": args.dispatches, "qa_reruns": args.qa_reruns,
-            "gate": args.gate_result or "unrecorded", "wall_seconds": wall,
+            "dispatches": args.dispatches, "lead_implemented": lead_implemented,
+            "qa_reruns": args.qa_reruns, "gate": args.gate_result or "unrecorded", "wall_seconds": wall,
             "tokens_in": tin, "tokens_out": tout,
         }
         BENCHMARK_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -1642,8 +1670,7 @@ def cmd_gate(args):
         if all_done:
             print(
                 "All milestones complete. Mission status → close_out. "
-                f"MAINTAINER WRAP-UP REQUIRED — dispatch @maintainer. "
-                f"Run: python3 execution/mission.py close-out {args.mission}"
+                f"Next: run python3 execution/mission.py close-out {args.mission}"
             )
 
 
@@ -1887,7 +1914,7 @@ def cmd_resume(args):
         fm["last_active_at"] = now_iso()
         write_mission_file(mission_path, fm, body)
         slug = fm.get("slug", Path(mission_path).stem)
-        print(f"MAINTAINER WRAP-UP REQUIRED — dispatch @maintainer. Run: python3 execution/mission.py close-out {mission_path}")
+        print(f"Next: run python3 execution/mission.py close-out {mission_path}")
         sys.exit(2)
     elif not milestones:
         print(
@@ -2210,6 +2237,8 @@ def main():
     )
     p_cs.add_argument("mission", help="Path to mission .md file")
 
+    if sys.argv[1:2] == ["new"] and len(sys.argv) == 2:
+        print('example: python3 execution/mission.py new "<goal>" --slug <slug>', file=sys.stderr)
     args = parser.parse_args()
     if not args.cmd:
         parser.print_help()

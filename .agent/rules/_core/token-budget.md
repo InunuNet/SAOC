@@ -25,6 +25,7 @@ your judgment; if a feature needs more, ask in one line.
   defect; record it and stop.
 - When quota is short, say so and narrow: finish and commit what you started, report what you
   did not reach.
-- Compaction is yours to schedule: after a committed feature with large context run
-  `python3 execution/compact.py now`; mid-task, `compact.py delay`, then `restore`.
+- Compaction is yours to schedule: 350k is your context ceiling; compact yourself before it with
+  `python3 execution/compact.py now` after a commit or between missions. 500k is only the automatic
+  fallback and should never be what compacts you; mid-task `compact.py delay`, then `restore`.
 - Reading scratch results: tool reads of `.agent/memory/scratch/*-result.md` are head/tail capped (`head -40` / `tail -20`), never the whole file; the 10-line reply is the summary.

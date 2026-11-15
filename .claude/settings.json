@@ -363,5 +363,5 @@
     "type": "command",
     "command": "python3 execution/statusline.py"
   },
-  "autoCompactWindow": 235000
+  "autoCompactWindow": 500000
 }

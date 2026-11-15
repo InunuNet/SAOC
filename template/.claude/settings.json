@@ -216,7 +216,7 @@
       }
     ]
   },
-  "autoCompactWindow": 235000,
+  "autoCompactWindow": 500000,
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "BASH_DEFAULT_TIMEOUT_MS": "300000",

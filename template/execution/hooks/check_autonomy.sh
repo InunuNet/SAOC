@@ -1376,7 +1376,7 @@ re_code_pathopen=$'\\.open[[:space:]]*\\([[:space:]]*(mode[[:space:]]*=[[:space:
 # `s.replace(...)` and `os.path.exists(...)` must NOT read as writes.
 re_code_wverb=$'(write_text|write_bytes|writelines|writeFileSync|appendFileSync|createWriteStream|rmtree|makedirs|copyfile|copytree|copy2)[[:space:]]*\\(|(os|shutil|fs|FileUtils)\\.(write|copy|move|rename|replace|remove|unlink|truncate|mkdir|symlink|link)[A-Za-z_]*[[:space:]]*\\(|File\\.(write|delete|rename)|IO\\.write|(^|[[:space:];&|])(install|truncate|shred|sponge|tee|dd)[[:space:]]'
 
-_target_blk=0; _target_why=""; _target_path=""
+_target_blk=0; _target_why=""; _target_path=""; _target_hint=""
 # _code_write: set by scan_code_blob, 1 when the blob it just classified WRITES.
 _code_write=0
 
@@ -1627,6 +1627,14 @@ check_target() {
     # read_protected() itself applies the case-fold and glob-component checks.
     elif [ "$kind" = "read" ] && read_protected "$resolved"; then
       _target_blk=1; _target_path="$resolved"; _target_why="read of protected path '$resolved'"
+      _target_hint=""
+      # Denied only because the location is unknowable (a `;`/`&&` sequence with a
+      # stage that is not read-only): the same wildcard with the location known
+      # would pass. Say so; the verdict is unchanged. Subshell: TR_CWD_KNOWN stays 0.
+      if [ "${TR_CWD_KNOWN:-0}" != 1 ] && tr_has_glob "$resolved" \
+         && ( TR_CWD_KNOWN=1; ! read_protected "$resolved" ); then
+        _target_hint="; the wildcard cannot be checked inside this compound command, run the wildcard command on its own"
+      fi
       return
     fi
   done
@@ -2610,7 +2618,9 @@ if [ -n "$COMMAND" ]; then
 
   if [ "$_target_blk" = 1 ]; then
     floor_log_denial "$_target_why" "$_target_path"
-    echo "⛔ AUTONOMY FLOOR: $_target_why always denied" >&2
+    # The hint belongs to a wildcard read; any other reason set later drops it.
+    case "$_target_why" in "read of protected path "*) ;; *) _target_hint="" ;; esac
+    echo "⛔ AUTONOMY FLOOR: $_target_why always denied${_target_hint:-}" >&2
     exit 2
   fi
 fi

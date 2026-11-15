@@ -179,6 +179,8 @@
 09d8e1a94e8b44edd79e85bfd525625211e4b047 execution/hooks/full_boot.sh
 09d8e1a94e8b44edd79e85bfd525625211e4b047 template/execution/hooks/full_boot.sh
 09dffb686c46a8e3e8b4d09b3fb37a6bde63bb9c .anti/agents.json
+09f5fb772e559f80810fe89a9dfee4c211599c6b .agent/version
+09f5fb772e559f80810fe89a9dfee4c211599c6b template/.agent/version
 09f8129ba363ee0d156b09d0ffb530eeb05f82ec execution/sync_agents.sh
 09f8129ba363ee0d156b09d0ffb530eeb05f82ec template/execution/sync_agents.sh
 0a057bfedd7e3877360b096cd0004afeabb6253e template/.claude/settings.json
@@ -240,6 +242,8 @@
 0d1ff855d7614412406e846518419e529d7f17d3 execution/update_template.py
 0d1ff855d7614412406e846518419e529d7f17d3 template/execution/update_template.py
 0d2446a39193bff067e3fcbe4c656f286f81d3b0 template/Makefile
+0d2b0a19f32b9d96445549a970734b8141d79af3 execution/shipped_blobs.txt
+0d2b0a19f32b9d96445549a970734b8141d79af3 template/execution/shipped_blobs.txt
 0d2fa7b5a9611563a01c6aafba76fd71f30b2694 execution/tests/ghost-project/journal/journal.py
 0d3bce23123e138d0b4c25ec33999875eb52fcfa execution/msg.py
 0d3bce23123e138d0b4c25ec33999875eb52fcfa template/execution/msg.py
@@ -446,6 +450,8 @@
 15c9bf4c599cae1b207b1e4d4184d0ab00b4b8a2 .agent/skills/gws-sheets.md
 15c9bf4c599cae1b207b1e4d4184d0ab00b4b8a2 template/.agent/skills/gws-sheets.md
 15cb959278871b0e2f5c94080b12587c840a3e6d execution/tests/ghost-project/grid/SPEC.md
+15e789454e264c26f730baaf69462a75d850cf53 execution/hooks/check_autonomy.sh
+15e789454e264c26f730baaf69462a75d850cf53 template/execution/hooks/check_autonomy.sh
 15ee0fbb39f87540647ab9124d75950f145b0a96 .agent/version
 15ee0fbb39f87540647ab9124d75950f145b0a96 template/.agent/version
 15ff576390c0ad83f49da96a2a2325dfa522981d .agent/providers/antigravity.json
@@ -762,6 +768,8 @@
 2451c5439412b3cfb8db12ff1e7fce5f578e213d .agent/version
 2451c5439412b3cfb8db12ff1e7fce5f578e213d template/.agent/version
 245bc8db23cdb4c92f2580d4305797beff655bb6 execution/tests/ghost-project/triage/tests/fixtures/cap_input.jsonl
+245df64b01f9bbad2f58758ecbb4c8cec7fa388a execution/msg.py
+245df64b01f9bbad2f58758ecbb4c8cec7fa388a template/execution/msg.py
 245f482b152b6d101749ed0f4bf992dadaa8bf18 .agent/rules/claude/hooks.md
 245f482b152b6d101749ed0f4bf992dadaa8bf18 .claude/rules/hooks.md
 245f482b152b6d101749ed0f4bf992dadaa8bf18 template/.agent/rules/claude/hooks.md
@@ -846,6 +854,8 @@
 287eef56ce6db9d9e4797d203f45c6fd5ab87cf7 template/execution/sync_autonomy.py
 288ba12b4692f846e33b473bcd188b1dada52632 execution/onboard_flow.py
 288ba12b4692f846e33b473bcd188b1dada52632 template/execution/onboard_flow.py
+2897b8a5f2f35e2b7def0754c6f8e4a50dd2161a .agent/version
+2897b8a5f2f35e2b7def0754c6f8e4a50dd2161a template/.agent/version
 289a535315a435ea9a78560e2e8978b601e451c8 Makefile
 289f851c595074946a953065ce52582a2f39521b execution/contracts/improvement-loop-real-work.yaml
 28acfd6a9a06a6c7673de91709f44c1c86600522 execution/tests/ghost-project/sentinel/sentinel.py
@@ -1133,6 +1143,10 @@
 372f535c51d2a161e7a759f6656a25de87da4541 template/execution/hooks/full_boot.sh
 374180d9399eb23d5ee0ae8789adfd6d1817e89c .agent/agents/architect.md
 374ffd3f278f50028685a628d2c58e05019d4f6c .agent/directives/ATH-20261017-floor-prose-and-probes.md
+3757e059eed0cb02c2b44b86e064cbd9987cb99e .agent/rules/_core/workflow.md
+3757e059eed0cb02c2b44b86e064cbd9987cb99e .claude/rules/workflow.md
+3757e059eed0cb02c2b44b86e064cbd9987cb99e .grok/rules/workflow.md
+3757e059eed0cb02c2b44b86e064cbd9987cb99e template/.agent/rules/_core/workflow.md
 3759454a891e559491d190828b579b5c697e90f7 execution/com.athanor.pulse.plist
 3766da4d0f457e20fe6795d25e74ab5a9b644139 .agent/agents/analyst.md
 377d46c4466ef80beaf9af68a6715063a6f62941 execution/hook_probe.py
@@ -1399,6 +1413,8 @@
 438b9635722364fe90d4fded56b8dd1a6e85ea3f template/execution/brain.py
 43bb088158a23a4ff8968835416e3c77fec4cfed .agent/agents/qa.md
 43dc7e517f60e94d7440406d7f6d3ba8a324877e .agent/version
+43df4394dac1346c4cf877864306213bba997512 execution/update_template.sha256.json
+43df4394dac1346c4cf877864306213bba997512 template/execution/update_template.sha256.json
 43f2e0cddd8a84c9299cedab4e5e762b38277f79 execution/shipped_blobs.txt
 43f2e0cddd8a84c9299cedab4e5e762b38277f79 template/execution/shipped_blobs.txt
 440ed352c676f835f0de5d8f0c9402a30f5290c7 execution/tests/ghost-project/chronos/SPEC.md
@@ -1897,6 +1913,8 @@
 5c370d1765150efc47a8451540d60c92cdf44385 execution/update_template.py
 5c370d1765150efc47a8451540d60c92cdf44385 template/execution/update_template.py
 5c676d86980e9400f9a4d1bee0894d5a17e26223 .agent/directives/ATH-20261111-harness-updates-mandatory.md
+5c7749d61caf56c1d30d95c7ff8a6e6328691c21 .agent/version
+5c7749d61caf56c1d30d95c7ff8a6e6328691c21 template/.agent/version
 5c8a7492af99cd356a1710770bfdbe2e938b1e90 execution/checks/_archive/verify_sync_materialised_apex.py
 5c8a7492af99cd356a1710770bfdbe2e938b1e90 execution/checks/verify_sync_materialised_apex.py
 5c911f7e03868d5bb81a3fded7db93996a15bc53 execution/tests/ghost-project/relay2/relay2.py
@@ -2613,6 +2631,8 @@
 7f5c4722dc4f0d7b8502bdb3ec359daa4a410e72 .agent/workflows/audit.md
 7f74f4f1341696f0da76c59213eedba319afa6af execution/update_template.py
 7f74f4f1341696f0da76c59213eedba319afa6af template/execution/update_template.py
+7f7b86fa70df9c91054205c06e53b52cb956a090 execution/update_template.sha256.json
+7f7b86fa70df9c91054205c06e53b52cb956a090 template/execution/update_template.sha256.json
 7f81ee7c2d6d9e6200290d2dde1126c92f25994b .agent/directives/ATH-20260831-directive-channel-adopt.md
 7f81ee7c2d6d9e6200290d2dde1126c92f25994b template/.agent/directives/ATH-20260831-directive-channel-adopt.md
 7f88b4f5ba1929a0281b4b8e7208c10da8ac9944 .anti/agents.json
@@ -2644,6 +2664,8 @@
 809ce1025a8ebf0289ac666d55e4f31da4cd9e94 execution/tests/ghost-project/cipher/README.md
 80a0e2f7ee3f3282e547420d9197abcf27a4898a .agent/workflows/test.md
 80aa89b3728821e323d131c44a19f9c52886ff47 template/.agent/skills/quick-gate.md
+80ad43379a6a6782b24247956af688ed9f7eadb1 execution/shipped_blobs.txt
+80ad43379a6a6782b24247956af688ed9f7eadb1 template/execution/shipped_blobs.txt
 80bd46b0184353456495cdd18c8da6f80e9f2815 execution/ingest_pulse.sh
 80fc503d1005b8a1d167dcef3c2efbe567fcc350 execution/tests/ghost-project/mirror/mirror.py
 80fd26f37f8982e4878b3cf11ed8755a1d30cfac .agent/version
@@ -3428,6 +3450,8 @@ a97baafc8fae6df1fd7b9ce4cc10e63004972ada template/execution/shipped_blobs.txt
 a9845e7c1f737be7e235115cacdbd38b20fef639 execution/hooks/full_boot.sh
 a98a9d6081d6209bb4fc24f74786c17e05a5c20e execution/pulse_mission_loop.sh
 a98a9d6081d6209bb4fc24f74786c17e05a5c20e template/execution/pulse_mission_loop.sh
+a9a9f65c268d967b2edc1b98f87b6b7135e44fcd .agent/version
+a9a9f65c268d967b2edc1b98f87b6b7135e44fcd template/.agent/version
 a9ad34acb7b201a12e6317c63cce7e01c6680cc7 execution/tests/ghost-project/lodestar/tests/fixtures/flags_invalid_port.json
 a9ad9d97204d823a07540c30203b399649c3b325 execution/skills/quick_gate.sh
 a9ad9d97204d823a07540c30203b399649c3b325 template/execution/skills/quick_gate.sh
@@ -3439,6 +3463,8 @@ aa10ac0aafa5d152ef9e8eed4e5094abd257b9fd execution/tests/ghost-project/chronos/t
 aa24dc4da112d5575c686974471966a60e0123ab .agent/skills/quick-gate.md
 aa2d8354c6b79840bad5a0d2c3bf28995486626c execution/tests/ghost-project/prism/README.md
 aa3fa30273626d0da9df5b40d3625ab1089c74df .agent/schemas/mission.example.md
+aa5db5ff668550c31def85826200ffb4ed239355 execution/update_template.sha256.json
+aa5db5ff668550c31def85826200ffb4ed239355 template/execution/update_template.sha256.json
 aa5fdb47d3149bed9736b5fff40dcaa88f43e085 init.sh
 aa6f7e52d3f8a6adf6db23786967f53e18698187 execution/skills/quick_gate.sh
 aa6f7e52d3f8a6adf6db23786967f53e18698187 template/execution/skills/quick_gate.sh
@@ -3463,6 +3489,8 @@ aba7eb3e8ae54b078655acdea011fd63f71d2d55 execution/update_template.sha256.json
 aba7eb3e8ae54b078655acdea011fd63f71d2d55 template/execution/update_template.sha256.json
 abb3d8d939fe386c4ace728b756319c4c58c55cc execution/sync_rules.sh
 abb3d8d939fe386c4ace728b756319c4c58c55cc template/execution/sync_rules.sh
+abb7b67c72d6927a23db1cb0c048b394527ceca0 execution/mission.py
+abb7b67c72d6927a23db1cb0c048b394527ceca0 template/execution/mission.py
 abc3c701ab285a265b5cc0bbcc450092fa124940 execution/tests/stress_test.sh
 abc3c701ab285a265b5cc0bbcc450092fa124940 template/execution/tests/stress_test.sh
 abd02e0afbeca9b8e9f2c32a981e9db0a5384300 execution/tests/layer3_behavioral/test_boot_missing_workspace.sh
@@ -4045,6 +4073,8 @@ c6cff55cf75f2ee2685968efe2546e65c643cf6f template/.agent/version
 c6d56b40c8c1a28a8744c0bf3eb54c828dd61382 execution/tests/run_all.sh
 c702a8ba58b3a777c136b10662f9765ccbd218de execution/update_template.sha256.json
 c702a8ba58b3a777c136b10662f9765ccbd218de template/execution/update_template.sha256.json
+c70cf41017ec14c6a1c1ebefa1f18c813d9775c8 execution/update_template.sha256.json
+c70cf41017ec14c6a1c1ebefa1f18c813d9775c8 template/execution/update_template.sha256.json
 c7130366ed743640dcde569ce1759fc583ce0e09 execution/tests/ghost-project/csv_differ/goldens/expected1.txt
 c714000c2e50ac77b361370f2c2092706940750e execution/heartbeat_wrap.sh
 c722a640999eeed5cccc37d0f9f0deb5e7c032b9 execution/env_keys.py
@@ -4183,6 +4213,8 @@ cd4bd896c2621a73dcab9990ed40964557cdee77 .agent/directives/ATH-20261020-local-ma
 cd6312fbe9a35f26b7012c9a04d2e9db72af7dbc execution/update_template.sha256.json
 cd6312fbe9a35f26b7012c9a04d2e9db72af7dbc template/execution/update_template.sha256.json
 cd96c7da1907db99049bff6df7232dc8ec4f137a execution/tests/ghost-project/mirror/tests/run_tests.sh
+cda040714b1433dcce7f3b8379ae8d218c68e58d execution/shipped_blobs.txt
+cda040714b1433dcce7f3b8379ae8d218c68e58d template/execution/shipped_blobs.txt
 cdaca08b99855963df58953c63c948ab025acaa2 execution/sync_agents.sh
 cdb6b38fa9d4548c26e9a0a8831c3e99cdc79dde execution/checks/_archive/verify_post_update_boot.sh
 cdb6b38fa9d4548c26e9a0a8831c3e99cdc79dde execution/checks/verify_post_update_boot.sh
@@ -5041,6 +5073,8 @@ f58b6902f5b0e97ab2b74682ead208d81c699ee4 execution/statusline.py
 f58b6902f5b0e97ab2b74682ead208d81c699ee4 template/execution/statusline.py
 f5a500f38c495be48c981ff1a821b462c80ec83d .agent/version
 f5a500f38c495be48c981ff1a821b462c80ec83d template/.agent/version
+f5b54045801aff8be6d7fa467868e113997e83a7 execution/shipped_blobs.txt
+f5b54045801aff8be6d7fa467868e113997e83a7 template/execution/shipped_blobs.txt
 f5b84897c18907007b9e377687a802c7ccabf723 .agent/skills/gws-shared.md
 f5b84897c18907007b9e377687a802c7ccabf723 template/.agent/skills/gws-shared.md
 f5c9af7adc67f6bd7e093fbb7bb106e3d7b6689d template/.claude/settings.json
@@ -5153,6 +5187,8 @@ f9fb494b39054d5dfde999051db2ceab501659d3 execution/ingest_pulse.sh
 f9fb494b39054d5dfde999051db2ceab501659d3 template/execution/ingest_pulse.sh
 fa28c45293f70e35cd1d8adfff2bece731cdd92d execution/checks/_archive/verify_baseline_reconciliation.py
 fa28c45293f70e35cd1d8adfff2bece731cdd92d execution/checks/verify_baseline_reconciliation.py
+fa30b6da33c6ae1462fa31ef43c45a4aa547132c execution/msg.py
+fa30b6da33c6ae1462fa31ef43c45a4aa547132c template/execution/msg.py
 fa3238e260a060306beb4d569f0687e82a53dd37 execution/hooks/check_autonomy.sh
 fa3238e260a060306beb4d569f0687e82a53dd37 template/execution/hooks/check_autonomy.sh
 fa48fae8e095f77c366501993727535af2b9a7f0 Makefile
@@ -5197,6 +5233,8 @@ fc256995f1c25e69b3d9ae4fdcbadaf1696028e5 execution/prune_foreign.py
 fc256995f1c25e69b3d9ae4fdcbadaf1696028e5 template/execution/prune_foreign.py
 fc76e6dd24eef5056db03d322830bc44ff6a0694 execution/get_pulse_status.sh
 fc7ff3159c4db42345d3c3564d23fe508ebe4e21 execution/tests/ghost-project/escrow/tests/fixtures/escrow_boundary_expected.txt
+fca5678eb6e6ccfc9c8cb4eac79fab33b11e19c8 execution/mission.py
+fca5678eb6e6ccfc9c8cb4eac79fab33b11e19c8 template/execution/mission.py
 fcb963d9953150fb6817979dc8ea21d4b6946360 execution/update_template.py
 fcf0293fbca143f8043b59613c2c3e0a342fc9b8 .agent/rules/_core/sandbox.md
 fcf0293fbca143f8043b59613c2c3e0a342fc9b8 .claude/rules/sandbox.md

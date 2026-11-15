@@ -76,7 +76,8 @@ location. None of it is loaded at session start.
    variable in an `rm` argument; use `python3 execution/safe_delete.py`. Quote every glob.
 4. **Chain Continuous**: never pause between chain steps; stop only at a mission boundary or a
    BLOCKED verdict.
-5. **Context-Lean**: about 100k tokens working context per session, 300k hard ceiling. The
+5. **Context-Lean**: about 100k tokens working context per session, 350k hard ceiling
+   (compact yourself at a commit before it; 500k is only the automatic fallback). The
    orchestrator never does grunt work, each spawned agent gets ONE narrow self-contained
    mission, and on-disk scratch/specs/memory is the transfer channel. Agents reply in at most 10
    lines and the lead reads scratch results head/tail capped, never the whole file
