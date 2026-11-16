@@ -25,7 +25,7 @@ export function SocietyDropdown({ id, value, error, disabled, onChange }: {
     return () => document.removeEventListener('mousedown', outside);
   }, [open]);
   return <div ref={root} onBlur={(event) => {
-    if (!(event.relatedTarget instanceof Node && root.current?.contains(event.relatedTarget))) setOpen(false);
+    if (event.relatedTarget instanceof Node && !root.current?.contains(event.relatedTarget)) setOpen(false);
   }} className="space-y-1.5">
     <div id={labelId} className="font-sans text-[14px] font-medium text-[var(--ink-700)]">{REGISTRATION_LABELS.societies}</div>
     <button ref={button} id={id} type="button" disabled={disabled} aria-expanded={open} aria-controls={panelId}
