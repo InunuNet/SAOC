@@ -1,24 +1,19 @@
 'use client';
 
-// State for the registration form of a ticket type flagged requiresRegistration: the buyer's
-// draft, an optional spouse/partner draft, and the field errors of the last submit attempt.
+// State for the registration forms of a ticket type flagged requiresRegistration: one draft per
+// ticket in the cart, and the field errors of the last submit attempt.
 import { useState } from 'react';
 
 import {
-  draftToPerson,
+  checkDrafts,
   emptyDraft,
+  hasErrors,
   keepFlaggedErrors,
-  validateDrafts,
   type DraftTextField,
   type RegistrationDraft,
   type RegistrationErrors,
 } from '@/components/tickets/registrationDraft';
-import {
-  REGISTRATION_MAX_PEOPLE,
-  SOCIETY_NONE,
-  type RegistrationPerson,
-  type RegistrationRole,
-} from '@/lib/registration';
+import { SOCIETY_NONE, type RegistrationShareSection } from '@/lib/registration';
 
 function selectSocieties(current: string[], option: string, checked: boolean): string[] {
   // "None" stands alone: choosing it clears the societies, choosing a society clears "None".
@@ -27,60 +22,56 @@ function selectSocieties(current: string[], option: string, checked: boolean): s
   return [...current.filter((entry) => entry !== SOCIETY_NONE), option];
 }
 
-export function useRegistrationForm(startWithPartner: boolean) {
-  const [drafts, setDrafts] = useState<RegistrationDraft[]>(() =>
-    startWithPartner ? [emptyDraft(), emptyDraft()] : [emptyDraft()]
-  );
+// Ticking or unticking "Same as above" clears the section, so unticking shows it empty.
+function withShared(
+  draft: RegistrationDraft,
+  section: RegistrationShareSection,
+  checked: boolean
+): RegistrationDraft {
+  return section === 'contact'
+    ? { ...draft, sameContact: checked, mobile: '', country: '', province: '' }
+    : { ...draft, sameMembership: checked, societies: [] };
+}
+
+export function useRegistrationForm(count: number, ticketSlug: string) {
+  const [stored, setStored] = useState<RegistrationDraft[]>([]);
   const [errors, setErrors] = useState<RegistrationErrors[]>([]);
 
-  const roleIndex = (role: RegistrationRole) => (role === 'primary' ? 0 : 1);
+  // Drafts beyond the quantity are kept, so lowering and raising it again loses nothing typed.
+  const drafts = Array.from({ length: count }, (_, i) => stored[i] ?? emptyDraft());
 
   function applyDrafts(next: RegistrationDraft[]) {
-    setDrafts(next);
-    if (errors.some((personErrors) => Object.keys(personErrors).length > 0)) {
-      setErrors(keepFlaggedErrors(errors, validateDrafts(next)));
+    setStored([...next, ...stored.slice(next.length)]);
+    if (hasErrors(errors)) {
+      setErrors(keepFlaggedErrors(errors, checkDrafts(next.slice(0, count), ticketSlug).errors));
     }
   }
 
-  function setField(role: RegistrationRole, field: DraftTextField, value: string) {
-    const index = roleIndex(role);
-    applyDrafts(drafts.map((draft, i) => (i === index ? { ...draft, [field]: value } : draft)));
+  function change(attendee: number, update: (draft: RegistrationDraft) => RegistrationDraft) {
+    applyDrafts(drafts.map((draft, i) => (i === attendee - 1 ? update(draft) : draft)));
   }
 
-  function setSociety(option: string, checked: boolean) {
-    applyDrafts(
-      drafts.map((draft, i) =>
-        i === 0 ? { ...draft, societies: selectSocieties(draft.societies, option, checked) } : draft
-      )
-    );
+  function setField(attendee: number, field: DraftTextField, value: string) {
+    change(attendee, (draft) => ({ ...draft, [field]: value }));
   }
 
-  function addPartner() {
-    if (drafts.length >= REGISTRATION_MAX_PEOPLE) return;
-    setDrafts([...drafts, emptyDraft()]);
+  function setSociety(attendee: number, option: string, checked: boolean) {
+    change(attendee, (draft) => ({
+      ...draft,
+      societies: selectSocieties(draft.societies, option, checked),
+    }));
   }
 
-  function removePartner() {
-    setDrafts(drafts.slice(0, 1));
-    setErrors((prev) => prev.slice(0, 1));
+  function setShared(attendee: number, section: RegistrationShareSection, checked: boolean) {
+    change(attendee, (draft) => withShared(draft, section, checked));
   }
 
   // Runs on every submit attempt. Returns the people to post, or null with the errors shown.
-  function validate(): RegistrationPerson[] | null {
-    const found = validateDrafts(drafts);
+  function validate() {
+    const { errors: found, people } = checkDrafts(drafts, ticketSlug);
     setErrors(found);
-    if (found.some((personErrors) => Object.keys(personErrors).length > 0)) return null;
-    return drafts.map((draft, index) => draftToPerson(draft, index === 0 ? 'primary' : 'partner'));
+    return hasErrors(found) ? null : people;
   }
 
-  return {
-    drafts,
-    errors,
-    hasPartner: drafts.length > 1,
-    setField,
-    setSociety,
-    addPartner,
-    removePartner,
-    validate,
-  };
+  return { drafts, errors, setField, setSociety, setShared, validate };
 }

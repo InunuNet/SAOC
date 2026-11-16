@@ -751,7 +751,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // client-sent values are discarded; a `registration` on an unflagged item is dropped.
   const validatedRegistrations = new Map<string, RegistrationPerson[]>();
   for (const [slug, group] of registrationGroups(parsedLineItems, requiresRegistrationByType)) {
-    const validation = validateRegistrationGroup(group);
+    const validation = validateRegistrationGroup(group, slug);
     if (!validation.ok) {
       return NextResponse.json(
         { error: 'Please complete the registration form.', fields: validation.errors },

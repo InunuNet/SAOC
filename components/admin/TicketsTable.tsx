@@ -24,9 +24,16 @@ export interface TicketRow {
 
 /** Serialisable view of a ticket's registration map. Shown in this drawer and the CSV only. */
 export interface TicketRegistrationView {
-  role: string;
+  attendeeNumber: number | null;
   mobile: string;
   societies: string[] | null;
+  attending: string;
+  judgeAccredited: string;
+  judgeOrganisation: string;
+  judgeAvailable: string;
+  judgeDate: string;
+  judgeCommunication: string;
+  judgeForum: string;
   dietary: string;
 }
 
@@ -165,10 +172,17 @@ function TicketDetail({ row }: { row: TicketRow }) {
         <DetailSection
           title="Registration"
           items={[
-            { label: 'Role', value: registration.role },
+            { label: 'Attendee number', value: String(registration.attendeeNumber ?? NOT_PROVIDED) },
+            { label: 'Attending', value: registration.attending || NOT_PROVIDED },
             { label: 'Dietary', value: registration.dietary },
             { label: 'Mobile', value: registration.mobile || NOT_PROVIDED },
             { label: 'Societies', value: registration.societies?.join('; ') || NOT_PROVIDED },
+            { label: 'Accredited judge', value: registration.judgeAccredited || NOT_PROVIDED },
+            { label: 'Judging organisation', value: registration.judgeOrganisation || NOT_PROVIDED },
+            { label: 'Available as show judge', value: registration.judgeAvailable || NOT_PROVIDED },
+            { label: 'Date available', value: registration.judgeDate || NOT_PROVIDED },
+            { label: 'Judges Communication', value: registration.judgeCommunication || NOT_PROVIDED },
+            { label: 'Judges Forum', value: registration.judgeForum || NOT_PROVIDED },
           ]}
         />
       ) : null}

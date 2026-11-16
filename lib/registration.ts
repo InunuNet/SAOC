@@ -1,7 +1,8 @@
-// Registration form for the SAOC Symposium, WOSA Conference and Cocktail evening tickets.
-// Client-bundle-safe (no firebase-admin): the browser and the checkout route run the same rules.
-// Option lists and labels come from Lee-Ann's sheet with Brad's typo fixes; see
+// Registration form for the SAOC Symposium, WOSA Conference and Cocktail evening tickets: one full
+// form per ticket. Client-bundle-safe (no firebase-admin): the browser and the checkout route run
+// the same rules. Option lists and labels come from Lee-Ann's sheet with Brad's typo fixes; see
 // .agent/memory/project/specs/registration-forms/goldens/registration-fields.json.
+import { MAX_LINE_ITEMS } from '@/lib/tickets-constants';
 
 export const REGISTRATION_OPTIONS = {
   title: ['Mr', 'Mrs', 'Ms', 'Dr.', 'Sir', 'Hon.'],
@@ -241,13 +242,33 @@ export const REGISTRATION_OPTIONS = {
     'Overseas visitor',
     'Independent Member',
   ],
+  attending: [
+    'Exhibit Entry - Early bird special',
+    'Exhibit Entry - Friday',
+    'Exhibit Entry - Saturday',
+    'Exhibit Entry - Sunday',
+    'Weekend Pass',
+    'Sunset Cocktails',
+    'SAOC Symposium Early Bird',
+    'SAOC Symposium Normal Ticket',
+    'SAOC Symposium Speaker',
+    'SAOC Symposium Speaker Partner/Spouse',
+    'WOSA Symposium Early Bird',
+    'WOSA Symposium Normal Ticket',
+    'WOSA Symposium Speaker',
+    'WOSA Symposium Speaker Partner/Spouse',
+  ],
+  judgeYesNoNa: ['Yes', 'No', 'Not applicable'],
+  judgeOrganisation: ['SAOC', 'AOS', 'Not applicable'],
+  judgeDate: ['22-Sep', '23-Sep', '22 & 23 Sept', 'None', 'Not applicable'],
   dietary: ['None', 'Vegetarian', 'Halaal'],
 } as const;
 
-export type RegistrationRole = 'primary' | 'partner';
+export type RegistrationShareSection = 'contact' | 'membership';
 
+/** One attendee's registration as validated: every sheet field, plus the email. */
 export interface RegistrationPerson {
-  role: RegistrationRole;
+  attendeeNumber: number;
   title: string;
   firstName: string;
   surname: string;
@@ -255,32 +276,42 @@ export interface RegistrationPerson {
   mobile: string;
   email: string;
   country: string;
-  province?: string | null;
-  societies?: string[] | null;
+  province: string | null;
+  societies: string[];
+  attending: string;
+  judgeAccredited: string;
+  judgeOrganisation: string;
+  judgeAvailable: string;
+  judgeDate: string;
+  judgeCommunication: string;
+  judgeForum: string;
   dietary: string;
+  sameAsAttendee1: RegistrationShareSection[];
 }
 
-/** The map stored on the ticket doc: the person minus the email (kept in attendeeEmail). */
-export interface RegistrationDoc {
-  role: RegistrationRole;
-  title: string;
-  firstName: string;
-  surname: string;
-  preferredName: string;
-  mobile: string;
-  country: string;
-  province: string | null;
-  societies: string[] | null;
-  dietary: string;
-}
+/** The map stored on every ticket doc: the person minus the email (kept in attendeeEmail). */
+export type RegistrationDoc = Omit<RegistrationPerson, 'email'>;
 
 export type RegistrationValidation =
   | { ok: true; people: RegistrationPerson[] }
   | { ok: false; errors: Record<string, string> };
 
-export const REGISTRATION_MAX_PEOPLE = 2;
 export const SOUTH_AFRICA = 'South Africa';
 export const SOCIETY_NONE = 'None';
+export const SAME_AS_ABOVE_LABEL = 'Same as above';
+
+export const ATTENDING_BY_TICKET: Record<string, string> = {
+  'saoc-symposium': 'SAOC Symposium Normal Ticket',
+  'wosa-conference': 'WOSA Symposium Normal Ticket',
+  'sunset-cocktails-single': 'Sunset Cocktails',
+};
+
+/** Which fields each "Same as above" section covers. */
+export const SHARE_SECTION_FIELDS: Record<RegistrationShareSection, readonly string[]> = {
+  contact: ['mobile', 'country', 'province'],
+  membership: ['societies'],
+};
+export const SHARE_SECTIONS: readonly RegistrationShareSection[] = ['contact', 'membership'];
 
 const NAME_MAX_LENGTH = 100;
 const MOBILE_MAX_LENGTH = 30;
@@ -295,43 +326,78 @@ export const REGISTRATION_LABELS = {
   firstName: 'First Name (as per your identity document or passport)',
   surname: 'Surname (as per your identity document or passport)',
   preferredName: 'Preferred name',
-  mobile: 'Mobile Number (include country code)',
   email: 'Email address',
+  mobile: 'Mobile Number (include country code)',
   country: 'Country',
   province: 'If South African, select Province',
   societies: 'To which Society do you belong to?',
+  attending: 'Please select from the dropdown',
+  judgeAccredited: 'Are you an accredited Orchid Judge',
+  judgeOrganisation: 'With which Orchid Organisation',
+  judgeAvailable: 'Will you be available as a Show Judge at the Show',
+  judgeDate: 'Which date would you be available?',
+  judgeCommunication: 'Will you be attending the Judges Communication?',
+  judgeForum: 'Will you be attending the Judges Forum?',
   dietary: 'Please select from the drop down list',
 } as const;
 
 export const REGISTRATION_SECTION_HEADINGS = {
   personal: 'PERSONAL INFORMATION',
   membership: 'MEMBERSHIP',
+  booking: 'NATIONAL SHOW BOOKING OPTIONS',
+  judges: 'JUDGES EVENTS',
   dietary: 'DIETARY REQUIREMENTS',
-  partner: 'TRAVELLING COMPANION INFORMATION',
 } as const;
-
-export const ADD_PARTNER_LABEL = 'Add spouse/partner';
-export const REMOVE_PARTNER_LABEL = 'Remove spouse/partner';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-type DropdownKey = 'title' | 'country' | 'province' | 'society' | 'dietary';
+type OptionKey = keyof typeof REGISTRATION_OPTIONS;
+type DropdownField =
+  | 'title'
+  | 'country'
+  | 'attending'
+  | 'judgeAccredited'
+  | 'judgeOrganisation'
+  | 'judgeAvailable'
+  | 'judgeDate'
+  | 'judgeCommunication'
+  | 'judgeForum'
+  | 'dietary';
 
-function isOption(key: DropdownKey, value: string): boolean {
+const DROPDOWN_OPTIONS: Record<DropdownField, OptionKey> = {
+  title: 'title',
+  country: 'country',
+  attending: 'attending',
+  judgeAccredited: 'judgeYesNoNa',
+  judgeOrganisation: 'judgeOrganisation',
+  judgeAvailable: 'judgeYesNoNa',
+  judgeDate: 'judgeDate',
+  judgeCommunication: 'judgeYesNoNa',
+  judgeForum: 'judgeYesNoNa',
+  dietary: 'dietary',
+};
+const JUDGE_FIELDS = [
+  'judgeAccredited',
+  'judgeOrganisation',
+  'judgeAvailable',
+  'judgeDate',
+  'judgeCommunication',
+  'judgeForum',
+] as const;
+
+type Errors = Record<string, string>;
+type Raw = Record<string, unknown>;
+
+function isOption(key: OptionKey, value: string): boolean {
   return (REGISTRATION_OPTIONS[key] as readonly string[]).includes(value);
 }
 
+// A null, undefined or empty value counts as missing.
 function trimmed(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
 }
 
-function validateText(
-  raw: Record<string, unknown>,
-  key: 'firstName' | 'surname' | 'preferredName',
-  max: number,
-  errors: Record<string, string>,
-  prefix: string
-): string {
+function textField(raw: Raw, key: string, max: number, errors: Errors, prefix: string): string {
   const value = trimmed(raw[key]);
   if (value === '') errors[`${prefix}.${key}`] = 'This field is required.';
   else if (value.length > max)
@@ -339,20 +405,17 @@ function validateText(
   return value;
 }
 
-function validateDropdown(
-  raw: Record<string, unknown>,
-  key: 'title' | 'country' | 'dietary',
-  optionKey: DropdownKey,
-  errors: Record<string, string>,
-  prefix: string
-): string {
+function dropdownField(raw: Raw, key: DropdownField, errors: Errors, prefix: string): string {
   const value = trimmed(raw[key]);
   if (value === '') errors[`${prefix}.${key}`] = 'Please choose an option.';
-  else if (!isOption(optionKey, value)) errors[`${prefix}.${key}`] = 'Please choose from the list.';
+  else if (!isOption(DROPDOWN_OPTIONS[key], value)) {
+    errors[`${prefix}.${key}`] = 'Please choose from the list.';
+  }
   return value;
 }
 
-function validateMobile(value: string, errors: Record<string, string>, prefix: string): void {
+function mobileField(raw: Raw, errors: Errors, prefix: string): string {
+  const value = trimmed(raw.mobile);
   const digits = value.replace(/\D/g, '').length;
   if (value === '') errors[`${prefix}.mobile`] = 'This field is required.';
   else if (value.length > MOBILE_MAX_LENGTH) {
@@ -364,53 +427,38 @@ function validateMobile(value: string, errors: Record<string, string>, prefix: s
   ) {
     errors[`${prefix}.mobile`] = 'Please enter a valid mobile number, including the country code.';
   }
+  return value;
 }
 
-function validateEmail(value: string, errors: Record<string, string>, prefix: string): void {
+function emailField(raw: Raw, errors: Errors, prefix: string): string {
+  const value = trimmed(raw.email);
   if (value === '') errors[`${prefix}.email`] = 'This field is required.';
   else if (value.length > EMAIL_MAX_LENGTH) {
     errors[`${prefix}.email`] = `Please use ${EMAIL_MAX_LENGTH} characters or fewer.`;
   } else if (!EMAIL_PATTERN.test(value)) {
     errors[`${prefix}.email`] = 'Please enter a valid email address.';
   }
+  return value;
 }
 
-function validateProvince(
-  raw: Record<string, unknown>,
-  country: string,
-  errors: Record<string, string>,
-  prefix: string
-): string | null {
-  const given = raw.province;
+function provinceField(raw: Raw, country: string, errors: Errors, prefix: string): string | null {
+  const value = trimmed(raw.province);
   if (country !== SOUTH_AFRICA) {
-    if (given !== null && given !== undefined) {
-      errors[`${prefix}.province`] = 'Province applies to South Africa only.';
-    }
+    if (value !== '') errors[`${prefix}.province`] = 'Province applies to South Africa only.';
     return null;
   }
-  const value = trimmed(given);
   if (value === '') errors[`${prefix}.province`] = 'Please choose a province.';
   else if (!isOption('province', value))
     errors[`${prefix}.province`] = 'Please choose from the list.';
   return value === '' ? null : value;
 }
 
-function validateSocieties(
-  raw: Record<string, unknown>,
-  role: RegistrationRole,
-  errors: Record<string, string>,
-  prefix: string
-): string[] | null {
+function societiesField(raw: Raw, errors: Errors, prefix: string): string[] {
   const key = `${prefix}.societies`;
   const given = raw.societies;
-  if (role === 'partner') {
-    if (given !== null && given !== undefined)
-      errors[key] = 'Membership is asked of the buyer only.';
-    return null;
-  }
   if (!Array.isArray(given) || given.length === 0) {
     errors[key] = 'Please choose at least one option.';
-    return null;
+    return [];
   }
   const chosen = given.map((entry) => trimmed(entry));
   if (chosen.some((entry) => !isOption('society', entry))) {
@@ -421,35 +469,58 @@ function validateSocieties(
   return chosen;
 }
 
+// The sections this person copies from attendee 1. Attendee 1 has nothing to copy from.
+function sharedSections(raw: Raw, index: number, errors: Errors): RegistrationShareSection[] {
+  const given = raw.sameAsAttendee1;
+  if (given === undefined || given === null) return [];
+  const valid =
+    Array.isArray(given) &&
+    given.every((entry) => SHARE_SECTIONS.includes(entry as RegistrationShareSection));
+  if (!valid || (index === 0 && given.length > 0)) {
+    errors[`people.${index}.sameAsAttendee1`] = 'Please choose from the list.';
+    return [];
+  }
+  return SHARE_SECTIONS.filter((section) => given.includes(section));
+}
+
 function validatePerson(
   entry: unknown,
   index: number,
-  errors: Record<string, string>
+  ticketType: string,
+  first: RegistrationPerson | null,
+  errors: Errors
 ): RegistrationPerson | null {
   const prefix = `people.${index}`;
   if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) {
     errors[prefix] = 'Registration details are required.';
     return null;
   }
-  const raw = entry as Record<string, unknown>; // each field is type-checked below
-  const role: RegistrationRole = index === 0 ? 'primary' : 'partner';
-  if (raw.role !== role) errors[`${prefix}.role`] = `Person ${index + 1} must be the ${role}.`;
+  const raw = entry as Raw; // each field is type-checked below
+  const shared = sharedSections(raw, index, errors);
+  // A section ticked "Same as above" is copied from attendee 1; whatever was sent is overwritten.
+  const copyContact = first !== null && shared.includes('contact');
+  const copyMembership = first !== null && shared.includes('membership');
 
-  const title = validateDropdown(raw, 'title', 'title', errors, prefix);
-  const firstName = validateText(raw, 'firstName', NAME_MAX_LENGTH, errors, prefix);
-  const surname = validateText(raw, 'surname', NAME_MAX_LENGTH, errors, prefix);
-  const preferredName = validateText(raw, 'preferredName', NAME_MAX_LENGTH, errors, prefix);
-  const mobile = trimmed(raw.mobile);
-  validateMobile(mobile, errors, prefix);
-  const email = trimmed(raw.email);
-  validateEmail(email, errors, prefix);
-  const country = validateDropdown(raw, 'country', 'country', errors, prefix);
-  const province = validateProvince(raw, country, errors, prefix);
-  const societies = validateSocieties(raw, role, errors, prefix);
-  const dietary = validateDropdown(raw, 'dietary', 'dietary', errors, prefix);
+  const title = dropdownField(raw, 'title', errors, prefix);
+  const firstName = textField(raw, 'firstName', NAME_MAX_LENGTH, errors, prefix);
+  const surname = textField(raw, 'surname', NAME_MAX_LENGTH, errors, prefix);
+  const preferredName = textField(raw, 'preferredName', NAME_MAX_LENGTH, errors, prefix);
+  const email = emailField(raw, errors, prefix);
+  const mobile = copyContact ? first.mobile : mobileField(raw, errors, prefix);
+  const country = copyContact ? first.country : dropdownField(raw, 'country', errors, prefix);
+  const province = copyContact ? first.province : provinceField(raw, country, errors, prefix);
+  const societies = copyMembership ? [...first.societies] : societiesField(raw, errors, prefix);
+  const attending = dropdownField(raw, 'attending', errors, prefix);
+  if (attending !== '' && attending !== ATTENDING_BY_TICKET[ticketType]) {
+    errors[`${prefix}.attending`] = 'This must match the ticket being bought.';
+  }
+  const judges = Object.fromEntries(
+    JUDGE_FIELDS.map((key) => [key, dropdownField(raw, key, errors, prefix)])
+  ) as Pick<RegistrationPerson, (typeof JUDGE_FIELDS)[number]>;
+  const dietary = dropdownField(raw, 'dietary', errors, prefix);
 
   return {
-    role,
+    attendeeNumber: index + 1,
     title,
     firstName,
     surname,
@@ -459,27 +530,45 @@ function validatePerson(
     country,
     province,
     societies,
+    attending,
+    ...judges,
     dietary,
+    sameAsAttendee1: shared,
   };
 }
 
 /**
  * Pure and client-bundle-safe: the same rules run in the browser before the POST and in the
- * checkout route before any Firestore write. One or two people only; the first is the buyer.
+ * checkout route before any Firestore write. One person per ticket; attendee 1 is the first. A
+ * section ticked "Same as above" is copied from attendee 1 here, whatever the caller sent.
  */
-export function validateRegistrationGroup(people: unknown): RegistrationValidation {
-  if (!Array.isArray(people) || people.length < 1 || people.length > REGISTRATION_MAX_PEOPLE) {
+export function validateRegistrationGroup(
+  people: unknown,
+  ticketType: string
+): RegistrationValidation {
+  if (!Array.isArray(people) || people.length < 1 || people.length > MAX_LINE_ITEMS) {
     return {
       ok: false,
-      errors: { quantity: 'Registration is for one person, or one person plus a spouse/partner.' },
+      errors: { quantity: `Registration is for between 1 and ${MAX_LINE_ITEMS} attendees.` },
     };
   }
-  const errors: Record<string, string> = {};
+  if (!(ticketType in ATTENDING_BY_TICKET)) {
+    return { ok: false, errors: { ticketType: 'This ticket does not take a registration.' } };
+  }
+  const errors: Errors = {};
   const checked: RegistrationPerson[] = [];
-  people.forEach((entry, index) => {
-    const person = validatePerson(entry, index, errors);
+  let first: RegistrationPerson | null = null;
+  for (const [index, entry] of people.entries()) {
+    const person: RegistrationPerson | null = validatePerson(
+      entry,
+      index,
+      ticketType,
+      first,
+      errors
+    );
+    if (index === 0) first = person;
     if (person) checked.push(person);
-  });
+  }
   if (Object.keys(errors).length > 0) return { ok: false, errors };
   return { ok: true, people: checked };
 }
@@ -487,7 +576,7 @@ export function validateRegistrationGroup(people: unknown): RegistrationValidati
 /** The stored map, keys in the golden order; every optional is null, never undefined. */
 export function buildRegistrationDoc(person: RegistrationPerson): RegistrationDoc {
   return {
-    role: person.role,
+    attendeeNumber: person.attendeeNumber,
     title: person.title,
     firstName: person.firstName,
     surname: person.surname,
@@ -495,8 +584,16 @@ export function buildRegistrationDoc(person: RegistrationPerson): RegistrationDo
     mobile: person.mobile,
     country: person.country,
     province: person.province ?? null,
-    societies: person.societies ? [...person.societies] : null,
+    societies: [...person.societies],
+    attending: person.attending,
+    judgeAccredited: person.judgeAccredited,
+    judgeOrganisation: person.judgeOrganisation,
+    judgeAvailable: person.judgeAvailable,
+    judgeDate: person.judgeDate,
+    judgeCommunication: person.judgeCommunication,
+    judgeForum: person.judgeForum,
     dietary: person.dietary,
+    sameAsAttendee1: [...person.sameAsAttendee1],
   };
 }
 

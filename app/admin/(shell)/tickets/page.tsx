@@ -34,11 +34,19 @@ export default async function AdminTicketsPage() {
 function registrationView(raw: unknown): TicketRegistrationView | null {
   if (typeof raw !== 'object' || raw === null) return null;
   const map = raw as Record<string, unknown>; // written by buildRegistrationDoc; narrowed below
+  const text = (key: string) => (typeof map[key] === 'string' ? map[key] : '');
   return {
-    role: typeof map['role'] === 'string' ? map['role'] : '',
-    mobile: typeof map['mobile'] === 'string' ? map['mobile'] : '',
+    attendeeNumber: typeof map['attendeeNumber'] === 'number' ? map['attendeeNumber'] : null,
+    mobile: text('mobile'),
     societies: Array.isArray(map['societies']) ? map['societies'].map(String) : null,
-    dietary: typeof map['dietary'] === 'string' ? map['dietary'] : '',
+    attending: text('attending'),
+    judgeAccredited: text('judgeAccredited'),
+    judgeOrganisation: text('judgeOrganisation'),
+    judgeAvailable: text('judgeAvailable'),
+    judgeDate: text('judgeDate'),
+    judgeCommunication: text('judgeCommunication'),
+    judgeForum: text('judgeForum'),
+    dietary: text('dietary'),
   };
 }
 

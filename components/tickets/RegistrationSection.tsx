@@ -1,64 +1,48 @@
-// The registration form of a flagged ticket type: the buyer's fields, then at the bottom the
-// "Add spouse/partner" control, which reveals the travelling companion block.
-import { RegistrationPersonFields } from '@/components/tickets/RegistrationPersonFields';
-import type { useRegistrationForm } from '@/components/tickets/useRegistrationForm';
+// The registration forms of a flagged ticket type: one full form per ticket, "Attendee 1" to
+// "Attendee N", in place of the attendee name and email rows.
 import {
-  ADD_PARTNER_LABEL,
-  REGISTRATION_SECTION_HEADINGS,
-  REMOVE_PARTNER_LABEL,
-} from '@/lib/registration';
+  RegistrationAttendeeFields,
+  type RegistrationAttendeeFieldsProps,
+} from '@/components/tickets/RegistrationAttendeeFields';
+import type { useRegistrationForm } from '@/components/tickets/useRegistrationForm';
 
 interface RegistrationSectionProps {
   form: ReturnType<typeof useRegistrationForm>;
+  ticketSlug: string;
   disabled: boolean;
-  onAddPartner: () => void;
-  onRemovePartner: () => void;
 }
 
-const PARTNER_CONTROL_CLASS =
-  'min-h-11 font-sans text-[15px] font-medium text-primary underline underline-offset-2 disabled:opacity-60';
-
-export function RegistrationSection({
-  form,
-  disabled,
-  onAddPartner,
-  onRemovePartner,
-}: RegistrationSectionProps) {
+export function RegistrationSection({ form, ticketSlug, disabled }: RegistrationSectionProps) {
+  if (form.drafts.length === 0) return null;
+  const handlers: Pick<RegistrationAttendeeFieldsProps, 'onField' | 'onSociety' | 'onShared'> = {
+    onField: form.setField,
+    onSociety: form.setSociety,
+    onShared: form.setShared,
+  };
   return (
     <div className="space-y-6">
-      <RegistrationPersonFields
-        role="primary"
-        draft={form.drafts[0]}
-        errors={form.errors[0] ?? {}}
-        disabled={disabled}
-        onField={form.setField}
-        onSociety={form.setSociety}
-      />
-      {form.hasPartner ? (
-        <div
-          role="group"
-          aria-label={REGISTRATION_SECTION_HEADINGS.partner}
-          className="space-y-3 rounded-[12px] border border-rule/60 p-4"
-        >
-          <h2 className="nk-attendees-title">{REGISTRATION_SECTION_HEADINGS.partner}</h2>
-          <RegistrationPersonFields
-            role="partner"
-            draft={form.drafts[1]}
-            errors={form.errors[1] ?? {}}
-            disabled={disabled}
-            onField={form.setField}
-            onSociety={form.setSociety}
-          />
-        </div>
-      ) : null}
-      <button
-        type="button"
-        className={PARTNER_CONTROL_CLASS}
-        disabled={disabled}
-        onClick={form.hasPartner ? onRemovePartner : onAddPartner}
-      >
-        {form.hasPartner ? REMOVE_PARTNER_LABEL : ADD_PARTNER_LABEL}
-      </button>
+      {form.drafts.map((draft, index) => {
+        const attendee = index + 1;
+        const label = `Attendee ${attendee}`;
+        return (
+          <div
+            key={attendee}
+            role="group"
+            aria-label={label}
+            className="space-y-3 rounded-[12px] border border-rule/60 p-4"
+          >
+            <h2 className="nk-attendees-title">{label}</h2>
+            <RegistrationAttendeeFields
+              attendee={attendee}
+              ticketSlug={ticketSlug}
+              draft={draft}
+              errors={form.errors[index] ?? {}}
+              disabled={disabled}
+              {...handlers}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }

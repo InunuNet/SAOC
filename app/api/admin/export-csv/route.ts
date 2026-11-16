@@ -4,7 +4,7 @@ import { getAdminSession } from '@/lib/admin-auth';
 import { csvField } from '@/lib/csv-field';
 import { initAdmin } from '@/lib/firebase-admin';
 
-const CSV_HEADER = 'bookingRef,attendeeName,attendeeEmail,ticketType,status,purchasedAt,dietary,mobile,societies,registrationRole';
+const CSV_HEADER = 'bookingRef,attendeeName,attendeeEmail,ticketType,status,purchasedAt,dietary,mobile,societies,attendeeNumber,attending,judgeAccredited,judgeOrganisation,judgeAvailable,judgeDate,judgeCommunication,judgeForum';
 const SOCIETY_SEPARATOR = '; ';
 
 export async function GET() {
@@ -26,7 +26,7 @@ export async function GET() {
       ? new Date((data['purchasedAt'] as { toMillis(): number }).toMillis()).toISOString()
       : '';
 
-    // Empty for a ticket with no registration; societies are joined, and null for a partner.
+    // Empty for a ticket with no registration; societies are joined.
     const registration = (data['registration'] ?? {}) as Record<string, unknown>; // buildRegistrationDoc map
     const societies = Array.isArray(registration['societies'])
       ? registration['societies'].map(String).join(SOCIETY_SEPARATOR)
@@ -42,7 +42,14 @@ export async function GET() {
       csvField(String(registration['dietary'] ?? '')),
       csvField(String(registration['mobile'] ?? '')),
       csvField(societies),
-      csvField(String(registration['role'] ?? '')),
+      csvField(String(registration['attendeeNumber'] ?? '')),
+      csvField(String(registration['attending'] ?? '')),
+      csvField(String(registration['judgeAccredited'] ?? '')),
+      csvField(String(registration['judgeOrganisation'] ?? '')),
+      csvField(String(registration['judgeAvailable'] ?? '')),
+      csvField(String(registration['judgeDate'] ?? '')),
+      csvField(String(registration['judgeCommunication'] ?? '')),
+      csvField(String(registration['judgeForum'] ?? '')),
     ].join(',');
   });
 

@@ -33,13 +33,14 @@ const FIXTURE_TICKET_TYPES = [
 const FIXTURE_DAY_TICKET_TYPES = [
   { ...FIXTURE_TICKET_TYPES[0], slug: 'fixture-day-ticket', name: 'Fixture day ticket', requiresDaySelection: true },
 ];
-// ?type=registration swaps in a flagged product (no day), so the registration form can be
+// ?type=registration swaps in a flagged product (the real symposium slug, so the locked Attending
+// value resolves; no day), so the registration forms can be
 // exercised without a Sanity document.
 const FIXTURE_REGISTRATION_TICKET_TYPES = [
   {
     ...FIXTURE_TICKET_TYPES[0],
-    slug: 'fixture-registration-ticket',
-    name: 'Fixture registration ticket',
+    slug: 'saoc-symposium',
+    name: 'Fixture symposium',
     requiresRegistration: true,
   },
 ];
