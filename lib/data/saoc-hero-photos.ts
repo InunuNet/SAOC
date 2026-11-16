@@ -48,6 +48,8 @@ const ORIGINAL_SIZES: Readonly<Record<string, readonly [number, number]>> = {
   '/images/orchid-dark.jpg': [5184, 3456],
   '/images/orchid-purple.jpg': [5308, 4160],
   '/images/orchid-violet.jpg': [7327, 4885],
+  '/images/heroes/hero-home-1-zygopetalum-hendrik.jpg': [3000, 1579],
+  '/images/heroes/hero-home-2-dendrobium-chlorostylum.jpg': [3000, 1578],
 };
 const ASPECT_PRECISION = 1000;
 

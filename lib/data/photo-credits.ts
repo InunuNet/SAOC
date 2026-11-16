@@ -1,0 +1,147 @@
+export interface PhotoCredit {
+  image: string;
+  author: string;
+  licence: string | null;
+  licenceUrl: string | null;
+  sourceUrl: string | null;
+  changed: boolean;
+}
+
+export const PHOTO_CREDITS: readonly PhotoCredit[] = [
+  {
+    image: "/images/heroes/hero-home-1-zygopetalum-hendrik.jpg",
+    author: "Hendrik Schoeman",
+    licence: null,
+    licenceUrl: null,
+    sourceUrl: null,
+    changed: true,
+  },
+  {
+    image: "/images/heroes/hero-home-2-dendrobium-chlorostylum.jpg",
+    author: "Motohiro Sunouchi",
+    licence: "CC BY 2.0",
+    licenceUrl: "https://creativecommons.org/licenses/by/2.0/",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Dendrobium_chlorostylum_Gagnep.,_Bull._Mus._Natl._Hist._Nat.,_s%C3%A9r._2,_21_739_(1950)_(49780386092).jpg",
+    changed: true,
+  },
+  {
+    image: "/images/heroes/hero-nos-hub-cattleya-aclandiae.jpg",
+    author: "Motohiro Sunouchi",
+    licence: "CC BY 2.0",
+    licenceUrl: "https://creativecommons.org/licenses/by/2.0/",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Cattleya_aclandiae_Lindl.,_Edwards's_Bot._Reg._26_t._48_(1840)_(41247080285).jpg",
+    changed: true,
+  },
+  {
+    image: "/images/heroes/hero-nos-about-colmanara-hendrik.jpg",
+    author: "Hendrik Schoeman",
+    licence: null,
+    licenceUrl: null,
+    sourceUrl: null,
+    changed: true,
+  },
+  {
+    image: "/images/heroes/hero-nos-programme-dendrobium-hendrik.jpg",
+    author: "Hendrik Schoeman",
+    licence: null,
+    licenceUrl: null,
+    sourceUrl: null,
+    changed: true,
+  },
+  {
+    image: "/images/heroes/hero-nos-conferences-cattleya-white.jpg",
+    author: "Zyrahila",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Cattleya_Orchids.jpg",
+    changed: true,
+  },
+  {
+    image: "/images/heroes/hero-nos-workshops-cattleya-apricot-hendrik.jpg",
+    author: "Hendrik Schoeman",
+    licence: null,
+    licenceUrl: null,
+    sourceUrl: null,
+    changed: true,
+  },
+  {
+    image: "/images/heroes/hero-nos-plan-paphiopedilum-yellow.jpg",
+    author: "Ronincmc",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Orchid_4035.jpg",
+    changed: true,
+  },
+  {
+    image: "/images/heroes/hero-nos-faq-paphiopedilum-rust.jpg",
+    author: "Emőke Dénes",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Asparagales_-_Paphiopedilum_sp._-_3.jpg",
+    changed: true,
+  },
+  {
+    image: "/images/heroes/hero-nos-expect-zygopetalum-dunkle.jpg",
+    author: "Petar Milošević",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Zygopetalum_'Dunkle_Bl%C3%BCte'.jpg",
+    changed: true,
+  },
+  {
+    image: "/images/stubs/stub-vip-dracula.jpg",
+    author: "Motohiro Sunouchi",
+    licence: "CC BY 2.0",
+    licenceUrl: "https://creativecommons.org/licenses/by/2.0/",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Dracula_vampira_(Luer)_Luer,_Selbyana_2_198_(1978)_(49164670877).jpg",
+    changed: true,
+  },
+  {
+    image: "/images/stubs/stub-sunset-cattleya-gold.jpg",
+    author: "Hendrik Schoeman",
+    licence: null,
+    licenceUrl: null,
+    sourceUrl: null,
+    changed: true,
+  },
+  {
+    image: "/images/stubs/stub-weekend-cattleya-lilac.jpg",
+    author: "Hendrik Schoeman",
+    licence: null,
+    licenceUrl: null,
+    sourceUrl: null,
+    changed: true,
+  },
+  {
+    image: "/images/stubs/stub-day-cattleya-lime.jpg",
+    author: "Hendrik Schoeman",
+    licence: null,
+    licenceUrl: null,
+    sourceUrl: null,
+    changed: true,
+  },
+  {
+    image: "/images/stubs/stub-symposium-cattleya-violet.jpg",
+    author: "Hendrik Schoeman",
+    licence: null,
+    licenceUrl: null,
+    sourceUrl: null,
+    changed: true,
+  },
+  {
+    image: "/images/stubs/stub-wosa-cattleya-pink.jpg",
+    author: "Hendrik Schoeman",
+    licence: null,
+    licenceUrl: null,
+    sourceUrl: null,
+    changed: true,
+  },
+  {
+    image: "/images/stubs/stub-workshops-dendrobium-magenta.jpg",
+    author: "Hendrik Schoeman",
+    licence: null,
+    licenceUrl: null,
+    sourceUrl: null,
+    changed: true,
+  },
+];
