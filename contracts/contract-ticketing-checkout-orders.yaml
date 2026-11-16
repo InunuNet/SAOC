@@ -178,7 +178,8 @@ assertions:
       description: >-
         Structural proof that a missing RECOVERY_TOKEN_SECRET fails closed: the route
         reads the env var, and an `if (!recoveryTokenSecret)` guard exists textually
-        before the writeReservationPair() call site, mirroring the existing
+        before POST calls reserveTicket(), whose transaction calls
+        writeMultiReservationPair(), mirroring the existing
         merchantId/merchantKey guard shape in the same file. Named defeating mutation: a
         real implementation that reads the env var and passes it straight to
         mintRecoveryToken() with no preceding guard, silently minting a

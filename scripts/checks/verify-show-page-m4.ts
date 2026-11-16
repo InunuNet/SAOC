@@ -514,15 +514,13 @@ function runHubChecks(manifest: RouteManifest): void {
   }
   check('H1', h1ok, 'four groups, exact ids/labels/order, 16 members each in one group, link text = manifest label', h1fail.join('; '));
 
-  // H2 — each group is a real <section aria-labelledby> landmark with a heading ahead of
-  // its links (structural proxy: NosHubGroup.tsx renders <section aria-labelledby=...><h3
-  // id=...>...</h3><ul>... in that literal order).
-  const hubGroupSrc = readFileSync(path.join(PROJECT_ROOT, 'components/show/nos/NosHubGroup.tsx'), 'utf8');
-  const sectionIdx = hubGroupSrc.indexOf('<section aria-labelledby=');
-  const headingIdx = hubGroupSrc.indexOf('<h3 id=');
+  // H2 — NosHubGroup was removed; NosShowIndex now owns the grouped navigation landmark.
+  const hubGroupSrc = readFileSync(path.join(PROJECT_ROOT, 'components/nos/NosShowIndex.tsx'), 'utf8');
+  const navIdx = hubGroupSrc.indexOf('<nav aria-label="Explore the show pages"');
+  const headingIdx = hubGroupSrc.indexOf('<h3>{heading}</h3>');
   const listIdx = hubGroupSrc.indexOf('<ul');
-  const h2ok = sectionIdx !== -1 && headingIdx !== -1 && listIdx !== -1 && sectionIdx < headingIdx && headingIdx < listIdx;
-  check('H2', h2ok, '<section aria-labelledby> then <h3 id> then <ul>, in document order', h2ok ? '' : 'structure not found in NosHubGroup.tsx');
+  const h2ok = navIdx !== -1 && headingIdx !== -1 && listIdx !== -1 && navIdx < headingIdx && headingIdx < listIdx;
+  check('H2', h2ok, 'NosShowIndex renders a labelled navigation landmark with group headings before lists', h2ok ? '' : 'structure not found in NosShowIndex.tsx');
 
   // H3 — the hub's pre-existing content still renders (proxy: known pre-M4 text runs
   // still present in the source).

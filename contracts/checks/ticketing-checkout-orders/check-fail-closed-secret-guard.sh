@@ -39,10 +39,11 @@ if ! grep -q "RECOVERY_TOKEN_SECRET" "$ROUTE_FILE"; then
 fi
 
 # A guard of the shape `if (!recoveryTokenSecret)` (or equivalent falsy check on a variable read
-# from RECOVERY_TOKEN_SECRET) must exist and must textually precede the writeReservationPair() call
-# site — reuses the same anchor-ordering technique as check-transaction-scope-structural.sh.
+# from RECOVERY_TOKEN_SECRET) must precede the reserveTicket() call in POST, which in turn
+# reaches the Firestore write via writeMultiReservationPair().
 GUARD_LINE=$(grep -n 'if (!recoveryTokenSecret)' "$ROUTE_FILE" | head -1 | cut -d: -f1 || true)
-CALL_LINE=$(grep -n 'writeReservationPair(' "$ROUTE_FILE" | head -1 | cut -d: -f1 || true)
+CALL_LINE=$(grep -n '^[[:space:]]*outcome = await reserveTicket({' "$ROUTE_FILE" | head -1 | cut -d: -f1 || true)
+WRITE_LINE=$(grep -n '^[[:space:]]*writeMultiReservationPair(transaction,' "$ROUTE_FILE" | head -1 | cut -d: -f1 || true)
 
 if [[ -z "$GUARD_LINE" ]]; then
   echo "FAIL: no 'if (!recoveryTokenSecret)' fail-closed guard found in $ROUTE_FILE."
@@ -54,19 +55,25 @@ if [[ -z "$GUARD_LINE" ]]; then
 fi
 
 if [[ -z "$CALL_LINE" ]]; then
-  echo "FAIL: writeReservationPair() is not called anywhere in $ROUTE_FILE — nothing to guard yet."
+  echo "FAIL: reserveTicket() is not called from POST in $ROUTE_FILE — nothing to guard yet."
   exit 1
 fi
 
-if (( GUARD_LINE > CALL_LINE )); then
+if [[ -z "$WRITE_LINE" || "$CALL_LINE" -ge "$WRITE_LINE" ]]; then
+  echo "FAIL: reserveTicket() does not reach a later writeMultiReservationPair() call in $ROUTE_FILE."
+  exit 1
+fi
+
+if (( GUARD_LINE >= CALL_LINE )); then
   echo "FAIL: the 'if (!recoveryTokenSecret)' guard (line $GUARD_LINE) appears AFTER"
-  echo "      writeReservationPair() is called (line $CALL_LINE) — a guard placed after the write"
+  echo "      reserveTicket() is called (line $CALL_LINE) — a guard placed after the write path"
   echo "      it's meant to prevent cannot prevent it."
   exit 1
 fi
 
 echo "PASS: app/api/tickets/checkout/route.ts reads RECOVERY_TOKEN_SECRET and has an"
 echo "      'if (!recoveryTokenSecret)' fail-closed guard (line $GUARD_LINE) textually before the"
-echo "      writeReservationPair() call site (line $CALL_LINE) — a missing secret refuses the"
+echo "      reserveTicket() call site (line $CALL_LINE), before writeMultiReservationPair()"
+echo "      (line $WRITE_LINE) — a missing secret refuses the"
 echo "      purchase instead of silently minting an unverifiable recovery token."
 exit 0
