@@ -13,6 +13,7 @@ export interface NosExtraStaticRoute {
 // through the SAOC sitemap (lib/saoc-sitemap-routes.ts).
 export const NOS_EXTRA_STATIC_ROUTES: ReadonlyArray<NosExtraStaticRoute> = [
   { path: '/contact', changeFrequency: 'yearly', priority: 0.5 },
+  { path: '/photo-credits', changeFrequency: 'yearly', priority: 0.3 },
 ];
 
 const TICKET_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;

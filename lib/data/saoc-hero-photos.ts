@@ -31,6 +31,7 @@ export const SAOC_HERO_PHOTOS: Readonly<Record<string, SaocHeroPhoto>> = {
   '/memorandum-of-incorporation': { typographic: true },
   '/media-kit': { typographic: true },
   '/privacy': { typographic: true },
+  '/photo-credits': { typographic: true },
   '/terms': { typographic: true },
   '/refunds': { typographic: true },
 };

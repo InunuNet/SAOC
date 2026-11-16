@@ -7,7 +7,8 @@ years, omits /contact and every /tickets/[slug].
 
 New module `lib/nos-sitemap-routes.ts` (pure, no Sanity, no env), exporting:
 - `NOS_EXTRA_STATIC_ROUTES: ReadonlyArray<{ path: string; changeFrequency; priority: number }>` containing
-  `/contact` (public NOS path; its canonical is the NOS host, verified in audit nos/contact.html).
+  `/contact` (public NOS path; its canonical is the NOS host, verified in audit nos/contact.html),
+  and `/photo-credits` (the NOS host's own photo credits page).
 - `nosTicketSlugPaths(slugs: readonly string[]): string[]` returning `/tickets/<slug>` for each slug matching
   `^[a-z0-9]+(?:-[a-z0-9]+)*$`, de-duplicated and sorted; invalid slugs dropped silently.
 
