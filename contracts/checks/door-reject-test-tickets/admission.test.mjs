@@ -42,7 +42,7 @@ function loader({ testMode = true, db, session = { ok: true, decodedToken: { uid
     'next/server': { NextResponse: { json: (body, init) => Response.json(body, init) } },
     'react/jsx-runtime': require('react/jsx-runtime'),
   };
-  const allowed = new Set(['lib/checkin.ts', 'lib/checkin-day-policy.ts', 'lib/checkin-context.ts', 'lib/checkin-test-ticket-guard.ts', 'lib/checkin-audit.ts', 'lib/tickets-constants.ts', 'lib/checkout-reservation.ts', 'lib/orders.ts', 'lib/payments/pending-hold.ts', 'app/api/admin/checkin/route.ts', 'components/admin/DoorResultBanner.tsx']);
+  const allowed = new Set(['lib/checkin.ts', 'lib/checkin-day-policy.ts', 'lib/checkin-context.ts', 'lib/checkin-test-ticket-guard.ts', 'lib/checkin-audit.ts', 'lib/tickets-constants.ts', 'lib/registration.ts', 'lib/checkout-reservation.ts', 'lib/orders.ts', 'lib/payments/pending-hold.ts', 'app/api/admin/checkin/route.ts', 'components/admin/DoorResultBanner.tsx']);
   function load(relative) {
     assert.ok(allowed.has(relative), `Unapproved module: ${relative}`);
     if (cache.has(relative)) return cache.get(relative).exports;
