@@ -37,6 +37,11 @@ export function useRegistrationForm(count: number, ticketSlug: string) {
   const [stored, setStored] = useState<RegistrationDraft[]>([]);
   const [errors, setErrors] = useState<RegistrationErrors[]>([]);
 
+  // A removed attendee's errors go with it, so a form added back later starts clean (the cart's
+  // own attendee rows do the same). React re-renders at once when state is set during render.
+  if (errors.length > count) setErrors(errors.slice(0, count));
+  const shownErrors = errors.slice(0, count);
+
   // Drafts beyond the quantity are kept, so lowering and raising it again loses nothing typed.
   const drafts = Array.from({ length: count }, (_, i) => stored[i] ?? emptyDraft());
 
@@ -73,5 +78,5 @@ export function useRegistrationForm(count: number, ticketSlug: string) {
     return hasErrors(found) ? null : people;
   }
 
-  return { drafts, errors, setField, setSociety, setShared, validate };
+  return { drafts, errors: shownErrors, setField, setSociety, setShared, validate };
 }
