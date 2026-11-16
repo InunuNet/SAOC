@@ -179,6 +179,12 @@
       "harness_version": "3.8.153",
       "note": "3.8.153 applied 2026-11-16; in use",
       "result": "applied"
+    },
+    "ATH-20261116-dev-audit-attribution": {
+      "at": "2026-11-16T19:36:54Z",
+      "harness_version": "3.8.154",
+      "note": "3.8.154 applied; execution/codex_dev.sh and agy_dev.sh in sync with template; self-check grep passes",
+      "result": "applied"
     }
   },
   "schema": "athanor.directives-applied/v1"

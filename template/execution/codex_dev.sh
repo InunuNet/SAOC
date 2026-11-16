@@ -80,6 +80,12 @@ wt_git_intact() {
     [ -f "$WT/.git" ] && [ ! -L "$WT/.git" ] && cmp -s "$WT/.git" "$SBX/wt.git.snapshot"
 }
 
+audit_trusted() {
+    [ "${DEV_AUDIT_STRICT:-}" != "1" ] || return 1
+    case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) return 1 ;; esac
+    [ "$CONFINEMENT" = "codex-workspace-write" ]
+}
+
 ledger_append() {
     local verdict="$1" rc="$2" wall="$3"
     if [ ! -f "$SCRIPT_DIR/dispatch_ledger.py" ]; then
@@ -108,7 +114,7 @@ PRE
 
 cmd_run() {
     [ -n "$TASK" ] || die "run needs --task"
-    local codex_bin task_text dirty start rc wall hits warns p audit verdict exit_code stat
+    local codex_bin task_text dirty start rc wall hits warns p audit verdict exit_code stat changed_preview
     codex_bin="${CODEX_DEV_BIN:-codex}"
     MODEL="$("$PY" -c 'import io,json,sys
 try:
@@ -158,7 +164,12 @@ except (OSError, ValueError, KeyError, TypeError): sys.exit(2)' "$ROOT/.agent/pr
     if ! wt_git_intact; then
         audit="ESCAPED: the worktree .git pointer was changed or replaced"
     elif [ -n "$hits" ]; then
-        audit="ESCAPED: files changed in the main checkout outside the worktree"
+        if audit_trusted; then
+            audit="WARN: main checkout changed during the run"
+            warns="${hits}${warns}"; hits=""
+        else
+            audit="ESCAPED: files changed in the main checkout outside the worktree"
+        fi
     elif [ -n "$warns" ]; then
         audit="WARN: changes in the main checkout, see the result file"
     fi
@@ -188,8 +199,8 @@ except (OSError, ValueError, KeyError, TypeError): sys.exit(2)' "$ROOT/.agent/pr
         echo "- model: $MODEL; rc: $rc; wall: ${wall}s"
         echo "- audit: $audit"
         echo "- silently excluded from the audit: $AUDIT_SILENT_EXCLUDES and $SBX_REL"
-        if [ -n "$hits" ]; then echo "- escaped paths:"; printf '%s' "$hits" | head -n 20 | sed 's/^/  - /'; fi
-        if [ -n "$warns" ]; then echo "- changes requiring review:"; printf '%s' "$warns" | head -n 50 | sed 's/^/  - /'; fi
+        if [ -n "$hits" ]; then echo "- escaped paths:"; printf '%s' "$hits" | sed '/^$/d; s/^/  - /'; fi
+        if [ -n "$warns" ]; then echo "- changes requiring review:"; printf '%s' "$warns" | sed '/^$/d; s/^/  - /'; fi
         echo
         echo "## Diff stat"
         printf '%s\n' "$stat"
@@ -198,7 +209,11 @@ except (OSError, ValueError, KeyError, TypeError): sys.exit(2)' "$ROOT/.agent/pr
         head -c 4000 "$SBX/last-message.txt"
     } > "$RESULT"
     ledger_append "$verdict" "$rc" "$wall"
-    echo "$verdict $ID (audit: $audit); result: .agent/memory/scratch/codex-dev-$ID-result.md"
+    # Most significant first: a tampered .git pointer, then real escapes or lead changes, then
+    # warn-prefix churn, so .agent/ and .tmp/ noise never hides the path that matters.
+    changed_preview="$( { wt_git_intact || printf '%s\n' "$SBX_REL/wt/.git"; printf '%s' "$hits"; printf '%s' "$warns"; } \
+        | awk 'NF && n < 3 { printf "%s%s", (n ? ", " : ""), $0; n++ }')"
+    echo "$verdict $ID (audit: $audit${changed_preview:+; paths: $changed_preview}); result: .agent/memory/scratch/codex-dev-$ID-result.md"
     exit "$exit_code"
 }
 
@@ -207,7 +222,8 @@ cmd_apply() {
     case "$(cat -- "$SBX/verdict" 2>/dev/null)" in DONE|DONE-WARN) ;; *) die "run '$ID' did not finish DONE; refusing to apply" 1 ;; esac
     wt_git_intact || die "the worktree .git pointer changed since the run; refusing" 1
     git -C "$WT" add -A -N . >/dev/null 2>&1
-    local protected patch nfiles
+    local protected patch nfiles rejected p before idx line file_rejected
+    local -a rej_before=()
     git -c core.quotePath=false -C "$WT" diff HEAD --name-only -z --no-renames --no-ext-diff > "$SBX/names.z" || die "git diff failed" 1
     [ -s "$SBX/names.z" ] || die "nothing to apply: the worktree has no changes" 1
     nfiles="$(git -C "$WT" diff HEAD --name-only --no-renames | wc -l | tr -d ' ')"
@@ -219,7 +235,35 @@ cmd_apply() {
     fi
     patch="$SBX/change.patch"
     git -C "$WT" diff HEAD --binary --no-renames --no-ext-diff --no-textconv > "$patch" || die "git diff failed" 1
-    git -C "$ROOT" apply --check "$patch" || die "patch does not apply cleanly to the main tree" 1
+    if ! git -C "$ROOT" apply --check "$patch"; then
+        while IFS= read -r -d '' p; do
+            before=""
+            [ ! -f "$ROOT/$p.rej" ] || before="$(cksum < "$ROOT/$p.rej")"
+            rej_before+=("$before")
+        done < "$SBX/names.z"
+        git -c core.quotePath=false -C "$ROOT" apply --reject "$patch" 2> "$SBX/apply.err"
+        cat "$SBX/apply.err" >&2
+        rejected=""
+        idx=0
+        while IFS= read -r -d '' p; do
+            file_rejected=""
+            if [ -f "$ROOT/$p.rej" ] &&
+                { [ -z "${rej_before[$idx]}" ] || [ "$(cksum < "$ROOT/$p.rej")" != "${rej_before[$idx]}" ]; }; then
+                file_rejected=" $p ($p.rej)"
+            else
+                while IFS= read -r line; do
+                    case "$line" in
+                        "error: $p:"*|"error: patch failed: $p:"*|"error: cannot apply binary patch to '$p'"*|"error: binary patch does not apply to '$p'"*)
+                            file_rejected=" $p"; break ;;
+                    esac
+                done < "$SBX/apply.err"
+            fi
+            rejected="${rejected}${file_rejected}"
+            idx=$((idx + 1))
+        done < "$SBX/names.z"
+        echo "PARTIAL: rejected${rejected:- hunk(s); inspect git apply output}"
+        exit 1
+    fi
     git -C "$ROOT" apply "$patch" || die "git apply failed" 1
     echo "applied $nfiles file(s) UNCOMMITTED; run the tests and the gate, then commit"
 }

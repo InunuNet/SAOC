@@ -63,6 +63,7 @@ fi
 { echo "=== CALL"; echo "PWD:$(pwd)"; for a in "$@"; do printf '<<%s>>\n' "$a"; done; } 2>/dev/null >> "$log"
 if [ -f "$settings" ]; then cat "$settings" 2>/dev/null > "$log.settings"; else printf '%s' "$settings" 2>/dev/null > "$log.settings"; fi
 for f in ${STUB_AGY_REL_WRITES:-}; do echo w 2>/dev/null > "$f"; done
+if [ -n "${STUB_AGY_SLEEP:-}" ]; then sleep "$STUB_AGY_SLEEP"; fi
 for f in ${STUB_AGY_APPEND:-}; do echo "agy edit" >> "$f"; done
 for f in ${STUB_AGY_WRITE_ABS:-}; do mkdir -p "$(dirname "$f")"; sleep 1; echo w > "$f"; done
 if [ -n "${STUB_AGY_ESCAPE_PATH:-}" ]; then sleep 1; echo escaped > "$STUB_AGY_ESCAPE_PATH"; fi
@@ -157,6 +158,7 @@ setup_common() {
     export QA_LOG_DIR="$RUN/qalogs"
     unset QA_LEDGER_BY_CALLER QA_BOTH_ALLOW_DEGRADED STUB_AGY_MODE STUB_AGY_APPEND STUB_AGY_ESCAPE_PATH
     unset STUB_AGY_USAGE_PCT STUB_AGY_ARGON_PCT STUB_AGY_CRLF STUB_AGY_WRITE_ABS STUB_AGY_REL_WRITES AGY_DEV_UNCONFINED
+    unset STUB_AGY_SLEEP DEV_AUDIT_STRICT
     unset MSYS_NO_PATHCONV MSYS2_ARG_CONV_EXCL TMPDIR AGY_MODEL AGY_QA_MODEL AGY_DEV_MODEL
 }
 
@@ -910,10 +912,59 @@ case_confinement() {
     fi
 }
 
+# dev-audit-attribution: a main-checkout change during a run is the lead's under trusted
+# confinement (DONE-WARN, path named), ESCAPED when unconfined; a conflicting apply lands the
+# clean files and names the rejected one.
+case_dev_attribution() {
+    need_script "$AGY_DEV"
+    setup_common
+    local writer res
+    export AGY_DEV_UNCONFINED=1
+    ( sleep 2; echo lead > "$FX/lead.txt" ) & writer=$!
+    dev_run at1 STUB_AGY_SLEEP=4
+    wait "$writer" 2>/dev/null
+    expect_eq "unconfined lead change rc" "1" "$RC"
+    expect_has "unconfined lead change verdict" "$(cat "$FX/.agent/memory/scratch/agy-dev-at1-result.md" 2>/dev/null)" "ESCAPED"
+    expect_has "unconfined verdict line names the path" "$OUT" "lead.txt"
+    rm -f "$FX/lead.txt"
+
+    if [ "$(uname -s)" = Darwin ] && [ -x /usr/bin/sandbox-exec ]; then
+        unset AGY_DEV_UNCONFINED
+        ( sleep 2; echo lead > "$FX/lead3.txt" ) & writer=$!
+        dev_run at3 STUB_AGY_SLEEP=4 STUB_AGY_APPEND=app.txt
+        wait "$writer" 2>/dev/null
+        res="$(cat "$FX/.agent/memory/scratch/agy-dev-at3-result.md" 2>/dev/null)"
+        expect_eq "sandbox-exec lead change rc" "0" "$RC"
+        expect_eq "sandbox-exec lead change verdict" "# agy-dev at3: DONE-WARN" "$(head -n 1 "$FX/.agent/memory/scratch/agy-dev-at3-result.md" 2>/dev/null | tr -d '\r')"
+        expect_has "sandbox-exec audit line" "$res" "WARN: main checkout changed during the run"
+        expect_has "sandbox-exec result lists the path" "$res" "lead3.txt"
+        expect_has "sandbox-exec verdict line names the path" "$OUT" "lead3.txt"
+        rm -f "$FX/lead3.txt"
+        run_cap bash "$AGY_DEV" discard --id at3
+        export AGY_DEV_UNCONFINED=1
+    else
+        pass "sandbox-exec attribution: skipped, no sandbox-exec on $(uname -s)"
+    fi
+
+    dev_run ar1 STUB_AGY_APPEND=app.txt
+    expect_eq "reject setup run A rc" "0" "$RC"
+    dev_run ar2 STUB_AGY_APPEND=app.txt STUB_AGY_REL_WRITES=b.txt
+    expect_eq "reject setup run B rc" "0" "$RC"
+    run_cap bash "$AGY_DEV" apply --id ar1
+    expect_eq "apply A rc" "0" "$RC"
+    run_cap bash "$AGY_DEV" apply --id ar2
+    expect_eq "apply B partial rc" "1" "$RC"
+    expect_file "apply B still lands its clean file" "$FX/b.txt"
+    expect_eq "app.txt keeps exactly run A's edit" "$(printf 'base\nagy edit')" "$(cat "$FX/app.txt")"
+    expect_has "partial apply is announced" "$OUT$ERR" "PARTIAL"
+    expect_has "partial apply names the rejected file" "$OUT$ERR" "app.txt"
+    expect_file "rejected hunk saved" "$FX/app.txt.rej"
+}
+
 case "$CASE" in
-    models|verdicts|review_readonly|live_readonly|alternation|failover|codex_lead|both|ledger_row|dev_isolation|dev_apply|summary|regressions|confinement)
+    models|verdicts|review_readonly|live_readonly|alternation|failover|codex_lead|both|ledger_row|dev_isolation|dev_apply|dev_attribution|summary|regressions|confinement)
         "case_$CASE" ;;
-    *) echo "usage: agy_delegation_test.sh <models|verdicts|review_readonly|live_readonly|alternation|failover|codex_lead|both|ledger_row|dev_isolation|dev_apply|summary|regressions|confinement>" >&2; exit 2 ;;
+    *) echo "usage: agy_delegation_test.sh <models|verdicts|review_readonly|live_readonly|alternation|failover|codex_lead|both|ledger_row|dev_isolation|dev_apply|dev_attribution|summary|regressions|confinement>" >&2; exit 2 ;;
 esac
 
 if [ "$NFAIL" -gt 0 ]; then echo "RESULT: $CASE FAILED ($NFAIL assertion(s))"; exit 1; fi

@@ -21,7 +21,8 @@
 # dispatch_ledger.py append supports --confinement, in the ledger row.
 #
 # Audit scope: the project root only. Changes under .agent/memory/, .tmp/ and comms.md are
-# reported (DONE-WARN), any other change in the main checkout is ESCAPED. WRITES OUTSIDE THE
+# reported (DONE-WARN); other main-checkout changes are DONE-WARN under trusted confinement
+# and ESCAPED otherwise. WRITES OUTSIDE THE
 # PROJECT ARE NOT AUDITED (the rest of the disk is not ours to walk); shell is denied, so only a
 # write_file to an outside path could do it.
 #
@@ -38,7 +39,7 @@ HELPER="$SCRIPT_DIR/agy_dev_helper.py"
 # pulse.log: the Pulse launchd service appends to it every few minutes (Mumbl 2026-11-15).
 AUDIT_SILENT_EXCLUDES=".git .agent/memory/project/telemetry .agent/memory/scratch pulse.log"
 # Changes here are never ignored: listed in the result file, verdict DONE-WARN (apply allowed,
-# the lead must look). A change anywhere else in the project is ESCAPED.
+# the lead must look). Other changes need trusted confinement for DONE-WARN.
 AUDIT_WARN_PREFIXES=".agent/memory/ .tmp/"
 AUDIT_WARN_FILES="comms.md"
 CR="$(printf '\r')"
@@ -118,7 +119,7 @@ audit_changed_paths() {
     } | sort -u
 }
 
-# 0 when path $1 is harness churn that is reported (DONE-WARN) rather than ESCAPED.
+# 0 when path $1 is harness churn that is reported (DONE-WARN) under any confinement.
 audit_is_warn_path() {
     local p
     for p in $AUDIT_WARN_PREFIXES; do
@@ -160,6 +161,10 @@ state_inside() {
 # 0 when $WT/.git is still the regular pointer file captured before the run.
 wt_git_intact() {
     [ -f "$WT/.git" ] && [ ! -L "$WT/.git" ] && cmp -s "$WT/.git" "$SBX/wt.git.snapshot"
+}
+
+audit_trusted() {
+    [ "${DEV_AUDIT_STRICT:-}" != "1" ] && [ "$CONFINEMENT" = "sandbox-exec" ]
 }
 
 # Fill CONF with the command prefix that confines agy's writes to the worktree and its own state.
@@ -293,7 +298,7 @@ cmd_run() {
     # Audit, authoritative inside the project: any file or symlink newer than the marker, or a
     # tracked-status change, outside the worktree and the silent excludes. Writes outside the
     # project root are NOT audited (the rest of the disk is not ours to walk).
-    local audit="CLEAN" hits="" warns="" p
+    local audit="CLEAN" hits="" warns="" p changed_preview
     audit_status > "$SBX/status.after"
     audit_changed_paths > "$SBX/changed.txt"
     while IFS= read -r p; do
@@ -309,7 +314,12 @@ cmd_run() {
     if ! wt_git_intact; then
         audit="ESCAPED: the worktree .git pointer was changed or replaced"
     elif [ -n "$hits" ]; then
-        audit="ESCAPED: files changed in the main checkout outside the worktree"
+        if audit_trusted; then
+            audit="WARN: main checkout changed during the run"
+            warns="${hits}${warns}"; hits=""
+        else
+            audit="ESCAPED: files changed in the main checkout outside the worktree"
+        fi
     elif [ -n "$warns" ]; then
         audit="WARN: unaudited changes (harness churn or agy), see the result file"
     fi
@@ -347,13 +357,13 @@ cmd_run() {
         echo "- writes outside the project are not audited; shell is denied, only a write_file" \
              "to an outside path could do it"
         if [ -n "$hits" ]; then
-            echo "- escaped paths (first 20):"
-            printf '%s' "$hits" | head -n 20 | sed 's/^/  - /'
+            echo "- escaped paths:"
+            printf '%s' "$hits" | sed '/^$/d; s/^/  - /'
         fi
         if [ -n "$warns" ]; then
             echo
             echo "## Unaudited changes (harness churn or agy)"
-            printf '%s' "$warns" | head -n 50 | sed 's/^/- /'
+            printf '%s' "$warns" | sed '/^$/d; s/^/- /'
         fi
         echo
         [ -z "$err_text" ] || echo "- error: $err_text"
@@ -368,7 +378,11 @@ cmd_run() {
 
     ledger_append "$verdict" "$rc" "$wall" "$tokens_in" "$tokens_out" "$tokens_thinking" \
         "$tokens_cache_read" "$tokens_total"
-    echo "$verdict $ID (audit: $audit); result: .agent/memory/scratch/agy-dev-$ID-result.md"
+    # Most significant first: a tampered .git pointer, then real escapes or lead changes, then
+    # warn-prefix churn, so .agent/ and .tmp/ noise never hides the path that matters.
+    changed_preview="$( { wt_git_intact || printf '%s\n' "$SBX_REL/wt/.git"; printf '%s' "$hits"; printf '%s' "$warns"; } \
+        | awk 'NF && n < 3 { printf "%s%s", (n ? ", " : ""), $0; n++ }')"
+    echo "$verdict $ID (audit: $audit${changed_preview:+; paths: $changed_preview}); result: .agent/memory/scratch/agy-dev-$ID-result.md"
     exit "$exit_code"
 }
 
@@ -380,7 +394,8 @@ cmd_apply() {
     esac
     wt_git_intact || die "the worktree .git pointer changed since the run; refusing" 1
     git -C "$WT" add -A -N . >/dev/null 2>&1
-    local protected patch nfiles
+    local protected patch nfiles rejected p before idx line file_rejected
+    local -a rej_before=()
     # NUL-separated, unquoted names; --no-renames lists both sides of a rename; the helper
     # reads them from a file (no bash 4 features, no quoting pitfalls).
     git -c core.quotePath=false -C "$WT" diff HEAD --name-only -z --no-renames --no-ext-diff \
@@ -395,7 +410,35 @@ cmd_apply() {
     fi
     patch="$SBX/change.patch"
     git -C "$WT" diff HEAD --binary --no-renames --no-ext-diff --no-textconv > "$patch" || die "git diff failed" 1
-    git -C "$ROOT" apply --check "$patch" || die "patch does not apply cleanly to the main tree" 1
+    if ! git -C "$ROOT" apply --check "$patch"; then
+        while IFS= read -r -d '' p; do
+            before=""
+            [ ! -f "$ROOT/$p.rej" ] || before="$(cksum < "$ROOT/$p.rej")"
+            rej_before+=("$before")
+        done < "$SBX/names.z"
+        git -c core.quotePath=false -C "$ROOT" apply --reject "$patch" 2> "$SBX/apply.err"
+        cat "$SBX/apply.err" >&2
+        rejected=""
+        idx=0
+        while IFS= read -r -d '' p; do
+            file_rejected=""
+            if [ -f "$ROOT/$p.rej" ] &&
+                { [ -z "${rej_before[$idx]}" ] || [ "$(cksum < "$ROOT/$p.rej")" != "${rej_before[$idx]}" ]; }; then
+                file_rejected=" $p ($p.rej)"
+            else
+                while IFS= read -r line; do
+                    case "$line" in
+                        "error: $p:"*|"error: patch failed: $p:"*|"error: cannot apply binary patch to '$p'"*|"error: binary patch does not apply to '$p'"*)
+                            file_rejected=" $p"; break ;;
+                    esac
+                done < "$SBX/apply.err"
+            fi
+            rejected="${rejected}${file_rejected}"
+            idx=$((idx + 1))
+        done < "$SBX/names.z"
+        echo "PARTIAL: rejected${rejected:- hunk(s); inspect git apply output}"
+        exit 1
+    fi
     git -C "$ROOT" apply "$patch" || die "git apply failed" 1
     echo "applied $nfiles file(s) UNCOMMITTED; run the tests and the gate, then commit"
 }

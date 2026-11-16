@@ -63,10 +63,14 @@ if [ -n "$ofile" ]; then
     mkdir -p "$(dirname "$ofile")" 2>/dev/null
     printf 'stub done\n' > "$ofile"
 fi
-if [ -n "${STUB_CODEX_WRITE_REL:-}" ]; then
-    mkdir -p "$cdir/$(dirname "$STUB_CODEX_WRITE_REL")"
-    printf 'stub write\n' > "$cdir/$STUB_CODEX_WRITE_REL"
-fi
+for rel in ${STUB_CODEX_WRITE_REL:-}; do
+    mkdir -p "$cdir/$(dirname "$rel")"
+    printf 'stub write\n' > "$cdir/$rel"
+done
+for rel in ${STUB_CODEX_APPEND_REL:-}; do
+    printf '%s\n' "${STUB_CODEX_APPEND_TEXT:-appended}" >> "$cdir/$rel"
+done
+if [ -n "${STUB_CODEX_SLEEP:-}" ]; then sleep "$STUB_CODEX_SLEEP"; fi
 if [ -n "${STUB_CODEX_WRITE_ABS:-}" ]; then
     sleep 1
     mkdir -p "$(dirname "$STUB_CODEX_WRITE_ABS")"
@@ -111,6 +115,7 @@ setup_common() { # $1 = case label for distinct run-id
     export STUB_CODEX_LOG ATHANOR_DISPATCH_LEDGER="$LEDGER" CODEX_DEV_BIN="$RUN/bin/codex"
     export PATH="$RUN/bin:$PATH"
     unset STUB_CODEX_WRITE_REL STUB_CODEX_WRITE_ABS STUB_CODEX_RC STUB_CODEX_STDERR CODEX_MODEL
+    unset STUB_CODEX_APPEND_REL STUB_CODEX_APPEND_TEXT STUB_CODEX_SLEEP DEV_AUDIT_STRICT
 }
 
 run_cap() { # run a command in the fixture; sets OUT ERR RC
@@ -229,8 +234,11 @@ case_escape() {
     [ -f "$CODEX_DEV" ] || return 1
     setup_common escape
     local res line1
-    run_cap env STUB_CODEX_WRITE_ABS="$FX/escaped.txt" bash execution/codex_dev.sh run --task "Escape" --id es1
+    # A stub write is indistinguishable from lead activity, so strict mode stands in for
+    # untrusted confinement here (dev-audit-attribution SPEC).
+    run_cap env DEV_AUDIT_STRICT=1 STUB_CODEX_WRITE_ABS="$FX/escaped.txt" bash execution/codex_dev.sh run --task "Escape" --id es1
     expect_eq "escape rc" "1" "$RC"
+    expect_has "escape verdict line names the path" "$OUT" "escaped.txt"
     res="$FX/.agent/memory/scratch/codex-dev-es1-result.md"
     expect_file "escape result file" "$res"
     line1="$(head -n 1 "$res" 2>/dev/null | tr -d '\r')"
@@ -251,6 +259,145 @@ case_unavailable() {
     run_cap env STUB_CODEX_RC=1 STUB_CODEX_STDERR="ERROR: compile failed" \
         bash execution/codex_dev.sh run --task "Broken" --id un2
     expect_eq "plain failure rc stays 1" "1" "$RC"
+}
+
+is_windows_shell() { case "$(uname -s 2>/dev/null)" in MINGW*|MSYS*|CYGWIN*) return 0 ;; esac; return 1; }
+
+case_lead_change() {
+    need_script "$CODEX_DEV"
+    [ -f "$CODEX_DEV" ] || return 1
+    setup_common leadchange
+    local res line1 writer
+    # The lead writes the main checkout while the (clean) dev run is in flight.
+    ( sleep 2; echo lead > "$FX/lead.txt" ) & writer=$!
+    run_cap env STUB_CODEX_SLEEP=4 STUB_CODEX_WRITE_REL="src/a.txt" bash execution/codex_dev.sh run --task "Clean" --id lc1
+    wait "$writer" 2>/dev/null
+    res="$FX/.agent/memory/scratch/codex-dev-lc1-result.md"
+    line1="$(head -n 1 "$res" 2>/dev/null | tr -d '\r')"
+    if is_windows_shell; then
+        expect_eq "lead change, untrusted Windows confinement rc" "1" "$RC"
+        expect_eq "lead change, untrusted Windows confinement verdict" "ESCAPED" "$line1"
+    else
+        expect_eq "lead change rc" "0" "$RC"
+        expect_eq "lead change result line 1" "DONE-WARN" "$line1"
+        expect_has "lead change audit line" "$(cat "$res" 2>/dev/null)" "WARN: main checkout changed during the run"
+        expect_eq "lead change ledger verdict" "DONE-WARN" "$(last_row_get verdict)"
+    fi
+    expect_has "lead change result lists the path" "$(cat "$res" 2>/dev/null)" "lead.txt"
+    expect_has "lead change verdict line names the path" "$OUT" "lead.txt"
+
+    rm -f "$FX/lead.txt"
+    ( sleep 2; echo lead > "$FX/lead2.txt" ) & writer=$!
+    run_cap env DEV_AUDIT_STRICT=1 STUB_CODEX_SLEEP=4 bash execution/codex_dev.sh run --task "Strict" --id lc2
+    wait "$writer" 2>/dev/null
+    expect_eq "strict lead change rc" "1" "$RC"
+    expect_eq "strict lead change verdict" "ESCAPED" "$(head -n 1 "$FX/.agent/memory/scratch/codex-dev-lc2-result.md" 2>/dev/null | tr -d '\r')"
+    expect_has "strict verdict line names the path" "$OUT" "lead2.txt"
+}
+
+case_apply_reject() {
+    need_script "$CODEX_DEV"
+    [ -f "$CODEX_DEV" ] || return 1
+    setup_common applyreject
+    local head0
+    head0="$(git -C "$FX" rev-parse HEAD)"
+    run_cap env STUB_CODEX_APPEND_REL="app.txt" STUB_CODEX_APPEND_TEXT="line-from-A" \
+        bash execution/codex_dev.sh run --task "Append A" --id ar1
+    expect_eq "reject setup run A rc" "0" "$RC"
+    run_cap env STUB_CODEX_APPEND_REL="app.txt" STUB_CODEX_APPEND_TEXT="line-from-B" STUB_CODEX_WRITE_REL="src/b.txt" \
+        bash execution/codex_dev.sh run --task "Append B" --id ar2
+    expect_eq "reject setup run B rc" "0" "$RC"
+    run_cap bash execution/codex_dev.sh apply --id ar1
+    expect_eq "apply A rc" "0" "$RC"
+    run_cap bash execution/codex_dev.sh apply --id ar2
+    expect_eq "apply B partial rc" "1" "$RC"
+    expect_file "apply B still lands its clean file" "$FX/src/b.txt"
+    expect_has "app.txt keeps run A's line" "$(cat "$FX/app.txt")" "line-from-A"
+    expect_lacks "app.txt has no conflict markers" "$(cat "$FX/app.txt")" "<<<<<<<"
+    expect_has "partial apply is announced" "$OUT$ERR" "PARTIAL"
+    expect_has "partial apply names the rejected file" "$OUT$ERR" "app.txt"
+    expect_file "rejected hunk saved" "$FX/app.txt.rej"
+    expect_eq "HEAD unchanged after partial apply" "$head0" "$(git -C "$FX" rev-parse HEAD)"
+}
+
+case_qa_r1() {
+    need_script "$CODEX_DEV"
+    [ -f "$CODEX_DEV" ] || return 1
+    setup_common qar1
+    local writer
+    # 1. warn-prefix churn sorts ahead of the real escape; the verdict line must still name it.
+    ( sleep 2; mkdir -p "$FX/.agent/memory/m" "$FX/.tmp/t"; echo x > "$FX/.agent/memory/m/a.md"; echo x > "$FX/.agent/memory/m/b.md"; echo x > "$FX/.tmp/t/c.txt"; echo x > "$FX/zz_escaped.py" ) & writer=$!
+    run_cap env DEV_AUDIT_STRICT=1 STUB_CODEX_SLEEP=4 bash execution/codex_dev.sh run --task "Strict" --id qr1
+    wait "$writer" 2>/dev/null
+    expect_eq "qa-r1 strict escape rc" "1" "$RC"
+    expect_has "qa-r1 verdict line names the escaped path first" "$OUT" "zz_escaped.py"
+    rm -f "$FX/zz_escaped.py"
+
+    # 3. a file-level conflict (new file already exists) must not block the clean files.
+    run_cap env STUB_CODEX_WRITE_REL="src/new.txt" bash execution/codex_dev.sh run --task "New A" --id qr3a
+    run_cap env STUB_CODEX_WRITE_REL="src/new.txt src/clean.txt" STUB_CODEX_APPEND_REL="src/new.txt" STUB_CODEX_APPEND_TEXT="B" \
+        bash execution/codex_dev.sh run --task "New B" --id qr3b
+    run_cap bash execution/codex_dev.sh apply --id qr3a
+    expect_eq "qa-r3 apply A rc" "0" "$RC"
+    run_cap bash execution/codex_dev.sh apply --id qr3b
+    expect_eq "qa-r3 apply B partial rc" "1" "$RC"
+    expect_file "qa-r3 clean file lands despite a file-level conflict" "$FX/src/clean.txt"
+    expect_has "qa-r3 PARTIAL names the conflicting file" "$OUT$ERR" "src/new.txt"
+
+    # 4. a stale .rej from an earlier apply is not reported as a new rejection.
+    printf 'stale\n' > "$FX/app.txt.rej"
+    run_cap env STUB_CODEX_WRITE_REL="src/fresh.txt" STUB_CODEX_APPEND_REL="app.txt" STUB_CODEX_APPEND_TEXT="ok" \
+        bash execution/codex_dev.sh run --task "Clean apply" --id qr4
+    run_cap bash execution/codex_dev.sh apply --id qr4
+    expect_eq "qa-r4 clean apply rc with a stale .rej present" "0" "$RC"
+    expect_lacks "qa-r4 no PARTIAL for a clean apply" "$OUT$ERR" "PARTIAL"
+}
+
+case_qa_r2() {
+    need_script "$CODEX_DEV"
+    [ -f "$CODEX_DEV" ] || return 1
+    setup_common qar2
+    local writer partial
+    if ! is_windows_shell; then
+        # 1. trusted confinement: warn-prefix churn must not hide the lead's change on the verdict line.
+        ( sleep 2; mkdir -p "$FX/.agent/memory/m" "$FX/.tmp/t"; echo x > "$FX/.agent/memory/m/a.md"; echo x > "$FX/.agent/memory/m/b.md"; echo x > "$FX/.tmp/t/c.txt"; echo x > "$FX/zz_lead.txt" ) & writer=$!
+        run_cap env STUB_CODEX_SLEEP=4 bash execution/codex_dev.sh run --task "Trusted" --id qs1
+        wait "$writer" 2>/dev/null
+        expect_eq "qa-r2 trusted lead change rc" "0" "$RC"
+        expect_has "qa-r2 DONE-WARN verdict line names the lead change before churn" "$OUT" "zz_lead.txt"
+        rm -f "$FX/zz_lead.txt"
+    else
+        pass "qa-r2 trusted ordering: skipped on Windows (untrusted)"
+    fi
+
+    # 2. a tampered worktree .git pointer is named even when other main-checkout paths changed.
+    ( sleep 2; mkdir -p "$FX/.tmp/t"; echo x > "$FX/.tmp/t/x.txt" ) & writer=$!
+    run_cap env STUB_CODEX_WRITE_REL=".git" STUB_CODEX_SLEEP=4 bash execution/codex_dev.sh run --task "Tamper" --id qs2
+    wait "$writer" 2>/dev/null
+    expect_eq "qa-r2 tamper rc" "1" "$RC"
+    expect_has "qa-r2 tamper verdict" "$OUT" "ESCAPED"
+    expect_has "qa-r2 tamper verdict line names the .git pointer" "$OUT" "wt/.git"
+
+    # 3. a file-level conflict (no .rej written) is still named on the PARTIAL: line itself.
+    run_cap env STUB_CODEX_WRITE_REL="src/new.txt" bash execution/codex_dev.sh run --task "New A" --id qs3a
+    run_cap env STUB_CODEX_WRITE_REL="src/new.txt src/clean.txt" STUB_CODEX_APPEND_REL="src/new.txt" STUB_CODEX_APPEND_TEXT="B" \
+        bash execution/codex_dev.sh run --task "New B" --id qs3b
+    run_cap bash execution/codex_dev.sh apply --id qs3a
+    run_cap bash execution/codex_dev.sh apply --id qs3b
+    partial="$(printf '%s\n' "$OUT" | grep '^PARTIAL:')"
+    expect_eq "qa-r2 file-level conflict rc" "1" "$RC"
+    expect_has "qa-r2 PARTIAL: line names src/new.txt" "$partial" "src/new.txt"
+
+    # 4. a stale .rej does not make a cleanly applied file show as rejected in a partial apply.
+    printf 'stale\n' > "$FX/app.txt.rej"
+    run_cap env STUB_CODEX_APPEND_REL="other.txt" STUB_CODEX_APPEND_TEXT="A" bash execution/codex_dev.sh run --task "Other A" --id qs4a
+    run_cap env STUB_CODEX_APPEND_REL="other.txt app.txt" STUB_CODEX_APPEND_TEXT="B" bash execution/codex_dev.sh run --task "Other B" --id qs4b
+    run_cap bash execution/codex_dev.sh apply --id qs4a
+    run_cap bash execution/codex_dev.sh apply --id qs4b
+    partial="$(printf '%s\n' "$OUT" | grep '^PARTIAL:')"
+    expect_eq "qa-r2 stale .rej partial rc" "1" "$RC"
+    expect_has "qa-r2 PARTIAL: names the real conflict" "$partial" "other.txt"
+    expect_lacks "qa-r2 PARTIAL: omits the cleanly applied file with a stale .rej" "$partial" "app.txt"
 }
 
 case_warn() {
@@ -420,16 +567,16 @@ case_twins() {
 
 case_all() {
     local c
-    for c in usage argv done escape unavailable warn apply discard missing timeout_reap timeout_zero start_fail twins; do
+    for c in usage argv done escape unavailable lead_change apply_reject qa_r1 qa_r2 warn apply discard missing timeout_reap timeout_zero start_fail twins; do
         echo "--- case: $c ---"
         "case_$c"
     done
 }
 
 case "$CASE" in
-    usage|argv|done|escape|unavailable|warn|apply|discard|missing|timeout_reap|timeout_zero|start_fail|twins|all)
+    usage|argv|done|escape|unavailable|lead_change|apply_reject|qa_r1|qa_r2|warn|apply|discard|missing|timeout_reap|timeout_zero|start_fail|twins|all)
         "case_$CASE" ;;
-    *) echo "usage: codex_dev_test.sh <usage|argv|done|escape|unavailable|warn|apply|discard|missing|timeout_reap|timeout_zero|start_fail|twins|all>" >&2; exit 2 ;;
+    *) echo "usage: codex_dev_test.sh <usage|argv|done|escape|unavailable|lead_change|apply_reject|qa_r1|qa_r2|warn|apply|discard|missing|timeout_reap|timeout_zero|start_fail|twins|all>" >&2; exit 2 ;;
 esac
 
 if [ "$NFAIL" -gt 0 ]; then echo "RESULT: $CASE FAILED ($NFAIL assertion(s))"; exit 1; fi
