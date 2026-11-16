@@ -1,4 +1,5 @@
 // Golden checker for mission registration-forms. Written by the architect; @dev never edits it.
+// Reworked 16 Nov 2026 (merged judge controls, dietary Other, strict email and mobile, hidden Attending).
 // Run from the repo root (or CHECK_ROOT) as: tsx <this file> <options|cases|shape|unflagged|wiring>
 // It loads the dev's lib/registration.ts and lib/checkout-reservation.ts from process.cwd().
 import { readFileSync } from 'node:fs';
@@ -34,7 +35,11 @@ if (mode === 'options') {
   for (const key of Object.keys(fields.options)) {
     if (!same(REGISTRATION_OPTIONS[key], fields.options[key])) fail(`option list '${key}' differs from golden`);
   }
-  if (!same(fields.options.dietary, ['None', 'Vegetarian', 'Halaal'])) fail('golden dietary list altered');
+  if (!same(fields.options.dietary, ['None', 'Vegetarian', 'Halaal', 'Other'])) fail('golden dietary list altered');
+  if (!same(fields.options.judgeAccreditation, ['No', 'Yes, with SAOC', 'Yes, with AOS'])) fail('golden judgeAccreditation list altered');
+  // The merged control offers exactly "No" plus one "Yes, with <org>" per organisation of the sheet's list.
+  const orgs = fields.options.judgeOrganisation.filter((o: string) => o !== 'Not applicable');
+  if (!same(REGISTRATION_OPTIONS.judgeAccreditation, ['No', ...orgs.map((o: string) => `Yes, with ${o}`)])) fail('judgeAccreditation is not derived from the organisation list');
   console.log('PASS options');
 } else if (mode === 'cases') {
   const { validateRegistrationGroup } = await load('lib/registration.ts');
@@ -54,6 +59,11 @@ if (mode === 'options') {
     });
     for (const [i, field] of c.expect.resolvedEqualsAttendee1 ?? []) {
       if (!same(result.people[i][field], result.people[0][field])) fail(`${c.id}: person ${i} ${field} was not copied from attendee 1`);
+    }
+    for (const [i, expected] of c.expect.fields ?? []) {
+      for (const [field, value] of Object.entries(expected as Record<string, unknown>)) {
+        if (!same(result.people[i][field], value)) fail(`${c.id}: person ${i} ${field} is ${JSON.stringify(result.people[i][field])}, expected ${JSON.stringify(value)}`);
+      }
     }
     for (const [i, list] of c.expect.sameAsAttendee1 ?? []) {
       if (!same(result.people[i].sameAsAttendee1, list)) fail(`${c.id}: person ${i} sameAsAttendee1 differs`);
@@ -96,6 +106,10 @@ if (mode === 'options') {
       if ('email' in doc) fail('email must not be stored inside registration');
     }
     if (buildRegistrationDoc(inputOf(overseasCocktail)).province !== null) fail('non-SA province must be null, not undefined or empty');
+    const { formatDietary } = await load('lib/registration.ts');
+    for (const [reg, expected] of shape.displayHelper.cases) {
+      if (formatDietary(reg) !== expected) fail(`formatDietary(${JSON.stringify(reg)}) is ${JSON.stringify(formatDietary(reg))}, expected ${JSON.stringify(expected)}`);
+    }
     const inputs = [inputOf(attendee1), inputOf(attendee2CopiedSections)];
     const people = [attendee1.registration, attendee2CopiedSections.registration];
     const primary = attendee1;

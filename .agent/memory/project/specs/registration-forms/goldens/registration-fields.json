@@ -1,5 +1,5 @@
 {
-  "schema": "saoc.registration-fields/v2",
+  "schema": "saoc.registration-fields/v3",
   "source": {
     "sheetId": "1G6uAaoDDDFMD7bB5upxBtgiH3eN2q3ZyLi9XVBE6Sjs",
     "sheetName": "Symposium Registration form",
@@ -115,7 +115,8 @@
           "type": "select",
           "required": true,
           "options": "country",
-          "shareGroup": "contact"
+          "shareGroup": "contact",
+          "defaultValue": "South Africa"
         },
         {
           "key": "province",
@@ -149,7 +150,8 @@
           ],
           "note": "No sheet heading exists for this group; the checkbox is described by the three sheet labels. Mobile and email swap places versus the sheet so the group is contiguous."
         }
-      ]
+      ],
+      "layout": "at 1280px: Title, First Name and Surname share one row; Preferred name and Email share one row; Mobile has its own row; Country and Province share one row (Province only when South Africa). Single column on phones."
     },
     {
       "id": "membership",
@@ -158,12 +160,18 @@
         {
           "key": "societies",
           "label": "To which Society do you belong to?",
-          "type": "multiselect",
+          "type": "multiselect-dropdown",
           "required": true,
           "options": "society",
           "minSelected": 1,
           "exclusiveOption": "None",
-          "shareGroup": "membership"
+          "shareGroup": "membership",
+          "placeholder": "Select all that apply",
+          "control": "disclosure button #registration-{n}-societies (aria-expanded, aria-controls) that opens a panel role=group named by the label holding native checkboxes; Escape closes and returns focus to the button; button text is the placeholder when empty, the option name when one, 'N selected' when more",
+          "rules": [
+            "None excludes every other choice (choosing None clears the rest, choosing another clears None)",
+            "no other combination rule until Lee-Ann answers"
+          ]
         }
       ],
       "shareGroups": [
@@ -179,7 +187,7 @@
     },
     {
       "id": "booking",
-      "heading": "NATIONAL SHOW BOOKING OPTIONS",
+      "heading": null,
       "fields": [
         {
           "key": "attending",
@@ -192,58 +200,78 @@
             "saoc-symposium": "SAOC Symposium Normal Ticket",
             "wosa-conference": "WOSA Symposium Normal Ticket",
             "sunset-cocktails-single": "Sunset Cocktails"
-          }
+          },
+          "rendered": false,
+          "note": "Not rendered: no element, no heading. The client still sends attending derived from the ticket slug and the server still rejects any other value."
         }
-      ]
+      ],
+      "hidden": true
     },
     {
       "id": "judges",
       "heading": "JUDGES EVENTS",
       "fields": [
         {
-          "key": "judgeAccredited",
+          "key": "judgeAccreditation",
+          "storedAs": [
+            "judgeAccredited",
+            "judgeOrganisation"
+          ],
           "label": "Are you an accredited Orchid Judge",
           "type": "select",
+          "options": "judgeAccreditation",
+          "default": "No",
           "required": true,
-          "options": "judgeYesNoNa"
-        },
-        {
-          "key": "judgeOrganisation",
-          "label": "With which Orchid Organisation",
-          "type": "select",
-          "required": true,
-          "options": "judgeOrganisation"
+          "note": "label is the sheet's own question; Brad named no label for the merged control"
         },
         {
           "key": "judgeAvailable",
-          "label": "Will you be available as a Show Judge at the Show",
-          "type": "select",
-          "required": true,
-          "options": "judgeYesNoNa"
+          "storedAs": [
+            "judgeAvailable",
+            "judgeDate"
+          ],
+          "label": "Available as a show judge",
+          "type": "checkbox",
+          "default": false,
+          "shownOnlyWhen": {
+            "judgeAccreditation": "Yes, with <any>"
+          },
+          "note": "label is Brad's wording"
         },
         {
-          "key": "judgeDate",
+          "key": "judgeDate-22-sep / judgeDate-23-sep",
           "label": "Which date would you be available?",
-          "type": "select",
-          "required": true,
-          "options": "judgeDate"
+          "type": "checkbox-group",
+          "options": "judgeDateChoices",
+          "shownOnlyWhen": {
+            "judgeAvailable": true
+          },
+          "minSelected": 1,
+          "bothSelectedStoredAs": "22 & 23 Sept",
+          "note": "group name is the sheet label; ids registration-{n}-judgeDate-22-sep and registration-{n}-judgeDate-23-sep; unticking availability hides and clears them"
         },
         {
           "key": "judgeCommunication",
           "label": "Will you be attending the Judges Communication?",
           "type": "select",
-          "required": true,
-          "options": "judgeYesNoNa"
+          "options": "judgeYesNo",
+          "default": "No",
+          "shownOnlyWhen": {
+            "judgeAccreditation": "Yes, with <any>"
+          }
         },
         {
           "key": "judgeForum",
           "label": "Will you be attending the Judges Forum?",
           "type": "select",
-          "required": true,
-          "options": "judgeYesNoNa"
+          "options": "judgeYesNo",
+          "default": "No",
+          "shownOnlyWhen": {
+            "judgeAccreditation": "Yes, with <any>"
+          }
         }
       ],
-      "note": "No skip rule: non-judges answer with the sheet option Not applicable (None for the date)."
+      "note": "Merged per Brad 16 Nov. 'Not applicable' is no longer offered; a person who is not an accredited judge is stored with the canonical not-accredited combination (see rework.storedJudgeCombinations). Gating availability, communication and forum on accreditation is the architect's reading of Brad's 'hide what does not apply'; see spec.md section 9."
     },
     {
       "id": "dietary",
@@ -254,7 +282,19 @@
           "label": "Please select from the drop down list",
           "type": "select",
           "required": true,
-          "options": "dietary"
+          "options": "dietary",
+          "default": "None"
+        },
+        {
+          "key": "dietaryOther",
+          "label": "Other",
+          "type": "text",
+          "required": true,
+          "maxLength": 100,
+          "shownOnlyWhen": {
+            "dietary": "Other"
+          },
+          "storedNullOtherwise": true
         }
       ]
     }
@@ -540,12 +580,89 @@
     "dietary": [
       "None",
       "Vegetarian",
-      "Halaal"
+      "Halaal",
+      "Other"
+    ],
+    "judgeAccreditation": [
+      "No",
+      "Yes, with SAOC",
+      "Yes, with AOS"
+    ],
+    "judgeYesNo": [
+      "Yes",
+      "No"
+    ],
+    "judgeDateChoices": [
+      "22-Sep",
+      "23-Sep"
     ]
   },
   "attendingByTicketSlug": {
     "saoc-symposium": "SAOC Symposium Normal Ticket",
     "wosa-conference": "WOSA Symposium Normal Ticket",
     "sunset-cocktails-single": "Sunset Cocktails"
+  },
+  "rework": {
+    "date": "2026-11-16",
+    "authority": "feedback-2026-11-16/corrections.md (Brad's decisions, second pass)",
+    "summary": "Stored fields are unchanged in meaning (judgeAccredited, judgeOrganisation, judgeAvailable, judgeDate, judgeCommunication, judgeForum, dietary) plus one new stored key dietaryOther. The form asks fewer, merged questions and the client maps controls to those stored fields; the server enforces the same canonical combinations.",
+    "storedJudgeCombinations": {
+      "notAccredited": {
+        "judgeAccredited": "No",
+        "judgeOrganisation": "Not applicable",
+        "judgeAvailable": "Not applicable",
+        "judgeDate": "Not applicable",
+        "judgeCommunication": "No",
+        "judgeForum": "No",
+        "note": "the availability, date, communication and forum controls are hidden and cleared"
+      },
+      "accreditedNotAvailable": {
+        "judgeAccredited": "Yes",
+        "judgeOrganisation": "SAOC | AOS",
+        "judgeAvailable": "No",
+        "judgeDate": "None",
+        "judgeCommunication": "Yes | No",
+        "judgeForum": "Yes | No"
+      },
+      "accreditedAvailable": {
+        "judgeAccredited": "Yes",
+        "judgeOrganisation": "SAOC | AOS",
+        "judgeAvailable": "Yes",
+        "judgeDate": "22-Sep | 23-Sep | 22 & 23 Sept",
+        "judgeCommunication": "Yes | No",
+        "judgeForum": "Yes | No"
+      }
+    },
+    "uiToStored": {
+      "judgeAccreditation 'No'": "judgeAccredited No, judgeOrganisation Not applicable",
+      "judgeAccreditation 'Yes, with <org>'": "judgeAccredited Yes, judgeOrganisation <org>",
+      "availability checkbox ticked, date boxes 22-Sep only / 23-Sep only / both": "judgeAvailable Yes, judgeDate 22-Sep / 23-Sep / 22 & 23 Sept",
+      "availability checkbox unticked (accredited)": "judgeAvailable No, judgeDate None",
+      "dietary Other + text": "dietary Other, dietaryOther <trimmed text>; any other dietary value: dietaryOther null"
+    },
+    "defaults": {
+      "country": "South Africa",
+      "judgeAccreditation": "No",
+      "judgeCommunication": "No",
+      "judgeForum": "No",
+      "dietary": "None",
+      "societies": "empty, placeholder 'Select all that apply'"
+    },
+    "hiddenWhenNotApplicable": [
+      "attending (always hidden, value derived from the ticket)",
+      "province unless country is South Africa",
+      "judgeAvailable, judge date boxes, judgeCommunication, judgeForum unless accredited",
+      "judge date boxes unless judgeAvailable ticked",
+      "dietaryOther unless dietary is Other",
+      "contact and membership controls when Same as above is ticked"
+    ],
+    "openForLeeAnn": "Membership combinations other than None-exclusive (Overseas visitor with a South African society, society member with Independent Member). No rule is encoded; validation-cases pins that those combinations stay valid until she answers."
+  },
+  "defaultCountry": "South Africa",
+  "validationRules": {
+    "email": "trimmed, at most 254 chars, one @, local part at most 64 chars with no leading, trailing or doubled dots and no spaces, domain labels of letters, digits and inner hyphens separated by single dots, final label letters only and at least 2 long",
+    "mobile": "allowed characters digits, spaces, hyphens, round brackets and a leading plus; at most 30 characters. After stripping spaces, hyphens and brackets it must be (a) '+' or '00' then country code and number of 8 to 15 digits in total, first digit not 0; when the country code is 27 the number is exactly 9 digits and does not start with 0; or (b) South African local format: '0' then exactly 9 digits (10 digits in all). Anything else, including no country code and '+27 (0)82...', is rejected",
+    "names": "first name, surname, preferred name: required after trimming, at most 100 characters",
+    "dietaryOther": "required (trimmed, 1 to 100 chars) iff dietary is Other, otherwise must be empty/absent and is stored as null"
   }
 }
