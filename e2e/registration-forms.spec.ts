@@ -54,7 +54,7 @@ test.describe('registration form, flagged ticket', () => {
     await expect(page.locator('#registration-primary-firstName')).toBeVisible();
     await expect(page.getByRole('button', { name: ADD })).toBeVisible();
     await expect(page.locator('#registration-partner-firstName')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: /increase/i })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'One more' })).toHaveCount(0);
   });
 
   test('every sheet field is present with the corrected labels and the sheet dropdown values', async ({ page }) => {
@@ -132,13 +132,17 @@ test.describe('registration form, non-registration ticket unchanged', () => {
   test('the default fixture has no registration UI and posts no registration key', async ({ page }) => {
     await open(page);
     const bodies = await captureCheckout(page);
+    // Today's UI: the quantity stepper is present (its real accessible names are "One fewer"/"One more")
+    // and the single default attendee row is the only person form. No registration form, no partner control.
+    await expect(page.getByRole('button', { name: 'One more' })).toBeVisible();
     await expect(page.locator('#registration-primary-firstName')).toHaveCount(0);
     await expect(page.getByRole('button', { name: ADD })).toHaveCount(0);
-    await page.getByRole('button', { name: /increase/i }).first().click();
+    await expect(page.locator('[id^="attendee-fixture-ticket-"][id$="-name"]')).toHaveCount(1);
     await page.locator('#attendee-fixture-ticket-0-name').fill('Test Person');
     await page.locator('#attendee-fixture-ticket-0-email').fill('person@example.invalid');
     await page.getByRole('button', { name: SUBMIT }).click();
     await expect.poll(() => bodies.length).toBe(1);
+    expect(bodies[0].lineItems).toHaveLength(1);
     expect(Object.keys(bodies[0].lineItems[0]).sort()).toEqual(['attendeeEmail', 'attendeeName', 'ticketType']);
   });
 });
