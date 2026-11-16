@@ -185,6 +185,7 @@
   /* FC-1: each lockup keeps the ground it was drawn for; padding clears the art from the plate edge, and the footer's negative margins are offset by it. */
   .nh-brand { forced-color-adjust: none; background: var(--nc-ground); border-radius: 4px; padding: 6px 10px; }
   .nf-lockup { forced-color-adjust: none; background: var(--nc-royal); border-radius: 4px; padding: 6px 10px; width: 268px; margin: -22px -29px -25px -27px; }
+  .nf-saoc-credit a { forced-color-adjust: none; background: var(--nc-royal); }
   .nf-form button { border: 1px solid ButtonText; }
   .nh-link:focus-visible, .nh-trigger:focus-visible, .nh-mega-list a:focus-visible, .nd-item:focus-visible, .nd-group a:focus-visible, .nd-credit a:focus-visible, .nf-list a:focus-visible, .nf-legal a:focus-visible { outline: 2px solid Highlight; outline-offset: 2px; }
 }
