@@ -24,7 +24,9 @@ export function SocietyDropdown({ id, value, error, disabled, onChange }: {
     document.addEventListener('mousedown', outside);
     return () => document.removeEventListener('mousedown', outside);
   }, [open]);
-  return <div ref={root} className="space-y-1.5">
+  return <div ref={root} onBlur={(event) => {
+    if (root.current && !root.current.contains(event.relatedTarget as Node | null)) setOpen(false);
+  }} className="space-y-1.5">
     <div id={labelId} className="font-sans text-[14px] font-medium text-[var(--ink-700)]">{REGISTRATION_LABELS.societies}</div>
     <button ref={button} id={id} type="button" disabled={disabled} aria-expanded={open} aria-controls={panelId}
       aria-labelledby={`${labelId} ${id}-value`} aria-invalid={Boolean(error)} aria-describedby={error ? `${id}-error` : undefined}
@@ -34,12 +36,6 @@ export function SocietyDropdown({ id, value, error, disabled, onChange }: {
     </button>
     {open ? <div id={panelId} role="group" aria-labelledby={labelId} onKeyDown={(event) => {
       if (event.key === 'Escape') { event.preventDefault(); setOpen(false); button.current?.focus(); }
-      if (event.key === 'Tab') {
-        const controls = Array.from(event.currentTarget.querySelectorAll<HTMLInputElement>('input:not(:disabled)'));
-        if (!controls.length) return;
-        if (event.shiftKey && document.activeElement === controls[0]) { event.preventDefault(); controls.at(-1)?.focus(); }
-        else if (!event.shiftKey && document.activeElement === controls.at(-1)) { event.preventDefault(); controls[0].focus(); }
-      }
     }} className="max-h-72 overflow-y-auto border border-rule bg-ivory px-3.5">
       {REGISTRATION_OPTIONS.society.map((option) => {
         const optionId = `${id}-${option.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
