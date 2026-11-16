@@ -31,7 +31,7 @@ export interface TicketProduct {
   theme: string | null;
   numeral: string;
   caption: string;
-  /** One of the five rights-cleared production photographs; null renders the field colour. */
+  /** A rights-cleared production photograph; null renders the field colour. */
   photo: string | null;
   /** CSS object-position of the photograph inside the stub. */
   focus: string;
@@ -135,8 +135,8 @@ export const TICKET_PRODUCTS: Record<TicketProductId, TicketProduct> = {
     theme: 'From Wild Origins to Cultivated Excellence',
     numeral: '19th',
     caption: 'National Orchid Show',
-    photo: null,
-    focus: '50% 50%',
+    photo: '/images/orchid-cattleya-white.jpg',
+    focus: '45% 50%',
     fieldVar: '--ticket-field-symposium',
     slugs: ['saoc-symposium'],
     partner: null,
@@ -152,8 +152,8 @@ export const TICKET_PRODUCTS: Record<TicketProductId, TicketProduct> = {
     theme: null,
     numeral: '19th',
     caption: 'National Orchid Show',
-    photo: null,
-    focus: '50% 50%',
+    photo: '/images/orchid-disa-uniflora.jpg',
+    focus: '60% 45%',
     fieldVar: '--ticket-field-wosa',
     slugs: ['wosa-conference'],
     partner: null,
