@@ -161,50 +161,57 @@ export function ShowBand({ show, detailsHref, showPhoto = true, split }: ShowBan
               : 'saoc-container w-full flex flex-col justify-center py-[60px] min-[1100px]:py-20 on-dark'
           }
         >
-          <div data-show-band-content className="w-full max-w-[720px]">
-            <div className="mb-6">
-              <span className="eyebrow eyebrow--light">Flagship Event</span>
+          <div
+            data-show-band-content
+            className={showPhoto ? 'w-full max-w-[720px]' : 'w-full min-[1100px]:grid min-[1100px]:grid-cols-2 gap-x-16'}
+          >
+            <div>
+              <div className="mb-6">
+                <span className="eyebrow eyebrow--light">Flagship Event</span>
+              </div>
+
+              <h2 className="font-serif font-light text-[clamp(32px,3.8vw,48px)] leading-[1.1] tracking-[-0.015em] text-ivory mb-8 text-balance">
+                {showTitleWithEdition(show?.edition, 'National Orchid Show')}
+              </h2>
+
+              <dl data-show-band-facts className="grid grid-cols-2 gap-x-10 gap-y-5 mb-8">
+                {meta.map((item) => (
+                  <div key={item.label} className="border-t border-ivory/15 pt-3">
+                    <dt className="font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/65 mb-1">
+                      {item.label}
+                    </dt>
+                    <dd className="font-sans text-[16px] leading-[1.55] text-ivory">{item.value}</dd>
+                  </div>
+                ))}
+              </dl>
             </div>
 
-            <h2 className="font-serif font-light text-[clamp(32px,3.8vw,48px)] leading-[1.1] tracking-[-0.015em] text-ivory mb-8 text-balance">
-              {showTitleWithEdition(show?.edition, 'National Orchid Show')}
-            </h2>
+            <div>
+              <CountdownBox target={target} edition={show?.edition} />
 
-            <dl data-show-band-facts className="grid grid-cols-2 gap-x-10 gap-y-5 mb-8">
-              {meta.map((item) => (
-                <div key={item.label} className="border-t border-ivory/15 pt-3">
-                  <dt className="font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/65 mb-1">
-                    {item.label}
-                  </dt>
-                  <dd className="font-sans text-[16px] leading-[1.55] text-ivory">{item.value}</dd>
-                </div>
-              ))}
-            </dl>
-
-            <CountdownBox target={target} edition={show?.edition} />
-
-            <div className="flex flex-wrap items-center gap-3">
-              <a
-                href={nosUrl('/tickets')}
-                data-show-band-cta="primary"
-                className="inline-flex items-center justify-center text-[14px] font-medium tracking-[0.01em] rounded-[2px] border transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 px-[22px] py-[14px] max-[559px]:w-full border-transparent bg-accent text-ink hover:bg-accent-soft hover:-translate-y-px focus-visible:-translate-y-px active:translate-y-0"
-              >
-                Book tickets
-              </a>
-              <a
-                href={detailsHref ?? nosUrl('/')}
-                data-show-band-cta="secondary"
-                className="inline-flex items-center justify-center text-[14px] font-medium tracking-[0.01em] rounded-[2px] border transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 px-[22px] py-[14px] text-ivory border-ivory/45 hover:border-ivory hover:bg-white/6 hover:-translate-y-px focus-visible:-translate-y-px active:translate-y-0"
-              >
-                Show details
-              </a>
-              <a
-                href={nosUrl('/award-entries')}
-                data-show-band-cta="tertiary"
-                className="inline-flex items-center justify-center text-[14px] font-medium tracking-[0.01em] rounded-[2px] border transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 min-h-[44px] px-1 border-transparent text-ivory underline decoration-accent decoration-1 underline-offset-4 hover:text-accent-soft hover:decoration-accent-soft"
-              >
-                Plant Entry
-              </a>
+              <div className="flex flex-wrap items-center gap-3">
+                <a
+                  href={nosUrl('/tickets')}
+                  data-show-band-cta="primary"
+                  className="inline-flex items-center justify-center text-[14px] font-medium tracking-[0.01em] rounded-[2px] border transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 px-[22px] py-[14px] max-[559px]:w-full border-transparent bg-accent text-ink hover:bg-accent-soft hover:-translate-y-px focus-visible:-translate-y-px active:translate-y-0"
+                >
+                  Book tickets
+                </a>
+                <a
+                  href={detailsHref ?? nosUrl('/')}
+                  data-show-band-cta="secondary"
+                  className="inline-flex items-center justify-center text-[14px] font-medium tracking-[0.01em] rounded-[2px] border transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 px-[22px] py-[14px] text-ivory border-ivory/45 hover:border-ivory hover:bg-white/6 hover:-translate-y-px focus-visible:-translate-y-px active:translate-y-0"
+                >
+                  Show details
+                </a>
+                <a
+                  href={nosUrl('/award-entries')}
+                  data-show-band-cta="tertiary"
+                  className="inline-flex items-center justify-center text-[14px] font-medium tracking-[0.01em] rounded-[2px] border transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 min-h-[44px] px-1 border-transparent text-ivory underline decoration-accent decoration-1 underline-offset-4 hover:text-accent-soft hover:decoration-accent-soft"
+                >
+                  Plant Entry
+                </a>
+              </div>
             </div>
           </div>
         </div>

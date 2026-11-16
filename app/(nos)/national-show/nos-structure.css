@@ -508,7 +508,7 @@
 /* R69 grouped index on the hub: three ruled columns of titled links, no descriptions. The
    container is the shared axis ([data-nos-wrap]). */
 .nos-theme .nos-index {
-  padding-block: 88px;
+  padding-block: 64px;
   border-top: 1px solid var(--rule);
 }
 .nos-theme .nos-index > [data-nos-wrap] {
@@ -555,9 +555,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  min-height: 56px;
+  min-height: 48px;
   font-family: var(--serif);
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1.25;
   color: var(--ink);
   text-decoration: none;
@@ -2215,25 +2215,25 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   transform-origin: 50% 205px;
 }
 .nos-theme .nk-fan .nk-wrap:nth-child(1) {
-  --x: -185px;
+  --x: -225px;
   --y: 40px;
   --r: -12deg;
   z-index: 1;
 }
 .nos-theme .nk-fan .nk-wrap:nth-child(2) {
-  --x: -62px;
+  --x: -75px;
   --y: 22px;
   --r: -4deg;
   z-index: 2;
 }
 .nos-theme .nk-fan .nk-wrap:nth-child(3) {
-  --x: 62px;
+  --x: 75px;
   --y: 22px;
   --r: 4deg;
   z-index: 3;
 }
 .nos-theme .nk-fan .nk-wrap:nth-child(4) {
-  --x: 185px;
+  --x: 225px;
   --y: 40px;
   --r: 12deg;
   z-index: 4;

@@ -28,7 +28,7 @@ function slideLabel(index: number, total: number, subject: string): string {
 }
 
 const HERO_CTA_BASE =
-  'inline-flex min-h-11 w-full items-center justify-center gap-2 border px-6 py-3 font-sans text-[14px] font-medium transition-colors duration-150 sm:w-auto outline-ivory focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]';
+  'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-[2px] border px-[22px] py-[14px] text-[14px] font-medium tracking-[0.01em] transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) sm:w-auto focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 hover:-translate-y-px focus-visible:-translate-y-px active:translate-y-0';
 
 // The full-bleed hero's box is at least the 860px min-height of .home-hero (globals.css), so a source wider
 // than 860px x its aspect is height-driven and `sizes` must say so.
