@@ -30,11 +30,11 @@ for (const name of [
   'hero-nos-workshops-cattleya-apricot-hendrik.jpg',
   'hero-nos-plan-paphiopedilum-yellow.jpg',
   'hero-nos-faq-paphiopedilum-rust.jpg',
-  'hero-nos-expect-zygopetalum-dunkle.jpg',
+  'hero-nos-expect-phalaenopsis-pink.jpg',
   'hero-nos-symposium-phalaenopsis-stripes.jpg',
   'hero-saoc-judging-colmanara-hendrik.jpg',
   'hero-saoc-events-habenaria-hendrik.jpg',
-  'hero-saoc-sponsors-zygopetalum-dunkle.jpg',
+  'hero-saoc-sponsors-dendrobium-hendrik.jpg',
   'hero-saoc-event-cattleya-white.jpg',
 ]) HERO_SOURCES.add(path.join(SOURCE_ROOT, 'heroes', name));
 // Hero sources also get an AVIF set (same widths, same -q88 name, .avif extension), served first by
