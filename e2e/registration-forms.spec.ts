@@ -23,10 +23,10 @@
 //   #registration-{n}-judgeAvailable "Available as a show judge" (unticked), selects #registration-{n}-judgeCommunication
 //   and #registration-{n}-judgeForum (Yes/No, No preselected);
 // - only when availability is ticked: role=group "Which date would you be available?" with checkboxes
-//   #registration-{n}-judgeDate-22-sep ("22-Sep") and #registration-{n}-judgeDate-23-sep ("23-Sep"); at least one required;
+//   #registration-{n}-judgeDate-22-sep ("22 September 2027") and #registration-{n}-judgeDate-23-sep ("23 September 2027"); stored values stay 22-Sep / 23-Sep; at least one required;
 // - dietary select defaults to "None" and has "Other"; the text input #registration-{n}-dietaryOther (label "Other") exists
 //   only while Other is selected and is then required;
-// - every select has right padding for its chevron (computed padding-right >= 36px, appearance none);
+// - every select has right padding for its chevron (computed padding-right >= 36px, appearance none or base-select);
 // - validation errors per field as `#registration-{n}-{key}-error` plus the `#checkout-error-summary` pattern;
 // - submit "Continue to payment".
 // =============================================================
@@ -119,8 +119,8 @@ test.describe('registration form, flagged ticket', () => {
     await expect(field(page, 1, 'attending')).toHaveCount(0); // hidden entirely, not a greyed control
     await expect(f.getByLabel('Please select from the dropdown')).toHaveCount(0);
     for (const label of [
-      'First Name (as per your identity document or passport)',
-      'Surname (as per your identity document or passport)',
+      'First Name',
+      'Surname',
       'Mobile Number (include country code)',
       'Are you an accredited Orchid Judge',
     ]) {
@@ -187,7 +187,7 @@ test.describe('registration form, flagged ticket', () => {
         return { padding: parseFloat(s.paddingRight), appearance: s.appearance };
       });
       expect(style.padding).toBeGreaterThanOrEqual(36);
-      expect(style.appearance).toBe('none');
+      expect(['none', 'base-select']).toContain(style.appearance); // base-select = Chromium customizable select (Brad 16 Nov: style the open list like the form)
     }
   });
 
@@ -195,6 +195,9 @@ test.describe('registration form, flagged ticket', () => {
     const y = async (loc: Locator) => (await loc.boundingBox())!.y;
     const near = (a: number, b: number) => Math.abs(a - b) <= 6;
     expect(near(await y(field(page, 1, 'title')), await y(field(page, 1, 'firstName')))).toBe(true);
+    // Brad 16 Nov: Title only as wide as it needs; First Name and Surname share the rest
+    const w = async (loc: Locator) => (await loc.boundingBox())!.width;
+    expect(await w(field(page, 1, 'title'))).toBeLessThan((await w(field(page, 1, 'firstName'))) * 0.6);
     expect(near(await y(field(page, 1, 'firstName')), await y(field(page, 1, 'surname')))).toBe(true);
     expect(near(await y(field(page, 1, 'preferredName')), await y(field(page, 1, 'email')))).toBe(true);
     expect(near(await y(field(page, 1, 'country')), await y(field(page, 1, 'province')))).toBe(true);
@@ -221,11 +224,11 @@ test.describe('registration form, flagged ticket', () => {
     const dates = form(page, 1).getByRole('group', { name: DATE_LABEL });
     await expect(dates).toBeVisible();
     await expect(dates.getByRole('checkbox')).toHaveCount(2);
-    await dates.getByLabel('22-Sep', { exact: true }).check();
+    await dates.getByLabel('22 September 2027', { exact: true }).check();
     await field(page, 1, 'judgeAvailable').uncheck();
     await expect(dates).toHaveCount(0); // hidden when unticked
     await field(page, 1, 'judgeAvailable').check();
-    await expect(dates.getByLabel('22-Sep', { exact: true })).not.toBeChecked(); // and cleared
+    await expect(dates.getByLabel('22 September 2027', { exact: true })).not.toBeChecked(); // and cleared
 
     await accreditation.selectOption('No'); // changing accreditation never touches availability or attendance
     await expect(field(page, 1, 'judgeAvailable')).toBeChecked();
@@ -348,8 +351,8 @@ test.describe('registration form, flagged ticket', () => {
     await field(page, 1, 'judgeAccreditation').selectOption('Yes, with AOS');
     await field(page, 1, 'judgeAvailable').check();
     const dates = form(page, 1).getByRole('group', { name: DATE_LABEL });
-    await dates.getByLabel('22-Sep', { exact: true }).check();
-    await dates.getByLabel('23-Sep', { exact: true }).check();
+    await dates.getByLabel('22 September 2027', { exact: true }).check();
+    await dates.getByLabel('23 September 2027', { exact: true }).check();
     await field(page, 1, 'judgeForum').selectOption('Yes');
     await field(page, 1, 'dietary').selectOption('Other');
     await field(page, 1, 'dietaryOther').fill('  No shellfish  ');
@@ -373,7 +376,7 @@ test.describe('registration form, flagged ticket', () => {
     const bodies = await captureCheckout(page);
     await fillAttendee(page, 1);
     await field(page, 1, 'judgeAvailable').check();
-    await form(page, 1).getByRole('group', { name: DATE_LABEL }).getByLabel('23-Sep', { exact: true }).check();
+    await form(page, 1).getByRole('group', { name: DATE_LABEL }).getByLabel('23 September 2027', { exact: true }).check();
     await field(page, 1, 'judgeForum').selectOption('Yes');
     await page.getByRole('button', { name: SUBMIT }).click();
     await expect.poll(() => bodies.length).toBe(1);
@@ -392,7 +395,7 @@ test.describe('registration form, flagged ticket', () => {
     expect(reg).toMatchObject({ judgeAccredited: 'Yes', judgeOrganisation: 'SAOC', judgeAvailable: 'No', judgeDate: 'None', country: 'United Kingdom', province: null });
     await expect(page.getByRole('button', { name: SUBMIT })).toBeEnabled();
     await field(page, 1, 'judgeAvailable').check();
-    await form(page, 1).getByRole('group', { name: DATE_LABEL }).getByLabel('23-Sep', { exact: true }).check();
+    await form(page, 1).getByRole('group', { name: DATE_LABEL }).getByLabel('23 September 2027', { exact: true }).check();
     await page.getByRole('button', { name: SUBMIT }).click();
     await expect.poll(() => bodies.length).toBe(2);
     reg = bodies[1].lineItems[0].registration as Record<string, unknown>;
