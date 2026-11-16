@@ -195,3 +195,24 @@ Brad-only: review and send Lee-Ann's invoice before year end; review hours Thu-S
 - [ ] P1 Hero and banner photos: any orchid will do, it does not have to be South African (90 to 95% of growers grow hybrids). Use Lee-Ann's free stock folder (Drive 15DHolJ-55GcoTVfZc2-lGrx6GsuTPHFa); she will buy a specific photo if we ask, cheap ones only. No AI-generated photos anywhere except the logo. Brad has favourites; he picks them.
 - [ ] P1 Conference prices from Lee-Ann's final list (Ticket Pricing.docx, 16 Nov): early bird R1 200 and spouse/partner R950 for both SAOC and WOSA. The early bird SKUs exist but are inactive; activate them once she gives the dates (#196 handles the cut-off). Spouse/partner needs a new SKU: asked her what it covers (doc, 16 Nov). Workshops R100 and complimentary R0 also asked.
 - Done 16 Nov: Sanity prices set from her list (VIP 350, Weekend Pass 350, symposium 1 500, WOSA 1 500, outing 150, cocktails 350). Footer stays in colour (committee's choice; Brad would have kept grayscale). Kosher guests choose Vegetarian, no separate option. Day and outing tickets keep name and email only.
+
+## 16-17 Nov night: Brad's "build everything not waiting on Lee-Ann" + beautification (all on dev preview, awaiting Brad's dev review)
+- Done, merged to main: #195 registration form (Brad approved for Lee-Ann to test).
+- On dev, awaiting review:
+  - feat/orchid-photo-refresh: 15 new hero crops plus 7 stubs (Hendrik Schoeman's photos first; close-ups of the dark studio stock shots). It supersedes #198; close #198 when this ships.
+  - fix/unblocked-site-batch-1: ticket anchor offset, recovery token valid to show end + 7 days, whoami 200. Gemini PASS.
+  - design/style-polish-1: 17 audit fixes plus round 2. Gemini found one defect, now fixed.
+  - Rebased locally, not yet pushed (force-push is blocked, so push them under new branch names): fix/a11y-attendees-mobile-menu, perf/lazy-firebase-signout.
+  - Already pushed and merged into preview: fix/fc1-nos-pr1-saoc, design/lt3-doc-h2-weight.
+- [ ] Brad ruling: where to show Commons photo credits (lib/data/photo-credits.ts holds the data, nothing rendered yet). The Zygopetalum 'Dunkle Blüte' author asks for an email before use outside Wikipedia.
+- [ ] Brad ruling, style audit R1-R10 (`.tmp/sandbox/style-audit/`):
+  - text cards square or rounded;
+  - /about hero facts alignment;
+  - tickets fan geometry;
+  - hide the single-item sub-nav;
+  - events flagship band without a photo;
+  - SAOC button recipe drift;
+  - NOS form radius 2, 8 or 10;
+  - NOS two-row phone header (147px);
+  - grey ledge from the home card shadow on phones.
+- [ ] /events hero is a pot-grown Habenaria (terrestrial); Lee-Ann may prefer a cultivated epiphyte. Alternative: swap it with the white Cattleya.
