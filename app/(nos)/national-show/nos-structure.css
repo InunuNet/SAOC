@@ -4885,3 +4885,15 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   border: 0;
   padding: 0;
 }
+
+@media print {
+  .nos-theme [data-nos-hero-media], .nos-theme .nos-hero-scrim {
+    display: none !important;
+  }
+  .nos-theme .nk-pool, .nos-theme .nk-pool * {
+    background: none !important;
+    color: #000 !important;
+    border-color: #000 !important;
+  }
+  .nos-theme .nk-pool a { text-decoration: underline; }
+}
