@@ -1,0 +1,108 @@
+{
+  "matched": [
+    {
+      "detailed": "Zululand Orchid Society",
+      "contactList": "Zululand Orchid Society",
+      "via": "exact"
+    },
+    {
+      "detailed": "Highway Orchid Society",
+      "contactList": "Highway Orchid Society",
+      "via": "exact"
+    },
+    {
+      "detailed": "Vlakte Orgideevereniging",
+      "contactList": "Die Vlakte Orchid Society",
+      "via": "alias"
+    },
+    {
+      "detailed": "Walker Bay Orchid Society",
+      "contactList": "Walker Bay Orchid Society",
+      "via": "exact"
+    },
+    {
+      "detailed": "Tygerberg Orchid Group",
+      "contactList": "Tygerberg Orchid Group",
+      "via": "exact"
+    },
+    {
+      "detailed": "Cape Orchid Society",
+      "contactList": "Cape Orchid Society",
+      "via": "exact"
+    },
+    {
+      "detailed": "Northern Gauteng Orchid Society",
+      "contactList": "Northern Gauteng Orchid Society",
+      "via": "exact"
+    },
+    {
+      "detailed": "Pietermaritzberg Orchid Society",
+      "contactList": "Pietermaritzburg Orchid Society",
+      "via": "alias"
+    },
+    {
+      "detailed": "Witwatersrand Orchid Society",
+      "contactList": "Witwatersrand Orchid Society",
+      "via": "exact"
+    },
+    {
+      "detailed": "Orchid Society of the Southern Cape",
+      "contactList": "Orchid Society of the Southern Cape",
+      "via": "exact"
+    },
+    {
+      "detailed": "Gonubie Orchid Society",
+      "contactList": "Gonubie Orchid Society",
+      "via": "exact"
+    },
+    {
+      "detailed": "Eastern Province Orchid Society",
+      "contactList": "Eastern Province Orchid Society",
+      "via": "exact"
+    }
+  ],
+  "contactListOnly": [
+    "Alfred County Orchid Society",
+    "Border Orchid Society",
+    "East Rand Orchid Society",
+    "Lowveld Orchid Group",
+    "Natal Orchid Society",
+    "Phalaborwa Orchid Society",
+    "Plantae Orchid Group",
+    "Rustenburg Orchid Society",
+    "Wolkberg Orchid Society"
+  ],
+  "emailConflicts": [
+    {
+      "slug": "vlakte-orgideevereniging",
+      "field": "contactEmail",
+      "detailed": "ronel.eksteen29@gmail.com",
+      "contactList": "ronel.eksteenza@gmail.com"
+    },
+    {
+      "slug": "tygerberg-orchid-group",
+      "field": "contactEmail",
+      "detailed": "tygerbergorchidgroup@gmail.com",
+      "contactList": "tygerorchidgroup@gmail.com"
+    },
+    {
+      "slug": "northern-gauteng-orchid-society",
+      "field": "contactEmail",
+      "detailed": "info@northerngautengorchidsociety.com",
+      "contactList": "ngos@saoc.co.za"
+    },
+    {
+      "slug": "pietermaritzberg-orchid-society",
+      "field": "contactEmail",
+      "detailed": "carolcook588@gmail.com",
+      "contactList": "YoungA@ukzn.ac.za"
+    },
+    {
+      "slug": "gonubie-orchid-society",
+      "field": "contactEmail",
+      "detailed": "annettebrown100@gmail.com",
+      "contactList": "gonubieorchidos@gmail.com"
+    }
+  ],
+  "fills": []
+}

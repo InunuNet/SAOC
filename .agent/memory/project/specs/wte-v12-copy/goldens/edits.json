@@ -1,0 +1,19 @@
+{
+  "_source": "Lee-Ann 'What to Expect.docx' Drive id 1UPPsvb7MNGkj-y5nV7CDDH5KyrblZMNi, edited 2 Nov 2026; paragraphs dumped verbatim in source-doc-paragraphs.txt. Base = origin/main 0d639ba2 page.tsx (before-page.tsx).",
+  "_whitespace_note": "Her doc has double spaces around the hyphen and in 'Western  Cape' in the made-possible sentence (a docx artefact; HTML collapses them). Pinned with single spaces per team-lead.",
+  "_keep": "'takes place' stays. Her 2 Nov reply to the old comment was 'Corrected'. 'takes please' is her doc's own typo and must be absent from the page.",
+  "edits": [
+    {"id": "E1", "before": "const FOOD = \"There is a restaurant on site as well as food vendors will be available.\";",
+     "after": "const FOOD = \"There will be several options for food and beverages.\";",
+     "her_words": "There will be several options for food and beverages."},
+    {"id": "E2a", "count": 2, "before": "meet members of the orchid societies from across the country",
+     "after": "meet orchid societies from across the country",
+     "her_words": "meet orchid societies from across the country"},
+    {"id": "E3", "before": "\"The 2027 National Show is made possible through",
+     "after": "\"The National Orchid Show - Western Cape 2027 is made possible through",
+     "her_words": "The National Orchid Show -  Western  Cape  2027 is made possible through"},
+    {"id": "E4", "before": "  { id: 'ticketType-early-bird', slug: 'early-bird', name: 'Early-Bird Exhibition Ticket' },\n",
+     "after": "  { id: 'ticketType-early-bird', slug: 'early-bird', name: 'Early-Bird Exhibition Ticket' },\n  { id: 'ticketType-day-visitor', slug: 'day-visitor', name: 'Day Pass Ticket' },\n",
+     "her_words": "Day Pass Ticket, R150 (price is read live from Sanity ticketType-day-visitor = 150, never hardcoded)"}
+  ]
+}

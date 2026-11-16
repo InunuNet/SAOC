@@ -1,0 +1,380 @@
+[
+  {
+    "_id": "society-cape-orchid-society",
+    "_type": "society",
+    "_rev": "fixture-rev-00",
+    "name": "Cape Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "cape-orchid-society"
+    },
+    "province": "WC",
+    "region": "Western Cape",
+    "founded": 1947,
+    "memberCount": 220,
+    "foundedPlaceholder": true,
+    "memberCountPlaceholder": true,
+    "meetPlaceholder": true,
+    "venuePlaceholder": true
+  },
+  {
+    "_id": "society-natal-orchid-society",
+    "_type": "society",
+    "_rev": "fixture-rev-01",
+    "name": "Natal Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "natal-orchid-society"
+    },
+    "province": "KZN",
+    "region": "KwaZulu-Natal",
+    "founded": 1954,
+    "memberCount": 310,
+    "foundedPlaceholder": true,
+    "memberCountPlaceholder": true,
+    "meetPlaceholder": true,
+    "venuePlaceholder": true
+  },
+  {
+    "_id": "society-transvaal-orchid-society",
+    "_type": "society",
+    "_rev": "fixture-rev-02",
+    "name": "Transvaal Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "transvaal-orchid-society"
+    },
+    "province": "GP",
+    "region": "Gauteng",
+    "founded": 1959,
+    "memberCount": 280,
+    "foundedPlaceholder": true,
+    "memberCountPlaceholder": true,
+    "meetPlaceholder": true,
+    "venuePlaceholder": true
+  },
+  {
+    "_id": "society-northern-transvaal-orchid-society",
+    "_type": "society",
+    "_rev": "fixture-rev-03",
+    "name": "Northern Transvaal Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "northern-transvaal-orchid-society"
+    },
+    "province": "GP",
+    "region": "Tshwane",
+    "founded": 1962,
+    "memberCount": 190,
+    "foundedPlaceholder": true,
+    "memberCountPlaceholder": true,
+    "meetPlaceholder": true,
+    "venuePlaceholder": true
+  },
+  {
+    "_id": "society-east-rand-orchid-society",
+    "_type": "society",
+    "_rev": "fixture-rev-04",
+    "name": "East Rand Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "east-rand-orchid-society"
+    },
+    "province": "GP",
+    "region": "Ekurhuleni",
+    "founded": 1974,
+    "memberCount": 95,
+    "foundedPlaceholder": true,
+    "memberCountPlaceholder": true,
+    "meetPlaceholder": true,
+    "venuePlaceholder": true
+  },
+  {
+    "_id": "society-west-rand-orchid-society",
+    "_type": "society",
+    "_rev": "fixture-rev-05",
+    "name": "West Rand Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "west-rand-orchid-society"
+    },
+    "province": "GP",
+    "region": "Krugersdorp",
+    "founded": 1978,
+    "memberCount": 72,
+    "foundedPlaceholder": true,
+    "memberCountPlaceholder": true,
+    "meetPlaceholder": true,
+    "venuePlaceholder": true
+  },
+  {
+    "_id": "society-lowveld-orchid-society",
+    "_type": "society",
+    "_rev": "fixture-rev-06",
+    "name": "Lowveld Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "lowveld-orchid-society"
+    },
+    "province": "MP",
+    "region": "Mbombela",
+    "founded": 1981,
+    "memberCount": 110,
+    "foundedPlaceholder": true,
+    "memberCountPlaceholder": true,
+    "meetPlaceholder": true,
+    "venuePlaceholder": true
+  },
+  {
+    "_id": "society-highveld-orchid-society",
+    "_type": "society",
+    "_rev": "fixture-rev-07",
+    "name": "Highveld Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "highveld-orchid-society"
+    },
+    "province": "MP",
+    "region": "Witbank",
+    "founded": 1985,
+    "memberCount": 48,
+    "foundedPlaceholder": true,
+    "memberCountPlaceholder": true,
+    "meetPlaceholder": true,
+    "venuePlaceholder": true
+  },
+  {
+    "_id": "society-free-state-orchid-society",
+    "_type": "society",
+    "_rev": "fixture-rev-08",
+    "name": "Free State Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "free-state-orchid-society"
+    },
+    "province": "FS",
+    "region": "Bloemfontein",
+    "founded": 1970,
+    "memberCount": 65,
+    "foundedPlaceholder": true,
+    "memberCountPlaceholder": true,
+    "meetPlaceholder": true,
+    "venuePlaceholder": true
+  },
+  {
+    "_id": "society-border-orchid-society",
+    "_type": "society",
+    "_rev": "fixture-rev-09",
+    "name": "Border Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "border-orchid-society"
+    },
+    "province": "EC",
+    "region": "East London",
+    "founded": 1976,
+    "memberCount": 54,
+    "foundedPlaceholder": true,
+    "memberCountPlaceholder": true,
+    "meetPlaceholder": true,
+    "venuePlaceholder": true
+  },
+  {
+    "_id": "society-eastern-province-orchid-society",
+    "_type": "society",
+    "_rev": "fixture-rev-10",
+    "name": "Eastern Province Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "eastern-province-orchid-society"
+    },
+    "province": "EC",
+    "region": "Gqeberha",
+    "founded": 1972,
+    "memberCount": 88,
+    "foundedPlaceholder": true,
+    "memberCountPlaceholder": true,
+    "meetPlaceholder": true,
+    "venuePlaceholder": true
+  },
+  {
+    "_id": "society-garden-route-orchid-society",
+    "_type": "society",
+    "_rev": "fixture-rev-11",
+    "name": "Garden Route Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "garden-route-orchid-society"
+    },
+    "province": "WC",
+    "region": "George",
+    "founded": 1989,
+    "memberCount": 76,
+    "foundedPlaceholder": true,
+    "memberCountPlaceholder": true,
+    "meetPlaceholder": true,
+    "venuePlaceholder": true
+  },
+  {
+    "_id": "society-overberg-orchid-society",
+    "_type": "society",
+    "_rev": "fixture-rev-12",
+    "name": "Overberg Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "overberg-orchid-society"
+    },
+    "province": "WC",
+    "region": "Hermanus",
+    "founded": 1994,
+    "memberCount": 41,
+    "foundedPlaceholder": true,
+    "memberCountPlaceholder": true,
+    "meetPlaceholder": true,
+    "venuePlaceholder": true
+  },
+  {
+    "_id": "society-winelands-orchid-society",
+    "_type": "society",
+    "_rev": "fixture-rev-13",
+    "name": "Winelands Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "winelands-orchid-society"
+    },
+    "province": "WC",
+    "region": "Stellenbosch",
+    "founded": 1998,
+    "memberCount": 62,
+    "foundedPlaceholder": true,
+    "memberCountPlaceholder": true,
+    "meetPlaceholder": true,
+    "venuePlaceholder": true
+  },
+  {
+    "_id": "society-midlands-orchid-society",
+    "_type": "society",
+    "_rev": "fixture-rev-14",
+    "name": "Midlands Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "midlands-orchid-society"
+    },
+    "province": "KZN",
+    "region": "Pietermaritzburg",
+    "founded": 1983,
+    "memberCount": 84,
+    "foundedPlaceholder": true,
+    "memberCountPlaceholder": true,
+    "meetPlaceholder": true,
+    "venuePlaceholder": true
+  },
+  {
+    "_id": "society-north-coast-orchid-society",
+    "_type": "society",
+    "_rev": "fixture-rev-15",
+    "name": "North Coast Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "north-coast-orchid-society"
+    },
+    "province": "KZN",
+    "region": "Ballito",
+    "founded": 1991,
+    "memberCount": 58,
+    "foundedPlaceholder": true,
+    "memberCountPlaceholder": true,
+    "meetPlaceholder": true,
+    "venuePlaceholder": true
+  },
+  {
+    "_id": "society-kalahari-orchid-society",
+    "_type": "society",
+    "_rev": "fixture-rev-16",
+    "name": "Kalahari Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "kalahari-orchid-society"
+    },
+    "province": "NC",
+    "region": "Kimberley",
+    "founded": 1988,
+    "memberCount": 32,
+    "foundedPlaceholder": true,
+    "memberCountPlaceholder": true,
+    "meetPlaceholder": true,
+    "venuePlaceholder": true
+  },
+  {
+    "_id": "society-limpopo-orchid-society",
+    "_type": "society",
+    "_rev": "fixture-rev-17",
+    "name": "Limpopo Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "limpopo-orchid-society"
+    },
+    "province": "LP",
+    "region": "Polokwane",
+    "founded": 1996,
+    "memberCount": 37,
+    "foundedPlaceholder": true,
+    "memberCountPlaceholder": true,
+    "meetPlaceholder": true,
+    "venuePlaceholder": true
+  },
+  {
+    "_id": "society-north-west-orchid-society",
+    "_type": "society",
+    "_rev": "fixture-rev-18",
+    "name": "North West Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "north-west-orchid-society"
+    },
+    "province": "NW",
+    "region": "Potchefstroom",
+    "founded": 1992,
+    "memberCount": 44,
+    "foundedPlaceholder": true,
+    "memberCountPlaceholder": true,
+    "meetPlaceholder": true,
+    "venuePlaceholder": true
+  },
+  {
+    "_id": "society-vaal-triangle-orchid-society",
+    "_type": "society",
+    "_rev": "fixture-rev-19",
+    "name": "Vaal Triangle Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "vaal-triangle-orchid-society"
+    },
+    "province": "GP",
+    "region": "Vanderbijlpark",
+    "founded": 1986,
+    "memberCount": 51,
+    "foundedPlaceholder": true,
+    "memberCountPlaceholder": true,
+    "meetPlaceholder": true,
+    "venuePlaceholder": true
+  },
+  {
+    "_id": "society-south-cape-orchid-society",
+    "_type": "society",
+    "_rev": "fixture-rev-20",
+    "name": "South Cape Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "south-cape-orchid-society"
+    },
+    "province": "WC",
+    "region": "Mossel Bay",
+    "founded": 2001,
+    "memberCount": 36,
+    "foundedPlaceholder": true,
+    "memberCountPlaceholder": true,
+    "meetPlaceholder": true,
+    "venuePlaceholder": true
+  }
+]

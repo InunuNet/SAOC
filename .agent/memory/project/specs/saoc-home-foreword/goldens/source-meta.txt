@@ -1,0 +1,6 @@
+file: SAOC Forward   11OCT2026.docx
+fileId: 1tF8g9yL1AIEqaf44ZAAJU0v4XMlJR5OL
+modifiedTime: 2026-10-28T06:03:43.936Z
+folder: Website docs for Brad > SAOC > 1. Home (1apCo6hv-evVb6qBHEMH_TKdEAP8e2LBq)
+doc title line (dropped from body, kept as heading source): "SAOC FORWARD" + date stamp "11OCT2026"
+request doc: "Changes that need to be made to the SAOC home page" 1WOqmfgeDd-LYLWmUKurAf7K4nE662tdgYte6FGZVfvU (modified 2026-11-12T06:28:05.951Z)

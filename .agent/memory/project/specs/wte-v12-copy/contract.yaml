@@ -1,0 +1,69 @@
+schema: athanor.contract/v1
+slug: wte-v12-copy
+goal: Land Lee-Ann's four outstanding What to Expect copy edits (food line, orchid societies, made-possible sentence, Day Pass admission row) and nothing else.
+created_at: '2026-11-13'
+autonomy: high
+
+features:
+  - id: F1
+    name: What to Expect v1.2 copy edits (food, societies, made-possible, Day Pass row)
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/wte-v12-copy/goldens/spec.md
+  - .agent/memory/project/specs/wte-v12-copy/goldens/edits.json
+  - .agent/memory/project/specs/wte-v12-copy/goldens/before-page.tsx
+  - .agent/memory/project/specs/wte-v12-copy/goldens/source-doc-paragraphs.txt
+  - .agent/memory/project/specs/wte-v12-copy/goldens/verify_wte_v12.py
+  - .agent/memory/project/specs/wte-v12-copy/goldens/check_qa_out.sh
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: FOOD reads her line
+      command: "grep -qF 'const FOOD = \"There will be several options for food and beverages.\";' \"${CHECK_ROOT:-.}/app/(nos)/national-show/what-to-expect/page.tsx\""
+    - id: A2
+      description: old restaurant line gone
+      command: "! grep -qF 'There is a restaurant on site' \"${CHECK_ROOT:-.}/app/(nos)/national-show/what-to-expect/page.tsx\""
+    - id: A3
+      description: both societies strings (narrative and THEME_LEAD) read meet orchid societies from across the country
+      command: "test $(grep -cF 'meet orchid societies from across the country' \"${CHECK_ROOT:-.}/app/(nos)/national-show/what-to-expect/page.tsx\") -eq 2"
+    - id: A4
+      description: old members-of-the-orchid-societies wording gone
+      command: "! grep -qF 'meet members of the orchid societies' \"${CHECK_ROOT:-.}/app/(nos)/national-show/what-to-expect/page.tsx\""
+    - id: A5
+      description: made-possible sentence opens with The National Orchid Show - Western Cape 2027 and the old opening is gone
+      command: "grep -qF '\"The National Orchid Show - Western Cape 2027 is made possible through the generous support' \"${CHECK_ROOT:-.}/app/(nos)/national-show/what-to-expect/page.tsx\" && ! grep -qF 'The 2027 National Show is made possible' \"${CHECK_ROOT:-.}/app/(nos)/national-show/what-to-expect/page.tsx\""
+    - id: A6
+      description: Day Pass row follows Early-Bird in ADMISSION_ROWS with the neighbouring row shape
+      command: "grep -qF \"  { id: 'ticketType-day-visitor', slug: 'day-visitor', name: 'Day Pass Ticket' },\" \"${CHECK_ROOT:-.}/app/(nos)/national-show/what-to-expect/page.tsx\""
+    - id: A7
+      description: takes place stays and her typo takes please is absent
+      command: "grep -qF 'takes place every three years' \"${CHECK_ROOT:-.}/app/(nos)/national-show/what-to-expect/page.tsx\" && ! grep -qF 'takes please' \"${CHECK_ROOT:-.}/app/(nos)/national-show/what-to-expect/page.tsx\""
+    - id: A8
+      description: page equals the origin/main base plus exactly the four pinned edits, nothing else changed
+      command: "python3 -I .agent/memory/project/specs/wte-v12-copy/goldens/verify_wte_v12.py .agent/memory/project/specs/wte-v12-copy/goldens/edits.json .agent/memory/project/specs/wte-v12-copy/goldens/before-page.tsx \"${CHECK_ROOT:-.}/app/(nos)/national-show/what-to-expect/page.tsx\""
+    - id: A9
+      description: Day Pass price is not hardcoded in the page
+      command: "! grep -qE 'R ?150|price: *150' \"${CHECK_ROOT:-.}/app/(nos)/national-show/what-to-expect/page.tsx\""
+    - id: A10
+      description: Typecheck passes
+      command: pnpm --dir "${CHECK_ROOT:-.}" type-check
+    - id: A11
+      description: Cross-model review (codex_qa) returned PASS; reads the saved verdict in .tmp/sandbox/codex-wte-v12/qa.out
+      type: codex_qa
+      script: .agent/memory/project/specs/wte-v12-copy/goldens/check_qa_out.sh
+      target: .tmp/sandbox/codex-wte-v12/qa.out
+      timeout_seconds: 60
+      required: true
+    - id: A12
+      description: PENDING DEPLOY - BrowserAgent on beta.saoc.co.za confirms the four edits render on /national-show/what-to-expect (food line, societies wording, made-possible sentence, Day Pass row with live R150). Expected to fail until the push to beta; not faked.
+      type: browser_deployed_check
+      target: .agent/memory/scratch/wte-v12-browser-manifest.json
+      required: true
+    - id: A13
+      description: gws inbox check is not applicable (no email is sent); declared non-required only to satisfy the triad coverage linter, expected to skip
+      type: gws_inbox_check
+      target: .agent/memory/scratch/wte-v12-gws-manifest.json
+      required: false

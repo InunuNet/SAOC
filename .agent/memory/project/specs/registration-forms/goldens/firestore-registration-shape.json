@@ -1,0 +1,148 @@
+{
+  "schema": "saoc.registration-firestore-shape/v2",
+  "note": "Stored on every ticket doc of a flagged ticket type (one per attendee). Copied sections are stored as VALUES on each ticket plus sameAsAttendee1 naming them. Email stays in attendeeEmail. No undefined anywhere; non-SA province is null. An unflagged ticket doc carries NO registration key.",
+  "registrationKeysInOrder": [
+    "attendeeNumber",
+    "title",
+    "firstName",
+    "surname",
+    "preferredName",
+    "mobile",
+    "country",
+    "province",
+    "societies",
+    "attending",
+    "judgeAccredited",
+    "judgeOrganisation",
+    "judgeAvailable",
+    "judgeDate",
+    "judgeCommunication",
+    "judgeForum",
+    "dietary",
+    "sameAsAttendee1"
+  ],
+  "derivedTicketFields": {
+    "attendeeName": "firstName + single space + surname (trimmed)",
+    "attendeeEmail": "registration email, trimmed and lower-cased"
+  },
+  "examples": {
+    "attendee1": {
+      "attendeeName": "Testone Person",
+      "attendeeEmail": "one@example.invalid",
+      "registration": {
+        "attendeeNumber": 1,
+        "title": "Ms",
+        "firstName": "Testone",
+        "surname": "Person",
+        "preferredName": "Te",
+        "mobile": "+27 11 000 0000",
+        "country": "South Africa",
+        "province": "Western Cape",
+        "societies": [
+          "Cape Orchid Society"
+        ],
+        "attending": "SAOC Symposium Normal Ticket",
+        "judgeAccredited": "No",
+        "judgeOrganisation": "Not applicable",
+        "judgeAvailable": "Not applicable",
+        "judgeDate": "Not applicable",
+        "judgeCommunication": "No",
+        "judgeForum": "No",
+        "dietary": "None",
+        "sameAsAttendee1": []
+      }
+    },
+    "attendee2CopiedSections": {
+      "attendeeName": "Testtwo Person",
+      "attendeeEmail": "two@example.invalid",
+      "registration": {
+        "attendeeNumber": 2,
+        "title": "Ms",
+        "firstName": "Testtwo",
+        "surname": "Person",
+        "preferredName": "Te",
+        "mobile": "+27 11 000 0000",
+        "country": "South Africa",
+        "province": "Western Cape",
+        "societies": [
+          "Cape Orchid Society"
+        ],
+        "attending": "SAOC Symposium Normal Ticket",
+        "judgeAccredited": "Yes",
+        "judgeOrganisation": "SAOC",
+        "judgeAvailable": "Yes",
+        "judgeDate": "22 & 23 Sept",
+        "judgeCommunication": "Yes",
+        "judgeForum": "Yes",
+        "dietary": "Vegetarian",
+        "sameAsAttendee1": [
+          "contact",
+          "membership"
+        ]
+      }
+    },
+    "overseasCocktail": {
+      "attendeeName": "Testover Person",
+      "attendeeEmail": "over@example.invalid",
+      "registration": {
+        "attendeeNumber": 1,
+        "title": "Ms",
+        "firstName": "Testover",
+        "surname": "Person",
+        "preferredName": "Te",
+        "mobile": "+27 11 000 0000",
+        "country": "Australia",
+        "province": null,
+        "societies": [
+          "Overseas visitor"
+        ],
+        "attending": "Sunset Cocktails",
+        "judgeAccredited": "No",
+        "judgeOrganisation": "Not applicable",
+        "judgeAvailable": "Not applicable",
+        "judgeDate": "Not applicable",
+        "judgeCommunication": "No",
+        "judgeForum": "No",
+        "dietary": "Halaal",
+        "sameAsAttendee1": []
+      }
+    }
+  },
+  "unflaggedTicketDocKeys": [
+    "issuedInTestMode",
+    "bookingRef",
+    "showId",
+    "attendeeName",
+    "attendeeEmail",
+    "ticketType",
+    "status",
+    "amount",
+    "purchasedAt",
+    "checkedInAt",
+    "m_payment_id",
+    "pf_payment_id",
+    "orderId",
+    "compedBy",
+    "expiresAt",
+    "idempotencyKey",
+    "chosenDay"
+  ],
+  "orderDocKeys": [
+    "issuedInTestMode",
+    "showId",
+    "buyerName",
+    "buyerEmail",
+    "amount",
+    "status",
+    "expiresAt",
+    "idempotencyKey",
+    "purchasedAt",
+    "gateway",
+    "gatewayPaymentId",
+    "m_payment_id",
+    "pf_payment_id",
+    "recoveryToken",
+    "recoveryTokenExpiresAt",
+    "expectedGatewayAmount"
+  ]
+}

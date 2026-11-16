@@ -1,0 +1,301 @@
+National Orchid Show – Western Cape 2027
+Ticket booking confirmation emails
+1. Early Bird Exhibition Ticket
+Subject: Your Early Bird Ticket – National Orchid Show – Western Cape 2027
+Dear {first_name},
+Thank you for booking your Early Bird Exhibition Ticket for the National Orchid Show – Western Cape 2027.
+We look forward to welcoming you to Hangar 25 at Stellenbosch Airfield for an exceptional celebration of orchids.
+Your booking details
+- Booking reference: {booking_reference}
+- Ticket type: Early Bird Exhibition Ticket
+- Ticket holder: {visitor_name}
+- Number of tickets: {ticket_quantity}
+- Valid for: {selected_visit_date}
+- Amount paid: {amount_paid}
+- Payment status: {payment_status}
+Your ticket and entry
+Your ticket is valid for one day only, on the date selected when making your booking.
+Please bring your ticket, either printed or displayed on your mobile device, so that the QR code can be scanned at the entrance.
+Exhibition opening hours
+- Friday, 24 September 2027: 09:00–17:00
+- Saturday, 25 September 2027: 09:00–17:00
+- Sunday, 26 September 2027: 09:00–16:00
+Venue and parking
+Hangar 25, Stellenbosch Airfield, Stellenbosch, Western Cape (R44).
+Parking will be available at the venue. Further parking and access instructions will be provided closer to the event.
+Ticket transfers
+If you are unable to attend, you may transfer your ticket to another person. Please give the new ticket holder a printed copy of the original ticket, including its QR code. The printed ticket must be presented at the entrance for scanning.
+Each QR code is valid for one ticket entitlement only and may not be used by more than one person.
+Cancellation and refund policy
+Cancellation requests must be submitted in writing to the organisers, quoting your booking reference.
+Refunds are calculated on the original ticket price, less the applicable cancellation percentage and a 5% administration fee:
+- More than 60 days before the event: 90% refund, less the 5% administration fee (85% of the original ticket price).
+- 30–60 days before the event: 75% refund, less the 5% administration fee (70% of the original ticket price).
+- 14–29 days before the event: 50% refund, less the 5% administration fee (45% of the original ticket price).
+- Less than 14 days before the event: Requests will be considered individually. Any approved refund will be subject to the 5% administration fee.
+The administration fee covers transaction and processing costs incurred by the organisers, including payment gateway and bank charges.
+If the organisers cancel the event, affected ticket holders will receive a full refund without an administration fee.
+Approved refunds will be processed within 14 business days.
+We look forward to seeing you!
+For further information, please visit nos.saoc.co.za or contact us at info@saoc.co.za.
+Kind regards,
+The National Orchid Show – Western Cape 2027 Organising Committee
+2. Day Visitor Ticket
+Subject: Your Day Visitor Ticket – National Orchid Show – Western Cape 2027
+Dear {first_name},
+Thank you for booking your Day Visitor Ticket for the National Orchid Show – Western Cape 2027.
+We look forward to welcoming you to Hangar 25 at Stellenbosch Airfield.
+Your booking details
+- Booking reference: {booking_reference}
+- Ticket type: Day Visitor Ticket
+- Ticket holder: {visitor_name}
+- Number of tickets: {ticket_quantity}
+- Valid for: {selected_visit_date}
+- Amount paid: {amount_paid}
+- Payment status: {payment_status}
+Your ticket and entry
+Your ticket is valid for one selected day only. It does not provide access on the other exhibition days.
+Please bring your ticket, either printed or displayed on your mobile device, so that the QR code can be scanned at the entrance.
+Exhibition opening hours
+- Friday, 24 September 2027: 09:00–17:00
+- Saturday, 25 September 2027: 09:00–17:00
+- Sunday, 26 September 2027: 09:00–16:00
+Venue and parking
+Hangar 25, Stellenbosch Airfield, Stellenbosch, Western Cape (R44).
+Parking will be available at the venue. Further parking and access instructions will be provided closer to the event.
+Ticket transfers
+If you are unable to attend, you may transfer your ticket to another person. Please give the new ticket holder a printed copy of the original ticket, including its QR code. The printed ticket must be presented at the entrance for scanning.
+Each QR code is valid for one ticket entitlement only and may not be used by more than one person.
+Cancellation and refund policy
+Cancellation requests must be submitted in writing to the organisers, quoting your booking reference.
+Refunds are calculated on the original ticket price, less the applicable cancellation percentage and a 5% administration fee:
+- More than 60 days before the event: 90% refund, less the 5% administration fee (85% of the original ticket price).
+- 30–60 days before the event: 75% refund, less the 5% administration fee (70% of the original ticket price).
+- 14–29 days before the event: 50% refund, less the 5% administration fee (45% of the original ticket price).
+- Less than 14 days before the event: Requests will be considered individually. Any approved refund will be subject to the 5% administration fee.
+The administration fee covers transaction and processing costs incurred by the organisers, including payment gateway and bank charges.
+If the organisers cancel the event, affected ticket holders will receive a full refund without an administration fee.
+Approved refunds will be processed within 14 business days.
+We look forward to welcoming you!
+For further information, please visit nos.saoc.co.za or contact us at info@saoc.co.za.
+Kind regards,
+The National Orchid Show – Western Cape 2027 Organising Committee
+3. Weekend Pass
+Subject: Your Weekend Pass – National Orchid Show – Western Cape 2027
+Dear {first_name},
+Thank you for booking your Weekend Pass for the National Orchid Show – Western Cape 2027.
+Your Weekend Pass gives you the opportunity to enjoy the exhibition over all three public show days. We look forward to welcoming you!
+Your booking details
+- Booking reference: {booking_reference}
+- Ticket type: Weekend Pass
+- Ticket holder: {visitor_name}
+- Number of tickets: {ticket_quantity}
+- Valid for: Friday 24, Saturday 25 and Sunday 26 September 2027
+- Amount paid: {amount_paid}
+- Payment status: {payment_status}
+Your ticket and entry
+Your Weekend Pass is valid for all three public exhibition days:
+- Friday, 24 September 2027: 09:00–17:00
+- Saturday, 25 September 2027: 09:00–17:00
+- Sunday, 26 September 2027: 09:00–16:00
+Please bring your ticket, either printed or displayed on your mobile device, each time you visit. Your QR code will be validated for each permitted day of entry. It is not necessary to obtain a separate ticket for each day.
+Venue and parking
+Hangar 25, Stellenbosch Airfield, Stellenbosch, Western Cape (R44).
+Parking will be available at the venue. Further parking and access instructions will be provided closer to the event.
+Ticket transfers
+If you are unable to attend, you may transfer your ticket to another person. Please give the new ticket holder a printed copy of the original ticket, including its QR code. The printed ticket must be presented at the entrance for scanning.
+Each QR code is valid for one ticket entitlement only and may not be used by more than one person.
+Cancellation and refund policy
+Cancellation requests must be submitted in writing to the organisers, quoting your booking reference.
+Refunds are calculated on the original ticket price, less the applicable cancellation percentage and a 5% administration fee:
+- More than 60 days before the event: 90% refund, less the 5% administration fee (85% of the original ticket price).
+- 30–60 days before the event: 75% refund, less the 5% administration fee (70% of the original ticket price).
+- 14–29 days before the event: 50% refund, less the 5% administration fee (45% of the original ticket price).
+- Less than 14 days before the event: Requests will be considered individually. Any approved refund will be subject to the 5% administration fee.
+The administration fee covers transaction and processing costs incurred by the organisers, including payment gateway and bank charges.
+If the organisers cancel the event, affected ticket holders will receive a full refund without an administration fee.
+Approved refunds will be processed within 14 business days.
+Enjoy the show!
+For further information, please visit nos.saoc.co.za or contact us at info@saoc.co.za.
+Kind regards,
+The National Orchid Show – Western Cape 2027 Organising Committee
+4. VIP Ticket
+Subject: Your VIP Ticket – National Orchid Show – Western Cape 2027
+Dear {first_name},
+Thank you for booking your VIP Ticket for the National Orchid Show – Western Cape 2027.
+We are delighted that you will be joining us for this special opening event. Your VIP experience offers an opportunity to enjoy the show ahead of the public exhibition.
+Your booking details
+- Booking reference: {booking_reference}
+- Ticket type: VIP Ticket
+- Ticket holder: {visitor_name}
+- Number of tickets: {ticket_quantity}
+- Date: Thursday, 23 September 2027
+- Time: 16:00–18:30
+- Amount paid: {amount_paid}
+- Payment status: {payment_status}
+Your VIP experience
+Your VIP ticket provides access to the National Orchid Show during the exclusive VIP session:
+Thursday, 23 September 2027
+16:00–18:30
+Please arrive in good time to allow for ticket scanning and entry.
+Further details regarding the VIP programme and any confirmed inclusions will be communicated closer to the event.
+Venue and parking
+Hangar 25, Stellenbosch Airfield, Stellenbosch, Western Cape (R44).
+Parking will be available at the venue. Further parking and access instructions will be provided closer to the event.
+Ticket transfers
+If you are unable to attend, you may transfer your ticket to another person. Please give the new ticket holder a printed copy of the original ticket, including its QR code. The printed ticket must be presented at the entrance for scanning.
+Each QR code is valid for one ticket entitlement only and may not be used by more than one person.
+Cancellation and refund policy
+Cancellation requests must be submitted in writing to the organisers, quoting your booking reference.
+Refunds are calculated on the original ticket price, less the applicable cancellation percentage and a 5% administration fee:
+- More than 60 days before the event: 90% refund, less the 5% administration fee (85% of the original ticket price).
+- 30–60 days before the event: 75% refund, less the 5% administration fee (70% of the original ticket price).
+- 14–29 days before the event: 50% refund, less the 5% administration fee (45% of the original ticket price).
+- Less than 14 days before the event: Requests will be considered individually. Any approved refund will be subject to the 5% administration fee.
+The administration fee covers transaction and processing costs incurred by the organisers, including payment gateway and bank charges.
+If the organisers cancel the event, affected ticket holders will receive a full refund without an administration fee.
+Approved refunds will be processed within 14 business days.
+We look forward to welcoming you!
+For further information, please visit nos.saoc.co.za or contact us at info@saoc.co.za.
+Kind regards,
+The National Orchid Show – Western Cape 2027 Organising Committee
+5. Sunset Cocktails
+Dear {first_name},
+Thank you for booking your tickets for Sunset Cocktails at the National Orchid Show – Western Cape 2027.
+We are delighted that you will be joining us for an enjoyable evening as part of the National Orchid Show celebrations.
+Your booking details
+- Booking reference: {booking_reference}
+- Ticket type: Sunset Cocktails
+- Booking name: {visitor_name}
+- Number of people attending: {ticket_quantity}
+- Payment status: {payment_status}
+Your ticket and entry
+Please bring your ticket, either printed or displayed on your mobile device, so that the QR code can be scanned on arrival.
+If you are unable to attend, you may transfer your ticket to another person. Please provide the new ticket holder with a printed copy of the original ticket, including its QR code. The printed ticket must be presented at the entrance for scanning.
+Each QR code is valid for one ticket entitlement only and may not be used by more than one person.
+Cancellation and refund policy
+Cancellation requests must be submitted in writing to the organisers, quoting your booking reference.
+Refunds are calculated on the original ticket price, less the applicable cancellation percentage and a 5% administration fee:
+- More than 60 days before the event: 90% refund, less the 5% administration fee (85% of the original ticket price).
+- 30–60 days before the event: 75% refund, less the 5% administration fee (70% of the original ticket price).
+- 14–29 days before the event: 50% refund, less the 5% administration fee (45% of the original ticket price).
+- Less than 14 days before the event: Requests will be considered individually. Any approved refund will be subject to the 5% administration fee.
+The administration fee covers transaction and processing costs incurred by the organisers, including payment gateway and bank charges.
+If the organisers cancel the event, affected ticket holders will receive a full refund without an administration fee.
+Approved refunds will be processed within 14 business days.
+We look forward to sharing a wonderful evening with you!
+For further information, please visit nos.saoc.co.za or contact us at info@saoc.co.za.
+Kind regards,
+The National Orchid Show – Western Cape 2027 Organising Committee
+National Orchid Show – Western Cape 2027
+Symposium and Conference Ticket Confirmation Emails
+1. SAOC Symposium
+Subject: Your SAOC Symposium Booking – National Orchid Show – Western Cape 2027
+Dear {first_name},
+Thank you for booking your ticket for the SAOC Symposium, presented as part of the National Orchid Show – Western Cape 2027.
+We look forward to welcoming you for a day of learning, discussion and knowledge-sharing focused on orchids.
+Your booking details
+- Booking reference: {booking_reference}
+- Ticket type: SAOC Symposium
+- Booking name: {visitor_name}
+- Number of attendees: {ticket_quantity}
+- Event date: Friday, 24 September 2027
+- Payment status: {payment_status}
+Your ticket and entry
+Your ticket provides access to the SAOC Symposium on Friday, 24 September 2027.
+Please bring your ticket, either printed or displayed on your mobile device, so that the QR code can be scanned on arrival.
+Further programme and venue information will be communicated to registered attendees closer to the event.
+Ticket transfers
+If you are unable to attend, you may transfer your ticket to another person. Please provide the new attendee with a printed copy of the original ticket, including its QR code. The printed ticket must be presented at registration for scanning.
+Each QR code is valid for one ticket entitlement only and may not be used by more than one person.
+Cancellation and refund policy
+Cancellation requests must be submitted in writing to the organisers, quoting your booking reference.
+Refunds are calculated on the original ticket price, less the applicable cancellation percentage and a 5% administration fee:
+- More than 60 days before the event: 90% refund, less the 5% administration fee (85% of the original ticket price).
+- 30–60 days before the event: 75% refund, less the 5% administration fee (70% of the original ticket price).
+- 14–29 days before the event: 50% refund, less the 5% administration fee (45% of the original ticket price).
+- Less than 14 days before the event: Requests will be considered individually. Any approved refund will be subject to the 5% administration fee.
+The administration fee covers transaction and processing costs incurred by the organisers, including payment gateway and bank charges.
+If the organisers cancel the event, affected ticket holders will receive a full refund without an administration fee.
+Approved refunds will be processed within 14 business days.
+We look forward to welcoming you to the symposium!
+For further information, please visit nos.saoc.co.za or contact info@saoc.co.za.
+Kind regards,
+The National Orchid Show – Western Cape 2027 Organising Committee
+2. WOSA Conference
+Subject: Your WOSA Conference Booking – National Orchid Show – Western Cape 2027
+Dear {first_name},
+Thank you for booking your ticket for the 7th WOSA Conference, presented as part of the National Orchid Show – Western Cape 2027.
+The conference brings together people with an interest in wild orchids and provides an opportunity to share knowledge, research and conservation experiences.
+We look forward to welcoming you for this special event.
+Your booking details
+- Booking reference: {booking_reference}
+- Ticket type: WOSA Conference
+- Booking name: {visitor_name}
+- Number of attendees: {ticket_quantity}
+- Event date: Saturday, 25 September 2027
+- Payment status: {payment_status}
+Your ticket and entry
+Your ticket provides access to the WOSA Conference on Saturday, 25 September 2027.
+Please bring your ticket, either printed or displayed on your mobile device, so that the QR code can be scanned on arrival.
+Further programme and venue information will be communicated to registered attendees closer to the event.
+Ticket transfers
+If you are unable to attend, you may transfer your ticket to another person. Please provide the new attendee with a printed copy of the original ticket, including its QR code. The printed ticket must be presented at registration for scanning.
+Each QR code is valid for one ticket entitlement only and may not be used by more than one person.
+Cancellation and refund policy
+Cancellation requests must be submitted in writing to the organisers, quoting your booking reference.
+Refunds are calculated on the original ticket price, less the applicable cancellation percentage and a 5% administration fee:
+- More than 60 days before the event: 90% refund, less the 5% administration fee (85% of the original ticket price).
+- 30–60 days before the event: 75% refund, less the 5% administration fee (70% of the original ticket price).
+- 14–29 days before the event: 50% refund, less the 5% administration fee (45% of the original ticket price).
+- Less than 14 days before the event: Requests will be considered individually. Any approved refund will be subject to the 5% administration fee.
+The administration fee covers transaction and processing costs incurred by the organisers, including payment gateway and bank charges.
+If the organisers cancel the event, affected ticket holders will receive a full refund without an administration fee.
+Approved refunds will be processed within 14 business days.
+We look forward to welcoming you to the WOSA Conference!
+For further information, please visit nos.saoc.co.za or contact info@saoc.co.za.
+Kind regards,
+The National Orchid Show – Western Cape 2027 Organising Committee
+3. SAOC/WOSA Joint Ticket
+Subject: Your SAOC Symposium and WOSA Conference Booking – National Orchid Show – Western Cape 2027
+Dear {first_name},
+Thank you for booking your SAOC/WOSA Joint Ticket for the National Orchid Show – Western Cape 2027.
+We are delighted that you will be joining us for both the SAOC Symposium and the 7th WOSA Conference.
+Your joint ticket provides access to both events, offering two days of presentations, knowledge-sharing and discussion about orchids.
+Your booking details
+- Booking reference: {booking_reference}
+- Ticket type: SAOC/WOSA Joint Ticket
+- Booking name: {visitor_name}
+- Number of attendees: {ticket_quantity}
+- Payment status: {payment_status}
+Your event access
+Your joint ticket includes access to both of the following events:
+SAOC Symposium
+- Friday, 24 September 2027
+7th WOSA Conference
+- Saturday, 25 September 2027
+Please bring your ticket, either printed or displayed on your mobile device, on both days. Your QR code will be validated for each event included in your booking.
+Further programme and venue information will be communicated to registered attendees closer to the events.
+Ticket transfers
+If you are unable to attend, you may transfer your ticket to another person. Please provide the new attendee with a printed copy of the original ticket, including its QR code. The printed ticket must be presented at registration for scanning.
+Each QR code is valid for one ticket entitlement only and may not be used by more than one person.
+Cancellation and refund policy
+Cancellation requests must be submitted in writing to the organisers, quoting your booking reference.
+Refunds are calculated on the original ticket price, less the applicable cancellation percentage and a 5% administration fee:
+- More than 60 days before the events: 90% refund, less the 5% administration fee (85% of the original ticket price).
+- 30–60 days before the events: 75% refund, less the 5% administration fee (70% of the original ticket price).
+- 14–29 days before the events: 50% refund, less the 5% administration fee (45% of the original ticket price).
+- Less than 14 days before the events: Requests will be considered individually. Any approved refund will be subject to the 5% administration fee.
+The administration fee covers transaction and processing costs incurred by the organisers, including payment gateway and bank charges.
+If the organisers cancel either event, the organisers will communicate the arrangements applicable to the affected ticket entitlement. If both events are cancelled, affected ticket holders will receive a full refund without an administration fee.
+Approved refunds will be processed within 14 business days.
+We look forward to welcoming you to both events!
+For further information, please visit nos.saoc.co.za or contact info@saoc.co.za.
+Kind regards,
+The National Orchid Show – Western Cape 2027 Organising Committee
+A few backend points to note
+- The SAOC/WOSA Joint Ticket should generate one booking confirmation but provide access to both Friday and Saturday events.
+- The QR code should validate separately for each event, rather than being marked as fully used after Friday.
+- If a booking includes more than one attendee, the system should ideally generate an individual QR code for each attendee.
+- The joint ticket cancellation wording needs to distinguish between cancellation of one event and cancellation of both, as reflected above.
+I have used the Friday and Saturday programme dates from the earlier event planning. The specific venues and registration times have deliberately been left out until those details are confirmed.

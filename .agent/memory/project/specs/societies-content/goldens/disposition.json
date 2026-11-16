@@ -1,0 +1,110 @@
+{
+  "listed": 21,
+  "hide": [
+    {
+      "_id": "society-transvaal-orchid-society",
+      "name": "Transvaal Orchid Society",
+      "reason": "renamed-successor:witwatersrand-orchid-society"
+    },
+    {
+      "_id": "society-northern-transvaal-orchid-society",
+      "name": "Northern Transvaal Orchid Society",
+      "reason": "renamed-successor:northern-gauteng-orchid-society"
+    },
+    {
+      "_id": "society-west-rand-orchid-society",
+      "name": "West Rand Orchid Society",
+      "reason": "no-drive-source"
+    },
+    {
+      "_id": "society-lowveld-orchid-society",
+      "name": "Lowveld Orchid Society",
+      "reason": "superseded-near-match:lowveld-orchid-group"
+    },
+    {
+      "_id": "society-highveld-orchid-society",
+      "name": "Highveld Orchid Society",
+      "reason": "no-drive-source"
+    },
+    {
+      "_id": "society-free-state-orchid-society",
+      "name": "Free State Orchid Society",
+      "reason": "no-drive-source"
+    },
+    {
+      "_id": "society-garden-route-orchid-society",
+      "name": "Garden Route Orchid Society",
+      "reason": "no-drive-source"
+    },
+    {
+      "_id": "society-overberg-orchid-society",
+      "name": "Overberg Orchid Society",
+      "reason": "no-drive-source"
+    },
+    {
+      "_id": "society-winelands-orchid-society",
+      "name": "Winelands Orchid Society",
+      "reason": "no-drive-source"
+    },
+    {
+      "_id": "society-midlands-orchid-society",
+      "name": "Midlands Orchid Society",
+      "reason": "no-drive-source"
+    },
+    {
+      "_id": "society-north-coast-orchid-society",
+      "name": "North Coast Orchid Society",
+      "reason": "no-drive-source"
+    },
+    {
+      "_id": "society-kalahari-orchid-society",
+      "name": "Kalahari Orchid Society",
+      "reason": "no-drive-source"
+    },
+    {
+      "_id": "society-limpopo-orchid-society",
+      "name": "Limpopo Orchid Society",
+      "reason": "no-drive-source"
+    },
+    {
+      "_id": "society-north-west-orchid-society",
+      "name": "North West Orchid Society",
+      "reason": "no-drive-source"
+    },
+    {
+      "_id": "society-vaal-triangle-orchid-society",
+      "name": "Vaal Triangle Orchid Society",
+      "reason": "no-drive-source"
+    },
+    {
+      "_id": "society-south-cape-orchid-society",
+      "name": "South Cape Orchid Society",
+      "reason": "superseded-near-match:orchid-society-of-the-southern-cape"
+    }
+  ],
+  "patchExisting": [
+    "society-cape-orchid-society",
+    "society-eastern-province-orchid-society",
+    "society-border-orchid-society",
+    "society-east-rand-orchid-society",
+    "society-natal-orchid-society"
+  ],
+  "create": [
+    "society-zululand-orchid-society",
+    "society-highway-orchid-society",
+    "society-vlakte-orgideevereniging",
+    "society-walker-bay-orchid-society",
+    "society-tygerberg-orchid-group",
+    "society-northern-gauteng-orchid-society",
+    "society-pietermaritzberg-orchid-society",
+    "society-witwatersrand-orchid-society",
+    "society-orchid-society-of-the-southern-cape",
+    "society-gonubie-orchid-society",
+    "society-alfred-county-orchid-society",
+    "society-lowveld-orchid-group",
+    "society-phalaborwa-orchid-society",
+    "society-plantae-orchid-group",
+    "society-rustenburg-orchid-society",
+    "society-wolkberg-orchid-society"
+  ]
+}

@@ -490,3 +490,6 @@ Source: Codex A12 output (`.tmp/sandbox/codex-a12/out.txt` in the dev tree) and 
 2. A14: the hook stays in `sanity/lib/client.ts` only. `sanity/lib/fetch.ts` must not call or import `withFixture`, read `SANITY_FIXTURE*`, or import anything from the fixture module except `SanityFixtureMiss` (rethrown from its catch ahead of the `propagateErrors` check); namespace imports and re-exports of the module are refused.
 3. A3 (`check-diff-scope.mjs`): exactly two paths added, `sanity/lib/fetch.ts` and `e2e/sanity-fetch-fixture-miss.spec.ts`.
 Run against the dev tree before freezing: A14 pass (81 captured queries), A13 pass.
+
+### Rev 47 (2026-10-29): What to Expect re-frozen to v1.1 (mission content-what-to-expect-v11)
+`goldens/sources/what-to-expect.md` is now byte-identical to Drive v1.2 (route table `drive.version` v1.2, new sha256; v1.2 differs from v1.1 only in her typo "takes please", rendered as she wrote it, `keepTypo` updated). Her opening hours gain "Sunset Cocktails 18.30 to 21.00" (no dash; the WE-G1 hours parse splits it at the label/time boundary into "Sunset Cocktails" and "18.30 to 21.00") and Thursday VIP becomes 16.00 to 18.00 (PG-G1 `pgSources` Thursday). Admission gains "Day Pass Ticket" (ticketType-day-visitor, slug day-visitor); `hoursRows` 4, five admission ids. Her price figures stay superseded by the ticket records.

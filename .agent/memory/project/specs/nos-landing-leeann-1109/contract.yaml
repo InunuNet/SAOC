@@ -1,0 +1,71 @@
+schema: athanor.contract/v1
+slug: nos-landing-leeann-1109
+goal: NOS home and footer carry the landing-page changes Brad cleared on 2026-11-09 (heading, figures removed, exhibit band links-only and renamed, venue name, full-colour vertical footer logos), with the Sanity venue patch staged dry-run.
+created_at: '2026-11-09'
+autonomy: high
+
+features:
+  - id: F1
+    name: NOS landing + footer changes per goldens/expected.md
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/nos-landing-leeann-1109/goldens/expected.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: hero h1 constant is Brad's heading
+      command: grep -qF "const HUB_HEADING = 'National Orchid Show - Western Cape 2027';" "app/(nos)/national-show/page.tsx"
+    - id: A2
+      description: figures strip gone from the page
+      command: "! grep -q LANDING_FIGURES \"app/(nos)/national-show/page.tsx\""
+    - id: A3
+      description: figures data deleted
+      command: "! grep -qE 'LANDING_FIGURES|National Show Editions' lib/data/nos-home-landing.ts"
+    - id: A4
+      description: Exhibit & trade heading removed
+      command: "! grep -qF 'Exhibit &amp; trade' \"app/(nos)/national-show/page.tsx\""
+    - id: A5
+      description: exhibit paragraphs removed
+      command: "! grep -qE 'EXHIBIT_LEAD|EXHIBIT_BODY' \"app/(nos)/national-show/page.tsx\""
+    - id: A6
+      description: Plant Entry label present
+      command: grep -qF "'Plant Entry'" "app/(nos)/national-show/page.tsx"
+    - id: A7
+      description: Vendors label present
+      command: grep -qF "'Vendors'" "app/(nos)/national-show/page.tsx"
+    - id: A8
+      description: international guests link removed from home
+      command: "! grep -qF \"'international-guests'\" \"app/(nos)/national-show/page.tsx\""
+    - id: A9
+      description: nav labels untouched
+      command: git diff --quiet origin/main -- components/nos-chrome/nos-nav.ts
+    - id: A10
+      description: old venue name gone from plan-your-visit
+      command: "! grep -qF 'The Hangar, Stellenbosch Flying Club' \"app/(nos)/national-show/plan-your-visit/page.tsx\""
+    - id: A11
+      description: new venue sentence present
+      command: grep -qF "The show is held at Hangar 25, Orca Aero Solutions, on the R44 at Stellenbosch Airfield in the Cape Winelands." "app/(nos)/national-show/plan-your-visit/page.tsx"
+    - id: A12
+      description: parking instruction unchanged
+      command: grep -qF "provided at the Stellenbosch flying club" "app/(nos)/national-show/plan-your-visit/page.tsx"
+    - id: A13
+      description: full-colour reversed vertical NOS logo copied byte-identical
+      command: cmp -s "branding/National Show 2027/Logo/NOS-2027-logo-full-colour-reversed-vertical.png" public/images/NOS-2027-logo-full-colour-reversed-vertical.png
+    - id: A14
+      description: footer uses the full-colour NOS lockup
+      command: grep -qF "NOS-2027-logo-full-colour-reversed-vertical.png" components/nos-chrome/NosFooter.tsx
+    - id: A15
+      description: branding untouched by this branch
+      command: git diff --quiet origin/main -- branding
+    - id: A16
+      description: Sanity venue script exists
+      command: test -f scripts/sanity-venue-name-1109.mjs
+    - id: A17
+      description: Sanity script defaults to dry run
+      command: grep -q -- "--apply" scripts/sanity-venue-name-1109.mjs
+    - id: A18
+      description: typecheck passes
+      command: pnpm -s exec tsc --noEmit

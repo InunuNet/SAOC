@@ -1,0 +1,82 @@
+schema: athanor.contract/v1
+slug: societies-content
+goal: Replace the 21 invented society placeholders on the SAOC site with exactly the 21 affiliated societies in Lee-Ann's Drive docs (12 detailed from "All Society data and history" 21 Oct, md5 ccc3d825; the other 9 from "Society Contact list - Word" 12 Aug, md5 21926d75; the detailed doc wins per field), via deterministic parses and a reversible Sanity sync, rendering only fields that have values.
+created_at: '2026-10-23'
+autonomy: high
+
+features:
+  - id: F1
+    name: societies content from Lee-Ann's two Drive docs (two parsers and a merge, additive schema, reversible sync, listing and detail rendering)
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/societies-content/goldens/parsed-societies.json
+  - .agent/memory/project/specs/societies-content/goldens/parsed-contact-list.json
+  - .agent/memory/project/specs/societies-content/goldens/merge-report.json
+  - .agent/memory/project/specs/societies-content/goldens/sanity-docs.json
+  - .agent/memory/project/specs/societies-content/goldens/dry-run-output.txt
+  - .agent/memory/project/specs/societies-content/goldens/disposition.json
+  - .agent/memory/project/specs/societies-content/goldens/fixtures/existing-docs.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: both parsers (detailed doc 12, contact list exactly 21), the merge (12 matched, 9 contact-list only, detailed doc wins, fills only empty fields, unmatched society throws) and the mapper reproduce the goldens exactly, keep Lee-Ann's spellings, never emit a "Not supplied" value, and throw on an unknown label, section or duplicate slug
+      command: npx tsx .agent/memory/project/specs/societies-content/checks/check-parser.mjs
+      timeout_seconds: 120
+    - id: A2
+      description: additive schema fields (listed with initialValue true, contact, committee object type, links, annual show, driveSource) exist and the committee object type is registered
+      command: bash .agent/memory/project/specs/societies-content/checks/check-wiring.sh schema-fields
+    - id: A3
+      description: CLI dry-run (the default) matches goldens/dry-run-output.txt byte for byte; --apply backs up all 21 docs first and leaves 21 listed (invented founded/memberCount cleared, existing province kept, no inferred province on the 16 new) and 16 hidden, 37 docs in total; a second run is a no-op (noop=37); an unknown society doc aborts with exit 3 before any write
+      command: npx tsx .agent/memory/project/specs/societies-content/checks/check-sync-cli.mjs
+      timeout_seconds: 300
+    - id: A4
+      description: sync script is dry-run by default, uses ifRevisionID, backs up under the project sandbox, deletes nothing and does not print the token
+      command: bash .agent/memory/project/specs/societies-content/checks/check-wiring.sh script-safety
+    - id: A5
+      description: society list, by-slug and slugs queries (and the llms refresh) filter listed != false, so sitemap and static params follow
+      command: bash .agent/memory/project/specs/societies-content/checks/check-wiring.sh queries-filter-listed
+    - id: A6
+      description: components render only populated fields for all 21 societies, no sentinel text, links as given, committee names as given, the Tygerberg webmaster note never shown, and the queries return exactly 21 of 37 (run after A3, which writes the after-apply store)
+      command: npx tsx .agent/memory/project/specs/societies-content/checks/check-render.mjs
+      timeout_seconds: 120
+    - id: A7
+      description: the internal committeeNote is not projected by any query and not referenced by any public surface
+      command: bash .agent/memory/project/specs/societies-content/checks/check-wiring.sh note-not-projected
+    - id: A8
+      description: the hardcoded 21-society fallback cannot resurrect a hidden society when Sanity is configured, and seed-sanity no longer re-creates the placeholders
+      command: bash .agent/memory/project/specs/societies-content/checks/check-wiring.sh no-static-resurrection
+    - id: A9
+      description: no "Not supplied" literal in app or component code
+      command: bash .agent/memory/project/specs/societies-content/checks/check-wiring.sh no-literal-sentinel
+    - id: A10
+      description: new committee component exists, is rendered by the detail page, and introduces no raw colour or font values (design handoff tokens only)
+      command: bash .agent/memory/project/specs/societies-content/checks/check-wiring.sh no-new-visual-tokens
+    - id: A11
+      description: type-check passes
+      command: pnpm type-check
+      timeout_seconds: 400
+    - id: A12
+      description: lint passes
+      command: pnpm lint
+      timeout_seconds: 400
+    - id: A13
+      description: production build passes
+      command: pnpm build
+      timeout_seconds: 900
+    - id: A14
+      description: LIVE, READ-ONLY, after the operator-authorised --apply to Sanity - 21 listed societies match the docs, the 16 placeholders are hidden not deleted, 37 society documents in total
+      command: npx tsx .agent/memory/project/specs/societies-content/checks/check-live-readonly.mjs
+      timeout_seconds: 120
+    - id: A15
+      description: RENDERED, after A13 and A14 - /societies links exactly the 21 slugs, the 16 hidden slugs are 404 and out of the sitemap, no "Not supplied" on any of the 22 pages, the Tygerberg webmaster note appears nowhere
+      command: npx tsx .agent/memory/project/specs/societies-content/checks/check-http.mjs
+      timeout_seconds: 400
+    - id: A16
+      description: docs/societies-content.md records the field mapping, the hide-not-delete disposition and the open questions
+      command: grep -q "listed" docs/societies-content.md && grep -q "DECISION NEEDED" docs/societies-content.md && grep -q "2026-08-12" docs/societies-content.md && grep -q "CONFLICT" docs/societies-content.md
+    - id: A17
+      description: the parser module exports both parsers, the merge, the alias table, the mapper and the source tags
+      command: bash .agent/memory/project/specs/societies-content/checks/check-wiring.sh parser-exports

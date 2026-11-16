@@ -1,0 +1,52 @@
+societies-sync mode=DRY-RUN store=fixture
+source A=content/drive-source/SAOC /3. Societies/All Society data and history/v1.0/content.md md5=ccc3d82558d31fd9abe009b323f940ee
+source B=content/drive-source/SAOC /3. Societies/Society Contact list - Word/v1.0/content.md md5=21926d7550945fbb89e137996acabf90
+parsed detailed=12 contactList=21 merged=21 warnings=4 conflicts=5
+WARN zululand-orchid-society website not-a-url "Zululand Orchid Society"
+WARN zululand-orchid-society facebook not-a-url "Zululand Orchid Society"
+WARN zululand-orchid-society instagram not-a-url "Zululand Orchid Society"
+WARN pietermaritzberg-orchid-society website not-a-url "Do not have a website"
+CONFLICT vlakte-orgideevereniging contactEmail A="ronel.eksteen29@gmail.com" B="ronel.eksteenza@gmail.com"
+CONFLICT tygerberg-orchid-group contactEmail A="tygerbergorchidgroup@gmail.com" B="tygerorchidgroup@gmail.com"
+CONFLICT northern-gauteng-orchid-society contactEmail A="info@northerngautengorchidsociety.com" B="ngos@saoc.co.za"
+CONFLICT pietermaritzberg-orchid-society contactEmail A="carolcook588@gmail.com" B="YoungA@ukzn.ac.za"
+CONFLICT gonubie-orchid-society contactEmail A="annettebrown100@gmail.com" B="gonubieorchidos@gmail.com"
+CREATE society-zululand-orchid-society
+CREATE society-highway-orchid-society
+CREATE society-vlakte-orgideevereniging
+CREATE society-walker-bay-orchid-society
+CREATE society-tygerberg-orchid-group
+PATCH society-cape-orchid-society ifRevisionID=fixture-rev-00 set=committee,contactEmail,contactPhone,description,driveSource,facebookUrl,foundedPlaceholder,instagramUrl,listed,meetPlaceholder,meets,memberCountPlaceholder,venue,venuePlaceholder,website unset=founded,memberCount
+CREATE society-northern-gauteng-orchid-society
+CREATE society-pietermaritzberg-orchid-society
+CREATE society-witwatersrand-orchid-society
+CREATE society-orchid-society-of-the-southern-cape
+CREATE society-gonubie-orchid-society
+PATCH society-eastern-province-orchid-society ifRevisionID=fixture-rev-10 set=committee,contactEmail,contactPhone,driveSource,facebookUrl,foundedPlaceholder,listed,meetPlaceholder,meets,memberCountPlaceholder,venue,venuePlaceholder unset=founded,memberCount
+CREATE society-alfred-county-orchid-society
+PATCH society-border-orchid-society ifRevisionID=fixture-rev-09 set=contactEmail,driveSource,foundedPlaceholder,listed,meetPlaceholder,meets,memberCountPlaceholder,venue,venuePlaceholder unset=founded,memberCount
+PATCH society-east-rand-orchid-society ifRevisionID=fixture-rev-04 set=contactEmail,driveSource,foundedPlaceholder,listed,meetPlaceholder,meets,memberCountPlaceholder,venue,venuePlaceholder unset=founded,memberCount
+CREATE society-lowveld-orchid-group
+PATCH society-natal-orchid-society ifRevisionID=fixture-rev-01 set=contactEmail,driveSource,foundedPlaceholder,listed,meetPlaceholder,meets,memberCountPlaceholder,venue,venuePlaceholder unset=founded,memberCount
+CREATE society-phalaborwa-orchid-society
+CREATE society-plantae-orchid-group
+CREATE society-rustenburg-orchid-society
+CREATE society-wolkberg-orchid-society
+HIDE society-transvaal-orchid-society ifRevisionID=fixture-rev-02
+HIDE society-northern-transvaal-orchid-society ifRevisionID=fixture-rev-03
+HIDE society-west-rand-orchid-society ifRevisionID=fixture-rev-05
+HIDE society-lowveld-orchid-society ifRevisionID=fixture-rev-06
+HIDE society-highveld-orchid-society ifRevisionID=fixture-rev-07
+HIDE society-free-state-orchid-society ifRevisionID=fixture-rev-08
+HIDE society-garden-route-orchid-society ifRevisionID=fixture-rev-11
+HIDE society-overberg-orchid-society ifRevisionID=fixture-rev-12
+HIDE society-winelands-orchid-society ifRevisionID=fixture-rev-13
+HIDE society-midlands-orchid-society ifRevisionID=fixture-rev-14
+HIDE society-north-coast-orchid-society ifRevisionID=fixture-rev-15
+HIDE society-kalahari-orchid-society ifRevisionID=fixture-rev-16
+HIDE society-limpopo-orchid-society ifRevisionID=fixture-rev-17
+HIDE society-north-west-orchid-society ifRevisionID=fixture-rev-18
+HIDE society-vaal-triangle-orchid-society ifRevisionID=fixture-rev-19
+HIDE society-south-cape-orchid-society ifRevisionID=fixture-rev-20
+SUMMARY create=16 patch=5 hide=16 noop=0
+DRY-RUN nothing written; re-run with --apply to write

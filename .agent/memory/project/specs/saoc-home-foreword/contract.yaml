@@ -1,0 +1,90 @@
+schema: athanor.contract/v1
+slug: saoc-home-foreword
+goal: Replace the SAOC home page 1968 founding-year band with a Forward by Douglas McMurtry section using Lee-Ann's copy verbatim.
+created_at: '2026-11-12'
+autonomy: high
+
+features:
+  - id: F1
+    name: Home page Forward section replaces 1968 band
+    status: pending
+  - id: F3
+    name: Compact collapsed-by-default Forward layout (layout-v2)
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/saoc-home-foreword/goldens/spec.md
+  - .agent/memory/project/specs/saoc-home-foreword/goldens/source-foreword.txt
+  - .agent/memory/project/specs/saoc-home-foreword/goldens/source-meta.txt
+  - .agent/memory/project/specs/saoc-home-foreword/goldens/verify_foreword.py
+  - .agent/memory/project/specs/saoc-home-foreword/goldens/layout-v2.md
+  - .agent/memory/project/specs/saoc-home-foreword/goldens/verify_layout_v2.py
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: 1968 founding-year stat band removed from MissionBlock
+      command: "! grep -q \"Founding Year\" ${CHECK_ROOT:-.}/components/home/MissionBlock.tsx"
+    - id: A2
+      description: STATS 1968 constant gone from MissionBlock
+      command: "! grep -q \"1968\" ${CHECK_ROOT:-.}/components/home/MissionBlock.tsx"
+    - id: A3
+      description: Foreword copy is verbatim from the Drive source
+      command: python3 -I .agent/memory/project/specs/saoc-home-foreword/goldens/verify_foreword.py .agent/memory/project/specs/saoc-home-foreword/goldens/source-foreword.txt "${CHECK_ROOT:-.}/lib/data/home-foreword.ts"
+    - id: A4
+      description: Heading reads Forward by Douglas McMurtry
+      command: grep -q "Forward by Douglas McMurtry" ${CHECK_ROOT:-.}/components/home/ForewordSection.tsx
+    - id: A5
+      description: Home page renders ForewordSection between MissionBlock and NavCards
+      command: python3 -I -c "import os; s=open(os.path.join(os.environ.get('CHECK_ROOT','.'),'app/(marketing)/page.tsx')).read(); assert s.index('<MissionBlock')<s.index('<ForewordSection')<s.index('<NavCards')"
+    - id: A6
+      description: ForewordSection exported from the home barrel
+      command: grep -q "ForewordSection" ${CHECK_ROOT:-.}/components/home/index.ts
+    - id: A7
+      description: ForewordSection is a server component
+      command: "! grep -q \"use client\" ${CHECK_ROOT:-.}/components/home/ForewordSection.tsx"
+    - id: A8
+      description: No new hex colours in ForewordSection (existing tokens only)
+      command: "! grep -qE \"#[0-9a-fA-F]{3,8}\" ${CHECK_ROOT:-.}/components/home/ForewordSection.tsx"
+    - id: A9
+      description: Uses existing doc-prose pattern (F3 moved the body column into ForewordExpandable)
+      command: grep -q "doc-prose" ${CHECK_ROOT:-.}/components/home/ForewordExpandable.tsx
+    - id: A10
+      description: Typecheck passes
+      command: pnpm --dir "${CHECK_ROOT:-.}" type-check
+    - id: A11
+      description: F3 one button with aria-expanded and aria-controls, collapsed by default, labelled Continue reading; ForewordSection stays server
+      command: python3 -I .agent/memory/project/specs/saoc-home-foreword/goldens/verify_layout_v2.py button
+    - id: A12
+      description: F3 every paragraph stays in the markup; collapsed ones carry hidden past HOME_FOREWORD_INTRO_COUNT (1)
+      command: python3 -I .agent/memory/project/specs/saoc-home-foreword/goldens/verify_layout_v2.py paragraphs
+    - id: A13
+      description: F3 left column is lg:sticky lg:top-[121px] lg:self-start, two columns only from lg, nothing sticky on mobile
+      command: python3 -I .agent/memory/project/specs/saoc-home-foreword/goldens/verify_layout_v2.py sticky
+    - id: A14
+      description: F3 section padding no larger than the smallest neighbour (PartnersSection py-20) and never py-24
+      command: python3 -I .agent/memory/project/specs/saoc-home-foreword/goldens/verify_layout_v2.py padding
+    - id: A15
+      description: F3 no height animation or smooth scroll, one persistent button, EventsStrip button classes reused, no hex
+      command: python3 -I .agent/memory/project/specs/saoc-home-foreword/goldens/verify_layout_v2.py motion_focus
+    - id: A16
+      description: F3 copy still verbatim after the layout change
+      command: python3 -I .agent/memory/project/specs/saoc-home-foreword/goldens/verify_foreword.py .agent/memory/project/specs/saoc-home-foreword/goldens/source-foreword.txt "${CHECK_ROOT:-.}/lib/data/home-foreword.ts"
+    - id: A17
+      description: Cross-model review (codex_qa) of the F3 layout returned PASS for commit 46993f22; this check reads the saved verdict in .tmp/sandbox/codex-foreword/qa3.out rather than re-running the review
+      type: codex_qa
+      script: .agent/memory/project/specs/saoc-home-foreword/goldens/check_qa_out.sh
+      target: .tmp/sandbox/codex-foreword/qa3.out
+      timeout_seconds: 60
+      required: true
+    - id: A18
+      description: PENDING DEPLOY - BrowserAgent on beta.saoc.co.za confirms the home Forward section shows the intro, Continue reading expands the rest, and the layout is compact at 390px and 1280px. Expected to fail until Brad approves the push to beta; not faked.
+      type: browser_deployed_check
+      target: .agent/memory/scratch/saoc-home-foreword-browser-manifest.json
+      required: true
+    - id: A19
+      description: gws inbox check is not applicable (no email is sent); declared non-required only to satisfy the triad coverage linter, expected to skip
+      type: gws_inbox_check
+      target: .agent/memory/scratch/saoc-home-foreword-gws-manifest.json
+      required: false

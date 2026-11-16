@@ -1,0 +1,77 @@
+schema: athanor.contract/v1
+slug: payment-gateway-settings
+goal: Move payment gateway, sandbox mode and the R0.01 option to an owner-only Payment settings page with audited changes and no live path, and turn /admin/settings into general Settings (profile) for every admin.
+created_at: '2026-10-23'
+autonomy: high
+
+features:
+  - id: F1
+    name: Owner-only Payment settings page (/admin/payments) with Sandbox-only mode, audited changes, Recent changes list
+    status: pending
+  - id: F2
+    name: General Settings page (/admin/settings) with read-only profile, open to every signed-in admin
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/payment-gateway-settings/goldens/design.md
+  - .agent/memory/project/specs/payment-gateway-settings/goldens/page-states.md
+  - .agent/memory/project/specs/payment-gateway-settings/goldens/settings-general.md
+  - .agent/memory/project/specs/payment-gateway-settings/goldens/codex-qa-prompt.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: F1/F2 files exist at the golden paths
+      command: bash .agent/memory/project/specs/payment-gateway-settings/checks/static.sh files
+    - id: A2
+      description: Payments page is a server component and the panel is a client component
+      command: bash .agent/memory/project/specs/payment-gateway-settings/checks/static.sh no-use-client-page
+    - id: A3
+      description: Nav has a PAYMENTS group with Payment settings (owner capability only) and Settings visible to a capability-less admin
+      command: npx tsx .agent/memory/project/specs/payment-gateway-settings/checks/check-lib.mts nav
+    - id: A4
+      description: Dashboard Payment settings link points at /admin/payments
+      command: bash .agent/memory/project/specs/payment-gateway-settings/checks/static.sh dashboard-link
+    - id: A5
+      description: Admin fixtures route map has a payments entry
+      command: bash .agent/memory/project/specs/payment-gateway-settings/checks/static.sh fixture-wiring
+    - id: A6
+      description: Both settings API routes and the payments layout gate on session then manage-payment-settings before any read or write, GET and PUT
+      command: node .agent/memory/project/specs/payment-gateway-settings/checks/check-routes.mjs gate
+    - id: A7
+      description: Audited write is one transaction, writes from/to/byUid/byEmail/mode/at, skips no-ops, fails closed on audit failure, has no undefined fields
+      command: npx tsx .agent/memory/project/specs/payment-gateway-settings/checks/check-lib.mts audit
+    - id: A8
+      description: Both PUT routes use the audited write, no direct unaudited set, actor taken from the verified session
+      command: node .agent/memory/project/specs/payment-gateway-settings/checks/check-routes.mjs audit
+    - id: A9
+      description: parsePaymentMode accepts only sandbox, rejects live and malformed input; SELECTABLE_PAYMENT_MODES is exactly sandbox
+      command: npx tsx .agent/memory/project/specs/payment-gateway-settings/checks/check-lib.mts mode
+    - id: A10
+      description: Gateway route validates mode with parsePaymentMode and returns 400; no route contains a live literal
+      command: node .agent/memory/project/specs/payment-gateway-settings/checks/check-routes.mjs mode
+    - id: A11
+      description: Panel renders Live disabled with the credentials explanation, Sandbox, R0.01, Recent changes and a confirm on gateway switch
+      command: bash .agent/memory/project/specs/payment-gateway-settings/checks/static.sh mode-ui
+    - id: A12
+      description: Page title is Payment gateway settings and the misleading Ozow sandbox test mode label is gone
+      command: bash .agent/memory/project/specs/payment-gateway-settings/checks/static.sh copy
+    - id: A13
+      description: Nothing in M1 can produce a live charge (no live env names or flags, IsTest still hard-true, PayFast sandbox constants, TICKETING_PAYMENTS_LIVE false, no wired mode)
+      command: bash .agent/memory/project/specs/payment-gateway-settings/checks/static.sh no-live
+    - id: A14
+      description: The nine ozow-sandbox-toggle legacy checks that pass on main still pass
+      command: bash .agent/memory/project/specs/payment-gateway-settings/checks/static.sh legacy-checks
+    - id: A15
+      description: General Settings has no payment gate or payment API calls and checks the admin session
+      command: bash .agent/memory/project/specs/payment-gateway-settings/checks/static.sh settings-open
+    - id: A16
+      description: Profile shows provider, roles, a sign-out reusing useAdminSignOut, and no invented Dashboard preferences section
+      command: bash .agent/memory/project/specs/payment-gateway-settings/checks/static.sh profile
+    - id: A17
+      description: TypeScript compiles
+      command: pnpm exec tsc --noEmit
+    - id: A18
+      description: The panel imports neither firebase-admin nor lib/admin-auth
+      command: "! grep -qE \"firebase-admin|lib/admin-auth\" components/admin/PaymentSettingsPanel.tsx"

@@ -3425,3 +3425,15 @@ Headless in my clone, SAOC host (localhost:3094), origin/main 52b63e6d, 11 route
 ## [SAOC -> OPERATOR] 2026-11-13 14:51 — session waiting on a permission prompt
 
 Claude needs your permission. Waiting: Bash {"command": "cd /Users/vetus/ai/SAOC; D=.tmp/sandbox/leeann-coverage/live; rm -f $D/*.md; \ncat $D/nos-urls.txt $D/beta-urls.txt | grep -v sitemap > $D/all-urls.txt\nfetch(){ u=$1; n=$(echo \"$u\" | sed 's#https://##; s#[/.]#_#g'); curl -s -m 120 \"http://localhost:7077/$u?js=true&no_cache=true\" >  Nothing proceeds until someone answers it in the terminal. (permission_gate.sh; one notice per 30 min)
+
+## [SAOC -> OPERATOR] 2026-11-15 00:40 — session waiting on a permission prompt
+
+Claude needs your permission. Waiting: Bash {"command": "W=/Users/vetus/ai/SAOC/.claude/worktrees/harness-update-3122; printf 's:\\n\\t@python3 execution/mission.py --help >/dev/null 2>&1; for f in $$(ls .agent/memory/project/specs/*/contract.yaml | head -3); do echo $$f; python3 execution/contract.py validate $$f 2>&1 | tail -3; done\\n' | m Nothing proceeds until someone answers it in the terminal. (permission_gate.sh; one notice per 30 min)
+
+## [SAOC -> OPERATOR] 2026-11-16 15:14 — session waiting on a permission prompt
+
+Claude needs your permission. Waiting: AskUserQuestion {"questions": [{"question": "Early bird tickets are moving from a ticket-count limit to a cut-off date (Lee-Ann, 16 Nov call). What date should early bird close?", "header": "Early bird", "options": [{"label": "Ask Lee-Ann (Recommended)", "description": "Add a dated question to her questions doc; bu Nothing proceeds until someone answers it in the terminal. (permission_gate.sh; one notice per 30 min)
+
+## [SAOC -> OPERATOR] 2026-11-16 15:29 — session waiting on a permission prompt
+
+Claude needs your permission. Waiting: AskUserQuestion {"questions": [{"question": "Lee-Ann's registration sheet notes the partner block is for the 'SAOC or WOSA conference'. Should the WOSA conference tickets get the same registration form as the SAOC symposium and cocktail evening?", "header": "WOSA", "options": [{"label": "Yes, include WOSA (Recommen Nothing proceeds until someone answers it in the terminal. (permission_gate.sh; one notice per 30 min)

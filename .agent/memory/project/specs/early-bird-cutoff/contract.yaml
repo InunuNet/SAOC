@@ -1,0 +1,47 @@
+schema: athanor.contract/v1
+slug: early-bird-cutoff
+goal: Early-bird availability on the NOS ticket cards is decided by the Sanity earlyBirdCutoff date alone, with no early-bird count shown or used to end the early bird.
+created_at: '2026-11-16'
+autonomy: low
+
+features:
+  - id: F1
+    name: "Early bird ends on earlyBirdCutoff, not on a sold count; drop the N-left display and pool banner data"
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/early-bird-cutoff/goldens/check-early-bird-cutoff.mts
+  - .agent/memory/project/specs/early-bird-cutoff/goldens/expected-output.json
+  - .agent/memory/project/specs/early-bird-cutoff/goldens/check-scope.py
+  - .agent/memory/project/specs/early-bird-cutoff/goldens/goldens.sha256
+
+# Gate runs with CHECK_ROOT set to the worktree Hydrogen edited (branched from origin/main,
+# node_modules present). Default "." is the main checkout, which is dirty with other missions,
+# so A4 only passes against a clean worktree.
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Pipeline check with fixed clocks - before the cutoff, the last minute of the cutoff day, after it, and with a null cutoff, early-bird availability follows the date only and the pool banner data is gone
+      command: TSX_TSCONFIG_PATH="${CHECK_ROOT:-.}/tsconfig.json" pnpm exec tsx .agent/memory/project/specs/early-bird-cutoff/goldens/check-early-bird-cutoff.mts
+    - id: A2
+      description: Typecheck passes
+      command: pnpm --dir "${CHECK_ROOT:-.}" type-check
+    - id: A3
+      description: Lint passes on the two edited files
+      command: pnpm --dir "${CHECK_ROOT:-.}" exec eslint lib/data/ticket-card-view-models.ts lib/data/ticket-hub-source.ts
+    - id: A4
+      description: Only the two allowed files changed; Ozow, payment, webhook, email, PDF, checkout route, components, copy, tests and goldens untouched
+      command: python3 -I .agent/memory/project/specs/early-bird-cutoff/goldens/check-scope.py "${CHECK_ROOT:-.}"
+    - id: A5
+      description: The early-bird-left label is gone from the view-model builder
+      command: "! grep -q \"early-bird left\" ${CHECK_ROOT:-.}/lib/data/ticket-card-view-models.ts"
+    - id: A6
+      description: The builder reads the new earlyBirdOpen flag
+      command: grep -q "earlyBirdOpen" ${CHECK_ROOT:-.}/lib/data/ticket-card-view-models.ts
+    - id: A7
+      description: The hub source derives earlyBirdOpen from the shared isWithinEarlyBirdWindow (the same rule checkout enforces)
+      command: grep -q "isWithinEarlyBirdWindow" ${CHECK_ROOT:-.}/lib/data/ticket-hub-source.ts
+    - id: A8
+      description: Check script, expected output and scope guard are byte-identical to the architect's versions
+      command: shasum -a 256 -c .agent/memory/project/specs/early-bird-cutoff/goldens/goldens.sha256

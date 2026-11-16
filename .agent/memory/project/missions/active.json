@@ -1,16 +1,16 @@
 {
-  "mission": ".agent/memory/project/missions/2026-11-01-go-live-prep.md",
+  "mission": ".agent/memory/project/missions/2026-11-10-ticket-email-samples.md",
   "checkpoint": {
     "milestone": null,
     "feature": null
   },
-  "activated_at": "2026-11-02T21:30:02.011683+00:00",
+  "activated_at": "2026-11-10T11:02:19.306910+00:00",
   "autonomy": {
     "level": "high",
     "normalized": "autonomous",
     "permission_tier": "high",
-    "updated_at": "2026-11-02T21:30:02.012275+00:00",
-    "decided_at": "2026-11-02T21:30:02.012275+00:00",
+    "updated_at": "2026-11-10T11:02:19.307564+00:00",
+    "decided_at": "2026-11-10T11:02:19.307564+00:00",
     "decided_by": "workspace default (profile.json)"
   }
 }

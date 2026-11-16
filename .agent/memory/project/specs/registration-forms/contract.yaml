@@ -1,0 +1,85 @@
+schema: athanor.contract/v1
+slug: registration-forms
+goal: Buyers of symposium, WOSA conference and cocktail tickets complete one full registration form per ticket (every field of Lee-Ann's sheet, all required, Same as above on forms 2 and later) inside the ticket purchase before the Ozow handoff; stored on each ticket, shown in admin and CSV only; every other ticket type and all payment code unchanged.
+created_at: '2026-11-16'
+autonomy: high
+
+features:
+  - id: F1
+    name: requiresRegistration flag, lib/registration.ts (options, validation with same-as-above resolution, doc builder), checkout route and ticket doc wiring
+    status: pending
+  - id: F2
+    name: One full attendee registration form per ticket in the cart (Attendee 1..N, Same as above on contact and membership for 2..N), replacing the name and email rows, submitted with Pay
+    status: pending
+  - id: F3
+    name: Registration details (dietary, Judges Events, Attending) in admin ticket detail and CSV export
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/registration-forms/goldens/registration-fields.json
+  - .agent/memory/project/specs/registration-forms/goldens/firestore-registration-shape.json
+  - .agent/memory/project/specs/registration-forms/goldens/validation-cases.json
+  - .agent/memory/project/specs/registration-forms/goldens/check_registration.mts
+  - .agent/memory/project/specs/registration-forms/goldens/registration-form.spec.ts
+  - .agent/memory/project/specs/registration-forms/goldens/check_untouched.sh
+  - .agent/memory/project/specs/registration-forms/goldens/check_qa_out.sh
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: F1 Sanity ticketType has requiresRegistration (boolean, default false) and the checkout route reads it and calls validateRegistrationGroup
+      command: pnpm --dir "${CHECK_ROOT:-.}" exec tsx .agent/memory/project/specs/registration-forms/goldens/check_registration.mts wiring
+    - id: A2
+      description: F1 dropdown option lists in lib/registration.ts equal the golden (Lee-Ann sheet with Brad's typo fixes; dietary exactly None, Vegetarian, Halaal)
+      command: pnpm --dir "${CHECK_ROOT:-.}" exec tsx .agent/memory/project/specs/registration-forms/goldens/check_registration.mts options
+    - id: A3
+      description: F1 validateRegistrationGroup passes all 40 golden cases (N=1, N=3 all full, N=3 Same as above ticked, a section unticked and empty fails, Judges Events and Attending missing fail, never-shareable fields, province and society rules, 20 allowed and 21 blocked) including the copied values
+      command: pnpm --dir "${CHECK_ROOT:-.}" exec tsx .agent/memory/project/specs/registration-forms/goldens/check_registration.mts cases
+    - id: A4
+      description: F1 buildRegistrationDoc and buildMultiReservationDocs give the golden registration shape (full map per ticket, copied sections stored as values plus sameAsAttendee1) on the ticket docs, nulls not undefined, order doc keys unchanged
+      command: pnpm --dir "${CHECK_ROOT:-.}" exec tsx .agent/memory/project/specs/registration-forms/goldens/check_registration.mts shape
+    - id: A5
+      description: F1 a non-registration ticket doc and the order doc keep exactly today's keys (no registration key, no undefined); passes on the baseline before any change
+      command: pnpm --dir "${CHECK_ROOT:-.}" exec tsx .agent/memory/project/specs/registration-forms/goldens/check_registration.mts unflagged
+    - id: A6
+      description: Ozow, payment and webhook code is byte-identical to the merge-base with origin/main
+      command: bash .agent/memory/project/specs/registration-forms/goldens/check_untouched.sh lib/ozow.ts lib/payfast.ts lib/payments lib/ozow-sandbox-test-mode.ts lib/ozow-sandbox-test-mode-shared.ts lib/payment-mode.ts app/api/tickets/itn app/api/tickets/ozow-itn app/api/tickets/ozow-sandbox-test-mode
+    - id: A7
+      description: Confirmation email, ticket PDF and ticket email templates are byte-identical (no dietary or mobile in them)
+      command: bash .agent/memory/project/specs/registration-forms/goldens/check_untouched.sh lib/confirmation-email.ts lib/ticket-pdf.ts app/api/tickets/pdf emails
+    - id: A8
+      description: F2 the e2e golden was copied to e2e/registration-forms.spec.ts unchanged
+      command: cmp -s .agent/memory/project/specs/registration-forms/goldens/registration-form.spec.ts "${CHECK_ROOT:-.}/e2e/registration-forms.spec.ts"
+    - id: A9
+      description: F2 e2e - quantity 1 and 3 attendee forms, every sheet section incl. Judges Events and locked Attending, Same as above hide and show, blocked submits, three full registrations in the POST, non-registration ticket unchanged (checkout POST mocked, no Ozow call)
+      command: mkdir -p .tmp/sandbox/fx-empty/log && TICKET_FIXTURES=1 SANITY_FIXTURE_MODE=replay SANITY_FIXTURE_DIR=.tmp/sandbox/fx-empty SANITY_FIXTURE_LOGDIR=.tmp/sandbox/fx-empty/log NEXT_PUBLIC_SAOC_SITE_URL=http://localhost:3999 NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost:3999 SAOC_E2E_DYNAMIC_PORT=3999 pnpm --dir "${CHECK_ROOT:-.}" exec playwright test e2e/registration-forms.spec.ts --reporter=line
+    - id: A10
+      description: F3 CSV header keeps the original six columns first and appends dietary, mobile, societies, attendeeNumber, attending and the six judge answers
+      command: grep -qF "const CSV_HEADER = 'bookingRef,attendeeName,attendeeEmail,ticketType,status,purchasedAt,dietary,mobile,societies,attendeeNumber,attending,judgeAccredited,judgeOrganisation,judgeAvailable,judgeDate,judgeCommunication,judgeForum';" "${CHECK_ROOT:-.}"/app/api/admin/export-csv/route.ts
+    - id: A11
+      description: F3 admin ticket detail shows Dietary and Judges Events rows (admin only, not on the door screen)
+      command: "grep -qF \"label: 'Dietary'\" \"${CHECK_ROOT:-.}\"/components/admin/TicketsTable.tsx && grep -q judgeAccredited \"${CHECK_ROOT:-.}\"/components/admin/TicketsTable.tsx && ! grep -rqi \"dietary\" \"${CHECK_ROOT:-.}\"/components/admin/DoorScannerClient.tsx \"${CHECK_ROOT:-.}\"/components/admin/DoorResultBanner.tsx"
+    - id: A12
+      description: Typecheck passes
+      command: pnpm --dir "${CHECK_ROOT:-.}" type-check
+    - id: A13
+      description: Lint passes on the touched files
+      command: pnpm --dir "${CHECK_ROOT:-.}" exec eslint lib/registration.ts lib/checkout-reservation.ts app/api/tickets/checkout/route.ts app/api/admin/export-csv/route.ts components/tickets components/admin/TicketsTable.tsx
+    - id: A14
+      description: Cross-model review (codex_qa) returned PASS on the whole diff; reads the saved verdict in .tmp/sandbox/codex-registration-forms/qa.out. Review must probe the checkout route (3 or more line items, flagged item without registration, client-sent attendeeName ignored for flagged items, replay idempotency) because no automated test reaches the live route.
+      type: codex_qa
+      script: .agent/memory/project/specs/registration-forms/goldens/check_qa_out.sh
+      target: .tmp/sandbox/codex-registration-forms/qa.out
+      timeout_seconds: 60
+      required: true
+    - id: A15
+      description: PENDING DEPLOY - BrowserAgent on http://dev.saoc.co.za confirms the symposium, WOSA conference and cocktail ticket pages show one registration form per ticket with Same as above on forms 2 and later, and the day-entry page is unchanged, at 390px and 1280px. Expected to fail until the dev deploy; not faked.
+      type: browser_deployed_check
+      target: .agent/memory/scratch/registration-forms-browser-manifest.json
+      required: true
+    - id: A16
+      description: gws inbox check is not applicable (no new email is sent); declared non-required only to satisfy the triad coverage linter, expected to skip
+      type: gws_inbox_check
+      target: .agent/memory/scratch/registration-forms-gws-manifest.json
+      required: false

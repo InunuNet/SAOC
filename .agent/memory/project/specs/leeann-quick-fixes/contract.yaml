@@ -1,0 +1,105 @@
+schema: athanor.contract/v1
+slug: leeann-quick-fixes
+goal: Apply Lee-Ann's unambiguous Questions-doc corrections (contact surname, show name, venue, NOS nav labels and redirect) in code and production Sanity, with every change traced to her wording.
+created_at: '2026-11-11'
+autonomy: high
+
+features:
+  - id: F1
+    name: "B14 contact page surname van der Westhuizen"
+    status: pending
+  - id: F2
+    name: "B10 replace XIX / 19th wording with National Orchid Show - Western Cape 2027 (ticket numeral and edition-driven helpers deferred)"
+    status: pending
+  - id: F3
+    name: "B18 stale venue Stellenbosch Flying Club becomes Hangar 25 (her verbatim parking copy excepted)"
+    status: pending
+  - id: F4
+    name: "B6-B9 NOS nav: Plant Entry under Programme, Vendors group, International guests removed and redirected"
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/leeann-quick-fixes/goldens/leeann-words.md
+  - .agent/memory/project/specs/leeann-quick-fixes/goldens/code-edits.md
+  - .agent/memory/project/specs/leeann-quick-fixes/goldens/sanity-patch.md
+  - .agent/memory/project/specs/leeann-quick-fixes/goldens/open-questions.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: F1 no van der Merwe left in live source (admin fixture excepted)
+      command: >-
+        node contracts/checks/leeann-quick-fixes/check-stale-strings.mjs merwe
+    - id: A2
+      description: F1 contact page carries the corrected surname
+      command: >-
+        grep -q "Caral-Anne van der Westhuizen" "app/(nos)/national-show/contact/page.tsx"
+    - id: A3
+      description: F2 no 19th National or XIX left outside documented exceptions
+      command: >-
+        node contracts/checks/leeann-quick-fixes/check-stale-strings.mjs ordinal
+    - id: A4
+      description: F2 nav lead label and landing sentence use the new show name
+      command: >-
+        grep -q "leadLabel: 'National Orchid Show - Western Cape 2027'" components/nos-chrome/nos-nav.ts
+    - id: A5
+      description: F2 landing opening sentence reads grammatically with the new name
+      command: >-
+        grep -qF "The National Orchid Show - Western Cape 2027 opens on 23rd September 2027 in Stellenbosch." lib/data/nos-home-landing.ts
+    - id: A6
+      description: F2 ticket stub numeral deliberately untouched (design mark, question open)
+      command: >-
+        grep -c "numeral: 'XIX'" lib/data/ticket-presentation.ts
+    - id: A7
+      description: F3 no Flying Club left outside documented exceptions
+      command: >-
+        node contracts/checks/leeann-quick-fixes/check-stale-strings.mjs flying
+    - id: A8
+      description: F3 seed singleton location uses the Hangar 25 venue
+      command: >-
+        grep -qF "location: 'Hangar 25, Orca Aero Solutions, Stellenbosch Airfield'" scripts/seed-page-singletons.ts
+    - id: A9
+      description: F4 nav has Plant Entry inside Programme, a one-link Vendors group, and no International guests
+      command: >-
+        node contracts/checks/leeann-quick-fixes/check-nav.mjs
+    - id: A10
+      description: F4 no old nav labels in the nav-bearing files, ShowBand, page titles or e2e
+      command: >-
+        node contracts/checks/leeann-quick-fixes/check-stale-strings.mjs labels
+    - id: A11
+      description: F4 vendors page title is Vendors
+      command: >-
+        grep -q "const PAGE_TITLE = 'Vendors'" "app/(nos)/national-show/vendors/page.tsx"
+    - id: A12
+      description: F4 award entries page title is Plant Entry
+      command: >-
+        grep -q "const PAGE_TITLE = 'Plant Entry'" "app/(nos)/national-show/award-entries/page.tsx"
+    - id: A13
+      description: F4 permanent redirect from international-guests to vendors exists
+      command: >-
+        grep -A3 -F "source: '/national-show/international-guests'" next.config.ts | grep -q "permanent: true"
+    - id: A14
+      description: F4 redirect destination is the vendors page
+      command: >-
+        grep -A3 -F "source: '/national-show/international-guests'" next.config.ts | grep -qF "destination: '/national-show/vendors'"
+    - id: A15
+      description: F4 international-guests content files are kept on disk
+      command: >-
+        test -f "app/(nos)/national-show/international-guests/page.tsx"
+    - id: A16
+      description: Sanity patch script exists with dry-run default and apply flag
+      command: >-
+        grep -q -- "--apply" scripts/sanity-leeann-quick-fixes-1111.mjs
+    - id: A17
+      description: Sanity patch script refuses any project other than 26yfbug4
+      command: >-
+        grep -q "26yfbug4" scripts/sanity-leeann-quick-fixes-1111.mjs
+    - id: A18
+      description: Production Sanity holds the new venue, show name and no stale strings (read-only GROQ)
+      command: >-
+        node contracts/checks/leeann-quick-fixes/check-sanity.mjs
+    - id: A19
+      description: Typecheck passes
+      command: >-
+        pnpm type-check

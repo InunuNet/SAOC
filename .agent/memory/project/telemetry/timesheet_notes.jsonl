@@ -1,1 +1,6 @@
 {"date": "2026-10-29", "note": "Backfill to date: ~130h (24.7h measured since 28 Sep + ~105h extrapolated Apr-Sep). See timesheet-backfill-2026-10-29.md", "ts": "2026-10-29T13:04:16.624444+00:00"}
+{"date": "2026-11-02", "note": "Fleet wrap-up on Brad's move. go-live-prep security branches F3, F6, F8 and nos-tech-audit are committed locally, none pushed or merged; beta unchanged for Lee-", "ts": "2026-11-02T14:13:39.005815+00:00"}
+{"date": "2026-11-02", "note": "claude-md-slim: CLAUDE.md 18.8 KB to 3.7 KB, detail moved verbatim to root PROJECT_GUIDE.md. Cost 1 architect, 1 dev, 2 Codex. Codex caught broken relative link", "ts": "2026-11-02T21:29:56.296683+00:00"}
+{"date": "2026-11-02", "note": "claude-md-slim: Slim always-loaded CLAUDE.md to at most 7 KB by moving detail to docs/project-guide.md (Brad 2026-11-02 lean order)", "ts": "2026-11-02T21:29:58.100236+00:00"}
+{"date": "2026-11-08", "note": "2026-11-08 Brad AFK GO run (SAOC): 9 local branches built, none pushed (copy freeze kept): sharp 0.35.5; runtime transitive patches; A10 live-types check; LT-3/", "ts": "2026-11-08T09:06:04.504554+00:00"}
+{"date": "2026-11-08", "note": "2026-11-08 afternoon (SAOC, conservative): Codex QA on all branches. PASS: transitive, lazy-firebase, header-lt3, a11y-at1-mn1. Held: sharp (hero AVIF output ch", "ts": "2026-11-08T13:05:11.358300+00:00"}

@@ -1,0 +1,77 @@
+{
+ "before cutoff, pool unsold": {
+  "weekend": {
+   "slug": "weekend-pass-early-bird",
+   "state": "available",
+   "price": 360,
+   "hasCount": false
+  },
+  "day": {
+   "slug": "early-bird",
+   "state": "available",
+   "price": 120,
+   "hasCount": false
+  },
+  "poolBanner": "none"
+ },
+ "before cutoff, old 500 cap fully sold": {
+  "weekend": {
+   "slug": "weekend-pass-early-bird",
+   "state": "available",
+   "price": 360,
+   "hasCount": false
+  },
+  "day": {
+   "slug": "early-bird",
+   "state": "available",
+   "price": 120,
+   "hasCount": false
+  },
+  "poolBanner": "none"
+ },
+ "last minute of cutoff day (UTC)": {
+  "weekend": {
+   "slug": "weekend-pass-early-bird",
+   "state": "available",
+   "price": 360,
+   "hasCount": false
+  },
+  "day": {
+   "slug": "early-bird",
+   "state": "available",
+   "price": 120,
+   "hasCount": false
+  },
+  "poolBanner": "none"
+ },
+ "first minute after cutoff day": {
+  "weekend": {
+   "slug": "weekend-pass",
+   "state": "available",
+   "price": 380,
+   "hasCount": true
+  },
+  "day": {
+   "slug": "day-visitor",
+   "state": "available",
+   "price": 150,
+   "hasCount": false
+  },
+  "poolBanner": "none"
+ },
+ "null cutoff, far future, 500 sold": {
+  "weekend": {
+   "slug": "weekend-pass-early-bird",
+   "state": "available",
+   "price": 360,
+   "hasCount": false
+  },
+  "day": {
+   "slug": "early-bird",
+   "state": "available",
+   "price": 120,
+   "hasCount": false
+  },
+  "poolBanner": "none"
+ }
+}

@@ -1,0 +1,734 @@
+[
+  {
+    "name": "Zululand Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "zululand-orchid-society"
+    },
+    "listed": true,
+    "contactEmail": "gverm@telkomsa.net",
+    "contactPhone": "0828019224",
+    "meets": "Every 4th Sunday of the month except December, 10:00 AM",
+    "venue": "Arboretum Primary School Waterberry Road Arboretum Richards Bay",
+    "committee": [
+      {
+        "_key": "chair-president",
+        "_type": "societyCommitteeMember",
+        "role": "Chair/President",
+        "name": "Gerhard Vermeulen"
+      },
+      {
+        "_key": "secretary",
+        "_type": "societyCommitteeMember",
+        "role": "Secretary",
+        "name": "Bernard Wouda"
+      },
+      {
+        "_key": "treasurer",
+        "_type": "societyCommitteeMember",
+        "role": "Treasurer",
+        "name": "Ria Vermeulen"
+      }
+    ],
+    "committeeNote": null,
+    "website": null,
+    "facebookUrl": null,
+    "instagramUrl": null,
+    "annualShow": "Every first Sunday of September.",
+    "description": null,
+    "foundedPlaceholder": false,
+    "memberCountPlaceholder": false,
+    "meetPlaceholder": false,
+    "venuePlaceholder": false,
+    "driveSource": "All Society data and history.docx@v1.0#ccc3d82558d31fd9abe009b323f940ee + Society Contact list - Word.docx@v1.0#21926d7550945fbb89e137996acabf90"
+  },
+  {
+    "name": "Highway Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "highway-orchid-society"
+    },
+    "listed": true,
+    "contactEmail": "jimmyp@mweb.co.za",
+    "contactPhone": "0828091572",
+    "meets": "Every second Saturday of the month except December, 1:30 PM",
+    "venue": "Pinetown Methodist Church hall",
+    "committee": [
+      {
+        "_key": "chair-president",
+        "_type": "societyCommitteeMember",
+        "role": "Chair/President",
+        "name": "Jimmy Pauck"
+      },
+      {
+        "_key": "secretary",
+        "_type": "societyCommitteeMember",
+        "role": "Secretary",
+        "name": "Jimmy Pauck"
+      },
+      {
+        "_key": "treasurer",
+        "_type": "societyCommitteeMember",
+        "role": "Treasurer",
+        "name": "Ingrid Greyvenstein"
+      }
+    ],
+    "committeeNote": null,
+    "website": null,
+    "facebookUrl": "https://www.facebook.com/share/1BWFfEnEVq/",
+    "instagramUrl": null,
+    "annualShow": null,
+    "description": null,
+    "foundedPlaceholder": false,
+    "memberCountPlaceholder": false,
+    "meetPlaceholder": false,
+    "venuePlaceholder": false,
+    "driveSource": "All Society data and history.docx@v1.0#ccc3d82558d31fd9abe009b323f940ee + Society Contact list - Word.docx@v1.0#21926d7550945fbb89e137996acabf90"
+  },
+  {
+    "name": "Vlakte Orgideevereniging",
+    "slug": {
+      "_type": "slug",
+      "current": "vlakte-orgideevereniging"
+    },
+    "listed": true,
+    "contactEmail": "ronel.eksteen29@gmail.com",
+    "contactPhone": "0825642847",
+    "meets": "Saturday, 12:00 PM",
+    "venue": "NG Church Hall, 34 Mentz Ave, Bela Bela. Limpopo",
+    "committee": [
+      {
+        "_key": "chair-president",
+        "_type": "societyCommitteeMember",
+        "role": "Chair/President",
+        "name": "Riaan de Villiers"
+      },
+      {
+        "_key": "secretary",
+        "_type": "societyCommitteeMember",
+        "role": "Secretary",
+        "name": "Ronél Eksteen"
+      },
+      {
+        "_key": "treasurer",
+        "_type": "societyCommitteeMember",
+        "role": "Treasurer",
+        "name": "Faan Heystek"
+      }
+    ],
+    "committeeNote": null,
+    "website": null,
+    "facebookUrl": null,
+    "instagramUrl": null,
+    "annualShow": null,
+    "description": null,
+    "foundedPlaceholder": false,
+    "memberCountPlaceholder": false,
+    "meetPlaceholder": false,
+    "venuePlaceholder": false,
+    "driveSource": "All Society data and history.docx@v1.0#ccc3d82558d31fd9abe009b323f940ee + Society Contact list - Word.docx@v1.0#21926d7550945fbb89e137996acabf90"
+  },
+  {
+    "name": "Walker Bay Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "walker-bay-orchid-society"
+    },
+    "listed": true,
+    "contactEmail": "walkerbayorchidsociety@gmail.com",
+    "contactPhone": "0734284398",
+    "meets": "2nd Saturday of each Month, 2:00 PM",
+    "venue": "Various Venues",
+    "committee": [
+      {
+        "_key": "chair-president",
+        "_type": "societyCommitteeMember",
+        "role": "Chair/President",
+        "name": "Hendrik Schoeman"
+      },
+      {
+        "_key": "secretary",
+        "_type": "societyCommitteeMember",
+        "role": "Secretary",
+        "name": "Lee-Ann McCleland"
+      },
+      {
+        "_key": "treasurer",
+        "_type": "societyCommitteeMember",
+        "role": "Treasurer",
+        "name": "Lee-Ann McCleland"
+      }
+    ],
+    "committeeNote": null,
+    "website": null,
+    "facebookUrl": "https://www.facebook.com/groups/532003706949428",
+    "instagramUrl": null,
+    "annualShow": null,
+    "description": null,
+    "foundedPlaceholder": false,
+    "memberCountPlaceholder": false,
+    "meetPlaceholder": false,
+    "venuePlaceholder": false,
+    "driveSource": "All Society data and history.docx@v1.0#ccc3d82558d31fd9abe009b323f940ee + Society Contact list - Word.docx@v1.0#21926d7550945fbb89e137996acabf90"
+  },
+  {
+    "name": "Tygerberg Orchid Group",
+    "slug": {
+      "_type": "slug",
+      "current": "tygerberg-orchid-group"
+    },
+    "listed": true,
+    "contactEmail": "tygerbergorchidgroup@gmail.com",
+    "contactPhone": "+27 (0)82 371 6936",
+    "meets": "Every 3rd Saturday of the month, 9:30 AM",
+    "venue": "Durbanville Library, Oxford Street, Durbanville, Cape Town",
+    "committee": [
+      {
+        "_key": "chair-president",
+        "_type": "societyCommitteeMember",
+        "role": "Chair/President",
+        "name": "Bernadette Smith"
+      },
+      {
+        "_key": "secretary",
+        "_type": "societyCommitteeMember",
+        "role": "Secretary",
+        "name": "Caral-Anne van der Westhuizen"
+      },
+      {
+        "_key": "treasurer",
+        "_type": "societyCommitteeMember",
+        "role": "Treasurer",
+        "name": "Lionel Scott"
+      }
+    ],
+    "committeeNote": "We have a vice president (Byron Gopper) and other members voted onto the committee at the AGM. Would it be possible to add them? Thanks very much Caral-Anne",
+    "website": null,
+    "facebookUrl": "https://www.facebook.com/profile.php?id=61591780598779",
+    "instagramUrl": null,
+    "annualShow": null,
+    "description": "Established in November 1985 as a non-profit association, the TOG is an affiliate of the South African Orchid Council (SAOC) which is the governing body managed by a Board of directors nominated by all the different societies in the RSA. Membership is available to all people interested in orchids.",
+    "foundedPlaceholder": false,
+    "memberCountPlaceholder": false,
+    "meetPlaceholder": false,
+    "venuePlaceholder": false,
+    "driveSource": "All Society data and history.docx@v1.0#ccc3d82558d31fd9abe009b323f940ee + Society Contact list - Word.docx@v1.0#21926d7550945fbb89e137996acabf90"
+  },
+  {
+    "name": "Cape Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "cape-orchid-society"
+    },
+    "listed": true,
+    "contactEmail": "capeorchidsoc@gmail.com",
+    "contactPhone": "083 658 1154",
+    "meets": "every fourth Tuesday evening of the month, 7:00 PM",
+    "venue": "Athenaeum, 1 Mariendahl Lane (off Campground Road) in Newlands, Cape Town.",
+    "committee": [
+      {
+        "_key": "chair-president",
+        "_type": "societyCommitteeMember",
+        "role": "Chair/President",
+        "name": "Barry Deutschmann"
+      },
+      {
+        "_key": "secretary",
+        "_type": "societyCommitteeMember",
+        "role": "Secretary",
+        "name": "Aayesha Hoosain"
+      },
+      {
+        "_key": "treasurer",
+        "_type": "societyCommitteeMember",
+        "role": "Treasurer",
+        "name": "Leesyl Gibson"
+      }
+    ],
+    "committeeNote": null,
+    "website": "https://www.capeorchidsociety.co.za/",
+    "facebookUrl": "https://www.facebook.com/groups/150026875064922",
+    "instagramUrl": "https://www.instagram.com/capeorchidsociety?igsh=MWlsZHdvdDZ3cmo4cg==",
+    "annualShow": null,
+    "description": "Founded in 1957, the Cape Orchid Society is the oldest orchid group in South Africa and a founder member of the South African Orchid Council. The COS strives to bring together those interested in orchids in order to promote and encourage the culture and conservation of orchids, as well as to educate and provide a base for all other orchid-related activities. The COS began with monthly meetings, which still continue today, providing informative presentations, practical growing advice and an opportunity for growers to display and discuss their plants and flowers. The Society hosts a number of events throughout the year, including two shows in which growers showcase their blooms, an auction, greenhouse open days and hikes. We also provide members with a newsletter, monthly guest speakers, local judging, and much, much, more!",
+    "foundedPlaceholder": false,
+    "memberCountPlaceholder": false,
+    "meetPlaceholder": false,
+    "venuePlaceholder": false,
+    "driveSource": "All Society data and history.docx@v1.0#ccc3d82558d31fd9abe009b323f940ee + Society Contact list - Word.docx@v1.0#21926d7550945fbb89e137996acabf90"
+  },
+  {
+    "name": "Northern Gauteng Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "northern-gauteng-orchid-society"
+    },
+    "listed": true,
+    "contactEmail": "info@northerngautengorchidsociety.com",
+    "contactPhone": "083 629 2587",
+    "meets": "2nd Saturday of the month, 2:00 PM",
+    "venue": "Safari Garden Centre, cnr. Lynnwood Road and Rubida Street, The Willows, Pretoria East",
+    "committee": [
+      {
+        "_key": "chair-president",
+        "_type": "societyCommitteeMember",
+        "role": "Chair/President",
+        "name": "Dr. Malan de Villiers"
+      },
+      {
+        "_key": "secretary",
+        "_type": "societyCommitteeMember",
+        "role": "Secretary",
+        "name": "David Alex Wilson"
+      },
+      {
+        "_key": "treasurer",
+        "_type": "societyCommitteeMember",
+        "role": "Treasurer",
+        "name": "Marietjie Houghton"
+      }
+    ],
+    "committeeNote": null,
+    "website": "https://www.northerngautengorchidsociety.com",
+    "facebookUrl": "https://www.facebook.com/NorthernGautengOrchidSociety",
+    "instagramUrl": "https://www.instagram.com/northerngautengorchidsociety/",
+    "annualShow": null,
+    "description": "The Northern Gauteng Orchid Society (NGOS), formerly the Orchid Society of Northern Transvaal (ONT) was founded in 1967 and is the fourth oldest orchid society in South Africa. Based in Pretoria, it serves the Northern Gauteng and adjacent region. The society’s emblem is Angraecum stella-africae.",
+    "foundedPlaceholder": false,
+    "memberCountPlaceholder": false,
+    "meetPlaceholder": false,
+    "venuePlaceholder": false,
+    "driveSource": "All Society data and history.docx@v1.0#ccc3d82558d31fd9abe009b323f940ee + Society Contact list - Word.docx@v1.0#21926d7550945fbb89e137996acabf90"
+  },
+  {
+    "name": "Pietermaritzberg Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "pietermaritzberg-orchid-society"
+    },
+    "listed": true,
+    "contactEmail": "carolcook588@gmail.com",
+    "contactPhone": "0829234061",
+    "meets": "Second Saturday of the month, 2:00 PM",
+    "venue": "Members homes",
+    "committee": [
+      {
+        "_key": "chair-president",
+        "_type": "societyCommitteeMember",
+        "role": "Chair/President",
+        "name": "Alison Young"
+      },
+      {
+        "_key": "secretary",
+        "_type": "societyCommitteeMember",
+        "role": "Secretary",
+        "name": "Ronald O’Donoghu"
+      },
+      {
+        "_key": "treasurer",
+        "_type": "societyCommitteeMember",
+        "role": "Treasurer",
+        "name": "Carol Cook"
+      }
+    ],
+    "committeeNote": null,
+    "website": null,
+    "facebookUrl": null,
+    "instagramUrl": null,
+    "annualShow": null,
+    "description": "The Pietermaritzburg Orchid Society started in May 1978. It is a long-established society that serves all the orchid enthusiasts in the greater Msunduzi District in the midlands of KwaZulu-Natal. It was established to promote, develop and foster interest in culture, propagation, conservation and the study of orchids.",
+    "foundedPlaceholder": false,
+    "memberCountPlaceholder": false,
+    "meetPlaceholder": false,
+    "venuePlaceholder": false,
+    "driveSource": "All Society data and history.docx@v1.0#ccc3d82558d31fd9abe009b323f940ee + Society Contact list - Word.docx@v1.0#21926d7550945fbb89e137996acabf90"
+  },
+  {
+    "name": "Witwatersrand Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "witwatersrand-orchid-society"
+    },
+    "listed": true,
+    "contactEmail": "info@witsorchid.co.za",
+    "contactPhone": "0823566808",
+    "meets": "Last Sunday of every month, 1:30 PM",
+    "venue": "The Floreum, Botanical Gardens, Emmarentia, Randburg, 2195",
+    "committee": [
+      {
+        "_key": "chair-president",
+        "_type": "societyCommitteeMember",
+        "role": "Chair/President",
+        "name": "Victor Heard"
+      },
+      {
+        "_key": "secretary",
+        "_type": "societyCommitteeMember",
+        "role": "Secretary",
+        "name": "Allison Gilbert"
+      },
+      {
+        "_key": "treasurer",
+        "_type": "societyCommitteeMember",
+        "role": "Treasurer",
+        "name": "David Eastman"
+      }
+    ],
+    "committeeNote": null,
+    "website": "https://witsorchid.co.za/",
+    "facebookUrl": "https://www.facebook.com/groups/WitsOrchidSociety",
+    "instagramUrl": "https://www.instagram.com/witwatersrandorchidsociety/",
+    "annualShow": null,
+    "description": "The Witwatersrand Orchid Society (WOS) is one of the oldest orchid societies in South Africa. Established in 1963 under its original name, the Transvaal Orchid Society, the Society has a long-standing history of promoting an appreciation and understanding of orchids and their cultivation.",
+    "foundedPlaceholder": false,
+    "memberCountPlaceholder": false,
+    "meetPlaceholder": false,
+    "venuePlaceholder": false,
+    "driveSource": "All Society data and history.docx@v1.0#ccc3d82558d31fd9abe009b323f940ee + Society Contact list - Word.docx@v1.0#21926d7550945fbb89e137996acabf90"
+  },
+  {
+    "name": "Orchid Society of the Southern Cape",
+    "slug": {
+      "_type": "slug",
+      "current": "orchid-society-of-the-southern-cape"
+    },
+    "listed": true,
+    "contactEmail": "ossoutherncape@gmail.com",
+    "contactPhone": null,
+    "meets": "Last Saturday of the month unless changed, 2:00 PM",
+    "venue": "presbyterian Church",
+    "committee": [
+      {
+        "_key": "chair-president",
+        "_type": "societyCommitteeMember",
+        "role": "Chair/President",
+        "name": "Scott Ormerod"
+      },
+      {
+        "_key": "secretary",
+        "_type": "societyCommitteeMember",
+        "role": "Secretary",
+        "name": "Lize Smit"
+      },
+      {
+        "_key": "treasurer",
+        "_type": "societyCommitteeMember",
+        "role": "Treasurer",
+        "name": "Gladys Fick"
+      }
+    ],
+    "committeeNote": null,
+    "website": "https://ossoutherncape.wixsite.com/orchids",
+    "facebookUrl": "https://www.facebook.com/ossc1984",
+    "instagramUrl": "https://www.instagram.com/orchid_society_southern_cape/",
+    "annualShow": null,
+    "description": null,
+    "foundedPlaceholder": false,
+    "memberCountPlaceholder": false,
+    "meetPlaceholder": false,
+    "venuePlaceholder": false,
+    "driveSource": "All Society data and history.docx@v1.0#ccc3d82558d31fd9abe009b323f940ee + Society Contact list - Word.docx@v1.0#21926d7550945fbb89e137996acabf90"
+  },
+  {
+    "name": "Gonubie Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "gonubie-orchid-society"
+    },
+    "listed": true,
+    "contactEmail": "annettebrown100@gmail.com",
+    "contactPhone": "0832754967",
+    "meets": "First Sunday of each Month, 2:00 PM",
+    "venue": "Beacon Bay Bowling Club",
+    "committee": [
+      {
+        "_key": "chair-president",
+        "_type": "societyCommitteeMember",
+        "role": "Chair/President",
+        "name": "Elize Cloete"
+      },
+      {
+        "_key": "secretary",
+        "_type": "societyCommitteeMember",
+        "role": "Secretary",
+        "name": "Annette Brown"
+      },
+      {
+        "_key": "treasurer",
+        "_type": "societyCommitteeMember",
+        "role": "Treasurer",
+        "name": "Diane Hensberg"
+      }
+    ],
+    "committeeNote": null,
+    "website": null,
+    "facebookUrl": "https://www.facebook.com/share/1BqbDNYFju/",
+    "instagramUrl": null,
+    "annualShow": null,
+    "description": "Gonubie Orchid Society was formed in 1998 by Eric Dodd and became affiliated to SAOC in May 1999. The Society first met at Pioneer Nursery in Gonubie. In 2014, the Society moved their meetings to the Gonubie Hotel. The Society has always been a strong Society and is well known for it’s yearly Orchid Shows. It’s membership has been strong with an average of 30 members since it’s establishment. Since May 2026, we meet at the Beacon Bay Bowling Club.",
+    "foundedPlaceholder": false,
+    "memberCountPlaceholder": false,
+    "meetPlaceholder": false,
+    "venuePlaceholder": false,
+    "driveSource": "All Society data and history.docx@v1.0#ccc3d82558d31fd9abe009b323f940ee + Society Contact list - Word.docx@v1.0#21926d7550945fbb89e137996acabf90"
+  },
+  {
+    "name": "Eastern Province Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "eastern-province-orchid-society"
+    },
+    "listed": true,
+    "contactEmail": "anemarielab@gmail.com",
+    "contactPhone": "074 852 7877",
+    "meets": "The 2nd Thursday of the month, 7:00 PM",
+    "venue": "Caritas Service Centre, West Street, Newton Park, Port Elizabeth",
+    "committee": [
+      {
+        "_key": "chair-president",
+        "_type": "societyCommitteeMember",
+        "role": "Chair/President",
+        "name": "Robert de Witt (Acting)"
+      },
+      {
+        "_key": "secretary",
+        "_type": "societyCommitteeMember",
+        "role": "Secretary",
+        "name": "Annemare Labuschagne"
+      },
+      {
+        "_key": "treasurer",
+        "_type": "societyCommitteeMember",
+        "role": "Treasurer",
+        "name": "Leo de Gois"
+      }
+    ],
+    "committeeNote": null,
+    "website": null,
+    "facebookUrl": "https://www.facebook.com/share/1DWwY6233R/",
+    "instagramUrl": null,
+    "annualShow": null,
+    "description": null,
+    "foundedPlaceholder": false,
+    "memberCountPlaceholder": false,
+    "meetPlaceholder": false,
+    "venuePlaceholder": false,
+    "driveSource": "All Society data and history.docx@v1.0#ccc3d82558d31fd9abe009b323f940ee + Society Contact list - Word.docx@v1.0#21926d7550945fbb89e137996acabf90"
+  },
+  {
+    "name": "Alfred County Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "alfred-county-orchid-society"
+    },
+    "listed": true,
+    "contactEmail": "alfredcountyorchidsociety84@gmail.com",
+    "contactPhone": null,
+    "meets": "3rd Sunday of the Month, 14:00",
+    "venue": "1b Meriel road, Uvongo, Margate",
+    "committee": null,
+    "committeeNote": null,
+    "website": null,
+    "facebookUrl": null,
+    "instagramUrl": null,
+    "annualShow": null,
+    "description": null,
+    "foundedPlaceholder": false,
+    "memberCountPlaceholder": false,
+    "meetPlaceholder": false,
+    "venuePlaceholder": false,
+    "driveSource": "Society Contact list - Word.docx@v1.0#21926d7550945fbb89e137996acabf90"
+  },
+  {
+    "name": "Border Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "border-orchid-society"
+    },
+    "listed": true,
+    "contactEmail": "dudleyreynolds5@gmail.com",
+    "contactPhone": null,
+    "meets": "2nd Wednesday of the month, 18:00",
+    "venue": "8 Abbots Gardens, 17 Harburn road, East London.",
+    "committee": null,
+    "committeeNote": null,
+    "website": null,
+    "facebookUrl": null,
+    "instagramUrl": null,
+    "annualShow": null,
+    "description": null,
+    "foundedPlaceholder": false,
+    "memberCountPlaceholder": false,
+    "meetPlaceholder": false,
+    "venuePlaceholder": false,
+    "driveSource": "Society Contact list - Word.docx@v1.0#21926d7550945fbb89e137996acabf90"
+  },
+  {
+    "name": "East Rand Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "east-rand-orchid-society"
+    },
+    "listed": true,
+    "contactEmail": "eastrandorchids@gmail.com",
+    "contactPhone": null,
+    "meets": "2nd Saturday of the Month, 14:00",
+    "venue": "NG Kerk Edenvale, Cnr 7th Avenue and 4th Street Edenvale, Gauteng.",
+    "committee": null,
+    "committeeNote": null,
+    "website": null,
+    "facebookUrl": null,
+    "instagramUrl": null,
+    "annualShow": null,
+    "description": null,
+    "foundedPlaceholder": false,
+    "memberCountPlaceholder": false,
+    "meetPlaceholder": false,
+    "venuePlaceholder": false,
+    "driveSource": "Society Contact list - Word.docx@v1.0#21926d7550945fbb89e137996acabf90"
+  },
+  {
+    "name": "Lowveld Orchid Group",
+    "slug": {
+      "_type": "slug",
+      "current": "lowveld-orchid-group"
+    },
+    "listed": true,
+    "contactEmail": "dblouw@global.co.za",
+    "contactPhone": null,
+    "meets": "3rd Thursday of every 2nd month, 16:00",
+    "venue": "Please email to confirm venue for current month",
+    "committee": null,
+    "committeeNote": null,
+    "website": null,
+    "facebookUrl": null,
+    "instagramUrl": null,
+    "annualShow": null,
+    "description": null,
+    "foundedPlaceholder": false,
+    "memberCountPlaceholder": false,
+    "meetPlaceholder": false,
+    "venuePlaceholder": false,
+    "driveSource": "Society Contact list - Word.docx@v1.0#21926d7550945fbb89e137996acabf90"
+  },
+  {
+    "name": "Natal Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "natal-orchid-society"
+    },
+    "listed": true,
+    "contactEmail": "natalorchidsociety.kzn@gmail.com",
+    "contactPhone": null,
+    "meets": "3rd Saturday of every month, 09:30",
+    "venue": "Northlands Bowling Club - Durban North",
+    "committee": null,
+    "committeeNote": null,
+    "website": null,
+    "facebookUrl": null,
+    "instagramUrl": null,
+    "annualShow": null,
+    "description": null,
+    "foundedPlaceholder": false,
+    "memberCountPlaceholder": false,
+    "meetPlaceholder": false,
+    "venuePlaceholder": false,
+    "driveSource": "Society Contact list - Word.docx@v1.0#21926d7550945fbb89e137996acabf90"
+  },
+  {
+    "name": "Phalaborwa Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "phalaborwa-orchid-society"
+    },
+    "listed": true,
+    "contactEmail": "phworchidsociety@gmail.com",
+    "contactPhone": null,
+    "meets": "2nd Sunday of every 2nd month, 12:00",
+    "venue": "The Bus Stop, 47 Hardekool street, Phalaborwa",
+    "committee": null,
+    "committeeNote": null,
+    "website": null,
+    "facebookUrl": null,
+    "instagramUrl": null,
+    "annualShow": null,
+    "description": null,
+    "foundedPlaceholder": false,
+    "memberCountPlaceholder": false,
+    "meetPlaceholder": false,
+    "venuePlaceholder": false,
+    "driveSource": "Society Contact list - Word.docx@v1.0#21926d7550945fbb89e137996acabf90"
+  },
+  {
+    "name": "Plantae Orchid Group",
+    "slug": {
+      "_type": "slug",
+      "current": "plantae-orchid-group"
+    },
+    "listed": true,
+    "contactEmail": "info@plantae.co.za",
+    "contactPhone": null,
+    "meets": null,
+    "venue": null,
+    "committee": null,
+    "committeeNote": null,
+    "website": null,
+    "facebookUrl": null,
+    "instagramUrl": null,
+    "annualShow": null,
+    "description": null,
+    "foundedPlaceholder": false,
+    "memberCountPlaceholder": false,
+    "meetPlaceholder": true,
+    "venuePlaceholder": true,
+    "driveSource": "Society Contact list - Word.docx@v1.0#21926d7550945fbb89e137996acabf90"
+  },
+  {
+    "name": "Rustenburg Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "rustenburg-orchid-society"
+    },
+    "listed": true,
+    "contactEmail": "dekkerchrista@yahoo.com",
+    "contactPhone": null,
+    "meets": "Please email to confirm venue and time",
+    "venue": "49 Leyd Street, Rustenburg, 0299",
+    "committee": null,
+    "committeeNote": null,
+    "website": null,
+    "facebookUrl": null,
+    "instagramUrl": null,
+    "annualShow": null,
+    "description": null,
+    "foundedPlaceholder": false,
+    "memberCountPlaceholder": false,
+    "meetPlaceholder": false,
+    "venuePlaceholder": false,
+    "driveSource": "Society Contact list - Word.docx@v1.0#21926d7550945fbb89e137996acabf90"
+  },
+  {
+    "name": "Wolkberg Orchid Society",
+    "slug": {
+      "_type": "slug",
+      "current": "wolkberg-orchid-society"
+    },
+    "listed": true,
+    "contactEmail": "wjaneg5759@gmail.com",
+    "contactPhone": null,
+    "meets": "3rd Sunday of the month, 14:00",
+    "venue": "Fairview conference centre",
+    "committee": null,
+    "committeeNote": null,
+    "website": null,
+    "facebookUrl": null,
+    "instagramUrl": null,
+    "annualShow": null,
+    "description": null,
+    "foundedPlaceholder": false,
+    "memberCountPlaceholder": false,
+    "meetPlaceholder": false,
+    "venuePlaceholder": false,
+    "driveSource": "Society Contact list - Word.docx@v1.0#21926d7550945fbb89e137996acabf90"
+  }
+]

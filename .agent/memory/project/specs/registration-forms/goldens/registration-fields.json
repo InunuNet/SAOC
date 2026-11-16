@@ -1,0 +1,551 @@
+{
+  "schema": "saoc.registration-fields/v2",
+  "source": {
+    "sheetId": "1G6uAaoDDDFMD7bB5upxBtgiH3eN2q3ZyLi9XVBE6Sjs",
+    "sheetName": "Symposium Registration form",
+    "tabs": [
+      "Registration sheet",
+      "Dropdown lists"
+    ],
+    "readOn": "2026-11-16",
+    "rulings": "Brad 16 Nov 2026: every sheet field and block on the form incl. Judges Events and Attending, all required; N tickets give N full forms; Same as above on forms 2+; corrected typos; Halaal kept."
+  },
+  "corrections": [
+    {
+      "from": "Identit documet",
+      "to": "identity document"
+    },
+    {
+      "from": "Indipendant Member",
+      "to": "Independent Member"
+    },
+    {
+      "from": "WOSASymposium Normal Ticket",
+      "to": "WOSA Symposium Normal Ticket"
+    },
+    {
+      "from": "Country list blank row, duplicate Russia, order slips",
+      "to": "blank dropped, de-duplicated, sorted A to Z (assumption)"
+    }
+  ],
+  "appliesToTicketSlugs": [
+    "saoc-symposium",
+    "wosa-conference",
+    "sunset-cocktails-single"
+  ],
+  "attendeeForms": {
+    "count": "one full form per ticket, quantity 1 to 20 (MAX_LINE_ITEMS)",
+    "heading": "Attendee {n}",
+    "idPattern": "registration-{n}-{key}",
+    "accessibleGroupName": "Attendee {n}",
+    "travellingCompanionBlock": "covered by attendee 2 and later; the sheet block TRAVELING COMPANION INFORMATION is not rendered as a separate section"
+  },
+  "sameAsAbove": {
+    "label": "Same as above",
+    "appliesToAttendees": "2 and later",
+    "groups": [
+      "contact",
+      "membership"
+    ],
+    "perPersonNever": [
+      "title",
+      "firstName",
+      "surname",
+      "preferredName",
+      "email",
+      "attending",
+      "judges",
+      "dietary"
+    ],
+    "behaviour": "ticking hides the section and copies attendee 1 values at submit (server re-copies, authoritative); unticking shows it again, empty and required",
+    "storedAs": "sameAsAttendee1: list of copied group ids, [] when none"
+  },
+  "sections": [
+    {
+      "id": "personal",
+      "heading": "PERSONAL INFORMATION",
+      "fields": [
+        {
+          "key": "title",
+          "label": "Title",
+          "type": "select",
+          "required": true,
+          "options": "title"
+        },
+        {
+          "key": "firstName",
+          "label": "First Name (as per your identity document or passport)",
+          "type": "text",
+          "required": true,
+          "maxLength": 100
+        },
+        {
+          "key": "surname",
+          "label": "Surname (as per your identity document or passport)",
+          "type": "text",
+          "required": true,
+          "maxLength": 100
+        },
+        {
+          "key": "preferredName",
+          "label": "Preferred name",
+          "type": "text",
+          "required": true,
+          "maxLength": 100
+        },
+        {
+          "key": "email",
+          "label": "Email address",
+          "type": "email",
+          "required": true,
+          "maxLength": 254,
+          "note": "each ticket is delivered to its own email; never shareable"
+        },
+        {
+          "key": "mobile",
+          "label": "Mobile Number (include country code)",
+          "type": "tel",
+          "required": true,
+          "maxLength": 30,
+          "shareGroup": "contact"
+        },
+        {
+          "key": "country",
+          "label": "Country",
+          "type": "select",
+          "required": true,
+          "options": "country",
+          "shareGroup": "contact"
+        },
+        {
+          "key": "province",
+          "label": "If South African, select Province",
+          "type": "select",
+          "required": false,
+          "options": "province",
+          "shareGroup": "contact",
+          "requiredWhen": {
+            "country": "South Africa"
+          },
+          "shownOnlyWhen": {
+            "country": "South Africa"
+          }
+        }
+      ],
+      "shareGroups": [
+        {
+          "id": "contact",
+          "fields": [
+            "mobile",
+            "country",
+            "province"
+          ],
+          "checkboxLabel": "Same as above",
+          "checkboxIdSuffix": "same-contact",
+          "describedByLabels": [
+            "Mobile Number (include country code)",
+            "Country",
+            "If South African, select Province"
+          ],
+          "note": "No sheet heading exists for this group; the checkbox is described by the three sheet labels. Mobile and email swap places versus the sheet so the group is contiguous."
+        }
+      ]
+    },
+    {
+      "id": "membership",
+      "heading": "MEMBERSHIP",
+      "fields": [
+        {
+          "key": "societies",
+          "label": "To which Society do you belong to?",
+          "type": "multiselect",
+          "required": true,
+          "options": "society",
+          "minSelected": 1,
+          "exclusiveOption": "None",
+          "shareGroup": "membership"
+        }
+      ],
+      "shareGroups": [
+        {
+          "id": "membership",
+          "fields": [
+            "societies"
+          ],
+          "checkboxLabel": "Same as above",
+          "checkboxIdSuffix": "same-membership"
+        }
+      ]
+    },
+    {
+      "id": "booking",
+      "heading": "NATIONAL SHOW BOOKING OPTIONS",
+      "fields": [
+        {
+          "key": "attending",
+          "label": "Please select from the dropdown",
+          "type": "select",
+          "required": true,
+          "options": "attending",
+          "locked": true,
+          "prefillByTicketSlug": {
+            "saoc-symposium": "SAOC Symposium Normal Ticket",
+            "wosa-conference": "WOSA Symposium Normal Ticket",
+            "sunset-cocktails-single": "Sunset Cocktails"
+          }
+        }
+      ]
+    },
+    {
+      "id": "judges",
+      "heading": "JUDGES EVENTS",
+      "fields": [
+        {
+          "key": "judgeAccredited",
+          "label": "Are you an accredited Orchid Judge",
+          "type": "select",
+          "required": true,
+          "options": "judgeYesNoNa"
+        },
+        {
+          "key": "judgeOrganisation",
+          "label": "With which Orchid Organisation",
+          "type": "select",
+          "required": true,
+          "options": "judgeOrganisation"
+        },
+        {
+          "key": "judgeAvailable",
+          "label": "Will you be available as a Show Judge at the Show",
+          "type": "select",
+          "required": true,
+          "options": "judgeYesNoNa"
+        },
+        {
+          "key": "judgeDate",
+          "label": "Which date would you be available?",
+          "type": "select",
+          "required": true,
+          "options": "judgeDate"
+        },
+        {
+          "key": "judgeCommunication",
+          "label": "Will you be attending the Judges Communication?",
+          "type": "select",
+          "required": true,
+          "options": "judgeYesNoNa"
+        },
+        {
+          "key": "judgeForum",
+          "label": "Will you be attending the Judges Forum?",
+          "type": "select",
+          "required": true,
+          "options": "judgeYesNoNa"
+        }
+      ],
+      "note": "No skip rule: non-judges answer with the sheet option Not applicable (None for the date)."
+    },
+    {
+      "id": "dietary",
+      "heading": "DIETARY REQUIREMENTS",
+      "fields": [
+        {
+          "key": "dietary",
+          "label": "Please select from the drop down list",
+          "type": "select",
+          "required": true,
+          "options": "dietary"
+        }
+      ]
+    }
+  ],
+  "options": {
+    "title": [
+      "Mr",
+      "Mrs",
+      "Ms",
+      "Dr.",
+      "Sir",
+      "Hon."
+    ],
+    "country": [
+      "Afghanistan",
+      "Albania",
+      "Algeria",
+      "Andorra",
+      "Angola",
+      "Antigua and Barbuda",
+      "Argentina",
+      "Armenia",
+      "Australia",
+      "Austria",
+      "Azerbaijan",
+      "Bahamas",
+      "Bahrain",
+      "Bangladesh",
+      "Barbados",
+      "Belarus",
+      "Belgium",
+      "Belize",
+      "Benin",
+      "Bhutan",
+      "Bolivia",
+      "Bosnia and Herzegovina",
+      "Botswana",
+      "Brazil",
+      "Brunei",
+      "Bulgaria",
+      "Burkina Faso",
+      "Burundi",
+      "Cambodia",
+      "Cameroon",
+      "Canada",
+      "Cape Verde",
+      "Central African Republic",
+      "Chad",
+      "Chile",
+      "China",
+      "Colombia",
+      "Comoros",
+      "Costa Rica",
+      "Cote d'Ivoire",
+      "Croatia",
+      "Cuba",
+      "Cyprus",
+      "Czech Republic",
+      "Democratic Republic of the Congo",
+      "Denmark",
+      "Djibouti",
+      "Dominica",
+      "Dominican Republic",
+      "Ecuador",
+      "Egypt",
+      "El Salvador",
+      "Equatorial Guinea",
+      "Eritrea",
+      "Estonia",
+      "Eswatini",
+      "Ethiopia",
+      "Fiji",
+      "Finland",
+      "France",
+      "Gabon",
+      "Gambia",
+      "Georgia",
+      "Germany",
+      "Ghana",
+      "Greece",
+      "Grenada",
+      "Guatemala",
+      "Guinea",
+      "Guinea-Bissau",
+      "Guyana",
+      "Haiti",
+      "Holy See (Vatican City)",
+      "Honduras",
+      "Hungary",
+      "Iceland",
+      "India",
+      "Indonesia",
+      "Iran",
+      "Iraq",
+      "Ireland",
+      "Israel",
+      "Italy",
+      "Jamaica",
+      "Japan",
+      "Jordan",
+      "Kazakhstan",
+      "Kenya",
+      "Kiribati",
+      "Kuwait",
+      "Kyrgyzstan",
+      "Laos",
+      "Latvia",
+      "Lebanon",
+      "Lesotho",
+      "Liberia",
+      "Libya",
+      "Liechtenstein",
+      "Lithuania",
+      "Luxembourg",
+      "Madagascar",
+      "Malawi",
+      "Malaysia",
+      "Maldives",
+      "Mali",
+      "Malta",
+      "Marshall Islands",
+      "Mauritania",
+      "Mauritius",
+      "Mexico",
+      "Micronesia",
+      "Moldova",
+      "Monaco",
+      "Mongolia",
+      "Montenegro",
+      "Morocco",
+      "Mozambique",
+      "Myanmar",
+      "Namibia",
+      "Nauru",
+      "Nepal",
+      "Netherlands",
+      "New Zealand",
+      "Nicaragua",
+      "Niger",
+      "Nigeria",
+      "North Korea",
+      "North Macedonia",
+      "Norway",
+      "Oman",
+      "Pakistan",
+      "Palau",
+      "Palestine",
+      "Panama",
+      "Papua New Guinea",
+      "Paraguay",
+      "Peru",
+      "Philippines",
+      "Poland",
+      "Portugal",
+      "Qatar",
+      "Republic of the Congo",
+      "Romania",
+      "Russia",
+      "Rwanda",
+      "Saint Kitts and Nevis",
+      "Saint Lucia",
+      "Saint Vincent and the Grenadines",
+      "Samoa",
+      "San Marino",
+      "Sao Tome and Principe",
+      "Saudi Arabia",
+      "Senegal",
+      "Serbia",
+      "Seychelles",
+      "Sierra Leone",
+      "Singapore",
+      "Slovakia",
+      "Slovenia",
+      "Solomon Islands",
+      "Somalia",
+      "South Africa",
+      "South Korea",
+      "South Sudan",
+      "Spain",
+      "Sri Lanka",
+      "Sudan",
+      "Suriname",
+      "Sweden",
+      "Switzerland",
+      "Syria",
+      "Taiwan",
+      "Tajikistan",
+      "Tanzania",
+      "Thailand",
+      "Timor-Leste",
+      "Togo",
+      "Tonga",
+      "Trinidad and Tobago",
+      "Tunisia",
+      "Turkey",
+      "Turkmenistan",
+      "Tuvalu",
+      "Uganda",
+      "Ukraine",
+      "United Arab Emirates",
+      "United Kingdom",
+      "United States",
+      "Uruguay",
+      "Uzbekistan",
+      "Vanuatu",
+      "Venezuela",
+      "Vietnam",
+      "Yemen",
+      "Zambia",
+      "Zimbabwe"
+    ],
+    "province": [
+      "Eastern Cape",
+      "Free State",
+      "Gauteng",
+      "KwaZulu-Natal",
+      "Limpopo",
+      "Mpumalanga",
+      "North West",
+      "Northern Cape",
+      "Western Cape"
+    ],
+    "society": [
+      "None",
+      "Alfred County Orchid Society",
+      "Border Orchid Society",
+      "Cape Orchid Society",
+      "Die Vlakte Orchid Society",
+      "Eastern Province Orchid Society",
+      "East Rand Orchid Society",
+      "Gonubie Orchid Society",
+      "Highway Orchid Society",
+      "Lowveld Orchid Group",
+      "Natal Orchid Society",
+      "Northern Gauteng Orchid Society",
+      "Orchid Society of the Southern Cape",
+      "Phalaborwa Orchid Society",
+      "Pietermaritzburg Orchid Society",
+      "Plantae Orchid Group",
+      "Rustenburg Orchid Society",
+      "Tygerberg Orchid Group",
+      "Walker Bay Orchid Society",
+      "Witwatersrand Orchid Society",
+      "Wolkberg Orchid Society",
+      "Zululand Orchid Society",
+      "Wild Orchids of Southern Africa",
+      "Overseas visitor",
+      "Independent Member"
+    ],
+    "attending": [
+      "Exhibit Entry - Early bird special",
+      "Exhibit Entry - Friday",
+      "Exhibit Entry - Saturday",
+      "Exhibit Entry - Sunday",
+      "Weekend Pass",
+      "Sunset Cocktails",
+      "SAOC Symposium Early Bird",
+      "SAOC Symposium Normal Ticket",
+      "SAOC Symposium Speaker",
+      "SAOC Symposium Speaker Partner/Spouse",
+      "WOSA Symposium Early Bird",
+      "WOSA Symposium Normal Ticket",
+      "WOSA Symposium Speaker",
+      "WOSA Symposium Speaker Partner/Spouse"
+    ],
+    "judgeYesNoNa": [
+      "Yes",
+      "No",
+      "Not applicable"
+    ],
+    "judgeOrganisation": [
+      "SAOC",
+      "AOS",
+      "Not applicable"
+    ],
+    "judgeDate": [
+      "22-Sep",
+      "23-Sep",
+      "22 & 23 Sept",
+      "None",
+      "Not applicable"
+    ],
+    "dietary": [
+      "None",
+      "Vegetarian",
+      "Halaal"
+    ]
+  },
+  "attendingByTicketSlug": {
+    "saoc-symposium": "SAOC Symposium Normal Ticket",
+    "wosa-conference": "WOSA Symposium Normal Ticket",
+    "sunset-cocktails-single": "Sunset Cocktails"
+  }
+}
