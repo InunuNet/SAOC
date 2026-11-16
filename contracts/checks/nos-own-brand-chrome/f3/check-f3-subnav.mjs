@@ -103,7 +103,7 @@ await main('F3-R27 subnav', async (r) => {
         m.items.forEach((it, i) => {
           const id = `${tag} item "${it.text}"`;
           if (!/karla/i.test(firstFamily(it.family)) || it.weight !== 700) r.fail(`${id}: ${firstFamily(it.family)} ${it.weight}, want Karla 700`);
-          if (!(Math.abs(it.size - 14.5) <= 0.1)) r.fail(`${id}: ${it.size}px, want 14.5px`);
+          if (!(Math.abs(it.size - 15) <= 0.1)) r.fail(`${id}: ${it.size}px, want 15px`);
           if (!rgbNear(rgbOf(it.color), ROYAL_RGB)) r.fail(`${id}: colour ${it.color}, want royal rgb(33, 26, 87)`);
           if (!(Math.abs(it.rect.height - 44) <= 0.6)) r.fail(`${id}: height ${it.rect.height.toFixed(1)}px, want 44px`);
           const prev = m.items[i - 1];

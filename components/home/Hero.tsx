@@ -158,7 +158,7 @@ export function Hero({ show }: HeroProps) {
 
           <div
             data-hero-ctas
-            className={`flex w-full flex-col gap-4 sm:w-auto sm:flex-row mt-8`}
+            className={`flex w-full flex-col gap-4 sm:w-auto sm:flex-row sm:items-start mt-8`}
           >
             <Link
               href="/societies"

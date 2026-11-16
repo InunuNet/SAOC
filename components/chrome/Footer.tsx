@@ -45,7 +45,7 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
             Brad's instruction (the earlier raster export baked a navy box
             behind it, which was wrong). See SaocLockup.tsx's own header
             comment for the full metrics() derivation. */}
-        <div className={FOOTER_LAYOUT.brandColumn}>
+        <div className={`${FOOTER_LAYOUT.brandColumn} self-stretch text-center`}>
           {/* The lockup is sized by its container, so the auto track needs a definite width to hug.
               -mt-[30px] cancels the emblem PNG's transparent top (116px of 618 at the 160px box), so the
               artwork's top sits on the column headings' top line (NOS Design). */}

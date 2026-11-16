@@ -29,7 +29,7 @@ export function EventsAbout({ intro, placeholderNote = null }: EventsAboutProps)
           <PortableText value={intro ?? []} />
         </div>
       ) : null}
-      <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
+      <div className="flex flex-wrap items-center justify-start gap-x-8 gap-y-4">
         {placeholderNote ? <PlaceholderMarker label={placeholderNote} /> : <span />}
         <div className="flex flex-wrap items-center gap-3">
           <Link href="/societies" className={OUTLINE_BUTTON}>
