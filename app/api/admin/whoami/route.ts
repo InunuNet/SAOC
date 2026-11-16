@@ -12,7 +12,7 @@ const NO_STORE = { 'Cache-Control': 'no-store' };
 export async function GET() {
   const session = await getAdminSession();
   if (!session.ok) {
-    return NextResponse.json({ admin: false }, { status: 401, headers: NO_STORE });
+    return NextResponse.json({ admin: false }, { status: 200, headers: NO_STORE });
   }
   return NextResponse.json(
     { admin: true, email: session.decodedToken.email ?? null },
