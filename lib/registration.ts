@@ -472,7 +472,7 @@ function societiesField(raw: Raw, errors: Errors, prefix: string): string[] {
 // The sections this person copies from attendee 1. Attendee 1 has nothing to copy from.
 function sharedSections(raw: Raw, index: number, errors: Errors): RegistrationShareSection[] {
   const given = raw.sameAsAttendee1;
-  if (given === undefined || given === null) return [];
+  if (given === undefined) return [];
   const valid =
     Array.isArray(given) &&
     given.every((entry) => SHARE_SECTIONS.includes(entry as RegistrationShareSection));
