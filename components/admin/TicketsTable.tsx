@@ -3,6 +3,8 @@
 import { useState } from 'react';
 
 import { formatAdminDate, formatAdminDateTime } from '@/lib/admin-format';
+import { formatDietary } from '@/lib/registration';
+import { DetailDrawer, DetailSection } from './DetailDrawer';
 import { StatusPill } from './StatusPill';
 import { AdminTable } from './table/AdminTable';
 import { TICKET_COLUMNS } from './table/columns';
@@ -17,6 +19,24 @@ export interface TicketRow {
   ticketType: string;
   status: string;
   purchasedAt: string | null;
+  /** Dietary and contact details from the registration form; null for every other ticket. */
+  registration?: TicketRegistrationView | null;
+}
+
+/** Serialisable view of a ticket's registration map. Shown in this drawer and the CSV only. */
+export interface TicketRegistrationView {
+  attendeeNumber: number | null;
+  mobile: string;
+  societies: string[] | null;
+  attending: string;
+  judgeAccredited: string;
+  judgeOrganisation: string;
+  judgeAvailable: string;
+  judgeDate: string;
+  judgeCommunication: string;
+  judgeForum: string;
+  dietary: string;
+  dietaryOther: string | null;
 }
 
 const ALL_STATUSES = 'all';
@@ -43,6 +63,7 @@ interface TicketsTableProps {
 export function TicketsTable({ tickets }: TicketsTableProps) {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState(ALL_STATUSES);
+  const [openId, setOpenId] = useState<string | null>(null);
 
   const needle = search.trim().toLowerCase();
   const visible = tickets.filter(
@@ -85,6 +106,8 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
     }
   }
 
+  const opened = openId ? (tickets.find((row) => row.id === openId) ?? null) : null;
+
   return (
     <div>
       <TableToolbar
@@ -105,6 +128,8 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
         getRowId={(row) => row.id}
         renderCell={renderCell}
         cellTitle={cellTitle}
+        onOpen={(row) => setOpenId(row.id)}
+        selectedId={opened?.id ?? null}
         sortedDescColumnId="purchased"
         emptyText={EMPTY_TEXT}
         card={(row) => ({
@@ -117,6 +142,52 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
           ],
         })}
       />
+      <DetailDrawer
+        open={opened !== null}
+        title={opened?.attendeeName ?? ''}
+        subtitle={opened?.attendeeEmail}
+        onClose={() => setOpenId(null)}
+        rowId={opened?.id}
+      >
+        {opened ? <TicketDetail row={opened} /> : null}
+      </DetailDrawer>
     </div>
+  );
+}
+
+const NOT_PROVIDED = 'Not provided';
+
+function TicketDetail({ row }: { row: TicketRow }) {
+  const { registration } = row;
+  return (
+    <>
+      <DetailSection
+        title="Ticket"
+        items={[
+          { label: 'Booking ref', value: row.bookingRef },
+          { label: 'Ticket type', value: row.ticketType },
+          { label: 'Status', value: <StatusPill status={row.status} /> },
+          { label: 'Purchased', value: formatAdminDateTime(row.purchasedAt) },
+        ]}
+      />
+      {registration ? (
+        <DetailSection
+          title="Registration"
+          items={[
+            { label: 'Attendee number', value: String(registration.attendeeNumber ?? NOT_PROVIDED) },
+            { label: 'Attending', value: registration.attending || NOT_PROVIDED },
+            { label: 'Dietary', value: formatDietary(registration) },
+            { label: 'Mobile', value: registration.mobile || NOT_PROVIDED },
+            { label: 'Societies', value: registration.societies?.join('; ') || NOT_PROVIDED },
+            { label: 'Accredited judge', value: registration.judgeAccredited || NOT_PROVIDED },
+            { label: 'Judging organisation', value: registration.judgeOrganisation || NOT_PROVIDED },
+            { label: 'Available as show judge', value: registration.judgeAvailable || NOT_PROVIDED },
+            { label: 'Date available', value: registration.judgeDate || NOT_PROVIDED },
+            { label: 'Judges Communication', value: registration.judgeCommunication || NOT_PROVIDED },
+            { label: 'Judges Forum', value: registration.judgeForum || NOT_PROVIDED },
+          ]}
+        />
+      ) : null}
+    </>
   );
 }

@@ -21,6 +21,12 @@ import {
   type LineItemPlan,
 } from '@/lib/checkout-reservation';
 import { initAdmin } from '@/lib/firebase-admin';
+import {
+  applyRegistrations,
+  registrationGroups,
+  validateRegistrationGroup,
+  type RegistrationPerson,
+} from '@/lib/registration';
 import { ORDERS_COLLECTION } from '@/lib/orders';
 import { resolveProvider } from '@/lib/payments';
 import type { PaymentProvider, ProviderReadiness } from '@/lib/payments';
@@ -112,6 +118,7 @@ interface SanityTicketType {
   earlyBirdCutoff: unknown;
   requiresDaySelection: unknown;
   requiresAttendeeNames: unknown;
+  requiresRegistration: unknown;
   // F5 (ticketing-conferences-and-events, M2): optional pooled-capacity fields — unknown for
   // the same reason as every other field above, Sanity does not enforce types at the API level.
   capacityPool: unknown;
@@ -263,6 +270,9 @@ export interface CheckoutLineItemInput {
   /** F5 (ticketing-f5-day-attendees) — absent is fine for any type; when present, must
    *  match CHOSEN_DAY_PATTERN or the whole cart is rejected. */
   chosenDay?: string;
+  /** registration-forms: the raw, unvalidated person a flagged ticket type needs. Only carried
+   *  when sent; resolveRegistrations() validates it or drops it. */
+  registration?: unknown;
 }
 
 const CHOSEN_DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -274,6 +284,23 @@ const CHOSEN_DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
  * present — CHOSEN_DAY_PATTERN-valid chosenDay) — one bad item rejects the WHOLE cart,
  * never silently drops it and proceeds with the rest.
  */
+function parseAttendee(
+  candidate: Record<string, unknown>
+): { attendeeName: string; attendeeEmail: string } | null {
+  const { attendeeName, attendeeEmail } = candidate;
+  if (
+    typeof attendeeName !== 'string' ||
+    attendeeName.trim().length === 0 ||
+    attendeeName.length > CONTACT_FIELD_MAX_LENGTHS.name ||
+    typeof attendeeEmail !== 'string' ||
+    !EMAIL_PATTERN.test(attendeeEmail) ||
+    attendeeEmail.length > CONTACT_FIELD_MAX_LENGTHS.email
+  ) {
+    return null;
+  }
+  return { attendeeName, attendeeEmail };
+}
+
 export function parseLineItems(raw: unknown): CheckoutLineItemInput[] | null {
   if (!Array.isArray(raw) || raw.length === 0 || raw.length > MAX_LINE_ITEMS) {
     return null;
@@ -283,32 +310,25 @@ export function parseLineItems(raw: unknown): CheckoutLineItemInput[] | null {
   for (const entry of raw) {
     if (typeof entry !== 'object' || entry === null) return null;
     const candidate = entry as Record<string, unknown>;
-    const { ticketType, attendeeName, attendeeEmail, chosenDay } = candidate;
-    if (
-      typeof ticketType !== 'string' ||
-      ticketType.trim().length === 0 ||
-      typeof attendeeName !== 'string' ||
-      attendeeName.trim().length === 0 ||
-      typeof attendeeEmail !== 'string' ||
-      !EMAIL_PATTERN.test(attendeeEmail)
-    ) {
-      return null;
-    }
+    const { ticketType, chosenDay, registration } = candidate;
+    if (typeof ticketType !== 'string' || ticketType.trim().length === 0) return null;
     // ticketType is left unbounded: an unknown slug is rejected after the Sanity lookup (route.ts:566).
-    if (
-      attendeeName.length > CONTACT_FIELD_MAX_LENGTHS.name ||
-      attendeeEmail.length > CONTACT_FIELD_MAX_LENGTHS.email
-    ) {
-      return null;
-    }
+    // A flagged type's attendee fields come from its registration and the client's are ignored, so
+    // an item carrying a registration may send none or bad ones: they read as empty here and the
+    // route re-checks them below for any item whose type turns out not to be flagged.
+    const attendee = parseAttendee(candidate);
+    if (!attendee && registration === undefined) return null;
+    const { attendeeName, attendeeEmail } = attendee ?? { attendeeName: '', attendeeEmail: '' };
     if (chosenDay !== undefined && (typeof chosenDay !== 'string' || !CHOSEN_DAY_PATTERN.test(chosenDay))) {
       return null;
     }
-    lineItems.push(
-      chosenDay === undefined
-        ? { ticketType, attendeeName, attendeeEmail }
-        : { ticketType, attendeeName, attendeeEmail, chosenDay }
-    );
+    lineItems.push({
+      ticketType,
+      attendeeName,
+      attendeeEmail,
+      ...(chosenDay === undefined ? {} : { chosenDay }),
+      ...(registration === undefined ? {} : { registration }),
+    });
   }
   return lineItems;
 }
@@ -471,8 +491,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
   const showId = body.showId;
 
-  const lineItems = parseLineItems(body.lineItems);
-  if (!lineItems) {
+  const parsedLineItems = parseLineItems(body.lineItems);
+  if (!parsedLineItems) {
     return NextResponse.json(
       { error: 'showId, lineItems (1-20 valid line items) are required.' },
       { status: 400 }
@@ -545,13 +565,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // references (dedupe by slug — two line items of the same type fetch its Sanity doc
   // once, not twice), same capacity/price/show validation as before, applied per type. Any
   // one bad type refuses the WHOLE request before any Firestore write.
-  const distinctTicketTypes = [...new Set(lineItems.map((lineItem) => lineItem.ticketType))];
+  const distinctTicketTypes = [...new Set(parsedLineItems.map((lineItem) => lineItem.ticketType))];
   const amountByType: Record<string, number> = {};
   const capacityByType: Record<string, number> = {};
   // F5 (ticketing-f5-day-attendees): captured per distinct type, enforced per LINE item below
   // (a line item's own chosenDay is what's being validated, not the type as a whole).
   const requiresDaySelectionByType: Record<string, boolean> = {};
   const requiresAttendeeNamesByType: Record<string, boolean> = {};
+  const requiresRegistrationByType: Record<string, boolean> = {};
   // F3 (conference-workshop-tickets, M2): per-type exclusion list, same population pattern as
   // requiresDaySelectionByType/requiresAttendeeNamesByType above — enforced per LINE item below.
   const excludedDaysByType: Record<string, string[]> = {};
@@ -660,6 +681,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
     requiresDaySelectionByType[slug] = ticketTypeDoc.requiresDaySelection === true;
     requiresAttendeeNamesByType[slug] = ticketTypeDoc.requiresAttendeeNames === true;
+    requiresRegistrationByType[slug] = ticketTypeDoc.requiresRegistration === true;
     excludedDaysByType[slug] = excludedDays ?? [];
 
     // F1 (ticketing-flow-redesign, M1): a closed early-bird window with no regularPrice
@@ -721,6 +743,31 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         headcountPerUnit: sibling.headcountPerUnit ?? 1,
       };
     }
+  }
+
+  // registration-forms: every line item of a flagged ticket type must carry a valid registration
+  // (one buyer, or buyer plus partner; 3 or more is refused). Runs before any Firestore write.
+  // The attendee name and email of those items are derived here from the registration and the
+  // client-sent values are discarded; a `registration` on an unflagged item is dropped.
+  const validatedRegistrations = new Map<string, RegistrationPerson[]>();
+  for (const [slug, group] of registrationGroups(parsedLineItems, requiresRegistrationByType)) {
+    const validation = validateRegistrationGroup(group, slug);
+    if (!validation.ok) {
+      return NextResponse.json(
+        { error: 'Please complete the registration form.', fields: validation.errors },
+        { status: 400 }
+      );
+    }
+    validatedRegistrations.set(slug, validation.people);
+  }
+  const lineItems = applyRegistrations(parsedLineItems, validatedRegistrations);
+  // An item that sent a registration but whose type is not flagged keeps the ordinary rule: it
+  // needs a valid attendee name and email of its own.
+  if (lineItems.some((item) => !item.registration && !parseAttendee(item))) {
+    return NextResponse.json(
+      { error: 'showId, lineItems (1-20 valid line items) are required.' },
+      { status: 400 }
+    );
   }
 
   // F5 (ticketing-f5-day-attendees): a NEW per-LINE-ITEM validation pass — every line item,
@@ -915,6 +962,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           lineItem.chosenDay,
           requiresDaySelectionByType[lineItem.ticketType]
         ),
+        ...(lineItem.registration ? { registration: lineItem.registration } : {}),
       })),
       amountByType,
       capacityByType,
@@ -1221,6 +1269,7 @@ async function reserveTicket(input: ReservationInput): Promise<ReservationOutcom
         amount: input.amountByType[lineItem.ticketType],
         bookingRef: generateBookingRef(),
         chosenDay: lineItem.chosenDay,
+        ...(lineItem.registration ? { registration: lineItem.registration } : {}),
       }));
       const reference = lineItemPlans[0].bookingRef;
 

@@ -19,6 +19,7 @@ export interface SanityTicketType {
   earlyBirdCutoff?: string | null;
   provisional?: boolean | null;
   requiresDaySelection?: boolean | null;
+  requiresRegistration?: boolean | null;
   category?: string | null;
   capacityPool?: string | null;
   headcountPerUnit?: number | null;

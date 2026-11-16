@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 
 import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
+import { SELECT_CLASS, SelectChevron } from '@/components/forms/select-class';
 import { FormErrorAlert } from '@/components/ui/FormErrorAlert';
 import {
   ENQUIRY_CONSENT_LABEL,
@@ -268,23 +269,26 @@ export function SponsorEnquiryForm({ site }: SponsorEnquiryFormProps) {
       </Field>
 
       <Field id="se-level" label={ENQUIRY_LABELS.level} error={fieldErrors.level}>
-        <select
-          id="se-level"
-          name="level"
-          value={values.level}
-          onChange={setField('level')}
-          disabled={disabled}
-          className={inputClass}
-          aria-invalid={invalid('level')}
-          aria-describedby={describedBy('level')}
-        >
-          <option value="">Choose a level</option>
-          {SPONSOR_LEVELS.map((level) => (
-            <option key={level.value} value={level.value}>
-              {level.label}
-            </option>
-          ))}
-        </select>
+        <div className="relative">
+          <select
+            id="se-level"
+            name="level"
+            value={values.level}
+            onChange={setField('level')}
+            disabled={disabled}
+            className={`${inputClass} ${SELECT_CLASS}`}
+            aria-invalid={invalid('level')}
+            aria-describedby={describedBy('level')}
+          >
+            <option value="">Choose a level</option>
+            {SPONSOR_LEVELS.map((level) => (
+              <option key={level.value} value={level.value}>
+                {level.label}
+              </option>
+            ))}
+          </select>
+          <SelectChevron />
+        </div>
       </Field>
 
       <Field id="se-message" label={ENQUIRY_REUSED.message} error={fieldErrors.message}>

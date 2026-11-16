@@ -24,6 +24,7 @@ const FIXTURE_TICKET_TYPES = [
     soldOut: false,
     provisional: false,
     requiresDaySelection: false,
+    requiresRegistration: false,
   },
 ];
 
@@ -31,6 +32,17 @@ const FIXTURE_TICKET_TYPES = [
 // day-required alert can be exercised beside the attendee fields.
 const FIXTURE_DAY_TICKET_TYPES = [
   { ...FIXTURE_TICKET_TYPES[0], slug: 'fixture-day-ticket', name: 'Fixture day ticket', requiresDaySelection: true },
+];
+// ?type=registration swaps in a flagged product (the real symposium slug, so the locked Attending
+// value resolves; no day), so the registration forms can be
+// exercised without a Sanity document.
+const FIXTURE_REGISTRATION_TICKET_TYPES = [
+  {
+    ...FIXTURE_TICKET_TYPES[0],
+    slug: 'saoc-symposium',
+    name: 'Fixture symposium',
+    requiresRegistration: true,
+  },
 ];
 const FIXTURE_SHOW_DAYS = ['2027-03-12', '2027-03-13'];
 
@@ -42,13 +54,20 @@ export default async function TicketBuyFixturePage({
   if (isHostedRuntime() || process.env.TICKET_FIXTURES !== '1') notFound();
   const { type } = await searchParams;
   const dayProduct = type === 'day';
+  const registrationProduct = type === 'registration';
   return (
     <NosThemeScope>
       <main>
         <div data-nos-wrap className="py-12">
           <div className="max-w-[560px]">
             <TicketPurchaseForm
-              ticketTypes={dayProduct ? FIXTURE_DAY_TICKET_TYPES : FIXTURE_TICKET_TYPES}
+              ticketTypes={
+                registrationProduct
+                  ? FIXTURE_REGISTRATION_TICKET_TYPES
+                  : dayProduct
+                    ? FIXTURE_DAY_TICKET_TYPES
+                    : FIXTURE_TICKET_TYPES
+              }
               showDays={dayProduct ? FIXTURE_SHOW_DAYS : []}
             />
           </div>

@@ -107,7 +107,9 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
     return Object.keys(rowErrors).length === 0;
   }
 
-  async function submit() {
+  // `registrationLineItems`: a flagged ticket type posts its registered people instead of the
+  // attendee rows, which it does not show.
+  async function submit(registrationLineItems?: CheckoutLineItemInput[]) {
     if (status === 'submitting' || quantity < MIN_QUANTITY) return;
     // A new attempt clears the last refusal's status, even if client validation stops it below.
     setErrorStatus(null);
@@ -120,12 +122,14 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
         : {};
     let lineItems: CheckoutLineItemInput[];
     try {
-      lineItems = buildLineItemsFromCart(
-        quantities,
-        { [ticketType.slug]: attendees },
-        [ticketType.slug],
-        chosenDays
-      );
+      lineItems =
+        registrationLineItems ??
+        buildLineItemsFromCart(
+          quantities,
+          { [ticketType.slug]: attendees },
+          [ticketType.slug],
+          chosenDays
+        );
     } catch {
       setStatus('error');
       setErrorMessage(

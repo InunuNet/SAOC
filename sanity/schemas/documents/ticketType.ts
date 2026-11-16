@@ -120,6 +120,17 @@ export const ticketType = defineType({
       initialValue: false,
       description: 'True for products (e.g. VIP) that must capture a named attendee.',
     }),
+    // registration-forms: the buyer completes the registration form (and may add a
+    // spouse/partner) before payment. Flag-driven, never slug-driven.
+    defineField({
+      name: 'requiresRegistration',
+      title: 'Requires Registration',
+      type: 'boolean',
+      initialValue: false,
+      description:
+        'True for the SAOC Symposium, WOSA Conference and Cocktail evening tickets: the buyer ' +
+        'completes the registration form before payment.',
+    }),
     // F3 (ticketing-conferences-and-events, M2): which purchase page this ticket type
     // belongs on. Required for new documents, no default `initialValue` — matching the
     // `show` field's precedent above: a silent wrong-category default is worse than a

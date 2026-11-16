@@ -3,6 +3,7 @@
 import { useId, useState } from 'react';
 
 import { groupByMonth, kindOptions, showEventControls } from '@/lib/events-list';
+import { SELECT_CLASS, SelectChevron } from '@/components/forms/select-class';
 
 import type { ListedEvent } from './EventCard';
 import { MonthGroup } from './MonthGroup';
@@ -61,19 +62,22 @@ export function EventsList({ events }: EventsListProps) {
             <label htmlFor={monthId} className={LABEL_CLASSES}>
               Month
             </label>
-            <select
-              id={monthId}
-              value={activeMonth}
-              onChange={(e) => setMonth(e.target.value)}
-              className={`min-h-11 rounded-[2px] border border-rule bg-parchment px-3 font-sans text-[14px] text-ink ${FOCUS_CLASSES}`}
-            >
-              <option value={ALL}>All months</option>
-              {months.map((group) => (
-                <option key={group.key} value={group.key}>
-                  {group.month}
-                </option>
-              ))}
-            </select>
+            <div className="relative self-start md:self-auto">
+              <select
+                id={monthId}
+                value={activeMonth}
+                onChange={(e) => setMonth(e.target.value)}
+                className={`min-h-11 rounded-[2px] border border-rule bg-parchment px-3 font-sans text-[14px] text-ink ${FOCUS_CLASSES} ${SELECT_CLASS}`}
+              >
+                <option value={ALL}>All months</option>
+                {months.map((group) => (
+                  <option key={group.key} value={group.key}>
+                    {group.month}
+                  </option>
+                ))}
+              </select>
+              <SelectChevron />
+            </div>
           </div>
         </div>
       ) : null}

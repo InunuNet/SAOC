@@ -20,6 +20,7 @@ function loadRoute(session) {
     '@/lib/admin-auth': { getAdminSession: async () => session },
     '@/lib/csv-field': { csvField: (value) => value },
     '@/lib/firebase-admin': { initAdmin: () => ({}) },
+    '@/lib/registration': { formatDietary: (r) => r.dietary === 'Other' && r.dietaryOther ? `Other: ${r.dietaryOther}` : (r.dietary ?? '') },
   };
   const source = readFileSync(path.join(ROOT, ROUTE), 'utf8');
   const code = ts.transpileModule(source, {

@@ -149,6 +149,7 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
     soldOut: soldOutBySlug[ticketType.slug] === true,
     provisional: ticketType.provisional === true,
     requiresDaySelection: ticketType.requiresDaySelection === true,
+    requiresRegistration: ticketType.requiresRegistration === true,
   };
 
   const quantity = parseQuantity(query.quantity);
