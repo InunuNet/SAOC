@@ -1,0 +1,44 @@
+schema: athanor.contract/v1
+slug: door-day-aware
+goal: Enforce SAST show-day and chosen-day admission while allowing both Weekend Pass products once per show day and preserving PR69 provenance, single-use VIP and first-admission readers.
+created_at: '2026-10-24'
+autonomy: high
+features:
+  - id: F1
+    name: >-
+      Implement the pure decideDayAdmission policy and clock/context-injected real check-in
+      service described in the golden README. Preserve auth, validation, read, not-found,
+      wrong-show and PR69 guard precedence; then not_show_day, wrong_day, duplicate, unpaid
+      and admission. Store pass daily timestamps transactionally, preserve first checkedInAt
+      and unique-ticket counters, append one audit attempt per result and reuse existing banner.
+    status: pending
+goldens:
+  - contracts/golden/door-day-aware/README.md
+  - contracts/golden/door-day-aware/truth-table.json
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Real pure policy consumes the complete golden matrix with injected time, SAST midnight edges and no input mutation.
+      command: node --test --test-name-pattern='truth table' contracts/checks/door-day-aware/admission.test.mjs
+    - id: A2
+      description: Real route and real service enforce every golden decision, response, no-write refusal, audit and rendered rejection.
+      command: node --test --test-name-pattern='route' contracts/checks/door-day-aware/admission.test.mjs
+    - id: A3
+      description: Every PR69 provenance row and all existing refusal paths retain precedence in both launch modes, including auth auditing and infrastructure failure.
+      command: node --test --test-name-pattern='regressions' contracts/checks/door-day-aware/admission.test.mjs
+    - id: A4
+      description: Original PR69 pure guard and all issuance builders still pass without edits or network.
+      command: node --test --test-name-pattern='truth table|builders' contracts/checks/door-reject-test-tickets/admission.test.mjs
+    - id: A5
+      description: Run all day-aware offline checks including retries and first/day-two/day-three sequences.
+      command: node --test contracts/checks/door-day-aware/*.test.mjs
+    - id: A6
+      description: Type-check all production and fixture types, exhaustive refusal mappings and scanner response metadata.
+      command: pnpm type-check
+    - id: A7
+      description: Lint the specified implementation surface and contract checks; expand this list for any additional files touched by implementation.
+      command: pnpm exec eslint lib/checkin-day-policy.ts lib/checkin-context.ts lib/checkin.ts lib/checkin-audit.ts app/api/admin/checkin/route.ts types/index.ts components/admin/DoorResultBanner.tsx components/admin/DoorScannerClient.tsx contracts/checks/door-day-aware/*.test.mjs
+    - id: A8
+      description: Payments launch flag remains unchanged by door policy.
+      command: grep -qx 'const TICKETING_PAYMENTS_LIVE = false;' lib/ticketing-test-mode.ts
