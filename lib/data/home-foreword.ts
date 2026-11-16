@@ -1,6 +1,6 @@
-/** Heading for the home page foreword section. Lee-Ann's spelling; change it here only. */
-export const HOME_FOREWORD_LABEL = 'Forward';
-export const HOME_FOREWORD_HEADING = 'Forward by Douglas McMurtry';
+/** Heading for the home page foreword section. The heading uses "Foreword", corrected per Brad on 2026-11-16. */
+export const HOME_FOREWORD_LABEL = 'Foreword';
+export const HOME_FOREWORD_HEADING = 'Foreword by Douglas McMurtry';
 
 /**
  * Fixed text from the Council (Lee-Ann's foreword docx), reproduced verbatim.

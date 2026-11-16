@@ -6,7 +6,7 @@ import {
 } from '@/lib/data/home-foreword';
 import { ForewordExpandable } from './ForewordExpandable';
 
-/** Renders HOME_FOREWORD_HEADING ("Forward by Douglas McMurtry"); edit the text in lib/data/home-foreword.ts. */
+/** Renders HOME_FOREWORD_HEADING ("Foreword by Douglas McMurtry"); edit the text in lib/data/home-foreword.ts. */
 export function ForewordSection() {
   return (
     <section
