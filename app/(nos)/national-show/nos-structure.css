@@ -4890,6 +4890,21 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   .nos-theme [data-nos-hero-media], .nos-theme .nos-hero-scrim {
     display: none !important;
   }
+  /* Ticket stubs and the masthead fan must read on paper with background graphics off. */
+  .nos-theme .nk-stub, .nos-theme .nk-band {
+    background: none !important;
+    color: #000 !important;
+    border-color: #000 !important;
+  }
+  .nos-theme .nk-stub :is(.nk-num, .nk-numlab, .nk-admit) {
+    color: #000 !important;
+  }
+  .nos-theme .nk-face.has-photo img {
+    display: none !important;
+  }
+  .nos-theme .nk-face.has-photo::after {
+    content: none;
+  }
   .nos-theme .nk-pool, .nos-theme .nk-pool * {
     background: none !important;
     color: #000 !important;

@@ -66,7 +66,7 @@ export function NosFooter({ showPlaceholders }: NosFooterProps) {
     <footer id="nf" className={`nf ${nosChromeFontClass}`}>
       <div className={FOOTER_LAYOUT.grid}>
         <div className={`nf-brand ${FOOTER_LAYOUT.brandColumn}`}>
-          <div className={FOOTER_LAYOUT.brandMark}>
+          <div className={`${FOOTER_LAYOUT.brandMark} print:hidden`}>
             <Link className="nf-lockup" href={HUB_HREF}>
               <picture>
                 <img
@@ -82,7 +82,7 @@ export function NosFooter({ showPlaceholders }: NosFooterProps) {
           </div>
         </div>
 
-        <div className="nf-col">
+        <div className="nf-col print:hidden">
           <div className="nf-head">{FOOTER_HEADINGS.explore}</div>
           <ul className={`nf-list ${FOOTER_RHYTHM.list}`}>
             {NOS_FOOTER_EXPLORE.map((n) => (
@@ -109,6 +109,7 @@ export function NosFooter({ showPlaceholders }: NosFooterProps) {
               variant="official-mono"
               href={saocUrl('/')}
               testId="nf-saoc-lockup"
+              className="print:hidden"
             />
             <span className="nf-credit-reg">
               {FOOTER_REG.split(/\s{2,}/).map((part, i) => (
@@ -120,7 +121,7 @@ export function NosFooter({ showPlaceholders }: NosFooterProps) {
             </span>
           </div>
           {/* WOSA appears once in this footer: a Partner link under the credit (NOS Design FT4). */}
-          <ul className={`nf-list ${FOOTER_RHYTHM.list}`}>
+          <ul className={`nf-list ${FOOTER_RHYTHM.list} print:hidden`}>
             <li>
               <a
                 className={`${FOOTER_RHYTHM.row} gap-1`}
@@ -136,7 +137,7 @@ export function NosFooter({ showPlaceholders }: NosFooterProps) {
           </ul>
         </div>
 
-        <div className="nf-col nf-col-touch">
+        <div className="nf-col nf-col-touch print:hidden">
           <div className="nf-head">{FOOTER_HEADINGS.touch}</div>
           <p className="nf-text">{FOOTER_BULLETIN.blurb}</p>
           <NewsletterSignup
@@ -162,7 +163,7 @@ export function NosFooter({ showPlaceholders }: NosFooterProps) {
             &copy; {new Date().getFullYear()}
             {FOOTER_COPYRIGHT_TAIL}
           </span>
-          <div className={`nf-legal ${FOOTER_LAYOUT.legal}`}>
+          <div className={`nf-legal ${FOOTER_LAYOUT.legal} print:hidden`}>
             {NOS_FOOTER_LEGAL.map((l) => (
               <Link key={l.id} href={nosPath(l.href)}>
                 {l.label}
