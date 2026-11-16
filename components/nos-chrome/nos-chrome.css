@@ -205,3 +205,12 @@
 /* Newsletter sign-up status line (footer-newsletter-subscribe): hidden while empty so the live region adds no gap. */
 .nf-signup-status:empty { display: none; }
 .nf-signup-status { margin: 8px 0 0; }
+
+@media print {
+  .nf, .nf * {
+    background: none !important;
+    color: #000 !important;
+    border-color: #000 !important;
+  }
+  .nf a { text-decoration: underline; }
+}
