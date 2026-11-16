@@ -187,7 +187,7 @@ test.describe('registration form, flagged ticket', () => {
         return { padding: parseFloat(s.paddingRight), appearance: s.appearance };
       });
       expect(style.padding).toBeGreaterThanOrEqual(36);
-      expect(['none', 'base-select']).toContain(style.appearance); // base-select = Chromium customizable select (Brad 16 Nov: style the open list like the form)
+      expect(style.appearance).toBe('base-select'); // Playwright runs Chromium, which supports customizable select (Brad 16 Nov: style the open list like the form)
     }
   });
 
