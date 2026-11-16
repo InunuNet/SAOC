@@ -17,14 +17,14 @@ export interface HomeHeroSlide {
 export const HOME_HERO_SLIDES: readonly HomeHeroSlide[] = [
   {
     key: 'orchid-dark',
-    src: '/images/orchid-dark.jpg',
-    alt: 'Dark orchid',
-    position: '62% 50%',
+    src: '/images/heroes/hero-home-1-zygopetalum-hendrik.jpg',
+    alt: 'Zygopetalum orchid',
+    position: '50% 50%',
   },
   {
     key: 'orchid-purple',
-    src: '/images/orchid-purple-home.jpg',
-    alt: 'Purple orchid',
+    src: '/images/heroes/hero-home-2-dendrobium-chlorostylum.jpg',
+    alt: 'Dendrobium orchid',
     position: '50% 50%',
   },
 ];

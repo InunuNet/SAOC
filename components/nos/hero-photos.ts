@@ -24,7 +24,7 @@ export interface NosHeroPhoto {
 }
 
 export const HERO_PHOTOS: Readonly<Record<string, NosHeroPhoto>> = {
-  '/national-show': { src: '/images/orchid-dark.jpg', objectPosition: '68% 50%' },
+  '/national-show': { src: '/images/heroes/hero-nos-hub-cattleya-aclandiae.jpg', objectPosition: '50% 50%' },
 };
 
 export type NosCropCode =
@@ -41,15 +41,15 @@ export type NosCropCode =
   | 'Y1';
 
 export const HERO_CROPS: Readonly<Record<NosCropCode, NosHeroPhoto>> = {
-  S3a: { src: '/images/nos-hero-S3a.jpg' },
-  S3b: { src: '/images/nos-hero-S3b.jpg' },
-  S2a: { src: '/images/nos-hero-S2a.jpg' },
-  S2c: { src: '/images/nos-hero-S2c.jpg' },
-  S1b: { src: '/images/nos-hero-S1b.jpg' },
-  H4a: { src: '/images/nos-hero-H4a.jpg' },
+  S3a: { src: '/images/heroes/hero-nos-about-colmanara-hendrik.jpg', objectPosition: '50% 50%' },
+  S3b: { src: '/images/heroes/hero-nos-programme-dendrobium-hendrik.jpg', objectPosition: '50% 50%' },
+  S2a: { src: '/images/heroes/hero-nos-conferences-cattleya-white.jpg', objectPosition: '50% 50%' },
+  S2c: { src: '/images/heroes/hero-nos-workshops-cattleya-apricot-hendrik.jpg', objectPosition: '50% 50%' },
+  S1b: { src: '/images/heroes/hero-nos-plan-paphiopedilum-yellow.jpg', objectPosition: '50% 50%' },
+  H4a: { src: '/images/heroes/hero-nos-faq-paphiopedilum-rust.jpg', objectPosition: '50% 50%' },
   H4b: { src: '/images/nos-hero-H4b.jpg' },
-  D1: { src: '/images/nos-hero-D1.jpg' },
-  PK1: { src: '/images/nos-hero-PK1.jpg' },
+  D1: { src: '/images/heroes/hero-nos-symposium-phalaenopsis-stripes.jpg', objectPosition: '50% 50%' },
+  PK1: { src: '/images/heroes/hero-nos-expect-phalaenopsis-pink.jpg', objectPosition: '50% 50%' },
   PK3: { src: '/images/nos-hero-PK3.jpg' },
   Y1: { src: '/images/nos-hero-Y1.jpg' },
 };
