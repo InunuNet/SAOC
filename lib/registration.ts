@@ -506,8 +506,7 @@ export function registrationAttendee(person: RegistrationPerson): {
   attendeeEmail: string;
 } {
   return {
-    // Capped at the name limit parseLineItems() enforces on the checkout POST.
-    attendeeName: `${person.firstName} ${person.surname}`.trim().slice(0, NAME_MAX_LENGTH),
+    attendeeName: `${person.firstName} ${person.surname}`.trim(),
     attendeeEmail: person.email.trim().toLowerCase(),
   };
 }

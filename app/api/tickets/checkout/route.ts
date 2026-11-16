@@ -284,6 +284,23 @@ const CHOSEN_DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
  * present — CHOSEN_DAY_PATTERN-valid chosenDay) — one bad item rejects the WHOLE cart,
  * never silently drops it and proceeds with the rest.
  */
+function parseAttendee(
+  candidate: Record<string, unknown>
+): { attendeeName: string; attendeeEmail: string } | null {
+  const { attendeeName, attendeeEmail } = candidate;
+  if (
+    typeof attendeeName !== 'string' ||
+    attendeeName.trim().length === 0 ||
+    attendeeName.length > CONTACT_FIELD_MAX_LENGTHS.name ||
+    typeof attendeeEmail !== 'string' ||
+    !EMAIL_PATTERN.test(attendeeEmail) ||
+    attendeeEmail.length > CONTACT_FIELD_MAX_LENGTHS.email
+  ) {
+    return null;
+  }
+  return { attendeeName, attendeeEmail };
+}
+
 export function parseLineItems(raw: unknown): CheckoutLineItemInput[] | null {
   if (!Array.isArray(raw) || raw.length === 0 || raw.length > MAX_LINE_ITEMS) {
     return null;
@@ -293,24 +310,15 @@ export function parseLineItems(raw: unknown): CheckoutLineItemInput[] | null {
   for (const entry of raw) {
     if (typeof entry !== 'object' || entry === null) return null;
     const candidate = entry as Record<string, unknown>;
-    const { ticketType, attendeeName, attendeeEmail, chosenDay, registration } = candidate;
-    if (
-      typeof ticketType !== 'string' ||
-      ticketType.trim().length === 0 ||
-      typeof attendeeName !== 'string' ||
-      attendeeName.trim().length === 0 ||
-      typeof attendeeEmail !== 'string' ||
-      !EMAIL_PATTERN.test(attendeeEmail)
-    ) {
-      return null;
-    }
+    const { ticketType, chosenDay, registration } = candidate;
+    if (typeof ticketType !== 'string' || ticketType.trim().length === 0) return null;
     // ticketType is left unbounded: an unknown slug is rejected after the Sanity lookup (route.ts:566).
-    if (
-      attendeeName.length > CONTACT_FIELD_MAX_LENGTHS.name ||
-      attendeeEmail.length > CONTACT_FIELD_MAX_LENGTHS.email
-    ) {
-      return null;
-    }
+    // A flagged type's attendee fields come from its registration and the client's are ignored, so
+    // an item carrying a registration may send none or bad ones: they read as empty here and the
+    // route re-checks them below for any item whose type turns out not to be flagged.
+    const attendee = parseAttendee(candidate);
+    if (!attendee && registration === undefined) return null;
+    const { attendeeName, attendeeEmail } = attendee ?? { attendeeName: '', attendeeEmail: '' };
     if (chosenDay !== undefined && (typeof chosenDay !== 'string' || !CHOSEN_DAY_PATTERN.test(chosenDay))) {
       return null;
     }
@@ -753,6 +761,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     validatedRegistrations.set(slug, validation.people);
   }
   const lineItems = applyRegistrations(parsedLineItems, validatedRegistrations);
+  // An item that sent a registration but whose type is not flagged keeps the ordinary rule: it
+  // needs a valid attendee name and email of its own.
+  if (lineItems.some((item) => !item.registration && !parseAttendee(item))) {
+    return NextResponse.json(
+      { error: 'showId, lineItems (1-20 valid line items) are required.' },
+      { status: 400 }
+    );
+  }
 
   // F5 (ticketing-f5-day-attendees): a NEW per-LINE-ITEM validation pass — every line item,
   // not just distinct types, since each line item may carry its own chosenDay — ahead of the
