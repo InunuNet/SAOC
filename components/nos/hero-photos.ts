@@ -48,7 +48,7 @@ export const HERO_CROPS: Readonly<Record<NosCropCode, NosHeroPhoto>> = {
   S1b: { src: '/images/heroes/hero-nos-plan-paphiopedilum-yellow.jpg', objectPosition: '50% 50%' },
   H4a: { src: '/images/heroes/hero-nos-faq-paphiopedilum-rust.jpg', objectPosition: '50% 50%' },
   H4b: { src: '/images/nos-hero-H4b.jpg' },
-  D1: { src: '/images/nos-hero-D1.jpg' },
+  D1: { src: '/images/heroes/hero-nos-symposium-phalaenopsis-stripes.jpg', objectPosition: '50% 50%' },
   PK1: { src: '/images/heroes/hero-nos-expect-zygopetalum-dunkle.jpg', objectPosition: '50% 50%' },
   PK3: { src: '/images/nos-hero-PK3.jpg' },
   Y1: { src: '/images/nos-hero-Y1.jpg' },

@@ -6,8 +6,7 @@
 // A name ending in -flip, or a cut such as orchid-violet-about, is a build-time derived source
 // (lib/hero-derived-sources.json, scripts/generate-image-variants.mjs): the flip is a file, never a CSS
 // transform. `objectPosition` is the ruled crop. A route with `typographic: true` has no photograph
-// (the solid sage hero). /events/[slug] has no ruled crop yet: it keeps its photograph and takes the
-// shared hero treatment only.
+// (the solid sage hero).
 // =============================================================
 
 import derivedSources from '@/lib/hero-derived-sources.json';
@@ -17,14 +16,13 @@ export type SaocHeroPhoto =
   | { typographic: true };
 
 export const SAOC_HERO_PHOTOS: Readonly<Record<string, SaocHeroPhoto>> = {
-  '/about': { src: '/images/orchid-violet-about.jpg', objectPosition: '0% 63%' },
+  '/about': { src: '/images/orchid-pink-about.jpg', objectPosition: '0% 50%' },
   '/societies': { src: '/images/orchid-purple-flip.jpg', objectPosition: '0% 20%' },
-  '/judging': { src: '/images/orchid-purple-flip.jpg', objectPosition: '0% 40%' },
-  '/events': { src: '/images/orchid-purple-flip.jpg', objectPosition: '0% 60%' },
-  '/sponsors': { src: '/images/orchid-dark-flip.jpg', objectPosition: '0% 100%' },
+  '/judging': { src: '/images/heroes/hero-saoc-judging-colmanara-hendrik.jpg', objectPosition: '0% 50%' },
+  '/events': { src: '/images/heroes/hero-saoc-events-habenaria-hendrik.jpg', objectPosition: '0% 50%' },
+  '/sponsors': { src: '/images/heroes/hero-saoc-sponsors-zygopetalum-dunkle.jpg', objectPosition: '0% 50%' },
   '/contact': { src: '/images/orchid-violet-contact.jpg', objectPosition: '0% 80%' },
-  // No ruled crop (NOS Design 2026-10-26 is silent): the current photograph and position stand.
-  '/events/[slug]': { src: '/images/orchid-dark.jpg', objectPosition: '72% 42%' },
+  '/events/[slug]': { src: '/images/heroes/hero-saoc-event-cattleya-white.jpg', objectPosition: '0% 50%' },
   // Typographic: solid sage, no photograph (HM-7 /404 and /events/submit, HM-6 (b) /societies/[slug]).
   '/societies/[slug]': { typographic: true },
   '/events/submit': { typographic: true },
@@ -50,6 +48,11 @@ const ORIGINAL_SIZES: Readonly<Record<string, readonly [number, number]>> = {
   '/images/orchid-violet.jpg': [7327, 4885],
   '/images/heroes/hero-home-1-zygopetalum-hendrik.jpg': [3000, 1579],
   '/images/heroes/hero-home-2-dendrobium-chlorostylum.jpg': [3000, 1578],
+  '/images/orchid-pink-about.jpg': [3000, 1000],
+  '/images/heroes/hero-saoc-judging-colmanara-hendrik.jpg': [3000, 1000],
+  '/images/heroes/hero-saoc-events-habenaria-hendrik.jpg': [3000, 1000],
+  '/images/heroes/hero-saoc-sponsors-zygopetalum-dunkle.jpg': [3000, 1000],
+  '/images/heroes/hero-saoc-event-cattleya-white.jpg': [3000, 1000],
 };
 const ASPECT_PRECISION = 1000;
 
