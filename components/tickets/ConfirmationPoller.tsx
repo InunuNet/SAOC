@@ -131,11 +131,11 @@ export function ConfirmationPoller({ bookingRef }: ConfirmationPollerProps) {
       <div className="mx-auto max-w-[600px] text-center">
         {(state === 'checking' || state === 'reserved') && (
           <div role="status" aria-live="polite">
-            <p className="font-sans text-[13px] font-semibold text-muted">Reserved</p>
-            <h2 className="mt-3 font-serif tracking-[-0.015em] font-light text-[32px] text-ink">
+            <p className="mx-auto font-sans text-[13px] font-semibold text-muted">Reserved</p>
+            <h2 className="mx-auto mt-3 max-w-full break-words font-serif tracking-[-0.015em] font-light text-[32px] text-ink">
               {confirmationPendingHeading}
             </h2>
-            <p className="mt-4 font-sans text-[15px] leading-relaxed text-ink/80">
+            <p className="mx-auto mt-4 font-sans text-[15px] leading-relaxed text-ink/80">
               {confirmationPendingMessage}
             </p>
           </div>
@@ -143,15 +143,17 @@ export function ConfirmationPoller({ bookingRef }: ConfirmationPollerProps) {
 
         {state === 'timed-out' && (
           <div role="status" aria-live="polite">
-            <h2 className="font-serif tracking-[-0.015em] font-light text-[32px] text-ink">
+            <h2 className="mx-auto max-w-full break-words font-serif tracking-[-0.015em] font-light text-[32px] text-ink">
               {confirmationPendingHeading}
             </h2>
-            <p className="mt-4 font-sans text-[15px] leading-relaxed text-ink/80">
+            <p className="mx-auto mt-4 font-sans text-[15px] leading-relaxed text-ink/80">
               This is taking longer than expected. Please don&apos;t resubmit payment — contact
               info@saoc.co.za with your booking reference if this doesn&apos;t resolve soon.
             </p>
             {bookingRef ? (
-              <p className="mt-3 font-sans text-[13px] text-muted">Booking ref: {bookingRef}</p>
+              <p className="mx-auto mt-3 break-words font-sans text-[13px] text-muted">
+                Booking ref: {bookingRef}
+              </p>
             ) : null}
           </div>
         )}
