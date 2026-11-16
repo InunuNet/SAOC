@@ -38,10 +38,10 @@ export function RegistrationAttendeeFields({ attendee, draft, errors, disabled, 
   const dateId = fieldId(attendee, 'judgeDate');
   return <div className="space-y-3">
     <h3 className={HEADING_CLASS}>{REGISTRATION_SECTION_HEADINGS.personal}</h3>
-    <div className="grid gap-3 sm:grid-cols-3">{select('title', REGISTRATION_OPTIONS.title)}{text('firstName', 'text', 100)}{text('surname', 'text', 100)}</div>
-    <div className="grid gap-3 sm:grid-cols-2">{text('preferredName', 'text', 100)}{text('email', 'email', 254)}</div>
+    <div className="grid gap-3 sm:grid-cols-3 sm:items-end">{select('title', REGISTRATION_OPTIONS.title)}{text('firstName', 'text', 100)}{text('surname', 'text', 100)}</div>
+    <div className="grid gap-3 sm:grid-cols-2 sm:items-end">{text('preferredName', 'text', 100)}{text('email', 'email', 254)}</div>
     {later ? <SameAsAbove id={fieldId(attendee, 'same-contact')} covers={[REGISTRATION_LABELS.mobile, REGISTRATION_LABELS.country, REGISTRATION_LABELS.province].join(', ')} checked={draft.sameContact} disabled={disabled} onChange={(checked) => onShared(attendee, 'contact', checked)} /> : null}
-    {!draft.sameContact ? <>{text('mobile', 'tel', 30)}<div className="grid gap-3 sm:grid-cols-2">{select('country', REGISTRATION_OPTIONS.country)}{draft.country === SOUTH_AFRICA ? select('province', REGISTRATION_OPTIONS.province) : null}</div></> : null}
+    {!draft.sameContact ? <>{text('mobile', 'tel', 30)}<div className="grid gap-3 sm:grid-cols-2 sm:items-end">{select('country', REGISTRATION_OPTIONS.country)}{draft.country === SOUTH_AFRICA ? select('province', REGISTRATION_OPTIONS.province) : null}</div></> : null}
     <h3 className={HEADING_CLASS}>{REGISTRATION_SECTION_HEADINGS.membership}</h3>
     {later ? <SameAsAbove id={fieldId(attendee, 'same-membership')} covers={REGISTRATION_LABELS.societies} checked={draft.sameMembership} disabled={disabled} onChange={(checked) => onShared(attendee, 'membership', checked)} /> : null}
     {!draft.sameMembership ? <SocietyDropdown id={fieldId(attendee, 'societies')} value={draft.societies} error={errors.societies} disabled={disabled} onChange={(option, checked) => onSociety(attendee, option, checked)} /> : null}
@@ -55,7 +55,7 @@ export function RegistrationAttendeeFields({ attendee, draft, errors, disabled, 
       {REGISTRATION_OPTIONS.judgeDateChoices.map((date) => { const id = `${dateId}-${date.toLowerCase()}`; return <label htmlFor={id} key={date} className={OPTION_LABEL_CLASS}><input id={id} type="checkbox" checked={draft.judgeDates.includes(date)} onChange={(event) => onJudgeDate(attendee, date, event.target.checked)} disabled={disabled} className={CHECKBOX_CLASS} />{date}</label>; })}
       {errors.judgeDate ? <TicketFieldAlert id={`${dateId}-error`}>{errors.judgeDate}</TicketFieldAlert> : null}
     </div> : null}
-    <div className="grid gap-3 sm:grid-cols-2">{select('judgeCommunication', REGISTRATION_OPTIONS.judgeYesNo)}{select('judgeForum', REGISTRATION_OPTIONS.judgeYesNo)}</div>
+    <div className="grid gap-3 sm:grid-cols-2 sm:items-end">{select('judgeCommunication', REGISTRATION_OPTIONS.judgeYesNo)}{select('judgeForum', REGISTRATION_OPTIONS.judgeYesNo)}</div>
     <h3 className={HEADING_CLASS}>{REGISTRATION_SECTION_HEADINGS.dietary}</h3>
     {select('dietary', REGISTRATION_OPTIONS.dietary)}
     {draft.dietary === 'Other' ? text('dietaryOther', 'text', 100) : null}
