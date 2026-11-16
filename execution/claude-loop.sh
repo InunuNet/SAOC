@@ -4,11 +4,11 @@
 # Handles quota (exit 3 -> sleep), INT/TERM signals, mission done/BLOCKED.
 #
 # Env vars:
-#   CLAUDE_LOOP_MAX          Max turns (0 = unlimited, default 0)
+#   CLAUDE_LOOP_MAX          Max turns (default 10; 0 is unlimited only with CLAUDE_LOOP_UNLIMITED=1)
 #   CLAUDE_LOOP_QUOTA_SLEEP  Seconds to sleep on quota exhaustion (default 10800)
 #   CLAUDE_LOOP_PROMPT       Prompt for first turn (optional; if unset, uses -c from turn 0)
 
-CLAUDE_LOOP_MAX=${CLAUDE_LOOP_MAX:-0}
+CLAUDE_LOOP_MAX=${CLAUDE_LOOP_MAX:-10}
 CLAUDE_LOOP_QUOTA_SLEEP=${CLAUDE_LOOP_QUOTA_SLEEP:-10800}
 
 # Parse --max N and --dry-run flags; remaining args forwarded to claude
@@ -22,6 +22,12 @@ while [ $# -gt 0 ]; do
 done
 
 _log() { printf 'claude-loop: %s\n' "$*" >&2; }
+
+# A loop with no turn cap is how a whole 5h quota window once went in 15 minutes.
+if [ "$CLAUDE_LOOP_MAX" -eq 0 ] && [ "${CLAUDE_LOOP_UNLIMITED:-0}" != "1" ]; then
+    _log "max 0 means unlimited and needs CLAUDE_LOOP_UNLIMITED=1; using 10"
+    CLAUDE_LOOP_MAX=10
+fi
 DRY_RUN=${DRY_RUN:-false}
 
 _child_pid=""
@@ -54,8 +60,17 @@ else:
         || echo "unknown"
 }
 
+_burn_brake_check() {
+    python3 execution/burn_brake.py check --no-voice >/dev/null 2>&1
+    if [ -e .agent/memory/scratch/BURN_BRAKE ]; then
+        _log "BURN_BRAKE is on (.agent/memory/scratch/BURN_BRAKE): quota is burning too fast; run python3 execution/burn_brake.py release"
+        exit 4
+    fi
+}
+
 _count=0
 while true; do
+    _burn_brake_check
     # Check mission status before each turn
     _status=$(_get_mission_status 2>/dev/null || echo "unknown")
     case "$_status" in

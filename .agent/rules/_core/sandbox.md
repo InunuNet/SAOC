@@ -1,3 +1,10 @@
+---
+description: Sandbox detail.
+paths:
+  - ".tmp/**"
+  - "execution/safe_delete.py"
+---
+
 # Sandbox Rule
 
 Permission bypass is scoped to the project folder; work outside it prompts by hand and stalls

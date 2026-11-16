@@ -83,7 +83,7 @@ SHAPE_DEPTH = 6
 MAX_GRANTS = 20
 MAX_GRANT_SECONDS = 24 * 3600
 MIN_TTL_SECONDS = 300
-PENDING_MAX_AGE = 15 * 60
+PENDING_MAX_AGE = 60 * 60
 CLOCK_SKEW_SECONDS = 60
 MAX_FILE_BYTES = 256 * 1024
 MAX_STDIN_BYTES = 1024 * 1024
@@ -277,6 +277,10 @@ def validate_command_scope(scope):
     verbs = [v.strip() for v in scope.split(",")]
     if len(verbs) > MAX_COMMANDS or any(not VERB_NAME_RE.fullmatch(v) for v in verbs):
         raise Refusal("command scope entries must be bare names (no path, space or glob): %r" % scope)
+    elevators = [v for v in verbs if v in ELEVATION_VERBS]
+    if elevators:
+        raise Refusal("a command scope names the inner command (apt for `sudo apt ...`), not %s; "
+                      "use * for any" % elevators[0])
     return list(dict.fromkeys(verbs))
 
 
@@ -559,12 +563,84 @@ def _admits(grant, verb, parsed, mode):
     return name is not None and name in grant["commands"]
 
 
-def decide_use(root, verb, args, mode="run", now=None):
+# ---------------------------------------------------------------------------------------------
+# agent-owned host: a root-owned marker file is a standing, host-scoped permit for `sudo` only
+
+AGENT_OWNED_MARKER = "/etc/athanor/agent-owned-host"
+AGENT_OWNED_GRANT = {"id": "agent-owned-host", "expires_at": "never", "kind": "command",
+                    "commands": None}
+AGENT_OWNED_BY = "agent-owned-host marker"
+MARKER_MAX_BYTES = 4096
+MARKER_UNSAFE_MODE = stat.S_IWGRP | stat.S_IWOTH
+# -D/--chdir and -R/--chroot make the inner command's relative paths resolve elsewhere than the
+# hook judges them, so the marker never admits them.
+MARKER_REFUSED_OPTIONS = {"D", "R", "chdir", "chroot"}
+
+
+def _marker_read(path):
+    """(fstat, text) of the marker, opened without following a link; raises OSError."""
+    fd = os.open(path, os.O_RDONLY | _O_NOFOLLOW | _O_BINARY)
+    try:
+        return os.fstat(fd), os.read(fd, MARKER_MAX_BYTES).decode("utf-8", "replace")
+    finally:
+        os.close(fd)
+
+
+def _root_owned_sealed(info, want_dir):
+    """True when `info` is a root:root regular file (or directory), not group/other writable."""
+    kind_ok = stat.S_ISDIR(info.st_mode) if want_dir else stat.S_ISREG(info.st_mode)
+    return kind_ok and info.st_uid == 0 and info.st_gid == 0 \
+        and not info.st_mode & MARKER_UNSAFE_MODE
+
+
+def agent_owned_host(path=AGENT_OWNED_MARKER, node=None, lstat=os.lstat, read=_marker_read):
+    """True only when `path` is a sealed root-owned marker naming this host.
+
+    The path and every seam default to the real system and no environment variable can redirect
+    them: a caller (the golden) may only pass different arguments in-process, and the hook never
+    does. Every check fails closed. Never honoured on Windows.
+    """
+    if os.name == "nt":
+        return False
+    node = os.uname().nodename if node is None else node
+    try:
+        if not path.startswith("/") or "\0" in path or not node:
+            return False
+        parts = [p for p in path.split("/") if p]
+        walked = ""
+        for part in parts[:-1]:
+            walked += "/" + part
+            if stat.S_ISLNK(lstat(walked).st_mode):
+                return False
+        if not _root_owned_sealed(lstat("/".join(path.split("/")[:-1]) or "/"), True):
+            return False
+        leaf = lstat(path)
+        if stat.S_ISLNK(leaf.st_mode):
+            return False
+        info, text = read(path)
+        if (info.st_ino, info.st_dev) != (leaf.st_ino, leaf.st_dev) \
+                or not _root_owned_sealed(info, False):
+            return False
+        first = text.split("\n", 1)[0]
+        return first == "host: " + node
+    except (OSError, ValueError):
+        return False
+
+
+def decide_use(root, verb, args, mode="run", now=None, marker=None):
+    # `marker` is an in-process test seam (a callable); the CLI never passes it.
     """(status, grant, granted_by, parsed): status 'ok' or 'deny:<why>'."""
-    permit = load_permit(root, now)
-    if permit is None:
-        return "deny:no valid permit", None, "", None
-    granted_by, grants = permit
+    if verb == "sudo" and mode == "run" and (marker or agent_owned_host)():
+        granted_by, grants = AGENT_OWNED_BY, [AGENT_OWNED_GRANT]
+        walked = _walk_options(args, *SUDO_SPEC)
+        if walked is None or walked[1] & MARKER_REFUSED_OPTIONS:
+            return "deny:sudo options that move the working or root directory need a permit", \
+                None, "", None
+    else:
+        permit = load_permit(root, now)
+        if permit is None:
+            return "deny:no valid permit", None, "", None
+        granted_by, grants = permit
     parsed = ("none", None) if mode == "link" else parse_elevation(verb, args)
     if parsed is None:
         return "deny:could not parse the options of %s" % verb, None, "", None
@@ -640,7 +716,7 @@ def validate_pending(doc, request_id, root, now):
         raise Refusal("pending request has no valid time")
     age = (now - requested).total_seconds()
     if age < -CLOCK_SKEW_SECONDS or age > PENDING_MAX_AGE:
-        raise Refusal("pending request is stale")
+        raise Refusal("pending request is stale (over 60 minutes); run escalate.py request again")
     if not MIN_TTL_SECONDS <= ttl <= MAX_GRANT_SECONDS or len(reason.strip()) < MIN_REASON:
         raise Refusal("pending request ttl or reason out of range")
     if validate_scope(kind, scope, root) != scope:
@@ -914,13 +990,32 @@ def write_payload_shape(root, payload):
         pass
 
 
+def _quotes_only(root, tokens, text):
+    """True when one id names a readable pending request whose exact question this is not and
+    which does not open like the real one (an altered copy is tampering and refuses visibly): the
+    question merely quotes the id, so nothing is consumed and nothing is said. A bad pending doc
+    returns False and falls through to the visible refusal."""
+    if len(set(tokens)) != 1:
+        return False
+    try:
+        doc = load_pending(root, tokens[0])
+        expected = question_text(tokens[0], doc["kind"], doc["scope"], doc["reason"],
+                                 doc["ttl_seconds"])
+    except (Refusal, KeyError, TypeError, ValueError):
+        return False
+    return text != expected and not text.startswith("[escalation %s] Grant " % tokens[0])
+
+
 def _handle_answer(payload, root, now):
-    questions = (payload.get("tool_input") or {}).get("questions")
+    tool_input = payload.get("tool_input")
+    questions = tool_input.get("questions") if isinstance(tool_input, dict) else None
     question = questions[0] if isinstance(questions, list) and questions else None
     if not isinstance(question, dict) or not isinstance(question.get("question"), str):
         return "ignored"
     tokens = ESC_TOKEN_RE.findall(question["question"])
-    if not tokens:
+    if not tokens or not any((pending_dir(root) / (t + ".json")).exists() for t in set(tokens)):
+        return "ignored"
+    if _quotes_only(root, tokens, question["question"]):
         return "ignored"
     if not hook_ancestry_ok(payload.get("_chain") if sandbox_root(root) else None):
         return "refused:not called by a hook"
@@ -936,6 +1031,9 @@ def _handle_answer(payload, root, now):
             raise Refusal("question text differs from the request")
         if _option_labels(question) != ["Grant", "Deny"] or question.get("multiSelect"):
             raise Refusal("options are not exactly Grant and Deny")
+        if answer not in ("Grant", "Deny"):
+            raise Refusal("the answer was not exactly Grant or Deny (free text never grants); "
+                          "run escalate.py request again")
         return answer == "Grant"
 
     try:

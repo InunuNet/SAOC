@@ -7,7 +7,7 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const root = resolve(process.env.CHECK_ROOT ?? '.');
-const here = resolve('.agent/memory/project/specs/early-bird-cutoff/goldens');
+const here = import.meta.dirname;
 const hub = (await import(pathToFileURL(resolve(root, 'lib/data/ticket-hub-source.ts')).href)) as {
   buildHubCards: (i: Record<string, unknown>) => {
     cards: Record<string, Record<string, unknown> | undefined>;
@@ -49,7 +49,6 @@ const got = {
   'first minute after cutoff day': run('2027-07-31', '2027-08-01T00:00:00Z', {}),
   'null cutoff, far future, 500 sold': run(null, '2030-01-01T00:00:00Z', EXHAUSTED),
 };
-if (process.env.DUMP) { console.log(JSON.stringify(got, null, 1)); process.exit(0); }
 const want = JSON.parse(readFileSync(resolve(here, 'expected-output.json'), 'utf8')) as Record<string, unknown>;
 const problems = Object.keys(want).filter((k) => JSON.stringify(got[k as keyof typeof got]) !== JSON.stringify(want[k]));
 if (problems.length > 0) {

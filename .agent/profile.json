@@ -49,7 +49,7 @@
   "billing": {
     "billable": true,
     "client": "SA Orchid Council",
-    "rate": 750,
+    "rate": 825,
     "currency": "ZAR"
   }
 }

@@ -19,4 +19,6 @@ fi
 if command -v kdialog >/dev/null 2>&1; then
   exec kdialog --password "$prompt" --title "Athanor"
 fi
+# No dialog tool (e.g. Omarchy/Hyprland): say so, and name the route that does prompt.
+echo "sudo_askpass: no password dialog (zenity or kdialog) on this host; use pkexec <cmd>, which prompts through the polkit agent, or install zenity" >&2
 exit 1

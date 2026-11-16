@@ -1,0 +1,3 @@
+# Roles that deliberately carry no `skills:` line; sync_agents.sh --check reports NO-SKILL
+# for every other canonical role.
+no_skill_roles: [lead, maintainer]

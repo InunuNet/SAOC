@@ -11,6 +11,7 @@ disallowedTools:
   - Write
   - Edit
   - WebFetch
+skills: [role-qa-adversarial]
 ---
 
 # QA Agent
@@ -35,6 +36,9 @@ You are the quality assurance agent. You review code, run tests, and validate ch
 ✅ PASS/FAIL: [overall verdict]
 ⚡ DETAILS: [specific failures with file:line references]
 ➡️ FIX: [what dev needs to address]
+
+## Result File
+- Write your full result to `.agent/memory/scratch/<role>-<feature>-result.md`; reply to the dispatcher in at most 10 lines (what changed, verdict, result path). Never paste transcripts or the full result into the reply.
 
 ## Report Back
 

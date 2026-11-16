@@ -1,3 +1,3 @@
-3830faf8962f3599621e38a5d10a25dc393c58c042bd04109880b5592d3feb19  .agent/memory/project/specs/early-bird-cutoff/goldens/check-early-bird-cutoff.mts
+ce437cd64d667bf62d8fb623a5da386cbf37af4bc7a0095798cba4a8992660fa  .agent/memory/project/specs/early-bird-cutoff/goldens/check-early-bird-cutoff.mts
 c91ab096eca6ad01e4bf87de2da0a2cffb4b986f7da77d516d3e61d572f1da78  .agent/memory/project/specs/early-bird-cutoff/goldens/expected-output.json
 5f889fdcff07992f2682e51390961b7d6ec6a6ace11235619b9833ad089c4b51  .agent/memory/project/specs/early-bird-cutoff/goldens/check-scope.py

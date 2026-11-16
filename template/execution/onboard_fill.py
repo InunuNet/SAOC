@@ -50,7 +50,7 @@ LEGACY_IDENTITY_RE = re.compile(
 def load_identity(profile_path):
     """Return (agent_name, role, project_name) from the profile, or Nones."""
     try:
-        with open(profile_path) as fh:
+        with open(profile_path, encoding="utf-8") as fh:
             profile = json.load(fh)
     except (OSError, ValueError) as exc:
         print("onboard_fill: cannot read %s (%s)" % (profile_path, exc),
@@ -103,7 +103,7 @@ def registry_pairs(root):
     path = os.path.join(root, REGISTRY_REL)
     rows, cur = [], None
     try:
-        with open(path) as fh:
+        with open(path, encoding="utf-8") as fh:
             for raw in fh:
                 line = raw.split("#", 1)[0].strip()
                 if not line:
@@ -244,8 +244,14 @@ def main(argv):
         return 1
 
     if new_text != text:
-        with open(agents_path, "w") as fh:
-            fh.write(new_text)
+        # Encode first and swap atomically: the old text-mode write used the
+        # locale codec (cp1252 on Windows), raised after truncating, and left
+        # AGENTS.md at 0 bytes.
+        data = new_text.encode("utf-8")
+        tmp = agents_path + ".tmp"
+        with open(tmp, "wb") as fh:
+            fh.write(data)
+        os.replace(tmp, agents_path)
         print("onboard_fill: identity written to %s (%s)" % (agents_path, how))
     else:
         print("onboard_fill: identity in %s already current" % agents_path)

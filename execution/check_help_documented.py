@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """check_help_documented.py — every target `make help` prints is documented.
 
-The Makefile Targets section of AGENTS.md drifted three times because the
+The Makefile Targets section of docs/harness/AGENT_REFERENCE.md drifted three times because the
 only thing keeping it in step with `make help` was someone remembering. A
 target added to help and not to the section is invisible to every agent that
 reads the instructions instead of the Makefile, which is all of them: the
@@ -22,7 +22,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-DOC_PATH = Path("AGENTS.md")
+DOC_PATH = Path("docs/harness/AGENT_REFERENCE.md")
 SECTION_HEADING = "Makefile Targets"
 HELP_TARGET_RE = re.compile(r"^\s+make\s+([A-Za-z0-9][A-Za-z0-9_-]*)\b")
 DOC_TARGET_RE = re.compile(r"^-\s+`([A-Za-z0-9][A-Za-z0-9_-]*)`")

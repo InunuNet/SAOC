@@ -136,6 +136,10 @@ for path in sorted(SPECS_ROOT.glob("**/contract*.yaml")):
             failures.append((path, err))
 
 if checked == 0:
+    if BOOT_MODE:
+        # A freshly onboarded workspace has no specs yet; that is not a defect.
+        print(f"no contract*.yaml files under {SPECS_ROOT} (fresh workspace)")
+        sys.exit(0)
     print(f"FAIL: no contract*.yaml files found under {SPECS_ROOT}", file=sys.stderr)
     sys.exit(1)
 
@@ -149,9 +153,16 @@ if failures:
     print(f"\n{len(failures)}/{checked} contract file(s) failed to parse.", file=sys.stderr)
     sys.exit(1)
 
+try:
+    specs_rel = SPECS_ROOT.relative_to(REPO_ROOT)
+except ValueError:
+    specs_rel = SPECS_ROOT
+
 if archived_failures:
     print(f"NOTE: {len(archived_failures)} archived contract(s) do not parse "
           "(no open mission, untouched for 7+ days); run without --boot to list them")
-
-print(f"PASS: all {checked} contract*.yaml files under {SPECS_ROOT.relative_to(REPO_ROOT)} parse cleanly")
-sys.exit(0)
+    parsed = checked - len(archived_failures)
+    print(f"PASS: {parsed} of {checked} contract*.yaml files under {specs_rel} parse; "
+          f"{len(archived_failures)} archived do not (non-fatal in --boot)")
+else:
+    print(f"PASS: all {checked} contract*.yaml files under {specs_rel} parse cleanly")

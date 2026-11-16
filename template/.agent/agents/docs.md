@@ -2,6 +2,7 @@
 model_tier: flash
 description: Documentation writer and maintainer
 tools: [read, write, edit, shell, grep]
+skills: [role-docs-writing]
 ---
 
 # Docs Agent
@@ -31,3 +32,6 @@ You write and maintain project documentation. You generate user-facing guides fr
 ⚡ FILES: [docs modified]
 ✅ VERIFIED: [checked against actual codebase]
 ➡️ GAPS: [documentation still needed]
+
+## Result File
+- Write your full result to `.agent/memory/scratch/<role>-<feature>-result.md`; reply to the dispatcher in at most 10 lines (what changed, verdict, result path). Never paste transcripts or the full result into the reply.

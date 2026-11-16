@@ -26,7 +26,11 @@ bash execution/skills/wrap_mission.sh "what was accomplished" "tag1,tag2"
 
 ## What it does
 1. `python3 execution/brain.py wrap-up` — stores session learning in semantic memory
-2. `git add -A`, then scans the staged set with `execution/skills/lib/secret_guard.py`.
+2. Stages ONLY the active mission's own files (`execution/skills/lib/scoped_stage.py`: the
+   `<slug>.touched.json` ledger, the mission file and its spec dir, intersected with the dirty
+   set) plus `backlog.md` and `data/`; never `git add -A`. A file changed outside the ledger
+   (e.g. by a shell command) stays uncommitted: commit it yourself. It then scans the staged
+   set with `execution/skills/lib/secret_guard.py`.
    If any secret-looking path is staged (`.secrets/`, `.env`/`.env.*` except the
    allowlist, service-account JSON, SSH keys, `.pem`/`.p12`/`.pfx`/`.key`), everything
    is unstaged and the script ABORTS (exit 1) — no commit, no push, no `active.json`

@@ -70,4 +70,4 @@ python3 execution/contract.py validate .agent/memory/project/specs/<slug>/contra
 ## Related
 
 - `.agent/agents/architect.md` — the agent that must use this
-- `execution/contract.py` — the validator + gate runner
+- `execution/contract.py` — the validator + gate runner (`gate` without `--phase` defaults to `all`)

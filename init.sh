@@ -15,6 +15,9 @@
 # the script with the trap never firing, which is the silent-death this trap
 # exists to end.
 set -Eeuo pipefail
+# Windows: every child python reads, writes and prints UTF-8 (a cp1252 console cannot
+# print the check marks; scaffold failed 0/6 without this, Athanor Win 2026-11-07).
+export PYTHONUTF8=1
 
 # ── Colors (skip if not a terminal) ──────────────────────────────────────────
 if [ -t 1 ]; then
@@ -151,6 +154,12 @@ NAME_EXPLICIT="false" # true once --name/--name= is seen on the command line
 # every consumer sees the disposition of the tree as the OPERATOR handed it
 # over — not as init.sh has since reshaped it.
 WORKSPACE_ESTABLISHED="false"
+
+# Set by decide_disposition() when PROJECT_PATH is the harness's own checkout
+# (whichever checkout's init.sh runs). Its AGENTS.md/.gitignore are the
+# harness's own sources, not delivered output: the residue gate and the
+# gitignore merge both leave them alone.
+HARNESS_SELF_CHECKOUT="false"
 
 # Set by reserve_quarantine() to the quarantine directory this run created and
 # its basename; both empty until something is actually quarantined. ONE
@@ -491,6 +500,25 @@ decide_disposition() {
     if [ "$PROJECT_PATH" = "$SCRIPT_DIR" ] && [ "$PROJECT_NAME" = "$(harness_name)" ]; then
         self_repo="true"
     fi
+    # ANY CHECKOUT'S init.sh, POINTED AT THE HARNESS'S OWN CHECKOUT, IS STILL
+    # THE HARNESS'S OWN WORKSPACE (2026-11-14 incident). A sandbox clone's
+    # init.sh run with the default --path resolved PROJECT_PATH to the real
+    # Athanor checkout, `PROJECT_PATH == SCRIPT_DIR` was false, the profile
+    # (project_name Athanor) read as an inherited clone, and the checkout's
+    # entire .agent/memory was quarantined. The copy test stays intact: a
+    # folder is the harness's own checkout only when it is named after the
+    # harness AND carries init.sh plus the template profile AND is itself the
+    # top of a git work tree. A copytree without .git, or a copy scaffolded
+    # under a new name, satisfies none of that and is still quarantined.
+    if [ "$self_repo" != "true" ] && [ "$PROJECT_NAME" = "$(harness_name)" ] \
+        && [ -f "$PROJECT_PATH/init.sh" ] && [ -f "$PROJECT_PATH/template/.agent/profile.json" ]; then
+        local own_top
+        own_top="$(git_clean -C "$PROJECT_PATH" rev-parse --show-toplevel 2>/dev/null || true)"
+        if [ -n "$own_top" ] && [ "$(cd "$own_top" && pwd -P)" = "$(cd "$PROJECT_PATH" && pwd -P)" ]; then
+            self_repo="true"
+        fi
+    fi
+    HARNESS_SELF_CHECKOUT="$self_repo"
     [ -f "$target" ] || return 0
 
     # INHERITED_CLONE IS A TEST ON THE PROJECT NAME ALONE (Codex finding 1,
@@ -694,6 +722,14 @@ install_preserving() {
             fi
         done
     fi
+    # An ESTABLISHED workspace owns its differing regular file: keep it, say so,
+    # never quarantine or replace it (init-established-noop). A symlink is kept
+    # too, and never written through. A missing dest or a non-file still falls through to the install/quarantine path.
+    if [ "$WORKSPACE_ESTABLISHED" = "true" ] && { [ -f "$dest" ] || [ -h "$dest" ]; }; then
+        printf "${YELLOW}   ⚠ %s already existed and differed — PRESERVED, not overwritten (established workspace).${NC}\n" \
+            "$rel" >&2
+        return 0
+    fi
     if [ -e "$dest" ] || [ -h "$dest" ]; then
         reserve_quarantine
         mkdir -p "$QUARANTINE_DIR/$(dirname -- "$qrel")"
@@ -802,6 +838,33 @@ dispose_memory() {
                 exit 1
             fi
         done
+    fi
+
+    # The root comms.md board travels with the memory too (queue item 35,
+    # Quest 2026-11-10). A copy of the harness carries the harness's own board,
+    # and comms_inbox.py then lists every FLEET broadcast on it as unread at the
+    # new project's first boot. Moved, never deleted; a symlink is moved as the
+    # link itself, its target untouched. It lands in a FRESH subdirectory: the
+    # quarantine root mirrors .agent/memory/, which may itself carry a comms.md
+    # (or COMMS.md on a case-insensitive filesystem) that a plain mv would
+    # overwrite. mkdir without -p fails on an existing name; mktemp then picks
+    # an unused one. Accepted residual (Codex QA): a board the operator wrote
+    # into a harness copy before the first init.sh run is quarantined too —
+    # the same safe direction the memory ruling takes, an inspection, no loss.
+    local board="$PROJECT_PATH/comms.md" bdir
+    if [ -e "$board" ] || [ -h "$board" ]; then
+        bdir="$qdir/inherited-root"
+        if ! mkdir -- "$bdir" 2>/dev/null; then
+            bdir="$(mktemp -d "$qdir/inherited-root.XXXXXX")" || bdir=""
+        fi
+        if [ -z "$bdir" ] || ! mv -- "$board" "$bdir/comms.md"; then
+            printf "${YELLOW}❌ Could not quarantine the inherited comms.md board: %s${NC}\n" "$board" >&2
+            printf "${DIM}   Nothing was deleted. Fix the permissions on %s and re-run init.sh.${NC}\n" \
+                "$PROJECT_PATH" >&2
+            exit 1
+        fi
+        printf "${YELLOW}   ⚠ Inherited comms.md board QUARANTINED, not deleted: .agent/%s/%s/comms.md${NC}\n" \
+            "$QUARANTINE_BASENAME" "$(basename -- "$bdir")"
     fi
 
     mkdir -p "$mem"
@@ -1238,6 +1301,10 @@ scaffold_core() {
             name="$(basename -- "$entry")"
             install_preserving "$entry" ".agent/pulse/registry/$name" "pulse/registry/$name"
         done
+        # The glob skips dotfiles: keep pulse jobs LF under autocrlf=true.
+        [ -f "$TEMPLATE_DIR/.agent/pulse/registry/.gitattributes" ] && \
+            install_preserving "$TEMPLATE_DIR/.agent/pulse/registry/.gitattributes" \
+                ".agent/pulse/registry/.gitattributes" "pulse/registry/.gitattributes"
     fi
 
     # Identity templates (filled in during /onboard). Per-file and named, never a
@@ -1350,8 +1417,27 @@ scaffold_core() {
         fi
     fi
 
+    # execution/skills/lib/ holds secret_guard.py, scoped_stage.py and
+    # mission_complete.py, which wrap_mission.sh calls; without them the secret
+    # scan runs against nothing.
+    if [ -d "$SCRIPT_DIR/execution/skills/lib" ]; then
+        mkdir -p "$PROJECT_PATH/execution/skills/lib" 2>/dev/null || true
+        while IFS= read -r -d '' entry; do
+            relpath="${entry#"$SCRIPT_DIR"/execution/skills/lib/}"
+            mkdir -p "$PROJECT_PATH/execution/skills/lib/$(dirname -- "$relpath")"
+            install_preserving "$entry" "execution/skills/lib/$relpath" "skills/lib/$relpath"
+        done < <(find "$SCRIPT_DIR/execution/skills/lib" -type f -print0)
+    fi
+
     # settings.json last — hooks must exist before Claude Code processes this file
-    cp "$SCRIPT_DIR/.claude/settings.json"  "$PROJECT_PATH/.claude/settings.json"  2>/dev/null || true
+    # On an ESTABLISHED workspace an existing settings.json is the project's own
+    # hooks and permissions (MERGE in the manifest, owned by update_template.py):
+    # install it only when missing.
+    if [ "$WORKSPACE_ESTABLISHED" != "true" ] \
+        || { [ ! -e "$PROJECT_PATH/.claude/settings.json" ] \
+            && [ ! -h "$PROJECT_PATH/.claude/settings.json" ]; }; then
+        cp "$SCRIPT_DIR/.claude/settings.json"  "$PROJECT_PATH/.claude/settings.json"  2>/dev/null || true
+    fi
 
     # Copy execution scripts -- every top-level execution/*.py and *.sh, NOT a
     # hand-curated name list (fleet-acceptance F2/fix#1).
@@ -1385,6 +1471,9 @@ scaffold_core() {
     done
     shopt -u nullglob
     cp "$SCRIPT_DIR/execution/com.athanor.pulse.plist" "$PROJECT_PATH/execution/com.athanor.pulse.plist" 2>/dev/null || true
+    # Harness files stay LF on every platform: Git for Windows defaults to
+    # autocrlf=true, which turns every .sh to CRLF and bash dies on $'\r'.
+    cp "$SCRIPT_DIR/execution/.gitattributes" "$PROJECT_PATH/execution/.gitattributes" 2>/dev/null || true
 
     # Tier-3, host-only (platform-scoped-delivery D1/ruling-1): deliver
     # execution/platform/<host>/ ONLY -- never the other two. A freshly
@@ -1409,6 +1498,10 @@ scaffold_core() {
     # silently-skipped copy here scaffolds a workspace whose audit is broken.
     mkdir -p "$PROJECT_PATH/execution/checks"
     deliver_file "$SCRIPT_DIR/execution/checks/verify_no_symlink_stubs.py" "$PROJECT_PATH/execution/checks/verify_no_symlink_stubs.py"
+    # mission.py resume and contract.py main() run this boot-context warning on
+    # every call; without it a fresh scaffold prints "can't open file" instead of
+    # the warning (Athanor Omarchy project-e2e, 2026-11-07).
+    deliver_file "$SCRIPT_DIR/execution/checks/verify_boot_ran.py" "$PROJECT_PATH/execution/checks/verify_boot_ran.py"
 
     # onboarding-rework F2: the pre-push guard's entry point. git_guard.py
     # itself ships in the execution/ list above; this shim is what git actually
@@ -1451,7 +1544,15 @@ scaffold_core() {
     # Copy .agent config files (handoff manifest, update manifest, protected-files list)
     [ -f "$SCRIPT_DIR/.agent/handoffs.yaml" ]        && cp "$SCRIPT_DIR/.agent/handoffs.yaml"        "$PROJECT_PATH/.agent/handoffs.yaml"        2>/dev/null || true
     [ -f "$SCRIPT_DIR/.agent/update-manifest.yaml" ] && cp "$SCRIPT_DIR/.agent/update-manifest.yaml" "$PROJECT_PATH/.agent/update-manifest.yaml" 2>/dev/null || true
-    [ -f "$TEMPLATE_DIR/.agent/no-update" ]          && cp "$TEMPLATE_DIR/.agent/no-update"          "$PROJECT_PATH/.agent/no-update"          2>/dev/null || true
+    # no-update is the PROJECT's own protect-list (handoffs/update-manifest above
+    # are harness-owned): on an established workspace an existing one is never
+    # overwritten, only a missing one is delivered.
+    if [ -f "$TEMPLATE_DIR/.agent/no-update" ] \
+        && { [ "$WORKSPACE_ESTABLISHED" != "true" ] \
+            || { [ ! -e "$PROJECT_PATH/.agent/no-update" ] \
+                && [ ! -h "$PROJECT_PATH/.agent/no-update" ]; }; }; then
+        cp "$TEMPLATE_DIR/.agent/no-update" "$PROJECT_PATH/.agent/no-update" 2>/dev/null || true
+    fi
 
     # ── Copy canonical agents, skills, workflows from Athanor ───────────────
     for f in "$SCRIPT_DIR/.agent/agents/"*.md; do
@@ -1581,11 +1682,11 @@ import os
 import sys
 
 path = sys.argv[1]
-with open(path, "r") as fh:
+with open(path, "r", encoding="utf-8") as fh:
     text = fh.read()
 for key in ("PROJECT_NAME", "HARNESS_NAME", "TEMPLATE_VERSION"):
     text = text.replace("%s%s%s" % ("{{", key, "}}"), os.environ["FILL_" + key])
-with open(path, "w") as fh:
+with open(path, "w", encoding="utf-8") as fh:
     fh.write(text)
 PYFILL
         install_preserving "$staging" "AGENTS.md" "root/AGENTS.md" \
@@ -1707,6 +1808,12 @@ setup_gitignore() {
     if [ -n "$NESTED_OUTER" ]; then
         printf "${DIM}   Leaving .gitignore alone — it belongs to the work tree at %s.${NC}\n" \
             "$NESTED_OUTER"
+        return 0
+    fi
+
+    # The harness's own checkout keeps its own .gitignore: merging the scaffold
+    # set into it is churn on a tracked file (init-established-noop).
+    if [ "$HARNESS_SELF_CHECKOUT" = "true" ] && [ -f "$target" ]; then
         return 0
     fi
 
@@ -2092,7 +2199,7 @@ verify_no_placeholder_residue() {
     # --exclude-dir: a project that happens to own a directory called `memory`
     # keeps its residue gate.
     if [ -n "$hits" ]; then
-        local kept="" line skip prefix
+        local kept="" line skip prefix rel
         while IFS= read -r line; do
             [ -n "$line" ] || continue
             case "$line" in
@@ -2111,6 +2218,27 @@ verify_no_placeholder_residue() {
                 [ -z "$skip" ] || break
             done
             [ -z "$skip" ] || continue
+            # ONLY WHAT init.sh DELIVERS IS ITS TO JUDGE. A project's own README
+            # or src/ quoting `{{TOKEN}}` is not a half-written instruction, and
+            # failing an established re-run over it refuses a healthy workspace.
+            # Delivered = a path with a counterpart under template/, the
+            # instruction files setup_instructions writes (AGENTS.md, CLAUDE.md),
+            # or a SCRIPT_DIR source copied below that template/ does not mirror
+            # (agents, skills, workflows, providers, the two manifests, the
+            # Claude settings). The prefix is stripped BEFORE the `:lineno:`
+            # split, so a colon inside PROJECT_PATH cannot truncate the path.
+            rel="${line#"$PROJECT_PATH"/}"
+            rel="${rel%%:[0-9]*:*}"
+            case "$rel" in
+                AGENTS.md|CLAUDE.md) [ "$HARNESS_SELF_CHECKOUT" != "true" ] || continue ;;
+                .agent/agents/*.md|.agent/skills/*.md|.agent/workflows/*.md|.agent/providers/*.json)
+                    # Only a basename the harness itself ships is delivered; a
+                    # project-owned .agent/agents/custom.md is not judged.
+                    [ -f "$SCRIPT_DIR/$rel" ] || continue ;;
+                .agent/handoffs.yaml|.agent/update-manifest.yaml) ;;
+                .claude/settings.json) ;;
+                *) [ -e "$TEMPLATE_DIR/$rel" ] || continue ;;
+            esac
             kept="${kept}${line}"$'\n'
         done <<< "$hits"
         hits="${kept%$'\n'}"
@@ -2126,11 +2254,17 @@ verify_no_placeholder_residue() {
     top="$(git_clean -C "$PROJECT_PATH" rev-parse --show-toplevel 2>/dev/null || true)"
     if [ -n "$hits" ] && [ -n "$top" ] && [ "$(cd "$top" && pwd -P)" = "$(cd "$PROJECT_PATH" && pwd -P)" ]; then
         local ignored
-        ignored=$(printf '%s\n' "$hits" | sed -E 's/:[0-9]+:.*$//' | sort -u \
-            | git_clean -C "$PROJECT_PATH" check-ignore --stdin 2>/dev/null || true)
+        # Prefix stripped BEFORE the `:lineno:` split (a colon run inside
+        # PROJECT_PATH must not truncate it), so check-ignore sees relpaths.
+        local hit_rel
+        ignored=$(printf '%s\n' "$hits" | while IFS= read -r line; do
+            hit_rel="${line#"$PROJECT_PATH"/}"
+            printf '%s\n' "${hit_rel%%:[0-9]*:*}"
+        done | sort -u | git_clean -C "$PROJECT_PATH" check-ignore --stdin 2>/dev/null || true)
         if [ -n "$ignored" ]; then
             hits=$(printf '%s\n' "$hits" | while IFS= read -r line; do
-                grep -Fxq -- "$(printf '%s' "$line" | sed -E 's/:[0-9]+:.*$//')" <<< "$ignored" \
+                hit_rel="${line#"$PROJECT_PATH"/}"
+                grep -Fxq -- "${hit_rel%%:[0-9]*:*}" <<< "$ignored" \
                     || printf '%s\n' "$line"
             done)
         fi

@@ -16,19 +16,30 @@ failing backend never changes a gate verdict or blocks a prompt. A failing gate 
 
 ## Switch and silence
 
-- **Service folder.** `/Users/vetus/ai/Voice/MacOS/` holds the model, its venv and `tools/speak.py`. It
-  lives outside git. `VOICE_HOME` or `--home` selects another folder.
-- **Off by default.** Nothing speaks until the operator creates `/Users/vetus/ai/Voice/MacOS/.enabled`.
+- **Service folder.** `/Users/vetus/.athanor/voice/` holds the model, its venv and `tools/speak.py`. It
+  lives outside git. `VOICE_HOME` or `--home` selects another folder. (Migration: before 2026-11-08 the old home was ~/ai/Voice/MacOS.)
+- **Chosen at onboarding.** `onboard_flow.py` prints, just before the closing panel, the voice the project
+  gets by default, the audition command (`voice_say.py --voice NAME --text ...`) and the pool. The operator
+  picks one and the agent records it as the project's entry in `voices.json`.
+- **Off by default.** Nothing speaks until the operator creates `/Users/vetus/.athanor/voice/.enabled`.
   Deleting that file turns the voice off again. Agents do not create it.
 - **Away.** A project containing `.agent/memory/scratch/UNATTENDED` is silent. Both the switch and
   UNATTENDED are read on every call.
 - **Goodnight.** A prompt saying goodnight, going to bed or the like, typed in ANY project, makes the
-  UserPromptSubmit hook (`voice_say.py --hook --event prompt`) write `/Users/vetus/ai/Voice/MacOS/.asleep`,
+  UserPromptSubmit hook (`voice_say.py --hook --event prompt`) write `/Users/vetus/.athanor/voice/.asleep`,
   and every project is then silent. The first prompt in any project at least 4 hours later
   (`VOICE_SLEEP_MIN_SECONDS`) removes it, so the operator's morning message resumes voice updates.
   Delete `.asleep` by hand to wake it sooner.
 - **Platform.** macOS only. Elsewhere the speaker exits 0, silently in hook mode, with one stderr line
   otherwise.
+
+## Voice for one project
+
+Working through the night on one project: say "voice on" in it. The UserPromptSubmit hook creates that
+project's `.agent/memory/scratch/VOICE_ON`, and the project speaks even while the fleet-wide `.asleep` is
+set; every other project stays silent. "Voice off" removes the flag (no effect if it is absent), and a
+goodnight in the project removes it while writing `.asleep` as usual. `.enabled` stays the master switch
+and UNATTENDED still silences.
 
 ## One voice per project
 

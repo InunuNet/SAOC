@@ -23,7 +23,8 @@
 #   read_protected()      — the READ-direction verdict: re_read_protpath with
 #                            the settings-file half scoped to foreign paths
 #
-# Callers that invoke expand_target() must have `declare -A VARS=()` in
+# Callers that invoke expand_target() must have called vars_reset (or set
+# `local VARS_OFF=1` for a scope that must see no assignments) in
 # scope first (it looks up two-step `NAME=VALUE` assignments there).
 
 # HEREDOC_STRIP_AWK drops heredoc bodies (from "<<DELIM" through the
@@ -222,19 +223,54 @@ tr_oldlex_flag() {
 # expansion, slash de-duplication and leading ./ stripping, then a bounded
 # walk resolving any symlinked path component (existence-dependent, the
 # one place it has to be — everything before it is pure text expansion).
+# Assignment tracking without associative arrays (bash 3.2): each NAME=VALUE
+# the scan has seen is held in _ATHV_<NAME>. NAME is always a validated shell
+# identifier ([A-Za-z_][A-Za-z0-9_]*), so the indirect name is safe.
+vars_reset() {
+  local _v
+  for _v in ${!_ATHV_@}; do unset "$_v"; done
+}
+vars_set() { printf -v "_ATHV_$1" '%s' "$2"; }
+
+# lc_ascii <var> <text>: lowercase <text> into <var> without a fork (${x,,} is
+# bash 4+). Callers match the result against ASCII words only, so the fold is
+# ASCII plus the two Unicode letters whose lowercase IS ASCII: KELVIN SIGN
+# (U+212A -> k) and CAPITAL I WITH DOT (U+0130 -> i). bash 5's ${x,,} folds
+# them under a UTF-8 locale, so without this `-iname '*.\u212aEY'` passed the
+# credential check under 3.2 (Codex QA 2026-11-11). Folded in every locale:
+# the stricter verdict, never the looser one.
+lc_ascii() {
+  local _s="$2" _o="" _c _i _pre
+  _s="${_s//$'\xe2\x84\xaa'/k}"; _s="${_s//$'\xc4\xb0'/i}"
+  local _U=ABCDEFGHIJKLMNOPQRSTUVWXYZ _L=abcdefghijklmnopqrstuvwxyz
+  for ((_i = 0; _i < ${#_s}; _i++)); do
+    _c="${_s:_i:1}"
+    case "$_c" in
+      [ABCDEFGHIJKLMNOPQRSTUVWXYZ]) _pre="${_U%%"$_c"*}"; _c="${_L:${#_pre}:1}" ;;
+    esac
+    _o+="$_c"
+  done
+  printf -v "$1" '%s' "$_o"
+}
+
 expand_target() {
   local w="$1"
   w="${w//\$\{HOME\}/$HOME}"
   w="${w//\$HOME/$HOME}"
   if [[ "$w" =~ ^\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?(.*)$ ]]; then
     local vn="${BASH_REMATCH[1]}" rest="${BASH_REMATCH[2]}"
-    [ -n "${VARS[$vn]+x}" ] && w="${VARS[$vn]}${rest}"
+    if [ "${VARS_OFF:-0}" != 1 ]; then
+      local _vk="_ATHV_$vn"
+      declare -p "$_vk" >/dev/null 2>&1 && w="${!_vk}${rest}"
+    fi
   fi
   case "$w" in
     "~") w="$HOME" ;;
     "~/"*) w="${HOME}/${w#\~/}" ;;
   esac
-  while [[ "$w" == *//* ]]; do w="${w//\/\//\/}"; done
+  # The replacement is a variable: bash 3.2 keeps the backslash of a literal `\/`.
+  local _sl=/
+  while [[ "$w" == *//* ]]; do w="${w//\/\//$_sl}"; done
   while [[ "$w" == ./* ]]; do w="${w#./}"; done
   local result="" part depth=0
   IFS='/' read -r -a _parts <<< "$w"
@@ -633,6 +669,22 @@ project_own_dotenv() {
   return 1
 }
 
+# nm_credential_exempt <resolved-path> -- 0 when the path sits inside a node_modules tree and
+# neither the part before it nor the part after it names a credential or machinery directory
+# (.ssh .aws .gnupg secrets .git .claude .agent hooks). Such a path is exempt from the credential
+# FILE-NAME patterns (.pem, .key, .env, .sops.yaml): packages ship test certs and fixtures.
+nm_credential_exempt() {
+  local p="$1" before after
+  local deny='(^|/)(\.ssh|\.aws|\.gnupg|secrets|\.git|\.claude|\.agent|hooks)(/|$)'
+  case "$p" in */node_modules/*) ;; *) return 1 ;; esac
+  path_in_project "$p" || return 1
+  before="${p%%/node_modules/*}"
+  after="${p#*/node_modules/}"
+  ci_match "$deny" "$before/" && return 1
+  ci_match "$deny" "$after" && return 1
+  return 0
+}
+
 # read_protected <resolved-path> — the READ-direction verdict. 0 = protected.
 #
 # The core credential set is tested FIRST and unconditionally, so a settings
@@ -644,6 +696,12 @@ read_protected() {
   # Tested before the core set, because `.env` IS in the core set. The depth
   # restriction inside project_own_dotenv() is what keeps that safe.
   project_own_dotenv "$p" && return 1
+  # Dependency trees ship test certificates and keys (.pem/.key); they are not credentials.
+  # Credential directories and wildcard reach into them are still judged.
+  if nm_credential_exempt "$p"; then
+    component_glob_hit "$p" && return 0
+    return 1
+  fi
   ci_match "$re_read_protpath_core" "$p" && return 0
   component_glob_hit "$p" && return 0
   if ci_match "$re_read_protpath_settings" "$p"; then

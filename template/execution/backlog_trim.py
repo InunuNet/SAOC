@@ -102,16 +102,13 @@ def update_last_compacted(lines: list[str], today: str) -> list[str]:
         if pattern.match(line):
             lines[i] = new_header + "\n"
             return lines
-    # Insert as the third non-blank line if no header found
-    insert_after = -1
-    non_blank_count = 0
-    for i, line in enumerate(lines):
-        if line.strip():
-            non_blank_count += 1
-            if non_blank_count == 3:
-                insert_after = i
-                break
-    lines.insert(insert_after + 1, new_header + "\n")
+    # No header yet: place it directly under the first H1 title, else first.
+    title_idx = next((i for i, line in enumerate(lines) if line.startswith("# ")), -1)
+    at = title_idx + 1
+    block = [new_header + "\n"]
+    if at < len(lines) and lines[at].strip():
+        block.append("\n")
+    lines[at:at] = block
     return lines
 
 

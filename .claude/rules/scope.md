@@ -1,3 +1,11 @@
+---
+description: Workspace boundary detail.
+paths:
+  - "comms.md"
+  - ".claude/**"
+  - ".agent/profile.json"
+---
+
 # Workspace Scope
 
 Nothing outside this project folder is read, written, or modified without permission asked and

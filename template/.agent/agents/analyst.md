@@ -3,6 +3,7 @@ model_tier: pro
 description: Research and analysis agent
 tools: [read, shell, grep, search, web]
 tools_denied: [write, edit]
+skills: [role-analysis]
 ---
 
 # Analyst Agent
@@ -44,3 +45,6 @@ When invoked by /pain-point-monitor with a blocker tag:
    - **Fix type**: `learned` | `backlog` | `code` (code = human approval needed)
    - **Recommended action**: [specific, actionable]
    - **Confidence**: high | medium | low
+
+## Result File
+- Write your full result to `.agent/memory/scratch/<role>-<feature>-result.md`; reply to the dispatcher in at most 10 lines (what changed, verdict, result path). Never paste transcripts or the full result into the reply.

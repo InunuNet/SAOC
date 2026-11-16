@@ -31,6 +31,10 @@ import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+_EXEC_DIR = os.path.dirname(os.path.abspath(__file__))
+if _EXEC_DIR not in sys.path:
+    sys.path.insert(0, _EXEC_DIR)
+from bash_exe import bash_exe  # noqa: E402  Windows: Git Bash, never System32 WSL
 
 HOOK_REL = Path("execution/hooks/check_autonomy.sh")
 SANDBOX_ROOT = Path(".tmp/sandbox/route3")
@@ -81,7 +85,7 @@ def run_hook(root: Path, target: str) -> tuple[int, str]:
         "tool_input": {"file_path": target, "content": "probe"},
     })
     proc = subprocess.run(
-        ["bash", str(root / HOOK_REL)],
+        [bash_exe(), str(root / HOOK_REL)],
         input=payload, capture_output=True, text=True, cwd=root, timeout=60,
         env={**os.environ, "CLAUDE_PROJECT_DIR": str(root)},
     )

@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """quota.py — project-local quota oracle (mission quota-aware-execution F1).
 
-Reads ONLY the project-local mirror file written by
-execution/hooks/inject_pressure.sh on every UserPromptSubmit turn
-(default .agent/memory/scratch/.quota_status.json). NEVER reads the global
-Claude usage cache under the user's home directory, directly or via
-subprocess — that crossing is sanctioned for inject_pressure.sh alone, and
-the carve-out is recorded in that script's own header
-(execution/hooks/inject_pressure.sh).
+Reads the project-local mirror file (default
+.agent/memory/scratch/.quota_status.json). Self-refresh: when `status` finds the
+mirror missing or stale it asks execution/statusline.py to rewrite the mirror
+from the global usage cache, but only if that cache is itself fresh; the only
+reader of the global cache is statusline.py's own loader, never this file.
+When the global cache is missing or older than STALE_SECONDS, quota.py first
+calls statusline.refresh_usage_cache() once (token from the macOS Keychain or
+<config dir>/.credentials.json), so Linux and Windows sessions with no
+statusline render still get a real reading.
 
 Provider-aware (GH #1368): the mirror is only ever trusted inside a genuine
 Claude Code session (CLAUDECODE=1, set by the real CLI binary itself). In any
@@ -25,14 +27,20 @@ Exit 2 is reserved for CLI usage errors (bad flags).
 """
 import argparse
 import datetime
+import importlib.util
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
 SCHEMA = "athanor.quota/v1"
 STALE_SECONDS = 900
 DEFAULT_MIRROR_PATH = ".agent/memory/scratch/.quota_status.json"
+MIRROR_SCRATCH_PARTS = (".agent", "memory", "scratch")
+MIRROR_FILENAME = ".quota_status.json"
+REASON_MAX_CHARS = 64
+REFRESHABLE_REASONS = ("missing_mirror", "stale")
 REQUIRED_FIELDS = ("used_pct", "resets_at", "seconds_to_reset", "captured_at")
 
 # Band thresholds (mission quota-aware-pause-resume F1). Named constants so
@@ -72,7 +80,24 @@ def _unknown(reason):
         "age_seconds": None,
         "reason": reason,
         "band": "unknown",
+        "windows": {},
     }
+
+
+def _parse_windows(raw):
+    """Parse the optional per-window map; malformed entries are skipped."""
+    out = {}
+    if not isinstance(raw, dict):
+        return out
+    for name, win in raw.items():
+        try:
+            used = max(0, min(100, int(win["used_pct"])))
+            secs = win.get("seconds_to_reset")
+            out[name] = {"used_pct": used, "resets_at": win.get("resets_at"),
+                         "seconds_to_reset": None if secs is None else float(secs)}
+        except (TypeError, ValueError, KeyError, AttributeError):
+            continue
+    return out
 
 
 def read_status(mirror_path):
@@ -124,6 +149,7 @@ def read_status(mirror_path):
 
     state = "partial" if is_partial else "ok"
     return {
+        "windows": _parse_windows(data.get("windows")),
         "schema": SCHEMA,
         "state": state,
         "used_pct": used_pct,
@@ -141,7 +167,28 @@ def _left(used_pct):
     return 100 - int(used_pct)
 
 
+WINDOW_LABELS = {"five_hour": "5h", "seven_day": "week"}
+
+
+def format_windows(status):
+    """One line per window, only when the status is readable."""
+    lines = []
+    if status["state"] not in ("ok", "partial"):
+        return lines
+    for name, win in status.get("windows", {}).items():
+        secs = win["seconds_to_reset"]
+        resets = "unknown" if secs is None else f"{secs / 3600.0:.1f}h"
+        lines.append(
+            f"quota window={name} label={WINDOW_LABELS.get(name, name)} "
+            f"used={win['used_pct']}% left={_left(win['used_pct'])}% resets_in={resets}")
+    return lines
+
+
 def format_text(status):
+    return "\n".join([_format_legacy(status)] + format_windows(status))
+
+
+def _format_legacy(status):
     band = status.get("band", "unknown")
     if status["state"] == "ok":
         resets_hrs = status["seconds_to_reset"] / 3600.0
@@ -154,11 +201,81 @@ def format_text(status):
             f"quota: state=partial used={status['used_pct']}% left={_left(status['used_pct'])}% "
             f"resets_in=unknown band={band}"
         )
-    return f"quota: state=unknown reason={status['reason']} band={band}"
+    line = f"quota: state=unknown reason={status['reason']} band={band}"
+    if status.get("refresh_error"):
+        line += f" refresh_error={status['refresh_error']}"
+    return line
+
+
+def _load_statusline():
+    path = Path(__file__).resolve().parent / "statusline.py"
+    spec = importlib.util.spec_from_file_location("statusline", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    override = os.environ.get("QUOTA_GLOBAL_STATE")
+    if override:
+        mod.GLOBAL_STATE = Path(override)
+    return mod
+
+
+def _project_root_for(mirror_path):
+    """Project root owning a standard mirror path, else None (no refresh)."""
+    path = Path(mirror_path).resolve()
+    if path.name != MIRROR_FILENAME or path.parent.parts[-3:] != MIRROR_SCRATCH_PARTS:
+        return None
+    return path.parents[3]
+
+
+def refresh_from_global(mirror_path):
+    """Rewrite the mirror from a fresh global cache. Returns the failure reason or None."""
+    root = _project_root_for(mirror_path)
+    if root is None:
+        return "stale"
+    try:
+        sl = _load_statusline()
+        age = sl.global_age(sl.USAGE_CACHE_NAME)
+        if age is None or age > STALE_SECONDS:
+            sl.refresh_usage_cache()
+            age = sl.global_age(sl.USAGE_CACHE_NAME)
+        if age is None:
+            return "missing_cache"
+        cache = sl.global_json(sl.USAGE_CACHE_NAME)
+        if age > STALE_SECONDS or cache is None:
+            return "stale"
+        sl.mirror_quota_all(root, cache)
+    except Exception:
+        return "stale"
+    return None
+
+
+def _refresh_error(mirror_path):
+    """Last failed-refresh reason token from the attempt stamp, else None. Never raises."""
+    try:
+        sl = _load_statusline()
+        text = (sl.GLOBAL_STATE / sl.USAGE_ATTEMPT_STAMP_NAME).read_text()
+    except Exception:
+        return None
+    reason = re.sub(r"[^A-Za-z0-9_]", "", text)[:REASON_MAX_CHARS]
+    return None if reason in ("", "ok") else reason
+
+
+def current_status(mirror_path):
+    status = read_status(mirror_path)
+    if status["state"] != "unknown" or status["reason"] not in REFRESHABLE_REASONS:
+        return status
+    failure = refresh_from_global(mirror_path)
+    if failure is not None:
+        unknown = _unknown(failure)
+        if failure == "missing_cache":
+            reason = _refresh_error(mirror_path)
+            if reason:
+                unknown["refresh_error"] = reason
+        return unknown
+    return read_status(mirror_path)
 
 
 def cmd_status(args):
-    status = read_status(args.mirror_path)
+    status = current_status(args.mirror_path)
     if args.json:
         print(json.dumps(status))
     else:
@@ -180,7 +297,7 @@ def main():
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
     status_parser.add_argument(
-        "--mirror-path",
+        "--mirror-path", "--mirror",
         default=DEFAULT_MIRROR_PATH,
         help=f"Path to the mirror file (default: {DEFAULT_MIRROR_PATH})",
     )

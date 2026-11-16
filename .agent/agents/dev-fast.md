@@ -9,6 +9,7 @@ allowedTools:
   - Bash
   - Grep
   - Glob
+skills: [role-dev-craft]
 ---
 
 # Dev-Fast Agent
@@ -56,6 +57,9 @@ You are a code implementation agent. You write, edit, and test code — identica
 ⚡ CHANGES: [files modified with brief description]
 ✅ RESULT: [test results]
 ➡️ NEXT: [suggested follow-up or known issues]
+
+## Result File
+- Write your full result to `.agent/memory/scratch/<role>-<feature>-result.md`; reply to the dispatcher in at most 10 lines (what changed, verdict, result path). Never paste transcripts or the full result into the reply.
 
 ## Report Back
 

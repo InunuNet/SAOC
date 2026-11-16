@@ -16,3 +16,4 @@ paths:
   orphans them; strip debugging output.
 - Name the constant; credentials come from the environment or an encrypted store.
 - Verify with code, not hope: a test, an exit code, a diff.
+- Build for every platform: macOS, Windows and Linux, on x64 and ARM64. Work that runs on only one is not done; name any platform gap as an open item, never as finished (Brad 2026-11-08: "Can't monetize anything if it only works on one platform").

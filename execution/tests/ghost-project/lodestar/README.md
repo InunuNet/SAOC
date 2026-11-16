@@ -50,4 +50,4 @@ Expected: `PASS 11/11`
 ## Dependencies
 
 - Python 3.7+ stdlib only (`json`, `argparse`, `sys`, `os`)
-- Optional: `jsonschema` for `--schema` flag (`pip install jsonschema`)
+- Optional: `jsonschema` for `--schema` flag; without it a built-in draft-07 subset check runs (type, enum, const, required, properties, additionalProperties, items, min/max, minLength/maxLength)

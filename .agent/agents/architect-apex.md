@@ -3,6 +3,7 @@ model_tier: apex
 name: architect-apex
 description: "Apex-tier system design. Same contract as @architect; dispatched only for features declaring tier: apex. Returns decisions, never code."
 tools: [read, write, edit, shell, grep]
+skills: [role-architecture]
 ---
 
 # Architect Agent
@@ -80,6 +81,9 @@ Also write golden files at `.agent/memory/project/specs/<slug>/goldens/`.
 ⚡ SPECIFICATION: [what dev should implement]
 ✅ RATIONALE: [why this approach]
 ➡️ RISKS: [what could go wrong]
+
+## Result File
+- Write your full result to `.agent/memory/scratch/<role>-<feature>-result.md`; reply to the dispatcher in at most 10 lines (what changed, verdict, result path). Never paste transcripts or the full result into the reply.
 
 ## Report Back
 
