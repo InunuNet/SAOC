@@ -153,7 +153,7 @@ Build (Brad approved, dev first):
 - [ ] P0 Early bird tickets: change from a ticket-count limit ("tickets left") to a cut-off date, and reset the early bird stock. Lee-Ann sets the date (reminder added to her questions doc on 2026-11-16).
 - [ ] P0 Per-ticket-type confirmation emails (PR #183, switch TICKET_TYPE_EMAILS_LIVE is off): turn it on in dev, Brad checks a sandbox test-purchase email, then beta. Lee-Ann will then check every ticket's email.
 - [ ] P1 Vendor listing before 1 Dec: each paid vendor's high-res logo plus a blurb of about 200 words, shown only after the vendor has paid. Lee-Ann collects the material from vendors as they pay. Needs /spec; no layout is invented, the layout comes from the design handoff.
-- [ ] P1 Hero banners: Lee-Ann allows any photo from her free stock folder (it need not be a South African orchid; no AI photos). Brad will name his favourites per page. Swap only the ones he names.
+- [ ] P1 Hero banners (Brad 16 Nov): add Lee-Ann's good free stock photos into the hero mix alongside the good ones already in use. Never remove a good existing hero; only add. Brad names which of her photos are good. No AI photos. Her photos need not be South African orchids.
 - [ ] P2 Wheelchair access (item 5 in her questions doc): she was not sure it shows anywhere on the site. Backlogged only (Brad 16 Nov).
 - [ ] Foreword spelling: PR #194 is on dev and awaits Brad's approval. Lee-Ann has already fixed her own copy.
 
