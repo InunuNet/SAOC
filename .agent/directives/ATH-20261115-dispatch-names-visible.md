@@ -15,8 +15,9 @@ verify: python3 execution/dispatch_name.py --role analyst --model sonnet --slug 
 Brad, 2026-11-15: "they're not sticking to the naming rules so I can't tell if it's Opus or
 Sonnet or Google or OpenAI like I can't tell which models are running".
 
-- **The rule is now in AGENTS.md section 4**, so every lead sees it when dispatching (it used to
-  load only when an agent file was touched).
+- **The rule now loads in every session** (3.8.153): `.claude/rules/dispatch-naming.md` has no
+  `paths:` scope any more. It used to load only when an agent file was touched, so leads never
+  saw it when dispatching. Your AGENTS.md is yours and is not changed.
 - **Every Agent dispatch passes `name`.** Render it with `python3 execution/dispatch_name.py
   --role <role> --model <model> --mission <slug> --milestone Mn --feature Fn`, or outside a
   mission `--slug <topic>`, e.g. `Analyst_Son55_ZausResearch`. Names like `zaus-research` or

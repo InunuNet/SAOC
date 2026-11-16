@@ -1,27 +1,19 @@
 ---
-description: Agent dispatch names by convention and the retry effort ladder.
-paths:
-  - ".agent/agents/*.md"
-  - ".claude/agents/*.md"
+description: Every Agent dispatch is named Role_Model so the operator's agent list shows role and model. Always loaded.
 ---
 
 # Agent Dispatch Names
 
-Pass `Role_Model_Mn-Fn_Slug` in the Agent tool's `name` field (that is what the agent list shows),
-rendered with `python3 execution/dispatch_name.py`. Outside a mission use `--slug` for
-`Role_Model_Slug` (no `Mn-Fn` segment), e.g. `Analyst_Son55_ZausResearch`.
+Every Agent tool call passes `name` (the agent list shows it), rendered by
+`python3 execution/dispatch_name.py --role <role> --model <model>` plus `--mission <slug>
+--milestone Mn --feature Fn` (`Dev_Son55_M1-F2_OneRustUi`) or, outside a mission, `--slug
+<topic>` (`Analyst_Son55_ZausResearch`). Never a bare topic like `zaus-research`: it hides the model.
 
-Model tags:
-- Claude: `Son55` (sonnet), `Opu55` (opus), `Hai55` (haiku), `Fab52` (fable)
-- Codex: `Sol6` (gpt-6-sol), `Ast6` (gpt-6-astra), `Lun6` (gpt-6-luna)
-- Antigravity: `Hyd4` (gemini-4-hydrogen-high), `Arg4` (gemini-4-argon-high); a bare
-  `gemini-4-hydrogen`/`-argon` renders the same tag, so always pass the effort
-- Unmapped models get family + version, and a non-high effort letter: `claude-opus-4-6` →
-  `Opu46`, `qwen-2.5-coder-32b-free` → `Qwen25`, `gemini-4-hydrogen-low` → `Hyd4L`
+Tags: Claude `Son55` `Opu55` `Hai55` `Fab52`; Codex `Sol6` `Ast6` `Lun6`; Antigravity `Hyd4`
+(gemini-4-hydrogen-high) `Arg4` (gemini-4-argon-high). Unmapped models get family + version, a
+non-high effort adds a letter (`Opu46`, `Qwen25`, `Hyd4L`); always pass the Gemini effort.
+A Codex/Antigravity shell (`codex_dev.sh`, `agy_dev.sh`, `qa.sh`, `codex exec`) starts its Bash
+description with the same tag: `Dev_Sol6 codex_dev OneRustUi`.
 
-For Codex/Antigravity background shells (`codex_dev.sh`, `agy_dev.sh`, `qa.sh`, `codex exec`),
-start the Bash `description` with the same tag, e.g. `Dev_Sol6 codex_dev OneRustUi`.
-
-Retry after a QA FAIL on the same feature+role climbs one rung (`--retry N` prints it): first
-dispatch `model: sonnet`, retry 1 `model: opus`, retry 2+ `model: fable` (ceiling). The ladder's
-tier ids `sonnet5`/`opus5`/`fable5` are labels; the Agent tool's `model:` takes the bare alias.
+Retry after a QA FAIL climbs one rung (`--retry N` prints it): `model: sonnet`, then `opus`,
+then `fable` (ceiling); the tier ids `sonnet5`/`opus5`/`fable5` are labels, `model:` takes the alias.
