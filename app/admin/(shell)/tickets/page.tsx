@@ -47,6 +47,7 @@ function registrationView(raw: unknown): TicketRegistrationView | null {
     judgeCommunication: text('judgeCommunication'),
     judgeForum: text('judgeForum'),
     dietary: text('dietary'),
+    dietaryOther: typeof map['dietaryOther'] === 'string' ? map['dietaryOther'] : null,
   };
 }
 

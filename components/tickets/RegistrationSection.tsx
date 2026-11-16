@@ -14,10 +14,12 @@ interface RegistrationSectionProps {
 
 export function RegistrationSection({ form, ticketSlug, disabled }: RegistrationSectionProps) {
   if (form.drafts.length === 0) return null;
-  const handlers: Pick<RegistrationAttendeeFieldsProps, 'onField' | 'onSociety' | 'onShared'> = {
+  const handlers: Pick<RegistrationAttendeeFieldsProps, 'onField' | 'onSociety' | 'onShared' | 'onAvailability' | 'onJudgeDate'> = {
     onField: form.setField,
     onSociety: form.setSociety,
     onShared: form.setShared,
+    onAvailability: form.setAvailability,
+    onJudgeDate: form.setJudgeDate,
   };
   return (
     <div className="space-y-6">

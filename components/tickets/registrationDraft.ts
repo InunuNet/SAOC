@@ -21,13 +21,13 @@ export interface RegistrationDraft {
   country: string;
   province: string;
   societies: string[];
-  judgeAccredited: string;
-  judgeOrganisation: string;
-  judgeAvailable: string;
-  judgeDate: string;
+  judgeAccreditation: string;
+  judgeAvailable: boolean;
+  judgeDates: string[];
   judgeCommunication: string;
   judgeForum: string;
   dietary: string;
+  dietaryOther: string;
   // "Same as above" ticks, forms 2 and later: the section is hidden and copied from attendee 1.
   sameContact: boolean;
   sameMembership: boolean;
@@ -35,7 +35,7 @@ export interface RegistrationDraft {
 
 export type DraftTextField = Exclude<
   keyof RegistrationDraft,
-  'societies' | 'sameContact' | 'sameMembership'
+  'societies' | 'sameContact' | 'sameMembership' | 'judgeAvailable' | 'judgeDates'
 >;
 
 /** Field errors of one attendee, keyed by field. */
@@ -53,12 +53,14 @@ const SUMMARY_FIELD_NAMES: Record<string, string> = {
   province: 'Province',
   societies: 'Society',
   judgeAccredited: 'Accredited Orchid Judge',
+  judgeAccreditation: 'Accredited Orchid Judge',
   judgeOrganisation: 'Orchid Organisation',
   judgeAvailable: 'Available as a Show Judge',
   judgeDate: 'Date available',
   judgeCommunication: 'Judges Communication',
   judgeForum: 'Judges Forum',
   dietary: 'Dietary requirements',
+  dietaryOther: 'Other dietary requirement',
 };
 
 export function emptyDraft(): RegistrationDraft {
@@ -69,16 +71,16 @@ export function emptyDraft(): RegistrationDraft {
     preferredName: '',
     email: '',
     mobile: '',
-    country: '',
+    country: SOUTH_AFRICA,
     province: '',
     societies: [],
-    judgeAccredited: '',
-    judgeOrganisation: '',
-    judgeAvailable: '',
-    judgeDate: '',
-    judgeCommunication: '',
-    judgeForum: '',
-    dietary: '',
+    judgeAccreditation: 'No',
+    judgeAvailable: false,
+    judgeDates: [],
+    judgeCommunication: 'No',
+    judgeForum: 'No',
+    dietary: 'None',
+    dietaryOther: '',
     sameContact: false,
     sameMembership: false,
   };
@@ -112,13 +114,14 @@ export function draftsToPeople(drafts: RegistrationDraft[], ticketSlug: string) 
       province: contact.country === SOUTH_AFRICA ? contact.province : null,
       societies: membership.societies,
       attending: ATTENDING_BY_TICKET[ticketSlug] ?? '',
-      judgeAccredited: draft.judgeAccredited,
-      judgeOrganisation: draft.judgeOrganisation,
-      judgeAvailable: draft.judgeAvailable,
-      judgeDate: draft.judgeDate,
+      judgeAccredited: draft.judgeAccreditation === 'No' ? 'No' : draft.judgeAccreditation.startsWith('Yes, with ') ? 'Yes' : '',
+      judgeOrganisation: draft.judgeAccreditation === 'No' ? 'Not applicable' : draft.judgeAccreditation.startsWith('Yes, with ') ? draft.judgeAccreditation.slice('Yes, with '.length) : '',
+      judgeAvailable: draft.judgeAvailable ? 'Yes' : 'No',
+      judgeDate: !draft.judgeAvailable ? 'None' : draft.judgeDates.length === 2 ? '22 & 23 Sept' : draft.judgeDates[0] ?? '',
       judgeCommunication: draft.judgeCommunication,
       judgeForum: draft.judgeForum,
       dietary: draft.dietary,
+      dietaryOther: draft.dietary === 'Other' ? draft.dietaryOther : null,
       sameAsAttendee1: shared,
     };
   });
@@ -142,7 +145,8 @@ export function checkDrafts(
     const [, index, field] = key.split('.');
     if (field === undefined || field === 'attending' || field === 'sameAsAttendee1') continue;
     if (isSharedField(drafts[Number(index)], Number(index), field)) continue;
-    errors[Number(index)][field] = message;
+    const control = field === 'judgeAccredited' || field === 'judgeOrganisation' ? 'judgeAccreditation' : field;
+    errors[Number(index)][control] = message;
   }
   return { errors, people: null };
 }
@@ -167,7 +171,7 @@ export function summaryEntriesFor(errors: RegistrationErrors[]): CheckoutErrorEn
       entries.push({
         key: id,
         message: `Attendee ${attendee}, ${SUMMARY_FIELD_NAMES[key]}: ${message}`,
-        target: key === 'societies' ? `#${id} input:not(:disabled)` : `#${id}`,
+        target: key === 'judgeDate' ? `#${id}-22-sep` : `#${id}`,
       });
     }
   });

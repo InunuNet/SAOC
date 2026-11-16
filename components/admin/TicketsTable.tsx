@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import { formatAdminDate, formatAdminDateTime } from '@/lib/admin-format';
+import { formatDietary } from '@/lib/registration';
 import { DetailDrawer, DetailSection } from './DetailDrawer';
 import { StatusPill } from './StatusPill';
 import { AdminTable } from './table/AdminTable';
@@ -35,6 +36,7 @@ export interface TicketRegistrationView {
   judgeCommunication: string;
   judgeForum: string;
   dietary: string;
+  dietaryOther: string | null;
 }
 
 const ALL_STATUSES = 'all';
@@ -174,7 +176,7 @@ function TicketDetail({ row }: { row: TicketRow }) {
           items={[
             { label: 'Attendee number', value: String(registration.attendeeNumber ?? NOT_PROVIDED) },
             { label: 'Attending', value: registration.attending || NOT_PROVIDED },
-            { label: 'Dietary', value: registration.dietary },
+            { label: 'Dietary', value: formatDietary(registration) },
             { label: 'Mobile', value: registration.mobile || NOT_PROVIDED },
             { label: 'Societies', value: registration.societies?.join('; ') || NOT_PROVIDED },
             { label: 'Accredited judge', value: registration.judgeAccredited || NOT_PROVIDED },

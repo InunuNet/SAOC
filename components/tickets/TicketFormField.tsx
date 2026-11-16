@@ -107,6 +107,7 @@ export function TicketSelectField({
       <label htmlFor={id} className={LABEL_CLASS}>
         {label}
       </label>
+      <div className="relative">
       <select
         id={id}
         autoComplete={autoComplete}
@@ -116,7 +117,7 @@ export function TicketSelectField({
         disabled={disabled}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}
-        className={INPUT_CLASS}
+        className={`${INPUT_CLASS} appearance-none pr-10`}
       >
         <option value="">Select…</option>
         {options.map((option) => (
@@ -125,6 +126,10 @@ export function TicketSelectField({
           </option>
         ))}
       </select>
+      <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" className="pointer-events-none absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-ink">
+        <path d="m3 6 5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      </div>
       {error ? <TicketFieldAlert id={`${id}-error`}>{error}</TicketFieldAlert> : null}
     </div>
   );

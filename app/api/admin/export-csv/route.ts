@@ -3,6 +3,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { getAdminSession } from '@/lib/admin-auth';
 import { csvField } from '@/lib/csv-field';
 import { initAdmin } from '@/lib/firebase-admin';
+import { formatDietary } from '@/lib/registration';
 
 const CSV_HEADER = 'bookingRef,attendeeName,attendeeEmail,ticketType,status,purchasedAt,dietary,mobile,societies,attendeeNumber,attending,judgeAccredited,judgeOrganisation,judgeAvailable,judgeDate,judgeCommunication,judgeForum';
 const SOCIETY_SEPARATOR = '; ';
@@ -39,7 +40,7 @@ export async function GET() {
       csvField(String(data['ticketType'] ?? '')),
       csvField(String(data['status'] ?? '')),
       csvField(purchasedAt),
-      csvField(String(registration['dietary'] ?? '')),
+      csvField(formatDietary({ dietary: String(registration['dietary'] ?? ''), dietaryOther: typeof registration['dietaryOther'] === 'string' ? registration['dietaryOther'] : null })),
       csvField(String(registration['mobile'] ?? '')),
       csvField(societies),
       csvField(String(registration['attendeeNumber'] ?? '')),

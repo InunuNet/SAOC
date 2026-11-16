@@ -4,6 +4,8 @@
 // .agent/memory/project/specs/registration-forms/goldens/registration-fields.json.
 import { MAX_LINE_ITEMS } from '@/lib/tickets-constants';
 
+const JUDGE_ORGANISATIONS = ['SAOC', 'AOS', 'Not applicable'] as const;
+
 export const REGISTRATION_OPTIONS = {
   title: ['Mr', 'Mrs', 'Ms', 'Dr.', 'Sir', 'Hon.'],
   country: [
@@ -259,9 +261,12 @@ export const REGISTRATION_OPTIONS = {
     'WOSA Symposium Speaker Partner/Spouse',
   ],
   judgeYesNoNa: ['Yes', 'No', 'Not applicable'],
-  judgeOrganisation: ['SAOC', 'AOS', 'Not applicable'],
+  judgeOrganisation: JUDGE_ORGANISATIONS,
   judgeDate: ['22-Sep', '23-Sep', '22 & 23 Sept', 'None', 'Not applicable'],
-  dietary: ['None', 'Vegetarian', 'Halaal'],
+  dietary: ['None', 'Vegetarian', 'Halaal', 'Other'],
+  judgeAccreditation: ['No', ...JUDGE_ORGANISATIONS.filter((organisation) => organisation !== 'Not applicable').map((organisation) => `Yes, with ${organisation}`)],
+  judgeYesNo: ['Yes', 'No'],
+  judgeDateChoices: ['22-Sep', '23-Sep'],
 } as const;
 
 export type RegistrationShareSection = 'contact' | 'membership';
@@ -286,6 +291,7 @@ export interface RegistrationPerson {
   judgeCommunication: string;
   judgeForum: string;
   dietary: string;
+  dietaryOther: string | null;
   sameAsAttendee1: RegistrationShareSection[];
 }
 
@@ -316,9 +322,7 @@ export const SHARE_SECTIONS: readonly RegistrationShareSection[] = ['contact', '
 const NAME_MAX_LENGTH = 100;
 const MOBILE_MAX_LENGTH = 30;
 const EMAIL_MAX_LENGTH = 254;
-const MOBILE_MIN_DIGITS = 7;
-const MOBILE_MAX_DIGITS = 15;
-const MOBILE_CHARACTERS = /^[\d\s+\-()]+$/;
+const MOBILE_CHARACTERS = /^\+?[\d\s()-]+$/;
 
 /** Field labels, verbatim from the sheet with Brad's typo fixes (goldens/registration-fields.json). */
 export const REGISTRATION_LABELS = {
@@ -339,6 +343,8 @@ export const REGISTRATION_LABELS = {
   judgeCommunication: 'Will you be attending the Judges Communication?',
   judgeForum: 'Will you be attending the Judges Forum?',
   dietary: 'Please select from the drop down list',
+  judgeAccreditation: 'Are you an accredited Orchid Judge',
+  dietaryOther: 'Other',
 } as const;
 
 export const REGISTRATION_SECTION_HEADINGS = {
@@ -349,31 +355,41 @@ export const REGISTRATION_SECTION_HEADINGS = {
   dietary: 'DIETARY REQUIREMENTS',
 } as const;
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_PATTERN = /^[^\s@.]+(?:\.[^\s@.]+)*@(?:[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*\.)+[A-Za-z]{2,}$/;
+
+export function isValidEmail(value: string): boolean {
+  const email = value.trim();
+  const local = email.split('@')[0];
+  return email.length <= EMAIL_MAX_LENGTH && local.length <= 64 && EMAIL_PATTERN.test(email);
+}
+
+export function isValidMobile(value: string): boolean {
+  const mobile = value.trim();
+  if (mobile.length > MOBILE_MAX_LENGTH || !MOBILE_CHARACTERS.test(mobile)) return false;
+  const compact = mobile.replace(/[\s()-]/g, '');
+  if (/^0\d{9}$/.test(compact)) return true;
+  const digits = compact.startsWith('+') ? compact.slice(1) : compact.startsWith('00') ? compact.slice(2) : '';
+  if (!/^[1-9]\d{7,14}$/.test(digits)) return false;
+  return !digits.startsWith('27') || /^27[1-9]\d{8}$/.test(digits);
+}
+
+export function formatDietary(registration: { dietary?: string; dietaryOther?: string | null }): string {
+  return registration.dietary === 'Other' && registration.dietaryOther
+    ? `Other: ${registration.dietaryOther}`
+    : registration.dietary ?? '';
+}
 
 type OptionKey = keyof typeof REGISTRATION_OPTIONS;
 type DropdownField =
   | 'title'
   | 'country'
   | 'attending'
-  | 'judgeAccredited'
-  | 'judgeOrganisation'
-  | 'judgeAvailable'
-  | 'judgeDate'
-  | 'judgeCommunication'
-  | 'judgeForum'
   | 'dietary';
 
 const DROPDOWN_OPTIONS: Record<DropdownField, OptionKey> = {
   title: 'title',
   country: 'country',
   attending: 'attending',
-  judgeAccredited: 'judgeYesNoNa',
-  judgeOrganisation: 'judgeOrganisation',
-  judgeAvailable: 'judgeYesNoNa',
-  judgeDate: 'judgeDate',
-  judgeCommunication: 'judgeYesNoNa',
-  judgeForum: 'judgeYesNoNa',
   dietary: 'dietary',
 };
 const JUDGE_FIELDS = [
@@ -416,15 +432,8 @@ function dropdownField(raw: Raw, key: DropdownField, errors: Errors, prefix: str
 
 function mobileField(raw: Raw, errors: Errors, prefix: string): string {
   const value = trimmed(raw.mobile);
-  const digits = value.replace(/\D/g, '').length;
   if (value === '') errors[`${prefix}.mobile`] = 'This field is required.';
-  else if (value.length > MOBILE_MAX_LENGTH) {
-    errors[`${prefix}.mobile`] = `Please use ${MOBILE_MAX_LENGTH} characters or fewer.`;
-  } else if (
-    !MOBILE_CHARACTERS.test(value) ||
-    digits < MOBILE_MIN_DIGITS ||
-    digits > MOBILE_MAX_DIGITS
-  ) {
+  else if (!isValidMobile(value)) {
     errors[`${prefix}.mobile`] = 'Please enter a valid mobile number, including the country code.';
   }
   return value;
@@ -435,7 +444,7 @@ function emailField(raw: Raw, errors: Errors, prefix: string): string {
   if (value === '') errors[`${prefix}.email`] = 'This field is required.';
   else if (value.length > EMAIL_MAX_LENGTH) {
     errors[`${prefix}.email`] = `Please use ${EMAIL_MAX_LENGTH} characters or fewer.`;
-  } else if (!EMAIL_PATTERN.test(value)) {
+  } else if (!isValidEmail(value)) {
     errors[`${prefix}.email`] = 'Please enter a valid email address.';
   }
   return value;
@@ -467,6 +476,32 @@ function societiesField(raw: Raw, errors: Errors, prefix: string): string[] {
     errors[key] = 'None cannot be combined with a society.';
   }
   return chosen;
+}
+
+function judgeFields(raw: Raw, errors: Errors, prefix: string): Pick<RegistrationPerson, (typeof JUDGE_FIELDS)[number]> {
+  const values = Object.fromEntries(JUDGE_FIELDS.map((key) => [key, trimmed(raw[key])])) as Pick<RegistrationPerson, (typeof JUDGE_FIELDS)[number]>;
+  const choice = (key: (typeof JUDGE_FIELDS)[number], allowed: readonly string[]) => {
+    const value = values[key];
+    if (!value) errors[`${prefix}.${key}`] = 'Please choose an option.';
+    else if (!allowed.includes(value)) errors[`${prefix}.${key}`] = 'Please choose from the list.';
+  };
+  choice('judgeAccredited', REGISTRATION_OPTIONS.judgeYesNo);
+  choice('judgeOrganisation', REGISTRATION_OPTIONS.judgeOrganisation);
+  choice('judgeAvailable', REGISTRATION_OPTIONS.judgeYesNo);
+  choice('judgeDate', REGISTRATION_OPTIONS.judgeDate);
+  choice('judgeCommunication', REGISTRATION_OPTIONS.judgeYesNo);
+  choice('judgeForum', REGISTRATION_OPTIONS.judgeYesNo);
+  if (!errors[`${prefix}.judgeOrganisation`] &&
+      ((values.judgeAccredited === 'No' && values.judgeOrganisation !== 'Not applicable') ||
+       (values.judgeAccredited === 'Yes' && values.judgeOrganisation === 'Not applicable'))) {
+    errors[`${prefix}.judgeOrganisation`] = 'Please choose from the list.';
+  }
+  if (!errors[`${prefix}.judgeDate`] &&
+      ((values.judgeAvailable === 'No' && values.judgeDate !== 'None') ||
+       (values.judgeAvailable === 'Yes' && !['22-Sep', '23-Sep', '22 & 23 Sept'].includes(values.judgeDate)))) {
+    errors[`${prefix}.judgeDate`] = 'Please choose from the list.';
+  }
+  return values;
 }
 
 // The sections this person copies from attendee 1. Attendee 1 has nothing to copy from.
@@ -514,10 +549,13 @@ function validatePerson(
   if (attending !== '' && attending !== ATTENDING_BY_TICKET[ticketType]) {
     errors[`${prefix}.attending`] = 'This must match the ticket being bought.';
   }
-  const judges = Object.fromEntries(
-    JUDGE_FIELDS.map((key) => [key, dropdownField(raw, key, errors, prefix)])
-  ) as Pick<RegistrationPerson, (typeof JUDGE_FIELDS)[number]>;
+  const judges = judgeFields(raw, errors, prefix);
   const dietary = dropdownField(raw, 'dietary', errors, prefix);
+  const dietaryOther = trimmed(raw.dietaryOther);
+  if (dietary === 'Other') {
+    if (!dietaryOther) errors[`${prefix}.dietaryOther`] = 'This field is required.';
+    else if (dietaryOther.length > NAME_MAX_LENGTH) errors[`${prefix}.dietaryOther`] = 'Please use 100 characters or fewer.';
+  } else if (dietaryOther) errors[`${prefix}.dietaryOther`] = 'Please choose from the list.';
 
   return {
     attendeeNumber: index + 1,
@@ -533,6 +571,7 @@ function validatePerson(
     attending,
     ...judges,
     dietary,
+    dietaryOther: dietary === 'Other' ? dietaryOther : null,
     sameAsAttendee1: shared,
   };
 }
@@ -593,6 +632,7 @@ export function buildRegistrationDoc(person: RegistrationPerson): RegistrationDo
     judgeCommunication: person.judgeCommunication,
     judgeForum: person.judgeForum,
     dietary: person.dietary,
+    dietaryOther: person.dietaryOther ?? null,
     sameAsAttendee1: [...person.sameAsAttendee1],
   };
 }

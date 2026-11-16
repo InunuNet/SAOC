@@ -29,7 +29,7 @@ function withShared(
   checked: boolean
 ): RegistrationDraft {
   return section === 'contact'
-    ? { ...draft, sameContact: checked, mobile: '', country: '', province: '' }
+    ? { ...draft, sameContact: checked, mobile: '', country: 'South Africa', province: '' }
     : { ...draft, sameMembership: checked, societies: [] };
 }
 
@@ -57,7 +57,18 @@ export function useRegistrationForm(count: number, ticketSlug: string) {
   }
 
   function setField(attendee: number, field: DraftTextField, value: string) {
-    change(attendee, (draft) => ({ ...draft, [field]: value }));
+    change(attendee, (draft) => ({ ...draft, [field]: value,
+      ...(field === 'country' && value !== 'South Africa' ? { province: '' } : {}),
+      ...(field === 'dietary' && value !== 'Other' ? { dietaryOther: '' } : {}),
+    }));
+  }
+
+  function setAvailability(attendee: number, checked: boolean) {
+    change(attendee, (draft) => ({ ...draft, judgeAvailable: checked, judgeDates: checked ? draft.judgeDates : [] }));
+  }
+
+  function setJudgeDate(attendee: number, date: string, checked: boolean) {
+    change(attendee, (draft) => ({ ...draft, judgeDates: checked ? [...draft.judgeDates, date] : draft.judgeDates.filter((entry) => entry !== date) }));
   }
 
   function setSociety(attendee: number, option: string, checked: boolean) {
@@ -78,5 +89,5 @@ export function useRegistrationForm(count: number, ticketSlug: string) {
     return hasErrors(found) ? null : people;
   }
 
-  return { drafts, errors: shownErrors, setField, setSociety, setShared, validate };
+  return { drafts, errors: shownErrors, setField, setSociety, setShared, setAvailability, setJudgeDate, validate };
 }
