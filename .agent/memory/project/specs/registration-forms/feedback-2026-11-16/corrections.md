@@ -28,3 +28,16 @@ Other verdicts on the same day: #194 Foreword APPROVED (merge on resume). #196 e
 ## Notes for the rework
 - The field list and options still come from Lee-Ann's sheet. The merges above change how a question is asked, not what is collected. The admin drawer and CSV keep the same answers, with the judge fields now derived from the combined controls.
 - Use the offload route: architect spec, then codex_dev or agy_dev, then a cross-vendor QA.
+
+## Brad's decisions (16 Nov, second pass): build these
+1. Booking option field: if a field is not user-editable, hide it. The form is already overwhelming. The value is still stored from the ticket.
+2. Membership multi-select dropdown: APPROVED.
+3. Membership combination rules: ASK LEE-ANN (question added to her doc 16 Nov). Until she answers, keep only today's rule: None excludes everything else.
+4. Country defaults to South Africa: APPROVED.
+5. Chevron padding: APPROVED.
+6. Merged judge dropdown: APPROVED (Brad's own spec).
+7. Availability checkbox with dates shown only when ticked: APPROVED (Brad's own spec; not re-mentioned in the second pass, treated as approved).
+8. None preselected: APPROVED.
+9. Dietary "Other": show the free-text field ONLY when Other is selected; it is required then.
+10. Compact and smart: APPROVED.
+11. Validate every field, client and server: APPROVED.
