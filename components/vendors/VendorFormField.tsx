@@ -29,7 +29,7 @@ interface VendorFormFieldProps {
 const labelClass = 'font-mono text-[11px] tracking-[0.16em] text-muted';
 const requirementLabelClass = 'nos-form-label';
 const inputClass =
-  'block w-full rounded-sm border border-muted bg-ivory px-3.5 py-2.5 font-sans text-[15px] text-ink placeholder:text-muted outline-none transition-colors focus:border-ink/40 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] disabled:opacity-60';
+  'block rounded-lg border border-muted bg-ivory px-3.5 py-2.5 font-sans text-[15px] text-ink placeholder:text-muted outline-none transition-colors focus:border-ink/40 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] disabled:opacity-60';
 const inputErrorClass = 'border-[var(--status-error)]';
 const errorClass = 'font-sans text-[14px] text-[var(--status-error)]';
 
@@ -56,7 +56,7 @@ export function VendorFormField({
   const errorId = `${id}-error`;
   const describedBy = error ? errorId : undefined;
   const baseClass = error ? `${inputClass} ${inputErrorClass}` : inputClass;
-  const fieldClass = inputClassName ? `${baseClass} ${inputClassName}` : baseClass;
+  const fieldClass = `${baseClass} ${inputClassName ?? 'w-full'}`;
 
   return (
     <div className="space-y-1.5">

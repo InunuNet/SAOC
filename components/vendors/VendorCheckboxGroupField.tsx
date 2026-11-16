@@ -61,7 +61,7 @@ export function VendorCheckboxGroupField({
       <legend className={showRequirement ? requirementLegendClass : legendClass}>
         {label}
       </legend>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+      <div className="grid auto-rows-fr grid-cols-1 gap-2 sm:grid-cols-2">
         {options.map((option) => {
           const optionId = `${id}-${option.value}`;
           return (

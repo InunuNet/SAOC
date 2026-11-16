@@ -106,7 +106,7 @@ export function SocietiesClient({ societies, provinces }: SocietiesClientProps) 
           </div>
         ) : null}
 
-        <div className="ml-auto flex min-h-11 min-w-[260px] items-center gap-2 rounded-sm border border-rule bg-parchment px-3 text-muted focus-within:outline-2 focus-within:outline-solid focus-within:outline-primary focus-within:outline-offset-[3px]">
+        <div className={`${chipsVisible ? 'sm:ml-auto' : ''} flex min-h-11 w-full min-w-[260px] items-center gap-2 rounded-sm border border-rule bg-parchment px-3 text-muted sm:max-w-md focus-within:outline-2 focus-within:outline-solid focus-within:outline-primary focus-within:outline-offset-[3px]`}>
           <Search size={16} aria-hidden />
           <input
             id="societies-search"

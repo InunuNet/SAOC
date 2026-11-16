@@ -84,8 +84,8 @@
   /* Not sticky here, so nothing covers a focused element; the global 5rem scroll-padding-top would
      only make a click on Menu (near the top) scroll the page before the panel's saved position. */
   html:has(#nh) { --scroll-padding-top: 0px; scroll-padding-top: 0; }
-  .nh-bar { display: grid; grid-template-columns: auto 1fr auto; padding-block: 16px 12px; }
-  .nh-brand { grid-column: 1 / -1; margin-right: 0; }
+  .nh-bar { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; padding-block: 8px; }
+  .nh-brand { grid-column: 1 / -1; width: min(100%, 288px); margin-right: 0; }
   .nh-cta { grid-column: 1; margin-left: 0; }
   .nh-burger { grid-column: 3; justify-self: end; }
 }

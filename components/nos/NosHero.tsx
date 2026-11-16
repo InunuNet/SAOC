@@ -285,7 +285,7 @@ export async function NosHero({
           )}
         </div>
       </section>
-      {group ? (
+      {group && group.items.length > 1 ? (
         <NosSubNav
           label={`${group.heading} pages`}
           items={group.items}

@@ -45,7 +45,7 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
             Brad's instruction (the earlier raster export baked a navy box
             behind it, which was wrong). See SaocLockup.tsx's own header
             comment for the full metrics() derivation. */}
-        <div className={FOOTER_LAYOUT.brandColumn}>
+        <div className={`${FOOTER_LAYOUT.brandColumn} self-stretch text-center max-md:justify-self-center`}>
           {/* The lockup is sized by its container, so the auto track needs a definite width to hug.
               -mt-[30px] cancels the emblem PNG's transparent top (116px of 618 at the 160px box), so the
               artwork's top sits on the column headings' top line (NOS Design). */}
@@ -120,7 +120,7 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
             fieldsClassName="flex flex-wrap items-end gap-0"
             labelClassName="sr-only"
             inputClassName="min-h-11 min-w-0 flex-1 bg-ivory/10 border border-accent-soft aria-invalid:border-[var(--status-error-on-dark)] text-ivory placeholder:text-ivory/75 font-sans text-[16px] px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-ivory"
-            buttonClassName="min-h-11 min-w-11 bg-accent text-primary-800 font-sans text-[13px] font-medium px-4 py-2 hover:bg-accent-soft transition-colors duration-150 shrink-0 disabled:opacity-60 outline-ivory focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px] forced-colors:border forced-colors:border-[color:ButtonText]"
+            buttonClassName="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-[2px] border border-transparent bg-accent px-[22px] py-[14px] text-[14px] font-medium tracking-[0.01em] text-primary-800 transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) hover:bg-accent-soft hover:-translate-y-px focus-visible:-translate-y-px active:translate-y-0 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 disabled:opacity-60 forced-colors:border forced-colors:border-[color:ButtonText]"
             statusClassName="mt-2 font-sans text-[13px] text-ivory/80 empty:hidden"
             errorClassName="mt-2 flex items-start gap-2 border border-[var(--status-error-on-dark)] px-3 py-2 font-sans text-[13px] text-ivory"
             errorIcon={<CircleAlert aria-hidden="true" className="mt-px size-4 shrink-0 text-[var(--status-error-on-dark)]" />}
