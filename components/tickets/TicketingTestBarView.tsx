@@ -15,7 +15,7 @@ export function TicketingTestBarView() {
     <aside
       aria-label="Testing only, not live"
       data-ticketing-test-bar="true"
-      className="sticky top-0 z-[70] flex min-h-[44px] w-full items-stretch bg-[#F2C230] text-[#14110A] md:min-h-[48px]"
+      className="print:hidden sticky top-0 z-[70] flex min-h-[44px] w-full items-stretch bg-[#F2C230] text-[#14110A] md:min-h-[48px]"
     >
       <span aria-hidden="true" className="w-[16px] shrink-0 md:w-[24px]" style={STRIPE_CAP_STYLE} />
       <div className="flex min-w-0 flex-1 flex-col items-center justify-center px-2 py-1 text-center font-sans">
