@@ -145,6 +145,29 @@ _Last compacted: 2026-11-02 by backlog_trim.py. Full history: git log on this fi
 - [ ] P2 (2026-11-08) Local branch design/lt3-doc-h2-weight (3 commits on 52b63e6d: 619baf6d LT-3 + admin h1 normal, 4369e07e FOC-1 nav focus ring, 8d9ae963 FC-1 forced colours). Measured on one build: SAOC .doc-h2 400 at 390/768, 300 at 1440; NOS /faq 300; focus diff 504px, ring 9.53:1 on #F4F3EC; forced-colours brand ground rgb(244,243,236) 6/10 padding, Subscribe 1px border; normal rendering unchanged. Awaiting Codex + Brad push.
 - [ ] P2 (2026-11-08) chore/gate-standard-gt1 @ d29d6057 follow-ups from Codex r3 (stopped at the retry ceiling): (a) gate-standard.mjs:815-817 public archive check uses the internal app path via settledStatus; also request public /archive and assert 404. (b) council-copy-fixes gate-standard-known-defect.mjs:14-19 infers route coverage from stdout, but a clean gate prints only "standard pass", so the wrapper fails on a clean gate; make the gate print a per-route coverage line or drop the stdout floor.
 
+## Lee-Ann catch-up 2026-11-16 (Brad + Lee-Ann call; Gemini notes doc 1DFr2zfVglEDlt_DLykSfF0RrFzpp9Wvpm56sMY5nOZA, Transcript tab)
+Process (Brad 16 Nov): nothing merges to main/beta until Brad approves it on http://dev.saoc.co.za.
+
+Build (Brad approved, dev first):
+- [ ] P0 Symposium AND cocktail evening tickets: a registration form, filled in before the Ozow payment step. Today checkout goes straight to Ozow with only attendee name and email. Fields come from Lee-Ann's "Symposium" Google Sheet in Docs for Brad: a registration tab plus a dropdown tab. It covers the primary ticket buyer, plus an optional spouse or partner. Dietary options are vegetarian and halal (kosher is folded into vegetarian). The sheet holds Carol-Ann's real contact details as sample data; ignore them and never copy them. Needs /spec first, because it sits in the checkout flow next to payment. Do not change Ozow, payment or webhook code.
+- [ ] P0 Early bird tickets: change from a ticket-count limit ("tickets left") to a cut-off date, and reset the early bird stock. Lee-Ann sets the date (reminder added to her questions doc on 2026-11-16).
+- [ ] P0 Per-ticket-type confirmation emails (PR #183, switch TICKET_TYPE_EMAILS_LIVE is off): turn it on in dev, Brad checks a sandbox test-purchase email, then beta. Lee-Ann will then check every ticket's email.
+- [ ] P1 Vendor listing before 1 Dec: each paid vendor's high-res logo plus a blurb of about 200 words, shown only after the vendor has paid. Lee-Ann collects the material from vendors as they pay. Needs /spec; no layout is invented, the layout comes from the design handoff.
+- [ ] P1 Hero banners: Lee-Ann allows any photo from her free stock folder (it need not be a South African orchid; no AI photos). Brad will name his favourites per page. Swap only the ones he names.
+- [ ] P2 Wheelchair access (item 5 in her questions doc): she was not sure it shows anywhere on the site. Backlogged only (Brad 16 Nov).
+- [ ] Foreword spelling: PR #194 is on dev and awaits Brad's approval. Lee-Ann has already fixed her own copy.
+
+Waiting on Lee-Ann:
+- [ ] Final ticket prices (she said 16 Nov).
+- [ ] Legal copy updated with the lawyer's suggestions, then the T&Cs and refund policy updated after she has checked every ticket email.
+- [ ] New photo of Mike Tibs (via Bernardet).
+- [ ] Copy for the "Start planning your entry" links section, and the plant entry forms (Fiona, after the judgecom meeting).
+- [ ] Copy for the last three of the 13 judging groups.
+- [ ] Past shows: copy, plus photos renamed sequentially ("2024 show photo 1"). Hold the page until the copy arrives. A professional photographer is appointed for the 2027 show.
+
+Confirmed on the call, no action: 21 societies; 13 judging groups heading; "3 years / 13 judging groups" line removed; Exhibit & trade renamed Vendors; plant entries under Program and "Start planning your entry"; footer photos stay in colour (Scott, Barry and Bernardet; Gemini's notes wrongly say grayscale); three fonts (answer for Scott); XIX changed to 19th; Funen contact spelling fixed.
+Brad-only: review and send Lee-Ann's invoice before year end; review hours Thu-Sat; next call Thu 20 Nov; go-live 1 Dec.
+
 ## Lee-Ann open items (review 2026-11-10)
 
 - [ ] (asked by 24 Oct, pending 17 days) Q5 accessible toilets: are they wheelchair-accessible? Her reply: "I will check this." Chase; no site change until she answers. Source: .tmp/sandbox/leeann-review/review.md A5.
