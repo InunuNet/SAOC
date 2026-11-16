@@ -52,15 +52,18 @@ export function CartAttendeeFields({
               const key = attendeeRowKey(type.slug, index);
               const rowErrors = errors[key] ?? {};
               return (
-                <div key={key} className="space-y-3 rounded-[12px] border border-rule/60 p-4">
-                  <p className="font-sans text-[14px] font-medium text-[var(--ink-700)]">
+                <fieldset
+                  key={key}
+                  className="m-0 min-w-0 space-y-3 rounded-[12px] border border-rule/60 p-4"
+                >
+                  <legend className="float-left w-full p-0 font-sans text-[14px] font-medium text-[var(--ink-700)]">
                     Attendee {index + 1} — {type.name}
-                  </p>
+                  </legend>
                   <TicketFormField
                     id={`attendee-${key}-name`}
                     label="Attendee name"
                     type="text"
-                    autoComplete="name"
+                    autoComplete={index === 0 ? 'name' : 'off'}
                     maxLength={CONTACT_FIELD_MAX_LENGTHS.name}
                     value={row.attendeeName}
                     onChange={(value) => onAttendeeChange(type.slug, index, 'attendeeName', value)}
@@ -71,14 +74,14 @@ export function CartAttendeeFields({
                     id={`attendee-${key}-email`}
                     label="Email address"
                     type="email"
-                    autoComplete="email"
+                    autoComplete={index === 0 ? 'email' : 'off'}
                     maxLength={CONTACT_FIELD_MAX_LENGTHS.email}
                     value={row.attendeeEmail}
                     onChange={(value) => onAttendeeChange(type.slug, index, 'attendeeEmail', value)}
                     disabled={disabled}
                     error={rowErrors.email}
                   />
-                </div>
+                </fieldset>
               );
             })}
           </div>
