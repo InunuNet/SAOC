@@ -62,7 +62,7 @@ export function EventsList({ events }: EventsListProps) {
             <label htmlFor={monthId} className={LABEL_CLASSES}>
               Month
             </label>
-            <div className="relative">
+            <div className="relative self-start md:self-auto">
               <select
                 id={monthId}
                 value={activeMonth}

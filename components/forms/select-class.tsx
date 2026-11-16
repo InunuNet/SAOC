@@ -1,5 +1,5 @@
 export const SELECT_CLASS =
-  'appearance-none pr-10 [appearance:base-select] [&::picker(select)]:[appearance:base-select] [&::picker(select)]:rounded-sm [&::picker(select)]:border [&::picker(select)]:border-rule [&::picker(select)]:bg-ivory [&::picker(select)]:font-sans [&::picker(select)]:text-[15px] [&::picker(select)]:text-ink [&::picker-icon]:hidden [&_option]:px-3.5 [&_option]:py-2.5 [&_option]:leading-5 [&_option:hover]:bg-bone [&_option:checked]:bg-bone';
+  'appearance-none pr-10 supports-[appearance:base-select]:[appearance:base-select] supports-[appearance:base-select]:[&::picker(select)]:[appearance:base-select] [&::picker(select)]:rounded-sm [&::picker(select)]:border [&::picker(select)]:border-rule [&::picker(select)]:bg-ivory [&::picker(select)]:font-sans [&::picker(select)]:text-[15px] [&::picker(select)]:text-ink [&::picker-icon]:hidden [&_option]:px-3.5 [&_option]:py-2.5 [&_option]:leading-5 [&_option:hover]:bg-bone [&_option:checked]:bg-bone';
 
 export function SelectChevron() {
   return (
