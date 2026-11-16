@@ -1,16 +1,18 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { getAuth, signOut } from 'firebase/auth';
-
-import { getFirebaseApp } from '@/lib/firebase';
 
 /**
  * Sign-out flow lifted unchanged from the old AdminNav, now used by AdminPill: the server-side cookie clear must run
  * even if the Firebase client call throws, so it is try/finally, not a bare sequential await.
+ * Firebase is imported lazily because AdminPill mounts on every public page and the SDK is only needed on sign-out.
  */
 export async function signOutAdmin(): Promise<void> {
   try {
+    const [{ getAuth, signOut }, { getFirebaseApp }] = await Promise.all([
+      import('firebase/auth'),
+      import('@/lib/firebase'),
+    ]);
     await signOut(getAuth(getFirebaseApp()));
   } catch (error) {
     console.error('Admin sign-out: Firebase signOut() failed', {
