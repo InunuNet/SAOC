@@ -312,7 +312,7 @@ export function TicketPurchaseForm({
           {TICKET_COPY.numberOfTickets}
         </label>
         <div
-          className="nk-qty"
+          className="nk-qty gap-2 p-1.5"
           role="group"
           aria-label={`${ticketType.name} ${TICKET_COPY.stepperLabelSuffix}`}
         >
@@ -321,6 +321,7 @@ export function TicketPurchaseForm({
             aria-label={TICKET_COPY.fewer}
             disabled={submitting || cart.quantity <= MIN_QUANTITY}
             onClick={() => cart.setQuantity(cart.quantity - 1)}
+            className="flex items-center justify-center"
           >
             <MinusIcon />
           </button>
@@ -332,6 +333,7 @@ export function TicketPurchaseForm({
             max={CART_MAX_LINE_ITEMS}
             step={1}
             value={cart.quantity}
+            style={{ fontSize: 20 }}
             disabled={submitting}
             onChange={(e) => {
               const parsed = Number.parseInt(e.target.value, 10);
@@ -343,6 +345,7 @@ export function TicketPurchaseForm({
             aria-label={TICKET_COPY.more}
             disabled={submitting || cart.quantity >= CART_MAX_LINE_ITEMS}
             onClick={() => cart.setQuantity(cart.quantity + 1)}
+            className="flex items-center justify-center"
           >
             <PlusIcon />
           </button>

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { getAuth } from 'firebase/auth';
 
 import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
+import { SELECT_CLASS, SelectChevron } from '@/components/forms/select-class';
 import { getFirebaseApp } from '@/lib/firebase';
 import { useHydrated } from '@/lib/hooks/useHydrated';
 
@@ -228,23 +229,26 @@ export function SubmitEventForm({ societies }: SubmitEventFormProps) {
         <label htmlFor="kind" className={LABEL_CLASS}>
           Event type <span aria-hidden>*</span>
         </label>
-        <select
-          id="kind"
-          name="kind"
-          required
-          value={values.kind}
-          onChange={set('kind')}
-          aria-invalid={errors.kind ? 'true' : undefined}
-          aria-describedby={errors.kind ? 'kind-error' : undefined}
-          className={INPUT_CLASS}
-        >
-          <option value="">Select type…</option>
-          {ALLOWED_KINDS.map((k) => (
-            <option key={k} value={k}>
-              {k.charAt(0).toUpperCase() + k.slice(1)}
-            </option>
-          ))}
-        </select>
+        <div className="relative">
+          <select
+            id="kind"
+            name="kind"
+            required
+            value={values.kind}
+            onChange={set('kind')}
+            aria-invalid={errors.kind ? 'true' : undefined}
+            aria-describedby={errors.kind ? 'kind-error' : undefined}
+            className={`${INPUT_CLASS} ${SELECT_CLASS}`}
+          >
+            <option value="">Select type…</option>
+            {ALLOWED_KINDS.map((k) => (
+              <option key={k} value={k}>
+                {k.charAt(0).toUpperCase() + k.slice(1)}
+              </option>
+            ))}
+          </select>
+          <SelectChevron />
+        </div>
         {errors.kind && <TicketFieldAlert id="kind-error">{errors.kind}</TicketFieldAlert>}
       </div>
 
@@ -347,20 +351,23 @@ export function SubmitEventForm({ societies }: SubmitEventFormProps) {
         <label htmlFor="hostSocietyId" className={LABEL_CLASS}>
           Host society <span className="text-muted">(optional)</span>
         </label>
-        <select
-          id="hostSocietyId"
-          name="hostSocietyId"
-          value={values.hostSocietyId}
-          onChange={set('hostSocietyId')}
-          className={INPUT_CLASS}
-          aria-invalid={errors.hostSocietyId ? 'true' : undefined}
-          aria-describedby={errors.hostSocietyId ? 'hostSocietyId-error' : undefined}
-        >
-          <option value="">Select society…</option>
-          {societies.map((s) => (
-            <option key={s.id} value={s.id}>{s.name}</option>
-          ))}
-        </select>
+        <div className="relative">
+          <select
+            id="hostSocietyId"
+            name="hostSocietyId"
+            value={values.hostSocietyId}
+            onChange={set('hostSocietyId')}
+            className={`${INPUT_CLASS} ${SELECT_CLASS}`}
+            aria-invalid={errors.hostSocietyId ? 'true' : undefined}
+            aria-describedby={errors.hostSocietyId ? 'hostSocietyId-error' : undefined}
+          >
+            <option value="">Select society…</option>
+            {societies.map((s) => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+          <SelectChevron />
+        </div>
         {errors.hostSocietyId && (
           <TicketFieldAlert id="hostSocietyId-error">{errors.hostSocietyId}</TicketFieldAlert>
         )}
