@@ -233,10 +233,7 @@
           "label": "Available as a show judge",
           "type": "checkbox",
           "default": false,
-          "shownOnlyWhen": {
-            "judgeAccreditation": "Yes, with <any>"
-          },
-          "note": "label is Brad's wording"
+          "note": "label is Brad's wording; shown to everyone"
         },
         {
           "key": "judgeDate-22-sep / judgeDate-23-sep",
@@ -255,23 +252,17 @@
           "label": "Will you be attending the Judges Communication?",
           "type": "select",
           "options": "judgeYesNo",
-          "default": "No",
-          "shownOnlyWhen": {
-            "judgeAccreditation": "Yes, with <any>"
-          }
+          "default": "No"
         },
         {
           "key": "judgeForum",
           "label": "Will you be attending the Judges Forum?",
           "type": "select",
           "options": "judgeYesNo",
-          "default": "No",
-          "shownOnlyWhen": {
-            "judgeAccreditation": "Yes, with <any>"
-          }
+          "default": "No"
         }
       ],
-      "note": "Merged per Brad 16 Nov. 'Not applicable' is no longer offered; a person who is not an accredited judge is stored with the canonical not-accredited combination (see rework.storedJudgeCombinations). Gating availability, communication and forum on accreditation is the architect's reading of Brad's 'hide what does not apply'; see spec.md section 9."
+      "note": "Merged per Brad 16 Nov. 'Not applicable' is no longer offered. Availability, Communication and Forum are asked of everyone, accredited or not (lead ruling 16 Nov: gating would be invention). See rework.storedJudgeCombinations."
     },
     {
       "id": "dietary",
@@ -605,40 +596,20 @@
   "rework": {
     "date": "2026-11-16",
     "authority": "feedback-2026-11-16/corrections.md (Brad's decisions, second pass)",
-    "summary": "Stored fields are unchanged in meaning (judgeAccredited, judgeOrganisation, judgeAvailable, judgeDate, judgeCommunication, judgeForum, dietary) plus one new stored key dietaryOther. The form asks fewer, merged questions and the client maps controls to those stored fields; the server enforces the same canonical combinations.",
+    "summary": "Stored fields are unchanged in meaning (judgeAccredited, judgeOrganisation, judgeAvailable, judgeDate, judgeCommunication, judgeForum, dietary) plus one new stored key dietaryOther. The form asks fewer, merged questions and the client maps controls to those stored fields; the server enforces the same canonical combinations. No gating on accreditation (lead ruling 16 Nov): availability, Communication and Forum are asked of everyone.",
     "storedJudgeCombinations": {
-      "notAccredited": {
-        "judgeAccredited": "No",
-        "judgeOrganisation": "Not applicable",
-        "judgeAvailable": "Not applicable",
-        "judgeDate": "Not applicable",
-        "judgeCommunication": "No",
-        "judgeForum": "No",
-        "note": "the availability, date, communication and forum controls are hidden and cleared"
-      },
-      "accreditedNotAvailable": {
-        "judgeAccredited": "Yes",
-        "judgeOrganisation": "SAOC | AOS",
-        "judgeAvailable": "No",
-        "judgeDate": "None",
-        "judgeCommunication": "Yes | No",
-        "judgeForum": "Yes | No"
-      },
-      "accreditedAvailable": {
-        "judgeAccredited": "Yes",
-        "judgeOrganisation": "SAOC | AOS",
-        "judgeAvailable": "Yes",
-        "judgeDate": "22-Sep | 23-Sep | 22 & 23 Sept",
-        "judgeCommunication": "Yes | No",
-        "judgeForum": "Yes | No"
-      }
+      "judgeAccredited": "No -> judgeOrganisation Not applicable; Yes -> judgeOrganisation SAOC | AOS",
+      "judgeAvailable": "No -> judgeDate None; Yes -> judgeDate 22-Sep | 23-Sep | 22 & 23 Sept",
+      "judgeCommunication": "Yes | No (Not applicable is not offered)",
+      "judgeForum": "Yes | No (Not applicable is not offered)",
+      "note": "the three groups are independent: availability and attendance do not depend on accreditation"
     },
     "uiToStored": {
       "judgeAccreditation 'No'": "judgeAccredited No, judgeOrganisation Not applicable",
       "judgeAccreditation 'Yes, with <org>'": "judgeAccredited Yes, judgeOrganisation <org>",
       "availability checkbox ticked, date boxes 22-Sep only / 23-Sep only / both": "judgeAvailable Yes, judgeDate 22-Sep / 23-Sep / 22 & 23 Sept",
-      "availability checkbox unticked (accredited)": "judgeAvailable No, judgeDate None",
-      "dietary Other + text": "dietary Other, dietaryOther <trimmed text>; any other dietary value: dietaryOther null"
+      "dietary Other + text": "dietary Other, dietaryOther <trimmed text>; any other dietary value: dietaryOther null",
+      "availability checkbox unticked": "judgeAvailable No, judgeDate None"
     },
     "defaults": {
       "country": "South Africa",
@@ -651,7 +622,7 @@
     "hiddenWhenNotApplicable": [
       "attending (always hidden, value derived from the ticket)",
       "province unless country is South Africa",
-      "judgeAvailable, judge date boxes, judgeCommunication, judgeForum unless accredited",
+      "nothing in the judge block hides on accreditation; only the date boxes hide, until availability is ticked",
       "judge date boxes unless judgeAvailable ticked",
       "dietaryOther unless dietary is Other",
       "contact and membership controls when Same as above is ticked"

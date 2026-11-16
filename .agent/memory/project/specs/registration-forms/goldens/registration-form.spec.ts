@@ -19,8 +19,9 @@
 //   returns focus to the button; None excludes every other choice;
 // - judge accreditation is ONE select #registration-{n}-judgeAccreditation (No preselected, then one "Yes, with <org>");
 //   there is NO judgeOrganisation select and NO judgeDate select any more;
-// - only when accreditation is a "Yes, with ..." option: checkbox #registration-{n}-judgeAvailable "Available as a show judge",
-//   selects #registration-{n}-judgeCommunication and #registration-{n}-judgeForum (Yes/No, No preselected);
+// - for EVERYONE, whatever the accreditation answer (no gating, lead ruling 16 Nov): checkbox
+//   #registration-{n}-judgeAvailable "Available as a show judge" (unticked), selects #registration-{n}-judgeCommunication
+//   and #registration-{n}-judgeForum (Yes/No, No preselected);
 // - only when availability is ticked: role=group "Which date would you be available?" with checkboxes
 //   #registration-{n}-judgeDate-22-sep ("22-Sep") and #registration-{n}-judgeDate-23-sep ("23-Sep"); at least one required;
 // - dietary select defaults to "None" and has "Other"; the text input #registration-{n}-dietaryOther (label "Other") exists
@@ -197,18 +198,14 @@ test.describe('registration form, flagged ticket', () => {
     expect(near(await y(field(page, 1, 'firstName')), await y(field(page, 1, 'surname')))).toBe(true);
     expect(near(await y(field(page, 1, 'preferredName')), await y(field(page, 1, 'email')))).toBe(true);
     expect(near(await y(field(page, 1, 'country')), await y(field(page, 1, 'province')))).toBe(true);
-    await field(page, 1, 'judgeAccreditation').selectOption('Yes, with SAOC');
     expect(near(await y(field(page, 1, 'judgeCommunication')), await y(field(page, 1, 'judgeForum')))).toBe(true);
   });
 
-  test('judges: one accreditation dropdown, extra questions only for accredited judges, dates only when available', async ({ page }) => {
+  test('judges: one accreditation dropdown; availability and attendance asked of everyone; dates only when available', async ({ page }) => {
     const accreditation = field(page, 1, 'judgeAccreditation');
     expect(await optionsOf(page, 1, 'judgeAccreditation')).toEqual(['No', 'Yes, with SAOC', 'Yes, with AOS']);
     await expect(accreditation).toHaveValue('No'); // None/No preselected
-    for (const key of ['judgeAvailable', 'judgeCommunication', 'judgeForum']) await expect(field(page, 1, key)).toHaveCount(0);
-    await expect(form(page, 1).getByRole('group', { name: DATE_LABEL })).toHaveCount(0);
-
-    await accreditation.selectOption('Yes, with AOS');
+    // not gated on accreditation: shown while the answer is No
     await expect(field(page, 1, 'judgeAvailable')).toBeVisible();
     await expect(form(page, 1).getByLabel('Available as a show judge')).not.toBeChecked();
     expect(await optionsOf(page, 1, 'judgeCommunication')).toEqual(['Yes', 'No']);
@@ -216,6 +213,9 @@ test.describe('registration form, flagged ticket', () => {
     await expect(field(page, 1, 'judgeCommunication')).toHaveValue('No');
     await expect(field(page, 1, 'judgeForum')).toHaveValue('No');
     await expect(form(page, 1).getByRole('group', { name: DATE_LABEL })).toHaveCount(0);
+
+    await accreditation.selectOption('Yes, with AOS');
+    for (const key of ['judgeAvailable', 'judgeCommunication', 'judgeForum']) await expect(field(page, 1, key)).toBeVisible();
 
     await field(page, 1, 'judgeAvailable').check();
     const dates = form(page, 1).getByRole('group', { name: DATE_LABEL });
@@ -227,11 +227,11 @@ test.describe('registration form, flagged ticket', () => {
     await field(page, 1, 'judgeAvailable').check();
     await expect(dates.getByLabel('22-Sep', { exact: true })).not.toBeChecked(); // and cleared
 
-    await accreditation.selectOption('No');
-    await expect(field(page, 1, 'judgeAvailable')).toHaveCount(0);
+    await accreditation.selectOption('No'); // changing accreditation never touches availability or attendance
+    await expect(field(page, 1, 'judgeAvailable')).toBeChecked();
+    await field(page, 1, 'judgeForum').selectOption('Yes');
     await accreditation.selectOption('Yes, with SAOC');
-    await expect(field(page, 1, 'judgeAvailable')).not.toBeChecked(); // cleared when hidden
-    await expect(field(page, 1, 'judgeCommunication')).toHaveValue('No');
+    await expect(field(page, 1, 'judgeForum')).toHaveValue('Yes');
   });
 
   test('dietary: None preselected, free text only when Other is chosen and then required', async ({ page }) => {
@@ -316,7 +316,7 @@ test.describe('registration form, flagged ticket', () => {
     expect(bodies).toHaveLength(0);
   });
 
-  test('quantity 1 valid with every default kept: canonical not-accredited answers, Attending derived and posted', async ({ page }) => {
+  test('quantity 1 valid with every default kept: judge answers No, Not applicable, No, None, No, No, Attending derived and posted', async ({ page }) => {
     const bodies = await captureCheckout(page);
     await fillAttendee(page, 1);
     await page.getByRole('button', { name: SUBMIT }).click();
@@ -333,8 +333,8 @@ test.describe('registration form, flagged ticket', () => {
     expect(reg).toMatchObject({
       judgeAccredited: 'No',
       judgeOrganisation: 'Not applicable',
-      judgeAvailable: 'Not applicable',
-      judgeDate: 'Not applicable',
+      judgeAvailable: 'No',
+      judgeDate: 'None',
       judgeCommunication: 'No',
       judgeForum: 'No',
       dietary: 'None',
@@ -367,6 +367,18 @@ test.describe('registration form, flagged ticket', () => {
       mobile: '082 000 0000',
     });
     expect((reg.dietaryOther as string).trim()).toBe('No shellfish');
+  });
+
+  test('a person who is not an accredited judge can still be available and attend the Forum', async ({ page }) => {
+    const bodies = await captureCheckout(page);
+    await fillAttendee(page, 1);
+    await field(page, 1, 'judgeAvailable').check();
+    await form(page, 1).getByRole('group', { name: DATE_LABEL }).getByLabel('23-Sep', { exact: true }).check();
+    await field(page, 1, 'judgeForum').selectOption('Yes');
+    await page.getByRole('button', { name: SUBMIT }).click();
+    await expect.poll(() => bodies.length).toBe(1);
+    const reg = bodies[0].lineItems[0].registration as Record<string, unknown>;
+    expect(reg).toMatchObject({ judgeAccredited: 'No', judgeOrganisation: 'Not applicable', judgeAvailable: 'Yes', judgeDate: '23-Sep', judgeCommunication: 'No', judgeForum: 'Yes' });
   });
 
   test('an accredited judge not available is posted with availability No and date None; a single date is posted as is', async ({ page }) => {
