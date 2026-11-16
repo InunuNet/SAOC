@@ -30,7 +30,7 @@ export function EventsAbout({ intro, placeholderNote = null }: EventsAboutProps)
         </div>
       ) : null}
       <div className="flex flex-wrap items-center justify-start gap-x-8 gap-y-4">
-        {placeholderNote ? <PlaceholderMarker label={placeholderNote} /> : <span />}
+        {placeholderNote ? <PlaceholderMarker label={placeholderNote} /> : null}
         <div className="flex flex-wrap items-center gap-3">
           <Link href="/societies" className={OUTLINE_BUTTON}>
             Find your society
