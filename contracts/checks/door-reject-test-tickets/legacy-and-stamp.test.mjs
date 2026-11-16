@@ -13,6 +13,9 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const root = process.env.DOOR_TEST_ROOT ? path.resolve(process.env.DOOR_TEST_ROOT) : path.resolve(here, '../../..');
 const golden = JSON.parse(readFileSync(path.resolve(here, '../../golden/door-reject-test-tickets/legacy-untagged.json'), 'utf8'));
 const stamp = { seconds: 1, nanoseconds: 0 };
+const today = '2027-09-24';
+const now = new Date(`${today}T10:00:00.000Z`);
+const showWindow = { startDate: new Date(`${today}T07:00:00.000Z`), endDate: new Date(`${today}T15:00:00.000Z`) };
 
 // Loads real source through an explicit allowlist. `gatewaySandboxOnly` is served to
 // lib/ticket-issuance-mode.ts as both adapters' sandbox flags (lib/payments/sandbox-mode.ts), so a go-live commit can be simulated
@@ -20,13 +23,15 @@ const stamp = { seconds: 1, nanoseconds: 0 };
 function loader({ testMode, gatewaySandboxOnly = true, ozowSandbox = gatewaySandboxOnly, payfastSandbox = gatewaySandboxOnly, db } = {}) {
   const cache = new Map();
   const stubs = {
-    'firebase-admin/firestore': { getFirestore: () => db, Timestamp: { now: () => stamp } },
+    'firebase-admin/firestore': { getFirestore: () => db, Timestamp: { now: () => stamp, fromDate: (date) => ({ seconds: Math.floor(date.getTime() / 1000), nanoseconds: 0 }) } },
     '@/lib/firebase-admin': { initAdmin: () => ({}) },
     '@/lib/ticketing-test-mode': { isTicketingTestMode: () => testMode },
     '@/lib/payments/sandbox-mode': { OZOW_SANDBOX_MODE: ozowSandbox, PAYFAST_SANDBOX_MODE: payfastSandbox },
+    '@/lib/checkin-context': { getCheckinContext: async () => ({ window: showWindow, daySelectionTypes: ['day-visitor', 'early-bird'] }) },
+    '@/lib/show-window-lookup': { computeShowDays: () => [today] },
     '@/lib/qr': { generateBookingRefQrDataUri: () => { throw Error('QR outside test scope'); } },
   };
-  const allowed = new Set(['lib/checkin.ts', 'lib/checkin-test-ticket-guard.ts', 'lib/tickets-constants.ts', 'lib/ticket-issuance-mode.ts', 'lib/checkout-reservation.ts', 'lib/orders.ts', 'lib/payments/pending-hold.ts']);
+  const allowed = new Set(['lib/checkin.ts', 'lib/checkin-day-policy.ts', 'lib/checkin-test-ticket-guard.ts', 'lib/tickets-constants.ts', 'lib/ticket-issuance-mode.ts', 'lib/registration.ts', 'lib/checkout-reservation.ts', 'lib/orders.ts', 'lib/payments/pending-hold.ts']);
   function load(relative) {
     assert.ok(allowed.has(relative), `Unapproved module: ${relative}`);
     if (cache.has(relative)) return cache.get(relative).exports;
@@ -85,9 +90,9 @@ async function scan(ticket, { testMode, gatewaySandboxOnly = true }) {
     }),
   };
   const load = loader({ testMode, gatewaySandboxOnly, db });
-  data = { bookingRef: 'ref', showId: load('lib/tickets-constants.ts').NATIONAL_SHOW_ID, attendeeName: 'Guest', attendeeEmail: 'guest@example.invalid', ticketType: 'day-visitor', amount: 100, purchasedAt: stamp, checkedInAt: null, orderId: 'order', m_payment_id: 'ref', pf_payment_id: null, ...ticket };
+  data = { bookingRef: 'ref', showId: load('lib/tickets-constants.ts').NATIONAL_SHOW_ID, attendeeName: 'Guest', attendeeEmail: 'guest@example.invalid', ticketType: 'day-visitor', chosenDay: today, amount: 100, purchasedAt: stamp, checkedInAt: null, orderId: 'order', m_payment_id: 'ref', pf_payment_id: null, ...ticket };
   const before = JSON.stringify(data);
-  const result = await load('lib/checkin.ts').checkInByBookingRef('ref');
+  const result = await load('lib/checkin.ts').checkInByBookingRef('ref', { now: () => now });
   assert.equal(JSON.stringify(data), before, 'source document must not be mutated');
   return { result, writes };
 }
