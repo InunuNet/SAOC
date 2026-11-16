@@ -120,7 +120,9 @@ export function SubmitEventForm({ societies }: SubmitEventFormProps) {
         import('firebase/auth'),
         import('@/lib/firebase'),
       ]);
-      user = getAuth(getFirebaseApp()).currentUser;
+      const auth = getAuth(getFirebaseApp());
+      await auth.authStateReady();
+      user = auth.currentUser;
     } catch {
       setServerError({
         text: 'Failed to get auth token. Please sign in again.',
