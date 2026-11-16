@@ -149,6 +149,36 @@
       "harness_version": "3.8.87",
       "note": "Now 3.8.87; voice stays off by default, not enabled here",
       "result": "applied"
+    },
+    "ATH-20261111-harness-updates-mandatory": {
+      "at": "2026-11-16T14:46:44Z",
+      "harness_version": "3.8.153",
+      "note": "3.8.153 applied 2026-11-16; in use",
+      "result": "applied"
+    },
+    "ATH-20261115-dispatch-names-visible": {
+      "at": "2026-11-16T14:46:44Z",
+      "harness_version": "3.8.153",
+      "note": "3.8.153 applied 2026-11-16; in use",
+      "result": "applied"
+    },
+    "ATH-20261115-msg-bus-project-at-host": {
+      "at": "2026-11-16T14:46:44Z",
+      "harness_version": "3.8.153",
+      "note": "3.8.153 applied 2026-11-16; in use",
+      "result": "applied"
+    },
+    "ATH-20261115-qa-balancer-antigravity": {
+      "at": "2026-11-16T14:46:44Z",
+      "harness_version": "3.8.153",
+      "note": "3.8.153 applied 2026-11-16; in use",
+      "result": "applied"
+    },
+    "ATH-20261115-role-skills-codex-dev": {
+      "at": "2026-11-16T14:46:43Z",
+      "harness_version": "3.8.153",
+      "note": "3.8.153 applied 2026-11-16; in use",
+      "result": "applied"
     }
   },
   "schema": "athanor.directives-applied/v1"
