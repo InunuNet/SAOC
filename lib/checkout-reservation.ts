@@ -1,5 +1,6 @@
 import type { Timestamp } from 'firebase-admin/firestore';
 
+import { buildRegistrationDoc, type RegistrationPerson } from '@/lib/registration';
 import { isIssuanceTestMode } from '@/lib/ticket-issuance-mode';
 import type { Order, Ticket, TicketType } from '@/types/index';
 
@@ -138,6 +139,8 @@ export interface CheckoutLineItemInputLike {
   attendeeEmail: string;
   /** F5 (ticketing-f5-day-attendees) — null when the line item carries no chosen day. */
   chosenDay: string | null;
+  /** registration-forms: the validated person, only for a flagged ticket type. */
+  registration?: RegistrationPerson;
 }
 
 export interface LineItemPlan {
@@ -150,6 +153,9 @@ export interface LineItemPlan {
   bookingRef: string;
   /** F5 (ticketing-f5-day-attendees) — null when this line item carries no chosen day. */
   chosenDay: string | null;
+  /** registration-forms: present only for a ticket type flagged requiresRegistration. The
+   *  validated person; buildMultiReservationDocs stores buildRegistrationDoc() of it. */
+  registration?: RegistrationPerson;
 }
 
 /**
@@ -312,6 +318,10 @@ export function buildMultiReservationDocs(
       expiresAt: input.expiresAt,
       idempotencyKey: input.idempotencyKey,
       chosenDay: lineItem.chosenDay,
+      // An unflagged ticket keeps exactly today's keys: no registration key at all.
+      ...(lineItem.registration
+        ? { registration: buildRegistrationDoc(lineItem.registration) }
+        : {}),
     })
   );
 

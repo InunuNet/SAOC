@@ -30,15 +30,19 @@ export function TicketFieldAlert({ children, spaced = false, id }: TicketFieldAl
   );
 }
 
+const INPUT_CLASS =
+  'w-full rounded-sm border border-rule bg-ivory px-3.5 py-2.5 font-sans text-[15px] text-ink placeholder:text-muted transition-colors focus:border-ink/40 disabled:opacity-60';
+const LABEL_CLASS = 'font-sans text-[14px] font-medium text-[var(--ink-700)]';
+
 interface TicketFormFieldProps {
   id: string;
   label: string;
-  type: 'text' | 'email';
+  type: 'text' | 'email' | 'tel';
   value: string;
   onChange: (value: string) => void;
   disabled: boolean;
   error?: string;
-  autoComplete?: 'name' | 'email';
+  autoComplete?: 'name' | 'email' | 'tel';
   maxLength?: number;
 }
 
@@ -55,7 +59,7 @@ export function TicketFormField({
 }: TicketFormFieldProps) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor={id} className="font-sans text-[14px] font-medium text-[var(--ink-700)]">
+      <label htmlFor={id} className={LABEL_CLASS}>
         {label}
       </label>
       <input
@@ -69,8 +73,58 @@ export function TicketFormField({
         disabled={disabled}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}
-        className="w-full rounded-sm border border-rule bg-ivory px-3.5 py-2.5 font-sans text-[15px] text-ink placeholder:text-muted transition-colors focus:border-ink/40 disabled:opacity-60"
+        className={INPUT_CLASS}
       />
+      {error ? <TicketFieldAlert id={`${id}-error`}>{error}</TicketFieldAlert> : null}
+    </div>
+  );
+}
+
+interface TicketSelectFieldProps {
+  id: string;
+  label: string;
+  options: readonly string[];
+  value: string;
+  onChange: (value: string) => void;
+  disabled: boolean;
+  error?: string;
+  autoComplete?: 'country-name';
+}
+
+// The same label, input class and alert as TicketFormField, over a native select.
+export function TicketSelectField({
+  id,
+  label,
+  options,
+  value,
+  onChange,
+  disabled,
+  error,
+  autoComplete,
+}: TicketSelectFieldProps) {
+  return (
+    <div className="space-y-1.5">
+      <label htmlFor={id} className={LABEL_CLASS}>
+        {label}
+      </label>
+      <select
+        id={id}
+        autoComplete={autoComplete}
+        required
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? `${id}-error` : undefined}
+        className={INPUT_CLASS}
+      >
+        <option value="">Select…</option>
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
       {error ? <TicketFieldAlert id={`${id}-error`}>{error}</TicketFieldAlert> : null}
     </div>
   );

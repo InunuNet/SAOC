@@ -2,6 +2,8 @@ import type { Timestamp } from 'firebase-admin/firestore';
 import type { PortableTextBlock } from '@portabletext/react';
 import type { SanityImageSource } from '@sanity/image-url';
 
+import type { RegistrationDoc } from '@/lib/registration';
+
 export type Society = {
   name: string;
   region: string;
@@ -181,6 +183,9 @@ export interface Ticket {
   // requiresDaySelection ticket type, null for every other position. Optional/nullable:
   // every pre-F5 Ticket literal never mentions it and must still compile.
   chosenDay?: string | null;
+  // registration-forms: the buyer's or partner's registration, present only on tickets of a type
+  // flagged requiresRegistration. Absent (no key) on every other ticket.
+  registration?: RegistrationDoc;
 }
 
 // F2 (ticketing-foundation) — an order is never itself "checked-in" (only a position is

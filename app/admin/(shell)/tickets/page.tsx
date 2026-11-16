@@ -2,7 +2,11 @@ import { redirect } from 'next/navigation';
 import { getFirestore, type Timestamp } from 'firebase-admin/firestore';
 
 import { PageHeader, PageShell } from '@/components/admin/PageHeader';
-import { TicketsTable, type TicketRow } from '@/components/admin/TicketsTable';
+import {
+  TicketsTable,
+  type TicketRegistrationView,
+  type TicketRow,
+} from '@/components/admin/TicketsTable';
 import { getAdminSession } from '@/lib/admin-auth';
 import { initAdmin } from '@/lib/firebase-admin';
 
@@ -25,6 +29,19 @@ export default async function AdminTicketsPage() {
   );
 }
 
+// The ticket's `registration` map (lib/registration.ts buildRegistrationDoc), or null when the
+// ticket has none. Only the fields the admin drawer shows leave the server.
+function registrationView(raw: unknown): TicketRegistrationView | null {
+  if (typeof raw !== 'object' || raw === null) return null;
+  const map = raw as Record<string, unknown>; // written by buildRegistrationDoc; narrowed below
+  return {
+    role: typeof map['role'] === 'string' ? map['role'] : '',
+    mobile: typeof map['mobile'] === 'string' ? map['mobile'] : '',
+    societies: Array.isArray(map['societies']) ? map['societies'].map(String) : null,
+    dietary: typeof map['dietary'] === 'string' ? map['dietary'] : '',
+  };
+}
+
 // Newest purchase first, ordered by Firestore: an unordered .get() returns auto-ID order, which
 // is how a fresh record ends up buried. The table never re-sorts.
 async function fetchTickets(): Promise<TicketRow[]> {
@@ -43,6 +60,7 @@ async function fetchTickets(): Promise<TicketRow[]> {
       ticketType: data['ticketType'] as string,
       status: data['status'] as string,
       purchasedAt: purchasedAt ? new Date(purchasedAt.toMillis()).toISOString() : null,
+      registration: registrationView(data['registration']),
     };
   });
 }

@@ -30,6 +30,10 @@ export interface TicketTypeCardData {
    *  Required (not optional), same posture as `provisional`, so the day-picker gate can
    *  never silently degrade to "never render". */
   requiresDaySelection: boolean;
+  /** registration-forms — true for the Symposium, WOSA Conference and Cocktail evening
+   *  tickets: the buy screen shows the registration form instead of the quantity stepper and
+   *  attendee rows. Required (not optional), same posture as the flags above. */
+  requiresRegistration: boolean;
 }
 
 interface TicketTypeCardProps {

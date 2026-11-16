@@ -203,6 +203,7 @@ export const ticketTypeBySlugQuery = defineQuery(`
     earlyBirdCutoff,
     requiresDaySelection,
     requiresAttendeeNames,
+    requiresRegistration,
     provisional,
     category,
     capacityPool,

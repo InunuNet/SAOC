@@ -21,6 +21,12 @@ import {
   type LineItemPlan,
 } from '@/lib/checkout-reservation';
 import { initAdmin } from '@/lib/firebase-admin';
+import {
+  applyRegistrations,
+  registrationGroups,
+  validateRegistrationGroup,
+  type RegistrationPerson,
+} from '@/lib/registration';
 import { ORDERS_COLLECTION } from '@/lib/orders';
 import { resolveProvider } from '@/lib/payments';
 import type { PaymentProvider, ProviderReadiness } from '@/lib/payments';
@@ -112,6 +118,7 @@ interface SanityTicketType {
   earlyBirdCutoff: unknown;
   requiresDaySelection: unknown;
   requiresAttendeeNames: unknown;
+  requiresRegistration: unknown;
   // F5 (ticketing-conferences-and-events, M2): optional pooled-capacity fields — unknown for
   // the same reason as every other field above, Sanity does not enforce types at the API level.
   capacityPool: unknown;
@@ -263,6 +270,9 @@ export interface CheckoutLineItemInput {
   /** F5 (ticketing-f5-day-attendees) — absent is fine for any type; when present, must
    *  match CHOSEN_DAY_PATTERN or the whole cart is rejected. */
   chosenDay?: string;
+  /** registration-forms: the raw, unvalidated person a flagged ticket type needs. Only carried
+   *  when sent; resolveRegistrations() validates it or drops it. */
+  registration?: unknown;
 }
 
 const CHOSEN_DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -283,7 +293,7 @@ export function parseLineItems(raw: unknown): CheckoutLineItemInput[] | null {
   for (const entry of raw) {
     if (typeof entry !== 'object' || entry === null) return null;
     const candidate = entry as Record<string, unknown>;
-    const { ticketType, attendeeName, attendeeEmail, chosenDay } = candidate;
+    const { ticketType, attendeeName, attendeeEmail, chosenDay, registration } = candidate;
     if (
       typeof ticketType !== 'string' ||
       ticketType.trim().length === 0 ||
@@ -304,11 +314,13 @@ export function parseLineItems(raw: unknown): CheckoutLineItemInput[] | null {
     if (chosenDay !== undefined && (typeof chosenDay !== 'string' || !CHOSEN_DAY_PATTERN.test(chosenDay))) {
       return null;
     }
-    lineItems.push(
-      chosenDay === undefined
-        ? { ticketType, attendeeName, attendeeEmail }
-        : { ticketType, attendeeName, attendeeEmail, chosenDay }
-    );
+    lineItems.push({
+      ticketType,
+      attendeeName,
+      attendeeEmail,
+      ...(chosenDay === undefined ? {} : { chosenDay }),
+      ...(registration === undefined ? {} : { registration }),
+    });
   }
   return lineItems;
 }
@@ -471,8 +483,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
   const showId = body.showId;
 
-  const lineItems = parseLineItems(body.lineItems);
-  if (!lineItems) {
+  const parsedLineItems = parseLineItems(body.lineItems);
+  if (!parsedLineItems) {
     return NextResponse.json(
       { error: 'showId, lineItems (1-20 valid line items) are required.' },
       { status: 400 }
@@ -545,13 +557,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // references (dedupe by slug — two line items of the same type fetch its Sanity doc
   // once, not twice), same capacity/price/show validation as before, applied per type. Any
   // one bad type refuses the WHOLE request before any Firestore write.
-  const distinctTicketTypes = [...new Set(lineItems.map((lineItem) => lineItem.ticketType))];
+  const distinctTicketTypes = [...new Set(parsedLineItems.map((lineItem) => lineItem.ticketType))];
   const amountByType: Record<string, number> = {};
   const capacityByType: Record<string, number> = {};
   // F5 (ticketing-f5-day-attendees): captured per distinct type, enforced per LINE item below
   // (a line item's own chosenDay is what's being validated, not the type as a whole).
   const requiresDaySelectionByType: Record<string, boolean> = {};
   const requiresAttendeeNamesByType: Record<string, boolean> = {};
+  const requiresRegistrationByType: Record<string, boolean> = {};
   // F3 (conference-workshop-tickets, M2): per-type exclusion list, same population pattern as
   // requiresDaySelectionByType/requiresAttendeeNamesByType above — enforced per LINE item below.
   const excludedDaysByType: Record<string, string[]> = {};
@@ -660,6 +673,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
     requiresDaySelectionByType[slug] = ticketTypeDoc.requiresDaySelection === true;
     requiresAttendeeNamesByType[slug] = ticketTypeDoc.requiresAttendeeNames === true;
+    requiresRegistrationByType[slug] = ticketTypeDoc.requiresRegistration === true;
     excludedDaysByType[slug] = excludedDays ?? [];
 
     // F1 (ticketing-flow-redesign, M1): a closed early-bird window with no regularPrice
@@ -722,6 +736,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       };
     }
   }
+
+  // registration-forms: every line item of a flagged ticket type must carry a valid registration
+  // (one buyer, or buyer plus partner; 3 or more is refused). Runs before any Firestore write.
+  // The attendee name and email of those items are derived here from the registration and the
+  // client-sent values are discarded; a `registration` on an unflagged item is dropped.
+  const validatedRegistrations = new Map<string, RegistrationPerson[]>();
+  for (const [slug, group] of registrationGroups(parsedLineItems, requiresRegistrationByType)) {
+    const validation = validateRegistrationGroup(group);
+    if (!validation.ok) {
+      return NextResponse.json(
+        { error: 'Please complete the registration form.', fields: validation.errors },
+        { status: 400 }
+      );
+    }
+    validatedRegistrations.set(slug, validation.people);
+  }
+  const lineItems = applyRegistrations(parsedLineItems, validatedRegistrations);
 
   // F5 (ticketing-f5-day-attendees): a NEW per-LINE-ITEM validation pass — every line item,
   // not just distinct types, since each line item may carry its own chosenDay — ahead of the
@@ -915,6 +946,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           lineItem.chosenDay,
           requiresDaySelectionByType[lineItem.ticketType]
         ),
+        ...(lineItem.registration ? { registration: lineItem.registration } : {}),
       })),
       amountByType,
       capacityByType,
@@ -1221,6 +1253,7 @@ async function reserveTicket(input: ReservationInput): Promise<ReservationOutcom
         amount: input.amountByType[lineItem.ticketType],
         bookingRef: generateBookingRef(),
         chosenDay: lineItem.chosenDay,
+        ...(lineItem.registration ? { registration: lineItem.registration } : {}),
       }));
       const reference = lineItemPlans[0].bookingRef;
 

@@ -15,17 +15,22 @@ import {
   type CheckoutErrorEntry,
 } from '@/components/tickets/CheckoutErrorSummary';
 import { CheckoutRedirectNotice } from '@/components/tickets/CheckoutRedirectNotice';
+import { RegistrationSection } from '@/components/tickets/RegistrationSection';
+import { summaryEntriesFor } from '@/components/tickets/registrationDraft';
 import { OzowSandboxTestModeBanner } from '@/components/tickets/OzowSandboxTestModeBanner';
 import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
 import { TicketingTestPayNotice } from '@/components/tickets/TicketingTestPayNotice';
 import type { TicketTypeCardData } from '@/components/tickets/TicketTypeCard';
+import { useRegistrationForm } from '@/components/tickets/useRegistrationForm';
 import { useTicketCart } from '@/components/tickets/useTicketCart';
 import { ArrowIcon, MinusIcon, PlusIcon } from '@/components/tickets/keepsake/parts';
 import { CHECKOUT_DAY_EVENT } from '@/components/tickets/keepsake/checkout-day';
 import { DayCount, DayCountNote, hasDayCountLine } from '@/components/tickets/keepsake/DayCount';
 import { isDayClosed } from '@/components/tickets/keepsake/days';
 import type { KeepsakeDay } from '@/components/tickets/keepsake/types';
+import type { CheckoutLineItemInput } from '@/app/api/tickets/checkout/route';
 import { CART_MAX_LINE_ITEMS } from '@/lib/cart';
+import { REGISTRATION_MAX_PEOPLE, registrationAttendee, type RegistrationPerson } from '@/lib/registration';
 import { TICKET_COPY } from '@/lib/data/ticket-presentation';
 import { formatShowDay, formatShowDayShort } from '@/lib/show-day-format';
 import { useHydrated } from '@/lib/hooks/useHydrated';
@@ -61,11 +66,13 @@ interface SummaryInput {
   quantity: number;
   ticketType: TicketTypeCardData;
   errors: AttendeeFieldErrors;
+  // A flagged ticket type lists the registration form's errors instead of attendee rows.
+  registrationEntries: CheckoutErrorEntry[] | null;
 }
 
 // Entries in DOM order: the day, then each attendee's name and email errors.
 function summaryEntries(input: SummaryInput): CheckoutErrorEntry[] {
-  const { dayInvalid, attendees, quantity, ticketType, errors } = input;
+  const { dayInvalid, attendees, quantity, ticketType, errors, registrationEntries } = input;
   const entries: CheckoutErrorEntry[] = [];
   if (dayInvalid) {
     entries.push({
@@ -74,6 +81,7 @@ function summaryEntries(input: SummaryInput): CheckoutErrorEntry[] {
       target: `#${DAY_GROUP} input:not(:disabled)`,
     });
   }
+  if (registrationEntries) return [...entries, ...registrationEntries];
   for (let index = 0; index < attendees; index += 1) {
     const rowKey = attendeeRowKey(ticketType.slug, index);
     // With several attendees the row label keeps each entry distinct.
@@ -95,9 +103,19 @@ function focusSummary(summary: HTMLDivElement | null) {
   summary?.scrollIntoView({ block: 'center' });
 }
 
-function startQuantity(requested: number | undefined): number {
+function startQuantity(requested: number | undefined, maxQuantity: number): number {
   if (requested === undefined || !Number.isFinite(requested)) return MIN_QUANTITY;
-  return Math.min(CART_MAX_LINE_ITEMS, Math.max(MIN_QUANTITY, Math.trunc(requested)));
+  return Math.min(maxQuantity, Math.max(MIN_QUANTITY, Math.trunc(requested)));
+}
+
+// One registered line item per person: the checkout route derives the attendee name and email
+// from the registration itself and ignores what is sent here.
+function registrationLineItems(slug: string, people: RegistrationPerson[]): CheckoutLineItemInput[] {
+  return people.map((person) => ({
+    ticketType: slug,
+    ...registrationAttendee(person),
+    registration: person,
+  }));
 }
 
 // A day product opens on the day the link named, else with no day chosen (r45b: never a default).
@@ -121,10 +139,17 @@ export function TicketPurchaseForm({
 }: TicketPurchaseFormProps) {
   const hydrated = useHydrated();
   const ticketType = ticketTypes[0];
+  const flagged = ticketType.requiresRegistration;
+  // A flagged type is one buyer or buyer plus partner, never more: its quantity is derived.
+  const initialCount = startQuantity(
+    initialQuantity,
+    flagged ? REGISTRATION_MAX_PEOPLE : CART_MAX_LINE_ITEMS
+  );
   const cart = useTicketCart(ticketType, {
-    quantity: startQuantity(initialQuantity),
+    quantity: initialCount,
     day: startDay(ticketType, showDays, initialDay),
   });
+  const registration = useRegistrationForm(initialCount > MIN_QUANTITY);
   const hintRef = useRef<HTMLParagraphElement>(null);
   const [hintRequested, setHintRequested] = useState(false);
   const hintVisible = hintRequested && cart.quantity < MIN_QUANTITY;
@@ -209,7 +234,8 @@ export function TicketPurchaseForm({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const dayMissing = ticketType.requiresDaySelection && cart.day === null;
-    const attendeesValid = cart.validate();
+    const people = flagged ? registration.validate() : null;
+    const attendeesValid = flagged ? people !== null : cart.validate();
     if (dayMissing) setDayRequested(true);
     if (dayMissing || !attendeesValid) {
       focusFailedSubmit();
@@ -221,7 +247,17 @@ export function TicketPurchaseForm({
       return;
     }
     if (cart.day !== null) setSubmitted({ day: cart.day, judged: false });
-    void cart.submit();
+    void cart.submit(people ? registrationLineItems(ticketType.slug, people) : undefined);
+  }
+
+  function addPartner() {
+    registration.addPartner();
+    cart.setQuantity(REGISTRATION_MAX_PEOPLE);
+  }
+
+  function removePartner() {
+    registration.removePartner();
+    cart.setQuantity(MIN_QUANTITY);
   }
 
   const submitting = cart.status === 'submitting';
@@ -286,56 +322,67 @@ export function TicketPurchaseForm({
         </fieldset>
       ) : null}
 
-      <div className="nk-field">
-        <label htmlFor="ticket-quantity" className="nk-field-label">
-          {TICKET_COPY.numberOfTickets}
-        </label>
-        <div
-          className="nk-qty"
-          role="group"
-          aria-label={`${ticketType.name} ${TICKET_COPY.stepperLabelSuffix}`}
-        >
-          <button
-            type="button"
-            aria-label={TICKET_COPY.fewer}
-            disabled={submitting || cart.quantity <= MIN_QUANTITY}
-            onClick={() => cart.setQuantity(cart.quantity - 1)}
-          >
-            <MinusIcon />
-          </button>
-          <input
-            id="ticket-quantity"
-            type="number"
-            inputMode="numeric"
-            min={MIN_QUANTITY}
-            max={CART_MAX_LINE_ITEMS}
-            step={1}
-            value={cart.quantity}
-            disabled={submitting}
-            onChange={(e) => {
-              const parsed = Number.parseInt(e.target.value, 10);
-              cart.setQuantity(Number.isNaN(parsed) ? 0 : parsed);
-            }}
-          />
-          <button
-            type="button"
-            aria-label={TICKET_COPY.more}
-            disabled={submitting || cart.quantity >= CART_MAX_LINE_ITEMS}
-            onClick={() => cart.setQuantity(cart.quantity + 1)}
-          >
-            <PlusIcon />
-          </button>
-        </div>
-      </div>
+      {flagged ? (
+        <RegistrationSection
+          form={registration}
+          disabled={submitting}
+          onAddPartner={addPartner}
+          onRemovePartner={removePartner}
+        />
+      ) : (
+        <>
+          <div className="nk-field">
+            <label htmlFor="ticket-quantity" className="nk-field-label">
+              {TICKET_COPY.numberOfTickets}
+            </label>
+            <div
+              className="nk-qty"
+              role="group"
+              aria-label={`${ticketType.name} ${TICKET_COPY.stepperLabelSuffix}`}
+            >
+              <button
+                type="button"
+                aria-label={TICKET_COPY.fewer}
+                disabled={submitting || cart.quantity <= MIN_QUANTITY}
+                onClick={() => cart.setQuantity(cart.quantity - 1)}
+              >
+                <MinusIcon />
+              </button>
+              <input
+                id="ticket-quantity"
+                type="number"
+                inputMode="numeric"
+                min={MIN_QUANTITY}
+                max={CART_MAX_LINE_ITEMS}
+                step={1}
+                value={cart.quantity}
+                disabled={submitting}
+                onChange={(e) => {
+                  const parsed = Number.parseInt(e.target.value, 10);
+                  cart.setQuantity(Number.isNaN(parsed) ? 0 : parsed);
+                }}
+              />
+              <button
+                type="button"
+                aria-label={TICKET_COPY.more}
+                disabled={submitting || cart.quantity >= CART_MAX_LINE_ITEMS}
+                onClick={() => cart.setQuantity(cart.quantity + 1)}
+              >
+                <PlusIcon />
+              </button>
+            </div>
+          </div>
 
-      <CartAttendeeFields
-        ticketTypes={ticketTypes}
-        quantities={{ [ticketType.slug]: cart.quantity }}
-        attendeesByType={{ [ticketType.slug]: cart.attendees }}
-        errors={cart.attendeeErrors}
-        disabled={submitting}
-        onAttendeeChange={cart.updateAttendeeField}
-      />
+          <CartAttendeeFields
+            ticketTypes={ticketTypes}
+            quantities={{ [ticketType.slug]: cart.quantity }}
+            attendeesByType={{ [ticketType.slug]: cart.attendees }}
+            errors={cart.attendeeErrors}
+            disabled={submitting}
+            onAttendeeChange={cart.updateAttendeeField}
+          />
+        </>
+      )}
 
       <TicketingTestPayNotice />
       <CheckoutErrorSummary
@@ -347,6 +394,7 @@ export function TicketPurchaseForm({
           quantity: cart.quantity,
           ticketType,
           errors: cart.attendeeErrors,
+          registrationEntries: flagged ? summaryEntriesFor(registration.errors) : null,
         })}
         serverMessage={serverMessage}
         summaryRef={summaryRef}
