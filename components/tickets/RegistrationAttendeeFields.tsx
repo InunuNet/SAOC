@@ -1,7 +1,7 @@
 import { fieldId, type DraftTextField, type RegistrationDraft, type RegistrationErrors } from '@/components/tickets/registrationDraft';
 import { SocietyDropdown } from '@/components/tickets/SocietyDropdown';
 import { TicketFieldAlert, TicketFormField, TicketSelectField } from '@/components/tickets/TicketFormField';
-import { REGISTRATION_LABELS, REGISTRATION_OPTIONS, REGISTRATION_SECTION_HEADINGS, SAME_AS_ABOVE_LABEL, SOUTH_AFRICA, type RegistrationShareSection } from '@/lib/registration';
+import { JUDGE_DATE_LABELS, REGISTRATION_LABELS, REGISTRATION_OPTIONS, REGISTRATION_SECTION_HEADINGS, SAME_AS_ABOVE_LABEL, SOUTH_AFRICA, type RegistrationShareSection } from '@/lib/registration';
 
 export interface RegistrationAttendeeFieldsProps {
   attendee: number;
@@ -38,7 +38,7 @@ export function RegistrationAttendeeFields({ attendee, draft, errors, disabled, 
   const dateId = fieldId(attendee, 'judgeDate');
   return <div className="space-y-3">
     <h3 className={HEADING_CLASS}>{REGISTRATION_SECTION_HEADINGS.personal}</h3>
-    <div className="grid gap-3 sm:grid-cols-3 sm:items-end">{select('title', REGISTRATION_OPTIONS.title)}{text('firstName', 'text', 100)}{text('surname', 'text', 100)}</div>
+    <div className="grid gap-3 sm:grid-cols-[7.5rem_minmax(0,1fr)_minmax(0,1fr)] sm:items-end">{select('title', REGISTRATION_OPTIONS.title)}{text('firstName', 'text', 100)}{text('surname', 'text', 100)}</div>
     <div className="grid gap-3 sm:grid-cols-2 sm:items-end">{text('preferredName', 'text', 100)}{text('email', 'email', 254)}</div>
     {later ? <SameAsAbove id={fieldId(attendee, 'same-contact')} covers={[REGISTRATION_LABELS.mobile, REGISTRATION_LABELS.country, REGISTRATION_LABELS.province].join(', ')} checked={draft.sameContact} disabled={disabled} onChange={(checked) => onShared(attendee, 'contact', checked)} /> : null}
     {!draft.sameContact ? <>{text('mobile', 'tel', 30)}<div className="grid gap-3 sm:grid-cols-2 sm:items-end">{select('country', REGISTRATION_OPTIONS.country)}{draft.country === SOUTH_AFRICA ? select('province', REGISTRATION_OPTIONS.province) : null}</div></> : null}
@@ -52,7 +52,7 @@ export function RegistrationAttendeeFields({ attendee, draft, errors, disabled, 
     </label>{errors.judgeAvailable ? <TicketFieldAlert id={`${fieldId(attendee, 'judgeAvailable')}-error`}>{errors.judgeAvailable}</TicketFieldAlert> : null}</div>
     {draft.judgeAvailable ? <div role="group" aria-label={REGISTRATION_LABELS.judgeDate} aria-invalid={Boolean(errors.judgeDate)} aria-describedby={errors.judgeDate ? `${dateId}-error` : undefined}>
       <p className="font-sans text-[14px] font-medium text-[var(--ink-700)]">{REGISTRATION_LABELS.judgeDate}</p>
-      {REGISTRATION_OPTIONS.judgeDateChoices.map((date) => { const id = `${dateId}-${date.toLowerCase()}`; return <label htmlFor={id} key={date} className={OPTION_LABEL_CLASS}><input id={id} type="checkbox" checked={draft.judgeDates.includes(date)} onChange={(event) => onJudgeDate(attendee, date, event.target.checked)} disabled={disabled} className={CHECKBOX_CLASS} />{date}</label>; })}
+      {REGISTRATION_OPTIONS.judgeDateChoices.map((date) => { const id = `${dateId}-${date.toLowerCase()}`; return <label htmlFor={id} key={date} className={OPTION_LABEL_CLASS}><input id={id} type="checkbox" checked={draft.judgeDates.includes(date)} onChange={(event) => onJudgeDate(attendee, date, event.target.checked)} disabled={disabled} className={CHECKBOX_CLASS} />{JUDGE_DATE_LABELS[date]}</label>; })}
       {errors.judgeDate ? <TicketFieldAlert id={`${dateId}-error`}>{errors.judgeDate}</TicketFieldAlert> : null}
     </div> : null}
     <div className="grid gap-3 sm:grid-cols-2 sm:items-end">{select('judgeCommunication', REGISTRATION_OPTIONS.judgeYesNo)}{select('judgeForum', REGISTRATION_OPTIONS.judgeYesNo)}</div>

@@ -305,6 +305,10 @@ export type RegistrationValidation =
 export const SOUTH_AFRICA = 'South Africa';
 export const SOCIETY_NONE = 'None';
 export const SAME_AS_ABOVE_LABEL = 'Same as above';
+export const JUDGE_DATE_LABELS = {
+  '22-Sep': '22 September 2027',
+  '23-Sep': '23 September 2027',
+} as const;
 
 export const ATTENDING_BY_TICKET: Record<string, string> = {
   'saoc-symposium': 'SAOC Symposium Normal Ticket',
@@ -327,8 +331,8 @@ const MOBILE_CHARACTERS = /^\+?[\d\s()-]+$/;
 /** Field labels, verbatim from the sheet with Brad's typo fixes (goldens/registration-fields.json). */
 export const REGISTRATION_LABELS = {
   title: 'Title',
-  firstName: 'First Name (as per your identity document or passport)',
-  surname: 'Surname (as per your identity document or passport)',
+  firstName: 'First Name',
+  surname: 'Surname',
   preferredName: 'Preferred name',
   email: 'Email address',
   mobile: 'Mobile Number (include country code)',

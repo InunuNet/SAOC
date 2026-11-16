@@ -31,7 +31,7 @@ export function TicketFieldAlert({ children, spaced = false, id }: TicketFieldAl
 }
 
 const INPUT_CLASS =
-  'w-full rounded-sm border border-rule bg-ivory px-3.5 py-2.5 font-sans text-[15px] text-ink placeholder:text-muted transition-colors focus:border-ink/40 disabled:opacity-60';
+  'h-11 w-full rounded-sm border border-rule bg-ivory px-3.5 py-2.5 font-sans text-[15px] leading-5 text-ink placeholder:text-muted transition-colors focus:border-ink/40 disabled:opacity-60';
 const LABEL_CLASS = 'font-sans text-[14px] font-medium text-[var(--ink-700)]';
 
 interface TicketFormFieldProps {
@@ -117,7 +117,7 @@ export function TicketSelectField({
         disabled={disabled}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}
-        className={`${INPUT_CLASS} appearance-none pr-10`}
+        className={`${INPUT_CLASS} appearance-none pr-10 [appearance:base-select] [&::picker(select)]:[appearance:base-select] [&::picker(select)]:rounded-sm [&::picker(select)]:border [&::picker(select)]:border-rule [&::picker(select)]:bg-ivory [&::picker(select)]:font-sans [&::picker(select)]:text-[15px] [&::picker(select)]:text-ink [&::picker-icon]:hidden [&_option]:px-3.5 [&_option]:py-2.5 [&_option]:leading-5 [&_option:hover]:bg-bone [&_option:checked]:bg-bone`}
       >
         <option value="">Select…</option>
         {options.map((option) => (

@@ -197,7 +197,9 @@ test.describe('registration form, flagged ticket', () => {
     expect(near(await y(field(page, 1, 'title')), await y(field(page, 1, 'firstName')))).toBe(true);
     // Brad 16 Nov: Title only as wide as it needs; First Name and Surname share the rest
     const w = async (loc: Locator) => (await loc.boundingBox())!.width;
-    expect(await w(field(page, 1, 'title'))).toBeLessThan((await w(field(page, 1, 'firstName'))) * 0.6);
+    const titleWidth = await w(field(page, 1, 'title'));
+    expect(titleWidth).toBeLessThanOrEqual(128); // just room for "Select..." and the chevron
+    expect(titleWidth).toBeLessThan(await w(field(page, 1, 'firstName')));
     expect(near(await y(field(page, 1, 'firstName')), await y(field(page, 1, 'surname')))).toBe(true);
     expect(near(await y(field(page, 1, 'preferredName')), await y(field(page, 1, 'email')))).toBe(true);
     expect(near(await y(field(page, 1, 'country')), await y(field(page, 1, 'province')))).toBe(true);
