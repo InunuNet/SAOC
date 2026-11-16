@@ -1,0 +1,182 @@
+{
+  "schema": "saoc.registration-firestore-shape/v3",
+  "note": "Stored on every ticket doc of a flagged ticket type (one per attendee). Copied sections are stored as VALUES on each ticket plus sameAsAttendee1 naming them. Email stays in attendeeEmail. No undefined anywhere; non-SA province is null. An unflagged ticket doc carries NO registration key. v3: one new key dietaryOther (trimmed text when dietary is Other, otherwise null) directly after dietary; every judge value is one of the combinations in registration-fields.json rework.storedJudgeCombinations (availability No pairs with date None, never Not applicable).",
+  "registrationKeysInOrder": [
+    "attendeeNumber",
+    "title",
+    "firstName",
+    "surname",
+    "preferredName",
+    "mobile",
+    "country",
+    "province",
+    "societies",
+    "attending",
+    "judgeAccredited",
+    "judgeOrganisation",
+    "judgeAvailable",
+    "judgeDate",
+    "judgeCommunication",
+    "judgeForum",
+    "dietary",
+    "dietaryOther",
+    "sameAsAttendee1"
+  ],
+  "derivedTicketFields": {
+    "attendeeName": "firstName + single space + surname (trimmed)",
+    "attendeeEmail": "registration email, trimmed and lower-cased"
+  },
+  "examples": {
+    "attendee1": {
+      "attendeeName": "Testone Person",
+      "attendeeEmail": "one@example.invalid",
+      "registration": {
+        "attendeeNumber": 1,
+        "title": "Ms",
+        "firstName": "Testone",
+        "surname": "Person",
+        "preferredName": "Te",
+        "mobile": "+27 11 000 0000",
+        "country": "South Africa",
+        "province": "Western Cape",
+        "societies": [
+          "Cape Orchid Society"
+        ],
+        "attending": "SAOC Symposium Normal Ticket",
+        "judgeAccredited": "No",
+        "judgeOrganisation": "Not applicable",
+        "judgeAvailable": "No",
+        "judgeDate": "None",
+        "judgeCommunication": "No",
+        "judgeForum": "No",
+        "dietary": "None",
+        "dietaryOther": null,
+        "sameAsAttendee1": []
+      }
+    },
+    "attendee2CopiedSections": {
+      "attendeeName": "Testtwo Person",
+      "attendeeEmail": "two@example.invalid",
+      "registration": {
+        "attendeeNumber": 2,
+        "title": "Ms",
+        "firstName": "Testtwo",
+        "surname": "Person",
+        "preferredName": "Te",
+        "mobile": "+27 11 000 0000",
+        "country": "South Africa",
+        "province": "Western Cape",
+        "societies": [
+          "Cape Orchid Society"
+        ],
+        "attending": "SAOC Symposium Normal Ticket",
+        "judgeAccredited": "Yes",
+        "judgeOrganisation": "SAOC",
+        "judgeAvailable": "Yes",
+        "judgeDate": "22 & 23 Sept",
+        "judgeCommunication": "Yes",
+        "judgeForum": "Yes",
+        "dietary": "Vegetarian",
+        "dietaryOther": null,
+        "sameAsAttendee1": [
+          "contact",
+          "membership"
+        ]
+      }
+    },
+    "overseasCocktail": {
+      "attendeeName": "Testover Person",
+      "attendeeEmail": "over@example.invalid",
+      "registration": {
+        "attendeeNumber": 1,
+        "title": "Ms",
+        "firstName": "Testover",
+        "surname": "Person",
+        "preferredName": "Te",
+        "mobile": "+27 11 000 0000",
+        "country": "Australia",
+        "province": null,
+        "societies": [
+          "Overseas visitor"
+        ],
+        "attending": "Sunset Cocktails",
+        "judgeAccredited": "No",
+        "judgeOrganisation": "Not applicable",
+        "judgeAvailable": "No",
+        "judgeDate": "None",
+        "judgeCommunication": "No",
+        "judgeForum": "No",
+        "dietary": "Other",
+        "dietaryOther": "No shellfish",
+        "sameAsAttendee1": []
+      }
+    }
+  },
+  "unflaggedTicketDocKeys": [
+    "issuedInTestMode",
+    "bookingRef",
+    "showId",
+    "attendeeName",
+    "attendeeEmail",
+    "ticketType",
+    "status",
+    "amount",
+    "purchasedAt",
+    "checkedInAt",
+    "m_payment_id",
+    "pf_payment_id",
+    "orderId",
+    "compedBy",
+    "expiresAt",
+    "idempotencyKey",
+    "chosenDay"
+  ],
+  "orderDocKeys": [
+    "issuedInTestMode",
+    "showId",
+    "buyerName",
+    "buyerEmail",
+    "amount",
+    "status",
+    "expiresAt",
+    "idempotencyKey",
+    "purchasedAt",
+    "gateway",
+    "gatewayPaymentId",
+    "m_payment_id",
+    "pf_payment_id",
+    "recoveryToken",
+    "recoveryTokenExpiresAt",
+    "expectedGatewayAmount"
+  ],
+  "displayHelper": {
+    "export": "formatDietary(registration)",
+    "cases": [
+      [
+        {
+          "dietary": "None",
+          "dietaryOther": null
+        },
+        "None"
+      ],
+      [
+        {
+          "dietary": "Other",
+          "dietaryOther": "No shellfish"
+        },
+        "Other: No shellfish"
+      ],
+      [
+        {
+          "dietary": "Vegetarian"
+        },
+        "Vegetarian"
+      ],
+      [
+        {},
+        ""
+      ]
+    ],
+    "usedBy": "admin ticket drawer Dietary row and the CSV dietary column"
+  }
+}

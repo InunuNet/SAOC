@@ -1,0 +1,4938 @@
+{
+  "schema": "saoc.registration-validation-cases/v3",
+  "note": "All names, numbers and addresses are fictional. validateRegistrationGroup(people, ticketType). errorKeys must be a subset of the returned errors keys. A null or empty-string field counts as missing. The validator resolves same-as-above sections from attendee 1 and returns people with attendeeNumber (1-based) and sameAsAttendee1 added. v3 (16 Nov rework): adds strict email and mobile, judge combinations (no gating on accreditation), dietaryOther, and pins that membership combinations beyond None-exclusive stay valid. Optional expect.fields is a list of [personIndex, {field: value}] that must equal the validated person.",
+  "cases": [
+    {
+      "id": "valid-n1",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true
+      },
+      "note": "one ticket, one full form"
+    },
+    {
+      "id": "valid-n1-cocktail",
+      "ticketType": "sunset-cocktails-single",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "Sunset Cocktails",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "id": "valid-n1-wosa",
+      "ticketType": "wosa-conference",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "WOSA Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "id": "valid-n1-overseas",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "Australia",
+          "province": null,
+          "societies": [
+            "Overseas visitor"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "Halaal",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "id": "valid-n1-judge-answers",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "Yes",
+          "judgeOrganisation": "AOS",
+          "judgeAvailable": "Yes",
+          "judgeDate": "23-Sep",
+          "judgeCommunication": "Yes",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "id": "valid-n3-all-full-forms",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Testtwo",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testtwo@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Testthree",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testthree@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "id": "valid-n3-same-as-above-ticked",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Testtwo",
+          "surname": "Person",
+          "preferredName": "Te",
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [
+            "contact",
+            "membership"
+          ],
+          "email": "testtwo@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Testthree",
+          "surname": "Person",
+          "preferredName": "Te",
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [
+            "contact",
+            "membership"
+          ],
+          "email": "testthree@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true,
+        "resolvedEqualsAttendee1": [
+          [
+            1,
+            "mobile"
+          ],
+          [
+            1,
+            "country"
+          ],
+          [
+            1,
+            "province"
+          ],
+          [
+            1,
+            "societies"
+          ],
+          [
+            2,
+            "mobile"
+          ],
+          [
+            2,
+            "country"
+          ],
+          [
+            2,
+            "province"
+          ],
+          [
+            2,
+            "societies"
+          ]
+        ],
+        "sameAsAttendee1": [
+          [
+            1,
+            [
+              "contact",
+              "membership"
+            ]
+          ],
+          [
+            2,
+            [
+              "contact",
+              "membership"
+            ]
+          ]
+        ]
+      },
+      "note": "copied values filled in by the validator, sections named in sameAsAttendee1"
+    },
+    {
+      "id": "valid-n3-contact-only-shared",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Testtwo",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "None"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [
+            "contact"
+          ],
+          "email": "testtwo@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Testthree",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testthree@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "id": "n3-one-section-unticked-left-empty",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Testtwo",
+          "surname": "Person",
+          "preferredName": "Te",
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [
+            "contact",
+            "membership"
+          ],
+          "email": "testtwo@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Testthree",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "",
+          "country": "",
+          "province": null,
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [
+            "membership"
+          ],
+          "email": "testthree@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.2.mobile",
+          "people.2.country"
+        ]
+      }
+    },
+    {
+      "id": "n3-membership-unticked-left-empty",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Testtwo",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testtwo@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Testthree",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [
+            "contact"
+          ],
+          "email": "testthree@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.2.societies"
+        ]
+      }
+    },
+    {
+      "id": "same-as-above-on-attendee-1-rejected",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [
+            "contact"
+          ],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.sameAsAttendee1"
+        ]
+      }
+    },
+    {
+      "id": "unknown-section-name",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Testtwo",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [
+            "dietary"
+          ],
+          "email": "testtwo@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.1.sameAsAttendee1"
+        ]
+      }
+    },
+    {
+      "id": "same-as-above-never-covers-email",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Testtwo",
+          "surname": "Person",
+          "preferredName": "Te",
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [
+            "contact",
+            "membership"
+          ],
+          "email": ""
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.1.email"
+        ]
+      }
+    },
+    {
+      "id": "same-as-above-never-covers-dietary",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Testtwo",
+          "surname": "Person",
+          "preferredName": "Te",
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "",
+          "sameAsAttendee1": [
+            "contact",
+            "membership"
+          ],
+          "email": "testtwo@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.1.dietary"
+        ]
+      }
+    },
+    {
+      "id": "same-as-above-never-covers-judges",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Testtwo",
+          "surname": "Person",
+          "preferredName": "Te",
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [
+            "contact",
+            "membership"
+          ],
+          "email": "testtwo@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.1.judgeDate"
+        ]
+      }
+    },
+    {
+      "id": "judge-question-missing",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.judgeAccredited"
+        ]
+      }
+    },
+    {
+      "id": "judge-organisation-missing",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.judgeOrganisation"
+        ]
+      }
+    },
+    {
+      "id": "judge-date-missing",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.judgeDate"
+        ]
+      }
+    },
+    {
+      "id": "judge-forum-missing",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": null,
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.judgeForum"
+        ]
+      }
+    },
+    {
+      "id": "unknown-judge-option",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "Maybe",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.judgeCommunication"
+        ]
+      }
+    },
+    {
+      "id": "attending-missing",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.attending"
+        ]
+      }
+    },
+    {
+      "id": "attending-not-the-ticket-bought",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "Sunset Cocktails",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.attending"
+        ]
+      },
+      "note": "symposium ticket cannot register as another option"
+    },
+    {
+      "id": "unknown-ticket-type",
+      "ticketType": "day-visitor",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "ticketType"
+        ]
+      }
+    },
+    {
+      "id": "missing-first-name",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "  ",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.firstName"
+        ]
+      }
+    },
+    {
+      "id": "missing-preferred-name",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.preferredName"
+        ]
+      }
+    },
+    {
+      "id": "missing-dietary",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.dietary"
+        ]
+      }
+    },
+    {
+      "id": "missing-province-for-south-africa",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": null,
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.province"
+        ]
+      }
+    },
+    {
+      "id": "province-given-for-non-sa",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "Australia",
+          "province": "Gauteng",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.province"
+        ]
+      }
+    },
+    {
+      "id": "no-society",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.societies"
+        ]
+      }
+    },
+    {
+      "id": "none-combined-with-society",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "None",
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.societies"
+        ]
+      }
+    },
+    {
+      "id": "society-none-alone-valid",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "None"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "id": "unknown-dietary-value",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "Vegan",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.dietary"
+        ]
+      }
+    },
+    {
+      "id": "unknown-society-value",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Not A Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.societies"
+        ]
+      }
+    },
+    {
+      "id": "bad-email",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "not-an-email"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.email"
+        ]
+      }
+    },
+    {
+      "id": "bad-mobile-letters",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "call me",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.mobile"
+        ]
+      }
+    },
+    {
+      "id": "over-length-name",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.surname"
+        ]
+      }
+    },
+    {
+      "id": "n20-allowed",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test2",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test2@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test3",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test3@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test4",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test4@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test5",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test5@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test6",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test6@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test7",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test7@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test8",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test8@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test9",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test9@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test10",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test10@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test11",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test11@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test12",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test12@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test13",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test13@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test14",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test14@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test15",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test15@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test16",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test16@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test17",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test17@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test18",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test18@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test19",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test19@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test20",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test20@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true
+      },
+      "note": "MAX_LINE_ITEMS is 20"
+    },
+    {
+      "id": "n21-blocked",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test2",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test2@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test3",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test3@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test4",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test4@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test5",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test5@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test6",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test6@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test7",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test7@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test8",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test8@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test9",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test9@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test10",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test10@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test11",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test11@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test12",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test12@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test13",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test13@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test14",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test14@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test15",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test15@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test16",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test16@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test17",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test17@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test18",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test18@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test19",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test19@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test20",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test20@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Test21",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "test21@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "quantity"
+        ]
+      }
+    },
+    {
+      "id": "zero-people",
+      "ticketType": "saoc-symposium",
+      "people": [],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "quantity"
+        ]
+      }
+    },
+    {
+      "id": "not-an-array",
+      "ticketType": "saoc-symposium",
+      "people": "nope",
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "quantity"
+        ]
+      }
+    },
+    {
+      "id": "email-ok-0",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "o'brien+tag@example.co.za"
+        }
+      ],
+      "expect": {
+        "ok": true
+      },
+      "note": "o'brien+tag@example.co.za"
+    },
+    {
+      "id": "email-ok-1",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "first.last@sub.example.org"
+        }
+      ],
+      "expect": {
+        "ok": true
+      },
+      "note": "first.last@sub.example.org"
+    },
+    {
+      "id": "email-bad-2",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "a@b"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.email"
+        ]
+      },
+      "note": "rejected"
+    },
+    {
+      "id": "email-bad-3",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "a@b.c"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.email"
+        ]
+      },
+      "note": "rejected"
+    },
+    {
+      "id": "email-bad-4",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "a..b@example.com"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.email"
+        ]
+      },
+      "note": "rejected"
+    },
+    {
+      "id": "email-bad-5",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": ".a@example.com"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.email"
+        ]
+      },
+      "note": "rejected"
+    },
+    {
+      "id": "email-bad-6",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "a.@example.com"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.email"
+        ]
+      },
+      "note": "rejected"
+    },
+    {
+      "id": "email-bad-7",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "a b@example.com"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.email"
+        ]
+      },
+      "note": "rejected"
+    },
+    {
+      "id": "email-bad-8",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "a@-example.com"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.email"
+        ]
+      },
+      "note": "rejected"
+    },
+    {
+      "id": "email-bad-9",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "a@example..com"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.email"
+        ]
+      },
+      "note": "rejected"
+    },
+    {
+      "id": "email-bad-10",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "a@@example.com"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.email"
+        ]
+      },
+      "note": "rejected"
+    },
+    {
+      "id": "email-bad-11",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@example.com"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.email"
+        ]
+      },
+      "note": "rejected"
+    },
+    {
+      "id": "email-bad-12",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "a@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.com"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.email"
+        ]
+      },
+      "note": "rejected"
+    },
+    {
+      "id": "email-missing",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": ""
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.email"
+        ]
+      }
+    },
+    {
+      "id": "mobile-ok-0",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 82 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true
+      },
+      "note": "+27 82 000 0000"
+    },
+    {
+      "id": "mobile-ok-1",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "082 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true
+      },
+      "note": "082 000 0000"
+    },
+    {
+      "id": "mobile-ok-2",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "0027 82 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true
+      },
+      "note": "0027 82 000 0000"
+    },
+    {
+      "id": "mobile-ok-3",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+44 20 7946 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true
+      },
+      "note": "+44 20 7946 0000"
+    },
+    {
+      "id": "mobile-ok-4",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+1 (202) 555 0100",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true
+      },
+      "note": "+1 (202) 555 0100"
+    },
+    {
+      "id": "mobile-ok-5",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+61-2-5550-0100",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true
+      },
+      "note": "+61-2-5550-0100"
+    },
+    {
+      "id": "mobile-bad-6",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "27820000000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.mobile"
+        ]
+      },
+      "note": "rejected: 27820000000"
+    },
+    {
+      "id": "mobile-bad-7",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 82 000 000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.mobile"
+        ]
+      },
+      "note": "rejected: +27 82 000 000"
+    },
+    {
+      "id": "mobile-bad-8",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 82 000 00000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.mobile"
+        ]
+      },
+      "note": "rejected: +27 82 000 00000"
+    },
+    {
+      "id": "mobile-bad-9",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "0820000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.mobile"
+        ]
+      },
+      "note": "rejected: 0820000"
+    },
+    {
+      "id": "mobile-bad-10",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "082 000 00000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.mobile"
+        ]
+      },
+      "note": "rejected: 082 000 00000"
+    },
+    {
+      "id": "mobile-bad-11",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 (0)82 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.mobile"
+        ]
+      },
+      "note": "rejected: +27 (0)82 000 0000"
+    },
+    {
+      "id": "mobile-bad-12",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27+82 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.mobile"
+        ]
+      },
+      "note": "rejected: +27+82 000 0000"
+    },
+    {
+      "id": "mobile-bad-13",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+0 123 456 7890",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.mobile"
+        ]
+      },
+      "note": "rejected: +0 123 456 7890"
+    },
+    {
+      "id": "mobile-bad-14",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+12 34",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.mobile"
+        ]
+      },
+      "note": "rejected: +12 34"
+    },
+    {
+      "id": "mobile-bad-15",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+1234567890123456",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.mobile"
+        ]
+      },
+      "note": "rejected: +1234567890123456"
+    },
+    {
+      "id": "mobile-bad-16",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "00",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.mobile"
+        ]
+      },
+      "note": "rejected: 00"
+    },
+    {
+      "id": "mobile-bad-17",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 082 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.mobile"
+        ]
+      },
+      "note": "rejected: +27 082 000 0000"
+    },
+    {
+      "id": "mobile-bad-18",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "tel: +27820000000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.mobile"
+        ]
+      },
+      "note": "rejected: tel: +27820000000"
+    },
+    {
+      "id": "mobile-too-long",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 82 000 0000 00000000000000000000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.mobile"
+        ]
+      },
+      "note": "31 chars"
+    },
+    {
+      "id": "judge-yes-saoc-not-available-valid",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "Yes",
+          "judgeOrganisation": "SAOC",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "Yes",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true
+      },
+      "note": "accredited, not available, date None"
+    },
+    {
+      "id": "judge-yes-aos-available-one-date-valid",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "Yes",
+          "judgeOrganisation": "AOS",
+          "judgeAvailable": "Yes",
+          "judgeDate": "22-Sep",
+          "judgeCommunication": "No",
+          "judgeForum": "Yes",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true,
+        "fields": [
+          [
+            0,
+            {
+              "judgeDate": "22-Sep",
+              "judgeOrganisation": "AOS"
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": "judge-available-both-dates-valid",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "Yes",
+          "judgeOrganisation": "SAOC",
+          "judgeAvailable": "Yes",
+          "judgeDate": "22 & 23 Sept",
+          "judgeCommunication": "No",
+          "judgeForum": "Yes",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "id": "judge-accredited-not-applicable-rejected",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "Not applicable",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.judgeAccredited"
+        ]
+      },
+      "note": "option dropped"
+    },
+    {
+      "id": "judge-accredited-yes-organisation-not-applicable",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "Yes",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "Yes",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.judgeOrganisation"
+        ]
+      }
+    },
+    {
+      "id": "judge-not-accredited-with-organisation",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "AOS",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.judgeOrganisation"
+        ]
+      },
+      "note": "No + AOS is impossible"
+    },
+    {
+      "id": "judge-available-without-dates",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "Yes",
+          "judgeOrganisation": "SAOC",
+          "judgeAvailable": "Yes",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "Yes",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.judgeDate"
+        ]
+      }
+    },
+    {
+      "id": "judge-available-date-not-applicable",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "Yes",
+          "judgeOrganisation": "SAOC",
+          "judgeAvailable": "Yes",
+          "judgeDate": "Not applicable",
+          "judgeCommunication": "No",
+          "judgeForum": "Yes",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.judgeDate"
+        ]
+      }
+    },
+    {
+      "id": "judge-dates-without-availability",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "Yes",
+          "judgeOrganisation": "SAOC",
+          "judgeAvailable": "No",
+          "judgeDate": "23-Sep",
+          "judgeCommunication": "No",
+          "judgeForum": "Yes",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.judgeDate"
+        ]
+      },
+      "note": "server rejects dates without availability"
+    },
+    {
+      "id": "judge-accredited-availability-not-applicable",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "Yes",
+          "judgeOrganisation": "SAOC",
+          "judgeAvailable": "Not applicable",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "Yes",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.judgeAvailable"
+        ]
+      }
+    },
+    {
+      "id": "judge-accredited-communication-not-applicable",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "Yes",
+          "judgeOrganisation": "SAOC",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "Not applicable",
+          "judgeForum": "Yes",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.judgeCommunication"
+        ]
+      }
+    },
+    {
+      "id": "judge-accredited-forum-not-applicable",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "Yes",
+          "judgeOrganisation": "SAOC",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "Not applicable",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.judgeForum"
+        ]
+      }
+    },
+    {
+      "id": "judge-not-accredited-available",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "Yes",
+          "judgeDate": "22-Sep",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true,
+        "fields": [
+          [
+            0,
+            {
+              "judgeAvailable": "Yes",
+              "judgeDate": "22-Sep",
+              "judgeAccredited": "No"
+            }
+          ]
+        ]
+      },
+      "note": "availability is asked of everyone"
+    },
+    {
+      "id": "judge-not-accredited-communication-yes",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "Yes",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true
+      },
+      "note": "attendance is asked of everyone"
+    },
+    {
+      "id": "judge-not-accredited-forum-yes",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "Yes",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true
+      },
+      "note": "attendance is asked of everyone"
+    },
+    {
+      "id": "judge-date-not-applicable-with-availability-no",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "Not applicable",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.judgeDate"
+        ]
+      },
+      "note": "Not applicable is no longer a stored date; No pairs with None"
+    },
+    {
+      "id": "dietary-other-with-text-valid",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "Other",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid",
+          "dietaryOther": "  Gluten free  "
+        }
+      ],
+      "expect": {
+        "ok": true,
+        "fields": [
+          [
+            0,
+            {
+              "dietary": "Other",
+              "dietaryOther": "Gluten free"
+            }
+          ]
+        ]
+      },
+      "note": "trimmed"
+    },
+    {
+      "id": "dietary-other-without-text",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "Other",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.dietaryOther"
+        ]
+      }
+    },
+    {
+      "id": "dietary-other-blank-text",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "Other",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid",
+          "dietaryOther": "   "
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.dietaryOther"
+        ]
+      }
+    },
+    {
+      "id": "dietary-other-null-text",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "Other",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid",
+          "dietaryOther": null
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.dietaryOther"
+        ]
+      }
+    },
+    {
+      "id": "dietary-other-too-long",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "Other",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid",
+          "dietaryOther": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.dietaryOther"
+        ]
+      },
+      "note": "101 chars"
+    },
+    {
+      "id": "dietary-other-100-valid",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "Other",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid",
+          "dietaryOther": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        }
+      ],
+      "expect": {
+        "ok": true
+      },
+      "note": "100 chars"
+    },
+    {
+      "id": "dietary-text-without-other",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid",
+          "dietaryOther": "Gluten free"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.dietaryOther"
+        ]
+      },
+      "note": "hidden and cleared client side; server rejects"
+    },
+    {
+      "id": "dietary-none-stores-null-other",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true,
+        "fields": [
+          [
+            0,
+            {
+              "dietary": "None",
+              "dietaryOther": null
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": "society-overseas-with-sa-society-valid",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Overseas visitor",
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true
+      },
+      "note": "no rule added: open question to Lee-Ann"
+    },
+    {
+      "id": "society-member-with-independent-valid",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society",
+            "Independent Member"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true
+      },
+      "note": "no rule added: open question to Lee-Ann"
+    },
+    {
+      "id": "society-many-valid",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society",
+            "Natal Orchid Society",
+            "Wild Orchids of Southern Africa"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "id": "society-none-with-overseas",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "None",
+            "Overseas visitor"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.societies"
+        ]
+      },
+      "note": "None excludes every other choice"
+    },
+    {
+      "id": "non-sa-country-province-null-valid",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "Australia",
+          "province": null,
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "id": "country-missing",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.country"
+        ]
+      }
+    },
+    {
+      "id": "attending-still-checked-for-wosa",
+      "ticketType": "wosa-conference",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.attending"
+        ]
+      }
+    },
+    {
+      "id": "title-not-in-list",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Lord",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.title"
+        ]
+      }
+    },
+    {
+      "id": "surname-whitespace-only",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "   ",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.0.surname"
+        ]
+      }
+    },
+    {
+      "id": "n2-same-as-above-bad-email-on-attendee-2",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": null,
+          "country": null,
+          "province": null,
+          "societies": null,
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [
+            "contact",
+            "membership"
+          ],
+          "email": "not-an-email"
+        }
+      ],
+      "expect": {
+        "ok": false,
+        "errorKeys": [
+          "people.1.email"
+        ]
+      }
+    },
+    {
+      "id": "n2-same-as-above-overwrites-bad-sent-mobile",
+      "ticketType": "saoc-symposium",
+      "people": [
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "+27 11 000 0000",
+          "country": "South Africa",
+          "province": "Western Cape",
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [],
+          "email": "testone@example.invalid"
+        },
+        {
+          "title": "Ms",
+          "firstName": "Testone",
+          "surname": "Person",
+          "preferredName": "Te",
+          "mobile": "0820000",
+          "country": "Australia",
+          "province": null,
+          "societies": [
+            "Cape Orchid Society"
+          ],
+          "attending": "SAOC Symposium Normal Ticket",
+          "judgeAccredited": "No",
+          "judgeOrganisation": "Not applicable",
+          "judgeAvailable": "No",
+          "judgeDate": "None",
+          "judgeCommunication": "No",
+          "judgeForum": "No",
+          "dietary": "None",
+          "sameAsAttendee1": [
+            "contact"
+          ],
+          "email": "two@example.invalid"
+        }
+      ],
+      "expect": {
+        "ok": true,
+        "resolvedEqualsAttendee1": [
+          [
+            1,
+            "mobile"
+          ],
+          [
+            1,
+            "country"
+          ],
+          [
+            1,
+            "province"
+          ]
+        ]
+      },
+      "note": "a copied section is overwritten by attendee 1 whatever was sent"
+    }
+  ]
+}
