@@ -59,6 +59,7 @@ export const ROUTE_CROPS: Readonly<Record<string, NosCropCode>> = {
   '/national-show/what-to-expect': 'PK1',
   '/national-show/plan-your-visit': 'S1b',
   '/national-show/faq': 'H4a',
+  '/national-show/photo-credits': 'H4b',
   '/national-show/programme': 'S3b',
   '/national-show/workshops': 'S2c',
   '/national-show/symposium': 'D1',
