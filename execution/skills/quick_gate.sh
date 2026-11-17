@@ -48,6 +48,11 @@ else
   echo "[quick-gate]   picked (highest feature number): $CONTRACT" >&2
 fi
 
+if [[ -z "$CONTRACT" && -f ".agent/memory/project/specs/${SLUG}/contract.yaml" ]]; then
+  # Plain contract.yaml for this mission (no feature contracts)
+  CONTRACT=".agent/memory/project/specs/${SLUG}/contract.yaml"
+fi
+
 if [[ -z "$CONTRACT" ]]; then
   # Fallback: any recent contract
   CONTRACT=$(find .agent/memory/project/specs -name "contract-f*.yaml" -newer "$ACTIVE" 2>/dev/null | head -1 || echo "")

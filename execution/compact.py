@@ -51,6 +51,9 @@ WAITER_LOG = WAITER_DIR / "compact_waiter.log"
 READING_MAX_AGE_SECONDS = 10 * 60
 # Claude Code accepts autoCompactWindow between 100000 and 1000000.
 WINDOW_MIN = 100000
+# `delay` is a standing value, so it never writes a window near the boot load
+# (thrashing); `now` stays below WINDOW_FLOOR on purpose, it is transient and restored.
+WINDOW_FLOOR = 200000
 NOW_MIN_TOKENS = 60000
 NOW_WINDOW_FRACTION = 0.6
 DEFAULT_DELAY_TOKENS = 150000
@@ -320,7 +323,7 @@ def cmd_delay(args, decider, reading, _claude_pid) -> int:
         print("compact: refused, --by must be a positive number of tokens", file=sys.stderr)
         return 1
     tokens = int(reading["tokens"])
-    window = max(WINDOW_MIN, min(int(reading["window_size"]), tokens + args.by))
+    window = max(WINDOW_FLOOR, min(int(reading["window_size"]), tokens + args.by))
     decider.arm_route_a(window=window)
     print(f"autoCompactWindow set to {window}: compaction pushed out to {window} tokens "
           "until the next compaction or `compact.py restore`; it applies when the session "

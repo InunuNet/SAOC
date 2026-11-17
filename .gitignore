@@ -162,3 +162,6 @@ content/drive-watch/
 
 # ticket-email-samples generated PDFs
 samples/
+# Per-checkout runtime state (clone-hygiene): never tracked
+/.agent/memory/project/hook_watermark.json
+/.agent/memory/project/missions/active.json
