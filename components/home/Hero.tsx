@@ -33,24 +33,13 @@ const HERO_CTA_BASE =
 // The full-bleed hero's box is at least the 860px min-height of .home-hero (globals.css), so a source wider
 // than 860px x its aspect is height-driven and `sizes` must say so.
 const HERO_BOX_HEIGHT = 860;
-// The object-position drift moves the photograph this far (percent) over a slide's time on screen.
-const DRIFT_X = 4;
-const DRIFT_Y = 6;
-
-/** The end of a slide's slow drift: its object-position nudged by DRIFT_X and DRIFT_Y, capped at 100%. */
-function driftEnd(position: string): string {
-  const [x, y] = position.split(' ').map(Number.parseFloat);
-  return `${Math.min(100, x + DRIFT_X)}% ${Math.min(100, y + DRIFT_Y)}%`;
-}
-
 const CONTROL_FOCUS =
   'focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]';
 
 export interface HeroProps {
   /**
-   * Sanity heroImages. No longer drives the imagery on this home: NOS Design ruled the slides
-   * (hero-cards-ruling A2), so they come from HOME_HERO_SLIDES at full resolution. The prop stays so
-   * the page and the Sanity type are unchanged.
+   * Sanity heroImages. Brad's 18 Nov slide order comes from HOME_HERO_SLIDES at full resolution.
+   * The prop stays so the page and the Sanity type are unchanged.
    */
   images?: SanityImageSource[] | null;
   /** Show identity from the nationalShow singleton — the CTA label is not a literal. */
@@ -66,6 +55,7 @@ export function Hero({ show }: HeroProps) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [leavingIdx, setLeavingIdx] = useState<number | null>(null);
   const [userPaused, setUserPaused] = useState(false);
+  const [activationCounts, setActivationCounts] = useState(() => slides.map(() => 0));
   const leaveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // WCAG 2.2.2: autoplay stops under prefers-reduced-motion, and follows live changes.
@@ -75,11 +65,12 @@ export function Hero({ show }: HeroProps) {
     () => false,
   );
 
-  // The outgoing slide keeps drifting while it fades out, so its transform never snaps back in view.
+  // Keep the outgoing zoom running through its fade; remount an image on reactivation so it starts wide.
   const goTo = (next: number) => {
     if (next === activeIdx) return;
     clearTimeout(leaveTimer.current);
     setLeavingIdx(activeIdx);
+    setActivationCounts((counts) => counts.map((count, i) => i === next ? count + 1 : count));
     setActiveIdx(next);
     leaveTimer.current = setTimeout(() => setLeavingIdx(null), FADE_MS);
   };
@@ -97,16 +88,16 @@ export function Hero({ show }: HeroProps) {
       className="home-hero relative isolate flex flex-col overflow-hidden bg-primary-800 on-dark lg:flex-row lg:items-center"
       style={{ '--hero-interval': `${CAROUSEL_INTERVAL_MS}ms` } as CSSProperties}
     >
-      {/* Crossfade image stack: opacity, plus a slow object-position drift on the slide that is showing.
+      {/* Crossfade image stack: opacity, plus a slow zoom on the slide that is showing.
           Up to 1023px the hero stacks: this is a 2/1 band with nothing over it and the copy sits under
           it on solid sage; from 1024px it is the full-bleed background of the copy. */}
       <div
         data-home-hero-media
-        className="relative aspect-[2/1] w-full lg:absolute lg:inset-0 lg:aspect-auto"
+        className="relative aspect-[2/1] w-full overflow-hidden lg:absolute lg:inset-0 lg:aspect-auto"
       >
         {slides.map((slide, i) => {
           const isActive = activeIdx === i;
-          const drifting = !reduceMotion && (isActive || leavingIdx === i);
+          const zooming = !reduceMotion && (isActive || leavingIdx === i);
           const aspect = heroSourceAspect(slide.src);
           return (
             <div
@@ -123,12 +114,12 @@ export function Hero({ show }: HeroProps) {
               ].join(' ')}
             >
               <HeroPicture
+                key={`${slide.key}-${activationCounts[i]}`}
                 src={slide.src}
-                className={['home-hero-img', drifting ? 'home-hero-drift' : ''].join(' ')}
+                className={['home-hero-img', zooming ? 'home-hero-drift' : ''].join(' ')}
                 style={
                   {
                     '--hero-pos': slide.position,
-                    '--hero-pos-end': driftEnd(slide.position),
                   } as CSSProperties
                 }
                 priority={i === 0}

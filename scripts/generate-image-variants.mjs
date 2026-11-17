@@ -23,6 +23,9 @@ const HERO_SOURCES = new Set(['orchid-violet.jpg', 'orchid-pink.jpg', 'orchid-da
 for (const name of [
   'hero-home-1-zygopetalum-hendrik.jpg',
   'hero-home-2-dendrobium-chlorostylum.jpg',
+  'hero-home-3-colmanara-hendrik.jpg',
+  'hero-home-4-cattleya-white.jpg',
+  'hero-home-5-dendrobium-hendrik.jpg',
   'hero-nos-hub-cattleya-aclandiae.jpg',
   'hero-nos-about-colmanara-hendrik.jpg',
   'hero-nos-programme-dendrobium-hendrik.jpg',
