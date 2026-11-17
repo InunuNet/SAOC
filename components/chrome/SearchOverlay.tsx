@@ -20,6 +20,7 @@ import { matchPages } from '@/lib/search-pages';
 interface SearchOverlayProps {
   open: boolean;
   onClose: () => void;
+  showPastShows: boolean;
 }
 
 interface SocietyHit {
@@ -45,7 +46,7 @@ const SUGGESTIONS: ReadonlyArray<{ label: string; href: string; crossSite?: bool
   { label: 'Contact the council', href: '/contact' },
 ];
 
-export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
+export function SearchOverlay({ open, onClose, showPastShows }: SearchOverlayProps) {
   const [q, setQ] = useState('');
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [prevOpen, setPrevOpen] = useState(open);
@@ -113,7 +114,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
   }, [q]);
 
   const term = q.trim();
-  const pageResults = matchPages(term);
+  const pageResults = matchPages(term, showPastShows);
   const societyResults: SocietyResult[] =
     term.length === 0 || response.term !== term
       ? []
@@ -152,7 +153,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
         </div>
 
         {/* Results */}
-        <div className="max-h-[60vh] overflow-y-auto px-5 py-4">
+        <div aria-live="polite" aria-atomic="false" className="max-h-[60vh] overflow-y-auto px-5 py-4">
           {!hasQuery && (
             <>
               <div className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted mb-3">

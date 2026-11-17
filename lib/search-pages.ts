@@ -1,6 +1,7 @@
 import { NAV, CONTACT_LINK } from '@/components/chrome/nav-config';
 import { FOOTER_NAV, FOOTER_LEGAL_LINKS } from '@/components/chrome/footer-data';
 import { NOS_NAV } from '@/components/nos-chrome/nos-nav';
+import { PAST_SHOWS_HREF } from '@/lib/data/past-shows';
 import { nosPath, NOS_INTERNAL_PREFIX } from '@/lib/nos-paths';
 import { nosUrl } from '@/lib/site-hosts';
 import { searchTokens } from '@/lib/societies/search';
@@ -45,10 +46,11 @@ export const SEARCH_PAGES: readonly PageLink[] = links.filter(
   (link, index) => links.findIndex((candidate) => candidate.href === link.href) === index,
 );
 
-export function matchPages(rawTerm: string): PageLink[] {
+export function matchPages(rawTerm: string, showPastShows = false): PageLink[] {
   const tokens = searchTokens(rawTerm);
   if (tokens.length === 0) return [];
   return SEARCH_PAGES.filter((page) => {
+    if (!showPastShows && page.href === nosUrl(nosPath(PAST_SHOWS_HREF))) return false;
     const label = page.label.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     return tokens.every((token) => label.includes(token));
   });

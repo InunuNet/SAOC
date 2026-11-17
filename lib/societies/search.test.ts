@@ -27,4 +27,6 @@ test('society search matches existing location text on both search paths', () =>
 test('page search uses existing navigation labels and routes', () => {
   assert.ok(matchPages('judging').some((page) => page.label === 'Judging & Awards' && page.href === '/judging'));
   assert.ok(matchPages('tickets').some((page) => page.label === 'Tickets' && page.href.endsWith('/tickets')));
+  assert.ok(!matchPages('past shows').some((page) => page.label === 'Past shows'));
+  assert.ok(matchPages('past shows', true).some((page) => page.label === 'Past shows'));
 });
