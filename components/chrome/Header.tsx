@@ -27,7 +27,7 @@ import { CONTACT_LINK, NAV } from './nav-config';
 const DEMOTED_IDS: readonly string[] = ['sponsors'];
 const DEMOTED_CLASS = 'min-[1280px]:max-[1384px]:hidden';
 
-export function Header() {
+export function Header({ showPastShows = false }: { showPastShows?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -218,7 +218,7 @@ export function Header() {
         nav={NAV}
         triggerRef={hamburgerRef}
       />
-      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} showPastShows={showPastShows} />
     </>
   );
 }
