@@ -2100,6 +2100,13 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   }
 }
 @media (max-width: 479px) {
+  .nos-theme .nk-buy-crumbs {
+    flex-wrap: wrap;
+  }
+  .nos-theme .nk-buy-crumbs > .nk-crumb {
+    flex-shrink: 1;
+    min-width: 0;
+  }
   .nos-theme .nk-buy-crumbs [aria-current='page'] {
     white-space: normal;
     overflow: visible;
@@ -3559,12 +3566,15 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   }
 }
 @media (min-width: 1280px) {
-  .nos-theme .hero-facts[data-fact-count="3"] > div:nth-child(2) {
-    order: 3;
-    grid-column: 1 / -1;
+  .nos-theme .hero-facts[data-fact-count="3"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .nos-theme .hero-facts[data-fact-count="3"] > div:last-child {
     grid-column: auto;
+  }
+  .nos-theme .hero-facts[data-fact-count="3"] dd,
+  .nos-theme .hero-facts[data-fact-count="3"] > div:first-child dd {
+    white-space: normal;
   }
 }
 
