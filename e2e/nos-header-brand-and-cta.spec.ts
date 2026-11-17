@@ -21,8 +21,8 @@ const LOCKUP_FILE = 'nos-full-colour-horizontal';
 const LOCKUP_ALT = SHOW_TITLE_EXPANDED;
 const LOCKUP_BOX_WIDE = 448;
 const PHONE_WIDTH = 390;
-// HD-1: the link box is min(container, 405px); on a 390px phone the container is 390 - 2 * 16.
-const LOCKUP_INK_PHONE = 358;
+// Below 768px, the link box is min(container, 288px); a 390px phone has 358px available.
+const LOCKUP_INK_PHONE = 288;
 const LOCKUP_INK_ROW = 405;
 const TOLERANCE_PX = 1.5;
 
@@ -47,7 +47,7 @@ test.describe('NOS header — lockup and Tickets call to action', () => {
     expect(Math.abs(box!.width - LOCKUP_BOX_WIDE)).toBeLessThanOrEqual(TOLERANCE_PX);
   });
 
-  // 358 is a phone rule, and phones use overlay scrollbars: emulate one so SG-1's
+  // Phones use overlay scrollbars: emulate one so SG-1's
   // `scrollbar-gutter: stable` reserves nothing, as on a real device.
   test.describe('on an emulated phone', () => {
     test.use({
@@ -57,7 +57,7 @@ test.describe('NOS header — lockup and Tickets call to action', () => {
       deviceScaleFactor: 3,
     });
 
-    test('the lockup fills the container on a phone', async ({ page, baseURL }) => {
+    test('the lockup is capped at 288px on a phone', async ({ page, baseURL }) => {
       await page.goto(`${nosBase(baseURL!)}/`);
 
       const brand = page.locator('header#nh .nh-brand');
@@ -66,6 +66,7 @@ test.describe('NOS header — lockup and Tickets call to action', () => {
       expect(clientWidth, 'the scrollbar gutter must be zero on a phone').toBe(PHONE_WIDTH);
       const box = await brand.boundingBox();
       expect(Math.abs(box!.width - LOCKUP_INK_PHONE)).toBeLessThanOrEqual(TOLERANCE_PX);
+      expect(box!.width).toBeLessThan(clientWidth - 2 * 16);
     });
   });
 
