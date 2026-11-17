@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRef, useState, useSyncExternalStore, type CSSProperties, type PointerEvent } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type PointerEvent } from 'react';
 import { ArrowRight, Pause, Play } from 'lucide-react';
 import type { SanityImageSource } from '@sanity/image-url';
 
@@ -62,7 +62,7 @@ export function Hero({ show }: HeroProps) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [leavingIdx, setLeavingIdx] = useState<number | null>(null);
   const [userPaused, setUserPaused] = useState(false);
-  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const [pointerInside, setPointerInside] = useState(false);
   const [readyDetails, setReadyDetails] = useState<readonly string[]>([]);
   const detailRequests = useRef(new Map<string, Promise<void>>());
   const hoverFrame = useRef<number | null>(null);
@@ -82,9 +82,18 @@ export function Hero({ show }: HeroProps) {
     () => false,
   );
   const hoverEnabled = fineHover && !reduceMotion;
-  const autoPaused = hoverEnabled && hoveredIdx === activeIdx && !!slides[activeIdx].detailSrc;
+  const zoomed = hoverEnabled && pointerInside && !!slides[activeIdx].detailSrc;
+  const autoPaused = zoomed;
 
-  const loadDetail = (src: string) => {
+  useEffect(() => {
+    // The overlay unmounts when hover support changes, so its leave handler cannot clear this state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!hoverEnabled) setPointerInside(false);
+  }, [hoverEnabled]);
+
+  useEffect(() => {
+    const src = slides[activeIdx].detailSrc;
+    if (!hoverEnabled || !pointerInside || !src) return;
     if (detailRequests.current.has(src)) return;
     const image = new Image();
     const request = new Promise<void>((resolve, reject) => {
@@ -99,7 +108,12 @@ export function Hero({ show }: HeroProps) {
       () => setReadyDetails((ready) => ready.includes(src) ? ready : [...ready, src]),
       () => detailRequests.current.delete(src),
     );
-  };
+  }, [activeIdx, pointerInside, hoverEnabled, slides]);
+
+  useEffect(() => () => {
+    if (hoverFrame.current !== null) cancelAnimationFrame(hoverFrame.current);
+    clearTimeout(leaveTimer.current);
+  }, []);
 
   const onPhotoMove = (event: PointerEvent<HTMLDivElement>) => {
     if (!hoverEnabled || !slides[activeIdx].detailSrc) return;
@@ -120,7 +134,8 @@ export function Hero({ show }: HeroProps) {
   const goTo = (next: number) => {
     if (next === activeIdx) return;
     clearTimeout(leaveTimer.current);
-    setHoveredIdx(null);
+    if (hoverFrame.current !== null) cancelAnimationFrame(hoverFrame.current);
+    hoverFrame.current = null;
     setLeavingIdx(activeIdx);
     setActivationCounts((counts) => counts.map((count, i) => i === next ? count + 1 : count));
     setActiveIdx(next);
@@ -168,7 +183,7 @@ export function Hero({ show }: HeroProps) {
               <div
                 ref={(node) => { zoomRefs.current[i] = node; }}
                 className="home-hero-hover absolute inset-0"
-                data-zoomed={hoverEnabled && hoveredIdx === i && !!slide.detailSrc ? '' : undefined}
+                data-zoomed={zoomed && isActive ? '' : undefined}
               >
                 <div
                   key={`${slide.key}-${activationCounts[i]}`}
@@ -194,19 +209,16 @@ export function Hero({ show }: HeroProps) {
             </div>
           );
         })}
-        {hoverEnabled && slides[activeIdx].detailSrc ? (
+        {hoverEnabled ? (
           <div
             data-home-hero-photo-hover
             className="absolute inset-0 z-10"
-            onPointerEnter={() => {
-              setHoveredIdx(activeIdx);
-              loadDetail(slides[activeIdx].detailSrc!);
-            }}
+            onPointerEnter={() => setPointerInside(true)}
             onPointerMove={onPhotoMove}
             onPointerLeave={() => {
               if (hoverFrame.current !== null) cancelAnimationFrame(hoverFrame.current);
               hoverFrame.current = null;
-              setHoveredIdx(null);
+              setPointerInside(false);
             }}
           />
         ) : null}
