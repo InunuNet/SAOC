@@ -929,3 +929,26 @@ h3.font-serif {
     max-width: 440px;
   }
 }
+
+/* PR-1 print stylesheet (NOS Design, 2026-11-08). Backgrounds are off by default in print, so the
+   dark bands lose their ground: they print as black ink on white. Screen rendering is untouched. */
+@media print {
+  [data-hd="nav"], [data-hd="search"], [data-hd="cta"], [data-hd="menu"],
+  [data-page-hero-media], [data-home-hero-media], [data-hero-scrim] {
+    display: none !important;
+  }
+  /* !important: the SAOC header's `sticky` utility and NOS `.nh { position: sticky }` both
+     outrank a bare element selector. */
+  header, .nh { position: static !important; }
+  :is(.bg-primary-800, .bg-primary, .bg-ink, .on-dark, .nos-on-dark),
+  :is(.bg-primary-800, .bg-primary, .bg-ink, .on-dark, .nos-on-dark) * {
+    background: none !important;
+    color: #000 !important;
+    border-color: #000 !important;
+  }
+  :is(.bg-primary-800, .bg-primary, .bg-ink, .on-dark, .nos-on-dark) a {
+    text-decoration: underline;
+  }
+  h2, h3 { break-after: avoid; }
+  article, figure, address, details, [data-event-card] { break-inside: avoid; }
+}
