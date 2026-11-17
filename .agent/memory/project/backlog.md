@@ -216,3 +216,11 @@ Brad-only: review and send Lee-Ann's invoice before year end; review hours Thu-S
   - NOS two-row phone header (147px);
   - grey ledge from the home card shadow on phones.
 - [ ] /events hero is a pot-grown Habenaria (terrestrial); Lee-Ann may prefer a cultivated epiphyte. Alternative: swap it with the white Cattleya.
+- Update 17 Nov ~02:00 (team decisions, not parked on Brad, per [[feedback-never-park-on-brad]]):
+  - Photo credits: a /photo-credits page on both hosts, linked from the footers (#199). The Zygopetalum 'Dunkle Blüte' photo is dropped (its author requires an email).
+  - The style designer ruled R1-R10. They are implemented in #201 and verified on dev (11/13 pass, last 3 fixed).
+  - Habenaria on the /events hero is kept (Lee-Ann: any orchid will do).
+  - QA: Gemini PASS on #199, #200, #201 (one false positive), #202, #203 (after the authStateReady fix), #205 and #164. #204 needed 4 rounds; all findings are fixed.
+  - New PRs: #206 infra checks, #207 door day-aware port (supersedes #75), #208 ticket emails switch on (samples re-rendered and sent to Brad).
+  - #201 and #204 both touch the Footer.tsx subscribe button and legal row. Whichever merges second keeps both class sets; preview/local shows the resolution.
+  - VIP evening times differ in three of Lee-Ann's documents. A follow-up is in her doc; the email copy stays verbatim until she answers.
