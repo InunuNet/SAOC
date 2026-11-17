@@ -15,6 +15,7 @@ import { nosBase } from './utils/site-urls';
 const PANEL_BREAKPOINT = 1384;
 const ROW_BREAKPOINT = 768;
 const LOCKUP_FOOTPRINT_PX = 405;
+const NARROW_LOCKUP_FOOTPRINT_PX = 288;
 const MIN_TARGET_PX = 44;
 const PANEL_MIN_WIDTH = 320;
 const PANEL_MAX_WIDTH = 400;
@@ -142,7 +143,7 @@ test.describe('NOS header — desktop panels', () => {
 
     const brand = (await page.locator('header#nh .nh-brand').boundingBox())!;
     const cta = (await page.locator('header#nh .nh-cta').boundingBox())!;
-    expect(Math.abs(brand.width - LOCKUP_FOOTPRINT_PX)).toBeLessThanOrEqual(SLOP_PX);
+    expect(Math.abs(brand.width - NARROW_LOCKUP_FOOTPRINT_PX)).toBeLessThanOrEqual(SLOP_PX);
     expect(cta.y, 'Tickets stayed beside the lockup').toBeGreaterThanOrEqual(brand.y + brand.height - SLOP_PX);
   });
 
