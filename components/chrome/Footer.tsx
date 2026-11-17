@@ -135,7 +135,7 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
             &copy; {new Date().getFullYear()}
             {FOOTER_COPYRIGHT_TAIL}
           </span>
-          <div className={FOOTER_LAYOUT.legal}>
+          <div className={`${FOOTER_LAYOUT.legal} gap-y-2 md:gap-y-4`}>
             {FOOTER_LEGAL_LINKS.map((l) => (
               <Link
                 key={l.href}
