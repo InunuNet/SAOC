@@ -32,7 +32,6 @@ export function societyMatches(society: SocietySearchHit, tokens: readonly strin
     society.region,
     society.meets,
     society.venue,
-    society.description,
   ]
     .filter((value): value is string => typeof value === 'string')
     .map((value) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase());
