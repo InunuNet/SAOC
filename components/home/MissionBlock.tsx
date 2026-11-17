@@ -27,7 +27,7 @@ export function MissionBlock({ missionText, withhold = false }: MissionBlockProp
           </div>
 
           {/* Right: body text */}
-          <div className="flex flex-col gap-6 self-end">
+          <div className="flex max-w-[64ch] flex-col gap-6 self-end">
             {hasCms && !cmsUnsourced ? (
               <p className="font-sans text-[16px] leading-[1.55] text-ink">{missionText}</p>
             ) : !withhold && cmsUnsourced ? (

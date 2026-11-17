@@ -113,7 +113,7 @@ export function PageHero({
         {eyebrow ? (
           <span
             data-page-hero-eyebrow
-            className="inline-flex items-center rounded-full border border-white/25 bg-[var(--primary-800)]/60 px-3.5 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.18em] text-ivory"
+            className="inline-flex items-center rounded-full border border-white/25 bg-[var(--primary-800)]/60 px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-ivory"
           >
             {eyebrow}
           </span>

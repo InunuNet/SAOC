@@ -428,8 +428,26 @@ h3.font-serif {
       rgb(34 40 31 / 0.88) 0,
       rgb(34 40 31 / 0.88)
         calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px),
-      transparent
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 12%)
+      rgb(34 40 31 / 0.855)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 2.2%),
+      rgb(34 40 31 / 0.788)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 4.4%),
+      rgb(34 40 31 / 0.69)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 6.6%),
+      rgb(34 40 31 / 0.57)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 8.8%),
+      rgb(34 40 31 / 0.44)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 11%),
+      rgb(34 40 31 / 0.31)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 13.2%),
+      rgb(34 40 31 / 0.19)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 15.4%),
+      rgb(34 40 31 / 0.092)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 17.6%),
+      rgb(34 40 31 / 0.025)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 19.8%),
+      rgb(34 40 31 / 0)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 22%)
     );
   }
 }

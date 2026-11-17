@@ -34,6 +34,18 @@ export function ForewordExpandable({
     }
   }
 
+  const readButton = (className: string) => (
+    <button
+      type="button"
+      aria-expanded={open}
+      aria-controls={controls}
+      onClick={toggle}
+      className={`min-h-11 items-center font-mono text-[11px] uppercase tracking-[0.18em] text-primary hover:text-primary-800 transition-colors duration-150 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] ${className}`}
+    >
+      {open ? EXPANDED_LABEL : COLLAPSED_LABEL}
+    </button>
+  );
+
   return (
     <div className="grid lg:grid-cols-[5fr_7fr] gap-x-16 gap-y-6">
       <div className="lg:sticky lg:top-[121px] lg:self-start">
@@ -47,15 +59,7 @@ export function ForewordExpandable({
         >
           {heading}
         </h2>
-        <button
-          type="button"
-          aria-expanded={open}
-          aria-controls={controls}
-          onClick={toggle}
-          className="mt-6 inline-flex min-h-11 items-center font-mono text-[11px] uppercase tracking-[0.18em] text-primary hover:text-primary-800 transition-colors duration-150 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
-        >
-          {open ? EXPANDED_LABEL : COLLAPSED_LABEL}
-        </button>
+        {readButton('mt-6 hidden lg:inline-flex')}
       </div>
 
       <div className="doc-prose">
@@ -69,6 +73,7 @@ export function ForewordExpandable({
           </p>
         ))}
       </div>
+      {readButton('inline-flex justify-self-start lg:hidden')}
     </div>
   );
 }

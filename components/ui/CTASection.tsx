@@ -46,14 +46,14 @@ export function CTASection({ eyebrow, heading, body, marked = false, primaryCta,
         <div className="mt-8 flex flex-wrap justify-center gap-4">
           <Link
             href={primaryCta.href}
-            className="font-sans text-[14px] font-medium bg-accent text-ink px-6 py-3 hover:bg-accent-soft transition-colors duration-150 outline-ivory focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]"
+            className="inline-flex min-h-11 items-center justify-center rounded-[2px] border border-transparent bg-accent px-[22px] py-[14px] text-[14px] font-medium tracking-[0.01em] text-ink transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) hover:bg-accent-soft hover:-translate-y-px focus-visible:-translate-y-px active:translate-y-0 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0"
           >
             {primaryCta.label}
           </Link>
           {secondaryCta ? (
             <Link
               href={secondaryCta.href}
-              className="font-sans text-[14px] font-medium border border-ivory/30 text-ivory px-6 py-3 hover:bg-ivory/10 transition-colors duration-150 outline-ivory focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]"
+              className="inline-flex min-h-11 items-center justify-center rounded-[2px] border border-ivory/30 px-[22px] py-[14px] text-[14px] font-medium tracking-[0.01em] text-ivory transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) hover:bg-ivory/10 hover:-translate-y-px focus-visible:-translate-y-px active:translate-y-0 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0"
             >
               {secondaryCta.label}
             </Link>

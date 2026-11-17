@@ -91,12 +91,13 @@
   margin-top: 0;
 }
 
-/* R27 group sub-nav: directly under the inner hero, not sticky. Karla 700 14.5px royal,
+/* R27 group sub-nav: directly under the inner hero, not sticky. Karla 700 15px royal,
    44px items, 24px gap, 1px --line rule on gold-100. <768px: one snap-scrolling row, hidden
    scrollbar, a 40px edge fade only on an edge that hides items. 767 rather than the R27 700
    because the Show-group row overflows at 701-767 (goldens/f10-breakpoint.json). */
 .nos-theme .nos-subnav {
   position: relative;
+  padding-block: 4px;
   background-color: var(--parchment);
 }
 .nos-theme .nos-subnav-row {
@@ -112,7 +113,7 @@
   align-items: center;
   height: 44px;
   font-family: var(--sans);
-  font-size: 14.5px;
+  font-size: 15px;
   font-weight: 700;
   line-height: 1.2;
   white-space: nowrap;
@@ -507,7 +508,7 @@
 /* R69 grouped index on the hub: three ruled columns of titled links, no descriptions. The
    container is the shared axis ([data-nos-wrap]). */
 .nos-theme .nos-index {
-  padding-block: 88px;
+  padding-block: 64px;
   border-top: 1px solid var(--rule);
 }
 .nos-theme .nos-index > [data-nos-wrap] {
@@ -554,9 +555,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  min-height: 56px;
+  min-height: 48px;
   font-family: var(--serif);
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1.25;
   color: var(--ink);
   text-decoration: none;
@@ -1448,7 +1449,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   inset: 0;
   background: linear-gradient(
     0deg,
-    color-mix(in srgb, var(--black) 78%, transparent) 0%,
+    color-mix(in srgb, var(--primary-800) 96%, transparent) 0%,
     color-mix(in srgb, var(--black) 36%, transparent) 46%,
     transparent 78%
   );
@@ -1993,6 +1994,12 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 .nos-theme .nk-grid.cols-3 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
+@media (min-width: 960px) {
+  .nos-theme .nk-grid.cols-3 .nk-buy {
+    min-height: 127px;
+    align-content: end;
+  }
+}
 @media (max-width: 959px) {
   .nos-theme .nk-grid.cols-2,
   .nos-theme .nk-grid.cols-3 {
@@ -2090,6 +2097,20 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+}
+@media (max-width: 479px) {
+  .nos-theme .nk-buy-crumbs {
+    flex-wrap: wrap;
+  }
+  .nos-theme .nk-buy-crumbs > .nk-crumb {
+    flex-shrink: 1;
+    min-width: 0;
+  }
+  .nos-theme .nk-buy-crumbs [aria-current='page'] {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
   }
 }
 .nos-theme .nk-masthead h1 {
@@ -2209,25 +2230,25 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   transform-origin: 50% 205px;
 }
 .nos-theme .nk-fan .nk-wrap:nth-child(1) {
-  --x: -185px;
+  --x: -225px;
   --y: 40px;
   --r: -12deg;
   z-index: 1;
 }
 .nos-theme .nk-fan .nk-wrap:nth-child(2) {
-  --x: -62px;
+  --x: -75px;
   --y: 22px;
   --r: -4deg;
   z-index: 2;
 }
 .nos-theme .nk-fan .nk-wrap:nth-child(3) {
-  --x: 62px;
+  --x: 75px;
   --y: 22px;
   --r: 4deg;
   z-index: 3;
 }
 .nos-theme .nk-fan .nk-wrap:nth-child(4) {
-  --x: 185px;
+  --x: 225px;
   --y: 40px;
   --r: 12deg;
   z-index: 4;
@@ -2612,12 +2633,9 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   text-underline-offset: 4px;
 }
 .nos-theme .nk-card[data-ticket-variant='summary'] .nk-ticket {
-  --stub: 112px;
+  --stub: 168px;
 }
 @container (min-width: 470px) {
-  .nos-theme .nk-card[data-ticket-variant='summary'] .nk-ticket {
-    --stub: 168px;
-  }
   .nos-theme .nk-card[data-ticket-variant='summary'] .nk-stub {
     min-height: 0;
   }
@@ -3533,9 +3551,11 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 .nos-theme .hero-facts dd {
   text-wrap: balance;
 }
-/* Three facts in the 768-1279 copy column leave the last one (the venue) about 219px, which wraps it to
-   three lines. It takes the row under the other two instead; the row is no taller than the wrapped one. */
-@media (min-width: 768px) and (max-width: 1279.98px) {
+/* Three facts leave too little space for the venue on one line. Give it the row under the other two. */
+@media (min-width: 768px) {
+  .nos-theme .hero-facts[data-fact-count="3"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .nos-theme .hero-facts[data-fact-count="3"] > div:last-child {
     grid-column: 1 / -1;
   }
@@ -3543,6 +3563,18 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
      second fact and the venue wrap, the row is a line taller until the swap, and the sub-nav jumps up. */
   .nos-theme .hero-facts[data-fact-count="3"] dd {
     white-space: nowrap;
+  }
+}
+@media (min-width: 1280px) {
+  .nos-theme .hero-facts[data-fact-count="3"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .nos-theme .hero-facts[data-fact-count="3"] > div:last-child {
+    grid-column: auto;
+  }
+  .nos-theme .hero-facts[data-fact-count="3"] dd,
+  .nos-theme .hero-facts[data-fact-count="3"] > div:first-child dd {
+    white-space: normal;
   }
 }
 
@@ -4424,7 +4456,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 .nos-theme .nos-hm-h2 {
   font-family: var(--serif);
   font-weight: 300;
-  font-size: clamp(2rem, 1.2rem + 1.6vw, 2.5rem);
+  font-size: clamp(2rem, 1.5rem + 1.6vw, 2.4375rem);
   line-height: 1.15;
   margin: 0 0 clamp(20px, 3vw, 32px);
   color: var(--ink);
@@ -4661,7 +4693,11 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   gap: 8px 24px;
   align-items: baseline;
   padding-block: 24px;
-  border-top: 1px solid var(--rule);
+  margin-top: -1px;
+  border-block: 1px solid var(--rule);
+}
+.nos-theme .nos-hm-stage:last-child {
+  border-bottom: 0;
 }
 @media (min-width: 600px) {
   .nos-theme .nos-hm-stage {
@@ -4716,6 +4752,9 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   align-items: center;
   gap: 8px 16px;
 }
+.nos-theme .nos-hm-foot-register [data-confirmation-badge] {
+  margin-top: 0;
+}
 .nos-theme .nos-hm-foot-label {
   font-family: var(--sans);
   font-size: 18px;
@@ -4735,7 +4774,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   line-height: 1.3;
   max-width: 38ch;
   color: var(--ink);
-  margin: 0 0 32px;
+  margin: 0 0 40px;
   text-wrap: balance;
 }
 
@@ -4863,7 +4902,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   border-radius: var(--radius-button);
 }
 .nos-theme [data-sponsor-enquiry='nos'] button[type='submit']:hover:not(:disabled) {
-  background-color: var(--primary-700);
+  background-color: var(--primary-800);
 }
 .nos-theme [data-sponsor-enquiry='nos'] button[type='submit']:focus-visible {
   outline: 2px solid var(--accent);

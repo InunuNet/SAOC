@@ -251,7 +251,7 @@ export function TicketPurchaseForm({
     <form
       method="post"
       onSubmit={handleSubmit}
-      className="nk-checkout grid gap-3"
+      className="nk-checkout grid max-w-4xl gap-3"
       noValidate
       data-nos-ticket-form=""
     >

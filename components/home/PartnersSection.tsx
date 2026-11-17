@@ -59,7 +59,7 @@ export function PartnersSection({ partners }: PartnersSectionProps) {
   return (
     <section
       data-home-section="partners"
-      className="py-20 bg-parchment"
+      className="pt-0 pb-20 bg-parchment"
       // CSSProperties has no index for custom properties; the cast is the standard React idiom.
       style={{ '--partner-arrow-lift': PARTNER_ARROW_LIFT } as CSSProperties}
     >
@@ -68,7 +68,7 @@ export function PartnersSection({ partners }: PartnersSectionProps) {
           <span className="eyebrow">In collaboration with</span>
         </div>
 
-        <div className="border-t border-rule -mx-3">
+        <div className="border-t border-rule">
           {cards.map((card) => {
             const body = (
               <>

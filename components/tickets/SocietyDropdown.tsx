@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { SelectChevron } from '@/components/forms/select-class';
 import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
 import { REGISTRATION_LABELS, REGISTRATION_OPTIONS } from '@/lib/registration';
 
@@ -28,12 +29,15 @@ export function SocietyDropdown({ id, value, error, disabled, onChange }: {
     if (event.relatedTarget instanceof Node && !root.current?.contains(event.relatedTarget)) setOpen(false);
   }} className="space-y-1.5">
     <div id={labelId} className="font-sans text-[14px] font-medium text-[var(--ink-700)]">{REGISTRATION_LABELS.societies}</div>
-    <button ref={button} id={id} type="button" disabled={disabled} aria-expanded={open} aria-controls={panelId}
-      aria-labelledby={`${labelId} ${id}-value`} aria-invalid={Boolean(error)} aria-describedby={error ? `${id}-error` : undefined}
-      onClick={() => setOpen(!open)} onKeyDown={(event) => { if (event.key === 'Escape') { setOpen(false); button.current?.focus(); } }}
-      className="w-full min-h-11 rounded-sm border border-rule bg-ivory px-3.5 py-2.5 text-left font-sans text-[15px] text-ink">
-      <span id={`${id}-value`}>{value.length === 0 ? 'Select all that apply' : value.length === 1 ? value[0] : `${value.length} selected`}</span>
-    </button>
+    <div className="relative">
+      <button ref={button} id={id} type="button" disabled={disabled} aria-expanded={open} aria-controls={panelId}
+        aria-labelledby={`${labelId} ${id}-value`} aria-invalid={Boolean(error)} aria-describedby={error ? `${id}-error` : undefined}
+        onClick={() => setOpen(!open)} onKeyDown={(event) => { if (event.key === 'Escape') { setOpen(false); button.current?.focus(); } }}
+        className="w-full min-h-11 rounded-sm border border-rule bg-ivory px-3.5 py-2.5 pr-10 text-left font-sans text-[15px] text-ink">
+        <span id={`${id}-value`}>{value.length === 0 ? 'Select all that apply' : value.length === 1 ? value[0] : `${value.length} selected`}</span>
+      </button>
+      <SelectChevron />
+    </div>
     {open ? <div id={panelId} role="group" aria-labelledby={labelId} onKeyDown={(event) => {
       if (event.key === 'Escape') { event.preventDefault(); setOpen(false); button.current?.focus(); }
     }} className="max-h-72 overflow-y-auto border border-rule bg-ivory px-3.5">
