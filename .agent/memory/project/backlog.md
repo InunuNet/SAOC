@@ -230,3 +230,8 @@ Brad-only: review and send Lee-Ann's invoice before year end; review hours Thu-S
   - #209 bumps Next 16.4.3 to 16.4.6 (GHSA-mfr8-8qww-v76h; the site doesn't use the affected API). It is deliberately NOT merged into preview, so the dev server Brad reviews stays stable.
   - The parallel image-variant pool was tried and dropped (no gain; see learned.md).
   - e2e in a worktree needs a real `pnpm install` plus the contract's env (TICKET_FIXTURES=1 and SANITY_FIXTURE_MODE=replay ...); see the registration-forms contract A9.
+
+## 17 Nov PR cleanup
+- [ ] **NOS Design: footer newsletter error colours** (Gemini, #212 review; pre-existing on main). On NOS the footer signup's email error (`NosFooter.tsx` errorClassName `nf-text`) has no icon or error border, and the topics alert in `NewsletterSignup.tsx` uses `border-error` (#9b2c2c) plus an uncoloured ⚠︎ on the royal #211A57 background, where SAOC uses `--status-error-on-dark`. Needs a NOS on-dark error token ruling from NOS Design before code.
+- [ ] **#188 harness 3.8.122**: left open. It edits the permission and autonomy hooks, so it is Brad's call; a newer template (3.8.154) is available and may replace it.
+- PRs consolidated 17 Nov: #210 (checks and docs from #186/#187/#189/#193), #211 (deps from #209/#190/#191), #212 (newsletter port of #130). Closed: #7, #11, #75, #97, #99, #163, #192, #198.
