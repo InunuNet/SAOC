@@ -420,6 +420,26 @@ h3.font-serif {
 .home-hero-img {
   object-fit: cover;
   object-position: var(--hero-pos);
+  transform: scale(1);
+  transform-origin: var(--hero-pos);
+}
+.home-hero-hover {
+  transform: scale(1);
+  transition: transform 900ms ease-out, transform-origin 180ms ease-out;
+}
+.home-hero-hover[data-zoomed] {
+  transform: scale(1.8);
+}
+.home-hero-detail {
+  opacity: 0;
+  animation: home-hero-detail-in 300ms ease-out forwards;
+}
+@keyframes home-hero-detail-in {
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-hover { transition: none; }
+  .home-hero-detail { animation: none; opacity: 1; }
 }
 @media (min-width: 1024px) {
   .home-hero [data-hero-scrim='copy'] {
@@ -453,10 +473,10 @@ h3.font-serif {
 }
 @keyframes home-hero-drift {
   from {
-    object-position: var(--hero-pos);
+    transform: scale(1);
   }
   to {
-    object-position: var(--hero-pos-end);
+    transform: scale(1.18);
   }
 }
 @keyframes home-hero-fill {
@@ -468,7 +488,9 @@ h3.font-serif {
   }
 }
 .home-hero-drift {
-  animation: home-hero-drift 8s linear both;
+  animation: home-hero-drift calc(var(--hero-interval) + 1400ms) linear both;
+  transform-origin: var(--hero-pos);
+  will-change: transform;
 }
 .home-hero-fill {
   transform-origin: left;
@@ -481,6 +503,7 @@ h3.font-serif {
 @media (prefers-reduced-motion: reduce) {
   .home-hero-drift {
     animation: none;
+    transform: scale(1);
     will-change: auto;
   }
 }

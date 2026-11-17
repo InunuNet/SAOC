@@ -3,13 +3,49 @@
     "slot": "saoc-home hero slide 1 (lead, reduced-motion static)",
     "file": "lib/data/home-hero-slides.ts",
     "image": "/images/heroes/hero-home-1-zygopetalum-hendrik.jpg",
-    "focus": "50% 50%"
+    "focus": "50% 45%"
   },
   {
     "slot": "saoc-home hero slide 2",
     "file": "lib/data/home-hero-slides.ts",
     "image": "/images/heroes/hero-home-2-dendrobium-chlorostylum.jpg",
     "focus": "50% 50%"
+  },
+  {
+    "slot": "saoc-home hero slide 3",
+    "file": "lib/data/home-hero-slides.ts",
+    "image": "/images/heroes/hero-home-3-colmanara-hendrik.jpg",
+    "focus": "40% 40%"
+  },
+  {
+    "slot": "saoc-home hero slide 4",
+    "file": "lib/data/home-hero-slides.ts",
+    "image": "/images/heroes/hero-home-6-cattleya-aclandiae.jpg",
+    "focus": "35% 50%"
+  },
+  {
+    "slot": "saoc-home hero slide 5",
+    "file": "lib/data/home-hero-slides.ts",
+    "image": "/images/heroes/hero-home-5-dendrobium-hendrik.jpg",
+    "focus": "55% 50%"
+  },
+  {
+    "slot": "saoc-home hero slide 6",
+    "file": "lib/data/home-hero-slides.ts",
+    "image": "/images/heroes/hero-home-4-cattleya-white.jpg",
+    "focus": "45% 45%"
+  },
+  {
+    "slot": "saoc-home hero slide 7",
+    "file": "lib/data/home-hero-slides.ts",
+    "image": "/images/heroes/hero-home-7-phalaenopsis-pink.jpg",
+    "focus": "55% 45%"
+  },
+  {
+    "slot": "saoc-home hero slide 8",
+    "file": "lib/data/home-hero-slides.ts",
+    "image": "/images/heroes/hero-home-8-phalaenopsis-stripes.jpg",
+    "focus": "65% 45%"
   },
   {
     "slot": "nos hub hero (full bleed)",

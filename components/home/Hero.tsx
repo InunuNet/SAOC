@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
+import { useRef, useState, useSyncExternalStore, type CSSProperties, type PointerEvent } from 'react';
 import { ArrowRight, Pause, Play } from 'lucide-react';
 import type { SanityImageSource } from '@sanity/image-url';
 
@@ -16,9 +16,16 @@ const CAROUSEL_INTERVAL_MS = 7000;
 const FADE_MS = 1400;
 const HEADING_ID = 'home-hero-heading';
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+const FINE_HOVER_QUERY = '(hover: hover) and (pointer: fine)';
 
 function subscribeReducedMotion(onChange: () => void): () => void {
   const query = window.matchMedia(REDUCED_MOTION_QUERY);
+  query.addEventListener('change', onChange);
+  return () => query.removeEventListener('change', onChange);
+}
+
+function subscribeFineHover(onChange: () => void): () => void {
+  const query = window.matchMedia(FINE_HOVER_QUERY);
   query.addEventListener('change', onChange);
   return () => query.removeEventListener('change', onChange);
 }
@@ -33,24 +40,13 @@ const HERO_CTA_BASE =
 // The full-bleed hero's box is at least the 860px min-height of .home-hero (globals.css), so a source wider
 // than 860px x its aspect is height-driven and `sizes` must say so.
 const HERO_BOX_HEIGHT = 860;
-// The object-position drift moves the photograph this far (percent) over a slide's time on screen.
-const DRIFT_X = 4;
-const DRIFT_Y = 6;
-
-/** The end of a slide's slow drift: its object-position nudged by DRIFT_X and DRIFT_Y, capped at 100%. */
-function driftEnd(position: string): string {
-  const [x, y] = position.split(' ').map(Number.parseFloat);
-  return `${Math.min(100, x + DRIFT_X)}% ${Math.min(100, y + DRIFT_Y)}%`;
-}
-
 const CONTROL_FOCUS =
   'focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]';
 
 export interface HeroProps {
   /**
-   * Sanity heroImages. No longer drives the imagery on this home: NOS Design ruled the slides
-   * (hero-cards-ruling A2), so they come from HOME_HERO_SLIDES at full resolution. The prop stays so
-   * the page and the Sanity type are unchanged.
+   * Sanity heroImages. Brad's 18 Nov slide order comes from HOME_HERO_SLIDES at full resolution.
+   * The prop stays so the page and the Sanity type are unchanged.
    */
   images?: SanityImageSource[] | null;
   /** Show identity from the nationalShow singleton — the CTA label is not a literal. */
@@ -66,6 +62,12 @@ export function Hero({ show }: HeroProps) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [leavingIdx, setLeavingIdx] = useState<number | null>(null);
   const [userPaused, setUserPaused] = useState(false);
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const [readyDetails, setReadyDetails] = useState<readonly string[]>([]);
+  const detailRequests = useRef(new Map<string, Promise<void>>());
+  const hoverFrame = useRef<number | null>(null);
+  const zoomRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [activationCounts, setActivationCounts] = useState(() => slides.map(() => 0));
   const leaveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // WCAG 2.2.2: autoplay stops under prefers-reduced-motion, and follows live changes.
@@ -74,12 +76,53 @@ export function Hero({ show }: HeroProps) {
     () => window.matchMedia(REDUCED_MOTION_QUERY).matches,
     () => false,
   );
+  const fineHover = useSyncExternalStore(
+    subscribeFineHover,
+    () => window.matchMedia(FINE_HOVER_QUERY).matches,
+    () => false,
+  );
+  const hoverEnabled = fineHover && !reduceMotion;
+  const autoPaused = hoverEnabled && hoveredIdx === activeIdx && !!slides[activeIdx].detailSrc;
 
-  // The outgoing slide keeps drifting while it fades out, so its transform never snaps back in view.
+  const loadDetail = (src: string) => {
+    if (detailRequests.current.has(src)) return;
+    const image = new Image();
+    const request = new Promise<void>((resolve, reject) => {
+      image.onload = () => {
+        image.decode().then(resolve, reject);
+      };
+      image.onerror = reject;
+      image.src = src;
+    });
+    detailRequests.current.set(src, request);
+    request.then(
+      () => setReadyDetails((ready) => ready.includes(src) ? ready : [...ready, src]),
+      () => detailRequests.current.delete(src),
+    );
+  };
+
+  const onPhotoMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (!hoverEnabled || !slides[activeIdx].detailSrc) return;
+    const zoom = zoomRefs.current[activeIdx];
+    if (!zoom) return;
+    const rect = event.currentTarget.parentElement?.getBoundingClientRect();
+    if (!rect) return;
+    const x = Math.max(0, Math.min(100, (event.clientX - rect.left) / rect.width * 100));
+    const y = Math.max(0, Math.min(100, (event.clientY - rect.top) / rect.height * 100));
+    if (hoverFrame.current !== null) cancelAnimationFrame(hoverFrame.current);
+    hoverFrame.current = requestAnimationFrame(() => {
+      zoom.style.transformOrigin = `${x}% ${y}%`;
+      hoverFrame.current = null;
+    });
+  };
+
+  // Keep the outgoing zoom running through its fade; remount an image on reactivation so it starts wide.
   const goTo = (next: number) => {
     if (next === activeIdx) return;
     clearTimeout(leaveTimer.current);
+    setHoveredIdx(null);
     setLeavingIdx(activeIdx);
+    setActivationCounts((counts) => counts.map((count, i) => i === next ? count + 1 : count));
     setActiveIdx(next);
     leaveTimer.current = setTimeout(() => setLeavingIdx(null), FADE_MS);
   };
@@ -93,20 +136,20 @@ export function Hero({ show }: HeroProps) {
       aria-roledescription="carousel"
       aria-labelledby={HEADING_ID}
       data-home-hero
-      data-paused={userPaused ? '' : undefined}
+      data-paused={userPaused || autoPaused ? '' : undefined}
       className="home-hero relative isolate flex flex-col overflow-hidden bg-primary-800 on-dark lg:flex-row lg:items-center"
       style={{ '--hero-interval': `${CAROUSEL_INTERVAL_MS}ms` } as CSSProperties}
     >
-      {/* Crossfade image stack: opacity, plus a slow object-position drift on the slide that is showing.
+      {/* Crossfade image stack: opacity, plus a slow zoom on the slide that is showing.
           Up to 1023px the hero stacks: this is a 2/1 band with nothing over it and the copy sits under
           it on solid sage; from 1024px it is the full-bleed background of the copy. */}
       <div
         data-home-hero-media
-        className="relative aspect-[2/1] w-full lg:absolute lg:inset-0 lg:aspect-auto"
+        className="relative aspect-[2/1] w-full overflow-hidden lg:absolute lg:inset-0 lg:aspect-auto"
       >
         {slides.map((slide, i) => {
           const isActive = activeIdx === i;
-          const drifting = !reduceMotion && (isActive || leavingIdx === i);
+          const zooming = !reduceMotion && (isActive || leavingIdx === i);
           const aspect = heroSourceAspect(slide.src);
           return (
             <div
@@ -122,29 +165,59 @@ export function Hero({ show }: HeroProps) {
                 isActive ? 'opacity-100' : 'opacity-0',
               ].join(' ')}
             >
-              <HeroPicture
-                src={slide.src}
-                className={['home-hero-img', drifting ? 'home-hero-drift' : ''].join(' ')}
-                style={
-                  {
-                    '--hero-pos': slide.position,
-                    '--hero-pos-end': driftEnd(slide.position),
-                  } as CSSProperties
-                }
-                priority={i === 0}
-                sizes={`(max-width: 1023px) max(100vw, calc(50vw * ${aspect})), max(100vw, ${Math.ceil(HERO_BOX_HEIGHT * aspect)}px)`}
-              />
+              <div
+                ref={(node) => { zoomRefs.current[i] = node; }}
+                className="home-hero-hover absolute inset-0"
+                data-zoomed={hoverEnabled && hoveredIdx === i && !!slide.detailSrc ? '' : undefined}
+              >
+                <div
+                  key={`${slide.key}-${activationCounts[i]}`}
+                  className={['absolute inset-0', zooming ? 'home-hero-drift' : ''].join(' ')}
+                  style={{ '--hero-pos': slide.position } as CSSProperties}
+                >
+                  <HeroPicture
+                    src={slide.src}
+                    className="home-hero-img"
+                    priority={i === 0}
+                    sizes={`(max-width: 1023px) max(100vw, calc(50vw * ${aspect})), max(100vw, ${Math.ceil(HERO_BOX_HEIGHT * aspect)}px)`}
+                  />
+                  {slide.detailSrc && readyDetails.includes(slide.detailSrc) ? (
+                    <img
+                      src={slide.detailSrc}
+                      alt=""
+                      aria-hidden="true"
+                      className="home-hero-img home-hero-detail absolute inset-0 h-full w-full"
+                    />
+                  ) : null}
+                </div>
+              </div>
             </div>
           );
         })}
+        {hoverEnabled && slides[activeIdx].detailSrc ? (
+          <div
+            data-home-hero-photo-hover
+            className="absolute inset-0 z-10"
+            onPointerEnter={() => {
+              setHoveredIdx(activeIdx);
+              loadDetail(slides[activeIdx].detailSrc!);
+            }}
+            onPointerMove={onPhotoMove}
+            onPointerLeave={() => {
+              if (hoverFrame.current !== null) cancelAnimationFrame(hoverFrame.current);
+              hoverFrame.current = null;
+              setHoveredIdx(null);
+            }}
+          />
+        ) : null}
       </div>
 
       {/* One localised scrim (NOS Design ruling A4): it covers the copy column only; the rest is bare photograph. */}
       <div aria-hidden="true" data-hero-scrim="copy" className="absolute inset-0 max-lg:hidden" />
 
       {/* Content: left-aligned in the container, a 640px column (A3). */}
-      <div className="saoc-container relative z-10 w-full py-10 lg:py-24">
-        <div className="flex max-w-[640px] flex-col items-start text-left">
+      <div className="saoc-container pointer-events-none relative z-10 w-full py-10 lg:py-24">
+        <div className="pointer-events-auto flex max-w-[640px] flex-col items-start text-left">
           <span className="mb-8 rounded-full border border-ivory/30 bg-white/10 px-4 py-1.5 font-mono text-[11px] uppercase tracking-[0.22em] text-ivory">
             SINCE 1968 · BLOEMFONTEIN
           </span>
