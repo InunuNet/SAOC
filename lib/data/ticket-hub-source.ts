@@ -4,7 +4,7 @@
 // reach firebase-admin, derive their products from ONE pipeline and never disagree about
 // which products exist.
 import { REGULAR_PRICE_SIBLING_SLUG } from '@/lib/admission-siblings';
-import { resolveEffectivePrice } from '@/lib/checkout-reservation';
+import { isWithinEarlyBirdWindow, resolveEffectivePrice } from '@/lib/checkout-reservation';
 import {
   buildTicketCardViewModels,
   type TicketCardsOutput,
@@ -92,6 +92,7 @@ function toTypeInput(
     capacityPool: t.capacityPool ?? fallback?.capacityPool ?? null,
     capacitySource: fallback ? 'provisional' : 'sanity',
     headcountPerUnit: t.headcountPerUnit ?? 1,
+    earlyBirdOpen: isWithinEarlyBirdWindow(now, t.earlyBirdCutoff ?? null),
   };
 }
 
