@@ -80,7 +80,7 @@ async function open(browser, host, [width, height], { admin = false } = {}) {
   page.on('request', (request) => {
     if (request.url().includes('/api/admin/whoami')) whoami.count += 1;
   });
-  if (admin) await page.route('**/api/admin/whoami', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
+  if (admin) await page.route('**/api/admin/whoami', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{"admin":true}' }));
   await page.goto(`http://${host}/`, { waitUntil: 'networkidle' });
   return { context, page, whoami };
 }

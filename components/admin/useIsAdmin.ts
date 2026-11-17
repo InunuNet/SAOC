@@ -40,11 +40,13 @@ export function askWhoami(): Promise<boolean> {
   const timeout = window.setTimeout(() => controller.abort(), WHOAMI_TIMEOUT_MS);
   inFlight = fetch(WHOAMI_URL, { credentials: 'same-origin', cache: 'no-store', signal: controller.signal })
     .then(async (res) => {
-      // Drain the body: a response nobody reads keeps the request open, which stalls the
-      // page's network-idle state (and the e2e specs that wait on it).
-      await res.arrayBuffer();
-      if (!res.ok) writeNotAdminCache();
-      return res.ok;
+      // Read the body to distinguish admin: false from admin: true. Consuming it also
+      // keeps the request from stalling the page's network-idle state.
+      const body: unknown = await res.json().catch(() => null);
+      const isAdmin = res.ok && typeof body === 'object' && body !== null &&
+        'admin' in body && body.admin === true;
+      if (!isAdmin) writeNotAdminCache();
+      return isAdmin;
     })
     .catch(() => false)
     .finally(() => {
