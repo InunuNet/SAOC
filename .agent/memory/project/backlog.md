@@ -87,7 +87,7 @@ _Last compacted: 2026-11-02 by backlog_trim.py. Full history: git log on this fi
 - [ ] **[P3] verify_manual_only_contracts_validate counts 0 manual_only contracts** al… → [details](data/p3-verify-manual-only-contracts-validate.md)
 - [x] **[P1, fix dispatched 2026-10-29] Codex post-merge FAIL on #154 (7095d23c, M3/F4… → [details](data/p1-fix-dispatched-2026-10-29-codex-post.md) — closed 2026-11-07: #160 ec0d5c71 merged
 - [x] **[P1, fix dispatched 2026-10-29] PR #160 (fix/m3-f4-gate-codex-findings, 8c08c8… → [details](data/p1-fix-dispatched-2026-10-29-pr-160-fix.md) — closed 2026-11-07: #160 ec0d5c71 merged
-- [ ] **[P2, NOS Design queued after F1c] /events/[slug] facts overrun the copy column at 2056:** facts reach x=1896 against a container right edge of 1634. Ruling source: NOS Design 2026-10-29 (16a4894). Dispatch after SDC F1c merges.
+- [x] **[P2, NOS Design queued after F1c] /events/[slug] facts overrun the copy column at 2056:** facts reach x=1896 against a container right edge of 1634. Ruling source: NOS Design 2026-10-29 (16a4894). Dispatch after SDC F1c merges. — re-measured 17 Nov on dev: no longer reproduces
 - [ ] **[P2, dispatched 2026-10-29] Codex post-merge on SDC #153/#156/#157/#158: all FAIL. Triage:**
 - [ ] **[P3, nos-beautiful-design, queued after NR-11] BD-6r /tickets masthead at ≥1240 (NOS Design be9a821, 2026-10-29; replaces withdrawn BD-6, whose "lone stub" was a capture artefact of the fan-out entrance).**
 - [ ] **[P2+P3, NOS lane, handed to NOS Site 2026-10-29] NOS Design beta check on main dbb7bd20 (df07f5d).**
@@ -119,7 +119,7 @@ _Last compacted: 2026-11-02 by backlog_trim.py. Full history: git log on this fi
 - [x] **[health 2026-10-31 ~20:20 SAST] Scheduled CI on main red again (run 4118887559… → [details](data/health-2026-10-31-20-20-sast-scheduled-c.md) — closed 2026-11-08: scheduled CI on main green 4 days running (runs 41816133304, 42012631989, 42204440877, 42361538824, all on 52b63e6d)
 - [ ] **[health 2026-11-01 ~08:00 SAST] Clean apart from the known Sanity scheduled-ru… → [details](data/health-2026-11-01-08-00-sast-clean-apart.md)
 - [ ] **[P3, gates, QA FALLBACK on #167 2026-11-01] nos-content-standard/goldens/check… → [details](data/p3-gates-qa-fallback-on-167-2026-11-01-n.md)
-- [ ] **[P2, NOS home, from NOS Design live check of 5a29e41c 2026-11-01] Phone sectio… → [details](data/p2-nos-home-from-nos-design-live-check-o.md)
+- [x] **[P2, NOS home, from NOS Design live check of 5a29e41c 2026-11-01] Phone sectio… → [details](data/p2-nos-home-from-nos-design-live-check-o.md) — re-measured 17 Nov on dev: no longer reproduces
 - [x] **[go-live-prep F1, contract READY, dev NOT started — parked at the 12:00 stop 2… → [details](data/go-live-prep-f1-contract-ready-dev-not-s.md) — closed 2026-11-07: #175defaa6ca
 - [ ] **[P2, from QA on #168 2026-11-01] Residue-guard quota skip has no escalation:**… → [details](data/p2-from-qa-on-168-2026-11-01-residue-gua.md)
 - [ ] **APPROVED by Brad 2026-11-01 — model conservation for the week of 2 Nov 2026 (standing rules, not a to-do):**
