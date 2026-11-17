@@ -32,6 +32,9 @@ for (const name of [
   'hero-home-3-colmanara-hendrik.jpg',
   'hero-home-4-cattleya-white.jpg',
   'hero-home-5-dendrobium-hendrik.jpg',
+  'hero-home-6-cattleya-aclandiae.jpg',
+  'hero-home-7-phalaenopsis-pink.jpg',
+  'hero-home-8-phalaenopsis-stripes.jpg',
   'hero-nos-hub-cattleya-aclandiae.jpg',
   'hero-nos-about-colmanara-hendrik.jpg',
   'hero-nos-programme-dendrobium-hendrik.jpg',
@@ -85,7 +88,7 @@ function encodingsFor(isHero, isLarge) {
 async function* walk(dir) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
-    if (full === OUTPUT_ROOT) continue;
+    if (full === OUTPUT_ROOT || full === path.join(SOURCE_ROOT, 'hero-detail')) continue;
     if (entry.isDirectory()) yield* walk(full);
     else if (RASTER_EXTENSION.test(entry.name)) yield full;
   }

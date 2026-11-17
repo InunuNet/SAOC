@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
+import { useRef, useState, useSyncExternalStore, type CSSProperties, type PointerEvent } from 'react';
 import { ArrowRight, Pause, Play } from 'lucide-react';
 import type { SanityImageSource } from '@sanity/image-url';
 
@@ -16,9 +16,16 @@ const CAROUSEL_INTERVAL_MS = 7000;
 const FADE_MS = 1400;
 const HEADING_ID = 'home-hero-heading';
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+const FINE_HOVER_QUERY = '(hover: hover) and (pointer: fine)';
 
 function subscribeReducedMotion(onChange: () => void): () => void {
   const query = window.matchMedia(REDUCED_MOTION_QUERY);
+  query.addEventListener('change', onChange);
+  return () => query.removeEventListener('change', onChange);
+}
+
+function subscribeFineHover(onChange: () => void): () => void {
+  const query = window.matchMedia(FINE_HOVER_QUERY);
   query.addEventListener('change', onChange);
   return () => query.removeEventListener('change', onChange);
 }
@@ -55,6 +62,11 @@ export function Hero({ show }: HeroProps) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [leavingIdx, setLeavingIdx] = useState<number | null>(null);
   const [userPaused, setUserPaused] = useState(false);
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const [readyDetails, setReadyDetails] = useState<readonly string[]>([]);
+  const detailRequests = useRef(new Map<string, Promise<void>>());
+  const hoverFrame = useRef<number | null>(null);
+  const zoomRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [activationCounts, setActivationCounts] = useState(() => slides.map(() => 0));
   const leaveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -64,11 +76,51 @@ export function Hero({ show }: HeroProps) {
     () => window.matchMedia(REDUCED_MOTION_QUERY).matches,
     () => false,
   );
+  const fineHover = useSyncExternalStore(
+    subscribeFineHover,
+    () => window.matchMedia(FINE_HOVER_QUERY).matches,
+    () => false,
+  );
+  const hoverEnabled = fineHover && !reduceMotion;
+  const autoPaused = hoverEnabled && hoveredIdx === activeIdx && !!slides[activeIdx].detailSrc;
+
+  const loadDetail = (src: string) => {
+    if (detailRequests.current.has(src)) return;
+    const image = new Image();
+    const request = new Promise<void>((resolve, reject) => {
+      image.onload = () => {
+        image.decode().then(resolve, reject);
+      };
+      image.onerror = reject;
+      image.src = src;
+    });
+    detailRequests.current.set(src, request);
+    request.then(
+      () => setReadyDetails((ready) => ready.includes(src) ? ready : [...ready, src]),
+      () => detailRequests.current.delete(src),
+    );
+  };
+
+  const onPhotoMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (!hoverEnabled || !slides[activeIdx].detailSrc) return;
+    const zoom = zoomRefs.current[activeIdx];
+    if (!zoom) return;
+    const rect = event.currentTarget.parentElement?.getBoundingClientRect();
+    if (!rect) return;
+    const x = Math.max(0, Math.min(100, (event.clientX - rect.left) / rect.width * 100));
+    const y = Math.max(0, Math.min(100, (event.clientY - rect.top) / rect.height * 100));
+    if (hoverFrame.current !== null) cancelAnimationFrame(hoverFrame.current);
+    hoverFrame.current = requestAnimationFrame(() => {
+      zoom.style.transformOrigin = `${x}% ${y}%`;
+      hoverFrame.current = null;
+    });
+  };
 
   // Keep the outgoing zoom running through its fade; remount an image on reactivation so it starts wide.
   const goTo = (next: number) => {
     if (next === activeIdx) return;
     clearTimeout(leaveTimer.current);
+    setHoveredIdx(null);
     setLeavingIdx(activeIdx);
     setActivationCounts((counts) => counts.map((count, i) => i === next ? count + 1 : count));
     setActiveIdx(next);
@@ -84,7 +136,7 @@ export function Hero({ show }: HeroProps) {
       aria-roledescription="carousel"
       aria-labelledby={HEADING_ID}
       data-home-hero
-      data-paused={userPaused ? '' : undefined}
+      data-paused={userPaused || autoPaused ? '' : undefined}
       className="home-hero relative isolate flex flex-col overflow-hidden bg-primary-800 on-dark lg:flex-row lg:items-center"
       style={{ '--hero-interval': `${CAROUSEL_INTERVAL_MS}ms` } as CSSProperties}
     >
@@ -113,29 +165,59 @@ export function Hero({ show }: HeroProps) {
                 isActive ? 'opacity-100' : 'opacity-0',
               ].join(' ')}
             >
-              <HeroPicture
-                key={`${slide.key}-${activationCounts[i]}`}
-                src={slide.src}
-                className={['home-hero-img', zooming ? 'home-hero-drift' : ''].join(' ')}
-                style={
-                  {
-                    '--hero-pos': slide.position,
-                  } as CSSProperties
-                }
-                priority={i === 0}
-                sizes={`(max-width: 1023px) max(100vw, calc(50vw * ${aspect})), max(100vw, ${Math.ceil(HERO_BOX_HEIGHT * aspect)}px)`}
-              />
+              <div
+                ref={(node) => { zoomRefs.current[i] = node; }}
+                className="home-hero-hover absolute inset-0"
+                data-zoomed={hoverEnabled && hoveredIdx === i && !!slide.detailSrc ? '' : undefined}
+              >
+                <div
+                  key={`${slide.key}-${activationCounts[i]}`}
+                  className={['absolute inset-0', zooming ? 'home-hero-drift' : ''].join(' ')}
+                  style={{ '--hero-pos': slide.position } as CSSProperties}
+                >
+                  <HeroPicture
+                    src={slide.src}
+                    className="home-hero-img"
+                    priority={i === 0}
+                    sizes={`(max-width: 1023px) max(100vw, calc(50vw * ${aspect})), max(100vw, ${Math.ceil(HERO_BOX_HEIGHT * aspect)}px)`}
+                  />
+                  {slide.detailSrc && readyDetails.includes(slide.detailSrc) ? (
+                    <img
+                      src={slide.detailSrc}
+                      alt=""
+                      aria-hidden="true"
+                      className="home-hero-img home-hero-detail absolute inset-0 h-full w-full"
+                    />
+                  ) : null}
+                </div>
+              </div>
             </div>
           );
         })}
+        {hoverEnabled && slides[activeIdx].detailSrc ? (
+          <div
+            data-home-hero-photo-hover
+            className="absolute inset-0 z-10"
+            onPointerEnter={() => {
+              setHoveredIdx(activeIdx);
+              loadDetail(slides[activeIdx].detailSrc!);
+            }}
+            onPointerMove={onPhotoMove}
+            onPointerLeave={() => {
+              if (hoverFrame.current !== null) cancelAnimationFrame(hoverFrame.current);
+              hoverFrame.current = null;
+              setHoveredIdx(null);
+            }}
+          />
+        ) : null}
       </div>
 
       {/* One localised scrim (NOS Design ruling A4): it covers the copy column only; the rest is bare photograph. */}
       <div aria-hidden="true" data-hero-scrim="copy" className="absolute inset-0 max-lg:hidden" />
 
       {/* Content: left-aligned in the container, a 640px column (A3). */}
-      <div className="saoc-container relative z-10 w-full py-10 lg:py-24">
-        <div className="flex max-w-[640px] flex-col items-start text-left">
+      <div className="saoc-container pointer-events-none relative z-10 w-full py-10 lg:py-24">
+        <div className="pointer-events-auto flex max-w-[640px] flex-col items-start text-left">
           <span className="mb-8 rounded-full border border-ivory/30 bg-white/10 px-4 py-1.5 font-mono text-[11px] uppercase tracking-[0.22em] text-ivory">
             SINCE 1968 · BLOEMFONTEIN
           </span>

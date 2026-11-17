@@ -1,0 +1,23 @@
+schema: athanor.contract/v1
+slug: home-hero-hover-detail
+goal: Rotate eight home hero photographs and offer decoded detail zoom on eligible fine-pointer hover.
+created_at: '2026-11-18'
+autonomy: high
+features:
+  - id: F1
+    name: Eight-slide home hero with optional hover detail
+    status: pending
+goldens:
+  - .agent/memory/project/specs/home-hero-hover-detail/goldens/slide-order.json
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Home hero has eight entries in the slide check
+      command: grep -q 'homeSlideEntries.length === 8' .agent/memory/project/specs/saoc-inner-heroes/checks/check-static.mjs
+    - id: A2
+      description: Detail sources stay outside the variant walker
+      command: grep -q "path.join(SOURCE_ROOT, 'hero-detail')" scripts/generate-image-variants.mjs
+    - id: A3
+      description: Fine pointer hover is gated
+      command: grep -q 'hover: hover) and (pointer: fine' components/home/Hero.tsx

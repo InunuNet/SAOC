@@ -423,6 +423,24 @@ h3.font-serif {
   transform: scale(1);
   transform-origin: var(--hero-pos);
 }
+.home-hero-hover {
+  transform: scale(1);
+  transition: transform 900ms ease-out, transform-origin 180ms ease-out;
+}
+.home-hero-hover[data-zoomed] {
+  transform: scale(1.8);
+}
+.home-hero-detail {
+  opacity: 0;
+  animation: home-hero-detail-in 300ms ease-out forwards;
+}
+@keyframes home-hero-detail-in {
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-hover { transition: none; }
+  .home-hero-detail { animation: none; opacity: 1; }
+}
 @media (min-width: 1024px) {
   .home-hero [data-hero-scrim='copy'] {
     background-image: linear-gradient(
@@ -471,6 +489,7 @@ h3.font-serif {
 }
 .home-hero-drift {
   animation: home-hero-drift calc(var(--hero-interval) + 1400ms) linear both;
+  transform-origin: var(--hero-pos);
   will-change: transform;
 }
 .home-hero-fill {

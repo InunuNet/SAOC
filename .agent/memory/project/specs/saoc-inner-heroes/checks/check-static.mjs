@@ -54,12 +54,13 @@ check('PhotoBand.tsx takes an imagePosition prop and applies it as object-positi
 const home = read('components/home/Hero.tsx');
 check('Hero.tsx: carousel images are decorative, alt=""  (HS-2)', /alt=""/.test(home) && !/alt=\{slide\.alt\}/.test(home));
 const slides = read('lib/data/home-hero-slides.ts');
-const homeSlideKeys = ['zygopetalum', 'dendrobium-chlorostylum', 'colmanara', 'cattleya-white', 'dendrobium-pair'];
-const homeSlideSources = ['hero-home-1-zygopetalum-hendrik.jpg', 'hero-home-2-dendrobium-chlorostylum.jpg', 'hero-home-3-colmanara-hendrik.jpg', 'hero-home-4-cattleya-white.jpg', 'hero-home-5-dendrobium-hendrik.jpg'];
-const homeSlidePositions = ['50% 45%', '50% 50%', '40% 40%', '45% 45%', '55% 50%'];
-const homeSlideEntries = [...slides.matchAll(/\{\s*key: '([^']+)',\s*src: '([^']+)',\s*alt: '([^']+)',\s*position: '([^']+)',\s*\}/g)];
-check('home-hero-slides.ts: exactly five slides in Brad’s 18 Nov order with the ruled sources and focal points',
-  homeSlideEntries.length === 5 && homeSlideEntries.every((entry, i) => entry[1] === homeSlideKeys[i] && entry[2] === `/images/heroes/${homeSlideSources[i]}` && entry[4] === homeSlidePositions[i]));
+const homeSlideKeys = ['zygopetalum', 'dendrobium-chlorostylum', 'colmanara', 'cattleya-aclandiae', 'dendrobium-pair', 'cattleya-white', 'phalaenopsis-pink', 'phalaenopsis-stripes'];
+const homeSlideSources = ['hero-home-1-zygopetalum-hendrik.jpg', 'hero-home-2-dendrobium-chlorostylum.jpg', 'hero-home-3-colmanara-hendrik.jpg', 'hero-home-6-cattleya-aclandiae.jpg', 'hero-home-5-dendrobium-hendrik.jpg', 'hero-home-4-cattleya-white.jpg', 'hero-home-7-phalaenopsis-pink.jpg', 'hero-home-8-phalaenopsis-stripes.jpg'];
+const homeSlidePositions = ['50% 45%', '50% 50%', '40% 40%', '35% 50%', '55% 50%', '45% 45%', '55% 45%', '65% 45%'];
+const homeSlideDetails = [null, 'hero-home-2-dendrobium-chlorostylum.webp', null, 'hero-home-6-cattleya-aclandiae.webp', null, 'hero-home-4-cattleya-white.webp', 'hero-home-7-phalaenopsis-pink.webp', 'hero-home-8-phalaenopsis-stripes.webp'];
+const homeSlideEntries = [...slides.matchAll(/\{\s*key: '([^']+)',\s*src: '([^']+)',\s*alt: '([^']+)',\s*position: '([^']+)',(?:\s*detailSrc: '([^']+)',)?\s*\}/g)];
+check('home-hero-slides.ts: exactly eight slides in Brad’s 18 Nov order with the ruled sources, focal points and detail files',
+  homeSlideEntries.length === 8 && homeSlideEntries.every((entry, i) => entry[1] === homeSlideKeys[i] && entry[2] === `/images/heroes/${homeSlideSources[i]}` && entry[4] === homeSlidePositions[i] && (entry[5] ?? null) === (homeSlideDetails[i] ? `/images/hero-detail/${homeSlideDetails[i]}` : null)));
 
 // Pink and yellow retire from every hero box (ruling 3); typographic pages pass no image.
 const heroFiles = [...walk('app/(marketing)').filter((f) => /page\.tsx$/.test(f)), ...walk('app/(shared)').filter((f) => /page\.tsx$/.test(f)), 'components/ui/PageHero.tsx', 'components/ui/PhotoBand.tsx', 'components/home/ShowBand.tsx', 'lib/data/home-hero-slides.ts', 'lib/data/saoc-hero-photos.ts', ...(existsSync('components/nos/LegalHero.tsx') ? ['components/nos/LegalHero.tsx'] : [])];

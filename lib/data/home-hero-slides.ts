@@ -1,4 +1,4 @@
-// Brad's 18 Nov instruction replaces the two-slide ruling: five slides, each slowly zooming in from
+// Brad's 18 Nov instruction replaces the two-slide ruling: eight slides, each slowly zooming in from
 // the whole flower toward its detail. The slides use the handoff sources at full resolution, not Sanity
 // heroImages. `position` sets both object-position and the zoom's transform-origin.
 
@@ -8,6 +8,7 @@ export interface HomeHeroSlide {
   /** The slide group's accessible label and the dot labels. The photograph itself is decorative (alt=""). */
   alt: string;
   position: string;
+  detailSrc?: string;
 }
 
 export const HOME_HERO_SLIDES: readonly HomeHeroSlide[] = [
@@ -22,6 +23,7 @@ export const HOME_HERO_SLIDES: readonly HomeHeroSlide[] = [
     src: '/images/heroes/hero-home-2-dendrobium-chlorostylum.jpg',
     alt: 'Dendrobium orchid',
     position: '50% 50%',
+    detailSrc: '/images/hero-detail/hero-home-2-dendrobium-chlorostylum.webp',
   },
   {
     key: 'colmanara',
@@ -30,15 +32,37 @@ export const HOME_HERO_SLIDES: readonly HomeHeroSlide[] = [
     position: '40% 40%',
   },
   {
-    key: 'cattleya-white',
-    src: '/images/heroes/hero-home-4-cattleya-white.jpg',
+    key: 'cattleya-aclandiae',
+    src: '/images/heroes/hero-home-6-cattleya-aclandiae.jpg',
     alt: 'Cattleya orchid',
-    position: '45% 45%',
+    position: '35% 50%',
+    detailSrc: '/images/hero-detail/hero-home-6-cattleya-aclandiae.webp',
   },
   {
     key: 'dendrobium-pair',
     src: '/images/heroes/hero-home-5-dendrobium-hendrik.jpg',
     alt: 'Dendrobium orchid',
     position: '55% 50%',
+  },
+  {
+    key: 'cattleya-white',
+    src: '/images/heroes/hero-home-4-cattleya-white.jpg',
+    alt: 'Cattleya orchid',
+    position: '45% 45%',
+    detailSrc: '/images/hero-detail/hero-home-4-cattleya-white.webp',
+  },
+  {
+    key: 'phalaenopsis-pink',
+    src: '/images/heroes/hero-home-7-phalaenopsis-pink.jpg',
+    alt: 'Phalaenopsis orchid',
+    position: '55% 45%',
+    detailSrc: '/images/hero-detail/hero-home-7-phalaenopsis-pink.webp',
+  },
+  {
+    key: 'phalaenopsis-stripes',
+    src: '/images/heroes/hero-home-8-phalaenopsis-stripes.jpg',
+    alt: 'Phalaenopsis orchid',
+    position: '65% 45%',
+    detailSrc: '/images/hero-detail/hero-home-8-phalaenopsis-stripes.webp',
   },
 ];
