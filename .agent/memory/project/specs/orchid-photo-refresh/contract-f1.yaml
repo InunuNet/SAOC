@@ -1,0 +1,23 @@
+schema: athanor.contract/v1
+slug: orchid-photo-refresh
+goal: Use the approved orchid photographs in their manifest slots with accurate metadata and photo credits.
+created_at: '2026-11-16'
+autonomy: high
+features:
+  - id: F1
+    name: Refresh hero and ticket stub photographs
+    status: pending
+goldens:
+  - .agent/memory/project/specs/orchid-photo-refresh/goldens/manifest-slots.json
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Home lead uses the approved Zygopetalum photograph
+      command: grep -q "hero-home-1-zygopetalum-hendrik.jpg" lib/data/home-hero-slides.ts
+    - id: A2
+      description: Symposium ticket has an orchid photograph
+      command: grep -q "stub-symposium-cattleya-violet.jpg" lib/data/ticket-presentation.ts
+    - id: A3
+      description: Photo credit data exists
+      command: test -f lib/data/photo-credits.ts

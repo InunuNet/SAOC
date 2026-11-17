@@ -26,6 +26,7 @@ const REQUIRED = [
   { path: '/privacy', label: 'Privacy' },
   { path: '/terms', label: 'Terms' },
   { path: '/refunds', label: 'Refunds' },
+  { path: '/photo-credits', label: 'Photo credits' },
 ];
 
 const pageRes = await fetch(pageUrl);

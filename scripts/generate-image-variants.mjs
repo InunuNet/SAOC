@@ -25,7 +25,24 @@ const HERO_WEBP_QUALITY = 72;
 // quality 88) but are encoded at this lower quality: at 2.5k-7k px the q88 files weighed 1-5 MB. Dimensions are
 // untouched (a hero is never served narrower than box x device pixel ratio), only bytes drop.
 const HERO_LARGE_WEBP_QUALITY = 78;
-const HERO_SOURCES = new Set(['orchid-violet.jpg', 'orchid-pink.jpg', 'orchid-dark.jpg', 'orchid-purple.jpg', 'orchid-yellow.jpg', 'nos-hero-S3a.jpg', 'nos-hero-S3b.jpg', 'nos-hero-S2a.jpg', 'nos-hero-S2c.jpg', 'nos-hero-S1b.jpg', 'nos-hero-H4a.jpg', 'nos-hero-H4b.jpg', 'nos-hero-D1.jpg', 'nos-hero-PK1.jpg', 'nos-hero-PK3.jpg', 'nos-hero-Y1.jpg'].map((name) => path.join(SOURCE_ROOT, name)));
+const HERO_SOURCES = new Set(['orchid-violet.jpg', 'orchid-pink.jpg', 'orchid-dark.jpg', 'orchid-purple.jpg', 'orchid-yellow.jpg', 'orchid-pink-about.jpg', 'nos-hero-S3a.jpg', 'nos-hero-S3b.jpg', 'nos-hero-S2a.jpg', 'nos-hero-S2c.jpg', 'nos-hero-S1b.jpg', 'nos-hero-H4a.jpg', 'nos-hero-H4b.jpg', 'nos-hero-D1.jpg', 'nos-hero-PK1.jpg', 'nos-hero-PK3.jpg', 'nos-hero-Y1.jpg'].map((name) => path.join(SOURCE_ROOT, name)));
+for (const name of [
+  'hero-home-1-zygopetalum-hendrik.jpg',
+  'hero-home-2-dendrobium-chlorostylum.jpg',
+  'hero-nos-hub-cattleya-aclandiae.jpg',
+  'hero-nos-about-colmanara-hendrik.jpg',
+  'hero-nos-programme-dendrobium-hendrik.jpg',
+  'hero-nos-conferences-cattleya-white.jpg',
+  'hero-nos-workshops-cattleya-apricot-hendrik.jpg',
+  'hero-nos-plan-paphiopedilum-yellow.jpg',
+  'hero-nos-faq-paphiopedilum-rust.jpg',
+  'hero-nos-expect-phalaenopsis-pink.jpg',
+  'hero-nos-symposium-phalaenopsis-stripes.jpg',
+  'hero-saoc-judging-colmanara-hendrik.jpg',
+  'hero-saoc-events-habenaria-hendrik.jpg',
+  'hero-saoc-sponsors-dendrobium-hendrik.jpg',
+  'hero-saoc-event-cattleya-white.jpg',
+]) HERO_SOURCES.add(path.join(SOURCE_ROOT, 'heroes', name));
 // Hero sources also get an AVIF set (same widths, same -q88 name, .avif extension), served first by
 // components/ui/HeroPicture.tsx with the WebP set as fallback. AVIF q55 is far smaller than the hero WebP.
 const HERO_AVIF_QUALITY = 55;
