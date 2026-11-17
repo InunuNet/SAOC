@@ -4,7 +4,7 @@ import Link from 'next/link';
 // loader omits it, since the name is only known once the ticket has loaded.
 export function TicketBuyCrumbs({ name }: { name?: string }) {
   return (
-    <nav className="nk-crumbs" aria-label="Breadcrumb">
+    <nav className="nk-crumbs nk-buy-crumbs" aria-label="Breadcrumb">
       <Link href="/">National Show</Link>
       <span className="nk-crumb">
         <span className="nk-sep" aria-hidden="true" />
