@@ -790,3 +790,5 @@ Brad, verbatim: "self compaction is important save it as a rule and always use i
 - Mid-task: `python3 execution/compact.py delay`, then `python3 execution/compact.py restore` at the next safe point. `python3 execution/compact.py status` shows tokens and what is scheduled.
 - Commit and wrap up properly first, so nothing is lost (2026-09-14 lesson above still holds).
 
+
+- 2026-11-17 Image variants are not the deploy bottleneck. A full local regeneration of 1725 variants takes ~6 min (357s one at a time, 340s with a parallel pool, because sharp already uses every core), so a parallel pool is not worth it. Most of the 50-60 min App Hosting build is elsewhere (next build or the builder itself). Measure the App Hosting build log before optimising again. Also: a worktree with a SYMLINKED node_modules cannot run `next dev`/e2e (Turbopack refuses to resolve outside the root), so run `pnpm install --prefer-offline` in the worktree instead.
