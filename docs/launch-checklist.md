@@ -254,6 +254,8 @@ Phase D2 (Stripe SA payment gateway) and D4 (ticket buy flow) are implemented bu
    toggle `adminSettings/ozowSandboxTestMode` (R0.01 amount override) must be turned off at the
    same deploy: while it is on, every new ticket is stamped as test and refused at the door, even
    with all three constants live.
+7. Confirm the active show's dates in Sanity match the real show days before opening; the door
+   refuses every ticket outside those dates. See [docs/door-day-aware.md](door-day-aware.md).
 
 ---
 
