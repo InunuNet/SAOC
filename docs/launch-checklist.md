@@ -45,8 +45,7 @@ NEXT_PUBLIC_SANITY_PROJECT_ID=26yfbug4
 NEXT_PUBLIC_SANITY_DATASET=production
 SANITY_API_READ_TOKEN=                 # Sanity → API → Tokens → viewer token
 SANITY_API_TOKEN=                      # Sanity → API → Tokens → editor token (for seed script)
-SANITY_WEBHOOK_SECRET=                 # Any random string ≥32 chars
-SANITY_REVALIDATE_SECRET=              # Any random string ≥32 chars
+SANITY_REVALIDATE_SECRET=              # Any random string ≥32 chars; the value Sanity's webhook sends in the x-sanity-secret header
 ```
 
 ### 2b. Firebase App Hosting secrets (production)
@@ -61,8 +60,7 @@ In the Firebase console → App Hosting → your backend → Environment:
 | `FIREBASE_ADMIN_PRIVATE_KEY` | From service account JSON |
 | `RESEND_API_KEY` | From Resend dashboard |
 | `SANITY_API_READ_TOKEN` | Viewer token from Sanity |
-| `SANITY_WEBHOOK_SECRET` | Same random string used in `.env.local` |
-| `SANITY_REVALIDATE_SECRET` | Same random string used in `.env.local` |
+| `SANITY_REVALIDATE_SECRET` | Same random string used in `.env.local`; the value Sanity's webhook sends in the `x-sanity-secret` header |
 
 Then update `apphosting.yaml` to reference them — add under `env:`:
 
@@ -92,10 +90,6 @@ Then update `apphosting.yaml` to reference them — add under `env:`:
     availability:
       - BUILD
       - RUNTIME
-  - variable: SANITY_WEBHOOK_SECRET
-    secret: SANITY_WEBHOOK_SECRET
-    availability:
-      - RUNTIME
   - variable: SANITY_REVALIDATE_SECRET
     secret: SANITY_REVALIDATE_SECRET
     availability:
@@ -123,13 +117,34 @@ After seeding, open `/studio` locally (or at your Firebase App Hosting URL) to v
 
 In Sanity → API → Webhooks → create new:
 
-- **URL:** `https://saoc.co.za/api/sanity-revalidate`
+- **URL:** `https://beta.saoc.co.za/api/revalidate` (route: `app/api/revalidate/route.ts`). Use the beta origin until the apex DNS cutover lands (the bare `saoc.co.za` still serves the old site; see `apphosting.yaml` `SITE_URL`), then change it to `https://saoc.co.za/api/revalidate`.
 - **Dataset:** `production`
 - **Trigger on:** Create, Update, Delete
 - **HTTP method:** POST
-- **Secret:** same value as `SANITY_WEBHOOK_SECRET` in `.env.local`
+- **HTTP Headers:** add one header, name `x-sanity-secret`, value = the `SANITY_REVALIDATE_SECRET` secret (Secret Manager, mapped in `apphosting.yaml`)
+- **Secret field:** leave empty. It makes Sanity sign the payload, and the route does not verify signatures; it only compares the `x-sanity-secret` header to `SANITY_REVALIDATE_SECRET`. Do not use the `?secret=` query form: secrets in URLs end up in logs.
+- **Projection:** keep `_type` in the payload (the default projection includes it). The route always revalidates the `sanity` tag, and also revalidates the tag named by `body._type`.
 
 This triggers Next.js ISR revalidation whenever Sanity content changes.
+
+**Verify (never print or inline the secret):** export it into your shell first, e.g. `read -rs SANITY_REVALIDATE_SECRET && export SANITY_REVALIDATE_SECRET`.
+
+```bash
+# Wrong header value: must return 401 {"ok":false,"error":"Invalid secret"}
+curl -s -o /dev/null -w '%{http_code}\n' -X POST \
+  -H 'x-sanity-secret: wrong' -H 'content-type: application/json' \
+  -d '{"_type":"event"}' https://beta.saoc.co.za/api/revalidate
+
+# Real secret from the env var: must return {"ok":true,"revalidated":true,"type":"event"}
+# The header comes from a printf (a shell builtin) via curl's @file form, so the secret
+# never appears in curl's argument list or in `ps`.
+curl -s -X POST \
+  -H @<(printf 'x-sanity-secret: %s\n' "$SANITY_REVALIDATE_SECRET") \
+  -H 'content-type: application/json' \
+  -d '{"_type":"event"}' https://beta.saoc.co.za/api/revalidate
+```
+
+Then use the webhook's "Attempts" log in Sanity to confirm a real publish returns 200.
 
 ---
 

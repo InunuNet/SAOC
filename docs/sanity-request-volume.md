@@ -49,4 +49,4 @@ CI (`.github/workflows/ci.yml`, `build` job): the AST check and probe `--selftes
 ## Open items
 
 - QA L2: 404 cache entries are unbounded.
-- The Sanity webhook is unverified, and `docs/launch-checklist.md:126` names `/api/sanity-revalidate` while the route is `/api/revalidate`.
+- Whether the Sanity webhook exists is unverified: our Editor token lacks `sanity.project.webhooks/read`. Setup is in `docs/launch-checklist.md` section 4 (`/api/revalidate`, `x-sanity-secret` header).
