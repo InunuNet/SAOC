@@ -124,6 +124,7 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
             statusClassName="mt-2 font-sans text-[13px] text-ivory/80 empty:hidden"
             errorClassName="mt-2 flex items-start gap-2 border border-[var(--status-error-on-dark)] px-3 py-2 font-sans text-[13px] text-ivory"
             errorIcon={<CircleAlert aria-hidden="true" className="mt-px size-4 shrink-0 text-[var(--status-error-on-dark)]" />}
+            unsubscribeLinkClassName="inline-flex min-h-11 items-center font-sans text-[13px] text-ivory/65 hover:text-ivory transition-colors duration-150"
           />
         </div>
       </div>
