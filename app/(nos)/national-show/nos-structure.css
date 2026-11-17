@@ -4891,7 +4891,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     display: none !important;
   }
   /* Ticket stubs and the masthead fan must read on paper with background graphics off. */
-  .nos-theme .nk-stub, .nos-theme .nk-band {
+  .nos-theme .nk-stub, .nos-theme .nk-band, .nos-theme .nk-stamp {
     background: none !important;
     color: #000 !important;
     border-color: #000 !important;
