@@ -54,9 +54,12 @@ check('PhotoBand.tsx takes an imagePosition prop and applies it as object-positi
 const home = read('components/home/Hero.tsx');
 check('Hero.tsx: carousel images are decorative, alt=""  (HS-2)', /alt=""/.test(home) && !/alt=\{slide\.alt\}/.test(home));
 const slides = read('lib/data/home-hero-slides.ts');
-const iDark = slides.indexOf("key: 'orchid-dark'"); const iPurple = slides.indexOf("key: 'orchid-purple'");
-check('home-hero-slides.ts: slides are dark then purple, violet retired', iDark !== -1 && iPurple > iDark && !slides.includes("key: 'orchid-violet'"));
-check('home-hero-slides.ts: the purple slide uses the derived cut /images/orchid-purple-home.jpg', slides.includes('/images/orchid-purple-home.jpg'));
+const homeSlideKeys = ['zygopetalum', 'dendrobium-chlorostylum', 'colmanara', 'cattleya-white', 'dendrobium-pair'];
+const homeSlideSources = ['hero-home-1-zygopetalum-hendrik.jpg', 'hero-home-2-dendrobium-chlorostylum.jpg', 'hero-home-3-colmanara-hendrik.jpg', 'hero-home-4-cattleya-white.jpg', 'hero-home-5-dendrobium-hendrik.jpg'];
+const homeSlidePositions = ['50% 45%', '50% 50%', '40% 40%', '45% 45%', '55% 50%'];
+const homeSlideEntries = [...slides.matchAll(/\{\s*key: '([^']+)',\s*src: '([^']+)',\s*alt: '([^']+)',\s*position: '([^']+)',\s*\}/g)];
+check('home-hero-slides.ts: exactly five slides in Brad’s 18 Nov order with the ruled sources and focal points',
+  homeSlideEntries.length === 5 && homeSlideEntries.every((entry, i) => entry[1] === homeSlideKeys[i] && entry[2] === `/images/heroes/${homeSlideSources[i]}` && entry[4] === homeSlidePositions[i]));
 
 // Pink and yellow retire from every hero box (ruling 3); typographic pages pass no image.
 const heroFiles = [...walk('app/(marketing)').filter((f) => /page\.tsx$/.test(f)), ...walk('app/(shared)').filter((f) => /page\.tsx$/.test(f)), 'components/ui/PageHero.tsx', 'components/ui/PhotoBand.tsx', 'components/home/ShowBand.tsx', 'lib/data/home-hero-slides.ts', 'lib/data/saoc-hero-photos.ts', ...(existsSync('components/nos/LegalHero.tsx') ? ['components/nos/LegalHero.tsx'] : [])];
