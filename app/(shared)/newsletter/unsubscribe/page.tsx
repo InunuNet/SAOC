@@ -37,7 +37,7 @@ export default async function NewsletterPreferencesPage({
   const isNos = site === 'nos';
 
   return (
-    <main id="main-content">
+    <div>
       {isNos ? (
         <NosHero
           route="/newsletter/unsubscribe"
@@ -81,6 +81,6 @@ export default async function NewsletterPreferencesPage({
           </div>
         )}
       </div>
-    </main>
+    </div>
   );
 }
