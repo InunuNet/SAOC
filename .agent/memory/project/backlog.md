@@ -224,3 +224,9 @@ Brad-only: review and send Lee-Ann's invoice before year end; review hours Thu-S
   - New PRs: #206 infra checks, #207 door day-aware port (supersedes #75), #208 ticket emails switch on (samples re-rendered and sent to Brad).
   - #201 and #204 both touch the Footer.tsx subscribe button and legal row. Whichever merges second keeps both class sets; preview/local shows the resolution.
   - VIP evening times differ in three of Lee-Ann's documents. A follow-up is in her doc; the email copy stays verbatim until she answers.
+- Update 17 Nov afternoon:
+  - Remaining-routes style pass in #201 (9 fixes plus 2 Gemini follow-ups, verified in the browser; 20/20 registration e2e).
+  - NOS /photo-credits hero is H4b.
+  - #209 bumps Next 16.4.3 to 16.4.6 (GHSA-mfr8-8qww-v76h; the site doesn't use the affected API). It is deliberately NOT merged into preview, so the dev server Brad reviews stays stable.
+  - The parallel image-variant pool was tried and dropped (no gain; see learned.md).
+  - e2e in a worktree needs a real `pnpm install` plus the contract's env (TICKET_FIXTURES=1 and SANITY_FIXTURE_MODE=replay ...); see the registration-forms contract A9.
