@@ -48,7 +48,7 @@ const ORIGINAL_SIZES: Readonly<Record<string, readonly [number, number]>> = {
   '/images/orchid-purple.jpg': [5308, 4160],
   '/images/orchid-violet.jpg': [7327, 4885],
   '/images/heroes/hero-home-1-zygopetalum-hendrik.jpg': [3000, 1579],
-  '/images/heroes/hero-home-2-dendrobium-chlorostylum.jpg': [3000, 1578],
+  '/images/heroes/hero-home-2-dendrobium-chlorostylum.jpg': [3000, 1814],
   '/images/orchid-pink-about.jpg': [3000, 1000],
   '/images/heroes/hero-saoc-judging-colmanara-hendrik.jpg': [3000, 1000],
   '/images/heroes/hero-saoc-events-habenaria-hendrik.jpg': [3000, 1000],
