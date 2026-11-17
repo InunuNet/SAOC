@@ -49,6 +49,14 @@ export const PHOTO_CREDITS: readonly PhotoCredit[] = [
     changed: true,
   },
   {
+    image: "/images/heroes/hero-home-6-cattleya-aclandiae.jpg",
+    author: "Motohiro Sunouchi",
+    licence: "CC BY 2.0",
+    licenceUrl: "https://creativecommons.org/licenses/by/2.0/",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Cattleya_aclandiae_Lindl.,_Edwards's_Bot._Reg._26_t._48_(1840)_(41247080285).jpg",
+    changed: true,
+  },
+  {
     image: "/images/heroes/hero-nos-hub-cattleya-aclandiae.jpg",
     author: "Motohiro Sunouchi",
     licence: "CC BY 2.0",
