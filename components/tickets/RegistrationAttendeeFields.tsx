@@ -42,10 +42,10 @@ export function RegistrationAttendeeFields({ attendee, draft, errors, disabled, 
     <div className="grid gap-3 sm:grid-cols-2 sm:items-end">{text('preferredName', 'text', 100)}{text('email', 'email', 254)}</div>
     {later ? <SameAsAbove id={fieldId(attendee, 'same-contact')} covers={[REGISTRATION_LABELS.mobile, REGISTRATION_LABELS.country, REGISTRATION_LABELS.province].join(', ')} checked={draft.sameContact} disabled={disabled} onChange={(checked) => onShared(attendee, 'contact', checked)} /> : null}
     {!draft.sameContact ? <>{text('mobile', 'tel', 30)}<div className="grid gap-3 sm:grid-cols-2 sm:items-end">{select('country', REGISTRATION_OPTIONS.country)}{draft.country === SOUTH_AFRICA ? select('province', REGISTRATION_OPTIONS.province) : null}</div></> : null}
-    <h3 className={HEADING_CLASS}>{REGISTRATION_SECTION_HEADINGS.membership}</h3>
+    <h3 className={`${HEADING_CLASS} mt-8`}>{REGISTRATION_SECTION_HEADINGS.membership}</h3>
     {later ? <SameAsAbove id={fieldId(attendee, 'same-membership')} covers={REGISTRATION_LABELS.societies} checked={draft.sameMembership} disabled={disabled} onChange={(checked) => onShared(attendee, 'membership', checked)} /> : null}
     {!draft.sameMembership ? <SocietyDropdown id={fieldId(attendee, 'societies')} value={draft.societies} error={errors.societies} disabled={disabled} onChange={(option, checked) => onSociety(attendee, option, checked)} /> : null}
-    <h3 className={HEADING_CLASS}>{REGISTRATION_SECTION_HEADINGS.judges}</h3>
+    <h3 className={`${HEADING_CLASS} mt-8`}>{REGISTRATION_SECTION_HEADINGS.judges}</h3>
     {select('judgeAccreditation', REGISTRATION_OPTIONS.judgeAccreditation)}
     <div><label htmlFor={fieldId(attendee, 'judgeAvailable')} className={OPTION_LABEL_CLASS}>
       <input id={fieldId(attendee, 'judgeAvailable')} type="checkbox" checked={draft.judgeAvailable} onChange={(event) => onAvailability(attendee, event.target.checked)} disabled={disabled} aria-invalid={Boolean(errors.judgeAvailable)} aria-describedby={errors.judgeAvailable ? `${fieldId(attendee, 'judgeAvailable')}-error` : undefined} className={CHECKBOX_CLASS} />Available as a show judge
@@ -56,7 +56,7 @@ export function RegistrationAttendeeFields({ attendee, draft, errors, disabled, 
       {errors.judgeDate ? <TicketFieldAlert id={`${dateId}-error`}>{errors.judgeDate}</TicketFieldAlert> : null}
     </div> : null}
     <div className="grid gap-3 sm:grid-cols-2 sm:items-end">{select('judgeCommunication', REGISTRATION_OPTIONS.judgeYesNo)}{select('judgeForum', REGISTRATION_OPTIONS.judgeYesNo)}</div>
-    <h3 className={HEADING_CLASS}>{REGISTRATION_SECTION_HEADINGS.dietary}</h3>
+    <h3 className={`${HEADING_CLASS} mt-8`}>{REGISTRATION_SECTION_HEADINGS.dietary}</h3>
     {select('dietary', REGISTRATION_OPTIONS.dietary)}
     {draft.dietary === 'Other' ? text('dietaryOther', 'text', 100) : null}
   </div>;

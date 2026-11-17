@@ -197,7 +197,7 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
       />
 
       <div data-nos-wrap data-ticket-body className="pb-12 pt-10 md:pt-16">
-        <div className="lg:max-w-[560px]">
+        <div className="lg:max-w-4xl">
           {!salesOpen ? (
             <SalesClosedNotice message={salesClosedMessage} />
           ) : cardData.soldOut ? (
@@ -206,7 +206,7 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
             </div>
           ) : null}
           {purchasable && productId ? (
-            <div className="nk-wrap nk-checkout-summary">
+            <div className="nk-wrap nk-checkout-summary lg:max-w-[560px]">
               <TicketCard
                 productId={productId}
                 variant="summary"

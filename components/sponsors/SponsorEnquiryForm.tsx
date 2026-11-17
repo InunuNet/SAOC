@@ -55,7 +55,7 @@ const EMPTY_VALUES: Values = {
 // with a 44px row and a 16px size so a phone does not zoom on focus.
 const inputClass =
   'min-h-11 w-full rounded-sm border border-muted bg-ivory px-3.5 py-2.5 font-sans text-[16px] text-ink placeholder:text-muted outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] transition-colors disabled:opacity-60 aria-invalid:border-error';
-const labelClass = 'font-mono text-[11px] tracking-[0.16em] text-muted';
+const labelClass = 'font-mono text-[12px] uppercase tracking-[0.18em] text-muted';
 
 interface FieldProps {
   id: string;

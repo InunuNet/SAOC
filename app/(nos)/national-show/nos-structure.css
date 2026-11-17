@@ -1448,7 +1448,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   inset: 0;
   background: linear-gradient(
     0deg,
-    color-mix(in srgb, var(--black) 78%, transparent) 0%,
+    color-mix(in srgb, var(--primary-800) 96%, transparent) 0%,
     color-mix(in srgb, var(--black) 36%, transparent) 46%,
     transparent 78%
   );
@@ -2096,6 +2096,13 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+}
+@media (max-width: 479px) {
+  .nos-theme .nk-buy-crumbs [aria-current='page'] {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
   }
 }
 .nos-theme .nk-masthead h1 {
@@ -3548,6 +3555,15 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
      second fact and the venue wrap, the row is a line taller until the swap, and the sub-nav jumps up. */
   .nos-theme .hero-facts[data-fact-count="3"] dd {
     white-space: nowrap;
+  }
+}
+@media (min-width: 1280px) {
+  .nos-theme .hero-facts[data-fact-count="3"] > div:nth-child(2) {
+    order: 3;
+    grid-column: 1 / -1;
+  }
+  .nos-theme .hero-facts[data-fact-count="3"] > div:last-child {
+    grid-column: auto;
   }
 }
 
