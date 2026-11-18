@@ -112,7 +112,7 @@ assertions:
       description: scripts/seed-show-visitor-info.ts carries all three corrected values (showDate, showEndDate, FAQ answer text).
       command: >-
         grep -q "showDate: '2027-09-23T09:00:00+02:00'" scripts/seed-show-visitor-info.ts &&
-        grep -q "showEndDate: '2027-09-26T17:00:00+02:00'" scripts/seed-show-visitor-info.ts &&
+        grep -q "showEndDate: '2027-09-26T16:00:00+02:00'" scripts/seed-show-visitor-info.ts &&
         grep -q "Thursday 23 to Sunday 26 September 2027" scripts/seed-show-visitor-info.ts
 
     - id: A15
@@ -183,7 +183,7 @@ assertions:
       description: Companion goldens for the F1 code edits are kept in sync (not gated elsewhere, but directly describe the changed scripts).
       command: >-
         grep -q "2027-09-23T09:00:00+02:00" contracts/golden/show-visitor-info/seed-show-visitor-info.golden.json &&
-        grep -q "2027-09-26T17:00:00+02:00" contracts/golden/show-visitor-info/seed-show-visitor-info.golden.json &&
+        grep -q "2027-09-26T16:00:00+02:00" contracts/golden/show-visitor-info/seed-show-visitor-info.golden.json &&
         grep -q "2027-09-23T09:00:00+02:00" contracts/golden/venue-seed-truth/expected-venue.json &&
         grep -q "2027-09-23T09:00:00+02:00" contracts/golden/f4-seed-page-singletons/nationalShow.golden.json
 
@@ -212,7 +212,7 @@ assertions:
       description: The new script carries the corrected constants, not the stale ones.
       command: >-
         grep -q "SHOW_START_ISO = '2027-09-23T09:00:00+02:00'" scripts/fix-show-dates-23-26-sept-2027.ts &&
-        grep -q "SHOW_END_ISO = '2027-09-26T17:00:00+02:00'" scripts/fix-show-dates-23-26-sept-2027.ts &&
+        grep -q "SHOW_END_ISO = '2027-09-26T16:00:00+02:00'" scripts/fix-show-dates-23-26-sept-2027.ts &&
         ! grep -qE "2027-09-16|2027-09-19" scripts/fix-show-dates-23-26-sept-2027.ts
 
     - id: A25

@@ -214,8 +214,8 @@ if (cmd === 'render') {
   if (Object.values(pages).some((n) => n < 1)) fail('fixture lacks vip / sunset / weekend / symposium positions');
   else {
     const vip = stubWords(pages.vip), sunset = stubWords(pages.sunset), weekend = stubWords(pages.weekend), sym = stubWords(pages.symposium);
-    need('VIP', ['Thursday', '23', 'September', '16h00', '19h00'], vip); forbid('VIP', ['24', '25', '26', 'confirmed'], vip);
-    need('Sunset', ['Thursday', '23', 'September', '18h00', '21h00'], sunset); forbid('Sunset', ['confirmed'], sunset);
+    need('VIP', ['Thursday', '23', 'September', '16h30', '19h00'], vip); forbid('VIP', ['24', '25', '26', 'confirmed'], vip);
+    need('Sunset', ['Thursday', '23', 'September', '18h30', '21h00'], sunset); forbid('Sunset', ['confirmed'], sunset);
     need('Weekend', ['Friday', '24', 'Sunday', '26', 'September', 'Entry', 'three'], weekend); forbid('Weekend', ['Thursday', 'confirmed'], weekend);
     need('Symposium', ['Friday', '24', 'September', '9am', '5pm'], sym); forbid('Symposium', ['confirmed', 'thursday'], sym);
   }
