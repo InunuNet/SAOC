@@ -7,10 +7,10 @@ export const COVER_TITLE = 'Questions for Lee-Ann';
 export const COVER_INTRO = 'These are sample emails and ticket PDFs. Nothing has been sent to anyone. The names, booking references and the amount R100.00 are made up for the samples.';
 
 export const COVER_QUESTIONS: readonly string[] = [
-  'Q1. VIP hours: this copy says Thursday, 23 September 2027, 16:00–18:30. The booking document says 17:00–18:30. Which is correct?',
+  'Q1. VIP hours: this copy says Thursday, 23 September 2027, 16:30–19:00. The booking document says 17:00–18:30. Which is correct?',
   'Q2. Refund policy, pending legal review: the cancellation and refund paragraph is reproduced exactly in every email, but the Terms say show tickets are non-refundable. Which applies?',
   'Q3. Venue wording: the copy says Hangar 25 at Stellenbosch Airfield (R44). The venue on the website is Hangar 25, Orca Aero Solutions. Your text is kept as written. Which wording should the emails use?',
-  'Q4. Sunset Cocktails: the copy has no subject line, date, time or venue, and no age restriction. These show as [To be confirmed].',
+  'Q4. Sunset Cocktails: the copy has no subject line, venue or age restriction. The subject remains [To be confirmed]; the date and time are Thursday, 23 September 2027, 18:30–21:00.',
   'Q5. SAOC Symposium, WOSA Conference and Joint Ticket: the copy leaves out the venue and times on purpose. They show as [To be confirmed].',
   'Q6. Line breaks: in the VIP copy the date and the time are on separate lines, and the sign-off is on two lines (Kind regards, then The National Orchid Show). They are shown the same way here. Please confirm.',
   'Q7. Payment status: which words should appear, for example Paid?',

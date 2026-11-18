@@ -29,7 +29,7 @@ to it at all. Don't shift a date that doesn't represent the real show.
 | `lib/admission-early-bird-pricing.ts` | 27 | comment only: "2027-09-16 start = 2027-06-18 cutoff" → "2027-09-23 start = 2027-06-25 cutoff" |
 | `lib/hooks/useCountdown.ts` | 88 | doc example `2027-09-16T09:00:00+02:00` → `2027-09-23T09:00:00+02:00` |
 | `lib/show-identity.ts` | 79 only | `2027-09-16` → `2027-09-23`. **Leave line 21 untouched** (its even-older "18–21 September 2027" example is out of scope by established precedent — confirms scope discipline, same as the prior purge's A9) |
-| `scripts/seed-show-visitor-info.ts` | 124 (comment), 128 `showDate`, 129 `showEndDate`, 208 (comment), 451 (FAQ answer text) | shift +7: `'2027-09-16T09:00:00+02:00'`→`'2027-09-23T09:00:00+02:00'`, `'2027-09-19T17:00:00+02:00'`→`'2027-09-26T17:00:00+02:00'`, `'Thursday 16 to Sunday 19 September 2027...'`→`'Thursday 23 to Sunday 26 September 2027...'` |
+| `scripts/seed-show-visitor-info.ts` | 124 (comment), 128 `showDate`, 129 `showEndDate`, 208 (comment), 451 (FAQ answer text) | shift +7: `'2027-09-16T09:00:00+02:00'`→`'2027-09-23T09:00:00+02:00'`, `'2027-09-19T17:00:00+02:00'`→`'2027-09-26T16:00:00+02:00'`, `'Thursday 16 to Sunday 19 September 2027...'`→`'Thursday 23 to Sunday 26 September 2027...'` |
 | `scripts/seed-page-singletons.ts` | 216 | `countdownDate:'2027-09-16T09:00:00+02:00'` → `'2027-09-23T09:00:00+02:00'` |
 | `contracts/checks/ticketing-complete-f2/check-vip-computed-early-bird-price.mjs` | 39, 43, 44 (+comments 14,16) | `SHOW_START_DATE`→`2027-09-23T07:00:00Z`; `INSIDE_WINDOW_PURCHASE_DATE`→`'2027-06-25T00:00:00+02:00'`; `OUTSIDE_WINDOW_PURCHASE_DATE`→`'2027-06-26T08:00:00+02:00'`. **Why this one is load-bearing, not cosmetic:** this file imports the REAL `ADMISSION_PRODUCTS` from `lib/provisional-figures.ts` and independently recomputes an expected cutoff from its OWN local `SHOW_START_DATE` to compare against it. Once `CONFIRMED_SHOW_START_2027` moves, this file's local constant must move with it or the check goes red for a reason that has nothing to do with a real regression. |
 | `contracts/checks/ticketing-complete-f2/check-vip-stored-cutoff-derived.mjs` | 40 (+comments 6,72,93) | same `SHOW_START_DATE` update, same reason |
@@ -104,7 +104,7 @@ New script, same shape as `scripts/fix-show-dates-2027.ts`, name it
 Constants:
 ```
 SHOW_START_ISO = '2027-09-23T09:00:00+02:00'
-SHOW_END_ISO   = '2027-09-26T17:00:00+02:00'
+SHOW_END_ISO   = '2027-09-26T16:00:00+02:00'
 SOCIETY_EVENT_START_DATE = '2027-09-23'
 SOCIETY_EVENT_END_DATE   = '2027-09-26'
 FAQ_ANSWER_TEXT = 'Thursday 23 to Sunday 26 September 2027, confirmed by the show committee.'

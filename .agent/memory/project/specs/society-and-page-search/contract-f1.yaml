@@ -1,0 +1,17 @@
+schema: athanor.contract/v1
+slug: society-and-page-search
+goal: Match society locations in both search paths and existing pages in the header overlay.
+created_at: '2026-11-18'
+autonomy: high
+features:
+  - id: F1
+    name: Shared society text matching and navigation page search
+    status: complete
+goldens:
+  - .agent/memory/project/specs/society-and-page-search/goldens/search-results.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Search regression tests pass
+      command: pnpm exec tsx --test lib/societies/search.test.ts

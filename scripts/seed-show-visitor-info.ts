@@ -126,7 +126,7 @@ const VENUE = {
 // grid.
 const SHOW_IDENTITY = {
   showDate: '2027-09-23T09:00:00+02:00',
-  showEndDate: '2027-09-26T17:00:00+02:00',
+  showEndDate: '2027-09-26T16:00:00+02:00',
   edition: 19,
   hostRegion: 'Western Cape',
 };

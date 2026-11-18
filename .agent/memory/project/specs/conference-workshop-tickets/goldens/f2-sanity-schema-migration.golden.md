@@ -81,13 +81,13 @@ the mission's own "LIVE HAZARD" note names six prior scripts that got this backw
   zero Sanity env vars, same dry-run posture as A11 — rather than scraping console output
   or requiring a live dataset read to prove the plan is correct.
 - **Patches, never creates**, every one of: `ticketType-saoc-symposium`,
-  `ticketType-wosa-conference` (flat R2000/80cap, no tranche field, no early-bird),
-  `ticketType-vip`, `ticketType-weekend-pass` (price 380, regularPrice/earlyBirdCutoff
+  `ticketType-wosa-conference` (flat R1500/80cap, no tranche field, no early-bird),
+  `ticketType-vip`, `ticketType-weekend-pass` (price 350, regularPrice/earlyBirdCutoff
   cleared to null), `ticketType-day-visitor` (price/capacity + new `excludedDays:
   ['2027-09-23']`), `ticketType-early-bird` (price/capacity/`capacityPool:
   'admission-early-bird'`/`excludedDays: ['2027-09-23']`/earlyBirdCutoff cleared),
   `ticketType-sunset-cocktails-single`, `ticketType-sunset-cocktails-couple`. The
-  symposium/WOSA patch object explicitly includes `price: 2000, capacity: 80,
+  symposium/WOSA patch object explicitly includes `price: 1500, capacity: 80,
   earlyBirdCutoff: null` and omits/clears any tranche-named field — read from
   `CONFERENCE_PRODUCTS` directly, never a separately-typed 2000/80.
 - **Does NOT create `ticketType-weekend-pass-early-bird`.** That document does not exist

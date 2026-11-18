@@ -53,7 +53,7 @@ const SHOW_DAYS: readonly ShowDay[] = [
     weekday: 'Thursday',
     day: '23',
     month: 'September',
-    hours: 'VIP Ticket Holders – 14.00 to 19.00',
+    hours: 'VIP Ticket Holders – 16.30 to 19.00',
   },
   { weekday: 'Friday', day: '24', month: 'September', hours: '9.00 to 17.00' },
   { weekday: 'Saturday', day: '25', month: 'September', hours: '9.00 to 17.00' },

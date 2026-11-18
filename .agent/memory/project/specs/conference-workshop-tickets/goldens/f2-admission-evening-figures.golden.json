@@ -12,7 +12,7 @@
     {
       "slug": "vip",
       "name": "VIP Ticket",
-      "price": 300,
+      "price": 350,
       "regularPrice": null,
       "capacity": 200,
       "releasedQuantity": null,
@@ -27,7 +27,7 @@
     {
       "slug": "weekend-pass",
       "name": "Weekend Pass",
-      "price": 380,
+      "price": 350,
       "regularPrice": null,
       "_regularPriceChangeNote": "Was 380 with regularPrice:400, then (earlier same day) 360/380. Now CLEARED to null — this slug no longer has a second price tier at all; its own early-bird price moved to the new weekend-pass-early-bird slug below. This single field itself still means 'the price', same as every other non-tiered product.",
       "capacity": 300,
@@ -99,7 +99,7 @@
     "SUNSET_COCKTAILS_POOL_CAPACITY": 200,
     "_poolCapacityNote": "Unchanged by message 6. CORRECTED (architect self-check, 2026-10-07): the live lib/provisional-figures.ts constant is 200, not 100 — Lee-Ann's sheet line 20 ('23 Thursday Sunset cocktails Evening R800 (18h00-21h00) # 100 total') sourced the ORIGINAL F2 interim conservative resize, but a later mission (ticketing-conferences-and-events, F5) restored it to the real physical ceiling of 200 once planPooledCapacity() could pool capacity correctly (see lib/provisional-figures.ts's own comment citing goldens/f5-checkout.golden.md 'Determination 2'). This mission (message 6) does not touch that number either way — 'unchanged' means unchanged at its CURRENT real value, 200, not a reversion to the superseded 100.",
     "sunset-cocktails-single": {
-      "price": 800,
+      "price": 350,
       "capacity": 200,
       "capacityPool": "sunset-cocktails",
       "headcountPerUnit": 1,

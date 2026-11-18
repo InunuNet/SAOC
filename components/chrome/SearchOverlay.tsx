@@ -7,7 +7,7 @@
 //   - "/" key when no input/textarea is focused
 //   - Header search button (via `open` prop from parent)
 // Closes on Esc, backdrop click, or close button.
-// Live-searches the listed societies via /api/societies/search (Sanity, `listed != false`).
+// Live-searches listed societies via /api/societies/search and existing navigation pages locally.
 // =============================================================
 
 import { useEffect, useRef, useState } from 'react';
@@ -15,10 +15,12 @@ import Link from 'next/link';
 import { Search } from 'lucide-react';
 import { nosUrl } from '@/lib/site-hosts';
 import { ArrowIcon } from '@/components/ui/ArrowIcon';
+import { matchPages } from '@/lib/search-pages';
 
 interface SearchOverlayProps {
   open: boolean;
   onClose: () => void;
+  showPastShows: boolean;
 }
 
 interface SocietyHit {
@@ -44,7 +46,7 @@ const SUGGESTIONS: ReadonlyArray<{ label: string; href: string; crossSite?: bool
   { label: 'Contact the council', href: '/contact' },
 ];
 
-export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
+export function SearchOverlay({ open, onClose, showPastShows }: SearchOverlayProps) {
   const [q, setQ] = useState('');
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [prevOpen, setPrevOpen] = useState(open);
@@ -89,7 +91,10 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
   }, [open]);
 
   // Live search: listed societies only, from the server (never a hardcoded list).
-  const [hits, setHits] = useState<SocietyHit[]>([]);
+  const [response, setResponse] = useState<{ term: string; hits: SocietyHit[] }>({
+    term: '',
+    hits: [],
+  });
   useEffect(() => {
     const term = q.trim();
     if (term.length === 0) return;
@@ -97,9 +102,9 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
     const timer = window.setTimeout(() => {
       fetch(`/api/societies/search?q=${encodeURIComponent(term)}`, { signal: controller.signal })
         .then((res) => (res.ok ? res.json() : []))
-        .then((data: SocietyHit[]) => setHits(Array.isArray(data) ? data : []))
+        .then((data: SocietyHit[]) => setResponse({ term, hits: Array.isArray(data) ? data : [] }))
         .catch(() => {
-          if (!controller.signal.aborted) setHits([]);
+          if (!controller.signal.aborted) setResponse({ term, hits: [] });
         });
     }, SEARCH_DEBOUNCE_MS);
     return () => {
@@ -108,15 +113,17 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
     };
   }, [q]);
 
+  const term = q.trim();
+  const pageResults = matchPages(term, showPastShows);
   const societyResults: SocietyResult[] =
-    q.trim().length === 0
+    term.length === 0 || response.term !== term
       ? []
-      : hits.map((item) => ({ kind: 'society', item, href: `/societies/${item.slug}` }));
+      : response.hits.map((item) => ({ kind: 'society', item, href: `/societies/${item.slug}` }));
 
   if (!open) return null;
 
-  const totalResults = societyResults.length;
-  const hasQuery = q.trim().length > 0;
+  const totalResults = societyResults.length + pageResults.length;
+  const hasQuery = term.length > 0;
 
   return (
     <div
@@ -146,7 +153,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
         </div>
 
         {/* Results */}
-        <div className="max-h-[60vh] overflow-y-auto px-5 py-4">
+        <div aria-live="polite" aria-atomic="false" className="max-h-[60vh] overflow-y-auto px-5 py-4">
           {!hasQuery && (
             <>
               <div className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted mb-3">
@@ -175,7 +182,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
             </>
           )}
 
-          {hasQuery && totalResults === 0 && (
+          {hasQuery && response.term === term && totalResults === 0 && (
             <div className="font-sans text-[14px] text-muted py-2">
               No matches for &ldquo;{q}&rdquo;. Try &ldquo;Cape&rdquo;, &ldquo;Durban&rdquo;, or
               &ldquo;judging&rdquo;.
@@ -210,6 +217,29 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
                 ))}
               </ul>
             </section>
+          )}
+
+          {hasQuery && pageResults.length > 0 && (
+            <ul className="flex flex-col gap-1">
+              {pageResults.map((page) => {
+                const PageLink = page.crossSite ? 'a' : Link;
+                return (
+                  <li key={page.href}>
+                    <PageLink
+                      href={page.href}
+                      onClick={onClose}
+                      data-variant="corner"
+                      className="flex items-center justify-between px-3 py-2 rounded-sm hover:bg-bone text-ink focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
+                    >
+                      <span data-corner-title>{page.label}</span>
+                      <span aria-hidden className="text-muted">
+                        <ArrowIcon variant="corner" />
+                      </span>
+                    </PageLink>
+                  </li>
+                );
+              })}
+            </ul>
           )}
         </div>
       </div>

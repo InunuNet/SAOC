@@ -50,7 +50,7 @@ for (const slug of ['saoc-symposium', 'wosa-conference']) {
   const id = `ticketType-${slug}`;
   const patch = patches[id];
   if (!patch) continue; // already reported as missing above
-  if (patch.price !== 2000) failures.push(`${id} patch: price is ${JSON.stringify(patch.price)}, expected 2000`);
+  if (patch.price !== 1500) failures.push(`${id} patch: price is ${JSON.stringify(patch.price)}, expected 1500`);
   if (patch.capacity !== 80) failures.push(`${id} patch: capacity is ${JSON.stringify(patch.capacity)}, expected 80`);
   if (patch.earlyBirdCutoff !== null) {
     failures.push(`${id} patch: earlyBirdCutoff is ${JSON.stringify(patch.earlyBirdCutoff)}, expected null`);

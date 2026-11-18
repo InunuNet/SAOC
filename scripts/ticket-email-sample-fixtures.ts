@@ -86,7 +86,7 @@ export const SAMPLE_ORDERS: readonly SampleOrder[] = [
     quantity: 1,
     bookingReference: 'NOS-SAMPLE-0004',
     chosenDay: null,
-    schedule: dateOnly('Thursday, 23 September 2027', '16:00–18:30'),
+    schedule: dateOnly('Thursday, 23 September 2027', '16:30–19:00'),
   },
   {
     key: 'sunset-cocktails',
@@ -96,7 +96,7 @@ export const SAMPLE_ORDERS: readonly SampleOrder[] = [
     quantity: 1,
     bookingReference: 'NOS-SAMPLE-0005',
     chosenDay: null,
-    schedule: null,
+    schedule: dateOnly('Thursday, 23 September 2027', '18:30–21:00'),
   },
   {
     key: 'saoc-symposium',

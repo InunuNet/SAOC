@@ -1,5 +1,5 @@
 // F2 (conference-workshop-tickets, M1) — A2: weekend-pass is now a single-price product —
-// price 380, regularPrice null, earlyBirdCutoff null, capacityPool null. The old
+// price 350, regularPrice null, earlyBirdCutoff null, capacityPool null. The old
 // date-cutoff early-bird mechanism (regularPrice 400 + EARLY_BIRD_CUTOFF) is superseded by
 // the new shared-pool 'weekend-pass-early-bird' sibling SKU (see check-weekend-pass-early-
 // bird-figures.mjs) — this slug itself must no longer carry any trace of it.
@@ -14,8 +14,8 @@ if (!weekendPass) {
   finish('check-weekend-pass-figures.mjs', ["no 'weekend-pass' product in ADMISSION_PRODUCTS"]);
 }
 
-if (weekendPass.price !== 380) {
-  failures.push(`price is ${JSON.stringify(weekendPass.price)}, expected 380`);
+if (weekendPass.price !== 350) {
+  failures.push(`price is ${JSON.stringify(weekendPass.price)}, expected 350`);
 }
 if (weekendPass.regularPrice !== undefined && weekendPass.regularPrice !== null) {
   failures.push(`regularPrice is ${JSON.stringify(weekendPass.regularPrice)}, expected null/unset (date-cutoff mechanism retired)`);
@@ -30,5 +30,5 @@ if (weekendPass.capacityPool !== undefined && weekendPass.capacityPool !== null)
 finish(
   'check-weekend-pass-figures.mjs',
   failures,
-  'weekend-pass is a single-price 380 product with no date-cutoff mechanism and no pool.',
+  'weekend-pass is a single-price 350 product with no date-cutoff mechanism and no pool.',
 );
