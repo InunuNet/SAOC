@@ -30,8 +30,8 @@ function slideLabel(index: number, total: number, subject: string): string {
 const HERO_CTA_BASE =
   'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-[2px] border px-[22px] py-[14px] text-[14px] font-medium tracking-[0.01em] transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) sm:w-auto focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 hover:-translate-y-px focus-visible:-translate-y-px active:translate-y-0';
 
-// The full-bleed hero is height-driven at desktop widths; keep image sizing in step with its ceiling.
-const HERO_BOX_HEIGHT = 680;
+// The full-bleed hero image fills the content-driven desktop box; use its minimum for image sizing.
+const HERO_BOX_HEIGHT = 620;
 const CONTROL_FOCUS =
   'focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]';
 
@@ -139,21 +139,21 @@ export function Hero({ show, societyCount }: HeroProps) {
 
       {/* The wider copy column keeps the headline compact and accommodates three CTAs. */}
       <div className="saoc-container pointer-events-none relative z-10 w-full py-10 lg:py-14">
-        <div className="pointer-events-auto flex max-w-[900px] flex-col items-start text-left">
+        <div className="pointer-events-auto flex max-w-[1100px] flex-col items-start text-left">
           <span className="mb-6 rounded-full border border-ivory/30 bg-white/10 px-4 py-1.5 font-mono text-[11px] uppercase tracking-[0.22em] text-ivory">
             SINCE 1968 · BLOEMFONTEIN
           </span>
 
           <h1
             id={HEADING_ID}
-            className="h1 font-serif font-light text-[clamp(42px,5vw,68px)] leading-[1.02] tracking-[-0.015em] text-ivory"
+            className="h1 font-serif font-light text-[clamp(42px,5vw,64px)] leading-[1.02] tracking-[-0.015em] text-ivory"
           >
             The national home of <em>orchid culture</em> in South Africa.
           </h1>
 
           <div
             data-hero-ctas
-            className="mt-8 flex w-full flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start"
+            className="mt-8 flex w-full max-w-[900px] flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start"
           >
             <div className="flex flex-col gap-2 sm:items-start">
               <Link
