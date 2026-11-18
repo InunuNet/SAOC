@@ -34,7 +34,7 @@ const HERO_MIN_HEIGHT_CLASS = 'min-h-[520px] md:min-h-[540px] lg:min-h-[600px]';
 // The wide hero's box is at least this tall, so a source wider than the box x its height is height-driven.
 const HERO_BOX_HEIGHT = 600;
 const STACK_BELOW_QUERY = '(max-width: 767px)';
-// The photograph itself is masked into the section's exact --primary-800 background in globals.css.
+// The photograph itself is masked to reveal the section's --primary-800 background in globals.css.
 
 export function PageHero({
   image,
@@ -65,21 +65,18 @@ export function PageHero({
       className={`relative isolate flex flex-col justify-center overflow-hidden bg-primary-800 md:flex-row md:items-center ${HERO_MIN_HEIGHT_CLASS}`}
     >
       {image ? (
-        <>
-          <div
-            data-page-hero-media
-            className="relative aspect-[2/1] w-full shrink-0 md:absolute md:inset-0 md:aspect-auto lg:right-auto lg:w-[min(100%,1500px)]"
-          >
-            <HeroPicture
-              src={image}
-              priority
-              sizes={sizes}
-              className="object-cover"
-              style={{ objectPosition: imagePosition }}
-            />
-          </div>
-          <div data-page-hero-dither aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-[28vw] hidden w-[22vw] mix-blend-soft-light md:block" />
-        </>
+        <div
+          data-page-hero-media
+          className="relative aspect-[2/1] w-full shrink-0 md:absolute md:inset-0 md:aspect-auto lg:right-auto lg:w-[min(100%,1500px)]"
+        >
+          <HeroPicture
+            src={image}
+            priority
+            sizes={sizes}
+            className="object-cover"
+            style={{ objectPosition: imagePosition }}
+          />
+        </div>
       ) : null}
       <div
         data-page-hero-copy
