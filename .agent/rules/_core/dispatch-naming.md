@@ -1,16 +1,19 @@
 ---
-description: Agent dispatch names by convention and the retry effort ladder.
-paths:
-  - ".agent/agents/*.md"
-  - ".claude/agents/*.md"
+description: Every Agent dispatch is named Role_Model so the operator's agent list shows role and model. Always loaded.
 ---
 
 # Agent Dispatch Names
 
-Name every Agent-tool dispatch by convention, in text: `Role_Model_Mn-Fn_Slug`, for example
-`Dev_Son5_M1-F1_HomeScaffolding`. Role is Dev, QA, Arch or Docs; Model is a short tier tag
-(Son5, Opu5, Fab5); Mn-Fn is the milestone and feature id; Slug is the mission or feature in
-PascalCase. No subprocess renders it.
+Every Agent tool call passes `name` (the agent list shows it), rendered by
+`python3 execution/dispatch_name.py --role <role> --model <model>` plus `--mission <slug>
+--milestone Mn --feature Fn` (`Dev_Son55_M1-F2_OneRustUi`) or, outside a mission, `--slug
+<topic>` (`Analyst_Son55_ZausResearch`). Never a bare topic like `zaus-research`: it hides the model.
 
-Retry after a QA FAIL on the same feature+role climbs one rung: first dispatch sonnet5, retry 1
-opus5, retry 2+ fable5 (ceiling). Pass the tier as the Agent tool's `model:`.
+Tags: Claude `Son55` `Opu55` `Hai55` `Fab52`; Codex `Sol6` `Ast6` `Lun6`; Antigravity `Hyd4`
+(gemini-4-hydrogen-high) `Arg4` (gemini-4-argon-high). Unmapped models get family + version, a
+non-high effort adds a letter (`Opu46`, `Qwen25`, `Hyd4L`); always pass the Gemini effort.
+A Codex/Antigravity shell (`codex_dev.sh`, `agy_dev.sh`, `qa.sh`, `codex exec`) starts its Bash
+description with the same tag: `Dev_Sol6 codex_dev OneRustUi`.
+
+Retry after a QA FAIL climbs one rung (`--retry N` prints it): `model: sonnet`, then `opus`,
+then `fable` (ceiling); the tier ids `sonnet5`/`opus5`/`fable5` are labels, `model:` takes the alias.

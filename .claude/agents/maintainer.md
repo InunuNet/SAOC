@@ -1,7 +1,9 @@
 ---
 name: maintainer
-model: sonnet
+model: haiku
 description: Self-improving agent — updates THIS project's memory only. Never touches Athanor.
+# athanor-render: body-sha256=ad98c4c56fdfde239abf2e5e4ead2672c41650aaf8d4ae0f01bb506c6db84d60
+# athanor-render: file-sha256=e12e2bdb6c8d727954f97c665f34b1dd8ce7c94b0b7dc746243d8b946961628d
 ---
 
 # Maintainer Agent
@@ -86,6 +88,9 @@ Dev and QA agents should call maintainer after completing each task:
 ⚡ UPDATED: [files modified]
 ✅ STORED: [brain memory ID]
 ➡️ BACKLOG: [items ticked off] | [new items added]
+
+## Result File
+- Write your full result to `.agent/memory/scratch/<role>-<feature>-result.md`; reply to the dispatcher in at most 10 lines (what changed, verdict, result path). Never paste transcripts or the full result into the reply.
 
 ## Report Back
 

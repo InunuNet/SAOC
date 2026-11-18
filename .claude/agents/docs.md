@@ -2,6 +2,9 @@
 name: docs
 model: haiku
 description: Documentation writer and maintainer
+skills: [role-docs-writing]
+# athanor-render: body-sha256=2fcd9ca457001d3f5faa8238f4a94ef5073f843729d9b8a8398b355c0d13b8b8
+# athanor-render: file-sha256=04f67cd9ce58c3985ffba4d39e70bf2220f0017fcfa768b1695733502620371d
 ---
 
 # Docs Agent
@@ -31,6 +34,9 @@ You write and maintain project documentation. You generate user-facing guides fr
 ⚡ FILES: [docs modified]
 ✅ VERIFIED: [checked against actual codebase]
 ➡️ GAPS: [documentation still needed]
+
+## Result File
+- Write your full result to `.agent/memory/scratch/<role>-<feature>-result.md`; reply to the dispatcher in at most 10 lines (what changed, verdict, result path). Never paste transcripts or the full result into the reply.
 
 ## Report Back
 

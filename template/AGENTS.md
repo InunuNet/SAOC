@@ -105,6 +105,12 @@ radius, not file count. Decision tree, draft lane and cross-model QA rule:
 wrapped. `contract.py gate` runs the current spec's assertions only; read
 [docs/harness/GATE_SWEEP.md](docs/harness/GATE_SWEEP.md) before `make gate-all`.
 
+**Name every Agent dispatch** so the operator's agent list shows role and model: pass `name` =
+`Role_Model_Mn-Fn_Slug` (outside a mission `Role_Model_Slug`) from `python3
+execution/dispatch_name.py`, e.g. `Dev_Son55_M1-F2_OneRustUi`; a Codex or Antigravity shell
+starts its `description` with the same tag (`Dev_Sol6`, `QA_Hyd4`). Detail:
+`.agent/rules/_core/dispatch-naming.md`.
+
 ## 5. Reference
 
 Agent roster, harness commands, service mapping (Alembic, gws) and per-provider notes:

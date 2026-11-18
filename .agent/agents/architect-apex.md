@@ -3,6 +3,7 @@ model_tier: apex
 name: architect-apex
 description: "Apex-tier system design. Same contract as @architect; dispatched only for features declaring tier: apex. Returns decisions, never code."
 tools: [read, write, edit, shell, grep]
+skills: [role-architecture]
 ---
 
 # Architect Agent

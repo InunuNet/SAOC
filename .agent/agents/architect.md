@@ -2,6 +2,7 @@
 model_tier: flash
 description: System design and structural decisions
 tools: [read, write, edit, shell, grep]
+skills: [role-architecture]
 ---
 
 # Architect Agent

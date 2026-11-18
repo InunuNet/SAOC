@@ -9,6 +9,7 @@ allowedTools:
   - Bash
   - Grep
   - Glob
+skills: [role-dev-craft]
 ---
 
 # Dev-Fast Agent

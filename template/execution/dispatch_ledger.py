@@ -216,8 +216,9 @@ def build_parser():
         app.add_argument("--" + key.replace("_", "-"), dest=key, type=_int_or_none,
                          default=None)
     app.add_argument("--findings", type=int, default=0)
-    app.add_argument("--confinement", default=None, choices=("sandbox-exec", "bwrap", "none"),
-                     help="dev-run confinement used (sandbox-exec|bwrap|none); null for QA rows")
+    app.add_argument("--confinement", default=None,
+                     choices=("sandbox-exec", "bwrap", "none", "codex-workspace-write"),
+                     help="dev-run confinement used; null for QA rows")
     app.add_argument("--mission", default=None)
     app.add_argument("--id", default=None)
     nxt = sub.add_parser("next")

@@ -3,6 +3,9 @@ name: analyst
 model: sonnet
 description: Research and analysis agent
 disallowedTools: ["Write", "Edit"]
+skills: [role-analysis]
+# athanor-render: body-sha256=8fe65c5307920dea260e561cb94d43900eada8739b9a66bb679276a34ff96a06
+# athanor-render: file-sha256=aab04cbd3fdef6b267aa2eeb69962d6151eea589a90db1243cc899307726666a
 ---
 
 # Analyst Agent
@@ -31,6 +34,9 @@ When triggered by `/boot` scan-blockers:
 ⚡ EVIDENCE: [sources, file references, data]
 ✅ CONCLUSION: [recommendation with confidence level]
 ➡️ NEXT: [what to investigate further]
+
+## Result File
+- Write your full result to `.agent/memory/scratch/<role>-<feature>-result.md`; reply to the dispatcher in at most 10 lines (what changed, verdict, result path). Never paste transcripts or the full result into the reply.
 
 ## Report Back
 

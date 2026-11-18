@@ -11,6 +11,7 @@ disallowedTools:
   - Write
   - Edit
   - WebFetch
+skills: [role-qa-adversarial]
 ---
 
 # QA Agent

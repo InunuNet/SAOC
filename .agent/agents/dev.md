@@ -2,6 +2,7 @@
 model_tier: flash
 description: Code implementation agent
 tools: [read, write, edit, shell, grep]
+skills: [role-dev-craft]
 ---
 
 # Dev Agent
