@@ -12,6 +12,7 @@ import {
   provinceCounts,
 } from '@/lib/societies-view';
 import type { Province } from '@/types';
+import { searchTokens, societyMatches } from '@/lib/societies/search';
 
 // The search string lives here once: it is both the placeholder and the accessible name.
 const SEARCH_PLACEHOLDER = 'Search by name or region…';
@@ -49,13 +50,10 @@ export function SocietiesClient({ societies, provinces }: SocietiesClientProps) 
   const counts = useMemo(() => provinceCounts(societies, provinces), [societies, provinces]);
 
   const filtered = useMemo(() => {
-    const term = q.trim().toLowerCase();
+    const tokens = searchTokens(q);
     return societies.filter((s) => {
       const provinceOk = province === 'ALL' || (s.province ?? '').toUpperCase() === province;
-      const textOk =
-        term.length === 0 ||
-        s.name.toLowerCase().includes(term) ||
-        (s.region ?? '').toLowerCase().includes(term);
+      const textOk = societyMatches(s, tokens);
       return provinceOk && textOk;
     });
   }, [societies, province, q]);

@@ -12,10 +12,12 @@ import { AdminPill } from '@/components/admin/AdminPill';
 import { RouteFocus } from '@/components/site-chrome/RouteFocus';
 import { SaocFontPreload } from '@/components/site-chrome/SaocFontPreload';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
+import { showPastShowsRoute } from '@/lib/data/past-shows-public';
 import { saocOrigin } from '@/lib/site-hosts';
 import { buildOrganizationJsonLd } from '@/lib/site-metadata';
 
-export function SaocFrame({ children }: { children: React.ReactNode }) {
+export async function SaocFrame({ children }: { children: React.ReactNode }) {
+  const showPastShows = await showPastShowsRoute();
   return (
     <>
       <script
@@ -25,7 +27,7 @@ export function SaocFrame({ children }: { children: React.ReactNode }) {
       />
       <SaocFontPreload />
       <SkipLink />
-      <Header />
+      <Header showPastShows={showPastShows} />
       <main id="main-content" tabIndex={-1}>
         {children}
       </main>
