@@ -17,10 +17,10 @@ export const HOME_HERO_SLIDES: readonly HomeHeroSlide[] = [
     position: '50% 45%',
   },
   {
-    key: 'dendrobium-chlorostylum',
-    src: '/images/heroes/hero-home-2-dendrobium-chlorostylum.jpg',
-    alt: 'Dendrobium orchid',
-    position: '50% 50%',
+    key: 'cymbidium',
+    src: '/images/heroes/hero-home-2-cymbidium-hendrik.jpg',
+    alt: 'Cymbidium orchid',
+    position: '50% 40%',
   },
   {
     key: 'colmanara',
@@ -29,10 +29,10 @@ export const HOME_HERO_SLIDES: readonly HomeHeroSlide[] = [
     position: '40% 40%',
   },
   {
-    key: 'cattleya-aclandiae',
-    src: '/images/heroes/hero-home-6-cattleya-aclandiae.jpg',
-    alt: 'Cattleya orchid',
-    position: '35% 50%',
+    key: 'paphiopedilum-rust',
+    src: '/images/heroes/hero-home-6-paphiopedilum-rust.jpg',
+    alt: 'Paphiopedilum orchid',
+    position: '50% 40%',
   },
   {
     key: 'dendrobium-pair',
@@ -41,10 +41,10 @@ export const HOME_HERO_SLIDES: readonly HomeHeroSlide[] = [
     position: '55% 50%',
   },
   {
-    key: 'cattleya-white',
-    src: '/images/heroes/hero-home-4-cattleya-white.jpg',
-    alt: 'Cattleya orchid',
-    position: '45% 45%',
+    key: 'paphiopedilum-yellow',
+    src: '/images/heroes/hero-home-4-paphiopedilum-yellow.jpg',
+    alt: 'Paphiopedilum orchid',
+    position: '50% 45%',
   },
   {
     key: 'phalaenopsis-pink',
@@ -53,9 +53,9 @@ export const HOME_HERO_SLIDES: readonly HomeHeroSlide[] = [
     position: '55% 45%',
   },
   {
-    key: 'phalaenopsis-stripes',
-    src: '/images/heroes/hero-home-8-phalaenopsis-stripes.jpg',
-    alt: 'Phalaenopsis orchid',
-    position: '65% 45%',
+    key: 'cymbidium-amber',
+    src: '/images/heroes/hero-home-8-cymbidium-amber-hendrik.jpg',
+    alt: 'Cymbidium orchid',
+    position: '50% 40%',
   },
 ];

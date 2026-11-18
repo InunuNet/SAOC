@@ -8,7 +8,7 @@
   {
     "slot": "saoc-home hero slide 2",
     "file": "lib/data/home-hero-slides.ts",
-    "image": "/images/heroes/hero-home-2-dendrobium-chlorostylum.jpg",
+    "image": "/images/heroes/hero-home-2-cymbidium-hendrik.jpg",
     "focus": "50% 50%"
   },
   {
@@ -20,7 +20,7 @@
   {
     "slot": "saoc-home hero slide 4",
     "file": "lib/data/home-hero-slides.ts",
-    "image": "/images/heroes/hero-home-6-cattleya-aclandiae.jpg",
+    "image": "/images/heroes/hero-home-6-paphiopedilum-rust.jpg",
     "focus": "35% 50%"
   },
   {
@@ -32,7 +32,7 @@
   {
     "slot": "saoc-home hero slide 6",
     "file": "lib/data/home-hero-slides.ts",
-    "image": "/images/heroes/hero-home-4-cattleya-white.jpg",
+    "image": "/images/heroes/hero-home-4-paphiopedilum-yellow.jpg",
     "focus": "45% 45%"
   },
   {
@@ -44,13 +44,13 @@
   {
     "slot": "saoc-home hero slide 8",
     "file": "lib/data/home-hero-slides.ts",
-    "image": "/images/heroes/hero-home-8-phalaenopsis-stripes.jpg",
+    "image": "/images/heroes/hero-home-8-cymbidium-amber-hendrik.jpg",
     "focus": "65% 45%"
   },
   {
     "slot": "nos hub hero (full bleed)",
     "file": "components/nos/hero-photos.ts HERO_PHOTOS['/national-show']",
-    "image": "/images/heroes/hero-nos-hub-cattleya-aclandiae.jpg",
+    "image": "/images/heroes/hero-nos-hub-cattleya-white.jpg",
     "focus": "50% 50%"
   },
   {
@@ -68,7 +68,7 @@
   {
     "slot": "nos inner S2a (/conferences, /terms, /newsletter/unsubscribe)",
     "file": "components/nos/hero-photos.ts ROUTE_CROPS",
-    "image": "/images/heroes/hero-nos-conferences-cattleya-white.jpg",
+    "image": "/images/heroes/hero-nos-conferences-cymbidium-green-hendrik.jpg",
     "focus": "50% 50%"
   },
   {
@@ -80,19 +80,19 @@
   {
     "slot": "nos inner S1b (/plan-your-visit, /vendors)",
     "file": "components/nos/hero-photos.ts ROUTE_CROPS",
-    "image": "/images/heroes/hero-nos-plan-paphiopedilum-yellow.jpg",
+    "image": "/images/heroes/hero-nos-plan-paphiopedilum-yellow-wide.jpg",
     "focus": "50% 50%"
   },
   {
     "slot": "nos inner H4a (/faq, /contact)",
     "file": "components/nos/hero-photos.ts ROUTE_CROPS",
-    "image": "/images/heroes/hero-nos-faq-paphiopedilum-rust.jpg",
+    "image": "/images/heroes/hero-nos-faq-cymbidium-hendrik.jpg",
     "focus": "50% 50%"
   },
   {
     "slot": "nos inner PK1 (/what-to-expect, /sa-exhibitors)",
     "file": "components/nos/hero-photos.ts ROUTE_CROPS",
-    "image": "/images/heroes/hero-nos-expect-phalaenopsis-pink.jpg",
+    "image": "/images/heroes/hero-nos-expect-cymbidium-amber-hendrik.jpg",
     "focus": "50% 50%"
   },
   {
