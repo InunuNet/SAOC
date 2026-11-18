@@ -99,7 +99,7 @@ export function PageHero({
       ) : null}
       <div
         data-page-hero-copy
-        className="relative z-10 flex w-full flex-col items-start px-[var(--container-pad)] text-left lg:ml-[52%] lg:w-[min(48%,calc(var(--container-max)/2_-_2%))] lg:pl-0"
+        className="relative z-10 flex w-full flex-col items-start px-[var(--container-pad)] text-left lg:ml-[52%] lg:w-[min(48%,max(calc(var(--container-max)/2_-_2%),calc(var(--u)*651)))] lg:pl-0"
       >
         {eyebrow ? (
           <span
