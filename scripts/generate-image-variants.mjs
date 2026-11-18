@@ -5,7 +5,7 @@
 import { execFile } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
 import { link, lstat, mkdir, open, readFile, readdir, realpath, rename, rm, stat } from 'node:fs/promises';
-import os from 'node:os';
+import os, { availableParallelism } from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import sharp from 'sharp';
@@ -111,6 +111,13 @@ const LOCK_STALE_MS = 30 * 60 * 1000;
 const MANIFEST_FLUSH_EVERY = 100;
 const GENERATED_EXTENSION = /\.(webp|avif)$/;
 const LOCK_TOKEN_BYTES = 8;
+const configuredConcurrency = process.env.IMAGE_VARIANT_CONCURRENCY;
+if (configuredConcurrency !== undefined && (!/^[1-9]\d*$/.test(configuredConcurrency) || !Number.isSafeInteger(Number(configuredConcurrency)))) {
+  throw new Error(`invalid IMAGE_VARIANT_CONCURRENCY: ${configuredConcurrency}`);
+}
+const concurrency = configuredConcurrency === undefined ? Math.max(1, availableParallelism()) : Number(configuredConcurrency);
+// Each worker encodes independently, so keep sharp from starting another CPU pool per job.
+if (concurrency > 1) sharp.concurrency(1);
 
 async function readOptionsManifest() {
   try {
@@ -303,8 +310,10 @@ async function collectDerivedSources() {
     const mtimeMs = Math.max(manifestMtimeMs, (await stat(entry.from)).mtimeMs);
     let cut = null;
     await collectVariants(path.join(SOURCE_ROOT, relative), relative, true, mtimeMs, async (outputWidth) => {
-      cut ??= await cutOf(entry);
-      return sharp(cut.data, { raw: cut.info }).resize({ width: outputWidth, withoutEnlargement: true });
+      // Memoise the promise, not the result: concurrent workers would otherwise each decode the same multi-MB cut.
+      cut ??= cutOf(entry);
+      const { data, info } = await cut;
+      return sharp(data, { raw: info }).resize({ width: outputWidth, withoutEnlargement: true });
     });
   }
 }
@@ -360,26 +369,46 @@ async function generate() {
     await writeOptionsManifest(entries);
   }
   let sinceFlush = 0;
-  for (const job of stale) {
-    const temp = `${job.output}.tmp-${process.pid}.${job.format}`;
-    await (await job.pipeline(job.width))[job.format](job.options).toFile(temp);
-    await fsyncPath(temp);
-    await rename(temp, job.output);
-    touchedDirs.add(path.dirname(job.output));
-    entries[job.output] = job.hash;
-    sinceFlush += 1;
-    if (sinceFlush >= MANIFEST_FLUSH_EVERY) {
-      await flush();
-      sinceFlush = 0;
+  let nextJob = 0;
+  let firstError = null;
+  let commit = Promise.resolve();
+  async function worker() {
+    while (firstError === null && nextJob < stale.length) {
+      const job = stale[nextJob++];
+      try {
+        const temp = `${job.output}.tmp-${process.pid}.${job.format}`;
+        await (await job.pipeline(job.width))[job.format](job.options).toFile(temp);
+        await fsyncPath(temp);
+        const previous = commit;
+        let release;
+        commit = new Promise((resolve) => { release = resolve; });
+        await previous;
+        try {
+          await rename(temp, job.output);
+          touchedDirs.add(path.dirname(job.output));
+          entries[job.output] = job.hash;
+          sinceFlush += 1;
+          if (sinceFlush >= MANIFEST_FLUSH_EVERY) {
+            await flush();
+            sinceFlush = 0;
+          }
+        } finally {
+          release();
+        }
+      } catch (error) {
+        firstError ??= error;
+      }
     }
   }
+  await Promise.all(Array.from({ length: Math.min(concurrency, stale.length) }, () => worker()));
+  if (firstError !== null) throw firstError;
   const kept = Object.fromEntries(jobs.map((job) => [job.output, entries[job.output]]));
   for (const key of Object.keys(entries)) delete entries[key];
   Object.assign(entries, kept);
   await flush();
   // Prune only after the manifest is durable: if the write above threw, nothing has been deleted.
   const pruned = await pruneOrphans();
-  console.log(`image variants: ${stale.length} generated, ${jobs.length - stale.length} up to date, ${pruned} orphans pruned`);
+  console.log(`image variants: ${stale.length} generated, ${jobs.length - stale.length} up to date, ${pruned} orphans pruned, concurrency ${concurrency}`);
 }
 
 await acquireLock();
