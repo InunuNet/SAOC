@@ -3024,8 +3024,11 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   }
   .nos-theme .nos-contact-hero .hero-facts dd {
     grid-row: 1;
-    align-self: start;
+    align-self: baseline;
     white-space: nowrap;
+  }
+  .nos-theme .nos-contact-hero .hero-facts dd a {
+    align-items: baseline;
   }
   .nos-theme .nos-contact-hero .hero-facts dt {
     grid-row: 2;
