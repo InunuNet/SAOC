@@ -33,11 +33,11 @@ export default async function PrivacyPage() {
         />
       ) : (
         <>
-          <LegalBreadcrumb label={PAGE_LABEL} />
           <RouteHero route="/privacy"
             heading={PRIVACY_POLICY.title}
             lede={PRIVACY_POLICY.subtitle}
           />
+          <LegalBreadcrumb label={PAGE_LABEL} />
         </>
       )}
       <DocumentLayout index={legalIndex(PRIVACY_POLICY)}>

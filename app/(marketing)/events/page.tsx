@@ -68,7 +68,6 @@ export default async function EventsPage() {
 
   return (
     <>
-      <Breadcrumb items={[{ label: 'Events' }]} />
       <RouteHero
         exempt
         route="/events"
@@ -76,6 +75,7 @@ export default async function EventsPage() {
         heading="Events"
         lede={LEDE}
       />
+      <Breadcrumb items={[{ label: 'Events' }]} />
 
       {/* One Event node per real event, so search engines read what the page lists. */}
       {events.map((event) => (

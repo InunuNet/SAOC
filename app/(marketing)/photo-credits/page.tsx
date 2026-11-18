@@ -15,8 +15,8 @@ export const metadata: Metadata = buildPageMetadata({
 export default function PhotoCreditsPage() {
   return (
     <>
-      <LegalBreadcrumb label="Photo credits" />
       <RouteHero route="/photo-credits" heading="Photo credits" />
+      <LegalBreadcrumb label="Photo credits" />
       <DocumentLayout>
         <PhotoCreditsBody />
       </DocumentLayout>

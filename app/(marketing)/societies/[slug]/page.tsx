@@ -127,13 +127,13 @@ export default async function SocietyPage({
 
   return (
     <>
-      <Breadcrumb items={[{ label: 'Societies', href: '/societies' }, { label: society.name }]} />
       <RouteHero
         route="/societies/[slug]"
         eyebrow={society.province ?? 'SAOC society'}
         heading={society.name}
         lede={society.region ?? undefined}
       />
+      <Breadcrumb items={[{ label: 'Societies', href: '/societies' }, { label: society.name }]} />
       <div className="saoc-container space-y-16 py-16">
         <SocietyFacts society={shown} />
 

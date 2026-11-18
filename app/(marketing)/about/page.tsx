@@ -92,13 +92,13 @@ export default async function AboutPage() {
 
   return (
     <>
-      <Breadcrumb items={[{ label: 'About' }]} />
       <RouteHero
         route="/about"
         eyebrow="Our Heritage"
         heading={<strong>About the South African Orchid Council</strong>}
         facts={HERITAGE_FACTS}
       />
+      <Breadcrumb items={[{ label: 'About' }]} />
 
       <DocumentLayout
         aside={

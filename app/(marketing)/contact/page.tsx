@@ -78,7 +78,6 @@ export default async function ContactPage() {
 
   return (
     <>
-      <Breadcrumb items={[{ label: 'Contact' }]} />
       <RouteHero
         exempt
         route="/contact"
@@ -86,6 +85,7 @@ export default async function ContactPage() {
         heading={data?.title ?? 'Contact SAOC'}
         lede={LEDE}
       />
+      <Breadcrumb items={[{ label: 'Contact' }]} />
       <div className="saoc-container py-16">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
           {/* LEFT — direct contacts sidebar */}

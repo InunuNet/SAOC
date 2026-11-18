@@ -1,0 +1,20 @@
+schema: athanor.contract/v1
+slug: brad-breadcrumb-placement
+goal: Place SAOC interior-page breadcrumbs immediately below their heroes without changing trail text.
+created_at: '2026-11-18'
+autonomy: high
+features:
+  - id: F1
+    name: Move every SAOC interior breadcrumb below its hero
+    status: pending
+goldens:
+  - .agent/memory/project/specs/brad-breadcrumb-placement/goldens/placement.txt
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Breadcrumb keeps the existing rule border and 16px vertical padding
+      command: grep -q 'saoc-container flex min-h-14 items-center flex-wrap gap-0 py-4' components/chrome/Breadcrumb.tsx
+    - id: A2
+      description: Authenticated event submission renders the breadcrumb after its hero
+      command: grep -q '<Breadcrumb items=' components/events/SubmitEventPageBody.tsx

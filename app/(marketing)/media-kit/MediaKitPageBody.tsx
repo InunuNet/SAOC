@@ -190,13 +190,13 @@ export function MediaKitPageBody() {
 
   return (
     <>
-      <Breadcrumb items={[{ label: 'Media Kit' }]} />
       <RouteHero
         route="/media-kit"
         eyebrow="Press"
         heading="Media Kit"
         lede="Resources and information for journalists, photographers and media partners."
       />
+      <Breadcrumb items={[{ label: 'Media Kit' }]} />
 
       <DocumentLayout>
       <div className="space-y-[var(--section-y)]">

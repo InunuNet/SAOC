@@ -33,8 +33,8 @@ export default async function TermsPage() {
         />
       ) : (
         <>
-          <LegalBreadcrumb label={PAGE_LABEL} />
           <RouteHero route="/terms" heading={WEBSITE_TERMS.title} />
+          <LegalBreadcrumb label={PAGE_LABEL} />
         </>
       )}
       <DocumentLayout index={legalIndex(WEBSITE_TERMS)}>

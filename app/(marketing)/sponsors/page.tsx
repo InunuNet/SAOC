@@ -59,7 +59,6 @@ export default async function SponsorsPage() {
 
   return (
     <>
-      <Breadcrumb items={[{ label: 'Sponsors' }]} />
       <RouteHero
         route="/sponsors"
         eyebrow="Become a sponsor"
@@ -74,6 +73,7 @@ export default async function SponsorsPage() {
           </Link>
         }
       />
+      <Breadcrumb items={[{ label: 'Sponsors' }]} />
 
       <DocumentLayout
         aside={

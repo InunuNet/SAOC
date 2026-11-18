@@ -23,13 +23,13 @@ export const metadata: Metadata = buildPageMetadata({
 export default function MembersPage() {
   return (
     <>
-      <Breadcrumb items={[{ label: 'Members Portal' }]} />
       <RouteHero
         route="/members"
         eyebrow="For paid-up members"
         heading="Members Portal"
         lede={LEDE}
       />
+      <Breadcrumb items={[{ label: 'Members Portal' }]} />
 
       <DocumentLayout
         aside={

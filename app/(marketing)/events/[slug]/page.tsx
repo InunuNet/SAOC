@@ -136,7 +136,6 @@ export default async function EventDetailPage({
         })}
       />
 
-      <Breadcrumb items={[{ label: 'Events', href: '/events' }, { label: event.title }]} />
       <RouteHero
         route="/events/[slug]"
         eyebrow={event.kind ?? undefined}
@@ -147,6 +146,7 @@ export default async function EventDetailPage({
             document layout, otherwise after the layout */}
         {show && !layout ? <ShowBand show={show} split="event" /> : null}
       </RouteHero>
+      <Breadcrumb items={[{ label: 'Events', href: '/events' }, { label: event.title }]} />
 
       {layout}
 
