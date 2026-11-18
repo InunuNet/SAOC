@@ -216,7 +216,7 @@ export const TICKET_EMAIL_COPY: Record<TicketEmailKey, TicketEmailCopy> = {
   },
   'sunset-cocktails': {
     subject: '[To be confirmed]',
-    pendingRows: [],
+    pendingRows: ['Venue'],
     blocks: [
       { kind: 'text', lines: ['Dear {first_name},'] },
       { kind: 'text', lines: ['Thank you for booking your tickets for Sunset Cocktails at the National Orchid Show – Western Cape 2027.'] },
