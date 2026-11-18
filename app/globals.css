@@ -517,9 +517,10 @@ h3.font-serif {
     margin-top: calc(var(--u) * 140);
   }
 }
-/* Below 1440px the 11px labels in the CTA row reach into the scrim's fade over bright parts of a photo, so
-   the solid zone runs to the CTA row's right edge plus 48px (WCAG AA 4.5:1). From 1440px it is the approved 640px. */
-@media (min-width: 1024px) and (max-width: 1439px) {
+/* The 11px labels in the CTA row reach into the scrim's fade over the bright parts of a photo (slide 5's
+   white petal gave 1.5:1), so from 1024px the solid zone runs to the CTA row's right edge plus 48px
+   (WCAG AA 4.5:1). The stops and colour after it are the approved ones. */
+@media (min-width: 1024px) {
   .home-hero {
     --scrim-solid: calc(max(calc(var(--u) * 980), 850px) + 48px);
   }
