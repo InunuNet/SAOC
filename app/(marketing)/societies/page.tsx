@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 
 import { RouteHero } from '@/components/ui/RouteHero';
+import { Breadcrumb } from '@/components/chrome/Breadcrumb';
 import { SocietiesClient } from './SocietiesClient';
 import { SocietiesFallback } from './SocietiesFallback';
 import type { SanitySociety } from '@/components/societies';
@@ -104,6 +105,7 @@ export default async function SocietiesPage() {
 
   return (
     <>
+      <Breadcrumb items={[{ label: 'Societies' }]} />
       <RouteHero
         exempt
         route="/societies"

@@ -2,10 +2,9 @@
 // SAOC — components/ui/PageHero.tsx
 // Server Component — shared hero for interior pages (mission saoc-inner-heroes, NOS Design 2026-10-26).
 // From 1024px the photograph is a left-anchored panel, with its bloom bottom-left, faded into the
-// sage behind the right-hand copy. At 768-1023px it keeps its current full-width layout and scrim.
+// sage behind the right-hand copy. At 768-1023px it fills the width with the same faded edge.
 // Below 768px the hero stacks: a 2/1 photograph band, the copy under it on solid sage.
-// With no `image` the hero is typographic: the same copy on solid sage, no media and no scrim; from
-// 1024px its band sizes to its content (HM-8), below that it keeps the 480px minimum.
+// With no `image` the same geometry and copy column sit on solid sage.
 // =============================================================
 
 import type { ReactNode } from 'react';
@@ -31,27 +30,11 @@ interface PageHeroProps {
   exempt?: boolean;
 }
 
-const HERO_MIN_HEIGHT_CLASS = 'md:min-h-[480px]';
+const HERO_MIN_HEIGHT_CLASS = 'min-h-[520px] md:min-h-[540px] lg:min-h-[600px]';
 // The wide hero's box is at least this tall, so a source wider than the box x its height is height-driven.
-const HERO_BOX_HEIGHT = 480;
+const HERO_BOX_HEIGHT = 600;
 const STACK_BELOW_QUERY = '(max-width: 767px)';
-// The copy zone: the scrim is clear through the bloom side (34%), eases in over the stops below (alpha,
-// position in percent) and reaches its full strength by 52%, where the copy column starts (HM-5).
-// Sage only (--primary-800), no wash over the bloom.
-const SCRIM_STOPS: readonly (readonly [number, number])[] = [
-  [0, 34],
-  [0.06, 38],
-  [0.16, 42],
-  [0.32, 45],
-  [0.52, 48],
-  [0.7, 50.5],
-  [0.8, 52],
-];
-const SCRIM_BACKGROUND = `linear-gradient(90deg, transparent 0, ${SCRIM_STOPS.map(
-  ([alpha, at]) => `rgb(34 40 31 / ${alpha}) ${at}%`,
-).join(', ')})`;
-// HM-8: from 1024px the typographic band is its content plus this block padding, with no minimum height.
-const TYPE_BAND_PADDING_CLASS = 'lg:py-[clamp(64px,6vw,96px)] lg:min-h-0';
+// The photograph itself is masked into the section's exact --primary-800 background in globals.css.
 
 export function PageHero({
   image,
@@ -79,15 +62,13 @@ export function PageHero({
       data-page-hero
       data-page-hero-variant={image ? undefined : 'type'}
       data-hero-exempt={exempt ? '' : undefined}
-      className={`relative isolate overflow-hidden bg-primary-800 md:flex md:items-center ${HERO_MIN_HEIGHT_CLASS}${
-        image ? '' : ` ${TYPE_BAND_PADDING_CLASS}`
-      }`}
+      className={`relative isolate flex flex-col justify-center overflow-hidden bg-primary-800 md:flex-row md:items-center ${HERO_MIN_HEIGHT_CLASS}`}
     >
       {image ? (
         <>
           <div
             data-page-hero-media
-            className="relative aspect-[2/1] w-full md:absolute md:inset-0 md:aspect-auto lg:right-auto lg:w-[min(100%,1500px)]"
+            className="relative aspect-[2/1] w-full shrink-0 md:absolute md:inset-0 md:aspect-auto lg:right-auto lg:w-[min(100%,1500px)]"
           >
             <HeroPicture
               src={image}
@@ -97,19 +78,12 @@ export function PageHero({
               style={{ objectPosition: imagePosition }}
             />
           </div>
-          <div
-            data-hero-scrim="copy"
-            aria-hidden="true"
-            className="absolute inset-0 max-md:hidden"
-            style={{ backgroundImage: SCRIM_BACKGROUND }}
-          />
+          <div data-page-hero-dither aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-[24%] hidden w-[45%] mix-blend-soft-light md:block" />
         </>
       ) : null}
       <div
         data-page-hero-copy
-        className={`relative z-10 flex w-full flex-col items-start px-[var(--container-pad)] py-10 text-left md:py-16 ${
-          image ? 'md:ml-[52%] md:w-[min(48%,calc(var(--container-max)/2_-_2%))] md:pl-0' : 'saoc-container lg:py-0'
-        }`}
+        className="relative z-10 flex w-full flex-col items-start px-[var(--container-pad)] py-10 text-left md:ml-[52%] md:w-[min(48%,calc(var(--container-max)/2_-_2%))] md:pl-0 md:py-16"
       >
         {eyebrow ? (
           <span

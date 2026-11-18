@@ -17,27 +17,27 @@ interface BreadcrumbProps {
 export function Breadcrumb({ items }: BreadcrumbProps) {
   return (
     <nav aria-label="Breadcrumb" className="bg-parchment border-b border-rule">
-      <div className="saoc-container flex items-center flex-wrap gap-0 py-3">
+      <div className="saoc-container flex min-h-14 items-center flex-wrap gap-0 py-4">
         <Link
           href="/"
-          className="inline-flex min-h-6 min-w-6 items-center font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted hover:text-primary transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
+          className="inline-flex min-h-6 min-w-6 items-center font-mono text-[13px] text-muted hover:text-primary transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
         >
           Home
         </Link>
         {items.map((item, index) => (
           <span key={index} className="flex items-center">
-            <span className="font-mono text-[10.5px] text-muted mx-1.5">/</span>
+            <span className="font-mono text-[13px] text-muted mx-2">/</span>
             {item.href ? (
               <Link
                 href={item.href}
-                className="inline-flex min-h-6 min-w-6 items-center font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted hover:text-primary transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
+                className="inline-flex min-h-6 min-w-6 items-center font-mono text-[13px] text-muted hover:text-primary transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
               >
                 {item.label}
               </Link>
             ) : (
               <span
                 aria-current="page"
-                className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted"
+                className="font-mono text-[13px] text-muted"
               >
                 {item.label}
               </span>
