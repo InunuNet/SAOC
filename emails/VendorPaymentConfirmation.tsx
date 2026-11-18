@@ -42,7 +42,7 @@ export default function VendorPaymentConfirmation({
       <ShellText size="small">
         Please quote this reference if you contact the show office about your stand.
       </ShellText>
-      <ShellButton href={showDetailsUrl}>View the National Show</ShellButton>
+      <ShellButton href={showDetailsUrl}>View the National Orchid Show</ShellButton>
     </EmailShell>
   );
 }

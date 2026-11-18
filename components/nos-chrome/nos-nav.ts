@@ -28,10 +28,10 @@ export const NOS_NAV: readonly NavItem[] = [
   {
     type: 'mega',
     id: 'national-show',
-    label: 'National Show',
+    label: 'National Orchid Show',
     href: NOS_HUB,
     lead: {
-      eyebrow: 'The National Show',
+      eyebrow: 'The National Orchid Show',
       leadLabel: 'National Orchid Show - Western Cape 2027',
       leadHref: NOS_HUB,
       theShow: {

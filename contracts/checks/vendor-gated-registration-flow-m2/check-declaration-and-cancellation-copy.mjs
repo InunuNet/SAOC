@@ -60,8 +60,8 @@ const failures = [];
 // 2027-vendor-registration-form_2026-08-26.md's "VENDOR DECLARATION" section.
 const DECLARATION_POINTS = [
   'I/We confirm that the information supplied in this Vendor Registration Form is true, accurate and complete to the best of my/our knowledge.',
-  'I/We confirm that I/We have disclosed all products, services, activities and equipment intended to be offered, displayed, demonstrated or undertaken at the 2027 SAOC National Show.',
-  'I/We confirm that I/We have read, understood and agree to comply with the 2027 SAOC National Show Vendor Terms & Conditions set out below.',
+  'I/We confirm that I/We have disclosed all products, services, activities and equipment intended to be offered, displayed, demonstrated or undertaken at the 2027 SAOC National Orchid Show.',
+  'I/We confirm that I/We have read, understood and agree to comply with the 2027 SAOC National Orchid Show Vendor Terms & Conditions set out below.',
   'I/We agree to comply with all applicable South African laws, regulations, permits, health and safety requirements, plant health requirements, municipal requirements and venue rules applicable to my/our participation in the Show.',
   'I/We undertake to obtain and maintain, at my/our own cost, all permits, licences, certificates, approvals and other authorisations required for my/our business, products, activities and participation in the Show.',
   'I/We will not sell, display, demonstrate or promote products or undertake activities that have not been declared in this registration form where such declaration is required, or where prior approval has been requested by the Show Organising Committee.',

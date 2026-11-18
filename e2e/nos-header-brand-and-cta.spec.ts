@@ -169,7 +169,7 @@ test.describe('chrome scope — each site wears only its own chrome', () => {
 
     await expect(page.locator('header#nh')).toHaveCount(0);
     await expect(page.getByRole('menu')).toHaveCount(0);
-    const showLink = page.locator('header').getByRole('link', { name: 'National Show', exact: true });
+    const showLink = page.locator('header').getByRole('link', { name: 'National Orchid Show', exact: true });
     await expect(showLink).toHaveCount(1);
     expect(new URL((await showLink.getAttribute('href')) ?? '').hostname.startsWith('nos.')).toBe(true);
   });

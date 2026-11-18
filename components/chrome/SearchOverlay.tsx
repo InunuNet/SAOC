@@ -41,7 +41,7 @@ const SEARCH_DEBOUNCE_MS = 150;
 const SUGGESTIONS: ReadonlyArray<{ label: string; href: string; crossSite?: boolean }> = [
   { label: 'About SAOC', href: '/about' },
   { label: 'Find a society', href: '/societies' },
-  { label: 'National Show', href: nosUrl('/'), crossSite: true },
+  { label: 'National Orchid Show', href: nosUrl('/'), crossSite: true },
   { label: 'Events calendar', href: '/events' },
   { label: 'Contact the council', href: '/contact' },
 ];

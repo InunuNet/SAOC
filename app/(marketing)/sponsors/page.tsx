@@ -32,7 +32,7 @@ export const metadata: Metadata = buildPageMetadata({
 
 const BENEFITS = [
   'Logo placement on saoc.co.za and event signage',
-  'Recognition at the National Show — exhibition space, programme, and banner placement',
+  'Recognition at the National Orchid Show — exhibition space, programme, and banner placement',
   'A feature in Orchids South Africa, our annual yearbook',
   'A mention to our affiliated-society network via newsletter and social channels',
 ] as const;
@@ -40,9 +40,9 @@ const BENEFITS = [
 const ENQUIRY_CTA_LABEL = 'Talk to us about sponsorship';
 
 const SUPPORT_LEAD =
-  'SAOC coordinates orchid growing, showing, hybridising, and judging across South Africa — reaching a national audience through our triennial National Show and annual yearbook.';
+  'SAOC coordinates orchid growing, showing, hybridising, and judging across South Africa — reaching a national audience through our triennial National Orchid Show and annual yearbook.';
 const SPONSOR_CTA_BODY =
-  'Partner with the national body coordinating orchid societies since 1968. Get in touch to discuss sponsorship of the National Show, the yearbook, or the council itself.';
+  'Partner with the national body coordinating orchid societies since 1968. Get in touch to discuss sponsorship of the National Orchid Show, the yearbook, or the council itself.';
 
 export default async function SponsorsPage() {
   const sponsors = await sanityFetch<SanitySponsor[]>({
@@ -62,6 +62,7 @@ export default async function SponsorsPage() {
       <Breadcrumb items={[{ label: 'Sponsors' }]} />
       <RouteHero
         route="/sponsors"
+        eyebrow="Become a sponsor"
         heading="Sponsors"
         lede={LEDE}
         actions={
@@ -116,7 +117,7 @@ export default async function SponsorsPage() {
             )}
             <p>
               Sponsorship funds the show bench, judging accreditation, and the community events
-              that keep orchid growing alive in South Africa — from the National Show down to
+              that keep orchid growing alive in South Africa — from the National Orchid Show down to
               local society meetings.
             </p>
           </div>

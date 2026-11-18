@@ -41,7 +41,7 @@ export const dynamic = 'force-dynamic';
 // r18 (Codi): the checkout step carries the tickets hub's breadcrumb (TicketsMasthead) one level
 // deeper, and mirrors the hub's BreadcrumbList (NosBreadcrumbJsonLd) with the product appended.
 const HUB_TRAIL = [
-  { name: 'National Show', href: '/national-show' },
+  { name: 'National Orchid Show', href: '/national-show' },
   { name: 'Tickets', href: '/national-show/tickets' },
 ];
 

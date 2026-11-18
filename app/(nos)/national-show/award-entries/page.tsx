@@ -34,7 +34,7 @@ const STANDFIRST = [
 const AWARD_SECTIONS = [
   {
     awardType: 'national-show',
-    heading: 'National Show Awards',
+    heading: 'National Orchid Show Awards',
     lede: "Orchids submitted for judging in the National Orchid Show's competitive classes.",
   },
   {

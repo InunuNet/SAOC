@@ -64,7 +64,7 @@ export const metadata: Metadata = withTicketingTestTitle(
   buildPageMetadata({
     title: NOS_ROUTE_HEROES.wosaConference.title,
     image: nosOgImage('WOSA Conference — National Orchid Show'),
-    description: 'The WOSA Conference, held alongside the National Show, and what it is for.',
+    description: 'The WOSA Conference, held alongside the National Orchid Show, and what it is for.',
     path: '/national-show/wosa-conference',
   })
 );

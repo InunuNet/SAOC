@@ -40,7 +40,7 @@ import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 // (M6/B8c).
 export const metadata: Metadata = buildPageMetadata({
   title: 'Vendor registration',
-  image: nosOgImage('Vendor registration — National Show'),
+  image: nosOgImage('Vendor registration — National Orchid Show'),
   description: 'Register your business as a vendor at the 2027 National Orchid Show.',
   path: '/national-show/vendors/register',
   noIndex: true,

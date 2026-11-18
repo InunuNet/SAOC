@@ -103,7 +103,7 @@ export default async function JudgingPage() {
           form, colour, size, and cultural condition.{' '}
           <span data-placeholder="true">Panels typically comprise three judges</span> and
           convene at affiliated society shows throughout the year, as well as at the
-          triennial National Show, where awards are conferred once a plant meets the
+          triennial National Orchid Show, where awards are conferred once a plant meets the
           required point threshold for its class.
         </p>,
       ),

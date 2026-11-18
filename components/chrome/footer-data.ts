@@ -20,7 +20,7 @@ export const FOOTER_NAV: ReadonlyArray<{
   { id: 'about', label: 'About', href: '/about' },
   { id: 'societies', label: 'Societies', href: '/societies' },
   { id: 'judging', label: 'Judging & Awards', href: '/judging' },
-  { id: 'show', label: 'National Show', href: nosUrl('/'), crossSite: true },
+  { id: 'show', label: 'National Orchid Show', href: nosUrl('/'), crossSite: true },
   { id: 'events', label: 'Events', href: '/events' },
 ];
 

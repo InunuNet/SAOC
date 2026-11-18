@@ -44,7 +44,7 @@ const WORKSHOP_FAQ_QUERY = defineQuery(`
 export const metadata: Metadata = withTicketingTestTitle(
   buildPageMetadata({
     title: NOS_ROUTE_HEROES.workshops.title,
-    image: nosOgImage('Workshops — National Show'),
+    image: nosOgImage('Workshops — National Orchid Show'),
     description: STANDFIRST,
     path: '/national-show/workshops',
   })

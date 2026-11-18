@@ -39,7 +39,7 @@ interface SectionLink {
 const SECTION_LINKS: readonly SectionLink[] = [
   {
     href: '/national-show',
-    label: 'National Show',
+    label: 'National Orchid Show',
     hint: 'The show overview and how to get involved',
   },
   { href: '/national-show/about', label: 'About the Show', hint: 'The theme, and who takes part' },
@@ -106,10 +106,10 @@ export function ShowSectionNav({ current }: ShowSectionNavProps) {
   const { columns } = resolveGridLayout(links.length);
 
   return (
-    <nav aria-label="National Show section" className="bg-bone py-12">
+    <nav aria-label="National Orchid Show section" className="bg-bone py-12">
       <div className="saoc-container">
         <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-accent">
-          More on the National Show
+          More on the National Orchid Show
         </p>
         {/* No hardcoded column-count utility below lg: mobile and tablet stack via flex-col, so the
             ONLY column-count class on this list comes from lib/grid-columns.ts (D68). */}

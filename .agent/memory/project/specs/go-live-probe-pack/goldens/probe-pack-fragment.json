@@ -1,5 +1,5 @@
 {
-  "_comment": "Golden: the additions the dev merges into cache-header-expectations.json (path in spec.md). Admin statuses are the UNAUTHENTICATED behaviour read from code: app/admin/(shell)/layout.tsx redirect('/admin/login') -> 307; app/api/admin/whoami/route.ts returns 401 + Cache-Control no-store; app/api/admin/export-csv/route.ts returns 401 'Unauthorized' for no-session. The dev MUST confirm each observed status and cache-control with a local --spawn run and change a row only with the observed value in the PR body. /admin/login is deliberately excluded (public chrome, not a protected surface). POST-only /api/admin/checkin is excluded (GET is 405, not a gate).",
+  "_comment": "Golden: the additions the dev merges into cache-header-expectations.json (path in spec.md). Admin statuses are the UNAUTHENTICATED behaviour read from code: app/admin/(shell)/layout.tsx redirect('/admin/login') -> 307; app/api/admin/whoami/route.ts returns 200 {admin:false} + Cache-Control no-store since PR #200 (was 401; observed in CI run 44205229638: status=200 cache-control=no-store); app/api/admin/export-csv/route.ts returns 401 'Unauthorized' for no-session. The dev MUST confirm each observed status and cache-control with a local --spawn run and change a row only with the observed value in the PR body. /admin/login is deliberately excluded (public chrome, not a protected surface). POST-only /api/admin/checkin is excluded (GET is 405, not a gate).",
   "routes_admin": [
     {
       "host": "saoc",
@@ -24,7 +24,7 @@
     {
       "host": "saoc",
       "path": "/api/admin/whoami",
-      "status": 401
+      "status": 200
     },
     {
       "host": "saoc",

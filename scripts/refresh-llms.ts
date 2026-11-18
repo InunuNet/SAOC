@@ -204,7 +204,7 @@ async function main(): Promise<void> {
   ]);
 
   {
-    const lines: string[] = ['## National Show', ''];
+    const lines: string[] = ['## National Orchid Show', ''];
     if (!upcomingShow && (!pastShows || pastShows.length === 0)) {
       lines.push(UNAVAILABLE);
     } else {
@@ -212,13 +212,13 @@ async function main(): Promise<void> {
         const dateStr = upcomingShow.showDate
           ? new Date(upcomingShow.showDate).toISOString().slice(0, 10)
           : 'TBD';
-        lines.push(`**Upcoming:** ${upcomingShow.title ?? 'National Show'} — ${dateStr}${upcomingShow.location ? `, ${upcomingShow.location}` : ''}`, '');
+        lines.push(`**Upcoming:** ${upcomingShow.title ?? 'National Orchid Show'} — ${dateStr}${upcomingShow.location ? `, ${upcomingShow.location}` : ''}`, '');
       }
       if (pastShows?.length) {
         lines.push('**Past Shows:**', '');
         for (const s of pastShows) {
           const loc = s.location ? ` — ${s.location}` : '';
-          lines.push(`- ${s.year ?? 'N/A'}: ${s.title ?? 'National Show'}${loc}`);
+          lines.push(`- ${s.year ?? 'N/A'}: ${s.title ?? 'National Orchid Show'}${loc}`);
         }
       }
     }

@@ -5,7 +5,7 @@
 import { execFile } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
 import { link, lstat, mkdir, open, readFile, readdir, realpath, rename, rm, stat } from 'node:fs/promises';
-import os from 'node:os';
+import os, { availableParallelism } from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import sharp from 'sharp';
@@ -46,12 +46,15 @@ for (const name of [
   'hero-nos-symposium-phalaenopsis-stripes.jpg',
   'hero-saoc-judging-colmanara-hendrik.jpg',
   'hero-saoc-events-habenaria-hendrik.jpg',
-  'hero-saoc-sponsors-dendrobium-hendrik.jpg',
+  'hero-saoc-sponsors-cattleya-riograndensis.jpg',
   'hero-saoc-event-cattleya-white.jpg',
 ]) HERO_SOURCES.add(path.join(SOURCE_ROOT, 'heroes', name));
 // Hero sources also get an AVIF set (same widths, same -q88 name, .avif extension), served first by
 // components/ui/HeroPicture.tsx with the WebP set as fallback. AVIF q55 is far smaller than the hero WebP.
 const HERO_AVIF_QUALITY = 55;
+// AVIF effort 3, not sharp's default 4: on the 2-vCPU App Hosting builder effort 4 pushed the 18 Nov release past Cloud
+// Build's 60-minute limit. Measured on 15 hero encodes: effort 3 is 3.8x faster, 0.6% larger, 0.24 dB lower PSNR.
+const HERO_AVIF_EFFORT = 3;
 // Every image keeps this cap (lib/image-loader.ts). Only the full-bleed hero photographs in
 // lib/hero-source-widths.json go above it, under the -q88 name (encoded at q78), up to their own native width and never beyond.
 const STANDARD_MAX_WIDTH = 2048;
@@ -80,7 +83,7 @@ function encodingsFor(isHero, isLarge) {
   if (isHero) {
     const quality = isLarge ? HERO_LARGE_WEBP_QUALITY : HERO_WEBP_QUALITY;
     encodings.push([`-q${HERO_VARIANT_NAME_QUALITY}`, 'webp', { quality, smartSubsample: true }]);
-    encodings.push([`-q${HERO_VARIANT_NAME_QUALITY}`, 'avif', { quality: HERO_AVIF_QUALITY }]);
+    encodings.push([`-q${HERO_VARIANT_NAME_QUALITY}`, 'avif', { quality: HERO_AVIF_QUALITY, effort: HERO_AVIF_EFFORT }]);
   }
   return encodings;
 }
@@ -88,7 +91,7 @@ function encodingsFor(isHero, isLarge) {
 async function* walk(dir) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
-    if (full === OUTPUT_ROOT || full === path.join(SOURCE_ROOT, 'hero-detail')) continue;
+    if (full === OUTPUT_ROOT) continue;
     if (entry.isDirectory()) yield* walk(full);
     else if (RASTER_EXTENSION.test(entry.name)) yield full;
   }
@@ -111,6 +114,13 @@ const LOCK_STALE_MS = 30 * 60 * 1000;
 const MANIFEST_FLUSH_EVERY = 100;
 const GENERATED_EXTENSION = /\.(webp|avif)$/;
 const LOCK_TOKEN_BYTES = 8;
+const configuredConcurrency = process.env.IMAGE_VARIANT_CONCURRENCY;
+if (configuredConcurrency !== undefined && (!/^[1-9]\d*$/.test(configuredConcurrency) || !Number.isSafeInteger(Number(configuredConcurrency)))) {
+  throw new Error(`invalid IMAGE_VARIANT_CONCURRENCY: ${configuredConcurrency}`);
+}
+const concurrency = configuredConcurrency === undefined ? Math.max(1, availableParallelism()) : Number(configuredConcurrency);
+// Each worker encodes independently, so keep sharp from starting another CPU pool per job.
+if (concurrency > 1) sharp.concurrency(1);
 
 async function readOptionsManifest() {
   try {
@@ -303,8 +313,10 @@ async function collectDerivedSources() {
     const mtimeMs = Math.max(manifestMtimeMs, (await stat(entry.from)).mtimeMs);
     let cut = null;
     await collectVariants(path.join(SOURCE_ROOT, relative), relative, true, mtimeMs, async (outputWidth) => {
-      cut ??= await cutOf(entry);
-      return sharp(cut.data, { raw: cut.info }).resize({ width: outputWidth, withoutEnlargement: true });
+      // Memoise the promise, not the result: concurrent workers would otherwise each decode the same multi-MB cut.
+      cut ??= cutOf(entry);
+      const { data, info } = await cut;
+      return sharp(data, { raw: info }).resize({ width: outputWidth, withoutEnlargement: true });
     });
   }
 }
@@ -360,26 +372,46 @@ async function generate() {
     await writeOptionsManifest(entries);
   }
   let sinceFlush = 0;
-  for (const job of stale) {
-    const temp = `${job.output}.tmp-${process.pid}.${job.format}`;
-    await (await job.pipeline(job.width))[job.format](job.options).toFile(temp);
-    await fsyncPath(temp);
-    await rename(temp, job.output);
-    touchedDirs.add(path.dirname(job.output));
-    entries[job.output] = job.hash;
-    sinceFlush += 1;
-    if (sinceFlush >= MANIFEST_FLUSH_EVERY) {
-      await flush();
-      sinceFlush = 0;
+  let nextJob = 0;
+  let firstError = null;
+  let commit = Promise.resolve();
+  async function worker() {
+    while (firstError === null && nextJob < stale.length) {
+      const job = stale[nextJob++];
+      try {
+        const temp = `${job.output}.tmp-${process.pid}.${job.format}`;
+        await (await job.pipeline(job.width))[job.format](job.options).toFile(temp);
+        await fsyncPath(temp);
+        const previous = commit;
+        let release;
+        commit = new Promise((resolve) => { release = resolve; });
+        await previous;
+        try {
+          await rename(temp, job.output);
+          touchedDirs.add(path.dirname(job.output));
+          entries[job.output] = job.hash;
+          sinceFlush += 1;
+          if (sinceFlush >= MANIFEST_FLUSH_EVERY) {
+            await flush();
+            sinceFlush = 0;
+          }
+        } finally {
+          release();
+        }
+      } catch (error) {
+        firstError ??= error;
+      }
     }
   }
+  await Promise.all(Array.from({ length: Math.min(concurrency, stale.length) }, () => worker()));
+  if (firstError !== null) throw firstError;
   const kept = Object.fromEntries(jobs.map((job) => [job.output, entries[job.output]]));
   for (const key of Object.keys(entries)) delete entries[key];
   Object.assign(entries, kept);
   await flush();
   // Prune only after the manifest is durable: if the write above threw, nothing has been deleted.
   const pruned = await pruneOrphans();
-  console.log(`image variants: ${stale.length} generated, ${jobs.length - stale.length} up to date, ${pruned} orphans pruned`);
+  console.log(`image variants: ${stale.length} generated, ${jobs.length - stale.length} up to date, ${pruned} orphans pruned, concurrency ${concurrency}`);
 }
 
 await acquireLock();

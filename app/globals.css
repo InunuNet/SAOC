@@ -409,37 +409,16 @@ h3.font-serif {
    one localised scrim covers the copy column only (to the column's right edge, then a short fade), so the
    rest is bare photograph; up to 1023px the hero stacks, with a 2/1 photograph band first and the copy on
    solid sage, and there is no scrim. There is no fade band: the hero ends on a hard edge onto the
-   parchment (A5). Motion on the slide that is showing is a slow object-position drift (never a
-   transform, so the photograph's box never outgrows the viewport) and a progress line whose end
+   parchment (A5). Motion on the slide that is showing is a subtle 1.04x zoom and a progress line whose end
    advances the carousel. Pause holds both; reduced motion drops both. */
 @media (min-width: 1024px) {
   .home-hero {
-    min-height: max(600px, min(88vh, 860px));
+    min-height: max(560px, min(72vh, 680px));
   }
 }
 .home-hero-img {
   object-fit: cover;
   object-position: var(--hero-pos);
-  transform: scale(1);
-  transform-origin: var(--hero-pos);
-}
-.home-hero-hover {
-  transform: scale(1);
-  transition: transform 900ms ease-out, transform-origin 180ms ease-out;
-}
-.home-hero-hover[data-zoomed] {
-  transform: scale(1.8);
-}
-.home-hero-detail {
-  opacity: 0;
-  animation: home-hero-detail-in 300ms ease-out forwards;
-}
-@keyframes home-hero-detail-in {
-  to { opacity: 1; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .home-hero-hover { transition: none; }
-  .home-hero-detail { animation: none; opacity: 1; }
 }
 @media (min-width: 1024px) {
   .home-hero [data-hero-scrim='copy'] {
@@ -447,27 +426,27 @@ h3.font-serif {
       90deg,
       rgb(34 40 31 / 0.88) 0,
       rgb(34 40 31 / 0.88)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px),
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px),
       rgb(34 40 31 / 0.855)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 2.2%),
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 2.2%),
       rgb(34 40 31 / 0.788)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 4.4%),
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 4.4%),
       rgb(34 40 31 / 0.69)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 6.6%),
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 6.6%),
       rgb(34 40 31 / 0.57)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 8.8%),
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 8.8%),
       rgb(34 40 31 / 0.44)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 11%),
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 11%),
       rgb(34 40 31 / 0.31)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 13.2%),
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 13.2%),
       rgb(34 40 31 / 0.19)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 15.4%),
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 15.4%),
       rgb(34 40 31 / 0.092)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 17.6%),
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 17.6%),
       rgb(34 40 31 / 0.025)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 19.8%),
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 19.8%),
       rgb(34 40 31 / 0)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 22%)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 22%)
     );
   }
 }
@@ -476,7 +455,7 @@ h3.font-serif {
     transform: scale(1);
   }
   to {
-    transform: scale(1.18);
+    transform: scale(1.04);
   }
 }
 @keyframes home-hero-fill {

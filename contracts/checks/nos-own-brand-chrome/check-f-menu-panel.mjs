@@ -13,7 +13,7 @@ const scrollRestoreWaived = (() => {
 
 const mega = NAV.find((n) => n.type === 'mega');
 const squash = (s) => (s ?? '').replace(/\s+/g, ' ').trim();
-const ORDER = ['About', 'Societies', 'Judging & Awards', 'Events', 'National Show', 'Sponsors', 'Contact'];
+const ORDER = ['About', 'Societies', 'Judging & Awards', 'Events', 'National Orchid Show', 'Sponsors', 'Contact'];
 const burgerOpen = (page) => page.locator('#nh-burger').getAttribute('aria-expanded');
 
 await main('F menu-panel', async (r) => {

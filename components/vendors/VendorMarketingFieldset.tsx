@@ -26,7 +26,7 @@ const MARKETING_PERMISSION_OPTIONS = [
   {
     value: 'full',
     label:
-      'I hereby give the 2027 SAOC National Show permission to use my business name, logo, supplied photographs and promotional information for reasonable event-related marketing and publicity.',
+      'I hereby give the 2027 SAOC National Orchid Show permission to use my business name, logo, supplied photographs and promotional information for reasonable event-related marketing and publicity.',
   },
   {
     value: 'listing-only',

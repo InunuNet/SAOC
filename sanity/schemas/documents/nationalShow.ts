@@ -2,7 +2,7 @@ import { defineField, defineType } from 'sanity';
 
 export const nationalShow = defineType({
   name: 'nationalShow',
-  title: 'National Show',
+  title: 'National Orchid Show',
   type: 'document',
   fields: [
     defineField({ name: 'title', title: 'Title', type: 'string' }),

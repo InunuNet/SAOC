@@ -113,11 +113,11 @@ export const PHOTO_CREDITS: readonly PhotoCredit[] = [
     changed: true,
   },
   {
-    image: "/images/heroes/hero-saoc-sponsors-dendrobium-hendrik.jpg",
-    author: "Hendrik Schoeman",
-    licence: null,
-    licenceUrl: null,
-    sourceUrl: null,
+    image: "/images/heroes/hero-saoc-sponsors-cattleya-riograndensis.jpg",
+    author: "Motohiro Sunouchi",
+    licence: "CC BY 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by/4.0/",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Cattleya_riograndensis_2311_(Rosim_%26_Campacci)_J.M.H.Shaw_%26_H.C.Pritch.-_Orchids_(West_Palm_Beach)_92(5)-_326_(2023)._20250121_170523.jpg",
     changed: true,
   },
   {

@@ -41,7 +41,7 @@ const NAV_CARDS: NavCardData[] = [
   {
     href: nosUrl('/'),
     crossSite: true,
-    badge: 'National Show',
+    badge: 'National Orchid Show',
     // Overwritten from the nationalShow singleton in buildNavCards().
     title: '',
     body: 'Every three years. Four days. A thousand plants at their peak.',

@@ -408,7 +408,7 @@ const EXHIBITOR_INFO_FIELDS: Record<string, unknown> = {
       },
       {
         text:
-          ' Whether exhibitors may be present during judging at the National Show has not been ' +
+          ' Whether exhibitors may be present during judging at the National Orchid Show has not been ' +
           'confirmed.',
       },
     ],
