@@ -417,7 +417,7 @@ h3.font-serif {
   --scrim-wash: rgb(34 40 31 / 0.78);
 }
 .home-hero {
-  --scrim-solid: calc(var(--u) * 640);
+  --scrim-solid: 640px;
 }
 .home-hero [data-hero-scrim='copy'],
 [data-page-hero] [data-hero-scrim='copy'] {
@@ -462,6 +462,7 @@ h3.font-serif {
 }
 .home-hero [data-hero-controls] [role='group'] button > span {
   width: max(28px, calc(var(--u) * 28));
+  height: 2px;
 }
 @media (min-width: 1024px) {
   .home-hero {
@@ -510,7 +511,7 @@ h3.font-serif {
     margin-top: calc(var(--u) * 32);
     max-width: max(calc(var(--u) * 980), 850px);
     grid-template-columns: repeat(3, minmax(270px, 1fr));
-    gap: max(12px, calc(var(--u) * 16));
+    gap: max(16px, calc(var(--u) * 16));
   }
   .home-hero [data-hero-controls] {
     margin-top: calc(var(--u) * 140);

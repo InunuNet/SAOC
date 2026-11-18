@@ -30,7 +30,7 @@ function slideLabel(index: number, total: number, subject: string): string {
 const HERO_CTA_BASE =
   'inline-flex w-full items-center justify-between rounded-[2px] border font-medium tracking-[0.01em] transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 hover:-translate-y-px focus-visible:-translate-y-px active:translate-y-0';
 const HERO_CTA_META =
-  'font-mono leading-[1.5] uppercase tracking-[0.18em] text-ivory/80 lg:whitespace-nowrap';
+  'font-mono leading-[1.5] uppercase tracking-[0.18em] text-ivory/80';
 
 // The photograph is full bleed behind the copy at every width. From 1024px the box is 40vw tall (the
 // 2048-wide reference frame is 820px), so a source wider than 2.5:1 is height-driven. Below 1024px the
