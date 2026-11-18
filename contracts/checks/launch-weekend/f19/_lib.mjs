@@ -106,7 +106,8 @@ export async function measureHeroContrast(page) {
       };
       add('h1', hero.querySelector('h1'));
       add('h1 em', hero.querySelector('h1 em'));
-      add('lede', hero.querySelector('p'));
+      // The home hero has no lede (Brad, 18 Nov): the 11px mono labels under each CTA are its small text.
+      hero.querySelectorAll('[data-hero-ctas] p').forEach((p, k) => add('meta' + (k + 1), p));
       const ctas = [...hero.querySelectorAll('a[href]')];
       ctas.forEach((a, k) => add('cta' + (k + 1) + ' ' + a.textContent.trim().slice(0, 28), a, true));
       return { clip: { x: hr.left + sx, y: hr.top + sy, width: hr.width, height: hr.height }, items };
