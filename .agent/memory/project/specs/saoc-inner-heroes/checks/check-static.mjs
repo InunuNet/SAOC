@@ -54,9 +54,9 @@ check('PhotoBand.tsx takes an imagePosition prop and applies it as object-positi
 const home = read('components/home/Hero.tsx');
 check('Hero.tsx: carousel images use the decorative HeroPicture (HS-2)', /<HeroPicture/.test(home) && !/alt=\{slide\.alt\}/.test(home));
 const slides = read('lib/data/home-hero-slides.ts');
-const homeSlideKeys = ['zygopetalum', 'cymbidium', 'colmanara', 'paphiopedilum-rust', 'dendrobium-pair', 'paphiopedilum-yellow', 'phalaenopsis-pink', 'cymbidium-amber'];
-const homeSlideSources = ['hero-home-1-zygopetalum-hendrik.jpg', 'hero-home-2-cymbidium-hendrik.jpg', 'hero-home-3-colmanara-hendrik.jpg', 'hero-home-6-paphiopedilum-rust.jpg', 'hero-home-5-dendrobium-hendrik.jpg', 'hero-home-4-paphiopedilum-yellow.jpg', 'hero-home-7-phalaenopsis-pink.jpg', 'hero-home-8-cymbidium-amber-hendrik.jpg'];
-const homeSlidePositions = ['50% 45%', '50% 40%', '40% 40%', '50% 40%', '55% 50%', '50% 45%', '55% 45%', '50% 40%'];
+const homeSlideKeys = ['zygopetalum', 'phalaenopsis-purple', 'colmanara', 'paphiopedilum-rust', 'dendrobium-pair', 'paphiopedilum-yellow', 'phalaenopsis-pink', 'oncidium-yellow'];
+const homeSlideSources = ['hero-home-1-zygopetalum-hendrik.jpg', 'hero-home-2-purple-phalaenopsis.jpg', 'hero-home-3-colmanara-hendrik.jpg', 'hero-home-6-paphiopedilum-rust.jpg', 'hero-home-5-dendrobium-hendrik.jpg', 'hero-home-4-paphiopedilum-yellow.jpg', 'hero-home-7-phalaenopsis-pink.jpg', 'hero-home-8-yellow-oncidium.jpg'];
+const homeSlidePositions = ['50% 45%', '50% 45%', '40% 40%', '50% 40%', '55% 50%', '50% 45%', '55% 45%', '50% 45%'];
 const homeSlideEntries = [...slides.matchAll(/\{\s*key: '([^']+)',\s*src: '([^']+)',\s*alt: '([^']+)',\s*position: '([^']+)',\s*\}/g)];
 check('home-hero-slides.ts: exactly eight slides in Brad’s 18 Nov order with the ruled sources and focal points',
   homeSlideEntries.length === 8 && homeSlideEntries.every((entry, i) => entry[1] === homeSlideKeys[i] && entry[2] === `/images/heroes/${homeSlideSources[i]}` && entry[4] === homeSlidePositions[i]) && !/detailSrc/.test(slides));

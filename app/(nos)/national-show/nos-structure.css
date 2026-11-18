@@ -3523,8 +3523,10 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
    is min(1080px, 62% of the content width). Below 768 the 2:1 band of PG-1 stands. */
 @media (min-width: 1024px) {
   .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-media {
-    inset: 0 0 0 38%;
-    width: auto;
+    /* Brad 18 Nov: never upscale on wide screens. 62% as before, capped at 1150px so a 2200-3000px
+       source keeps >= 2 device px per CSS px; anchored right. */
+    inset: 0 0 0 auto;
+    width: min(62%, 1150px);
     border-radius: 0;
     -webkit-mask-image: linear-gradient(90deg, transparent 0, black 22%);
     mask-image: linear-gradient(90deg, transparent 0, black 22%);
@@ -3532,7 +3534,8 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   .nos-theme .nos-hero-inner.nos-hero-photo::before {
     content: '';
     position: absolute;
-    inset: 0 0 0 38%;
+    inset: 0 0 0 auto;
+    width: min(62%, 1150px);
     z-index: 1;
     pointer-events: none;
   }

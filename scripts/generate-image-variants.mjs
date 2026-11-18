@@ -28,26 +28,26 @@ const HERO_LARGE_WEBP_QUALITY = 78;
 const HERO_SOURCES = new Set(['orchid-violet.jpg', 'orchid-pink.jpg', 'orchid-dark.jpg', 'orchid-purple.jpg', 'orchid-yellow.jpg', 'orchid-pink-about.jpg', 'nos-hero-S3a.jpg', 'nos-hero-S3b.jpg', 'nos-hero-S2a.jpg', 'nos-hero-S2c.jpg', 'nos-hero-S1b.jpg', 'nos-hero-H4a.jpg', 'nos-hero-H4b.jpg', 'nos-hero-D1.jpg', 'nos-hero-PK1.jpg', 'nos-hero-PK3.jpg', 'nos-hero-Y1.jpg'].map((name) => path.join(SOURCE_ROOT, name)));
 for (const name of [
   'hero-home-1-zygopetalum-hendrik.jpg',
-  'hero-home-2-cymbidium-hendrik.jpg',
+  'hero-home-2-purple-phalaenopsis.jpg',
   'hero-home-3-colmanara-hendrik.jpg',
   'hero-home-4-paphiopedilum-yellow.jpg',
   'hero-home-5-dendrobium-hendrik.jpg',
   'hero-home-6-paphiopedilum-rust.jpg',
   'hero-home-7-phalaenopsis-pink.jpg',
-  'hero-home-8-cymbidium-amber-hendrik.jpg',
+  'hero-home-8-yellow-oncidium.jpg',
   'hero-nos-hub-cattleya-white.jpg',
   'hero-nos-about-colmanara-hendrik.jpg',
   'hero-nos-programme-dendrobium-hendrik.jpg',
-  'hero-nos-conferences-cymbidium-green-hendrik.jpg',
+  'hero-nos-conferences-purple-phalaenopsis.jpg',
   'hero-nos-workshops-cattleya-apricot-hendrik.jpg',
   'hero-nos-plan-paphiopedilum-yellow-wide.jpg',
-  'hero-nos-faq-cymbidium-hendrik.jpg',
-  'hero-nos-expect-cymbidium-amber-hendrik.jpg',
+  'hero-nos-faq-pink-phalaenopsis.jpg',
+  'hero-nos-expect-zygopetalum-hendrik.jpg',
   'hero-nos-symposium-paphiopedilum-rust.jpg',
-  'hero-saoc-judging-yellow-hendrik.jpg',
+  'hero-saoc-judging-colmanara-hendrik.jpg',
   'hero-saoc-events-habenaria-hendrik.jpg',
   'hero-saoc-sponsors-cattleya-white-wide.jpg',
-  'hero-saoc-event-bulbophyllum-hendrik.jpg',
+  'hero-saoc-event-yellow-oncidium.jpg',
 ]) HERO_SOURCES.add(path.join(SOURCE_ROOT, 'heroes', name));
 // Hero sources also get an AVIF set (same widths, same -q88 name, .avif extension), served first by
 // components/ui/HeroPicture.tsx with the WebP set as fallback. AVIF q55 is far smaller than the hero WebP.

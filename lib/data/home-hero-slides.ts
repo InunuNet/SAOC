@@ -17,10 +17,10 @@ export const HOME_HERO_SLIDES: readonly HomeHeroSlide[] = [
     position: '50% 45%',
   },
   {
-    key: 'cymbidium',
-    src: '/images/heroes/hero-home-2-cymbidium-hendrik.jpg',
-    alt: 'Cymbidium orchid',
-    position: '50% 40%',
+    key: 'phalaenopsis-purple',
+    src: '/images/heroes/hero-home-2-purple-phalaenopsis.jpg',
+    alt: 'Phalaenopsis orchid',
+    position: '50% 45%',
   },
   {
     key: 'colmanara',
@@ -53,9 +53,9 @@ export const HOME_HERO_SLIDES: readonly HomeHeroSlide[] = [
     position: '55% 45%',
   },
   {
-    key: 'cymbidium-amber',
-    src: '/images/heroes/hero-home-8-cymbidium-amber-hendrik.jpg',
-    alt: 'Cymbidium orchid',
-    position: '50% 40%',
+    key: 'oncidium-yellow',
+    src: '/images/heroes/hero-home-8-yellow-oncidium.jpg',
+    alt: 'Oncidium orchid',
+    position: '50% 45%',
   },
 ];

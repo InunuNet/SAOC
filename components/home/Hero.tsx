@@ -32,8 +32,6 @@ const HERO_CTA_BASE =
 const HERO_CTA_META =
   'font-mono text-[11px] leading-[1.5] uppercase tracking-[0.18em] text-ivory/80 lg:whitespace-nowrap';
 
-// The full-bleed hero image fills the content-driven desktop box; use its minimum for image sizing.
-const HERO_BOX_HEIGHT = 620;
 const CONTROL_FOCUS =
   'focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]';
 
@@ -96,10 +94,10 @@ export function Hero({ show, societyCount }: HeroProps) {
     >
       {/* Crossfade image stack: opacity, plus a slow zoom on the slide that is showing.
           Up to 1023px the hero stacks: this is a 2/1 band with nothing over it and the copy sits under
-          it on solid sage; from 1024px it is the full-bleed background of the copy. */}
+          it on solid sage; from 1024px it is a right-aligned photo panel behind the copy. */}
       <div
         data-home-hero-media
-        className="relative aspect-[2/1] w-full overflow-hidden lg:absolute lg:inset-0 lg:aspect-auto"
+        className="relative aspect-[2/1] w-full overflow-hidden lg:absolute lg:inset-y-0 lg:right-0 lg:aspect-auto lg:w-[min(100%,1240px)]"
       >
         {slides.map((slide, i) => {
           const isActive = activeIdx === i;
@@ -128,7 +126,7 @@ export function Hero({ show, societyCount }: HeroProps) {
                   src={slide.src}
                   className="home-hero-img"
                   priority={i === 0}
-                  sizes={`(max-width: 1023px) max(100vw, calc(50vw * ${aspect})), max(100vw, ${Math.ceil(HERO_BOX_HEIGHT * aspect)}px)`}
+                  sizes={`(max-width: 1023px) max(100vw, calc(50vw * ${aspect})), min(100vw, 1240px)`}
                 />
               </div>
             </div>

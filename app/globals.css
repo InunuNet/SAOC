@@ -405,15 +405,20 @@ h3.font-serif {
   padding-inline: var(--container-pad);
 }
 
-/* Home hero (NOS Design hero-cards-ruling, 2026-10-23, Brad P0; saoc-inner-heroes 2026-10-26). From 1024px
-   one localised scrim covers the copy column only (to the column's right edge, then a short fade), so the
-   rest is bare photograph; up to 1023px the hero stacks, with a 2/1 photograph band first and the copy on
-   solid sage, and there is no scrim. There is no fade band: the hero ends on a hard edge onto the
-   parchment (A5). Motion on the slide that is showing is a subtle 1.04x zoom and a progress line whose end
-   advances the carousel. Pause holds both; reduced motion drops both. */
+/* Home hero: from 1024px the right-aligned photo panel fades into the sage behind the copy.
+   The existing copy scrim stays above it. Up to 1023px the hero keeps its 2/1 photograph band
+   and solid sage copy area. Slide drift, progress, pause and reduced motion stay on the slide. */
 @media (min-width: 1024px) {
   .home-hero {
     min-height: 620px;
+  }
+  .home-hero [data-home-hero-media] {
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgb(0 0 0 / 0.02) 3%, rgb(0 0 0 / 0.1) 7%, rgb(0 0 0 / 0.28) 11%, rgb(0 0 0 / 0.55) 17%, rgb(0 0 0 / 0.78) 23%, rgb(0 0 0 / 0.94) 29%, black 35%);
+    mask-image: linear-gradient(90deg, transparent 0%, rgb(0 0 0 / 0.02) 3%, rgb(0 0 0 / 0.1) 7%, rgb(0 0 0 / 0.28) 11%, rgb(0 0 0 / 0.55) 17%, rgb(0 0 0 / 0.78) 23%, rgb(0 0 0 / 0.94) 29%, black 35%);
+  }
+  [data-page-hero-media] {
+    -webkit-mask-image: linear-gradient(90deg, black 65%, rgb(0 0 0 / 0.94) 71%, rgb(0 0 0 / 0.78) 77%, rgb(0 0 0 / 0.55) 83%, rgb(0 0 0 / 0.28) 89%, rgb(0 0 0 / 0.1) 93%, rgb(0 0 0 / 0.02) 97%, transparent 100%);
+    mask-image: linear-gradient(90deg, black 65%, rgb(0 0 0 / 0.94) 71%, rgb(0 0 0 / 0.78) 77%, rgb(0 0 0 / 0.55) 83%, rgb(0 0 0 / 0.28) 89%, rgb(0 0 0 / 0.1) 93%, rgb(0 0 0 / 0.02) 97%, transparent 100%);
   }
 }
 .home-hero-img {

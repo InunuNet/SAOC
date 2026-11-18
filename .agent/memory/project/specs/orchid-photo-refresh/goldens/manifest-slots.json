@@ -8,7 +8,7 @@
   {
     "slot": "saoc-home hero slide 2",
     "file": "lib/data/home-hero-slides.ts",
-    "image": "/images/heroes/hero-home-2-cymbidium-hendrik.jpg",
+    "image": "/images/heroes/hero-home-2-purple-phalaenopsis.jpg",
     "focus": "50% 50%"
   },
   {
@@ -44,7 +44,7 @@
   {
     "slot": "saoc-home hero slide 8",
     "file": "lib/data/home-hero-slides.ts",
-    "image": "/images/heroes/hero-home-8-cymbidium-amber-hendrik.jpg",
+    "image": "/images/heroes/hero-home-8-yellow-oncidium.jpg",
     "focus": "65% 45%"
   },
   {
@@ -68,7 +68,7 @@
   {
     "slot": "nos inner S2a (/conferences, /terms, /newsletter/unsubscribe)",
     "file": "components/nos/hero-photos.ts ROUTE_CROPS",
-    "image": "/images/heroes/hero-nos-conferences-cymbidium-green-hendrik.jpg",
+    "image": "/images/heroes/hero-nos-conferences-purple-phalaenopsis.jpg",
     "focus": "50% 50%"
   },
   {
@@ -86,13 +86,13 @@
   {
     "slot": "nos inner H4a (/faq, /contact)",
     "file": "components/nos/hero-photos.ts ROUTE_CROPS",
-    "image": "/images/heroes/hero-nos-faq-cymbidium-hendrik.jpg",
+    "image": "/images/heroes/hero-nos-faq-pink-phalaenopsis.jpg",
     "focus": "50% 50%"
   },
   {
     "slot": "nos inner PK1 (/what-to-expect, /sa-exhibitors)",
     "file": "components/nos/hero-photos.ts ROUTE_CROPS",
-    "image": "/images/heroes/hero-nos-expect-cymbidium-amber-hendrik.jpg",
+    "image": "/images/heroes/hero-nos-expect-zygopetalum-hendrik.jpg",
     "focus": "50% 50%"
   },
   {
