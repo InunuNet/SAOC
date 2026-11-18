@@ -499,7 +499,11 @@ h3.font-serif {
   .home-hero [data-hero-copy] {
     padding-block: calc(var(--u) * 180) calc(var(--u) * 79);
   }
+  /* The copy column keeps the header's left axis; above 2048 it may run past the container's right edge. */
   .home-hero [data-hero-copy] > div {
+    width: max(calc(var(--u) * 1100), 850px);
+  }
+  .home-hero h1.h1 {
     max-width: calc(var(--u) * 1100);
   }
   .home-hero [data-hero-ctas] {
@@ -526,12 +530,14 @@ h3.font-serif {
   font-size: max(11px, calc(var(--u) * 12));
 }
 [data-page-hero] h1 {
+  max-width: max(768px, calc(var(--u) * 768));
   font-size: max(36px, calc(var(--u) * 72));
 }
 [data-page-hero] [data-page-hero-eyebrow] + h1 {
   margin-top: max(14px, calc(var(--u) * 20));
 }
 [data-page-hero] [data-page-hero-lede] {
+  max-width: max(672px, calc(var(--u) * 672));
   margin-top: max(14px, calc(var(--u) * 20));
   font-size: max(16px, calc(var(--u) * 16));
 }
