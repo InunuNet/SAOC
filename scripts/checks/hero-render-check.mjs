@@ -146,7 +146,24 @@ async function checkNaturalWidths(browser) {
 async function checkScrimAndContrast(browser) {
   const { context, page } = await open(browser, SAOC_HOST, '/', { width: 2056, height: 1100 }, 2);
   const scrim = await page.$eval('[data-hero-scrim="copy"]', (el) => getComputedStyle(el).backgroundImage);
-  check('A4 scrim ends transparent at 76%', /transparent 76%/.test(scrim) || /rgba\(0, 0, 0, 0\) 76%/.test(scrim), scrim.slice(0, 200));
+  // Brad, 18 Nov: one 90deg sage scrim on the copy column, solid through the CTA row's right edge plus 48px
+  // (the 11px labels must reach 4.5:1 on every slide), then easing to clear. Alphas never rise along it.
+  const alphas = [...scrim.matchAll(/rgba\(34, 40, 31, ([0-9.]+)\)/g)].map((m) => parseFloat(m[1]));
+  const eased = alphas.length >= 6 && alphas[0] === 0.88 && alphas[alphas.length - 1] === 0 && alphas.every((a, i) => i === 0 || a <= alphas[i - 1]);
+  check('A4 scrim is the sage 90deg ease, solid at .88 and ending clear', /^linear-gradient\(90deg/.test(scrim) && eased, scrim.slice(0, 200));
+  const solid = await page.evaluate(() => {
+    const el = document.querySelector('[data-hero-scrim="copy"]');
+    const stop = getComputedStyle(el).backgroundImage.match(/0\.88\) ([^,]*(?:\([^)]*\)[^,]*)*), rgba/)?.[1];
+    if (!stop) return null;
+    const probe = document.createElement('div');
+    probe.style.cssText = `position:absolute;visibility:hidden;height:0;width:${stop}`;
+    el.appendChild(probe);
+    const end = probe.getBoundingClientRect().width;
+    probe.remove();
+    const ctas = document.querySelector('[data-hero-ctas]').getBoundingClientRect();
+    return { end, ctaRight: ctas.right - el.getBoundingClientRect().left };
+  });
+  check('A4 scrim solid zone reaches the CTA row right edge + 48px', solid !== null && solid.end >= solid.ctaRight + 47, JSON.stringify(solid));
   const bands = await page.$$eval('[data-hero-scrim]', (els) => els.map((el) => el.getAttribute('data-hero-scrim')));
   check('A4 only the copy layer', bands.join() === 'copy', bands.join());
   await page.addStyleTag({ content: '[data-home-hero] h1, [data-home-hero] [data-hero-lede] { color: transparent !important; } [data-home-hero] h1 em { color: transparent !important; }' });
