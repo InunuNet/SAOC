@@ -28,7 +28,9 @@ function slideLabel(index: number, total: number, subject: string): string {
 }
 
 const HERO_CTA_BASE =
-  'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-[2px] border px-[22px] py-[14px] text-[14px] font-medium tracking-[0.01em] transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) sm:w-auto focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 hover:-translate-y-px focus-visible:-translate-y-px active:translate-y-0';
+  'inline-flex min-h-12 w-full items-center justify-between gap-4 rounded-[2px] border px-[22px] py-[14px] text-[14px] font-medium tracking-[0.01em] transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 hover:-translate-y-px focus-visible:-translate-y-px active:translate-y-0';
+const HERO_CTA_META =
+  'font-mono text-[11px] leading-[1.5] uppercase tracking-[0.18em] text-ivory/80';
 
 // The full-bleed hero image fills the content-driven desktop box; use its minimum for image sizing.
 const HERO_BOX_HEIGHT = 620;
@@ -153,38 +155,49 @@ export function Hero({ show, societyCount }: HeroProps) {
 
           <div
             data-hero-ctas
-            className="mt-8 flex w-full max-w-[900px] flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start"
+            className="mt-8 grid w-full max-w-[900px] grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-4"
           >
-            <div className="flex flex-col gap-2 sm:items-start">
+            <div className="flex min-w-0 flex-col gap-3">
               <Link
                 href="/societies"
                 data-hero-cta="primary"
-                className={`${HERO_CTA_BASE} border-ivory bg-ivory text-primary hover:bg-bone hover:border-bone`}
+                className={`${HERO_CTA_BASE} border-ivory bg-ivory text-primary hover:border-bone hover:bg-bone`}
               >
                 Find your society
-                <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" />
+                <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" className="shrink-0" />
               </Link>
-              {societyCount != null ? <p className="font-sans text-[15px] leading-[1.35] text-ivory">{societyCount} societies across South Africa</p> : null}
+              {societyCount != null ? (
+                <div className="flex flex-col gap-2">
+                  <span aria-hidden="true" className="h-[2px] w-6 bg-accent" />
+                  <p className={HERO_CTA_META}>{societyCount} societies across South Africa</p>
+                </div>
+              ) : null}
             </div>
-            <div className="flex flex-col gap-2 sm:items-start">
+            <div className="flex min-w-0 flex-col gap-3">
               <a
                 href={nosUrl('/')}
                 data-hero-cta="secondary"
                 className={`${HERO_CTA_BASE} border-ivory text-ivory hover:bg-ivory/10`}
               >
                 {showCtaLabel}
+                <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" className="shrink-0" />
               </a>
               {showDates ? (
-                <p data-home-show-date className="font-sans text-[15px] leading-[1.35] text-ivory">
-                  {showDates}
-                </p>
+                <div className="flex flex-col gap-2">
+                  <span aria-hidden="true" className="h-[2px] w-6 bg-accent" />
+                  <p data-home-show-date className={HERO_CTA_META}>{showDates}</p>
+                </div>
               ) : null}
             </div>
-            <div className="flex flex-col gap-2 sm:items-start">
+            <div className="flex min-w-0 flex-col gap-3">
               <a href={nosUrl('/tickets')} data-hero-cta="tickets" className={`${HERO_CTA_BASE} border-ivory text-ivory hover:bg-ivory/10`}>
                 Tickets
+                <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" className="shrink-0" />
               </a>
-              <p className="font-sans text-[15px] leading-[1.35] text-ivory">National Orchid Show</p>
+              <div className="flex flex-col gap-2">
+                <span aria-hidden="true" className="h-[2px] w-6 bg-accent" />
+                <p className={HERO_CTA_META}>National Orchid Show</p>
+              </div>
             </div>
           </div>
 

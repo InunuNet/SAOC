@@ -86,8 +86,8 @@ export default async function HomePage() {
       <JsonLd data={organizationJsonLd()} />
       <Hero images={home?.heroImages} show={show} societyCount={societyCount} />
       <MissionBlock missionText={home?.missionText} withhold={withhold} />
-      <ForewordSection />
       <NavCards show={show} withhold={withhold} />
+      <ForewordSection />
       <ShowBand show={show} />
       <EventsStrip events={eventsData} />
       {withhold ? null : <YearbookStrip />}
