@@ -152,7 +152,7 @@ export default async function RefundsPage() {
           </h2>
           <p>
             Admission tickets (single-day and weekend passes) are cancelled under the tiered
-            schedule set out above, based on notice given before the National Show&rsquo;s
+            schedule set out above, based on notice given before the National Orchid Show&rsquo;s
             opening day.
           </p>
 

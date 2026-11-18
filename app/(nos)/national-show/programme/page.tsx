@@ -27,7 +27,7 @@ export const revalidate = 60;
 export const metadata: Metadata = buildPageMetadata({
   title: 'Programme',
   image: nosOgImage('Programme — National Orchid Show'),
-  description: 'The overall schedule of sessions across the four days of the National Show.',
+  description: 'The overall schedule of sessions across the four days of the National Orchid Show.',
   path: '/national-show/programme',
 });
 

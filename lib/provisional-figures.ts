@@ -129,7 +129,7 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
     // Visitor's own early-bird tier, re-shaped in place to the new pool-based mechanism
     // (not a new slug, unlike weekend-pass-early-bird below).
     category: 'admission',
-    description: 'Single-day general admission to the National Show during the early-bird window — choose your day.',
+    description: 'Single-day general admission to the National Orchid Show during the early-bird window — choose your day.',
     price: 120,
     capacity: ADMISSION_EARLY_BIRD_POOL_CAPACITY,
     releasedQuantity: null,
@@ -146,7 +146,7 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
     slug: 'day-visitor',
     name: 'Day Visitor Ticket',
     category: 'admission',
-    description: 'Single-day general admission to the National Show — choose your day.',
+    description: 'Single-day general admission to the National Orchid Show — choose your day.',
     price: 150,
     capacity: 1000,
     releasedQuantity: null,
@@ -161,7 +161,7 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
     slug: 'weekend-pass',
     name: 'Weekend Pass',
     category: 'admission',
-    description: 'Full-weekend admission to the National Show.',
+    description: 'Full-weekend admission to the National Orchid Show.',
     price: 350,
     regularPrice: null,
     // Carried over unchanged from before the early-bird split — FLAGGED OPEN QUESTION, not
@@ -192,7 +192,7 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
     slug: 'weekend-pass-early-bird',
     name: 'Weekend Pass (Early Bird)',
     category: 'admission',
-    description: 'Full-weekend admission to the National Show at the early-bird price.',
+    description: 'Full-weekend admission to the National Orchid Show at the early-bird price.',
     // Not in Lee-Ann's 16 Nov price list; awaiting Brad's decision.
     price: 360,
     regularPrice: null,
@@ -219,7 +219,7 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
     slug: 'vip',
     name: 'VIP Ticket',
     category: 'admission',
-    description: 'Reception access plus full-weekend admission to the National Show.',
+    description: 'Reception access plus full-weekend admission to the National Orchid Show.',
     price: 350,
     regularPrice: null,
     earlyBirdCutoff: null,

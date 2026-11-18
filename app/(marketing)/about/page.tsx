@@ -95,6 +95,7 @@ export default async function AboutPage() {
       <Breadcrumb items={[{ label: 'About' }]} />
       <RouteHero
         route="/about"
+        eyebrow="Our Heritage"
         heading={<strong>About the South African Orchid Council</strong>}
         facts={HERITAGE_FACTS}
       />

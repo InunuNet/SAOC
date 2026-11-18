@@ -103,7 +103,7 @@ export const NAV: readonly NavLinkItem[] = [
   {
     type: 'link',
     id: 'national-show',
-    label: 'National Show',
+    label: 'National Orchid Show',
     href: nosUrl('/'),
     crossSite: true,
   },

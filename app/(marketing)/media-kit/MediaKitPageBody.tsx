@@ -36,7 +36,7 @@ const JUMP_ITEMS = [
   { href: '#duotone', label: 'Duotone' },
   { href: '#mark-only', label: 'Mark only' },
   { href: '#usage', label: 'Clear space and minimum size' },
-  { href: '#national-show', label: 'National Show 2027' },
+  { href: '#national-show', label: 'National Orchid Show 2027' },
 ];
 
 const LOCKUP_GRID = 'grid grid-cols-1 gap-6 md:grid-cols-2';
@@ -256,11 +256,11 @@ export function MediaKitPageBody() {
 
         <KitSection
           id="national-show"
-          heading="National Show 2027"
+          heading="National Orchid Show 2027"
           zip={kit.sectionZips['national-show']}
         >
           <OptionPicker
-            label="National Show 2027"
+            label="National Orchid Show 2027"
             name="national-show-colourway"
             hashPrefix="national-show"
             defaultId="full-colour"

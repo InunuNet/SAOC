@@ -130,11 +130,11 @@ export function toOrdinal(n: number): string {
 }
 
 /**
- * `19th National Show` — no leading article, for CTA labels and aria-labels. Falls back
+ * `19th National Orchid Show` — no leading article, for CTA labels and aria-labels. Falls back
  * to the edition-free wording rather than inventing a number: when a show-identity fact
  * is absent we render the absence, per show-identity-surfaces.golden.md.
  */
-export function showLabelWithEdition(edition?: number | null, noun = 'National Show'): string {
+export function showLabelWithEdition(edition?: number | null, noun = 'National Orchid Show'): string {
   return edition ? `${toOrdinal(edition)} ${noun}` : noun;
 }
 

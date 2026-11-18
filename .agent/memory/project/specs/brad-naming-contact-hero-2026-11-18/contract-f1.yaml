@@ -1,0 +1,23 @@
+schema: athanor.contract/v1
+slug: brad-naming-contact-hero-2026-11-18
+goal: Apply Brad’s National Orchid Show naming rule, align NOS contact facts, and add the two approved SAOC hero eyebrows.
+created_at: '2026-11-18'
+autonomy: high
+features:
+  - id: F1
+    name: Event naming, NOS contact alignment, and SAOC hero eyebrows
+    status: pending
+goldens:
+  - .agent/memory/project/specs/brad-naming-contact-hero-2026-11-18/goldens/change-report.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Sponsors hero uses the approved eyebrow
+      command: grep -q 'eyebrow="Become a sponsor"' 'app/(marketing)/sponsors/page.tsx'
+    - id: A2
+      description: About hero uses the handoff eyebrow
+      command: grep -q 'eyebrow="Our Heritage"' 'app/(marketing)/about/page.tsx'
+    - id: A3
+      description: NOS contact uses a scoped alignment class
+      command: grep -q 'className="nos-contact-hero"' 'app/(nos)/national-show/contact/page.tsx'

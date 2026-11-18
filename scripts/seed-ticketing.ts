@@ -202,12 +202,12 @@ async function seedTicketsPage(client: SanityClient): Promise<void> {
     _type: 'ticketsPage',
     title: 'Get Your Tickets',
     intro:
-      "Secure your seat at the SAOC National Show — South Africa's premier orchid " +
+      "Secure your seat at the SAOC National Orchid Show — South Africa's premier orchid " +
       'exhibition, bringing together growers, judges and orchid lovers from across the ' +
       'country.',
     buyButtonLabel: 'Buy Ticket',
     soldOutMessage: 'Sold out',
-    salesClosedMessage: 'Tickets for the 2027 National Show are not yet on sale — check back soon.',
+    salesClosedMessage: 'Tickets for the 2027 National Orchid Show are not yet on sale — check back soon.',
     // Reworded 2026-09 to stop contradicting /refunds's real tiered cancellation schedule —
     // this field no longer asserts "non-refundable" itself (the page renders a hardcoded,
     // code-owned link to /refunds as the single source of truth for that policy; see
@@ -223,13 +223,13 @@ async function seedTicketsPage(client: SanityClient): Promise<void> {
       'automatically.',
     confirmationSuccessHeading: "You're booked in",
     confirmationSuccessMessage:
-      'Thank you — your payment is confirmed and your spot at the SAOC National Show is ' +
+      'Thank you — your payment is confirmed and your spot at the SAOC National Orchid Show is ' +
       'secured.',
     confirmationNotFoundMessage:
       "We couldn't find a booking for that reference. If you've just paid, check the " +
       'confirmation link or contact info@saoc.co.za.',
     ticketIncludesNote:
-      'Your ticket includes full-day entry to the National Show floor, access to the ' +
+      'Your ticket includes full-day entry to the National Orchid Show floor, access to the ' +
       'judging galleries, and entry to all exhibitor stages.',
     cancelledHeading: 'Payment cancelled',
     cancelledMessage:

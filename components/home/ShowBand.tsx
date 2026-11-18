@@ -93,7 +93,7 @@ function CountdownBox({ target, edition }: { target: Date | null; edition?: numb
     <div
       data-show-band-countdown
       role="group"
-      aria-label={`Countdown to the ${showLabelWithEdition(edition)}`}
+      aria-label={`Countdown to the ${showLabelWithEdition(edition, 'National Orchid Show')}`}
       className={`${BOX_CLASSES} @container`}
     >
       <div className="grid grid-cols-4 @max-[360px]:grid-cols-2 gap-[2px]">

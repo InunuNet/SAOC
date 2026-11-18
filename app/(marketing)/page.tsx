@@ -15,16 +15,20 @@ import { JsonLd, organizationJsonLd } from '@/components/seo/JsonLd';
 import { saocOrigin } from '@/lib/site-hosts';
 import { upcomingEventsParams } from '@/lib/sast-date';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
+import { societies as staticSocieties } from '@/lib/data/societies';
+import { client } from '@/sanity/lib/client';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import {
   homePageQuery,
   upcomingEventsQuery,
   partnersQuery,
   nationalShowQuery,
+  societyListQuery,
 } from '@/sanity/queries';
 import type { SanityEvent } from '@/components/home/EventsStrip';
 import type { SanityPartner } from '@/components/home/PartnersSection';
 import type { ShowIdentity } from '@/types';
+import type { SanitySociety } from '@/components/societies';
 
 interface HomePageData {
   title?: string;
@@ -62,23 +66,28 @@ export function generateMetadata(): Metadata {
 }
 
 export default async function HomePage() {
-  const [home, eventsData, partnersData, show] = await Promise.all([
+  const [home, eventsData, partnersData, show, listedSocieties] = await Promise.all([
     sanityFetch<HomePageData>({ query: homePageQuery, tags: ['homePage', 'sanity'] }),
     sanityFetch<SanityEvent[]>({ query: upcomingEventsQuery, params: upcomingEventsParams(), tags: ['societyEvent', 'sanity'] }),
     sanityFetch<SanityPartner[]>({ query: partnersQuery, tags: ['sponsor', 'sanity'] }),
     sanityFetch<ShowIdentity>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
+    sanityFetch<SanitySociety[]>({ query: societyListQuery, tags: ['society', 'sanity'] }),
   ]);
 
   // F19 (vote 1C): facts the Council has not supplied render on the beta preview only, marked.
   const withhold = withholdPlaceholderProse();
+  // Match the /societies page: use its listed Sanity records, or its static fallback only offline.
+  const societyCount = listedSocieties && listedSocieties.length > 0
+    ? listedSocieties.length
+    : client === null ? staticSocieties.length : listedSocieties?.length ?? null;
 
   return (
     <>
       <JsonLd data={organizationJsonLd()} />
-      <Hero images={home?.heroImages} show={show} />
+      <Hero images={home?.heroImages} show={show} societyCount={societyCount} />
       <MissionBlock missionText={home?.missionText} withhold={withhold} />
-      <ForewordSection />
       <NavCards show={show} withhold={withhold} />
+      <ForewordSection />
       <ShowBand show={show} />
       <EventsStrip events={eventsData} />
       {withhold ? null : <YearbookStrip />}

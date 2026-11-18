@@ -1,14 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type PointerEvent } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { ArrowRight, Pause, Play } from 'lucide-react';
 import type { SanityImageSource } from '@sanity/image-url';
 
 import { HeroPicture } from '@/components/ui/HeroPicture';
 import { HOME_HERO_SLIDES } from '@/lib/data/home-hero-slides';
 import { heroSourceAspect } from '@/lib/data/saoc-hero-photos';
-import { formatShowDateRange, showLabelWithEdition, showYearOf } from '@/lib/show-identity';
+import { formatShowDateRange } from '@/lib/show-identity';
 import type { ShowIdentity } from '@/types';
 import { nosUrl } from '@/lib/site-hosts';
 
@@ -16,16 +16,9 @@ const CAROUSEL_INTERVAL_MS = 7000;
 const FADE_MS = 1400;
 const HEADING_ID = 'home-hero-heading';
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
-const FINE_HOVER_QUERY = '(hover: hover) and (pointer: fine)';
 
 function subscribeReducedMotion(onChange: () => void): () => void {
   const query = window.matchMedia(REDUCED_MOTION_QUERY);
-  query.addEventListener('change', onChange);
-  return () => query.removeEventListener('change', onChange);
-}
-
-function subscribeFineHover(onChange: () => void): () => void {
-  const query = window.matchMedia(FINE_HOVER_QUERY);
   query.addEventListener('change', onChange);
   return () => query.removeEventListener('change', onChange);
 }
@@ -35,11 +28,12 @@ function slideLabel(index: number, total: number, subject: string): string {
 }
 
 const HERO_CTA_BASE =
-  'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-[2px] border px-[22px] py-[14px] text-[14px] font-medium tracking-[0.01em] transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) sm:w-auto focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 hover:-translate-y-px focus-visible:-translate-y-px active:translate-y-0';
+  'inline-flex min-h-12 w-full items-center justify-between gap-4 rounded-[2px] border px-[22px] py-[14px] text-[14px] font-medium tracking-[0.01em] transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 hover:-translate-y-px focus-visible:-translate-y-px active:translate-y-0';
+const HERO_CTA_META =
+  'font-mono text-[11px] leading-[1.5] uppercase tracking-[0.18em] text-ivory/80 lg:whitespace-nowrap';
 
-// The full-bleed hero's box is at least the 860px min-height of .home-hero (globals.css), so a source wider
-// than 860px x its aspect is height-driven and `sizes` must say so.
-const HERO_BOX_HEIGHT = 860;
+// The full-bleed hero image fills the content-driven desktop box; use its minimum for image sizing.
+const HERO_BOX_HEIGHT = 620;
 const CONTROL_FOCUS =
   'focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]';
 
@@ -51,22 +45,19 @@ export interface HeroProps {
   images?: SanityImageSource[] | null;
   /** Show identity from the nationalShow singleton — the CTA label is not a literal. */
   show?: ShowIdentity | null;
+  /** Count of the same listed societies shown by /societies. */
+  societyCount?: number | null;
 }
 
-export function Hero({ show }: HeroProps) {
-  const showYear = showYearOf(show?.showDate);
-  const showCtaLabel = `${showLabelWithEdition(show?.edition)}${showYear ? `, ${showYear}` : ''}`;
+export function Hero({ show, societyCount }: HeroProps) {
+  // Brad, 18 Nov: the hero button reads the official name with no edition number.
+  const showCtaLabel = 'National Orchid Show';
   const showDates = formatShowDateRange(show?.showDate, show?.showEndDate);
   const slides = HOME_HERO_SLIDES;
 
   const [activeIdx, setActiveIdx] = useState(0);
   const [leavingIdx, setLeavingIdx] = useState<number | null>(null);
   const [userPaused, setUserPaused] = useState(false);
-  const [pointerInside, setPointerInside] = useState(false);
-  const [readyDetails, setReadyDetails] = useState<readonly string[]>([]);
-  const detailRequests = useRef(new Map<string, Promise<void>>());
-  const hoverFrame = useRef<number | null>(null);
-  const zoomRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [activationCounts, setActivationCounts] = useState(() => slides.map(() => 0));
   const leaveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -76,66 +67,14 @@ export function Hero({ show }: HeroProps) {
     () => window.matchMedia(REDUCED_MOTION_QUERY).matches,
     () => false,
   );
-  const fineHover = useSyncExternalStore(
-    subscribeFineHover,
-    () => window.matchMedia(FINE_HOVER_QUERY).matches,
-    () => false,
-  );
-  const hoverEnabled = fineHover && !reduceMotion;
-  const zoomed = hoverEnabled && pointerInside && !!slides[activeIdx].detailSrc;
-  const autoPaused = zoomed;
-
-  useEffect(() => {
-    // The overlay unmounts when hover support changes, so its leave handler cannot clear this state.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (!hoverEnabled) setPointerInside(false);
-  }, [hoverEnabled]);
-
-  useEffect(() => {
-    const src = slides[activeIdx].detailSrc;
-    if (!hoverEnabled || !pointerInside || !src) return;
-    if (detailRequests.current.has(src)) return;
-    const image = new Image();
-    const request = new Promise<void>((resolve, reject) => {
-      image.onload = () => {
-        image.decode().then(resolve, reject);
-      };
-      image.onerror = reject;
-      image.src = src;
-    });
-    detailRequests.current.set(src, request);
-    request.then(
-      () => setReadyDetails((ready) => ready.includes(src) ? ready : [...ready, src]),
-      () => detailRequests.current.delete(src),
-    );
-  }, [activeIdx, pointerInside, hoverEnabled, slides]);
-
   useEffect(() => () => {
-    if (hoverFrame.current !== null) cancelAnimationFrame(hoverFrame.current);
     clearTimeout(leaveTimer.current);
   }, []);
-
-  const onPhotoMove = (event: PointerEvent<HTMLDivElement>) => {
-    if (!hoverEnabled || !slides[activeIdx].detailSrc) return;
-    const zoom = zoomRefs.current[activeIdx];
-    if (!zoom) return;
-    const rect = event.currentTarget.parentElement?.getBoundingClientRect();
-    if (!rect) return;
-    const x = Math.max(0, Math.min(100, (event.clientX - rect.left) / rect.width * 100));
-    const y = Math.max(0, Math.min(100, (event.clientY - rect.top) / rect.height * 100));
-    if (hoverFrame.current !== null) cancelAnimationFrame(hoverFrame.current);
-    hoverFrame.current = requestAnimationFrame(() => {
-      zoom.style.transformOrigin = `${x}% ${y}%`;
-      hoverFrame.current = null;
-    });
-  };
 
   // Keep the outgoing zoom running through its fade; remount an image on reactivation so it starts wide.
   const goTo = (next: number) => {
     if (next === activeIdx) return;
     clearTimeout(leaveTimer.current);
-    if (hoverFrame.current !== null) cancelAnimationFrame(hoverFrame.current);
-    hoverFrame.current = null;
     setLeavingIdx(activeIdx);
     setActivationCounts((counts) => counts.map((count, i) => i === next ? count + 1 : count));
     setActiveIdx(next);
@@ -151,7 +90,7 @@ export function Hero({ show }: HeroProps) {
       aria-roledescription="carousel"
       aria-labelledby={HEADING_ID}
       data-home-hero
-      data-paused={userPaused || autoPaused ? '' : undefined}
+      data-paused={userPaused ? '' : undefined}
       className="home-hero relative isolate flex flex-col overflow-hidden bg-primary-800 on-dark lg:flex-row lg:items-center"
       style={{ '--hero-interval': `${CAROUSEL_INTERVAL_MS}ms` } as CSSProperties}
     >
@@ -181,91 +120,84 @@ export function Hero({ show }: HeroProps) {
               ].join(' ')}
             >
               <div
-                ref={(node) => { zoomRefs.current[i] = node; }}
-                className="home-hero-hover absolute inset-0"
-                data-zoomed={zoomed && isActive ? '' : undefined}
+                key={`${slide.key}-${activationCounts[i]}`}
+                className={['absolute inset-0', zooming ? 'home-hero-drift' : ''].join(' ')}
+                style={{ '--hero-pos': slide.position } as CSSProperties}
               >
-                <div
-                  key={`${slide.key}-${activationCounts[i]}`}
-                  className={['absolute inset-0', zooming ? 'home-hero-drift' : ''].join(' ')}
-                  style={{ '--hero-pos': slide.position } as CSSProperties}
-                >
-                  <HeroPicture
-                    src={slide.src}
-                    className="home-hero-img"
-                    priority={i === 0}
-                    sizes={`(max-width: 1023px) max(100vw, calc(50vw * ${aspect})), max(100vw, ${Math.ceil(HERO_BOX_HEIGHT * aspect)}px)`}
-                  />
-                  {slide.detailSrc && readyDetails.includes(slide.detailSrc) ? (
-                    <img
-                      src={slide.detailSrc}
-                      alt=""
-                      aria-hidden="true"
-                      className="home-hero-img home-hero-detail absolute inset-0 h-full w-full"
-                    />
-                  ) : null}
-                </div>
+                <HeroPicture
+                  src={slide.src}
+                  className="home-hero-img"
+                  priority={i === 0}
+                  sizes={`(max-width: 1023px) max(100vw, calc(50vw * ${aspect})), max(100vw, ${Math.ceil(HERO_BOX_HEIGHT * aspect)}px)`}
+                />
               </div>
             </div>
           );
         })}
-        {hoverEnabled ? (
-          <div
-            data-home-hero-photo-hover
-            className="absolute inset-0 z-10"
-            onPointerEnter={() => setPointerInside(true)}
-            onPointerMove={onPhotoMove}
-            onPointerLeave={() => {
-              if (hoverFrame.current !== null) cancelAnimationFrame(hoverFrame.current);
-              hoverFrame.current = null;
-              setPointerInside(false);
-            }}
-          />
-        ) : null}
       </div>
 
       {/* One localised scrim (NOS Design ruling A4): it covers the copy column only; the rest is bare photograph. */}
       <div aria-hidden="true" data-hero-scrim="copy" className="absolute inset-0 max-lg:hidden" />
 
-      {/* Content: left-aligned in the container, a 640px column (A3). */}
-      <div className="saoc-container pointer-events-none relative z-10 w-full py-10 lg:py-24">
-        <div className="pointer-events-auto flex max-w-[640px] flex-col items-start text-left">
-          <span className="mb-8 rounded-full border border-ivory/30 bg-white/10 px-4 py-1.5 font-mono text-[11px] uppercase tracking-[0.22em] text-ivory">
+      {/* The wider copy column keeps the headline compact and accommodates three CTAs. */}
+      <div className="saoc-container pointer-events-none relative z-10 w-full py-10 lg:py-14">
+        <div className="pointer-events-auto flex max-w-[1100px] flex-col items-start text-left">
+          <span className="mb-6 rounded-full border border-ivory/30 bg-white/10 px-4 py-1.5 font-mono text-[11px] uppercase tracking-[0.22em] text-ivory">
             SINCE 1968 · BLOEMFONTEIN
           </span>
 
           <h1
             id={HEADING_ID}
-            className="h1 font-serif font-light text-[clamp(48px,7.4vw,96px)] leading-[1.02] tracking-[-0.015em] text-ivory"
+            className="h1 font-serif font-light text-[clamp(42px,5vw,64px)] leading-[1.02] tracking-[-0.015em] text-ivory"
           >
             The national home of <em>orchid culture</em> in South Africa.
           </h1>
 
           <div
             data-hero-ctas
-            className={`flex w-full flex-col gap-4 sm:w-auto sm:flex-row sm:items-start mt-8`}
+            className="mt-8 grid w-full max-w-[980px] grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-4"
           >
-            <Link
-              href="/societies"
-              data-hero-cta="primary"
-              className={`${HERO_CTA_BASE} border-ivory bg-ivory text-primary hover:bg-bone hover:border-bone`}
-            >
-              Find your society
-              <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" />
-            </Link>
-            <div className="flex flex-col gap-2 sm:items-start">
+            <div className="flex min-w-0 flex-col gap-3">
+              <Link
+                href="/societies"
+                data-hero-cta="primary"
+                className={`${HERO_CTA_BASE} border-ivory bg-ivory text-primary hover:border-bone hover:bg-bone`}
+              >
+                Find your society
+                <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" className="shrink-0" />
+              </Link>
+              {societyCount != null ? (
+                <div className="flex flex-col gap-2">
+                  <span aria-hidden="true" className="h-[2px] w-6 bg-accent" />
+                  <p className={HERO_CTA_META}>{societyCount} societies across South Africa</p>
+                </div>
+              ) : null}
+            </div>
+            <div className="flex min-w-0 flex-col gap-3">
               <a
                 href={nosUrl('/')}
                 data-hero-cta="secondary"
                 className={`${HERO_CTA_BASE} border-ivory text-ivory hover:bg-ivory/10`}
               >
                 {showCtaLabel}
+                <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" className="shrink-0" />
               </a>
               {showDates ? (
-                <p data-home-show-date className="font-sans text-[15px] leading-[1.35] text-ivory">
-                  {showDates}
-                </p>
+                <div className="flex flex-col gap-2">
+                  <span aria-hidden="true" className="h-[2px] w-6 bg-accent" />
+                  <p data-home-show-date className={HERO_CTA_META}>{showDates}</p>
+                </div>
               ) : null}
+            </div>
+            <div className="flex min-w-0 flex-col gap-3">
+              <a href={nosUrl('/tickets')} data-hero-cta="tickets" className={`${HERO_CTA_BASE} border-ivory text-ivory hover:bg-ivory/10`}>
+                Tickets
+                <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" className="shrink-0" />
+              </a>
+              <div className="flex flex-col gap-2">
+                <span aria-hidden="true" className="h-[2px] w-6 bg-accent" />
+                <p className={HERO_CTA_META}>National Orchid Show</p>
+              </div>
             </div>
           </div>
 
@@ -273,7 +205,7 @@ export function Hero({ show }: HeroProps) {
               copy column, 56px below the CTAs, so the bloom side of the photograph carries no UI. Under reduced
               motion there is no autoplay, so no controls. */}
           {reduceMotion ? null : (
-            <div data-hero-controls className="mt-14 flex items-center gap-1">
+            <div data-hero-controls className="mt-10 flex items-center gap-1">
               <button
                 type="button"
                 aria-label={userPaused ? 'Play' : 'Pause'}

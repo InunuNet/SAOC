@@ -247,7 +247,7 @@ export function NosHeader({ nav, saocHomeHref, contactHref }: NosHeaderProps) {
             className="nh-brand"
             data-hd="brand"
             href={HUB_HREF}
-            aria-label={`${LOCKUP_ALT}, National Show home`}
+            aria-label={`${LOCKUP_ALT}, National Orchid Show home`}
             aria-current={current(HUB_HREF)}
           >
             <picture>

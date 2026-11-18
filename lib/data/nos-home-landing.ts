@@ -166,7 +166,7 @@ export const PLANT_ENTRY_STAGES: readonly PlantEntryStage[] = [
     stage: '04',
     title: 'Judging and awards',
     description:
-      'SAOC accredited judges assess each class, finalizing show award and choosing the Best Specimen Plant Overall, Grand Champion, 1st Reserve Champion, 2nd Reserve Champion. The National Show Committee will move plants to the exhibit, and the show will open to the public.',
+      'SAOC accredited judges assess each class, finalizing show award and choosing the Best Specimen Plant Overall, Grand Champion, 1st Reserve Champion, 2nd Reserve Champion. The National Orchid Show Committee will move plants to the exhibit, and the show will open to the public.',
   },
 ];
 

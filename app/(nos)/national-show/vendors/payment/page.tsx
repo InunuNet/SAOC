@@ -34,7 +34,7 @@ import { saocUrl } from '@/lib/site-hosts';
 export const metadata: Metadata = withTicketingTestTitle(
   buildPageMetadata({
     title: 'Vendor stand payment',
-    image: nosOgImage('Vendor stand payment — National Show'),
+    image: nosOgImage('Vendor stand payment — National Orchid Show'),
     description: 'Select your stand size and complete payment for the 2027 National Orchid Show.',
     path: '/national-show/vendors/payment',
     noIndex: true,

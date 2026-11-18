@@ -33,7 +33,7 @@ const THEME_SENTENCE =
   'Uniting conservation, science, and horticulture to explore how orchids in their natural environments inform responsible growing, breeding, and the sustainability of the orchid industry.';
 // What to Expect v1.0, the Symposium paragraph: its first sentence, word for word.
 const PROGRAMME_SENTENCE =
-  'The National Show Symposium will feature an outstanding programme of presentations by respected local and international speakers covering orchid cultivation, breeding, conservation, taxonomy, judging, sustainability and emerging scientific research.';
+  'The National Orchid Show Symposium will feature an outstanding programme of presentations by respected local and international speakers covering orchid cultivation, breeding, conservation, taxonomy, judging, sustainability and emerging scientific research.';
 
 export const metadata: Metadata = buildPageMetadata({
   title: PAGE_TITLE,

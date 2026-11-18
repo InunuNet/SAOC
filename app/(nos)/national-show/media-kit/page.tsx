@@ -43,7 +43,7 @@ export default async function NosMediaKitPage() {
       <NosSection>
         <KitSection
           id="national-show"
-          heading="National Show 2027"
+          heading="National Orchid Show 2027"
           zip={kit.sectionZips['national-show']}
         >
           <div className={CARD_GRID}>

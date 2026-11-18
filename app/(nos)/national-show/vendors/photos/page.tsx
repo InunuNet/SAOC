@@ -20,7 +20,7 @@ import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 // noIndex: token-gated, not public content, and excluded from the sitemap.
 export const metadata: Metadata = buildPageMetadata({
   title: 'Vendor product photos',
-  image: nosOgImage('Vendor product photos — National Show'),
+  image: nosOgImage('Vendor product photos — National Orchid Show'),
   description: 'Upload the product photos for your 2027 National Orchid Show vendor registration.',
   path: '/national-show/vendors/photos',
   noIndex: true,

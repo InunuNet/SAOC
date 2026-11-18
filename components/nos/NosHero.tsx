@@ -225,7 +225,7 @@ export async function NosHero({
           {crumbs ??
             (crumbLabel ? (
               <nav className="nk-crumbs" aria-label="Breadcrumb">
-                <Link href="/">National Show</Link>
+                <Link href="/">National Orchid Show</Link>
                 <span className="nk-crumb">
                   <span className="nk-sep" aria-hidden="true">
                     <span className="sr-only">–</span>

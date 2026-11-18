@@ -9,10 +9,10 @@ export function VendorTermsFieldset() {
       <p>
         By completing and submitting this Vendor Registration Form, I/We confirm that I/We have
         read, understood and agree to the following Terms and Conditions governing
-        participation in the 2027 SAOC National Show.
+        participation in the 2027 SAOC National Orchid Show.
       </p>
 
-      <p><strong>Registration and Consent.</strong> Completion and submission of this registration form constitutes consent for the organisers to collect and process the information provided for the purposes of administering the vendor registration, payment, communication, security and general management of the 2027 SAOC National Show.</p>
+      <p><strong>Registration and Consent.</strong> Completion and submission of this registration form constitutes consent for the organisers to collect and process the information provided for the purposes of administering the vendor registration, payment, communication, security and general management of the 2027 SAOC National Orchid Show.</p>
 
       <p><strong>Voluntary Agreement.</strong> I/We enter into this agreement voluntarily and confirm that the information provided in this registration form is true and correct to the best of my/our knowledge.</p>
 
@@ -48,7 +48,7 @@ export function VendorTermsFieldset() {
 
       <p><strong>Photography and Promotion.</strong> I/We acknowledge that photography and video recording may take place during the show for promotional, publicity, reporting and archival purposes. By participating in the show, I/We acknowledge that my/our booth, products and representatives may appear incidentally in such material.</p>
 
-      <p><strong>Protection of Personal Information.</strong> I/We consent to the collection, storage and processing of the personal information provided in this form for purposes relating to vendor registration, payment administration, communication, security, event management and other legitimate requirements of the 2027 SAOC National Show. The organisers will process personal information in accordance with the Protection of Personal Information Act 4 of 2013 (POPIA) and other applicable South African privacy legislation.</p>
+      <p><strong>Protection of Personal Information.</strong> I/We consent to the collection, storage and processing of the personal information provided in this form for purposes relating to vendor registration, payment administration, communication, security, event management and other legitimate requirements of the 2027 SAOC National Orchid Show. The organisers will process personal information in accordance with the Protection of Personal Information Act 4 of 2013 (POPIA) and other applicable South African privacy legislation.</p>
 
       <p><strong>Acceptance of Terms.</strong> By submitting this registration form, I/We confirm that I/We have read and understood these Terms and Conditions and agree to be bound by them. Submission of the completed registration form constitutes acceptance of these Terms and Conditions.</p>
     </div>
