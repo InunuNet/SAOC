@@ -32,7 +32,10 @@ interface PageHeroProps {
 }
 
 // From 1024px the box is 600/2048 of the width tall (29.3vw), so a source wider than the box is height-driven.
+// The copy can make it taller than that between 1024 and about 1400px (the event hero with facts measures
+// 407px at 1024 and 415px at 1280), so the box height is taken as at least DESKTOP_TALL_HERO_PX.
 const DESKTOP_HEIGHT_VW = 29.3;
+const DESKTOP_TALL_HERO_PX = 420;
 // Below 1024px the hero is content-tall, about this many px on a phone.
 const STACKED_BOX_HEIGHT = 520;
 const STACK_BELOW_QUERY = '(max-width: 1023px)';
@@ -69,7 +72,7 @@ export function PageHero({
   const sizes =
     aspect === null
       ? undefined
-      : `${STACK_BELOW_QUERY} max(100vw, ${Math.ceil(STACKED_BOX_HEIGHT * aspect)}px), max(100vw, calc(${DESKTOP_HEIGHT_VW}vw * ${aspect}))`;
+      : `${STACK_BELOW_QUERY} max(100vw, ${Math.ceil(STACKED_BOX_HEIGHT * aspect)}px), max(100vw, calc(max(${DESKTOP_HEIGHT_VW}vw, ${DESKTOP_TALL_HERO_PX}px) * ${aspect}))`;
 
   return (
     <section

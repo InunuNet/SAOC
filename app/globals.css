@@ -464,6 +464,16 @@ h3.font-serif {
   width: max(28px, calc(var(--u) * 28));
   height: 2px;
 }
+/* Phones: nine controls (the 44px pause button and eight slide buttons) must fit 288px at 320 wide, so the
+   slide hit areas are 28px (WCAG 2.2 target size minimum is 24px) and the painted bar 20px. */
+@media (max-width: 479px) {
+  .home-hero [data-hero-controls] [role='group'] button {
+    width: 28px;
+  }
+  .home-hero [data-hero-controls] [role='group'] button > span {
+    width: 20px;
+  }
+}
 @media (min-width: 1024px) {
   .home-hero {
     min-height: calc(var(--u) * 820);
