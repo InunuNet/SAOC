@@ -1,8 +1,9 @@
 // =============================================================
 // SAOC — components/ui/PageHero.tsx
 // Server Component — shared hero for interior pages (mission saoc-inner-heroes, NOS Design 2026-10-26).
-// From 1024px the photograph is a left-anchored panel, with its bloom bottom-left, faded into the
-// sage behind the right-hand copy. At 768-1023px it fills the width with the same faded edge.
+// From 768px up the photograph is full bleed with its bloom bottom-left (the left 34% is the bare
+// photograph) and the copy in a left-aligned column that starts at 52%, on an eased scrim local to
+// that column.
 // Below 768px the hero stacks: a 2/1 photograph band, the copy under it on solid sage.
 // With no `image` the same geometry and copy column sit on solid sage.
 // =============================================================
@@ -32,9 +33,23 @@ interface PageHeroProps {
 
 const HERO_MIN_HEIGHT_CLASS = 'min-h-[520px] md:min-h-[540px] lg:min-h-[600px]';
 // The wide hero's box is at least this tall, so a source wider than the box x its height is height-driven.
-const HERO_BOX_HEIGHT = 600;
+const HERO_BOX_HEIGHT = 480;
 const STACK_BELOW_QUERY = '(max-width: 767px)';
-// The photograph itself is masked to reveal the section's --primary-800 background in globals.css.
+// The copy zone: the scrim is clear through the bloom side (34%), eases in over the stops below (alpha,
+// position in percent) and reaches its full strength by 52%, where the copy column starts (HM-5).
+// Sage only (--primary-800), no wash over the bloom.
+const SCRIM_STOPS: readonly (readonly [number, number])[] = [
+  [0, 34],
+  [0.06, 38],
+  [0.16, 42],
+  [0.32, 45],
+  [0.52, 48],
+  [0.7, 50.5],
+  [0.8, 52],
+];
+const SCRIM_BACKGROUND = `linear-gradient(90deg, transparent 0, ${SCRIM_STOPS.map(
+  ([alpha, at]) => `rgb(34 40 31 / ${alpha}) ${at}%`,
+).join(', ')})`;
 
 export function PageHero({
   image,
@@ -50,12 +65,11 @@ export function PageHero({
   const heroFacts = normaliseHeroFacts(facts);
   const aspect = image ? heroSourceAspect(image) : null;
   // A cover image is driven by the longer of box width and box height x aspect. Wide: the box is the
-  // viewport wide and at least HERO_BOX_HEIGHT tall through tablet. From 1024px the panel has a
-  // 1500px width cap. Stacked: a 2/1 band, so its height is half the width.
+  // viewport wide and at least HERO_BOX_HEIGHT tall. Stacked: a 2/1 band, so its height is half the width.
   const sizes =
     aspect === null
       ? undefined
-      : `${STACK_BELOW_QUERY} max(100vw, calc(50vw * ${aspect})), (max-width: 1023px) max(100vw, ${Math.ceil(HERO_BOX_HEIGHT * aspect)}px), min(100vw, 1500px)`;
+      : `${STACK_BELOW_QUERY} max(100vw, calc(50vw * ${aspect})), max(100vw, ${Math.ceil(HERO_BOX_HEIGHT * aspect)}px)`;
 
   return (
     <section
@@ -65,18 +79,26 @@ export function PageHero({
       className={`relative isolate flex flex-col justify-center overflow-hidden bg-primary-800 md:flex-row md:items-center ${HERO_MIN_HEIGHT_CLASS}`}
     >
       {image ? (
-        <div
-          data-page-hero-media
-          className="relative aspect-[2/1] w-full shrink-0 md:absolute md:inset-0 md:aspect-auto lg:right-auto lg:w-[min(100%,1500px)]"
-        >
-          <HeroPicture
-            src={image}
-            priority
-            sizes={sizes}
-            className="object-cover"
-            style={{ objectPosition: imagePosition }}
+        <>
+          <div
+            data-page-hero-media
+            className="relative aspect-[2/1] w-full shrink-0 md:absolute md:inset-0 md:aspect-auto"
+          >
+            <HeroPicture
+              src={image}
+              priority
+              sizes={sizes}
+              className="object-cover"
+              style={{ objectPosition: imagePosition }}
+            />
+          </div>
+          <div
+            data-hero-scrim="copy"
+            aria-hidden="true"
+            className="absolute inset-0 max-md:hidden"
+            style={{ backgroundImage: SCRIM_BACKGROUND }}
           />
-        </div>
+        </>
       ) : null}
       <div
         data-page-hero-copy
