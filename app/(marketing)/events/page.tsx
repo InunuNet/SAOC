@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { RouteHero } from '@/components/ui/RouteHero';
+import { Breadcrumb } from '@/components/chrome/Breadcrumb';
 import { EventsAbout, EventsList, eventHref, type ListedEvent } from '@/components/events';
 import { ShowBand } from '@/components/home';
 import { JsonLd, eventJsonLd } from '@/components/seo/JsonLd';
@@ -67,6 +68,7 @@ export default async function EventsPage() {
 
   return (
     <>
+      <Breadcrumb items={[{ label: 'Events' }]} />
       <RouteHero
         exempt
         route="/events"

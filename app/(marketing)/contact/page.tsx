@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { RouteHero } from '@/components/ui/RouteHero';
+import { Breadcrumb } from '@/components/chrome/Breadcrumb';
 import { ContactForm } from '@/components/contact';
 import { VenueCard } from '@/components/show';
 import { SAOC_LINK_RING } from '@/components/ui/saoc-link-ring';
@@ -77,6 +78,7 @@ export default async function ContactPage() {
 
   return (
     <>
+      <Breadcrumb items={[{ label: 'Contact' }]} />
       <RouteHero
         exempt
         route="/contact"

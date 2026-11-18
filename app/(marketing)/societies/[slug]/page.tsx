@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { RouteHero } from '@/components/ui/RouteHero';
+import { Breadcrumb } from '@/components/chrome/Breadcrumb';
 import { ArrowIcon } from '@/components/ui/ArrowIcon';
 import { CTASection } from '@/components/ui/CTASection';
 import { client } from '@/sanity/lib/client';
@@ -126,6 +127,7 @@ export default async function SocietyPage({
 
   return (
     <>
+      <Breadcrumb items={[{ label: 'Societies', href: '/societies' }, { label: society.name }]} />
       <RouteHero
         route="/societies/[slug]"
         eyebrow={society.province ?? 'SAOC society'}
