@@ -45,7 +45,7 @@ const FULL_BLEED_QUALITY = 88;
 // DS-1 (c): the photo box is 62% wide from 1024px (38% to the right edge), 42% from 768px, a full-width band below it.
 // From 768 to 1023 the box is narrower than the 1.9:1 crop is wide at hero height, so object-fit: cover
 // paints the crop at height x aspect (about 1126px at the tallest hero measured there, 563px).
-const INNER_PHOTO_SIZES = '(min-width: 1024px) 62vw, (min-width: 768px) max(62vw, 1200px), 100vw';
+const INNER_PHOTO_SIZES = '(min-width: 1024px) min(62vw, 1150px), (min-width: 768px) max(62vw, 1200px), 100vw';
 
 // HB-3: the hub photo's painted width per band, from the box it fills with object-fit: cover on the
 // 3:2 source. At 767px and below the media is a fixed-height band (height x aspect wide); from

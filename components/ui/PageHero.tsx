@@ -1,9 +1,9 @@
 // =============================================================
 // SAOC — components/ui/PageHero.tsx
 // Server Component — shared hero for interior pages (mission saoc-inner-heroes, NOS Design 2026-10-26).
-// From 768px up the photograph is full bleed with its bloom bottom-left (the left 34% is the bare
-// photograph) and the copy in a left-aligned column that starts at 52%, on an eased scrim local to
-// that column. Below 768px the hero stacks: a 2/1 photograph band, the copy under it on solid sage.
+// From 1024px the photograph is a left-anchored panel, with its bloom bottom-left, faded into the
+// sage behind the right-hand copy. At 768-1023px it keeps its current full-width layout and scrim.
+// Below 768px the hero stacks: a 2/1 photograph band, the copy under it on solid sage.
 // With no `image` the hero is typographic: the same copy on solid sage, no media and no scrim; from
 // 1024px its band sizes to its content (HM-8), below that it keeps the 480px minimum.
 // =============================================================
@@ -67,11 +67,12 @@ export function PageHero({
   const heroFacts = normaliseHeroFacts(facts);
   const aspect = image ? heroSourceAspect(image) : null;
   // A cover image is driven by the longer of box width and box height x aspect. Wide: the box is the
-  // viewport wide and at least HERO_BOX_HEIGHT tall. Stacked: a 2/1 band, so its height is half the width.
+  // viewport wide and at least HERO_BOX_HEIGHT tall through tablet. From 1024px the panel has a
+  // 1500px width cap. Stacked: a 2/1 band, so its height is half the width.
   const sizes =
     aspect === null
       ? undefined
-      : `${STACK_BELOW_QUERY} max(100vw, calc(50vw * ${aspect})), max(100vw, ${Math.ceil(HERO_BOX_HEIGHT * aspect)}px)`;
+      : `${STACK_BELOW_QUERY} max(100vw, calc(50vw * ${aspect})), (max-width: 1023px) max(100vw, ${Math.ceil(HERO_BOX_HEIGHT * aspect)}px), min(100vw, 1500px)`;
 
   return (
     <section
@@ -86,7 +87,7 @@ export function PageHero({
         <>
           <div
             data-page-hero-media
-            className="relative aspect-[2/1] w-full md:absolute md:inset-0 md:aspect-auto"
+            className="relative aspect-[2/1] w-full md:absolute md:inset-0 md:aspect-auto lg:right-auto lg:w-[min(100%,1500px)]"
           >
             <HeroPicture
               src={image}
