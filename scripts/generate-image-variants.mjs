@@ -52,6 +52,9 @@ for (const name of [
 // Hero sources also get an AVIF set (same widths, same -q88 name, .avif extension), served first by
 // components/ui/HeroPicture.tsx with the WebP set as fallback. AVIF q55 is far smaller than the hero WebP.
 const HERO_AVIF_QUALITY = 55;
+// AVIF effort 3, not sharp's default 4: on the 2-vCPU App Hosting builder effort 4 pushed the 18 Nov release past Cloud
+// Build's 60-minute limit. Measured on 15 hero encodes: effort 3 is 3.8x faster, 0.6% larger, 0.24 dB lower PSNR.
+const HERO_AVIF_EFFORT = 3;
 // Every image keeps this cap (lib/image-loader.ts). Only the full-bleed hero photographs in
 // lib/hero-source-widths.json go above it, under the -q88 name (encoded at q78), up to their own native width and never beyond.
 const STANDARD_MAX_WIDTH = 2048;
@@ -80,7 +83,7 @@ function encodingsFor(isHero, isLarge) {
   if (isHero) {
     const quality = isLarge ? HERO_LARGE_WEBP_QUALITY : HERO_WEBP_QUALITY;
     encodings.push([`-q${HERO_VARIANT_NAME_QUALITY}`, 'webp', { quality, smartSubsample: true }]);
-    encodings.push([`-q${HERO_VARIANT_NAME_QUALITY}`, 'avif', { quality: HERO_AVIF_QUALITY }]);
+    encodings.push([`-q${HERO_VARIANT_NAME_QUALITY}`, 'avif', { quality: HERO_AVIF_QUALITY, effort: HERO_AVIF_EFFORT }]);
   }
   return encodings;
 }
