@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRef, useState, type ReactNode } from 'react';
 
 import { NEWSLETTER_COPY } from '@/components/chrome/newsletter-copy';
@@ -30,6 +31,9 @@ interface NewsletterSignupProps {
   statusClassName?: string;
   errorClassName?: string;
   errorIcon?: ReactNode;
+  /** The "Unsubscribe" text link under the button: wrapper and link classes, per footer. */
+  unsubscribeWrapClassName?: string;
+  unsubscribeLinkClassName?: string;
 }
 
 export function NewsletterSignup({
@@ -49,6 +53,8 @@ export function NewsletterSignup({
   statusClassName,
   errorClassName,
   errorIcon,
+  unsubscribeWrapClassName,
+  unsubscribeLinkClassName,
 }: NewsletterSignupProps) {
   const hydrated = useHydrated();
   const [email, setEmail] = useState('');
@@ -56,7 +62,7 @@ export function NewsletterSignup({
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [emailInvalid, setEmailInvalid] = useState(false);
-  const [topics, setTopics] = useState<NewsletterTopic[]>([site]);
+  const [topics, setTopics] = useState<NewsletterTopic[]>([]);
   const [topicsInvalid, setTopicsInvalid] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const firstTopicRef = useRef<HTMLInputElement>(null);
@@ -184,6 +190,11 @@ export function NewsletterSignup({
         >
           {submitLabel}
         </button>
+      </div>
+      <div className={unsubscribeWrapClassName}>
+        <Link href="/unsubscribe" className={unsubscribeLinkClassName}>
+          {NEWSLETTER_COPY.footerUnsubscribe}
+        </Link>
       </div>
       <div hidden className="hidden" aria-hidden="true">
         <label>

@@ -17,7 +17,7 @@ export interface JudgesDirectoryProps {
 export function JudgesDirectory({ judges, showPublicDirectory }: JudgesDirectoryProps) {
   if (!showPublicDirectory || judges.length === 0) {
     return (
-      <div className="border border-rule bg-parchment p-6 max-w-3xl">
+      <div className="rounded-[var(--radius-card)] border border-rule bg-parchment p-6 max-w-3xl">
         <p className="font-sans text-[16px] leading-[1.55] text-ink/70">
           The full accredited judges directory is available to SAOC members. Get in touch
           with the council directly.
@@ -39,7 +39,7 @@ export function JudgesDirectory({ judges, showPublicDirectory }: JudgesDirectory
       {judges.map((judge, i) => (
         <div
           key={`${judge.name}-${i}`}
-          className="flex items-center gap-4 border border-rule bg-parchment p-5"
+          className="flex items-center gap-4 rounded-[var(--radius-card)] border border-rule bg-parchment p-5"
         >
           <div>
             <p className="font-serif font-medium text-[17px] text-ink">{judge.name}</p>

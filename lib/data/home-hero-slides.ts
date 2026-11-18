@@ -1,10 +1,6 @@
-// The SAOC home hero's slides, in carousel order. NOS Design rulings (hero-cards-ruling A2, 2026-10-23;
-// saoc-inner-heroes HS-1, 2026-10-26): two slides, S3 dark (the lead, and the reduced-motion static) then
-// orchid purple, the derived cut orchid-purple-home (lib/hero-derived-sources.json). Violet has retired from
-// the home, and H4 purple stays out as an uncut original (its black plant clip shows at some widths; the
-// derived cut stops above it). The slides are the handoff sources at full resolution, not the Sanity heroImages.
-// `position` is the object-position of the slide: from 1024px up in the full-bleed hero, below it in the 2/1
-// band the hero stacks into. Re-ordering or swapping a slide is a change to this array only.
+// Brad's 18 Nov instruction replaces the two-slide ruling: eight slides, each slowly zooming in from
+// the whole flower toward its detail. The slides use the handoff sources at full resolution, not Sanity
+// heroImages. `position` sets both object-position and the zoom's transform-origin.
 
 export interface HomeHeroSlide {
   key: string;
@@ -12,19 +8,61 @@ export interface HomeHeroSlide {
   /** The slide group's accessible label and the dot labels. The photograph itself is decorative (alt=""). */
   alt: string;
   position: string;
+  detailSrc?: string;
 }
 
 export const HOME_HERO_SLIDES: readonly HomeHeroSlide[] = [
   {
-    key: 'orchid-dark',
-    src: '/images/orchid-dark.jpg',
-    alt: 'Dark orchid',
-    position: '62% 50%',
+    key: 'zygopetalum',
+    src: '/images/heroes/hero-home-1-zygopetalum-hendrik.jpg',
+    alt: 'Zygopetalum orchid',
+    position: '50% 45%',
   },
   {
-    key: 'orchid-purple',
-    src: '/images/orchid-purple-home.jpg',
-    alt: 'Purple orchid',
+    key: 'dendrobium-chlorostylum',
+    src: '/images/heroes/hero-home-2-dendrobium-chlorostylum.jpg',
+    alt: 'Dendrobium orchid',
     position: '50% 50%',
+    detailSrc: '/images/hero-detail/hero-home-2-dendrobium-chlorostylum.webp',
+  },
+  {
+    key: 'colmanara',
+    src: '/images/heroes/hero-home-3-colmanara-hendrik.jpg',
+    alt: 'Colmanara orchid',
+    position: '40% 40%',
+  },
+  {
+    key: 'cattleya-aclandiae',
+    src: '/images/heroes/hero-home-6-cattleya-aclandiae.jpg',
+    alt: 'Cattleya orchid',
+    position: '35% 50%',
+    detailSrc: '/images/hero-detail/hero-home-6-cattleya-aclandiae.webp',
+  },
+  {
+    key: 'dendrobium-pair',
+    src: '/images/heroes/hero-home-5-dendrobium-hendrik.jpg',
+    alt: 'Dendrobium orchid',
+    position: '55% 50%',
+  },
+  {
+    key: 'cattleya-white',
+    src: '/images/heroes/hero-home-4-cattleya-white.jpg',
+    alt: 'Cattleya orchid',
+    position: '45% 45%',
+    detailSrc: '/images/hero-detail/hero-home-4-cattleya-white.webp',
+  },
+  {
+    key: 'phalaenopsis-pink',
+    src: '/images/heroes/hero-home-7-phalaenopsis-pink.jpg',
+    alt: 'Phalaenopsis orchid',
+    position: '55% 45%',
+    detailSrc: '/images/hero-detail/hero-home-7-phalaenopsis-pink.webp',
+  },
+  {
+    key: 'phalaenopsis-stripes',
+    src: '/images/heroes/hero-home-8-phalaenopsis-stripes.jpg',
+    alt: 'Phalaenopsis orchid',
+    position: '65% 45%',
+    detailSrc: '/images/hero-detail/hero-home-8-phalaenopsis-stripes.webp',
   },
 ];

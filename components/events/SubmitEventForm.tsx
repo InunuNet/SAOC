@@ -2,11 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { getAuth } from 'firebase/auth';
 
 import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
 import { SELECT_CLASS, SelectChevron } from '@/components/forms/select-class';
-import { getFirebaseApp } from '@/lib/firebase';
 import { useHydrated } from '@/lib/hooks/useHydrated';
 
 type FormValues = {
@@ -38,7 +36,7 @@ type SubmitEventFormProps = {
 // Same field and label treatment as the /contact form. The boundary is --muted (3:1 non-text).
 const INPUT_CLASS =
   'w-full min-h-11 rounded-sm border border-muted bg-ivory px-3.5 py-2.5 font-sans text-[16px] text-ink placeholder:text-muted outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] transition-colors disabled:opacity-60 aria-invalid:border-error';
-const LABEL_CLASS = 'font-mono text-[11px] tracking-[0.16em] text-muted';
+const LABEL_CLASS = 'font-mono text-[12px] uppercase tracking-[0.18em] text-muted';
 const SUBMIT_CLASS =
   'inline-flex min-h-11 items-center rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ink hover:bg-accent-soft transition-colors focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] disabled:opacity-60 disabled:cursor-not-allowed';
 
@@ -116,8 +114,23 @@ export function SubmitEventForm({ societies }: SubmitEventFormProps) {
     setStatus('submitting');
     setServerError(null);
 
-    const auth = getAuth(getFirebaseApp());
-    const user = auth.currentUser;
+    let user;
+    try {
+      const [{ getAuth }, { getFirebaseApp }] = await Promise.all([
+        import('firebase/auth'),
+        import('@/lib/firebase'),
+      ]);
+      const auth = getAuth(getFirebaseApp());
+      await auth.authStateReady();
+      user = auth.currentUser;
+    } catch {
+      setServerError({
+        text: 'Failed to get auth token. Please sign in again.',
+        linkText: SIGN_IN_LINK_TEXT,
+      });
+      setStatus('error');
+      return;
+    }
     if (!user) {
       setServerError({ text: 'Please sign in again.', linkText: SIGN_IN_LINK_TEXT });
       setStatus('error');

@@ -89,6 +89,7 @@ try {
   need(sitemap.status === 200, `NOS sitemap: status ${sitemap.status}`);
   const locs = [...sitemap.body.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => new URL(m[1]).pathname);
   need(locs.includes('/contact'), 'NOS sitemap: /contact missing');
+  need(locs.includes('/photo-credits'), 'NOS sitemap: /photo-credits missing');
   for (const shared of ['/privacy', '/terms', '/refunds']) {
     need(!locs.includes(shared), `NOS sitemap: ${shared} listed (its canonical is the SAOC host)`);
   }

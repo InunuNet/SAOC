@@ -24,6 +24,14 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
  * the golden README's "Judgement calls" for why. Overridable per-call via `ttlMs`. */
 export const RECOVERY_TOKEN_DEFAULT_TTL_MS = 1000 * 60 * 60 * 24 * 180;
 
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+/** Keep a recovery link valid through the active show and seven days after it ends. */
+export function recoveryTokenTtlMs(now: Date, showEnd: Date | null): number {
+  if (!showEnd) return RECOVERY_TOKEN_DEFAULT_TTL_MS;
+  return Math.max(showEnd.getTime() + 7 * MS_PER_DAY, now.getTime() + MS_PER_DAY) - now.getTime();
+}
+
 export type SignatureCompare = (a: Buffer, b: Buffer) => boolean;
 
 /**

@@ -127,7 +127,7 @@ export function NavCards({ show, withhold = false }: NavCardsProps) {
                 href={card.href}
                 data-nav-card
                 data-placeholder={card.unsourced && !withhold ? 'true' : undefined}
-                className="petal-card group"
+                className="petal-card group max-md:[&::before]:hidden"
               >
                 <div className="petal-card-well">
                   <Image

@@ -247,75 +247,77 @@ export function VendorApplyForm() {
         </div>
       ) : null}
 
-      <VendorFormField
-        fieldKey="businessName"
-        label="Business name"
-        htmlType="text"
-        value={state.businessName}
-        onChange={(value) => handleChange('businessName', value)}
-        disabled={disabled}
-        required
-        maxLength={200}
-        showRequirement
-        error={errorFor('businessName')}
-        autoComplete="organization"
-      />
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        <VendorFormField
+          fieldKey="businessName"
+          label="Business name"
+          htmlType="text"
+          value={state.businessName}
+          onChange={(value) => handleChange('businessName', value)}
+          disabled={disabled}
+          required
+          maxLength={200}
+          showRequirement
+          error={errorFor('businessName')}
+          autoComplete="organization"
+        />
 
-      <VendorFormField
-        fieldKey="tradingName"
-        label="Trading name (if different, optional)"
-        htmlType="text"
-        value={state.tradingName}
-        onChange={(value) => handleChange('tradingName', value)}
-        disabled={disabled}
-        required={false}
-        maxLength={200}
-        autoComplete="organization"
-        showRequirement
-        error={errorFor('tradingName')}
-      />
+        <VendorFormField
+          fieldKey="tradingName"
+          label="Trading name (if different, optional)"
+          htmlType="text"
+          value={state.tradingName}
+          onChange={(value) => handleChange('tradingName', value)}
+          disabled={disabled}
+          required={false}
+          maxLength={200}
+          autoComplete="organization"
+          showRequirement
+          error={errorFor('tradingName')}
+        />
 
-      <VendorFormField
-        fieldKey="contactPersonName"
-        label="Contact person name"
-        htmlType="text"
-        value={state.contactPersonName}
-        onChange={(value) => handleChange('contactPersonName', value)}
-        disabled={disabled}
-        required
-        maxLength={150}
-        showRequirement
-        error={errorFor('contactPersonName')}
-        autoComplete="name"
-      />
+        <VendorFormField
+          fieldKey="contactPersonName"
+          label="Contact person name"
+          htmlType="text"
+          value={state.contactPersonName}
+          onChange={(value) => handleChange('contactPersonName', value)}
+          disabled={disabled}
+          required
+          maxLength={150}
+          showRequirement
+          error={errorFor('contactPersonName')}
+          autoComplete="name"
+        />
 
-      <VendorFormField
-        fieldKey="contactEmail"
-        label="Contact email"
-        htmlType="email"
-        value={state.contactEmail}
-        onChange={(value) => handleChange('contactEmail', value)}
-        disabled={disabled}
-        required
-        maxLength={254}
-        showRequirement
-        error={errorFor('contactEmail')}
-        autoComplete="email"
-      />
+        <VendorFormField
+          fieldKey="contactEmail"
+          label="Contact email"
+          htmlType="email"
+          value={state.contactEmail}
+          onChange={(value) => handleChange('contactEmail', value)}
+          disabled={disabled}
+          required
+          maxLength={254}
+          showRequirement
+          error={errorFor('contactEmail')}
+          autoComplete="email"
+        />
 
-      <VendorFormField
-        fieldKey="contactCellPhone"
-        label="Contact cell phone"
-        htmlType="tel"
-        value={state.contactCellPhone}
-        onChange={(value) => handleChange('contactCellPhone', value)}
-        disabled={disabled}
-        required
-        maxLength={30}
-        showRequirement
-        error={errorFor('contactCellPhone')}
-        autoComplete="tel"
-      />
+        <VendorFormField
+          fieldKey="contactCellPhone"
+          label="Contact cell phone"
+          htmlType="tel"
+          value={state.contactCellPhone}
+          onChange={(value) => handleChange('contactCellPhone', value)}
+          disabled={disabled}
+          required
+          maxLength={30}
+          showRequirement
+          error={errorFor('contactCellPhone')}
+          autoComplete="tel"
+        />
+      </div>
 
       <VendorCheckboxGroupField
         fieldKey="vendorCategory"
@@ -340,7 +342,7 @@ export function VendorApplyForm() {
         min={1}
         step={1}
         inputMode="numeric"
-        inputClassName="max-w-[12ch]"
+        inputClassName="w-40"
         showRequirement
         error={errorFor('indicativeBoothCount')}
       />

@@ -420,6 +420,26 @@ h3.font-serif {
 .home-hero-img {
   object-fit: cover;
   object-position: var(--hero-pos);
+  transform: scale(1);
+  transform-origin: var(--hero-pos);
+}
+.home-hero-hover {
+  transform: scale(1);
+  transition: transform 900ms ease-out, transform-origin 180ms ease-out;
+}
+.home-hero-hover[data-zoomed] {
+  transform: scale(1.8);
+}
+.home-hero-detail {
+  opacity: 0;
+  animation: home-hero-detail-in 300ms ease-out forwards;
+}
+@keyframes home-hero-detail-in {
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-hover { transition: none; }
+  .home-hero-detail { animation: none; opacity: 1; }
 }
 @media (min-width: 1024px) {
   .home-hero [data-hero-scrim='copy'] {
@@ -428,17 +448,35 @@ h3.font-serif {
       rgb(34 40 31 / 0.88) 0,
       rgb(34 40 31 / 0.88)
         calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px),
-      transparent
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 12%)
+      rgb(34 40 31 / 0.855)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 2.2%),
+      rgb(34 40 31 / 0.788)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 4.4%),
+      rgb(34 40 31 / 0.69)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 6.6%),
+      rgb(34 40 31 / 0.57)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 8.8%),
+      rgb(34 40 31 / 0.44)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 11%),
+      rgb(34 40 31 / 0.31)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 13.2%),
+      rgb(34 40 31 / 0.19)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 15.4%),
+      rgb(34 40 31 / 0.092)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 17.6%),
+      rgb(34 40 31 / 0.025)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 19.8%),
+      rgb(34 40 31 / 0)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 22%)
     );
   }
 }
 @keyframes home-hero-drift {
   from {
-    object-position: var(--hero-pos);
+    transform: scale(1);
   }
   to {
-    object-position: var(--hero-pos-end);
+    transform: scale(1.18);
   }
 }
 @keyframes home-hero-fill {
@@ -450,7 +488,9 @@ h3.font-serif {
   }
 }
 .home-hero-drift {
-  animation: home-hero-drift 8s linear both;
+  animation: home-hero-drift calc(var(--hero-interval) + 1400ms) linear both;
+  transform-origin: var(--hero-pos);
+  will-change: transform;
 }
 .home-hero-fill {
   transform-origin: left;
@@ -463,6 +503,7 @@ h3.font-serif {
 @media (prefers-reduced-motion: reduce) {
   .home-hero-drift {
     animation: none;
+    transform: scale(1);
     will-change: auto;
   }
 }
@@ -762,11 +803,17 @@ h3.font-serif {
   margin: 0 0 24px;
   font-family: var(--serif);
   font-size: var(--display-sm);
-  font-weight: 300;
+  font-weight: var(--serif-weight);
   line-height: 1.15;
   letter-spacing: -0.015em;
   color: var(--ink);
   text-wrap: pretty;
+}
+/* --display-sm reaches 32px at a 1067px viewport; from there the display weight applies. */
+@media (min-width: 1067px) {
+  .doc-h2 {
+    font-weight: 300;
+  }
 }
 /* --doc-scroll-margin is where a heading lands, measured from the viewport top. The html
    scroll-padding already supplies part of it, so only the remainder is the heading's own margin.
@@ -775,8 +822,8 @@ h3.font-serif {
 .doc-layout [data-doc-main] .doc-h2[id] {
   scroll-margin-top: calc(var(--doc-scroll-margin, 112px) - var(--scroll-padding-top, 0px));
 }
-/* A theme's own h2 rule (.nos-theme h2, 0,1,1) sets weight and wrap; the document scale keeps both. */
-.doc-h2,
+/* A theme's own h2 rule (.nos-theme h2, 0,1,1) sets weight and wrap; the document scale keeps both.
+   NOS floors its h2 at 32px, so it stays at the display weight at every width. */
 .nos-theme .doc-h2 {
   font-weight: 300;
   text-wrap: pretty;
@@ -910,4 +957,27 @@ h3.font-serif {
   .doc-aside.doc-aside--bare {
     max-width: 440px;
   }
+}
+
+/* PR-1 print stylesheet (NOS Design, 2026-11-08). Backgrounds are off by default in print, so the
+   dark bands lose their ground: they print as black ink on white. Screen rendering is untouched. */
+@media print {
+  [data-hd="nav"], [data-hd="search"], [data-hd="cta"], [data-hd="menu"],
+  [data-page-hero-media], [data-home-hero-media], [data-hero-scrim] {
+    display: none !important;
+  }
+  /* !important: the SAOC header's `sticky` utility and NOS `.nh { position: sticky }` both
+     outrank a bare element selector. */
+  header, .nh { position: static !important; }
+  :is(.bg-primary-800, .bg-primary, .bg-ink, .on-dark, .nos-on-dark),
+  :is(.bg-primary-800, .bg-primary, .bg-ink, .on-dark, .nos-on-dark) * {
+    background: none !important;
+    color: #000 !important;
+    border-color: #000 !important;
+  }
+  :is(.bg-primary-800, .bg-primary, .bg-ink, .on-dark, .nos-on-dark) a {
+    text-decoration: underline;
+  }
+  h2, h3 { break-after: avoid; }
+  article, figure, address, details, [data-event-card] { break-inside: avoid; }
 }

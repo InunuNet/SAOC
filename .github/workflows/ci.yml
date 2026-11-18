@@ -17,7 +17,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # 90: image variant generation alone took 32-58 min on 3009 variants (18 Nov release); the cache below makes reruns fast.
+    timeout-minutes: 90
 
     env:
       NEXT_TELEMETRY_DISABLED: 1
@@ -81,6 +82,14 @@ jobs:
         run: |
           node --test 'scripts/checks/regressions/*.test.mjs'
           python3 -B -m unittest discover -s scripts/checks/regressions
+
+      - name: Cache image variants
+        # Exact key only: the generator's freshness check compares mtimes, and restored files are newer than a fresh
+        # checkout, so a partial (restore-keys) hit could keep a stale variant of an edited source image.
+        uses: actions/cache@v4
+        with:
+          path: public/images/_opt
+          key: img-opt-${{ runner.os }}-${{ hashFiles('public/images/**/*.jpg', 'public/images/**/*.jpeg', 'public/images/**/*.png', 'public/images/**/*.webp', 'scripts/generate-image-variants.mjs', 'lib/hero-source-widths.json', 'pnpm-lock.yaml') }}
 
       - name: Build
         # The two site origins, as in apphosting.yaml: lib/site-hosts.ts throws in production without them.

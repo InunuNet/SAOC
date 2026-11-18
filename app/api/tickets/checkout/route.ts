@@ -36,7 +36,7 @@ import {
   resolveExpectedGatewayAmount,
   resolveOzowInitiateAmount,
 } from '@/lib/ozow-sandbox-test-mode';
-import { mintRecoveryToken } from '@/lib/recovery-token';
+import { mintRecoveryToken, recoveryTokenTtlMs } from '@/lib/recovery-token';
 import { buildShowWindow, isValidChosenDay } from '@/lib/show-window-lookup';
 import { client } from '@/sanity/lib/client';
 import {
@@ -401,6 +401,7 @@ type ReservationOutcome =
 
 interface ReservationInput {
   showId: string;
+  showEnd: Date | null;
   lineItems: CheckoutLineItemInputLike[];
   amountByType: Record<string, number>;
   /** F5: keyed by resolved pool key (capacityPool ?? slug), not always by slug. */
@@ -954,6 +955,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     outcome = await reserveTicket({
       showId,
+      showEnd: showWindow?.endDate ?? null,
       lineItems: lineItems.map((lineItem) => ({
         ticketType: lineItem.ticketType,
         attendeeName: lineItem.attendeeName.trim(),
@@ -1287,6 +1289,7 @@ async function reserveTicket(input: ReservationInput): Promise<ReservationOutcom
         orderId: orderRef.id,
         secret: input.recoveryTokenSecret,
         now,
+        ttlMs: recoveryTokenTtlMs(now, input.showEnd),
       });
 
       const docs = buildMultiReservationDocs({

@@ -18,7 +18,7 @@ export interface MediaKitJumpNavProps {
 
 export function MediaKitJumpNav({ items }: MediaKitJumpNavProps) {
   return (
-    <div className="sticky top-[48px] z-30 bg-parchment sm:top-[80px] xl:top-[72px]">
+    <div className="print:hidden sticky top-[48px] z-30 bg-parchment sm:top-[80px] xl:top-[72px]">
       <ShowJumpChips label={LABEL} items={items} className="py-3 max-[699px]:hidden" linkClassName={CHIP_RING} />
 
       <details className="min-[700px]:hidden">

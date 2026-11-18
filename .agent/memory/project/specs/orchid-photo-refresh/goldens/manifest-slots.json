@@ -1,0 +1,176 @@
+[
+  {
+    "slot": "saoc-home hero slide 1 (lead, reduced-motion static)",
+    "file": "lib/data/home-hero-slides.ts",
+    "image": "/images/heroes/hero-home-1-zygopetalum-hendrik.jpg",
+    "focus": "50% 45%"
+  },
+  {
+    "slot": "saoc-home hero slide 2",
+    "file": "lib/data/home-hero-slides.ts",
+    "image": "/images/heroes/hero-home-2-dendrobium-chlorostylum.jpg",
+    "focus": "50% 50%"
+  },
+  {
+    "slot": "saoc-home hero slide 3",
+    "file": "lib/data/home-hero-slides.ts",
+    "image": "/images/heroes/hero-home-3-colmanara-hendrik.jpg",
+    "focus": "40% 40%"
+  },
+  {
+    "slot": "saoc-home hero slide 4",
+    "file": "lib/data/home-hero-slides.ts",
+    "image": "/images/heroes/hero-home-6-cattleya-aclandiae.jpg",
+    "focus": "35% 50%"
+  },
+  {
+    "slot": "saoc-home hero slide 5",
+    "file": "lib/data/home-hero-slides.ts",
+    "image": "/images/heroes/hero-home-5-dendrobium-hendrik.jpg",
+    "focus": "55% 50%"
+  },
+  {
+    "slot": "saoc-home hero slide 6",
+    "file": "lib/data/home-hero-slides.ts",
+    "image": "/images/heroes/hero-home-4-cattleya-white.jpg",
+    "focus": "45% 45%"
+  },
+  {
+    "slot": "saoc-home hero slide 7",
+    "file": "lib/data/home-hero-slides.ts",
+    "image": "/images/heroes/hero-home-7-phalaenopsis-pink.jpg",
+    "focus": "55% 45%"
+  },
+  {
+    "slot": "saoc-home hero slide 8",
+    "file": "lib/data/home-hero-slides.ts",
+    "image": "/images/heroes/hero-home-8-phalaenopsis-stripes.jpg",
+    "focus": "65% 45%"
+  },
+  {
+    "slot": "nos hub hero (full bleed)",
+    "file": "components/nos/hero-photos.ts HERO_PHOTOS['/national-show']",
+    "image": "/images/heroes/hero-nos-hub-cattleya-aclandiae.jpg",
+    "focus": "50% 50%"
+  },
+  {
+    "slot": "nos inner S3a (/national-show/about, /archive, /tickets)",
+    "file": "components/nos/hero-photos.ts ROUTE_CROPS",
+    "image": "/images/heroes/hero-nos-about-colmanara-hendrik.jpg",
+    "focus": "50% 50%"
+  },
+  {
+    "slot": "nos inner S3b (/programme, /privacy)",
+    "file": "components/nos/hero-photos.ts ROUTE_CROPS",
+    "image": "/images/heroes/hero-nos-programme-dendrobium-hendrik.jpg",
+    "focus": "50% 50%"
+  },
+  {
+    "slot": "nos inner S2a (/conferences, /terms, /newsletter/unsubscribe)",
+    "file": "components/nos/hero-photos.ts ROUTE_CROPS",
+    "image": "/images/heroes/hero-nos-conferences-cattleya-white.jpg",
+    "focus": "50% 50%"
+  },
+  {
+    "slot": "nos inner S2c (/workshops, /media-kit)",
+    "file": "components/nos/hero-photos.ts ROUTE_CROPS",
+    "image": "/images/heroes/hero-nos-workshops-cattleya-apricot-hendrik.jpg",
+    "focus": "50% 50%"
+  },
+  {
+    "slot": "nos inner S1b (/plan-your-visit, /vendors)",
+    "file": "components/nos/hero-photos.ts ROUTE_CROPS",
+    "image": "/images/heroes/hero-nos-plan-paphiopedilum-yellow.jpg",
+    "focus": "50% 50%"
+  },
+  {
+    "slot": "nos inner H4a (/faq, /contact)",
+    "file": "components/nos/hero-photos.ts ROUTE_CROPS",
+    "image": "/images/heroes/hero-nos-faq-paphiopedilum-rust.jpg",
+    "focus": "50% 50%"
+  },
+  {
+    "slot": "nos inner PK1 (/what-to-expect, /sa-exhibitors)",
+    "file": "components/nos/hero-photos.ts ROUTE_CROPS",
+    "image": "/images/heroes/hero-nos-expect-phalaenopsis-pink.jpg",
+    "focus": "50% 50%"
+  },
+  {
+    "slot": "nos inner D1 (/symposium, /award-entries)",
+    "file": "components/nos/hero-photos.ts ROUTE_CROPS",
+    "image": "/images/nos-hero-D1.jpg",
+    "focus": null
+  },
+  {
+    "slot": "nos inner PK3 (/wosa-conference, /sponsors)",
+    "file": "components/nos/hero-photos.ts ROUTE_CROPS",
+    "image": "/images/nos-hero-PK3.jpg",
+    "focus": null
+  },
+  {
+    "slot": "nos inner Y1 (/international-guests, /refunds)",
+    "file": "components/nos/hero-photos.ts ROUTE_CROPS",
+    "image": "/images/nos-hero-Y1.jpg",
+    "focus": null
+  },
+  {
+    "slot": "nos H4b (mapped to no route)",
+    "file": "components/nos/hero-photos.ts HERO_CROPS",
+    "image": "/images/nos-hero-H4b.jpg",
+    "focus": null
+  },
+  {
+    "slot": "saoc /about, /societies, /judging, /events, /sponsors, /contact (split heroes)",
+    "file": "lib/data/saoc-hero-photos.ts",
+    "image": "orchid-violet-about / orchid-purple-flip / orchid-dark-flip / orchid-violet-contact",
+    "focus": null
+  },
+  {
+    "slot": "saoc /events/[slug]",
+    "file": "lib/data/saoc-hero-photos.ts",
+    "image": "/images/orchid-dark.jpg",
+    "focus": null
+  },
+  {
+    "slot": "ticket stub: vip",
+    "file": "lib/data/ticket-presentation.ts",
+    "image": "/images/stubs/stub-vip-dracula.jpg",
+    "focus": "50% 35%"
+  },
+  {
+    "slot": "ticket stub: sunset",
+    "file": "lib/data/ticket-presentation.ts",
+    "image": "/images/stubs/stub-sunset-cattleya-gold.jpg",
+    "focus": "50% 30%"
+  },
+  {
+    "slot": "ticket stub: weekend",
+    "file": "lib/data/ticket-presentation.ts",
+    "image": "/images/stubs/stub-weekend-cattleya-lilac.jpg",
+    "focus": "40% 30%"
+  },
+  {
+    "slot": "ticket stub: day",
+    "file": "lib/data/ticket-presentation.ts",
+    "image": "/images/stubs/stub-day-cattleya-lime.jpg",
+    "focus": "50% 30%"
+  },
+  {
+    "slot": "ticket stub: symposium (was null)",
+    "file": "lib/data/ticket-presentation.ts",
+    "image": "/images/stubs/stub-symposium-cattleya-violet.jpg",
+    "focus": "50% 40%"
+  },
+  {
+    "slot": "ticket stub: wosa (was null)",
+    "file": "lib/data/ticket-presentation.ts",
+    "image": "/images/stubs/stub-wosa-cattleya-pink.jpg",
+    "focus": "50% 30%"
+  },
+  {
+    "slot": "ticket stub: workshops",
+    "file": "lib/data/ticket-presentation.ts",
+    "image": "/images/stubs/stub-workshops-dendrobium-magenta.jpg",
+    "focus": "50% 45%"
+  }
+]

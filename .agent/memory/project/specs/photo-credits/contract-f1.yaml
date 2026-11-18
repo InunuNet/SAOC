@@ -1,0 +1,23 @@
+schema: athanor.contract/v1
+slug: photo-credits
+goal: Show data-driven photo credits on both hosts with footer links and sitemap entries.
+created_at: '2026-11-17'
+autonomy: high
+features:
+  - id: F1
+    name: Public photo credits pages and discovery links
+    status: pending
+goldens:
+  - .agent/memory/project/specs/photo-credits/goldens/credits.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Both host pages exist
+      command: test -f 'app/(marketing)/photo-credits/page.tsx' && test -f 'app/(nos)/national-show/photo-credits/page.tsx'
+    - id: A2
+      description: Both footer lists link to photo credits
+      command: grep -q "href: '/photo-credits'" components/chrome/footer-data.ts && grep -q "href: '/national-show/photo-credits'" components/nos-chrome/nos-footer-data.ts
+    - id: A3
+      description: Both sitemap helpers list photo credits
+      command: grep -q "path: '/photo-credits'" lib/saoc-sitemap-routes.ts && grep -q "path: '/photo-credits'" lib/nos-sitemap-routes.ts
