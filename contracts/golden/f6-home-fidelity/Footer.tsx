@@ -26,7 +26,7 @@ const FOOTER_NAV = [
   { id: 'about', label: 'About', href: '/about' },
   { id: 'societies', label: 'Societies', href: '/societies' },
   { id: 'judging', label: 'Judging & Awards', href: '/judging' },
-  { id: 'show', label: 'National Show', href: '/national-show' },
+  { id: 'show', label: 'National Orchid Show', href: '/national-show' },
   { id: 'events', label: 'Events', href: '/events' },
 ];
 

@@ -622,7 +622,7 @@ async function main(): Promise<void> {
     // Real seed body text (content/show-pages/11-programme.json, section "intro") —
     // >= 40 chars, quoted verbatim so this can only pass against the real document.
     const REAL_BODY_SUBSTRING =
-      'This page will bring together the master timetable for every National Show activity in one place, once the full programme is confirmed.';
+      'This page will bring together the master timetable for every National Orchid Show activity in one place, once the full programme is confirmed.';
     const nf7Ok =
       positiveHtml.includes(`${MARKER}="${PUBLISHED}"`) &&
       !positiveHtml.includes(`${MARKER}="${FALLBACK}"`) &&

@@ -3005,6 +3005,34 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     line-height: 1.15;
   }
 }
+/* Contact facts share value and label rows; each column sizes to its widest text. */
+@media (min-width: 768px) {
+  .nos-theme .nos-contact-hero .hero-facts[data-fact-count="2"] {
+    grid-template-columns: repeat(2, max-content);
+    grid-template-rows: auto auto;
+    column-gap: 48px;
+    row-gap: 6px;
+  }
+  .nos-theme .nos-contact-hero .hero-facts > div {
+    display: contents;
+  }
+  .nos-theme .nos-contact-hero .hero-facts > div:first-child > * {
+    grid-column: 1;
+  }
+  .nos-theme .nos-contact-hero .hero-facts > div:last-child > * {
+    grid-column: 2;
+  }
+  .nos-theme .nos-contact-hero .hero-facts dd {
+    grid-row: 1;
+    align-self: start;
+    white-space: nowrap;
+  }
+  .nos-theme .nos-contact-hero .hero-facts dt {
+    grid-row: 2;
+    align-self: baseline;
+    white-space: nowrap;
+  }
+}
 @media (max-width: 767px) {
   .nos-theme .nos-hero-actions .btn,
   .nos-theme .nos-hero-actions a {

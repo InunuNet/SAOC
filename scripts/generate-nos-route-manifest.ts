@@ -50,7 +50,7 @@ interface RouteRow {
 const ROUTE_TABLE: RouteRow[] = [
   {
     slug: '/national-show',
-    label: 'National Show',
+    label: 'National Orchid Show',
     group: null,
     parent: null,
     order: 1,
@@ -60,7 +60,7 @@ const ROUTE_TABLE: RouteRow[] = [
     status: 'restructured',
     owner: 'nos-design',
     archetype: 'hub',
-    purpose: 'The National Show subsection landing page and its entire primary navigation.',
+    purpose: 'The National Orchid Show subsection landing page and its entire primary navigation.',
     pageKey: '01-national-show-landing',
     specNumber: 1,
     diskPath: '.',
@@ -299,7 +299,7 @@ const ROUTE_TABLE: RouteRow[] = [
     status: 'created',
     owner: 'nos-design',
     archetype: 'listing',
-    purpose: 'The sponsors behind the National Show.',
+    purpose: 'The sponsors behind the National Orchid Show.',
     pageKey: '15-sponsors',
     specNumber: 15,
     diskPath: 'sponsors',

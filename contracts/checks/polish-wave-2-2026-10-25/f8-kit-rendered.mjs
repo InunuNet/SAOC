@@ -63,7 +63,7 @@ const NOS = {
   ids: ['full-colour', 'full-colour-reversed', 'grayscale', 'ink-olive', 'ink-purple', 'ink-violet', 'reversed-gold', 'reversed-white'],
   cards: () => 2,
   fixedCards: 1,
-  groupName: 'National Show 2027',
+  groupName: 'National Orchid Show 2027',
   srcToken: (id) => new RegExp(`logo-${id}-(horizontal|vertical)`),
 };
 

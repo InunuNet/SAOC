@@ -6,7 +6,7 @@
       "slug": "saoc-symposium",
       "name": "SAOC Symposium",
       "category": "conference",
-      "price": 2000,
+      "price": 1500,
       "regularPrice": null,
       "capacity": 80,
       "releasedQuantity": null,
@@ -18,13 +18,13 @@
       "capacityPool": null,
       "headcountPerUnit": null,
       "sourceCitationMustBeNonNull": true,
-      "_note": "One sellable product, flat R2000, 80 places, NO early-bird mechanism of any kind (no tranche, no discount, no cutoff). Brad's original scarcity-motivation intent (message 4: 'MOTIVATION BY SCARSITY') is recorded as a FLAGGED, NOT-BUILT recommendation below — an honest 'N of 80 places left' running count — pending his explicit go-ahead, never built silently as a substitute for the early-bird mechanism he just removed. provisional flipped to false 2026-10-07 (team-lead approved, architect rationale check): both price (R2000) AND capacity (80) are Brad's own direct, unambiguous verbatim ruling the same day as the workshop figures that already got provisional: false — direct, unambiguous figures, settled per the VIP-ruling precedent (provisional: false + sourceCitation), not a council/Lee-Ann-sheet-sourced estimate awaiting confirmation. The prior provisional: true on this entry had no sourced reason and was an oversight, not a deliberate withhold."
+      "_note": "One sellable product, flat R1500, 80 places, NO early-bird mechanism of any kind (no tranche, no discount, no cutoff). Brad's original scarcity-motivation intent (message 4: 'MOTIVATION BY SCARSITY') is recorded as a FLAGGED, NOT-BUILT recommendation below — an honest 'N of 80 places left' running count — pending his explicit go-ahead, never built silently as a substitute for the early-bird mechanism he just removed. provisional flipped to false 2026-10-07 (team-lead approved, architect rationale check): both price (R2000) AND capacity (80) are Brad's own direct, unambiguous verbatim ruling the same day as the workshop figures that already got provisional: false — direct, unambiguous figures, settled per the VIP-ruling precedent (provisional: false + sourceCitation), not a council/Lee-Ann-sheet-sourced estimate awaiting confirmation. The prior provisional: true on this entry had no sourced reason and was an oversight, not a deliberate withhold."
     },
     {
       "slug": "wosa-conference",
       "name": "WOSA Conference",
       "category": "conference",
-      "price": 2000,
+      "price": 1500,
       "regularPrice": null,
       "capacity": 80,
       "releasedQuantity": null,

@@ -32,7 +32,7 @@ const NAV_CARDS: NavCardData[] = [
   },
   {
     href: '/national-show',
-    badge: 'National Show',
+    badge: 'National Orchid Show',
     title: 'The 19th National Orchid Show, 2027',
     body: 'Every three years. Four days. A thousand plants at their peak.',
     meta: 'Sep 2027 · Cape Town',

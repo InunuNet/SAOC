@@ -132,7 +132,7 @@ export default async function ShowYearPage({ params }: { params: Promise<{ year:
   if (!show) notFound();
 
   // F7: edition, city and year on the CTA are show-identity facts, from the singleton.
-  const upcomingLabel = showLabelWithEdition(upcoming?.edition);
+  const upcomingLabel = showLabelWithEdition(upcoming?.edition, 'National Orchid Show');
   const upcomingYear = showYearOf(upcoming?.showDate);
   const upcomingPlaceAndYear = [upcoming?.venue?.city, upcomingYear ? String(upcomingYear) : null]
     .filter((part): part is string => Boolean(part))

@@ -20,7 +20,7 @@ export const SAOC_HERO_PHOTOS: Readonly<Record<string, SaocHeroPhoto>> = {
   '/societies': { src: '/images/orchid-purple-flip.jpg', objectPosition: '0% 20%' },
   '/judging': { src: '/images/heroes/hero-saoc-judging-colmanara-hendrik.jpg', objectPosition: '0% 50%' },
   '/events': { src: '/images/heroes/hero-saoc-events-habenaria-hendrik.jpg', objectPosition: '0% 50%' },
-  '/sponsors': { src: '/images/heroes/hero-saoc-sponsors-dendrobium-hendrik.jpg', objectPosition: '0% 50%' },
+  '/sponsors': { src: '/images/heroes/hero-saoc-sponsors-cattleya-riograndensis.jpg', objectPosition: '0% 50%' },
   '/contact': { src: '/images/orchid-violet-contact.jpg', objectPosition: '0% 80%' },
   '/events/[slug]': { src: '/images/heroes/hero-saoc-event-cattleya-white.jpg', objectPosition: '0% 50%' },
   // Typographic: solid sage, no photograph (HM-7 /404 and /events/submit, HM-6 (b) /societies/[slug]).
@@ -58,7 +58,7 @@ const ORIGINAL_SIZES: Readonly<Record<string, readonly [number, number]>> = {
   '/images/orchid-pink-about.jpg': [3000, 1000],
   '/images/heroes/hero-saoc-judging-colmanara-hendrik.jpg': [3000, 1000],
   '/images/heroes/hero-saoc-events-habenaria-hendrik.jpg': [3000, 1000],
-  '/images/heroes/hero-saoc-sponsors-dendrobium-hendrik.jpg': [3000, 1000],
+  '/images/heroes/hero-saoc-sponsors-cattleya-riograndensis.jpg': [3000, 1000],
   '/images/heroes/hero-saoc-event-cattleya-white.jpg': [3000, 1000],
 };
 const ASPECT_PRECISION = 1000;

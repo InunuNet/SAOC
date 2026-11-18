@@ -527,7 +527,7 @@ const QUESTIONS: readonly FaqSeed[] = [
     section: 'wosa-conference',
     question: 'How do I register for the WOSA Conference?',
     answer: [
-      'Via the National Show website and ticket sales table.',
+      'Via the National Orchid Show website and ticket sales table.',
     ],
   },
   {

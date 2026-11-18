@@ -39,7 +39,7 @@ export function NosPageNotFound() {
             Tickets
           </Button>
           <Button as={Link} href="/" variant="ghost-on-dark" className={LINK_CLASS}>
-            National Show
+            National Orchid Show
           </Button>
           <Button as={Link} href="/plan-your-visit" variant="ghost-on-dark" className={LINK_CLASS}>
             Plan your visit

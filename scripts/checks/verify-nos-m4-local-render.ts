@@ -329,7 +329,7 @@ async function main(): Promise<void> {
       // defect, not silently satisfied — see the dev report to the team lead.
       if (route.owner === 'nos-design') {
         const navCount = await page
-          .locator('nav[aria-label="National Show section"]')
+          .locator('nav[aria-label="National Orchid Show section"]')
           .count()
           .catch(() => 0);
         if (navCount !== 1) {

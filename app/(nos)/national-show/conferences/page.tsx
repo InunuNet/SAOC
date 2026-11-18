@@ -32,7 +32,7 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = withTicketingTestTitle(
   buildPageMetadata({
     title: NOS_ROUTE_HEROES.conferences.title,
-    image: nosOgImage('Conference registration — National Show'),
+    image: nosOgImage('Conference registration — National Orchid Show'),
     description:
       'For visitors interested in orchid science, cultivation, conservation and horticulture.',
     path: '/national-show/conferences',

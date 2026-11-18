@@ -52,7 +52,7 @@ export function UtilityBar() {
             href="/national-show"
             className="hidden min-[900px]:inline-block border border-ivory/30 text-ivory rounded-full px-3 py-1 text-[13px] font-sans hover:border-ivory/60 transition-colors duration-150"
           >
-            19th National Show · Sep 2027
+            19th National Orchid Show · Sep 2027
           </Link>
           <Link
             href="/societies"

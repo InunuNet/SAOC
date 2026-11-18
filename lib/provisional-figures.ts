@@ -129,7 +129,7 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
     // Visitor's own early-bird tier, re-shaped in place to the new pool-based mechanism
     // (not a new slug, unlike weekend-pass-early-bird below).
     category: 'admission',
-    description: 'Single-day general admission to the National Show during the early-bird window — choose your day.',
+    description: 'Single-day general admission to the National Orchid Show during the early-bird window — choose your day.',
     price: 120,
     capacity: ADMISSION_EARLY_BIRD_POOL_CAPACITY,
     releasedQuantity: null,
@@ -146,7 +146,7 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
     slug: 'day-visitor',
     name: 'Day Visitor Ticket',
     category: 'admission',
-    description: 'Single-day general admission to the National Show — choose your day.',
+    description: 'Single-day general admission to the National Orchid Show — choose your day.',
     price: 150,
     capacity: 1000,
     releasedQuantity: null,
@@ -161,8 +161,8 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
     slug: 'weekend-pass',
     name: 'Weekend Pass',
     category: 'admission',
-    description: 'Full-weekend admission to the National Show.',
-    price: 380,
+    description: 'Full-weekend admission to the National Orchid Show.',
+    price: 350,
     regularPrice: null,
     // Carried over unchanged from before the early-bird split — FLAGGED OPEN QUESTION, not
     // assumed: before the split this capped BOTH price tiers combined on one SKU; Brad's
@@ -192,7 +192,8 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
     slug: 'weekend-pass-early-bird',
     name: 'Weekend Pass (Early Bird)',
     category: 'admission',
-    description: 'Full-weekend admission to the National Show at the early-bird price.',
+    description: 'Full-weekend admission to the National Orchid Show at the early-bird price.',
+    // Not in Lee-Ann's 16 Nov price list; awaiting Brad's decision.
     price: 360,
     regularPrice: null,
     // Declares the FULL shared-pool ceiling, same convention as every other pool sibling in
@@ -218,8 +219,8 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
     slug: 'vip',
     name: 'VIP Ticket',
     category: 'admission',
-    description: 'Reception access plus full-weekend admission to the National Show.',
-    price: 300,
+    description: 'Reception access plus full-weekend admission to the National Orchid Show.',
+    price: 350,
     regularPrice: null,
     earlyBirdCutoff: null,
     capacity: 200,
@@ -278,7 +279,7 @@ export const DAY_VISITOR_SHAPED_SLUGS: readonly string[] = ADMISSION_PRODUCTS.fi
  * no longer present in this live array.
  */
 
-const SYMPOSIUM_WOSA_PRICE = 2000;
+const SYMPOSIUM_WOSA_PRICE = 1500;
 const SYMPOSIUM_WOSA_CAPACITY = 80;
 
 const SYMPOSIUM_WOSA_SOURCE_CITATION =
@@ -370,11 +371,12 @@ export const RETIRED_CONFERENCE_SLUGS = [
  */
 
 const SUNSET_COCKTAILS_CITATION = "Lee-Ann's 13.1 Ticketing system details.docx, line 305-314";
-const SUNSET_COCKTAILS_SINGLE_PRICE = 800;
+const SUNSET_COCKTAILS_SINGLE_PRICE = 350;
+// The couple entry is inactive live; Lee-Ann's 16 Nov list has no couple price.
 const SUNSET_COCKTAILS_COUPLE_PRICE = 1500;
 
 const FIELD_TRIP_CITATION = "Lee-Ann's 13.1 Ticketing system details.docx, line 158-162";
-const FIELD_TRIP_FLAT_PRICE = 200;
+const FIELD_TRIP_FLAT_PRICE = 150;
 
 // F5 (ticketing-conferences-and-events, M2): real physical ceilings, restored from F2's
 // interim conservative resize (100/50/30/30) now that planPooledCapacity() correctly pools

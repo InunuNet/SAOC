@@ -43,7 +43,7 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = withTicketingTestTitle(
   buildPageMetadata({
     title: 'Tickets',
-    image: nosOgImage('Tickets — National Show'),
+    image: nosOgImage('Tickets — National Orchid Show'),
     description:
       "Choose the option that matches why you're coming to the 2027 National Orchid Show — " +
       "we'll take you straight to the right form.",
@@ -57,7 +57,7 @@ const FOOT_OPTIONS = [
   {
     id: 'exhibit',
     heading: "I'm exhibiting orchids",
-    body: 'See what is involved in exhibiting at the National Show.',
+    body: 'See what is involved in exhibiting at the National Orchid Show.',
     cta: 'Apply to exhibit',
     href: '/vendors/apply',
   },

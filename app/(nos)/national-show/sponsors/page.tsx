@@ -35,12 +35,12 @@ const FACTS_LABELS = ['Dates', 'Venue', 'Host'] as const;
 
 const LEDE = 'Recognising the headline and supporting sponsors and donors of The National Orchid Show.';
 const STANDFIRST =
-  'The 2027 National Show is made possible through the generous support of our headline sponsors, donors and partners, whose commitment to horticulture, conservation, education and scientific advancement enables the South African Orchid Council to present a truly world-class event.';
+  'The 2027 National Orchid Show is made possible through the generous support of our headline sponsors, donors and partners, whose commitment to horticulture, conservation, education and scientific advancement enables the South African Orchid Council to present a truly world-class event.';
 const THEME_HEADING = 'From Wild Origins to Cultivated Excellence: The Future of Orchids';
 const THEME_PROSE =
   'The National Orchid Show will showcase a spectacular display of all the orchids that are submitted for judging and display. There will be specialist plant sales by local and international vendors, educational exhibits, a comprehensive symposium and conference, practical workshops and opportunities to engage with local and international experts.';
 const WALL_THANKS =
-  'The South African Orchid Council is deeply grateful to its headline sponsors and donors, whose generous support has made it possible to present a National Show of this scale and significance.';
+  'The South African Orchid Council is deeply grateful to its headline sponsors and donors, whose generous support has made it possible to present a National Orchid Show of this scale and significance.';
 const CARD_SENTENCE =
   'The sponsorship prospectus, packages, benefits and contact details can be sent via email.';
 
@@ -48,7 +48,7 @@ const REACH = [
   {
     href: '/national-show/symposium',
     title: 'SAOC Symposium',
-    text: 'The National Show Symposium will feature an outstanding programme of presentations by respected local and international speakers covering orchid cultivation, breeding, conservation, taxonomy, judging, sustainability and emerging scientific research.',
+    text: 'The National Orchid Show Symposium will feature an outstanding programme of presentations by respected local and international speakers covering orchid cultivation, breeding, conservation, taxonomy, judging, sustainability and emerging scientific research.',
   },
   {
     href: '/national-show/wosa-conference',
