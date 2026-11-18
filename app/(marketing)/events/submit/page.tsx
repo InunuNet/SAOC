@@ -45,8 +45,8 @@ export default async function SubmitEventPage() {
   if (!session.ok) {
     return (
       <>
-        <Breadcrumb items={[{ label: 'Events', href: '/events' }, { label: 'Submit an event' }]} />
         <LoginPrompt />
+        <Breadcrumb items={[{ label: 'Events', href: '/events' }, { label: 'Submit an event' }]} />
       </>
     );
   }
@@ -59,7 +59,6 @@ export default async function SubmitEventPage() {
 
   return (
     <>
-      <Breadcrumb items={[{ label: 'Events', href: '/events' }, { label: 'Submit an event' }]} />
       <SubmitEventPageBody societies={societies} />
     </>
   );

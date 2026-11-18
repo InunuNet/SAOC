@@ -73,8 +73,8 @@ export default async function RefundsPage() {
         <NosHero route="/refunds" title={TITLE} crumbLabel={TITLE} lede={LEDE} priority />
       ) : (
         <>
-          <LegalBreadcrumb label={TITLE} />
           <RouteHero route="/refunds" heading={TITLE} />
+          <LegalBreadcrumb label={TITLE} />
         </>
       )}
 

@@ -105,13 +105,13 @@ export default async function SocietiesPage() {
 
   return (
     <>
-      <Breadcrumb items={[{ label: 'Societies' }]} />
       <RouteHero
         exempt
         route="/societies"
         eyebrow="Affiliated societies"
         heading="Find an orchid society near you"
       />
+      <Breadcrumb items={[{ label: 'Societies' }]} />
       <div className="saoc-container py-16">
         <Suspense fallback={<SocietiesFallback societies={listed} />}>
           <SocietiesClient societies={listed} provinces={provinceChips} />

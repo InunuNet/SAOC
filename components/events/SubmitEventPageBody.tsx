@@ -1,3 +1,4 @@
+import { Breadcrumb } from '@/components/chrome/Breadcrumb';
 import { SubmitEventForm } from '@/components/events/SubmitEventForm';
 import { RouteHero } from '@/components/ui/RouteHero';
 
@@ -14,6 +15,7 @@ export function SubmitEventPageBody({ societies }: SubmitEventPageBodyProps) {
         heading="Submit an event"
         lede="Your submission will be reviewed by the council before it appears on the site."
       />
+      <Breadcrumb items={[{ label: 'Events', href: '/events' }, { label: 'Submit an event' }]} />
       <section className="saoc-container py-16">
         <div className="mx-auto max-w-[640px]">
           <SubmitEventForm societies={societies} />
