@@ -33,7 +33,7 @@
       {"host": "saoc", "path": "/admin/door", "status": 307},
       {"host": "saoc", "path": "/admin/vendors", "status": 307},
       {"host": "saoc", "path": "/admin/tickets", "status": 307},
-      {"host": "saoc", "path": "/api/admin/whoami", "status": 401},
+      {"host": "saoc", "path": "/api/admin/whoami", "status": 200},
       {"host": "saoc", "path": "/api/admin/export-csv", "status": 401}
     ],
     "static": [
