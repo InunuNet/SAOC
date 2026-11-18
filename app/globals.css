@@ -413,7 +413,7 @@ h3.font-serif {
    advances the carousel. Pause holds both; reduced motion drops both. */
 @media (min-width: 1024px) {
   .home-hero {
-    min-height: max(560px, min(72vh, 680px));
+    min-height: 620px;
   }
 }
 .home-hero-img {

@@ -2943,7 +2943,9 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 /* Contact facts share the value row and label baseline across both desktop columns. */
 @media (min-width: 768px) {
   .nos-theme .nos-contact-hero .hero-facts {
+    grid-template-columns: max-content max-content;
     grid-template-rows: auto auto;
+    column-gap: 48px;
     row-gap: 6px;
   }
   .nos-theme .nos-contact-hero .hero-facts > div {
@@ -2955,10 +2957,12 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   .nos-theme .nos-contact-hero .hero-facts dd {
     grid-row: 1;
     align-self: start;
+    white-space: nowrap;
   }
   .nos-theme .nos-contact-hero .hero-facts dt {
     grid-row: 2;
     align-self: baseline;
+    white-space: nowrap;
   }
 }
 .nos-theme .nos-hero-copy > * {
