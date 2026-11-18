@@ -162,7 +162,7 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
     name: 'Weekend Pass',
     category: 'admission',
     description: 'Full-weekend admission to the National Orchid Show.',
-    price: 380,
+    price: 350,
     regularPrice: null,
     // Carried over unchanged from before the early-bird split — FLAGGED OPEN QUESTION, not
     // assumed: before the split this capped BOTH price tiers combined on one SKU; Brad's
@@ -193,6 +193,7 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
     name: 'Weekend Pass (Early Bird)',
     category: 'admission',
     description: 'Full-weekend admission to the National Orchid Show at the early-bird price.',
+    // Not in Lee-Ann's 16 Nov price list; awaiting Brad's decision.
     price: 360,
     regularPrice: null,
     // Declares the FULL shared-pool ceiling, same convention as every other pool sibling in
@@ -219,7 +220,7 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
     name: 'VIP Ticket',
     category: 'admission',
     description: 'Reception access plus full-weekend admission to the National Orchid Show.',
-    price: 300,
+    price: 350,
     regularPrice: null,
     earlyBirdCutoff: null,
     capacity: 200,
@@ -278,7 +279,7 @@ export const DAY_VISITOR_SHAPED_SLUGS: readonly string[] = ADMISSION_PRODUCTS.fi
  * no longer present in this live array.
  */
 
-const SYMPOSIUM_WOSA_PRICE = 2000;
+const SYMPOSIUM_WOSA_PRICE = 1500;
 const SYMPOSIUM_WOSA_CAPACITY = 80;
 
 const SYMPOSIUM_WOSA_SOURCE_CITATION =
@@ -370,11 +371,12 @@ export const RETIRED_CONFERENCE_SLUGS = [
  */
 
 const SUNSET_COCKTAILS_CITATION = "Lee-Ann's 13.1 Ticketing system details.docx, line 305-314";
-const SUNSET_COCKTAILS_SINGLE_PRICE = 800;
+const SUNSET_COCKTAILS_SINGLE_PRICE = 350;
+// The couple entry is inactive live; Lee-Ann's 16 Nov list has no couple price.
 const SUNSET_COCKTAILS_COUPLE_PRICE = 1500;
 
 const FIELD_TRIP_CITATION = "Lee-Ann's 13.1 Ticketing system details.docx, line 158-162";
-const FIELD_TRIP_FLAT_PRICE = 200;
+const FIELD_TRIP_FLAT_PRICE = 150;
 
 // F5 (ticketing-conferences-and-events, M2): real physical ceilings, restored from F2's
 // interim conservative resize (100/50/30/30) now that planPooledCapacity() correctly pools

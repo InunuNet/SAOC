@@ -36,7 +36,7 @@ assertions:
       description: a very long attendee name wraps or shrinks inside the stub - every word present and ending left of the QR tile (x 108.3 mm), never overlapping it
       command: pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts longname
     - id: A30
-      description: schedule rule (decisions.md D11 rev) - dates come from TICKET_PRODUCTS via productIdForSlug (event/pass print the product's own when and meta, day-selection types the chosen day, programme/workshop/unmapped the pill); rendered stubs - VIP Thursday 23 September 16h00 to 19h00 and no 24/25/26, Sunset its when and meta with no pill, Weekend Friday 24 to Sunday 26 September, Symposium the pill and no date
+      description: schedule rule (decisions.md D11 rev) - dates come from TICKET_PRODUCTS via productIdForSlug (event/pass print the product's own when and meta, day-selection types the chosen day, programme/workshop/unmapped the pill); rendered stubs - VIP Thursday 23 September 16h30 to 19h00 and no 24/25/26, Sunset its when and meta with no pill, Weekend Friday 24 to Sunday 26 September, Symposium the pill and no date
       command: pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts schedule
     - id: A4
       description: every page is A4 portrait (595.28 x 841.89 pt)

@@ -6,7 +6,7 @@
 // message 6 (.agent/memory/scratch/brad-ticket-news-2026-10-07.md) and Lee-Ann's sheet, line
 // 19 (.agent/memory/scratch/leeann-notes-2026-10-07.md: "23 VIP Thursday, Opening 3 Hours on
 // thursday evening.(R300) 16h00-19h00 Total # 200 total") replace the 2026-09-08 ruling with
-// a flat R300 figure and drop the early-bird tier entirely — VIP now carries no
+// a flat R350 figure and drop the early-bird tier entirely — VIP now carries no
 // `regularPrice` and no `earlyBirdCutoff` at all. This check now proves the OPPOSITE
 // property it originally did: no purchase date can ever change VIP's price.
 //
@@ -44,8 +44,8 @@ if (vip.regularPrice !== undefined && vip.regularPrice !== null) {
 if (vip.earlyBirdCutoff !== null) {
   failures.push(`vip.earlyBirdCutoff is ${JSON.stringify(vip.earlyBirdCutoff)}, expected null — no date-based mechanism`);
 }
-if (vip.price !== 300) {
-  failures.push(`vip.price is ${JSON.stringify(vip.price)}, expected 300`);
+if (vip.price !== 350) {
+  failures.push(`vip.price is ${JSON.stringify(vip.price)}, expected 350`);
 }
 
 // Three purchase dates spanning years either side of the show — including the OLD, now-
@@ -92,6 +92,6 @@ if (failures.length > 0) {
 }
 console.log(
   'PASS: VIP carries no regularPrice/earlyBirdCutoff, resolveEffectivePrice() (the real ' +
-    'runtime mechanism) returns the flat R300 price for every probed purchase date, and the ' +
+    'runtime mechanism) returns the flat R350 price for every probed purchase date, and the ' +
     "override of Brad's 2026-09-08 ruling is explicitly cited."
 );

@@ -130,13 +130,13 @@ Your booking details
 - Ticket holder: {visitor_name}
 - Number of tickets: {ticket_quantity}
 - Date: Thursday, 23 September 2027
-- Time: 16:00–18:30
+- Time: 16:30–19:00
 - Amount paid: {amount_paid}
 - Payment status: {payment_status}
 Your VIP experience
 Your VIP ticket provides access to the National Orchid Show during the exclusive VIP session:
 Thursday, 23 September 2027
-16:00–18:30
+16:30–19:00
 Please arrive in good time to allow for ticket scanning and entry.
 Further details regarding the VIP programme and any confirmed inclusions will be communicated closer to the event.
 Venue and parking

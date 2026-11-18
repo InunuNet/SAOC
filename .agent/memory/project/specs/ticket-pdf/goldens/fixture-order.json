@@ -10,13 +10,13 @@
         "eyebrow": "Thursday evening",
         "numeral": "23",
         "dateText": "Thursday 23 September",
-        "timeText": "16h00 to 19h00"
+        "timeText": "16h30 to 19h00"
       },
       "timesHeading": "Opening times",
       "times": [
         {
           "label": "Thu 23",
-          "value": "16h00 to 19h00"
+          "value": "16h30 to 19h00"
         },
         {
           "label": "Fri 24",
@@ -41,13 +41,13 @@
         "eyebrow": null,
         "numeral": "23",
         "dateText": "Thursday 23 September",
-        "timeText": "18h00 to 21h00"
+        "timeText": "18h30 to 21h00"
       },
       "timesHeading": "Opening times",
       "times": [
         {
           "label": "Thu 23",
-          "value": "18h00 to 21h00"
+          "value": "18h30 to 21h00"
         }
       ]
     },

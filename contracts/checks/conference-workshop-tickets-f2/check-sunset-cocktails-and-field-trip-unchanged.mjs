@@ -9,9 +9,9 @@ import { loadRepoModule, finish } from './_lib.mjs';
 const { WORKSHOP_FIELD_TRIP_PRODUCTS } = await loadRepoModule('lib/provisional-figures.ts');
 
 const EXPECTED = {
-  'sunset-cocktails-single': { price: 800, capacity: 100, capacityPool: 'sunset-cocktails', headcountPerUnit: 1 },
+  'sunset-cocktails-single': { price: 350, capacity: 100, capacityPool: 'sunset-cocktails', headcountPerUnit: 1 },
   'sunset-cocktails-couple': { price: 1500, capacity: 100, capacityPool: 'sunset-cocktails', headcountPerUnit: 2 },
-  'field-trip': { price: 200, capacity: 60, capacityPool: 'field-trip', headcountPerUnit: 1 },
+  'field-trip': { price: 150, capacity: 60, capacityPool: 'field-trip', headcountPerUnit: 1 },
 };
 
 const failures = [];

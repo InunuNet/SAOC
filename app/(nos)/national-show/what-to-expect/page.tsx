@@ -48,7 +48,7 @@ const NARRATIVE = [
 const DATES_HEADING = "Show dates – for public entrance";
 const DATES_LINE = "Thursday 23 to Sunday 26 September 2027";
 const HOURS = [
-  "Thursday VIP Ticket Holders – 14.00 to 19.00",
+  "Thursday VIP Ticket Holders – 16.30 to 19.00",
   "Friday & Saturday – 9.00 to 17.00",
   "Sunday – 9.00 to 16.00",
 ];

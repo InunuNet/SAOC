@@ -44,7 +44,7 @@ export const FIXTURES: Fixture[] = [
         showDates: 'Thursday 23 to Sunday 26 September 2027',
         parking: null,
         openingTimes: [
-          { label: 'Thu 23', value: '16h00 to 19h00' },
+          { label: 'Thu 23', value: '16h30 to 19h00' },
           { label: 'Fri 24', value: null },
           { label: 'Sat 25', value: null },
           { label: 'Sun 26', value: null },

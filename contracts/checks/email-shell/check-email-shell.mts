@@ -210,7 +210,7 @@ if (cmd === 'families') {
   // Codi: known data must never render as a placeholder (matches the PDF, same Sanity data)
   const text = visibleText(await htmlOf('OrderConfirmation'));
   for (const bad of ['The venue To be confirmed', 'Show dates To be confirmed']) if (text.includes(bad)) fail(`OrderConfirmation: confirmed data rendered as placeholder: "${bad}"`);
-  for (const need of ['The Hangar, Stellenbosch Flying Club', 'Stellenbosch Airfield, R44, Stellenbosch, 7600, Western Cape', 'Thursday 23 to Sunday 26 September 2027', 'Thu 23: 16h00 to 19h00']) if (!text.includes(need)) fail(`OrderConfirmation: missing confirmed visit value "${need}"`);
+  for (const need of ['The Hangar, Stellenbosch Flying Club', 'Stellenbosch Airfield, R44, Stellenbosch, 7600, Western Cape', 'Thursday 23 to Sunday 26 September 2027', 'Thu 23: 16h30 to 19h00']) if (!text.includes(need)) fail(`OrderConfirmation: missing confirmed visit value "${need}"`);
 } else if (cmd === 'emergency') {
   const LINE = 'In an emergency: 10111 Police (national) · 10177 Ambulance and fire (national) · 112 All emergencies, from a mobile phone';
   const html = await htmlOf('OrderConfirmation');

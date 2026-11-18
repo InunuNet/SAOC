@@ -91,7 +91,7 @@ const SOCIETY_EVENT_ID = 'societyEvent-15-19th-south-african-national-orchid-sho
 const FAQ_QUESTION = 'When is the show?';
 
 const SHOW_START_ISO = '2027-09-23T09:00:00+02:00';
-const SHOW_END_ISO = '2027-09-26T17:00:00+02:00';
+const SHOW_END_ISO = '2027-09-26T16:00:00+02:00';
 const SOCIETY_EVENT_START_DATE = '2027-09-23';
 const SOCIETY_EVENT_END_DATE = '2027-09-26';
 const FAQ_ANSWER_TEXT = 'Thursday 23 to Sunday 26 September 2027, confirmed by the show committee.';
