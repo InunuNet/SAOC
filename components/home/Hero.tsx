@@ -30,7 +30,7 @@ function slideLabel(index: number, total: number, subject: string): string {
 const HERO_CTA_BASE =
   'inline-flex min-h-12 w-full items-center justify-between gap-4 rounded-[2px] border px-[22px] py-[14px] text-[14px] font-medium tracking-[0.01em] transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 hover:-translate-y-px focus-visible:-translate-y-px active:translate-y-0';
 const HERO_CTA_META =
-  'font-mono text-[11px] leading-[1.5] uppercase tracking-[0.18em] text-ivory/80';
+  'font-mono text-[11px] leading-[1.5] uppercase tracking-[0.18em] text-ivory/80 lg:whitespace-nowrap';
 
 // The full-bleed hero image fills the content-driven desktop box; use its minimum for image sizing.
 const HERO_BOX_HEIGHT = 620;
@@ -155,7 +155,7 @@ export function Hero({ show, societyCount }: HeroProps) {
 
           <div
             data-hero-ctas
-            className="mt-8 grid w-full max-w-[900px] grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-4"
+            className="mt-8 grid w-full max-w-[980px] grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-4"
           >
             <div className="flex min-w-0 flex-col gap-3">
               <Link
