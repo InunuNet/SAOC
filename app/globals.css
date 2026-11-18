@@ -435,9 +435,9 @@ h3.font-serif {
       rgb(0 0 0 / 0.31) 44vw,
       rgb(0 0 0 / 0.24) 45.5vw,
       rgb(0 0 0 / 0.17) 47vw,
-      rgb(0 0 0 / 0.115) 48vw,
+      rgb(0 0 0 / 0.11) 48vw,
       rgb(0 0 0 / 0.06) 49vw,
-      rgb(0 0 0 / 0.025) 49.5vw,
+      rgb(0 0 0 / 0.025) 49.6vw,
       transparent 50vw
     );
     -webkit-mask-image: var(--page-hero-mask);
