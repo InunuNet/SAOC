@@ -44,6 +44,7 @@ export default function NosContactPage() {
     <>
       <NosHero
         route="/national-show/contact"
+        className="nos-contact-hero"
         title={CONTACT_LINK.label}
         crumbLabel={CONTACT_LINK.label}
         facts={[

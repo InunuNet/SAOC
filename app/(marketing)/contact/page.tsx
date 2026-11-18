@@ -122,7 +122,7 @@ export default async function ContactPage() {
 
             <VenueCard
               venue={show?.venue}
-              heading="National Show venue"
+              heading="National Orchid Show venue"
               status={info?.confirmations?.venue}
               pendingLabel={info?.pendingLabel}
               researchLabel={info?.researchLabel}
@@ -134,7 +134,7 @@ export default async function ContactPage() {
                 href="/national-show"
                 className="underline underline-offset-2 hover:text-accent"
               >
-                See the National Show
+                See the National Orchid Show
               </Link>{' '}
               for travel, hours and admission.
             </p>

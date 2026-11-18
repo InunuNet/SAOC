@@ -5,7 +5,7 @@ import Link from 'next/link';
 export function TicketBuyCrumbs({ name }: { name?: string }) {
   return (
     <nav className="nk-crumbs nk-buy-crumbs" aria-label="Breadcrumb">
-      <Link href="/">National Show</Link>
+      <Link href="/">National Orchid Show</Link>
       <span className="nk-crumb">
         <span className="nk-sep" aria-hidden="true" />
         <Link href="/tickets">Tickets</Link>

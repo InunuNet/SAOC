@@ -50,7 +50,7 @@ const AVAILABLE_ITEMS = [
 
 export const metadata: Metadata = buildPageMetadata({
   title: PAGE_TITLE,
-  image: nosOgImage('Vendors — National Show'),
+  image: nosOgImage('Vendors — National Orchid Show'),
   description: STANDFIRST,
   path: '/national-show/vendors',
 });

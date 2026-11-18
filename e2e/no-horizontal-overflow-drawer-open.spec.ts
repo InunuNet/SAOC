@@ -35,7 +35,7 @@ test.describe('no horizontal overflow -- drawer open', () => {
   });
 
   // nos-site-split R3.3: on SAOC, National Show is a plain link to the NOS site (no disclosure).
-  test('no horizontal overflow at 390px with the SAOC drawer open and its National Show link shown', async ({
+  test('no horizontal overflow at 390px with the SAOC drawer open and its National Orchid Show link shown', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: VIEWPORT_HEIGHT });
@@ -43,7 +43,7 @@ test.describe('no horizontal overflow -- drawer open', () => {
     await page.getByRole('button', { name: 'Menu', exact: true }).click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByRole('link', { name: 'National Show', exact: true })).toBeVisible();
+    await expect(dialog.getByRole('link', { name: 'National Orchid Show', exact: true })).toBeVisible();
 
     const { scrollWidth, clientWidth } = await measureOverflow(page);
     expect(

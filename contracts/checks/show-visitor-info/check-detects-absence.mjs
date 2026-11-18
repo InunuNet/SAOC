@@ -12,7 +12,7 @@ import { runCheck, fetchPage, linksTo, textContains, visibleText, extractHrefs, 
 
 const UNLINKED_PAGE = `
 <html><body>
-  <h1>National Show</h1>
+  <h1>National Orchid Show</h1>
   <a href="/about">About</a>
   <a href="/contact">Contact</a>
   <script>var payload = {"planIntro":"Everything you need to get to the National Orchid Show"}</script>
@@ -53,7 +53,7 @@ await runCheck('check-detects-absence', async (r) => {
     textContains(UNLINKED_PAGE, 'plan-your-visit') === false,
     'textContains() ignores content that appears only inside a <style> block',
   );
-  r.check(textContains(UNLINKED_PAGE, 'National Show') === true, 'textContains() finds real visible text');
+  r.check(textContains(UNLINKED_PAGE, 'National Orchid Show') === true, 'textContains() finds real visible text');
   r.check(
     textContains('<p>a long\n   sentence</p>', 'a long sentence') === true,
     'textContains() matches across a line break in the markup',

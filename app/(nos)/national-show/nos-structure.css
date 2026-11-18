@@ -2940,6 +2940,27 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 }
 
 /* Hero facts (FACTS-1): one row under a hairline from 768, hairline-ruled dt/dd rows below. */
+/* Contact facts share the value row and label baseline across both desktop columns. */
+@media (min-width: 768px) {
+  .nos-theme .nos-contact-hero .hero-facts {
+    grid-template-rows: auto auto;
+    row-gap: 6px;
+  }
+  .nos-theme .nos-contact-hero .hero-facts > div {
+    display: grid;
+    grid-row: 1 / span 2;
+    grid-template-rows: subgrid;
+    gap: 0;
+  }
+  .nos-theme .nos-contact-hero .hero-facts dd {
+    grid-row: 1;
+    align-self: start;
+  }
+  .nos-theme .nos-contact-hero .hero-facts dt {
+    grid-row: 2;
+    align-self: baseline;
+  }
+}
 .nos-theme .nos-hero-copy > * {
   min-width: 0;
 }

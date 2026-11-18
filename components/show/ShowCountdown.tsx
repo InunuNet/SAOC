@@ -96,7 +96,7 @@ export function ShowCountdown({ label, countdownDate, edition, pendingLabel }: S
 
   const remain = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
-  const ariaLabel = `Countdown to the ${showLabelWithEdition(edition)}`;
+  const ariaLabel = `Countdown to the ${showLabelWithEdition(edition, 'National Orchid Show')}`;
 
   const caption = label ? (
     <p

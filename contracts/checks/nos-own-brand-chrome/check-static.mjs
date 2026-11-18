@@ -34,7 +34,7 @@ const modes = {
   dates() {
     need(existsSync(CHROME_DIR) && chromeFiles().length > 0, `${CHROME_DIR} does not exist or is empty`);
     for (const [f, s] of chromeSrc()) {
-      const t = s.replace(/National Orchid Show, Western Cape 2027(, National Show home)?/g, '');
+      const t = s.replace(/National Orchid Show, Western Cape 2027(, National Orchid Show home)?/g, '');
       const m = t.match(/\b\d{1,2}\s*[–-]\s*\d{1,2}\b|Septem|\b20(2|3)\d\b|19th|Stellenbosch|Hangar/);
       need(!m, `${f}: hard-coded show fact "${m?.[0]}" (dates, venue and edition come from Sanity / nav-config)`);
     }

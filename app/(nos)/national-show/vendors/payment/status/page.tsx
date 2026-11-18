@@ -18,7 +18,7 @@ import { nosOgImage } from '@/app/(nos)/national-show/og-image';
  */
 export const metadata: Metadata = buildPageMetadata({
   title: 'Vendor stand payment',
-  image: nosOgImage('Vendor stand payment — National Show'),
+  image: nosOgImage('Vendor stand payment — National Orchid Show'),
   description: 'Payment status for your 2027 National Orchid Show vendor stand.',
   path: '/national-show/vendors/payment/status',
   noIndex: true,

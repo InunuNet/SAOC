@@ -46,7 +46,7 @@ for (const name of [
   'hero-nos-symposium-phalaenopsis-stripes.jpg',
   'hero-saoc-judging-colmanara-hendrik.jpg',
   'hero-saoc-events-habenaria-hendrik.jpg',
-  'hero-saoc-sponsors-dendrobium-hendrik.jpg',
+  'hero-saoc-sponsors-cattleya-riograndensis.jpg',
   'hero-saoc-event-cattleya-white.jpg',
 ]) HERO_SOURCES.add(path.join(SOURCE_ROOT, 'heroes', name));
 // Hero sources also get an AVIF set (same widths, same -q88 name, .avif extension), served first by
@@ -91,7 +91,7 @@ function encodingsFor(isHero, isLarge) {
 async function* walk(dir) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
-    if (full === OUTPUT_ROOT || full === path.join(SOURCE_ROOT, 'hero-detail')) continue;
+    if (full === OUTPUT_ROOT) continue;
     if (entry.isDirectory()) yield* walk(full);
     else if (RASTER_EXTENSION.test(entry.name)) yield full;
   }

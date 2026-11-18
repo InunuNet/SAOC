@@ -35,7 +35,7 @@ const PINNED_SINGLETON_TYPES = [
 const SINGLETON_TITLES: Record<(typeof PINNED_SINGLETON_TYPES)[number], string> = {
   homePage: 'Home Page',
   aboutPage: 'About Page',
-  nationalShow: 'National Show',
+  nationalShow: 'National Orchid Show',
   contactPage: 'Contact Page',
   judgingPage: 'Judging Page',
   eventsPage: 'Events Page',

@@ -11,7 +11,7 @@ import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 // markup — the flow it leads into is invitation-gated, which Google excludes (M6/B8c).
 export const metadata: Metadata = buildPageMetadata({
   title: 'Vendor application',
-  image: nosOgImage('Vendor application — National Show'),
+  image: nosOgImage('Vendor application — National Orchid Show'),
   description:
     'Apply to exhibit as a vendor at the 2027 National Orchid Show. Once the committee ' +
     'reviews and approves your application, we will email you a link to complete your full ' +
