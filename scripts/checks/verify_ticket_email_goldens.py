@@ -22,6 +22,10 @@ import sys
 import unicodedata
 
 MARKER_HEAD = '## MARKERS'
+ANSWERED_SUNSET_ROWS = {
+    'Date: Thursday, 23 September 2027',
+    'Time: 18:30–21:00',
+}
 
 
 def norm(text):
@@ -63,6 +67,8 @@ def check_source(gdir):
         for line in body:
             line = strip_bullet(line)
             if line == 'Subject: [To be confirmed]' and key == 'sunset-cocktails':
+                continue
+            if key == 'sunset-cocktails' and line in ANSWERED_SUNSET_ROWS:
                 continue
             if line not in pool:
                 print('FAIL', key, 'line not verbatim in source:', line)

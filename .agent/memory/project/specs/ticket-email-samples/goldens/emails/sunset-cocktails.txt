@@ -7,6 +7,8 @@ Your booking details
 - Ticket type: Sunset Cocktails
 - Booking name: Thandi Nkosi
 - Number of people attending: 1
+- Date: Thursday, 23 September 2027
+- Time: 18:30–21:00
 - Payment status: Paid
 Your ticket and entry
 Please bring your ticket, either printed or displayed on your mobile device, so that the QR code can be scanned on arrival.
@@ -27,6 +29,3 @@ For further information, please visit nos.saoc.co.za or contact us at info@saoc.
 Kind regards,
 The National Orchid Show – Western Cape 2027 Organising Committee
 ## MARKERS
-Date: [To be confirmed]
-Time: [To be confirmed]
-Venue: [To be confirmed]
