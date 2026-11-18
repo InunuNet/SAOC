@@ -423,7 +423,7 @@ h3.font-serif {
    1500px. The section's sage shows through; the media wrapper paints no scrim. */
 @media (min-width: 768px) {
   [data-page-hero-media] img {
-    --page-hero-mask: linear-gradient(90deg,
+    -webkit-mask-image: linear-gradient(90deg,
       black 18vw,
       rgb(0 0 0 / 0.97) 22vw,
       rgb(0 0 0 / 0.90) 26vw,
@@ -437,8 +437,20 @@ h3.font-serif {
       rgb(0 0 0 / 0.02) 49.5vw,
       transparent 50vw
     );
-    -webkit-mask-image: var(--page-hero-mask);
-    mask-image: var(--page-hero-mask);
+    mask-image: linear-gradient(90deg,
+      black 18vw,
+      rgb(0 0 0 / 0.97) 22vw,
+      rgb(0 0 0 / 0.90) 26vw,
+      rgb(0 0 0 / 0.79) 30vw,
+      rgb(0 0 0 / 0.65) 34vw,
+      rgb(0 0 0 / 0.50) 38vw,
+      rgb(0 0 0 / 0.35) 42vw,
+      rgb(0 0 0 / 0.22) 45vw,
+      rgb(0 0 0 / 0.13) 47vw,
+      rgb(0 0 0 / 0.06) 48.5vw,
+      rgb(0 0 0 / 0.02) 49.5vw,
+      transparent 50vw
+    );
   }
 }
 .home-hero-img {
