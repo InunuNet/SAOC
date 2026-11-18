@@ -28,12 +28,15 @@ function slideLabel(index: number, total: number, subject: string): string {
 }
 
 const HERO_CTA_BASE =
-  'inline-flex min-h-12 w-full items-center justify-between gap-4 rounded-[2px] border px-[22px] py-[14px] text-[14px] font-medium tracking-[0.01em] transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 hover:-translate-y-px focus-visible:-translate-y-px active:translate-y-0';
+  'inline-flex w-full items-center justify-between rounded-[2px] border font-medium tracking-[0.01em] transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 hover:-translate-y-px focus-visible:-translate-y-px active:translate-y-0';
 const HERO_CTA_META =
-  'font-mono text-[11px] leading-[1.5] uppercase tracking-[0.18em] text-ivory/80 lg:whitespace-nowrap';
+  'font-mono leading-[1.5] uppercase tracking-[0.18em] text-ivory/80 lg:whitespace-nowrap';
 
-// At desktop widths, a full-bleed image can be height-driven even when the viewport is narrower.
-const HERO_BOX_HEIGHT = 620;
+// The photograph is full bleed behind the copy at every width. From 1024px the box is 40vw tall (the
+// 2048-wide reference frame is 820px), so a source wider than 2.5:1 is height-driven. Below 1024px the
+// hero is content-tall, about STACKED_BOX_HEIGHT px on a phone.
+const DESKTOP_HEIGHT_VW = 40;
+const STACKED_BOX_HEIGHT = 760;
 const CONTROL_FOCUS =
   'focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]';
 
@@ -91,16 +94,12 @@ export function Hero({ show, societyCount }: HeroProps) {
       aria-labelledby={HEADING_ID}
       data-home-hero
       data-paused={userPaused ? '' : undefined}
-      className="home-hero relative isolate flex flex-col overflow-hidden bg-primary-800 on-dark lg:flex-row lg:items-center"
+      className="home-hero relative isolate overflow-hidden bg-primary-800 on-dark"
       style={{ '--hero-interval': `${CAROUSEL_INTERVAL_MS}ms` } as CSSProperties}
     >
-      {/* Crossfade image stack: opacity, plus a slow zoom on the slide that is showing.
-          Up to 1023px the hero stacks: this is a 2/1 band with nothing over it and the copy sits under
-          it on solid sage; from 1024px it is the full-bleed background of the copy. */}
-      <div
-        data-home-hero-media
-        className="relative aspect-[2/1] w-full overflow-hidden lg:absolute lg:inset-0 lg:aspect-auto"
-      >
+      {/* Crossfade image stack: opacity, plus a slow zoom on the slide that is showing. The photograph is
+          the full-bleed background of the copy at every width. */}
+      <div data-home-hero-media className="absolute inset-0 overflow-hidden">
         {slides.map((slide, i) => {
           const isActive = activeIdx === i;
           const zooming = !reduceMotion && (isActive || leavingIdx === i);
@@ -128,7 +127,7 @@ export function Hero({ show, societyCount }: HeroProps) {
                   src={slide.src}
                   className="home-hero-img"
                   priority={i === 0}
-                  sizes={`(max-width: 1023px) max(100vw, calc(50vw * ${aspect})), max(100vw, ${Math.ceil(HERO_BOX_HEIGHT * aspect)}px)`}
+                  sizes={`(max-width: 1023px) max(100vw, ${Math.ceil(STACKED_BOX_HEIGHT * aspect)}px), max(100vw, calc(${DESKTOP_HEIGHT_VW}vw * ${aspect}))`}
                 />
               </div>
             </div>
@@ -136,28 +135,33 @@ export function Hero({ show, societyCount }: HeroProps) {
         })}
       </div>
 
-      {/* One localised scrim (NOS Design ruling A4): it covers the copy column only; the rest is bare photograph. */}
-      <div aria-hidden="true" data-hero-scrim="copy" className="absolute inset-0 max-lg:hidden" />
+      {/* One localised scrim (NOS Design ruling A4): from 1024px it covers the copy column only and the rest
+          is bare photograph; below that the copy fills the width, so it is an even wash (globals.css). */}
+      <div aria-hidden="true" data-hero-scrim="copy" className="absolute inset-0" />
 
       {/* The wider copy column keeps the headline compact and accommodates three CTAs. */}
-      <div className="saoc-container pointer-events-none relative z-10 w-full py-10 lg:py-14">
-        <div className="pointer-events-auto flex max-w-[1100px] flex-col items-start text-left">
-          <span className="mb-6 rounded-full border border-ivory/30 bg-white/10 px-4 py-1.5 font-mono text-[11px] uppercase tracking-[0.22em] text-ivory">
+      <div data-hero-copy
+        className="saoc-container pointer-events-none relative z-10 w-full">
+        <div className="pointer-events-auto flex flex-col items-start text-left">
+          <span
+            data-hero-eyebrow
+            className="rounded-full border border-ivory/30 bg-white/10 font-mono uppercase tracking-[0.22em] text-ivory"
+          >
             SINCE 1968 · BLOEMFONTEIN
           </span>
 
           <h1
             id={HEADING_ID}
-            className="h1 font-serif font-light text-[clamp(42px,5vw,64px)] leading-[1.02] tracking-[-0.015em] text-ivory"
+            className="h1 font-serif font-light leading-[1.02] tracking-[-0.015em] text-ivory"
           >
             The national home of <em>orchid culture</em> in South Africa.
           </h1>
 
           <div
             data-hero-ctas
-            className="mt-8 grid w-full max-w-[980px] grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-4"
+            className="grid w-full grid-cols-1"
           >
-            <div className="flex min-w-0 flex-col gap-3">
+            <div className="flex min-w-0 flex-col">
               <Link
                 href="/societies"
                 data-hero-cta="primary"
@@ -167,13 +171,13 @@ export function Hero({ show, societyCount }: HeroProps) {
                 <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" className="shrink-0" />
               </Link>
               {societyCount != null ? (
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col">
                   <span aria-hidden="true" className="h-[2px] w-6 bg-accent" />
                   <p className={HERO_CTA_META}>{societyCount} societies across South Africa</p>
                 </div>
               ) : null}
             </div>
-            <div className="flex min-w-0 flex-col gap-3">
+            <div className="flex min-w-0 flex-col">
               <a
                 href={nosUrl('/')}
                 data-hero-cta="secondary"
@@ -183,34 +187,33 @@ export function Hero({ show, societyCount }: HeroProps) {
                 <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" className="shrink-0" />
               </a>
               {showDates ? (
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col">
                   <span aria-hidden="true" className="h-[2px] w-6 bg-accent" />
                   <p data-home-show-date className={HERO_CTA_META}>{showDates}</p>
                 </div>
               ) : null}
             </div>
-            <div className="flex min-w-0 flex-col gap-3">
+            <div className="flex min-w-0 flex-col">
               <a href={nosUrl('/tickets')} data-hero-cta="tickets" className={`${HERO_CTA_BASE} border-ivory text-ivory hover:bg-ivory/10`}>
                 Tickets
                 <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" className="shrink-0" />
               </a>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col">
                 <span aria-hidden="true" className="h-[2px] w-6 bg-accent" />
                 <p className={HERO_CTA_META}>National Orchid Show</p>
               </div>
             </div>
           </div>
 
-          {/* Pause/Play (WCAG 2.2.2) precedes the indicators in DOM order, after the CTAs. At wider
-              widths the controls offset by half the added hero height to keep their distance from the bottom.
-              Under reduced motion there is no autoplay, so no controls. */}
+          {/* Pause/Play (WCAG 2.2.2) precedes the indicators in DOM order, after the CTAs. Under reduced
+              motion there is no autoplay, so no controls. */}
           {reduceMotion ? null : (
-            <div data-hero-controls className="mt-10 flex items-center gap-1 lg:translate-y-[calc((clamp(620px,41.667vw,820px)-620px)/2)]">
+            <div data-hero-controls className="flex items-center gap-1">
               <button
                 type="button"
                 aria-label={userPaused ? 'Play' : 'Pause'}
                 onClick={() => setUserPaused((paused) => !paused)}
-                className={`inline-flex h-11 w-11 items-center justify-center rounded-full border border-ivory/40 text-ivory transition-colors duration-150 hover:bg-ivory/10 ${CONTROL_FOCUS}`}
+                className={`inline-flex items-center justify-center rounded-full border border-ivory/40 text-ivory transition-colors duration-150 hover:bg-ivory/10 ${CONTROL_FOCUS}`}
               >
                 {userPaused ? (
                   <Play size={16} strokeWidth={1.5} aria-hidden="true" />
@@ -227,13 +230,13 @@ export function Hero({ show, societyCount }: HeroProps) {
                     aria-label={`Show slide ${i + 1}${slide.alt ? `: ${slide.alt}` : ''}`}
                     aria-current={activeIdx === i ? 'true' : undefined}
                     onClick={() => goTo(i)}
-                    className={`flex h-11 w-11 items-center justify-center ${CONTROL_FOCUS}`}
+                    className={`flex items-center justify-center ${CONTROL_FOCUS}`}
                   >
                     {/* The hit area is the 44px button; the painted track is 28 by 2. The active one fills
                         brass over the interval, and its end advances the carousel, so Pause holds both. */}
                     <span
                       aria-hidden="true"
-                      className="relative block h-[2px] w-7 overflow-hidden bg-ivory/40"
+                      className="relative block overflow-hidden bg-ivory/40"
                     >
                       {activeIdx === i ? (
                         <span
