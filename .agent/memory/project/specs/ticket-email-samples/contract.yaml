@@ -67,7 +67,7 @@ assertions:
   phase: 4
   checks:
     - id: A1
-      description: Frozen source text matches its sha256 and every golden email line is verbatim from it or a declared marker
+      description: Frozen source text matches its sha256 and every golden email line is verbatim from it, an answered Sunset Cocktails schedule row, or a declared marker
       command: python3 scripts/checks/verify_ticket_email_goldens.py source .agent/memory/project/specs/ticket-email-samples/goldens
     - id: A2
       description: Switch exists and defaults to off
