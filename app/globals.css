@@ -405,18 +405,12 @@ h3.font-serif {
   padding-inline: var(--container-pad);
 }
 
-/* Home hero: from 1024px the right-aligned photo panel fades into the sage behind the copy.
-   The existing copy scrim stays above it. Up to 1023px the hero keeps its 2/1 photograph band
-   and solid sage copy area. Slide drift, progress, pause and reduced motion stay on the slide. */
+/* Home hero: from 1024px the photograph fills the hero and an eased scrim sits behind the copy.
+   Up to 1023px the hero keeps its 2/1 photograph band and solid sage copy area.
+   Slide drift, progress, pause and reduced motion stay on the slide. */
 @media (min-width: 1024px) {
   .home-hero {
     min-height: 620px;
-  }
-  /* Mask each crossfade slide after its drifting image is painted. The media box only clips
-     the stack; masking that box can leave composited slide layers with a square edge. */
-  .home-hero [data-hero-slide] {
-    -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgb(0 0 0 / 0.02) 3%, rgb(0 0 0 / 0.1) 7%, rgb(0 0 0 / 0.28) 11%, rgb(0 0 0 / 0.55) 17%, rgb(0 0 0 / 0.78) 23%, rgb(0 0 0 / 0.94) 29%, black 35%);
-    mask-image: linear-gradient(90deg, transparent 0%, rgb(0 0 0 / 0.02) 3%, rgb(0 0 0 / 0.1) 7%, rgb(0 0 0 / 0.28) 11%, rgb(0 0 0 / 0.55) 17%, rgb(0 0 0 / 0.78) 23%, rgb(0 0 0 / 0.94) 29%, black 35%);
   }
 }
 .home-hero-img {
@@ -429,27 +423,27 @@ h3.font-serif {
       90deg,
       rgb(34 40 31 / 0.88) 0,
       rgb(34 40 31 / 0.88)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px),
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px),
       rgb(34 40 31 / 0.855)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 2.2%),
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 2.2%),
       rgb(34 40 31 / 0.788)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 4.4%),
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 4.4%),
       rgb(34 40 31 / 0.69)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 6.6%),
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 6.6%),
       rgb(34 40 31 / 0.57)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 8.8%),
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 8.8%),
       rgb(34 40 31 / 0.44)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 11%),
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 11%),
       rgb(34 40 31 / 0.31)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 13.2%),
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 13.2%),
       rgb(34 40 31 / 0.19)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 15.4%),
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 15.4%),
       rgb(34 40 31 / 0.092)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 17.6%),
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 17.6%),
       rgb(34 40 31 / 0.025)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 19.8%),
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 19.8%),
       rgb(34 40 31 / 0)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 22%)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 22%)
     );
   }
 }
