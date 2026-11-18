@@ -62,7 +62,7 @@ export function NewsletterSignup({
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [emailInvalid, setEmailInvalid] = useState(false);
-  const [topics, setTopics] = useState<NewsletterTopic[]>([]);
+  const [topics, setTopics] = useState<NewsletterTopic[]>([site]);
   const [topicsInvalid, setTopicsInvalid] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const firstTopicRef = useRef<HTMLInputElement>(null);
