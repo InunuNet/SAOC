@@ -1,5 +1,5 @@
 // F1 (conference-workshop-tickets, M1) — A4: saoc-symposium and wosa-conference carry the
-// exact new shape (price 2000, capacity 80, earlyBirdCutoff null, no tranche field of any
+// exact new shape (price 1500, capacity 80, earlyBirdCutoff null, no tranche field of any
 // kind, sourceCitation set) per goldens/f1-provisional-figures.golden.json
 // "updatedInPlace". Checks the REAL CONFERENCE_PRODUCTS array, not source text — a product
 // object's own keys, not a grep for a string that could appear only in a comment.
@@ -56,8 +56,8 @@ for (const [slug, expected] of Object.entries(EXPECTED)) {
   if (product.category !== 'conference') {
     failures.push(`'${slug}': category is ${JSON.stringify(product.category)}, expected 'conference'`);
   }
-  if (product.price !== 2000) {
-    failures.push(`'${slug}': price is ${JSON.stringify(product.price)}, expected 2000`);
+  if (product.price !== 1500) {
+    failures.push(`'${slug}': price is ${JSON.stringify(product.price)}, expected 1500`);
   }
   if (product.capacity !== 80) {
     failures.push(`'${slug}': capacity is ${JSON.stringify(product.capacity)}, expected 80`);
@@ -113,6 +113,6 @@ if (failures.length > 0) {
   process.exit(1);
 }
 console.log(
-  'PASS: saoc-symposium and wosa-conference each carry the exact new shape — R2000, 80 ' +
+  'PASS: saoc-symposium and wosa-conference each carry the exact new shape — R1500, 80 ' +
     'places, no early-bird mechanism, real sourceCitation.',
 );

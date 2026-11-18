@@ -6,7 +6,7 @@ goal: >
   to drop early-bird entirely for Symposium/WOSA: "No early bird for Symposiums and
   conferences" directly supersedes this feature's earlier 10-ticket scarcity-tranche
   design. Update lib/provisional-figures.ts in place: SAOC Symposium and WOSA Conference
-  each become ONE flat-R2000, 80-capacity product with NO early-bird field, mechanism, or
+  each become ONE flat-R1500, 80-capacity product with NO early-bird field, mechanism, or
   display (document identity/slug UNCHANGED so any already-issued order stays valid).
   Retire the old differential early-bird-price SKUs and the SAOC/WOSA joint bundle
   (active:false, never deleted) via RETIRED_CONFERENCE_SLUGS. Add real, Brad-sourced
@@ -44,7 +44,7 @@ assertions:
       command: node contracts/checks/conference-workshop-tickets-f1/check-retired-conference-slugs.mjs
 
     - id: A4
-      description: saoc-symposium and wosa-conference carry the exact new shape (price 2000, capacity 80, earlyBirdCutoff null, no tranche field, sourceCitation set) per the f1 golden
+      description: saoc-symposium and wosa-conference carry the exact new shape (price 1500, capacity 80, earlyBirdCutoff null, no tranche field, sourceCitation set) per the f1 golden
       command: node contracts/checks/conference-workshop-tickets-f1/check-symposium-wosa-figures.mjs
 
     - id: A5

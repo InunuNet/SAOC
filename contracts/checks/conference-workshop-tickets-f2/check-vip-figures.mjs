@@ -1,5 +1,5 @@
 // F2 (conference-workshop-tickets, M1) — A1: vip's shape is unchanged by this feature
-// (price 300, regularPrice null, capacity 200, no early-bird mechanism) and its
+// (price 350, regularPrice null, capacity 200, no early-bird mechanism) and its
 // sourceCitation names the VIP override explicitly (team-lead's second-pass default,
 // still a needs-Brad item, but shipped as the working figure rather than blocked —
 // see goldens/f2-admission-evening-figures.golden.json).
@@ -14,8 +14,8 @@ if (!vip) {
   finish('check-vip-figures.mjs', ["no 'vip' product in ADMISSION_PRODUCTS"]);
 }
 
-if (vip.price !== 300) {
-  failures.push(`price is ${JSON.stringify(vip.price)}, expected 300`);
+if (vip.price !== 350) {
+  failures.push(`price is ${JSON.stringify(vip.price)}, expected 350`);
 }
 if (vip.regularPrice !== undefined && vip.regularPrice !== null) {
   failures.push(`regularPrice is ${JSON.stringify(vip.regularPrice)}, expected null/unset`);
@@ -34,4 +34,4 @@ if (typeof vip.sourceCitation !== 'string' || vip.sourceCitation.length === 0) {
   );
 }
 
-finish('check-vip-figures.mjs', failures, "vip is price 300, capacity 200, no early-bird, override sourceCitation present.");
+finish('check-vip-figures.mjs', failures, "vip is price 350, capacity 200, no early-bird, override sourceCitation present.");
