@@ -201,11 +201,11 @@ export function Hero({ show, societyCount }: HeroProps) {
             </div>
           </div>
 
-          {/* Pause/Play (WCAG 2.2.2) precedes the indicators in DOM order, after the CTAs. They sit at the foot of the
-              copy column, 56px below the CTAs, so the bloom side of the photograph carries no UI. Under reduced
-              motion there is no autoplay, so no controls. */}
+          {/* Pause/Play (WCAG 2.2.2) precedes the indicators in DOM order, after the CTAs. At wider
+              widths the controls offset by half the added hero height to keep their distance from the bottom.
+              Under reduced motion there is no autoplay, so no controls. */}
           {reduceMotion ? null : (
-            <div data-hero-controls className="mt-10 flex items-center gap-1">
+            <div data-hero-controls className="mt-10 flex items-center gap-1 lg:translate-y-[calc((clamp(620px,41.667vw,820px)-620px)/2)]">
               <button
                 type="button"
                 aria-label={userPaused ? 'Play' : 'Pause'}
