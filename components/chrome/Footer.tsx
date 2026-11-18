@@ -32,24 +32,14 @@ import {
 export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
   return (
     // content-visibility:auto: the footer sits below every fold, so the browser skips its style and
-    // layout until it nears the viewport, and the Lora wordmark face in its lockup (the one face
-    // only the footer uses) is not fetched on the critical path (F1e). 640px is the placeholder
+    // layout until it nears the viewport, and the Lora wordmark face in its lockup is not fetched
+    // on the critical path (F1e). 640px is the placeholder
     // height until the first render, which the browser then remembers (`auto`).
     <footer className="bg-primary-800 text-ivory [content-visibility:auto] [contain-intrinsic-size:auto_640px]">
       <div className={FOOTER_LAYOUT.gridSaoc}>
-        {/* Col 1 — lockup + registration line. Live HTML/CSS lockup (SaocLockup,
-            orientation="vertical" tone="dark"): only the emblem (E4 Lapis
-            monotone) is an image, the wordmark/rule/tagline are real text
-            sized off the artifact's own metrics(). No background box — it
-            sits directly on this footer's own dark-sage background, per
-            Brad's instruction (the earlier raster export baked a navy box
-            behind it, which was wrong). See SaocLockup.tsx's own header
-            comment for the full metrics() derivation. */}
+        {/* Col 1 — full-colour emblem with the live wordmark and tagline, then registration. */}
         <div className={`${FOOTER_LAYOUT.brandColumn} self-stretch text-center max-md:justify-self-center`}>
-          {/* The lockup is sized by its container, so the auto track needs a definite width to hug.
-              -mt-[30px] cancels the emblem PNG's transparent top (116px of 618 at the 160px box), so the
-              artwork's top sits on the column headings' top line (NOS Design). */}
-          <div className={`${FOOTER_LAYOUT.brandMark} -mt-[30px] w-[280px] print:hidden`}>
+          <div className={`${FOOTER_LAYOUT.brandMark} w-[280px] print:hidden`}>
             <SaocLockup orientation="vertical" tone="dark" />
           </div>
           <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-ivory/65">

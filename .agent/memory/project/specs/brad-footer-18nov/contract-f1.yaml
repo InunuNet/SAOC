@@ -1,0 +1,23 @@
+schema: athanor.contract/v1
+slug: brad-footer-18nov
+goal: Keep SAOC and National Orchid Show footer topics, SAOC branding, and the event label consistent across pages.
+created_at: '2026-11-18'
+autonomy: high
+features:
+  - id: F1
+    name: Consistent footer newsletter topics and SAOC branding
+    status: pending
+goldens:
+  - .agent/memory/project/specs/brad-footer-18nov/goldens/footer.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Newsletter initial topic follows its site.
+      command: grep -Fq 'useState<NewsletterTopic[]>([site])' components/newsletter/NewsletterSignup.tsx
+    - id: A2
+      description: SAOC footer uses the full-colour emblem.
+      command: grep -Fq "tone === 'dark' ? OFFICIAL_COLOUR_EMBLEM : emblemSrc" components/chrome/SaocLockup.tsx
+    - id: A3
+      description: Footer show link comes from shared navigation.
+      command: grep -Fq "NAV.filter((item) => item.id === 'national-show')" components/chrome/footer-data.ts
