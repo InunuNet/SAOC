@@ -419,24 +419,26 @@ h3.font-serif {
     mask-image: linear-gradient(90deg, transparent 0%, rgb(0 0 0 / 0.02) 3%, rgb(0 0 0 / 0.1) 7%, rgb(0 0 0 / 0.28) 11%, rgb(0 0 0 / 0.55) 17%, rgb(0 0 0 / 0.78) 23%, rgb(0 0 0 / 0.94) 29%, black 35%);
   }
 }
-/* Interior photo fades across 30–50% of the hero, capped at the photo panel's 1500px edge. */
+/* Interior photo fades across 28–50% of the hero. */
 @media (min-width: 768px) {
   [data-page-hero-media] {
     --page-hero-mask: linear-gradient(
       90deg,
-      black min(30vw, 900px),
-      rgb(0 0 0 / 0.993) min(31.667vw, 950px),
-      rgb(0 0 0 / 0.972) min(33.333vw, 1000px),
-      rgb(0 0 0 / 0.919) min(35vw, 1050px),
-      rgb(0 0 0 / 0.825) min(36.667vw, 1100px),
-      rgb(0 0 0 / 0.686) min(38.333vw, 1150px),
-      rgb(0 0 0 / 0.5) min(40vw, 1200px),
-      rgb(0 0 0 / 0.314) min(41.667vw, 1250px),
-      rgb(0 0 0 / 0.175) min(43.333vw, 1300px),
-      rgb(0 0 0 / 0.081) min(45vw, 1350px),
-      rgb(0 0 0 / 0.028) min(46.667vw, 1400px),
-      rgb(0 0 0 / 0.007) min(48.333vw, 1450px),
-      transparent min(50vw, 1500px)
+      black 28vw,
+      rgb(0 0 0 / 0.91) 30vw,
+      rgb(0 0 0 / 0.82) 32vw,
+      rgb(0 0 0 / 0.73) 34vw,
+      rgb(0 0 0 / 0.64) 36vw,
+      rgb(0 0 0 / 0.555) 38vw,
+      rgb(0 0 0 / 0.47) 40vw,
+      rgb(0 0 0 / 0.39) 42vw,
+      rgb(0 0 0 / 0.31) 44vw,
+      rgb(0 0 0 / 0.24) 45.5vw,
+      rgb(0 0 0 / 0.17) 47vw,
+      rgb(0 0 0 / 0.115) 48vw,
+      rgb(0 0 0 / 0.06) 49vw,
+      rgb(0 0 0 / 0.025) 49.5vw,
+      transparent 50vw
     );
     -webkit-mask-image: var(--page-hero-mask);
     mask-image: var(--page-hero-mask);

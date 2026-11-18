@@ -78,7 +78,7 @@ export function PageHero({
               style={{ objectPosition: imagePosition }}
             />
           </div>
-          <div data-page-hero-dither aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-[min(24vw,720px)] hidden w-[min(45vw,1350px)] mix-blend-soft-light md:block" />
+          <div data-page-hero-dither aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-[28vw] hidden w-[22vw] mix-blend-soft-light md:block" />
         </>
       ) : null}
       <div
