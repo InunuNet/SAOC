@@ -20,4 +20,5 @@ assertions:
       command: grep -Fq 'lg:w-[min(100%,1500px)]' components/ui/PageHero.tsx
     - id: A3
       description: NOS inner photo panel is capped at 1500px.
-      command: grep -Fq 'width: min(100%, 1500px)' 'app/(nos)/national-show/nos-structure.css'
+      command: |-
+        grep -Fq 'width: min(100%, 1500px)' 'app/(nos)/national-show/nos-structure.css'

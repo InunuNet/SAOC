@@ -17,7 +17,8 @@ assertions:
       command: grep -Fq 'useState<NewsletterTopic[]>([site])' components/newsletter/NewsletterSignup.tsx
     - id: A2
       description: SAOC footer uses the full-colour emblem.
-      command: grep -Fq "tone === 'dark' ? OFFICIAL_COLOUR_EMBLEM : emblemSrc" components/chrome/SaocLockup.tsx
+      command: |-
+        grep -Fq "tone === 'dark' ? OFFICIAL_COLOUR_EMBLEM : emblemSrc" components/chrome/SaocLockup.tsx
     - id: A3
       description: Footer show link comes from shared navigation.
       command: grep -Fq "NAV.filter((item) => item.id === 'national-show')" components/chrome/footer-data.ts

@@ -17,7 +17,9 @@ assertions:
       command: test -f 'app/(marketing)/photo-credits/page.tsx' && test -f 'app/(nos)/national-show/photo-credits/page.tsx'
     - id: A2
       description: Both footer lists link to photo credits
-      command: grep -q "href: '/photo-credits'" components/chrome/footer-data.ts && grep -q "href: '/national-show/photo-credits'" components/nos-chrome/nos-footer-data.ts
+      command: |-
+        grep -q "href: '/photo-credits'" components/chrome/footer-data.ts && grep -q "href: '/national-show/photo-credits'" components/nos-chrome/nos-footer-data.ts
     - id: A3
       description: Both sitemap helpers list photo credits
-      command: grep -q "path: '/photo-credits'" lib/saoc-sitemap-routes.ts && grep -q "path: '/photo-credits'" lib/nos-sitemap-routes.ts
+      command: |-
+        grep -q "path: '/photo-credits'" lib/saoc-sitemap-routes.ts && grep -q "path: '/photo-credits'" lib/nos-sitemap-routes.ts
