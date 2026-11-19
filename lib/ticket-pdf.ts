@@ -15,6 +15,17 @@ import {
 import { create as createQr } from 'qrcode';
 
 import {
+  loadShippedDesign,
+  type PdfDesign,
+  type ShippedDesign,
+} from '@/lib/ticket-design';
+import {
+  DENSITY_MULTIPLIER,
+  TOKENS,
+  TYPE_STEP_PDF_SCALE,
+  type TokenName,
+} from '@/lib/ticket-design/tokens';
+import {
   TICKETING_TEST_BANNER_HEADLINE,
   TICKETING_TEST_BANNER_SUBLINE,
   isTicketingTestMode,
@@ -93,14 +104,13 @@ const hex = (value: string): Color =>
     parseInt(value.slice(3, 5), 16) / 255,
     parseInt(value.slice(5, 7), 16) / 255
   );
-const ROYAL = hex('#211a57');
-const GOLD_100 = hex('#fbfaf0');
-const GOLD_200 = hex('#f3f2d6');
-const INK = hex('#3a3654');
-const MUTED = hex('#6a6780');
-const OLIVE = hex('#a7a841');
-const RULE = hex('#e3e1c9');
-const WHITE = hex('#ffffff');
+const token = (name: TokenName): Color => hex(TOKENS[name]);
+const GOLD_100 = token('gold-100');
+const GOLD_200 = token('gold-200');
+const INK = token('ink');
+const MUTED = token('muted');
+const RULE = token('rule');
+const WHITE = token('white');
 const BLACK = hex('#000000');
 const BAND_TEXT = GOLD_200; // text on the royal header band
 
@@ -158,6 +168,7 @@ const PILL_HEIGHT = 4.4;
 const PILL_LINE_PITCH = 3;
 const ROW_PITCH = 7;
 const PILL_AFTER_GAP = 3.2; // clear space under a pill before the next label
+const VISIT_TEXT_SIZE = 9; // body size of the visit block; the typeStep scale applies to it
 const TIME_ROW_PITCH = 11.5; // opening times: date line, then its hours on the next line
 const TIME_VALUE_DROP = 4.6;
 const PILL_PAD_X = 2.4;
@@ -203,6 +214,12 @@ interface Logos {
 }
 
 interface Ctx {
+  /** The PDF half of the ticket design in force for this page (ticket-design-studio). */
+  design: PdfDesign;
+  accent: Color;
+  /** Text size multiplier (typeStep) and spacing multiplier (density). */
+  scale: number;
+  space: number;
   testMode: boolean;
   page: PDFPage;
   fonts: Fonts;
@@ -385,7 +402,7 @@ function drawPill(ctx: Ctx, x: number, top: number, maxWidth: number): number {
   ctx.page.drawSvgPath(roundedPath(x, top, textWidth + PILL_PAD_X * 2, height, Array(4).fill(radius)), {
     x: 0,
     y: PAGE_HEIGHT,
-    borderColor: ROYAL,
+    borderColor: ctx.accent,
     borderWidth: 0.5,
   });
   lines.forEach((line, i) =>
@@ -394,7 +411,7 @@ function drawPill(ctx: Ctx, x: number, top: number, maxWidth: number): number {
       y: top + PILL_HEIGHT / 2 + 0.85 + i * PILL_LINE_PITCH,
       font: ctx.fonts.bold,
       size: MIN_SMALL_CAPS_SIZE,
-      color: ROYAL,
+      color: ctx.accent,
     })
   );
   return height;
@@ -414,7 +431,7 @@ function caps(ctx: Ctx, text: string, x: number, y: number, color: Color, size =
 // ---- header ----
 
 function drawHeader(ctx: Ctx, index: number, total: number): void {
-  fillRect(ctx, 0, 0, A4_WIDTH_MM, HEADER_HEIGHT, ROYAL);
+  fillRect(ctx, 0, 0, A4_WIDTH_MM, HEADER_HEIGHT, token(ctx.design.headerGround));
   const { width, height } = ctx.logos.horizontal;
   const logoHeightMm = (HEADER_LOGO_WIDTH * height) / width;
   ctx.page.drawImage(ctx.logos.horizontal, {
@@ -451,7 +468,7 @@ function drawSchedule(ctx: Ctx, schedule: TicketPdfSchedule | null | undefined, 
     y: STUB_NUMERAL_Y,
     font: fonts.display,
     size: STUB_NUMERAL_SIZE,
-    color: ROYAL,
+    color: ctx.accent,
     align: 'right',
   });
   drawText(ctx, STUB_LABEL, {
@@ -459,7 +476,7 @@ function drawSchedule(ctx: Ctx, schedule: TicketPdfSchedule | null | undefined, 
     y: STUB_LABEL_Y,
     font: fonts.bold,
     size: STUB_LABEL_SIZE,
-    color: ROYAL,
+    color: ctx.accent,
     align: 'right',
   });
   if (!schedule?.dateText) {
@@ -476,7 +493,7 @@ function drawSchedule(ctx: Ctx, schedule: TicketPdfSchedule | null | undefined, 
       y: STUB_DATE_Y + i * STUB_DATE_PITCH,
       font: fonts.bold,
       size: STUB_DATE_SIZE,
-      color: ROYAL,
+      color: ctx.accent,
     })
   );
   const timeY = STUB_DATE_Y + (lines.length - 1) * STUB_DATE_PITCH + STUB_TIME_GAP;
@@ -542,7 +559,7 @@ function drawAttendeeName(ctx: Ctx, name: string, x: number, room: number): void
     lines[ATTENDEE_NAME_MAX_LINES - 1] = `${last}…`;
   }
   lines.forEach((line, i) =>
-    drawText(ctx, line, { x, y: ATTENDEE_NAME_Y + i * ATTENDEE_NAME_PITCH, font, size, color: ROYAL })
+    drawText(ctx, line, { x, y: ATTENDEE_NAME_Y + i * ATTENDEE_NAME_PITCH, font, size, color: ctx.accent })
   );
   if (cut) {
     // Keep the full name in the text layer: invisible wrapped copy below the visible lines.
@@ -553,7 +570,7 @@ function drawAttendeeName(ctx: Ctx, name: string, x: number, room: number): void
         y: PAGE_HEIGHT - mm(HIDDEN_NAME_Y + i * HIDDEN_LINE_PITCH),
         font,
         size: HIDDEN_TEXT_SIZE,
-        color: ROYAL,
+        color: ctx.accent,
         opacity: 0,
       })
     );
@@ -582,10 +599,10 @@ function drawStub(ctx: Ctx, position: TicketPdfPosition): void {
     y: 63.5,
     font: fonts.display,
     size: 29,
-    color: ROYAL,
+    color: ctx.accent,
     maxWidth: room,
   });
-  fillRect(ctx, x, 71.6, room, 0.5, OLIVE);
+  fillRect(ctx, x, 71.6, room, 0.5, token(ctx.design.ruleColour));
   drawSchedule(ctx, position.schedule, x);
   caps(ctx, 'Attendee', x, 110.4, MUTED);
   drawAttendeeName(ctx, position.attendeeName, x, room);
@@ -601,9 +618,10 @@ export const TICKET_PDF_QR_BOX_MM = {
 
 function drawQrTile(ctx: Ctx, bookingRef: string): void {
   const modules = createQr(bookingRef).modules;
-  const moduleMm = QR_MODULE_AREA_MM / modules.size;
+  const areaMm = ctx.design.qrMm;
+  const moduleMm = areaMm / modules.size;
   const centreX = (PERFORATION_X + RIGHT_X) / 2;
-  const originX = centreX - QR_MODULE_AREA_MM / 2;
+  const originX = centreX - areaMm / 2;
 
   const runs: string[] = [];
   for (let row = 0; row < modules.size; row++) {
@@ -624,7 +642,7 @@ function drawQrTile(ctx: Ctx, bookingRef: string): void {
     y: 125.9,
     font: ctx.fonts.bold,
     size: 7,
-    color: ROYAL,
+    color: ctx.accent,
     tracking: BAND_TRACKING,
     align: 'center',
   });
@@ -633,7 +651,7 @@ function drawQrTile(ctx: Ctx, bookingRef: string): void {
     y: 131.7,
     font: ctx.fonts.bold,
     size: 10.5,
-    color: ROYAL,
+    color: ctx.accent,
     tracking: REF_TRACKING,
     align: 'center',
     maxWidth: RIGHT_X - PERFORATION_X - 8,
@@ -646,7 +664,7 @@ function drawCard(ctx: Ctx, position: TicketPdfPosition): void {
     ctx,
     [MARGIN_X, CARD_TOP, PERFORATION_X - MARGIN_X, height],
     [CARD_RADIUS, 0, 0, CARD_RADIUS],
-    GOLD_200,
+    token(ctx.design.stubGround),
     RULE
   );
   fillRounded(
@@ -656,7 +674,7 @@ function drawCard(ctx: Ctx, position: TicketPdfPosition): void {
     WHITE,
     RULE
   );
-  dashedLine(ctx, [PERFORATION_X, CARD_TOP + 1], [PERFORATION_X, CARD_BOTTOM - 1], ROYAL, [1, 1]);
+  dashedLine(ctx, [PERFORATION_X, CARD_TOP + 1], [PERFORATION_X, CARD_BOTTOM - 1], ctx.accent, [1, 1]);
   drawStub(ctx, position);
   drawQrTile(ctx, position.bookingRef);
 }
@@ -664,21 +682,25 @@ function drawCard(ctx: Ctx, position: TicketPdfPosition): void {
 // ---- visit information ----
 
 function heading(ctx: Ctx, text: string, x: number, y: number): void {
-  drawText(ctx, text, { x, y, font: ctx.fonts.display, size: 13, color: ROYAL });
+  drawText(ctx, text, { x, y, font: ctx.fonts.display, size: 13, color: ctx.accent });
 }
 
 function rowOrPill(ctx: Ctx, value: string | null, x: number, y: number, maxWidth: number): number {
   if (!value) {
     return y - 3.2 + drawPill(ctx, x, y - 3.2, maxWidth) + PILL_AFTER_GAP;
   }
-  return drawWrapped(ctx, value, { x, y, maxWidth, maxLines: 3, lineHeight: 4.6 }, 9) + 5;
+  const lineHeight = 4.6 * ctx.space;
+  return (
+    drawWrapped(ctx, value, { x, y, maxWidth, maxLines: 3, lineHeight }, VISIT_TEXT_SIZE * ctx.scale) +
+    5 * ctx.space
+  );
 }
 
 function drawVenueColumn(ctx: Ctx, visit: TicketPdfVisit): void {
   const x = MARGIN_X;
   heading(ctx, 'The venue', x, VISIT_HEADING_Y);
   if (visit.venueName) {
-    drawText(ctx, visit.venueName, { x, y: 163 + VISIT_OFFSET, font: ctx.fonts.bold, size: 9, color: ROYAL, maxWidth: 62 });
+    drawText(ctx, visit.venueName, { x, y: 163 + VISIT_OFFSET, font: ctx.fonts.bold, size: VISIT_TEXT_SIZE * ctx.scale, color: ctx.accent, maxWidth: 62 });
   } else {
     drawPill(ctx, x, 159.8 + VISIT_OFFSET, 62);
   }
@@ -697,13 +719,13 @@ function drawTimesColumn(ctx: Ctx, position: TicketPdfPosition, visit: TicketPdf
   }
   let y = 164 + VISIT_OFFSET;
   for (const time of times.slice(0, 5)) {
-    drawText(ctx, time.label, { x, y, font: ctx.fonts.bold, size: 9, color: ROYAL, maxWidth: TIMES_VALUE_WIDTH + 16 });
+    drawText(ctx, time.label, { x, y, font: ctx.fonts.bold, size: VISIT_TEXT_SIZE * ctx.scale, color: ctx.accent, maxWidth: TIMES_VALUE_WIDTH + 16 });
     if (time.value) {
-      drawText(ctx, time.value, { x, y: y + TIME_VALUE_DROP, font: ctx.fonts.body, size: 9, color: INK, maxWidth: TIMES_VALUE_WIDTH + 16 });
+      drawText(ctx, time.value, { x, y: y + TIME_VALUE_DROP, font: ctx.fonts.body, size: VISIT_TEXT_SIZE * ctx.scale, color: INK, maxWidth: TIMES_VALUE_WIDTH + 16 });
     } else {
       drawPill(ctx, x, y + 1.4, TIMES_VALUE_WIDTH);
     }
-    y += TIME_ROW_PITCH;
+    y += TIME_ROW_PITCH * ctx.space;
   }
 }
 
@@ -712,7 +734,7 @@ function drawDatesColumn(ctx: Ctx, visit: TicketPdfVisit): void {
   heading(ctx, 'Show dates', x, VISIT_HEADING_Y);
   const y = rowOrPill(ctx, visit.showDates, x, 163 + VISIT_OFFSET, RIGHT_X - x);
   if (visit.showUrl) {
-    drawText(ctx, visit.showUrl, { x, y, font: ctx.fonts.body, size: 9, color: INK, maxWidth: RIGHT_X - x });
+    drawText(ctx, visit.showUrl, { x, y, font: ctx.fonts.body, size: VISIT_TEXT_SIZE * ctx.scale, color: INK, maxWidth: RIGHT_X - x });
   }
 }
 
@@ -770,18 +792,20 @@ function drawFooter(
   const { fonts, logos, pendingLabel } = ctx;
   const { visit } = input;
   const page = `Page ${index + 1} of ${input.positions.length}`;
-  drawText(ctx, INSTRUCTION, { x: MARGIN_X, y: CARD_BOTTOM + INSTRUCTION_GAP, font: fonts.body, size: 9, color: INK, maxWidth: CONTENT_WIDTH });
+  drawText(ctx, INSTRUCTION, { x: MARGIN_X, y: CARD_BOTTOM + INSTRUCTION_GAP * ctx.space, font: fonts.body, size: 9, color: INK, maxWidth: CONTENT_WIDTH });
   fillRect(ctx, MARGIN_X, FOOTER_RULE_Y, CONTENT_WIDTH, 0.1, RULE);
 
   const { width, height } = logos.vertical;
   const markWidth = (FOOTER_MARK_HEIGHT * width) / height;
-  ctx.page.drawImage(logos.vertical, {
-    x: mm(MARGIN_X),
-    y: PAGE_HEIGHT - mm(FOOTER_MARK_TOP + FOOTER_MARK_HEIGHT),
-    width: mm(markWidth),
-    height: mm(FOOTER_MARK_HEIGHT),
-  });
-  const x = MARGIN_X + markWidth + 4;
+  if (ctx.design.footerMark) {
+    ctx.page.drawImage(logos.vertical, {
+      x: mm(MARGIN_X),
+      y: PAGE_HEIGHT - mm(FOOTER_MARK_TOP + FOOTER_MARK_HEIGHT),
+      width: mm(markWidth),
+      height: mm(FOOTER_MARK_HEIGHT),
+    });
+  }
+  const x = ctx.design.footerMark ? MARGIN_X + markWidth + 4 : MARGIN_X;
   const y3 = FOOTER_TEXT_Y + FOOTER_LINE_PITCH * 2;
   const text = (value: string, at: number, y: number): number =>
     drawText(ctx, value, { x: at, y, font: fonts.body, size: FOOTNOTE_SIZE, color: MUTED });
@@ -878,8 +902,13 @@ async function loadAssets(pdf: PDFDocument): Promise<{ fonts: Fonts; logos: Logo
   };
 }
 
+/**
+ * `design` omitted: each page uses the committed design for its ticket type slug (the pre-studio
+ * look when none is committed). `options.testMode` defaults to the ticketing test switch.
+ */
 export async function buildTicketPdf(
   input: TicketPdfInput,
+  design?: ShippedDesign,
   options: { testMode?: boolean } = {}
 ): Promise<Uint8Array> {
   if (input.positions.length === 0) {
@@ -888,14 +917,23 @@ export async function buildTicketPdf(
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
   const { fonts, logos } = await loadAssets(pdf);
-  const ctx = {
+  const base = {
     testMode: options.testMode ?? isTicketingTestMode(),
     fonts,
     logos,
     pendingLabel: input.visit.pendingLabel?.trim() || DEFAULT_PENDING_LABEL,
   };
   input.positions.forEach((position, index) => {
-    drawPage({ ...ctx, page: pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]) }, input, position, index);
+    const pageDesign = (design ?? loadShippedDesign(position.slug)).pdf;
+    const ctx: Ctx = {
+      ...base,
+      design: pageDesign,
+      accent: token(pageDesign.accent),
+      scale: TYPE_STEP_PDF_SCALE[pageDesign.typeStep],
+      space: DENSITY_MULTIPLIER[pageDesign.density],
+      page: pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]),
+    };
+    drawPage(ctx, input, position, index);
   });
   pdf.setTitle(`Ticket ${input.positions[0].bookingRef}`);
   pdf.setLanguage('en-ZA');

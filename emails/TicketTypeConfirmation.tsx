@@ -1,5 +1,6 @@
 import { Img } from '@react-email/components';
 
+import { DEFAULT_DESIGN, type EmailDesign } from '@/lib/ticket-design';
 import {
   PENDING_MARKER,
   fillTokens,
@@ -9,6 +10,8 @@ import {
 } from '@/lib/ticket-email-copy';
 
 import EmailShell, {
+  themeFromDesign,
+  type ShellTheme,
   ShellCard,
   ShellDetailRow,
   ShellFootnote,
@@ -37,9 +40,11 @@ export interface TicketTypeConfirmationProps {
   recoveryUrl: string | null;
   /** Defaults to isTicketingTestMode(); explicit so the live (off) rendering is testable. */
   testMode?: boolean;
+  /** The email half of a ticket design; omitted reproduces the pre-studio look. */
+  design?: EmailDesign;
 }
 
-const QR_SIZE = 200;
+const RECOVERY_LEAD = 'Lost this email? ';
 const EMERGENCY_NUMBERS =
   'In an emergency: 10111 Police (national) · 10177 Ambulance and fire (national) · 112 All emergencies, from a mobile phone';
 
@@ -61,11 +66,13 @@ function TicketCards({
   copy,
   values,
   positions,
+  theme,
 }: {
   block: Extract<CopyBlock, { kind: 'details' }>;
   copy: TicketEmailCopy;
   values: TicketEmailValues;
   positions: OrderConfirmationPosition[];
+  theme: ShellTheme;
 }) {
   const pendingLabels = [...(copy.subject === null ? ['Subject'] : []), ...copy.pendingRows];
   return (
@@ -77,23 +84,23 @@ function TicketCards({
           bookingReference: position.bookingRef,
         };
         return (
-          <ShellCard key={position.bookingRef}>
+          <ShellCard key={position.bookingRef} theme={theme}>
             {block.rows.map((row) => (
-              <ShellDetailRow key={row.label} label={row.label}>
+              <ShellDetailRow key={row.label} label={row.label} theme={theme}>
                 {fillTokens(row.value, own)}
               </ShellDetailRow>
             ))}
             {pendingLabels.map((label) => (
-              <ShellDetailRow key={label} label={`${label}:`}>
-                <ShellPill>{PENDING_MARKER}</ShellPill>
+              <ShellDetailRow key={label} label={`${label}:`} theme={theme}>
+                <ShellPill theme={theme}>{PENDING_MARKER}</ShellPill>
               </ShellDetailRow>
             ))}
-            <ShellQrTile>
+            <ShellQrTile theme={theme}>
               <Img
                 src={`cid:${position.qrContentId}`}
                 alt={`QR code for booking reference ${position.bookingRef}`}
-                width={QR_SIZE}
-                height={QR_SIZE}
+                width={theme.qrPx}
+                height={theme.qrPx}
                 style={{ display: 'block', maxWidth: '100%', height: 'auto' }}
               />
             </ShellQrTile>
@@ -111,24 +118,39 @@ export default function TicketTypeConfirmation({
   positions,
   recoveryUrl,
   testMode,
+  design = DEFAULT_DESIGN.email,
 }: TicketTypeConfirmationProps) {
+  const theme = themeFromDesign(design);
+  const blocks = copy.blocks.map((block, index) => ({ block, index }));
+  // cardPosition "top" lifts the booking-detail cards above the other blocks; their words and
+  // the order of everything else are unchanged.
+  if (design.cardPosition === 'top') {
+    blocks.sort(
+      (a, b) =>
+        Number(b.block.kind === 'details') - Number(a.block.kind === 'details') || a.index - b.index
+    );
+  }
   return (
-    <EmailShell family="A" preview={preview}>
+    <EmailShell family="A" preview={preview} theme={theme}>
       <TestingNotice testMode={testMode} />
-      {copy.blocks.map((block, index) => {
+      {blocks.map(({ block, index }) => {
         const key = `${block.kind}-${index}`;
         switch (block.kind) {
           case 'heading':
-            return <ShellSubheading key={key}>{block.text}</ShellSubheading>;
+            return (
+              <ShellSubheading key={key} theme={theme}>
+                {block.text}
+              </ShellSubheading>
+            );
           case 'text':
             return (
-              <ShellText key={key}>
+              <ShellText key={key} theme={theme}>
                 <Lines lines={block.lines.map((line) => fillTokens(line, values))} />
               </ShellText>
             );
           case 'list':
             return (
-              <ShellText key={key}>
+              <ShellText key={key} theme={theme}>
                 {block.items.map((item, itemIndex) => (
                   <span key={item}>
                     {itemIndex > 0 ? <br /> : null}• {fillTokens(item, values)}
@@ -144,16 +166,20 @@ export default function TicketTypeConfirmation({
                 copy={copy}
                 values={values}
                 positions={positions}
+                theme={theme}
               />
             );
         }
       })}
       {recoveryUrl !== null && (
-        <ShellText size="small">
-          Lost this email? <ShellLink href={recoveryUrl}>Recover your tickets</ShellLink>
+        <ShellText size="small" theme={theme}>
+          {RECOVERY_LEAD}
+          <ShellLink href={recoveryUrl} theme={theme}>
+            Recover your tickets
+          </ShellLink>
         </ShellText>
       )}
-      <ShellFootnote>{EMERGENCY_NUMBERS}</ShellFootnote>
+      <ShellFootnote theme={theme}>{EMERGENCY_NUMBERS}</ShellFootnote>
     </EmailShell>
   );
 }

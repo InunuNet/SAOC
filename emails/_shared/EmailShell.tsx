@@ -2,6 +2,8 @@ import type { CSSProperties, ReactNode } from 'react';
 import { Head, Html, Img, Preview } from '@react-email/components';
 
 import { FOOTER_REG } from '@/components/chrome/footer-data';
+import type { EmailDesign } from '@/lib/ticket-design';
+import { DENSITY_MULTIPLIER, TOKENS, TYPE_STEP_EMAIL_PX } from '@/lib/ticket-design/tokens';
 import { SHOW_TITLE_EXPANDED } from '@/lib/show-title';
 import { saocUrl } from '@/lib/site-hosts';
 
@@ -30,7 +32,7 @@ const NOS_INK_MUTED = '#55507e';
 // QR tile ground: Codi's final ruling (white tile keeps the QR scannable in dark mode).
 const QR_TILE_WHITE = '#ffffff';
 
-interface ShellTheme {
+export interface ShellTheme {
   outer: string;
   card: string;
   /** Header band fill (A/B royal, D parchment). C has no header band, only a top rule. */
@@ -46,6 +48,14 @@ interface ShellTheme {
   bodyFont: string;
   // Muted body copy for secondary text such as the footer (--nos-ink-muted, derived).
   muted: string;
+  /** Lead body text size in px (ticket-design typeStep). */
+  bodyPx: number;
+  /** Multiplier over the spacing constants (ticket-design density). */
+  space: number;
+  headerAlign: 'left' | 'centre';
+  /** Show the vertical mark in the branded footer. */
+  footerMark: boolean;
+  qrPx: number;
 }
 
 const NOS_THEME: ShellTheme = {
@@ -62,10 +72,32 @@ const NOS_THEME: ShellTheme = {
   headingWeight: 400,
   bodyFont: 'Karla, Arial, Helvetica, sans-serif',
   muted: NOS_INK_MUTED,
+  bodyPx: 16,
+  space: 1,
+  headerAlign: 'left',
+  footerMark: true,
+  qrPx: 200,
 };
 
-// Helpers read NOS_THEME directly: emails render in the server graph, where React context is
-// unavailable. Reintroduce a theme prop (not context) if family D brings a second theme.
+/** The NOS theme with the ticket-design controls applied; the default design returns NOS_THEME's values. */
+export function themeFromDesign(design: EmailDesign): ShellTheme {
+  return {
+    ...NOS_THEME,
+    outer: TOKENS[design.outerGround],
+    card: TOKENS[design.cardGround],
+    header: TOKENS[design.headerGround],
+    accent: TOKENS[design.accent],
+    bodyPx: TYPE_STEP_EMAIL_PX[design.typeStep],
+    space: DENSITY_MULTIPLIER[design.density],
+    headerAlign: design.headerAlign,
+    footerMark: design.footerMark,
+    qrPx: design.qrPx,
+  };
+}
+
+// Emails render in the server graph, where React context is unavailable, so the theme travels as
+// a `theme` prop (default NOS_THEME). Helpers take the same optional prop.
+const spaced = (px: number, t: ShellTheme): number => Math.round(px * t.space);
 const CONTAINER_WIDTH = 600;
 const STACK_BREAKPOINT = 620;
 const GUTTER = 40;
@@ -120,18 +152,20 @@ interface EmailShellProps {
   /** Hidden inbox preheader. Each template passes its existing <Preview> text unchanged. */
   preview: string;
   children: ReactNode;
+  theme?: ShellTheme;
 }
 
 function Header({ theme: t }: { theme: ShellTheme }) {
+  const centred = t.headerAlign === 'centre';
   return (
     <tr>
       <td
-        className="shell-header shell-header-nos"
+        className={centred ? 'shell-header' : 'shell-header shell-header-nos'}
         {...bgAttr(t.header)}
-        align="left"
+        align={centred ? 'center' : 'left'}
         style={{
           backgroundColor: t.header,
-          padding: `28px ${GUTTER}px 28px ${HEADER_PAD_LEFT}`,
+          padding: centred ? `28px ${GUTTER}px` : `28px ${GUTTER}px 28px ${HEADER_PAD_LEFT}`,
         }}
       >
         <Img
@@ -145,6 +179,7 @@ function Header({ theme: t }: { theme: ShellTheme }) {
             width: `${HEADER_LOGO_WIDTH}px`,
             maxWidth: '100%',
             height: 'auto',
+            ...(centred ? { margin: '0 auto' } : {}),
           }}
         />
       </td>
@@ -179,19 +214,21 @@ function BrandedFooter({ theme: t }: { theme: ShellTheme }) {
         >
           <tbody>
             <tr>
-              <td
-                valign="middle"
-                width={FOOTER_MARK_HEIGHT + FOOTER_MARK_GAP}
-                style={{ padding: '16px 0 0', width: `${FOOTER_MARK_HEIGHT + FOOTER_MARK_GAP}px` }}
-              >
-                <Img
-                  src={logoUrl('nos-ink-purple-vertical-96h.png')}
-                  alt=""
-                  width={FOOTER_MARK_WIDTH}
-                  height={FOOTER_MARK_HEIGHT}
-                  style={{ display: 'block', border: 0, height: `${FOOTER_MARK_HEIGHT}px`, width: `${FOOTER_MARK_WIDTH}px` }}
-                />
-              </td>
+              {t.footerMark && (
+                <td
+                  valign="middle"
+                  width={FOOTER_MARK_HEIGHT + FOOTER_MARK_GAP}
+                  style={{ padding: '16px 0 0', width: `${FOOTER_MARK_HEIGHT + FOOTER_MARK_GAP}px` }}
+                >
+                  <Img
+                    src={logoUrl('nos-ink-purple-vertical-96h.png')}
+                    alt=""
+                    width={FOOTER_MARK_WIDTH}
+                    height={FOOTER_MARK_HEIGHT}
+                    style={{ display: 'block', border: 0, height: `${FOOTER_MARK_HEIGHT}px`, width: `${FOOTER_MARK_WIDTH}px` }}
+                  />
+                </td>
+              )}
               <td valign="middle" style={{ padding: '16px 0 0' }}>
                 <p className="shell-ink" style={footerLineStyle(t)}>{FOOTER_LINE}</p>
                 <p className="shell-ink" style={footerLineStyle(t)}>{FOOTER_REG_LINE}</p>
@@ -229,8 +266,8 @@ function PlainFooter({ theme: t }: { theme: ShellTheme }) {
   );
 }
 
-export default function EmailShell({ family, preview, children }: EmailShellProps) {
-  const t = NOS_THEME;
+export default function EmailShell({ family, preview, children, theme }: EmailShellProps) {
+  const t = theme ?? NOS_THEME;
   const branded = family !== 'C';
 
   return (
@@ -348,8 +385,8 @@ export function ShellHeading({ children }: { children: ReactNode }) {
   );
 }
 
-export function ShellSubheading({ children }: { children: ReactNode }) {
-  const t = NOS_THEME;
+export function ShellSubheading({ children, theme }: { children: ReactNode; theme?: ShellTheme }) {
+  const t = theme ?? NOS_THEME;
   return (
     <h2
       style={{
@@ -366,24 +403,26 @@ export function ShellSubheading({ children }: { children: ReactNode }) {
   );
 }
 
-const BODY_SIZE = { lead: '16px', small: '14px' } as const;
+const SMALL_BODY_PX = 14;
 
 export function ShellText({
   children,
   size = 'lead',
+  theme,
 }: {
   children: ReactNode;
-  size?: keyof typeof BODY_SIZE;
+  size?: 'lead' | 'small';
+  theme?: ShellTheme;
 }) {
-  const t = NOS_THEME;
+  const t = theme ?? NOS_THEME;
   return (
     <p
       className="shell-ink"
       style={{
-        margin: '0 0 16px',
+        margin: `0 0 ${spaced(16, t)}px`,
         fontFamily: t.bodyFont,
-        fontSize: BODY_SIZE[size],
-        lineHeight: size === 'lead' ? '24px' : '21px',
+        fontSize: `${size === 'lead' ? t.bodyPx : SMALL_BODY_PX}px`,
+        lineHeight: `${(size === 'lead' ? t.bodyPx : SMALL_BODY_PX) * 1.5}px`,
         color: t.ink,
       }}
     >
@@ -395,8 +434,16 @@ export function ShellText({
 const LABEL_COLUMN_WIDTH = 150;
 
 /** One label/value detail row with a 1px rule beneath it. Put the colon in the label. */
-export function ShellDetailRow({ label, children }: { label: ReactNode; children: ReactNode }) {
-  const t = NOS_THEME;
+export function ShellDetailRow({
+  label,
+  children,
+  theme,
+}: {
+  label: ReactNode;
+  children: ReactNode;
+  theme?: ShellTheme;
+}) {
+  const t = theme ?? NOS_THEME;
   return (
     <table
       role="presentation"
@@ -414,7 +461,7 @@ export function ShellDetailRow({ label, children }: { label: ReactNode; children
             valign="top"
             style={{
               width: `${LABEL_COLUMN_WIDTH}px`,
-              padding: '10px 12px 10px 0',
+              padding: `${spaced(10, t)}px 12px ${spaced(10, t)}px 0`,
               fontFamily: t.bodyFont,
               fontSize: '14px',
               lineHeight: '20px',
@@ -428,7 +475,7 @@ export function ShellDetailRow({ label, children }: { label: ReactNode; children
             className="shell-value shell-ink"
             valign="top"
             style={{
-              padding: '10px 0',
+              padding: `${spaced(10, t)}px 0`,
               fontFamily: t.bodyFont,
               fontSize: '14px',
               lineHeight: '20px',
@@ -551,8 +598,16 @@ export function ShellButton({ href, children }: { href: string; children: ReactN
   );
 }
 
-export function ShellLink({ href, children }: { href: string; children: ReactNode }) {
-  const t = NOS_THEME;
+export function ShellLink({
+  href,
+  children,
+  theme,
+}: {
+  href: string;
+  children: ReactNode;
+  theme?: ShellTheme;
+}) {
+  const t = theme ?? NOS_THEME;
   return (
     <a href={href} style={{ color: t.accent, textDecoration: 'underline' }}>
       {children}
@@ -561,15 +616,15 @@ export function ShellLink({ href, children }: { href: string; children: ReactNod
 }
 
 // One-line 12px secondary note above the footer, e.g. the order email's emergency numbers.
-export function ShellFootnote({ children }: { children: ReactNode }) {
-  const t = NOS_THEME;
+export function ShellFootnote({ children, theme }: { children: ReactNode; theme?: ShellTheme }) {
+  const t = theme ?? NOS_THEME;
   return <p style={{ ...footerLineStyle(t), margin: '8px 0 0' }}>{children}</p>;
 }
 
 // Small outlined status pill for an unknown value, e.g. "To be confirmed". It wraps inside its
 // outline when the label is long (Sanity pendingLabel); it never clips.
-export function ShellPill({ children }: { children: ReactNode }) {
-  const t = NOS_THEME;
+export function ShellPill({ children, theme }: { children: ReactNode; theme?: ShellTheme }) {
+  const t = theme ?? NOS_THEME;
   return (
     <span
       style={{
@@ -588,8 +643,8 @@ export function ShellPill({ children }: { children: ReactNode }) {
 }
 
 // A bordered card on the card ground, used to group one ticket's rows.
-export function ShellCard({ children }: { children: ReactNode }) {
-  const t = NOS_THEME;
+export function ShellCard({ children, theme }: { children: ReactNode; theme?: ShellTheme }) {
+  const t = theme ?? NOS_THEME;
   return (
     <table
       role="presentation"
@@ -597,7 +652,7 @@ export function ShellCard({ children }: { children: ReactNode }) {
       cellPadding={0}
       cellSpacing={0}
       border={0}
-      style={{ width: '100%', margin: '0 0 16px' }}
+      style={{ width: '100%', margin: `0 0 ${spaced(16, t)}px` }}
     >
       <tbody>
         <tr>
@@ -607,7 +662,7 @@ export function ShellCard({ children }: { children: ReactNode }) {
               backgroundColor: t.card,
               border: `1px solid ${t.rule}`,
               borderRadius: '12px',
-              padding: '8px 20px 20px',
+              padding: `${spaced(8, t)}px 20px ${spaced(20, t)}px`,
             }}
           >
             {children}
@@ -619,11 +674,11 @@ export function ShellCard({ children }: { children: ReactNode }) {
 }
 
 const QR_TILE_PADDING = 12;
-// 200px QR plus the tile padding on both sides; the tile shrinks below this on narrow cards.
-const QR_TILE_MAX_WIDTH = 200 + 2 * QR_TILE_PADDING;
 
-// White tile behind a QR code: keeps it scannable when a client darkens the card.
-export function ShellQrTile({ children }: { children: ReactNode }) {
+// White tile behind a QR code: keeps it scannable when a client darkens the card. The tile is the
+// QR size plus the tile padding on both sides; it shrinks below that on narrow cards.
+export function ShellQrTile({ children, theme }: { children: ReactNode; theme?: ShellTheme }) {
+  const t = theme ?? NOS_THEME;
   return (
     <table
       role="presentation"
@@ -631,7 +686,12 @@ export function ShellQrTile({ children }: { children: ReactNode }) {
       cellPadding={0}
       cellSpacing={0}
       border={0}
-      style={{ width: '100%', maxWidth: `${QR_TILE_MAX_WIDTH}px`, tableLayout: 'fixed', margin: '16px 0 0' }}
+      style={{
+        width: '100%',
+        maxWidth: `${t.qrPx + 2 * QR_TILE_PADDING}px`,
+        tableLayout: 'fixed',
+        margin: `${spaced(16, t)}px 0 0`,
+      }}
     >
       <tbody>
         <tr>

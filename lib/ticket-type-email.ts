@@ -8,6 +8,7 @@ import {
   type TicketEmailKey,
   type TicketEmailValues,
 } from '@/lib/ticket-email-copy';
+import { loadShippedDesign, type ShippedDesign } from '@/lib/ticket-design';
 import { withTestSubjectPrefix } from '@/lib/ticketing-test-mode';
 
 /**
@@ -22,6 +23,8 @@ export interface TicketTypeEmailInput {
   positions: OrderConfirmationPosition[];
   recoveryUrl: string | null;
   testMode?: boolean;
+  /** Omitted: the committed design for this ticket type (the pre-studio look by default). */
+  design?: ShippedDesign;
 }
 
 export interface TicketTypeEmail {
@@ -41,6 +44,7 @@ export function buildTicketTypeEmail(input: TicketTypeEmailInput): TicketTypeEma
       positions: input.positions,
       recoveryUrl: input.recoveryUrl,
       testMode: input.testMode,
+      design: (input.design ?? loadShippedDesign(input.key)).email,
     }),
   };
 }
