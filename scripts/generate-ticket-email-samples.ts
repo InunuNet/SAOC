@@ -158,8 +158,7 @@ async function mergePdfs(parts: readonly Uint8Array[]): Promise<Uint8Array> {
   return merged.save();
 }
 
-async function main(): Promise<void> {
-  const outDir = process.argv[2] ?? DEFAULT_OUT_DIR;
+async function writeAll(outDir: string): Promise<void> {
   await mkdir(outDir, { recursive: true });
   const write = (name: string, bytes: Uint8Array): Promise<void> =>
     writeFile(path.join(outDir, name), bytes);
@@ -183,7 +182,39 @@ async function main(): Promise<void> {
   console.log(`wrote ${2 * SAMPLE_ORDERS.length + 2} PDFs to ${outDir}`);
 }
 
-main().catch((error: unknown) => {
-  console.error('generate-ticket-email-samples failed:', error);
-  process.exit(1);
-});
+/**
+ * Writes email-<key>.pdf and ticket-<key>.pdf for one ticket type into outDir, using the
+ * settings saved for that type. Returns the written paths (outDir joined with the file name).
+ * Nothing is sent; the browser only loads inline data: URIs.
+ */
+export async function exportSamplesForKey(
+  key: string,
+  outDir: string = DEFAULT_OUT_DIR
+): Promise<string[]> {
+  const order = SAMPLE_ORDERS.find((candidate) => candidate.key === key);
+  if (!order) throw new Error(`exportSamplesForKey: no sample order for ticket type "${key}"`);
+  await mkdir(outDir, { recursive: true });
+
+  const browser = await chromium.launch();
+  try {
+    const email = await htmlToPdf(browser, await renderEmailHtml(order));
+    const ticket = await buildSampleTicketPdf(order);
+    const emailPath = path.join(outDir, `email-${key}.pdf`);
+    const ticketPath = path.join(outDir, `ticket-${key}.pdf`);
+    await writeFile(emailPath, email);
+    await writeFile(ticketPath, ticket);
+    return [emailPath, ticketPath];
+  } finally {
+    await browser.close();
+  }
+}
+
+/** True only when this file is the process entry point, so importing it never starts the CLI. */
+const isCli = path.basename(process.argv[1] ?? '') === 'generate-ticket-email-samples.ts';
+
+if (isCli) {
+  writeAll(process.argv[2] ?? DEFAULT_OUT_DIR).catch((error: unknown) => {
+    console.error('generate-ticket-email-samples failed:', error);
+    process.exit(1);
+  });
+}

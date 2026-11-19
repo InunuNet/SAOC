@@ -11,6 +11,7 @@ import { DESIGN_ENUMS, type EmailDesign, type PdfDesign, type ShippedDesign } fr
 import type { StudioTypeOption } from '@/lib/ticket-design/studio-samples';
 
 const SAVE_ENDPOINT = '/api/admin/studio/save';
+const EXPORT_ENDPOINT = '/api/admin/studio/export';
 const CONTRAST_DECIMALS = 1;
 
 interface StudioClientProps {
@@ -22,12 +23,19 @@ interface StudioClientProps {
 type SharedKey = keyof typeof DESIGN_ENUMS.shared;
 type SaveState = { kind: 'idle' } | { kind: 'saved'; path: string } | { kind: 'error'; message: string };
 
+type ExportState =
+  | { kind: 'idle' }
+  | { kind: 'done'; paths: string[] }
+  | { kind: 'error'; message: string };
+
 export function StudioClient({ types, initialSlug, initialDesign }: StudioClientProps) {
   const [slug, setSlug] = useState(initialSlug);
   const [saved, setSaved] = useState(initialDesign);
   const [design, setDesign] = useState(initialDesign);
   const [saving, setSaving] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>({ kind: 'idle' });
+  const [exporting, setExporting] = useState(false);
+  const [exportState, setExportState] = useState<ExportState>({ kind: 'idle' });
   const previews = usePreviews(design);
   const readings = designContrast(design);
   const blocked = readings.some((reading) => !reading.passes);
@@ -69,6 +77,24 @@ export function StudioClient({ types, initialSlug, initialDesign }: StudioClient
       setSaveState({ kind: 'error', message: error instanceof Error ? error.message : 'Save failed' });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const res = await fetch(EXPORT_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug }),
+      });
+      const body: { written?: string[]; error?: string } = await res.json();
+      if (!res.ok || !body.written) throw new Error(body.error ?? 'Export failed');
+      setExportState({ kind: 'done', paths: body.written });
+    } catch (error) {
+      setExportState({ kind: 'error', message: error instanceof Error ? error.message : 'Export failed' });
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -143,6 +169,22 @@ export function StudioClient({ types, initialSlug, initialDesign }: StudioClient
           <button type="button" className={BUTTON_SECONDARY} disabled={!dirty} onClick={() => setDesign(saved)}>
             Reset
           </button>
+          <button type="button" className={BUTTON_SECONDARY} disabled={exporting || dirty} onClick={() => void handleExport()}>
+            {exporting ? 'Exporting…' : 'Export samples'}
+          </button>
+        </div>
+        <div role="status" className="font-sans text-[14px] text-ink">
+          {exportState.kind === 'done' ? (
+            <>
+              Wrote:
+              <ul>
+                {exportState.paths.map((written) => (
+                  <li key={written}>{written}</li>
+                ))}
+              </ul>
+            </>
+          ) : null}
+          {exportState.kind === 'error' ? <FormErrorAlert>{exportState.message}</FormErrorAlert> : null}
         </div>
         <div role="status" className="font-sans text-[14px] text-ink">
           {saveState.kind === 'saved' ? `Saved to ${saveState.path}. Review the diff and commit it.` : null}
