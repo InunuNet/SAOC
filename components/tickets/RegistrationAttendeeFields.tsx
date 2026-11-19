@@ -1,4 +1,4 @@
-import { fieldId, type DraftTextField, type RegistrationDraft, type RegistrationErrors } from '@/components/tickets/registrationDraft';
+import { fieldId, isAccreditedJudge, type DraftTextField, type RegistrationDraft, type RegistrationErrors } from '@/components/tickets/registrationDraft';
 import { SocietyDropdown } from '@/components/tickets/SocietyDropdown';
 import { TicketFieldAlert, TicketFormField, TicketSelectField } from '@/components/tickets/TicketFormField';
 import { JUDGE_DATE_LABELS, REGISTRATION_LABELS, REGISTRATION_OPTIONS, REGISTRATION_SECTION_HEADINGS, SAME_AS_ABOVE_LABEL, SOUTH_AFRICA, type RegistrationShareSection } from '@/lib/registration';
@@ -47,10 +47,10 @@ export function RegistrationAttendeeFields({ attendee, draft, errors, disabled, 
     {!draft.sameMembership ? <SocietyDropdown id={fieldId(attendee, 'societies')} value={draft.societies} error={errors.societies} disabled={disabled} onChange={(option, checked) => onSociety(attendee, option, checked)} /> : null}
     <h3 className={`${HEADING_CLASS} mt-8`}>{REGISTRATION_SECTION_HEADINGS.judges}</h3>
     {select('judgeAccreditation', REGISTRATION_OPTIONS.judgeAccreditation)}
-    <div><label htmlFor={fieldId(attendee, 'judgeAvailable')} className={OPTION_LABEL_CLASS}>
+    {isAccreditedJudge(draft) ? <div><label htmlFor={fieldId(attendee, 'judgeAvailable')} className={OPTION_LABEL_CLASS}>
       <input id={fieldId(attendee, 'judgeAvailable')} type="checkbox" checked={draft.judgeAvailable} onChange={(event) => onAvailability(attendee, event.target.checked)} disabled={disabled} aria-invalid={Boolean(errors.judgeAvailable)} aria-describedby={errors.judgeAvailable ? `${fieldId(attendee, 'judgeAvailable')}-error` : undefined} className={CHECKBOX_CLASS} />Available as a show judge
-    </label>{errors.judgeAvailable ? <TicketFieldAlert id={`${fieldId(attendee, 'judgeAvailable')}-error`}>{errors.judgeAvailable}</TicketFieldAlert> : null}</div>
-    {draft.judgeAvailable ? <div role="group" aria-label={REGISTRATION_LABELS.judgeDate} aria-invalid={Boolean(errors.judgeDate)} aria-describedby={errors.judgeDate ? `${dateId}-error` : undefined}>
+    </label>{errors.judgeAvailable ? <TicketFieldAlert id={`${fieldId(attendee, 'judgeAvailable')}-error`}>{errors.judgeAvailable}</TicketFieldAlert> : null}</div> : null}
+    {isAccreditedJudge(draft) && draft.judgeAvailable ? <div role="group" aria-label={REGISTRATION_LABELS.judgeDate} aria-invalid={Boolean(errors.judgeDate)} aria-describedby={errors.judgeDate ? `${dateId}-error` : undefined}>
       <p className="font-sans text-[14px] font-medium text-[var(--ink-700)]">{REGISTRATION_LABELS.judgeDate}</p>
       {REGISTRATION_OPTIONS.judgeDateChoices.map((date) => { const id = `${dateId}-${date.toLowerCase()}`; return <label htmlFor={id} key={date} className={OPTION_LABEL_CLASS}><input id={id} type="checkbox" checked={draft.judgeDates.includes(date)} onChange={(event) => onJudgeDate(attendee, date, event.target.checked)} disabled={disabled} className={CHECKBOX_CLASS} />{JUDGE_DATE_LABELS[date]}</label>; })}
       {errors.judgeDate ? <TicketFieldAlert id={`${dateId}-error`}>{errors.judgeDate}</TicketFieldAlert> : null}

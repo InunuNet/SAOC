@@ -219,6 +219,8 @@ export const REGISTRATION_OPTIONS = {
   ],
   society: [
     'None',
+    'Independent Member',
+    'Overseas visitor',
     'Alfred County Orchid Society',
     'Border Orchid Society',
     'Cape Orchid Society',
@@ -241,8 +243,6 @@ export const REGISTRATION_OPTIONS = {
     'Wolkberg Orchid Society',
     'Zululand Orchid Society',
     'Wild Orchids of Southern Africa',
-    'Overseas visitor',
-    'Independent Member',
   ],
   attending: [
     'Exhibit Entry - Early bird special',
@@ -304,6 +304,10 @@ export type RegistrationValidation =
 
 export const SOUTH_AFRICA = 'South Africa';
 export const SOCIETY_NONE = 'None';
+export const SOCIETY_INDEPENDENT = 'Independent Member';
+export const SOCIETY_OVERSEAS = 'Overseas visitor';
+// Each of these stands alone: it cannot be combined with another of them or with any society.
+export const SOCIETY_EXCLUSIVE: readonly string[] = [SOCIETY_NONE, SOCIETY_INDEPENDENT, SOCIETY_OVERSEAS];
 export const SAME_AS_ABOVE_LABEL = 'Same as above';
 export const JUDGE_DATE_LABELS = {
   '22-Sep': '22 September 2027',
@@ -476,8 +480,8 @@ function societiesField(raw: Raw, errors: Errors, prefix: string): string[] {
   const chosen = given.map((entry) => trimmed(entry));
   if (chosen.some((entry) => !isOption('society', entry))) {
     errors[key] = 'Please choose from the list.';
-  } else if (chosen.includes(SOCIETY_NONE) && chosen.length > 1) {
-    errors[key] = 'None cannot be combined with a society.';
+  } else if (chosen.length > 1 && chosen.some((entry) => SOCIETY_EXCLUSIVE.includes(entry))) {
+    errors[key] = 'None, Independent Member and Overseas visitor cannot be combined with a society or each other.';
   }
   return chosen;
 }
@@ -489,6 +493,12 @@ function judgeFields(raw: Raw, errors: Errors, prefix: string): Pick<Registratio
     if (!value) errors[`${prefix}.${key}`] = 'Please choose an option.';
     else if (!allowed.includes(value)) errors[`${prefix}.${key}`] = 'Please choose from the list.';
   };
+  // A judge who is not accredited cannot offer to judge: the availability fields are not asked,
+  // so whatever was sent is ignored and cleared.
+  if (values.judgeAccredited === 'No') {
+    values.judgeAvailable = 'No';
+    values.judgeDate = 'None';
+  }
   choice('judgeAccredited', REGISTRATION_OPTIONS.judgeYesNo);
   choice('judgeOrganisation', REGISTRATION_OPTIONS.judgeOrganisation);
   choice('judgeAvailable', REGISTRATION_OPTIONS.judgeYesNo);
