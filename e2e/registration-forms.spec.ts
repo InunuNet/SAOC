@@ -516,6 +516,20 @@ test.describe('registration form, attendee accordion', () => {
     await expect(field(page, 1, 'firstName')).toHaveValue('Keep');
   });
 
+  test('headers work from the keyboard: Enter and Space toggle, Tab moves into the open card', async ({ page }) => {
+    await toggle(page, 1).focus();
+    await page.keyboard.press('Enter');
+    await expect(toggle(page, 1)).toHaveAttribute('aria-expanded', 'false');
+    await page.keyboard.press('Space');
+    await expect(toggle(page, 1)).toHaveAttribute('aria-expanded', 'true');
+    await toggle(page, 2).focus();
+    await page.keyboard.press('Enter');
+    await expect(toggle(page, 2)).toHaveAttribute('aria-expanded', 'true');
+    await expect(toggle(page, 1)).toHaveAttribute('aria-expanded', 'false');
+    await page.keyboard.press('Tab');
+    await expect(page.locator(':focus')).toHaveAttribute('id', /^registration-2-/);
+  });
+
   test('a failed submit opens the first attendee with an error and focuses the summary', async ({ page }) => {
     await fillAttendee(page, 1);
     await toggle(page, 3).click();

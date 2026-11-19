@@ -23,12 +23,13 @@ interface CheckoutErrorSummaryProps {
 
 // Focus() lands the summary clear of the sticky stack (NOS test bar 48 + header 97 = 145px).
 // A field inside a collapsed attendee card opens that card first, then takes focus.
-function focusTarget(selector: string) {
+function focusTarget(selector: string, mayOpenCard = true) {
   const target = document.querySelector<HTMLElement>(selector);
   const collapsed = target?.closest<HTMLElement>('[data-attendee-panel][hidden]');
-  if (collapsed) {
+  if (collapsed && mayOpenCard) {
     document.querySelector<HTMLButtonElement>(`[aria-controls="${collapsed.id}"]`)?.click();
-    requestAnimationFrame(() => focusTarget(selector));
+    // One retry once the card has rendered open; never loops if it stays closed.
+    requestAnimationFrame(() => focusTarget(selector, false));
     return;
   }
   target?.focus();
