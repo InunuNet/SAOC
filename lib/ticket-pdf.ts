@@ -16,6 +16,7 @@ import { create as createQr } from 'qrcode';
 
 import {
   loadShippedDesign,
+  validateDesign,
   type PdfDesign,
   type ShippedDesign,
 } from '@/lib/ticket-design';
@@ -914,6 +915,8 @@ export async function buildTicketPdf(
   if (input.positions.length === 0) {
     throw new Error('buildTicketPdf: at least one position is required');
   }
+  // An explicit design is untrusted (studio request, or a legacy options object in this slot).
+  const validDesign = design === undefined ? undefined : validateDesign(design);
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
   const { fonts, logos } = await loadAssets(pdf);
@@ -924,7 +927,7 @@ export async function buildTicketPdf(
     pendingLabel: input.visit.pendingLabel?.trim() || DEFAULT_PENDING_LABEL,
   };
   input.positions.forEach((position, index) => {
-    const pageDesign = (design ?? loadShippedDesign(position.slug)).pdf;
+    const pageDesign = (validDesign ?? loadShippedDesign(position.slug)).pdf;
     const ctx: Ctx = {
       ...base,
       design: pageDesign,

@@ -8,7 +8,7 @@ import {
   type TicketEmailKey,
   type TicketEmailValues,
 } from '@/lib/ticket-email-copy';
-import { loadShippedDesign, type ShippedDesign } from '@/lib/ticket-design';
+import { loadShippedDesign, validateDesign, type ShippedDesign } from '@/lib/ticket-design';
 import { withTestSubjectPrefix } from '@/lib/ticketing-test-mode';
 
 /**
@@ -44,7 +44,8 @@ export function buildTicketTypeEmail(input: TicketTypeEmailInput): TicketTypeEma
       positions: input.positions,
       recoveryUrl: input.recoveryUrl,
       testMode: input.testMode,
-      design: (input.design ?? loadShippedDesign(input.key)).email,
+      // An explicit design is untrusted (studio request): validate before it reaches CSS.
+      design: (input.design ? validateDesign(input.design) : loadShippedDesign(input.key)).email,
     }),
   };
 }

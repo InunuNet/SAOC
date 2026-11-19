@@ -39,5 +39,5 @@ const SHIPPED: Record<string, ShippedDesign> = {
 
 /** The committed design for a ticket type slug; types without a settings file use the default. */
 export function loadShippedDesign(slug: string | undefined): ShippedDesign {
-  return (slug !== undefined && SHIPPED[slug]) || DEFAULT_DESIGN;
+  return (slug !== undefined && Object.hasOwn(SHIPPED, slug) && SHIPPED[slug]) || DEFAULT_DESIGN;
 }
