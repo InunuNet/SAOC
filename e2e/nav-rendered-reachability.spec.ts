@@ -23,6 +23,9 @@ import { collectHrefs } from './utils/collect-nav-hrefs';
 import { NOS_GROUPS, NOS_REQUIRED_HEADER_HREFS } from './utils/nos-nav-hrefs';
 import { nosBase } from './utils/site-urls';
 
+// The credit link carries a screen-reader new-tab cue after the name (Brad, 19 Nov 2026).
+const SAOC_CREDIT_TEXT = /^South African Orchid Council\b/;
+const NEW_TAB_CUE_PATTERN = /\(opens in a new tab\)/;
 const SAOC_NAV_HREFS = Array.from(new Set([...collectHrefs(NAV), CONTACT_LINK.href]));
 
 // The dev server resolves the SAOC origin from its own environment, which this process does not
@@ -207,6 +210,9 @@ test.describe('NOS nav hrefs are reachable from the rendered NOS header', () => 
     const credit = page.getByRole('navigation', { name: 'Main menu' }).locator('.nd-credit a');
 
     expect(isSaocLink((await credit.getAttribute('href')) ?? '', '/')).toBe(true);
-    await expect(credit).toHaveText('South African Orchid Council');
+    await expect(credit).toHaveText(SAOC_CREDIT_TEXT);
+    await expect(credit).toHaveAttribute('target', '_blank');
+    await expect(credit).toHaveAttribute('rel', /noopener/);
+    await expect(credit.locator('.sr-only')).toHaveText(NEW_TAB_CUE_PATTERN);
   });
 });

@@ -11,6 +11,7 @@ import { loadShowFacts } from '@/lib/data/show-facts';
 import { NOS_CONTACT_PATH, nosPath } from '@/lib/nos-paths';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
+import { SaocText } from '@/components/nos/SaocText';
 
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site.
 export const revalidate = 60;
@@ -136,7 +137,7 @@ export default async function ExhibitorEntryGuidePage() {
       >
         {STANDFIRST.map((paragraph) => (
           <p key={paragraph} className="doc-standfirst nos-ex-standfirst">
-            {paragraph}
+            <SaocText>{paragraph}</SaocText>
           </p>
         ))}
         <div data-qa-list="" className="nos-ex-qa">
@@ -151,8 +152,10 @@ export default async function ExhibitorEntryGuidePage() {
         </div>
         {AWARD_SECTIONS.map((section) => (
           <section key={section.awardType} data-award-type={section.awardType}>
-            <h2 className="doc-h2 mt-10!">{section.heading}</h2>
-            <p>{section.lede}</p>
+            <h2 className="doc-h2 mt-10!"><SaocText>{section.heading}</SaocText></h2>
+            <p>
+              <SaocText>{section.lede}</SaocText>
+            </p>
             <ExhibitorStatusBadge status="pending" pendingLabel={AWARD_PENDING_LABEL} />
           </section>
         ))}

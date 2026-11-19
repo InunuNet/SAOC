@@ -153,7 +153,7 @@ assertions:
         address lines and coordinates (both signs of latitude/longitude checked
         literally, since a stray minus-sign flip is a realistic transcription slip).
       command: >-
-        grep -qF "Stellenbosch Airfield" scripts/seed-show-visitor-info.ts &&
+        grep -qF "addressLines: ['R44']" scripts/seed-show-visitor-info.ts &&
         grep -qF "'R44'" scripts/seed-show-visitor-info.ts &&
         grep -qF -- "-33.9794" scripts/seed-show-visitor-info.ts &&
         grep -qF "18.8196" scripts/seed-show-visitor-info.ts
@@ -173,7 +173,7 @@ assertions:
         grep -qF "2027-09-16T09:00:00+02:00" scripts/seed-show-visitor-info.ts &&
         grep -qF "2027-09-19T17:00:00+02:00" scripts/seed-show-visitor-info.ts &&
         grep -Eq "edition:\s*19" scripts/seed-show-visitor-info.ts &&
-        grep -qF "hostRegion: 'Western Cape'" scripts/seed-show-visitor-info.ts
+        grep -qF "hostRegion: 'Western Cape Orchid Societies'" scripts/seed-show-visitor-info.ts
       timeout_seconds: 30
 
     # ================= cleared shape, not reinvented content =================

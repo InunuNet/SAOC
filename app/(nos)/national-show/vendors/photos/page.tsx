@@ -3,6 +3,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 
 import { initAdmin } from '@/lib/firebase-admin';
 import { NosHero } from '@/components/nos/NosHero';
+import { SaocText } from '@/components/nos/SaocText';
 import { NosSection } from '@/components/nos/NosSection';
 import { VendorPhotoResumeUploads } from '@/components/vendors/VendorPhotoResumeUploads';
 import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
@@ -70,8 +71,10 @@ export default async function VendorPhotosPage({ searchParams }: VendorPhotosPag
         <div className="max-w-2xl">
           {state.kind === 'invalid' && (
             <p className="font-sans text-[15px] text-ink">
-              This photo upload link is no longer valid. Please contact SAOC if you believe this is
-              an error.
+              <SaocText>
+                This photo upload link is no longer valid. Please contact SAOC if you believe this is
+                an error.
+              </SaocText>
             </p>
           )}
           {state.kind === 'complete' && (

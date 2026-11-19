@@ -92,7 +92,7 @@ const QUESTIONS: readonly FaqSeed[] = [
     section: 'general-show-information',
     question: 'When and where will the Show take place?',
     answer: [
-      'The Show will take place in September 2027 at Hangar 25, Orca Aero Solutions, Stellenbosch Airfield, Stellenbosch, Western Cape.',
+      'The Show will take place in September 2027 at Stellenbosch Aerodrome, Stellenbosch, Western Cape.',
       'Plant delivery for judging will take place from Tuesday to Wednesday. The show will open to the public on the 23rd September 2027.',
     ],
   },
@@ -221,7 +221,7 @@ const QUESTIONS: readonly FaqSeed[] = [
     section: 'getting-to-the-venue-and-accessibility',
     question: 'Where is the venue?',
     answer: [
-      'The Show will be held at Hangar 25, Orca Aero Solutions, Stellenbosch Airfield, Stellenbosch, Western Cape. A map and directions should be provided on the website and will be emailed to you when you purchase a ticket.',
+      'The Show will be held at Stellenbosch Aerodrome, Stellenbosch, Western Cape. A map and directions should be provided on the website and will be emailed to you when you purchase a ticket.',
     ],
   },
   {

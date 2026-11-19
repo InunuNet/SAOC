@@ -20,7 +20,7 @@
 // before the first category.
 // =============================================================
 
-import { PortableText } from '@portabletext/react';
+import { SaocPortableText } from '@/components/nos/SaocText';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
@@ -186,7 +186,7 @@ export function ShowFaqList({
                         )}
                         {hasFaqAnswer(faq) ? (
                           <div className="doc-prose">
-                            <PortableText value={faq.answer ?? []} />
+                            <SaocPortableText value={faq.answer ?? []} />
                           </div>
                         ) : null}
                       </div>
