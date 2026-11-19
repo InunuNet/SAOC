@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { RouteHero } from '@/components/ui/RouteHero';
+import { Breadcrumb } from '@/components/chrome/Breadcrumb';
 import { ContactForm } from '@/components/contact';
 import { VenueCard } from '@/components/show';
 import { SAOC_LINK_RING } from '@/components/ui/saoc-link-ring';
@@ -84,6 +85,7 @@ export default async function ContactPage() {
         heading={data?.title ?? 'Contact SAOC'}
         lede={LEDE}
       />
+      <Breadcrumb items={[{ label: 'Contact' }]} />
       <div className="saoc-container py-16">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
           {/* LEFT — direct contacts sidebar */}

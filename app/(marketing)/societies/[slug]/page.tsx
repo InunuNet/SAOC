@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { RouteHero } from '@/components/ui/RouteHero';
+import { Breadcrumb } from '@/components/chrome/Breadcrumb';
 import { ArrowIcon } from '@/components/ui/ArrowIcon';
 import { CTASection } from '@/components/ui/CTASection';
 import { client } from '@/sanity/lib/client';
@@ -132,6 +133,7 @@ export default async function SocietyPage({
         heading={society.name}
         lede={society.region ?? undefined}
       />
+      <Breadcrumb items={[{ label: 'Societies', href: '/societies' }, { label: society.name }]} />
       <div className="saoc-container space-y-16 py-16">
         <SocietyFacts society={shown} />
 

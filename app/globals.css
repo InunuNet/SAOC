@@ -405,49 +405,182 @@ h3.font-serif {
   padding-inline: var(--container-pad);
 }
 
-/* Home hero (NOS Design hero-cards-ruling, 2026-10-23, Brad P0; saoc-inner-heroes 2026-10-26). From 1024px
-   one localised scrim covers the copy column only (to the column's right edge, then a short fade), so the
-   rest is bare photograph; up to 1023px the hero stacks, with a 2/1 photograph band first and the copy on
-   solid sage, and there is no scrim. There is no fade band: the hero ends on a hard edge onto the
-   parchment (A5). Motion on the slide that is showing is a subtle 1.04x zoom and a progress line whose end
-   advances the carousel. Pause holds both; reduced motion drops both. */
+/* Hero scale (Brad, 18 Nov): one reference frame, the 2048px-wide view. --u is 1px at 2048 and scales with
+   the viewport width, so every hero size is calc(var(--u) * <px at 2048>). Readability floors sit in
+   max(): lede 16px, CTA label 14px, eyebrow and mono labels 11px, buttons 44px. The home hero is 820px
+   tall at 2048 (40vw), an interior hero 600px (29.3vw); each is a min-height, so a floor never clips.
+   Below 1024px the photograph stays behind the copy; the hero is content-tall and the scrim an even wash.
+   Rules here are unlayered, so they beat the Tailwind utilities left on the elements. */
+.home-hero,
+[data-page-hero] {
+  --u: calc(100vw / 2048);
+  --scrim-wash: rgb(34 40 31 / 0.78);
+}
+.home-hero {
+  --scrim-solid: 640px;
+}
+.home-hero [data-hero-scrim='copy'],
+[data-page-hero] [data-hero-scrim='copy'] {
+  background-color: var(--scrim-wash);
+}
+.home-hero [data-hero-copy] {
+  padding-block: 56px 48px;
+}
+.home-hero [data-hero-eyebrow] {
+  margin-bottom: max(16px, calc(var(--u) * 24));
+  padding: max(4px, calc(var(--u) * 6)) max(12px, calc(var(--u) * 16));
+  font-size: max(11px, calc(var(--u) * 12));
+}
+.home-hero h1.h1 {
+  font-size: max(36px, calc(var(--u) * 96));
+}
+.home-hero [data-hero-ctas] {
+  margin-top: 28px;
+  gap: 24px;
+}
+.home-hero [data-hero-ctas] > div {
+  gap: max(8px, calc(var(--u) * 12));
+}
+.home-hero [data-hero-ctas] > div > div {
+  gap: max(6px, calc(var(--u) * 8));
+}
+.home-hero [data-hero-cta] {
+  min-height: 44px;
+  padding: max(12px, calc(var(--u) * 14)) max(18px, calc(var(--u) * 22));
+  gap: max(12px, calc(var(--u) * 16));
+  font-size: max(14px, calc(var(--u) * 14));
+}
+.home-hero [data-hero-ctas] p.font-mono {
+  font-size: max(11px, calc(var(--u) * 12));
+}
+.home-hero [data-hero-controls] {
+  margin-top: 32px;
+}
+.home-hero [data-hero-controls] button {
+  width: max(44px, calc(var(--u) * 44));
+  height: max(44px, calc(var(--u) * 44));
+}
+.home-hero [data-hero-controls] [role='group'] button > span {
+  width: max(28px, calc(var(--u) * 28));
+  height: 2px;
+}
+/* Phones: nine controls (the 44px pause button and eight slide buttons) must fit 288px at 320 wide, so the
+   slide hit areas are 28px (WCAG 2.2 target size minimum is 24px) and the painted bar 20px. */
+@media (max-width: 479px) {
+  .home-hero [data-hero-controls] [role='group'] button {
+    width: 28px;
+  }
+  .home-hero [data-hero-controls] [role='group'] button > span {
+    width: 20px;
+  }
+}
 @media (min-width: 1024px) {
   .home-hero {
-    min-height: 620px;
+    min-height: calc(var(--u) * 820);
+  }
+  .home-hero [data-hero-scrim='copy'] {
+    background-color: transparent;
+    background-image: linear-gradient(
+      90deg,
+      rgb(34 40 31 / 0.88) 0,
+      rgb(34 40 31 / 0.88)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + var(--scrim-solid)),
+      rgb(34 40 31 / 0.855)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + var(--scrim-solid) + 2.2%),
+      rgb(34 40 31 / 0.788)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + var(--scrim-solid) + 4.4%),
+      rgb(34 40 31 / 0.69)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + var(--scrim-solid) + 6.6%),
+      rgb(34 40 31 / 0.57)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + var(--scrim-solid) + 8.8%),
+      rgb(34 40 31 / 0.44)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + var(--scrim-solid) + 11%),
+      rgb(34 40 31 / 0.31)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + var(--scrim-solid) + 13.2%),
+      rgb(34 40 31 / 0.19)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + var(--scrim-solid) + 15.4%),
+      rgb(34 40 31 / 0.092)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + var(--scrim-solid) + 17.6%),
+      rgb(34 40 31 / 0.025)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + var(--scrim-solid) + 19.8%),
+      rgb(34 40 31 / 0)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + var(--scrim-solid) + 22%)
+    );
+  }
+  .home-hero [data-hero-copy] {
+    padding-block: calc(var(--u) * 180) calc(var(--u) * 79);
+  }
+  /* The copy column keeps the header's left axis; above 2048 it may run past the container's right edge. */
+  .home-hero [data-hero-copy] > div {
+    width: max(calc(var(--u) * 1100), 850px);
+  }
+  .home-hero h1.h1 {
+    max-width: calc(var(--u) * 1100);
+  }
+  .home-hero [data-hero-ctas] {
+    margin-top: calc(var(--u) * 32);
+    max-width: max(calc(var(--u) * 980), 850px);
+    grid-template-columns: repeat(3, minmax(270px, 1fr));
+    gap: max(16px, calc(var(--u) * 16));
+  }
+  .home-hero [data-hero-controls] {
+    margin-top: calc(var(--u) * 140);
+  }
+}
+/* The 11px labels in the CTA row reach into the scrim's fade over the bright parts of a photo (slide 5's
+   white petal gave 1.5:1), so from 1024px the solid zone runs to the CTA row's right edge plus 48px
+   (WCAG AA 4.5:1). The stops and colour after it are the approved ones. */
+@media (min-width: 1024px) {
+  .home-hero {
+    --scrim-solid: calc(max(calc(var(--u) * 980), 850px) + 48px);
   }
 }
 .home-hero-img {
   object-fit: cover;
   object-position: var(--hero-pos);
 }
+
+/* Interior heroes: the same frame, 600px tall at 2048. The column placement stays in PageHero. */
+[data-page-hero] [data-page-hero-copy] {
+  padding-block: 48px;
+}
+[data-page-hero] [data-page-hero-eyebrow] {
+  padding: max(4px, calc(var(--u) * 6)) max(12px, calc(var(--u) * 14));
+  font-size: max(11px, calc(var(--u) * 12));
+}
+[data-page-hero] h1 {
+  max-width: max(768px, calc(var(--u) * 768));
+  font-size: max(36px, calc(var(--u) * 72));
+}
+[data-page-hero] [data-page-hero-eyebrow] + h1 {
+  margin-top: max(14px, calc(var(--u) * 20));
+}
+[data-page-hero] [data-page-hero-lede] {
+  max-width: max(672px, calc(var(--u) * 672));
+  margin-top: max(14px, calc(var(--u) * 20));
+  font-size: max(16px, calc(var(--u) * 16));
+}
+[data-page-hero] .hero-facts {
+  margin-top: max(20px, calc(var(--u) * 32));
+  gap: max(16px, calc(var(--u) * 24)) max(24px, calc(var(--u) * 40));
+}
+[data-page-hero] .hero-facts dd {
+  font-size: max(24px, calc(var(--u) * 32));
+}
+[data-page-hero] .hero-facts dt {
+  margin-top: max(4px, calc(var(--u) * 6));
+  font-size: max(14px, calc(var(--u) * 15));
+}
 @media (min-width: 1024px) {
-  .home-hero [data-hero-scrim='copy'] {
-    background-image: linear-gradient(
-      90deg,
-      rgb(34 40 31 / 0.88) 0,
-      rgb(34 40 31 / 0.88)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px),
-      rgb(34 40 31 / 0.855)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 2.2%),
-      rgb(34 40 31 / 0.788)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 4.4%),
-      rgb(34 40 31 / 0.69)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 6.6%),
-      rgb(34 40 31 / 0.57)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 8.8%),
-      rgb(34 40 31 / 0.44)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 11%),
-      rgb(34 40 31 / 0.31)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 13.2%),
-      rgb(34 40 31 / 0.19)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 15.4%),
-      rgb(34 40 31 / 0.092)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 17.6%),
-      rgb(34 40 31 / 0.025)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 19.8%),
-      rgb(34 40 31 / 0)
-        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 900px + 22%)
-    );
+  [data-page-hero] {
+    min-height: calc(var(--u) * 600);
+  }
+  [data-page-hero] [data-hero-scrim='copy'] {
+    background-color: transparent;
+    background-image: var(--scrim-gradient);
+  }
+  [data-page-hero] [data-page-hero-copy] {
+    padding-block: calc(var(--u) * 64);
   }
 }
 @keyframes home-hero-drift {
@@ -706,8 +839,8 @@ h3.font-serif {
   overflow-wrap: break-word;
 }
 @media (min-width: 1024px) {
-  .hero-facts[data-facts-align='start'] {
-    flex-wrap: nowrap;
+  [data-page-hero] .hero-facts[data-facts-align='start'] {
+    flex-wrap: wrap;
   }
 }
 

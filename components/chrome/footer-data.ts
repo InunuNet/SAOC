@@ -6,7 +6,7 @@
 // components/nos-chrome/nos-footer-data.ts (nos-site-split F3, NOS Design R3.7).
 // =============================================================
 
-import { nosUrl } from '@/lib/site-hosts';
+import { NAV } from './nav-config';
 
 export const FOOTER_ORG_NAME = 'South African Orchid Council';
 
@@ -20,7 +20,7 @@ export const FOOTER_NAV: ReadonlyArray<{
   { id: 'about', label: 'About', href: '/about' },
   { id: 'societies', label: 'Societies', href: '/societies' },
   { id: 'judging', label: 'Judging & Awards', href: '/judging' },
-  { id: 'show', label: 'National Orchid Show', href: nosUrl('/'), crossSite: true },
+  ...NAV.filter((item) => item.id === 'national-show'),
   { id: 'events', label: 'Events', href: '/events' },
 ];
 

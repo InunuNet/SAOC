@@ -1,0 +1,8 @@
+{
+  "viewportCssPixels": [1440, 2048],
+  "assumedHeroWidthsCssPixels": [1425, 2033],
+  "homePanelWidthsCssPixels": [1240, 1240],
+  "saocRoutePanelWidthsCssPixels": [1425, 1500],
+  "nosInnerPanelWidthsCssPixels": [1425, 1500],
+  "browserVerification": "Lead to measure rendered panels at the dev preview hosts"
+}

@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 
 import { RouteHero } from '@/components/ui/RouteHero';
+import { Breadcrumb } from '@/components/chrome/Breadcrumb';
 import { SocietiesClient } from './SocietiesClient';
 import { SocietiesFallback } from './SocietiesFallback';
 import type { SanitySociety } from '@/components/societies';
@@ -110,6 +111,7 @@ export default async function SocietiesPage() {
         eyebrow="Affiliated societies"
         heading="Find an orchid society near you"
       />
+      <Breadcrumb items={[{ label: 'Societies' }]} />
       <div className="saoc-container py-16">
         <Suspense fallback={<SocietiesFallback societies={listed} />}>
           <SocietiesClient societies={listed} provinces={provinceChips} />

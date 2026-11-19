@@ -1,0 +1,24 @@
+schema: athanor.contract/v1
+slug: brad-hero-panel-18nov
+goal: Keep desktop hero photographs within fixed-width faded panels without changing hero copy or stacked layouts.
+created_at: '2026-11-18'
+autonomy: high
+features:
+  - id: F1
+    name: Desktop hero photo panels
+    status: pending
+goldens:
+  - .agent/memory/project/specs/brad-hero-panel-18nov/goldens/panel-widths.json
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Home photo panel is capped at 1240px.
+      command: grep -Fq 'lg:w-[min(100%,1240px)]' components/home/Hero.tsx
+    - id: A2
+      description: SAOC page photo panel is capped at 1500px.
+      command: grep -Fq 'lg:w-[min(100%,1500px)]' components/ui/PageHero.tsx
+    - id: A3
+      description: NOS inner photo panel is capped at 1500px.
+      command: |-
+        grep -Fq 'width: min(100%, 1500px)' 'app/(nos)/national-show/nos-structure.css'

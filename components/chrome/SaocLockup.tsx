@@ -187,16 +187,9 @@ export function SaocLockup({
   // app.js:92, scaled at s=0.55 (unchanged from round 1): name = 50*1.1*0.55
   // ≈ 30, ruleW ≈ 133, tagGap ≈ 9, tag 11 (the craft-floor minimum; NOS Design FT6).
   //
-  // Emblem is NOT sized off embBoxH (130*1.4=182 — that figure describes the
-  // UNTRIMMED 1254² export canvas; applying it to the already-trimmed asset
-  // shrinks the artwork a second time, which is what made round-2's emblem
-  // read as too small against the reference). Sized by WIDTH instead,
-  // directly against the rendered wordmark: target ratio 0.65 (Brad's
-  // measurement off his reference, brad-footer-reference.png) × the
-  // Playwright-measured rendered wordmark width at text-[30px] Lora
-  // (255.39px) ≈ 166px; height derived from the asset's own 640×618
-  // (1.0356:1) aspect ≈ 160px. Verified on the rendered page (Playwright):
-  // emblemWidth 166 / wordmarkWidth 255.39 = 0.65.
+  // The dark footer uses the 1228×741 full-colour emblem at 206×124; the
+  // light treatment keeps its 640×618 emblem at 166×160. Both stay below
+  // their native pixel sizes and retain their own aspect ratios.
   return (
     <Link
       href="/"
@@ -204,9 +197,14 @@ export function SaocLockup({
       className={[LINK_CLASSES_BY_TONE[tone], 'flex w-full min-w-0 flex-col items-center [container-type:inline-size]', className ?? ''].join(' ')}
     >
       <span aria-hidden="true" className="flex flex-col items-center">
-        <span className="relative shrink-0 w-[166px] h-[160px]">
-          <Image src={emblemSrc} alt="" fill sizes="166px" className="object-contain" priority={priority} />
-        </span>
+        <Image
+          src={tone === 'dark' ? OFFICIAL_COLOUR_EMBLEM : emblemSrc}
+          alt=""
+          width={tone === 'dark' ? 206 : 166}
+          height={tone === 'dark' ? 124 : 160}
+          className="h-auto max-w-full shrink-0"
+          priority={priority}
+        />
         {/* W2 ('South African Orchid Council') at 30px is ≈410px wide —
             wider than a footer column on narrow viewports. The artifact's
             own answer is `data-fit` (shrink-to-parent: zoom = min(1,

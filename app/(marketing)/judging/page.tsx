@@ -147,13 +147,13 @@ export default async function JudgingPage() {
 
   return (
     <>
-      <Breadcrumb items={[{ label: 'Judging' }]} />
       <RouteHero
         route="/judging"
         eyebrow="SAOC judging system"
         heading={data?.title ?? 'Judging at SAOC'}
         lede={LEDE}
       />
+      <Breadcrumb items={[{ label: 'Judging' }]} />
 
       <DocumentLayout index={index}>
         {allWithheld ? (

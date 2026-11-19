@@ -16,11 +16,11 @@ export const metadata: Metadata = buildPageMetadata({
 export default function MemorandumOfIncorporationPage() {
   return (
     <>
-      <Breadcrumb items={[{ label: 'Memorandum of Incorporation' }]} />
       <RouteHero
         route="/memorandum-of-incorporation"
         heading="Memorandum of Incorporation"
       />
+      <Breadcrumb items={[{ label: 'Memorandum of Incorporation' }]} />
       <DocumentLayout>
         <LegalBody document={COMPANY_DOCUMENTS} />
       </DocumentLayout>

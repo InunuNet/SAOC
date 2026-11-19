@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { RouteHero } from '@/components/ui/RouteHero';
+import { Breadcrumb } from '@/components/chrome/Breadcrumb';
 import { EventsAbout, EventsList, eventHref, type ListedEvent } from '@/components/events';
 import { ShowBand } from '@/components/home';
 import { JsonLd, eventJsonLd } from '@/components/seo/JsonLd';
@@ -74,6 +75,7 @@ export default async function EventsPage() {
         heading="Events"
         lede={LEDE}
       />
+      <Breadcrumb items={[{ label: 'Events' }]} />
 
       {/* One Event node per real event, so search engines read what the page lists. */}
       {events.map((event) => (

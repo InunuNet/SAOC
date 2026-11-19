@@ -13,6 +13,7 @@
 import { Header, Footer } from '@/components/chrome';
 import { NosFrame } from '@/components/site-chrome/NosFrame';
 import { NosThemeScope } from '@/components/nos/NosThemeScope';
+import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { requestSite } from '@/lib/request-site';
 
 export default async function AdminLoginLayout({ children }: { children: React.ReactNode }) {
@@ -28,7 +29,7 @@ export default async function AdminLoginLayout({ children }: { children: React.R
     <>
       <Header />
       <main>{children}</main>
-      <Footer showCopyGap={false} />
+      <Footer showCopyGap={!withholdPlaceholderProse()} />
     </>
   );
 }

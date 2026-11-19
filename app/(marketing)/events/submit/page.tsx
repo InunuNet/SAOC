@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 import { SubmitEventPageBody } from '@/components/events/SubmitEventPageBody';
 import { RouteHero } from '@/components/ui/RouteHero';
+import { Breadcrumb } from '@/components/chrome/Breadcrumb';
 import { getAdminSession } from '@/lib/admin-auth';
 import { buildPageMetadata } from '@/lib/seo';
 import { sanityFetch } from '@/sanity/lib/fetch';
@@ -42,7 +43,12 @@ export default async function SubmitEventPage() {
   const session = await getAdminSession();
 
   if (!session.ok) {
-    return <LoginPrompt />;
+    return (
+      <>
+        <LoginPrompt />
+        <Breadcrumb items={[{ label: 'Events', href: '/events' }, { label: 'Submit an event' }]} />
+      </>
+    );
   }
 
   const listed = await sanityFetch<SanitySocietyRow[] | null>({
@@ -51,5 +57,9 @@ export default async function SubmitEventPage() {
   });
   const societies = (listed ?? []).map((row) => ({ id: row._id, name: row.name }));
 
-  return <SubmitEventPageBody societies={societies} />;
+  return (
+    <>
+      <SubmitEventPageBody societies={societies} />
+    </>
+  );
 }

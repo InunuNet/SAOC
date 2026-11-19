@@ -1,14 +1,14 @@
 // =============================================================
 // SAOC — components/ui/PageHero.tsx
 // Server Component — shared hero for interior pages (mission saoc-inner-heroes, NOS Design 2026-10-26).
-// From 768px up the photograph is full bleed with its bloom bottom-left (the left 34% is the bare
+// From 1024px the photograph is full bleed with its bloom bottom-left (the left 34% is the bare
 // photograph) and the copy in a left-aligned column that starts at 52%, on an eased scrim local to
-// that column. Below 768px the hero stacks: a 2/1 photograph band, the copy under it on solid sage.
-// With no `image` the hero is typographic: the same copy on solid sage, no media and no scrim; from
-// 1024px its band sizes to its content (HM-8), below that it keeps the 480px minimum.
+// that column. The hero and everything in it scale with the viewport width (globals.css).
+// Below 1024px the photograph stays full bleed behind the copy, which fills the width on an even scrim.
+// With no `image` the same geometry and copy column sit on solid sage.
 // =============================================================
 
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { HeroPicture } from '@/components/ui/HeroPicture';
 import { normaliseHeroFacts, type HeroFact } from '@/lib/hero-facts';
 import { heroSourceAspect } from '@/lib/data/saoc-hero-photos';
@@ -31,10 +31,14 @@ interface PageHeroProps {
   exempt?: boolean;
 }
 
-const HERO_MIN_HEIGHT_CLASS = 'md:min-h-[480px]';
-// The wide hero's box is at least this tall, so a source wider than the box x its height is height-driven.
-const HERO_BOX_HEIGHT = 480;
-const STACK_BELOW_QUERY = '(max-width: 767px)';
+// From 1024px the box is 600/2048 of the width tall (29.3vw), so a source wider than the box is height-driven.
+// The copy can make it taller than that between 1024 and about 1400px (the event hero with facts measures
+// 407px at 1024 and 415px at 1280), so the box height is taken as at least DESKTOP_TALL_HERO_PX.
+const DESKTOP_HEIGHT_VW = 29.3;
+const DESKTOP_TALL_HERO_PX = 420;
+// Below 1024px the hero is content-tall, about this many px on a phone.
+const STACKED_BOX_HEIGHT = 520;
+const STACK_BELOW_QUERY = '(max-width: 1023px)';
 // The copy zone: the scrim is clear through the bloom side (34%), eases in over the stops below (alpha,
 // position in percent) and reaches its full strength by 52%, where the copy column starts (HM-5).
 // Sage only (--primary-800), no wash over the bloom.
@@ -50,8 +54,6 @@ const SCRIM_STOPS: readonly (readonly [number, number])[] = [
 const SCRIM_BACKGROUND = `linear-gradient(90deg, transparent 0, ${SCRIM_STOPS.map(
   ([alpha, at]) => `rgb(34 40 31 / ${alpha}) ${at}%`,
 ).join(', ')})`;
-// HM-8: from 1024px the typographic band is its content plus this block padding, with no minimum height.
-const TYPE_BAND_PADDING_CLASS = 'lg:py-[clamp(64px,6vw,96px)] lg:min-h-0';
 
 export function PageHero({
   image,
@@ -66,28 +68,22 @@ export function PageHero({
 }: PageHeroProps) {
   const heroFacts = normaliseHeroFacts(facts);
   const aspect = image ? heroSourceAspect(image) : null;
-  // A cover image is driven by the longer of box width and box height x aspect. Wide: the box is the
-  // viewport wide and at least HERO_BOX_HEIGHT tall. Stacked: a 2/1 band, so its height is half the width.
+  // A cover image is driven by the longer of box width and box height x aspect.
   const sizes =
     aspect === null
       ? undefined
-      : `${STACK_BELOW_QUERY} max(100vw, calc(50vw * ${aspect})), max(100vw, ${Math.ceil(HERO_BOX_HEIGHT * aspect)}px)`;
+      : `${STACK_BELOW_QUERY} max(100vw, ${Math.ceil(STACKED_BOX_HEIGHT * aspect)}px), max(100vw, calc(max(${DESKTOP_HEIGHT_VW}vw, ${DESKTOP_TALL_HERO_PX}px) * ${aspect}))`;
 
   return (
     <section
       data-page-hero
       data-page-hero-variant={image ? undefined : 'type'}
       data-hero-exempt={exempt ? '' : undefined}
-      className={`relative isolate overflow-hidden bg-primary-800 md:flex md:items-center ${HERO_MIN_HEIGHT_CLASS}${
-        image ? '' : ` ${TYPE_BAND_PADDING_CLASS}`
-      }`}
+      className="relative isolate flex items-center overflow-hidden bg-primary-800"
     >
       {image ? (
         <>
-          <div
-            data-page-hero-media
-            className="relative aspect-[2/1] w-full md:absolute md:inset-0 md:aspect-auto"
-          >
+          <div data-page-hero-media className="absolute inset-0">
             <HeroPicture
               src={image}
               priority
@@ -99,34 +95,32 @@ export function PageHero({
           <div
             data-hero-scrim="copy"
             aria-hidden="true"
-            className="absolute inset-0 max-md:hidden"
-            style={{ backgroundImage: SCRIM_BACKGROUND }}
+            className="absolute inset-0"
+            style={{ '--scrim-gradient': SCRIM_BACKGROUND } as CSSProperties}
           />
         </>
       ) : null}
       <div
         data-page-hero-copy
-        className={`relative z-10 flex w-full flex-col items-start px-[var(--container-pad)] py-10 text-left md:py-16 ${
-          image ? 'md:ml-[52%] md:w-[min(48%,calc(var(--container-max)/2_-_2%))] md:pl-0' : 'saoc-container lg:py-0'
-        }`}
+        className="relative z-10 flex w-full flex-col items-start px-[var(--container-pad)] text-left lg:ml-[52%] lg:w-[min(48%,max(calc(var(--container-max)/2_-_2%),calc(var(--u)*651)))] lg:pl-0"
       >
         {eyebrow ? (
           <span
             data-page-hero-eyebrow
-            className="inline-flex items-center rounded-full border border-white/25 bg-[var(--primary-800)]/60 px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-ivory"
+            className="inline-flex items-center rounded-full border border-white/25 bg-[var(--primary-800)]/60 font-mono uppercase tracking-[0.18em] text-ivory"
           >
             {eyebrow}
           </span>
         ) : null}
         <h1
-          className={`${eyebrow ? 'mt-5 ' : ''}max-w-3xl font-serif tracking-[-0.015em] font-light text-[clamp(42px,5.4vw,72px)] leading-[1.05] text-ivory`}
+          className="max-w-3xl font-serif tracking-[-0.015em] font-light leading-[1.05] text-ivory"
         >
           {heading}
         </h1>
         {lede ? (
           <p
             data-page-hero-lede
-            className="mt-5 max-w-2xl font-sans text-[16px] leading-[1.55] text-ivory text-pretty"
+            className="max-w-2xl font-sans leading-[1.55] text-ivory text-pretty"
           >
             {lede}
           </p>
