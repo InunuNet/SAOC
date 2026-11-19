@@ -7,9 +7,11 @@
 // the predicate takes its result rather than reading the ledger itself).
 import { effectiveCapacity, resolveEffectivePrice } from '@/lib/checkout-reservation';
 import { isDemoTicketTypeDoc } from '@/lib/demo-ticket-type';
+import { isWorkshopTicketDoc, WORKSHOP_TICKETS_ON_SALE } from '@/lib/workshop-sales';
 
 export type NotOnSaleReason =
   | 'demo'
+  | 'coming-soon'
   | 'inactive'
   | 'sales-closed'
   | 'wrong-show'
@@ -21,6 +23,8 @@ export type NotOnSaleReason =
 // predicate judges is `unknown` and narrowed here, never asserted.
 export interface OnSaleDoc {
   slug?: string | null;
+  category?: unknown;
+  isWorkshopSession?: unknown;
   demo?: boolean | null;
   active?: unknown;
   price: unknown;
@@ -94,12 +98,16 @@ function hasSellableCapacity(doc: OnSaleDoc): boolean {
 }
 
 /**
- * First failing reason wins, in this order: demo, inactive, sales-closed, wrong-show, no-price,
+ * First failing reason wins, in this order: demo, coming-soon, inactive, sales-closed,
+ * wrong-show, no-price,
  * no-capacity, sold-out. `qaFixturesAllowed` waives the demo reason and nothing else.
  */
 export function isTicketOnSale(input: OnSaleInput): OnSaleVerdict {
   const { doc, activeShowId, salesOpen, soldOut, now, qaFixturesAllowed: qaAllowed } = input;
   if (isDemoTicketTypeDoc(doc) && !qaAllowed) return { onSale: false, reason: 'demo' };
+  if (!WORKSHOP_TICKETS_ON_SALE && isWorkshopTicketDoc(doc)) {
+    return { onSale: false, reason: 'coming-soon' };
+  }
   if (doc.active !== true) return { onSale: false, reason: 'inactive' };
   if (!salesOpen) return { onSale: false, reason: 'sales-closed' };
   if (!ticketTypeMatchesActiveShow(doc, activeShowId)) {

@@ -73,7 +73,7 @@ const THEME_INDEX = 4;
 const ADMISSION_ROWS = [
   { id: 'ticketType-vip', slug: 'vip', name: 'VIP Ticket' },
   { id: 'ticketType-sunset-cocktails-single', slug: 'sunset-cocktails-single', name: 'Sunset Cocktails (Single)' },
-  { id: 'ticketType-weekend-pass-early-bird', slug: 'weekend-pass-early-bird', name: 'Weekend Pass (Early Bird)' },
+  { id: 'ticketType-weekend-pass', slug: 'weekend-pass', name: 'Weekend Pass' },
   { id: 'ticketType-early-bird', slug: 'early-bird', name: 'Early-Bird Exhibition Ticket' },
   { id: 'ticketType-day-visitor', slug: 'day-visitor', name: 'Day Pass Ticket' },
 ] as const;

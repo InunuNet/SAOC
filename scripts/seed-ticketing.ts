@@ -42,6 +42,7 @@ import { createClient, type SanityClient } from '@sanity/client';
 import {
   ADMISSION_PRODUCTS,
   CONFERENCE_PRODUCTS,
+  SPEAKERS_PARTNER_PRODUCT,
   WORKSHOP_FIELD_TRIP_PRODUCTS,
   type ProvisionalAdmissionProduct,
 } from '../lib/provisional-figures';
@@ -137,6 +138,7 @@ export function buildTicketTypeDoc(
     releasedQuantity: product.releasedQuantity,
     requiresDaySelection: product.requiresDaySelection,
     requiresAttendeeNames: product.requiresAttendeeNames,
+    requiresRegistration: product.requiresRegistration ?? false,
     category: product.category,
     capacityPool: product.capacityPool ?? null,
     headcountPerUnit: product.headcountPerUnit ?? null,
@@ -176,6 +178,7 @@ async function seedTicketTypes(client: SanityClient, showId: string): Promise<vo
     ...ADMISSION_PRODUCTS,
     ...CONFERENCE_PRODUCTS,
     ...WORKSHOP_FIELD_TRIP_PRODUCTS,
+    SPEAKERS_PARTNER_PRODUCT,
   ];
   for (const [index, product] of allProducts.entries()) {
     await client.createIfNotExists(buildTicketTypeDoc(product, index, showId));

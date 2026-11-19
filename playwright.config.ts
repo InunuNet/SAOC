@@ -34,6 +34,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 import { getFreeLocalPort } from './e2e/support/dynamic-port';
+import { E2E_SPEAKERS_PARTNER_PASSWORD } from './e2e/support/speakers-partner-dummy';
 
 const PORT_ENV_VAR = 'SAOC_E2E_DYNAMIC_PORT';
 
@@ -82,6 +83,9 @@ async function buildConfig() {
       command: `pnpm exec next dev --port ${PORT}`,
       url: BASE_URL,
       reuseExistingServer: false,
+      // A throwaway password for the Speakers Partner specs, set for the test server only; it
+      // overrides any real value in .env.local so the real secret is never needed or used here.
+      env: { SPEAKERS_PARTNER_PASSWORD: E2E_SPEAKERS_PARTNER_PASSWORD },
       timeout: 120_000,
     },
   });

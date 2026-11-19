@@ -372,6 +372,8 @@ const SLUG_TO_KEY: Readonly<Record<string, TicketEmailKey>> = {
   'saoc-symposium': 'saoc-symposium',
   'wosa-conference': 'wosa-conference',
   'saoc-wosa-joint': 'saoc-wosa-joint',
+  // The hidden Speakers Partner ticket covers both events: Lee-Ann's joint email fits it.
+  'speakers-partner': 'saoc-wosa-joint',
 };
 
 /** The email for a stored ticket type slug, or null when none is mapped (generic email is sent). */

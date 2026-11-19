@@ -113,7 +113,7 @@ function isPriceUsable(price: number | null): boolean {
 // Only the Weekend Pass and Day Pass SKUs share the early-bird pool; another product that happens
 // to carry a capacity pool (Sunset Cocktails, a field trip) must not change its count.
 const POOL_SKUS: ReadonlySet<string> = new Set(
-  Object.values(PASS_SKUS).flatMap((sku) => [sku.earlyBird, sku.regular])
+  Object.values(PASS_SKUS).flatMap((sku) => (sku.earlyBird ? [sku.earlyBird, sku.regular] : [sku.regular]))
 );
 
 function ownScarcity(type: TicketTypeInput, input: TicketCardsInput): CardScarcity | null {
@@ -197,7 +197,7 @@ function buildSingleCard(
     name: type.name ?? null,
     state,
     price: priceUsable ? type.price : null,
-    regularPrice: null,
+    regularPrice: type.regularPrice ?? null,
     regularName: null,
     scarcity,
     days: null,

@@ -23,8 +23,6 @@ interface BuyBlockProps {
   /** The name the stepper group is labelled with. */
   name: string;
   product: TicketProduct;
-  /** Per-session cards price each place and link their own session ticket type. */
-  session?: boolean;
   /** The chosen day (Day Pass only), appended to the checkout link. */
   day?: string | null;
   /** Day Pass only: called instead of following the link while no day is chosen. */
@@ -49,7 +47,6 @@ export function BuyBlock({
   vm,
   name,
   product,
-  session = false,
   day = null,
   regularName = null,
   onMissingDay,
@@ -57,6 +54,19 @@ export function BuyBlock({
   const [quantity, setQuantity] = useState(MIN_QUANTITY);
 
   if (vm.state === 'salesClosed') return null;
+
+  // Workshop tickets are not on sale yet (Brad, 19 Nov 2026): the card states its price and
+  // "Coming soon", never a stepper or a buy link. Checkout refuses them server-side as well.
+  if (product.kind === 'workshop') {
+    return (
+      <div className="nk-buy">
+        <div>
+          {vm.price !== null ? <TicketPrice price={vm.price} each muted={false} /> : null}
+          <span className="nk-chip">{TICKET_COPY.comingSoon}</span>
+        </div>
+      </div>
+    );
+  }
 
   if (vm.state === 'pricePending' || vm.price === null) {
     return (
@@ -99,17 +109,6 @@ export function BuyBlock({
     );
   }
 
-  // No workshop session is bookable yet: the product card states its price and offers nothing.
-  if (product.kind === 'workshop' && !session) {
-    return (
-      <div className="nk-buy">
-        <div>
-          <TicketPrice price={vm.price} each={each} muted={false} />
-        </div>
-      </div>
-    );
-  }
-
   const isPass = product.kind === 'pass';
   const scarcity = vm.scarcity;
   const max =
@@ -118,7 +117,7 @@ export function BuyBlock({
       : MAX_QUANTITY;
   const current = Math.min(quantity, max);
   const earlyBirdLine =
-    isPass && vm.slug.endsWith('early-bird')
+    (isPass && vm.slug.endsWith('early-bird')) || (!isPass && vm.regularPrice !== null)
       ? vm.regularPrice !== null
         ? `Early-bird ${formatRand(vm.price)}, then ${formatRand(vm.regularPrice)}`
         : TICKET_COPY.earlyBirdPriceStruck

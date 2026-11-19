@@ -318,6 +318,7 @@ export const ATTENDING_BY_TICKET: Record<string, string> = {
   'saoc-symposium': 'SAOC Symposium Normal Ticket',
   'wosa-conference': 'WOSA Symposium Normal Ticket',
   'sunset-cocktails-single': 'Sunset Cocktails',
+  'speakers-partner': 'SAOC Symposium Speaker Partner/Spouse',
 };
 
 /** Which fields each "Same as above" section covers. */
