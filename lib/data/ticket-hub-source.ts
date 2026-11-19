@@ -71,7 +71,11 @@ function toTypeInput(
   const sanityStock = typeof t.capacity === 'number' || typeof t.releasedQuantity === 'number';
   const fallback = sanityStock ? undefined : PROVISIONAL_STOCK[t.slug];
   // The early-bird SKUs carry no regular price of their own: the sibling SKU's live price is it.
-  const regularPrice = sibling ? (priceBySlug[sibling] ?? null) : null;
+  const earlyBirdOpen = isWithinEarlyBirdWindow(now, t.earlyBirdCutoff ?? null);
+  // A single-SKU early bird (the Symposium and WOSA Conference) names its own post-cut-off price,
+  // shown only while the early bird is still open.
+  const ownRegularPrice = t.earlyBirdCutoff && earlyBirdOpen ? (t.regularPrice ?? null) : null;
+  const regularPrice = sibling ? (priceBySlug[sibling] ?? null) : ownRegularPrice;
   return {
     slug: t.slug,
     name: t.name,
@@ -92,7 +96,7 @@ function toTypeInput(
     capacityPool: t.capacityPool ?? fallback?.capacityPool ?? null,
     capacitySource: fallback ? 'provisional' : 'sanity',
     headcountPerUnit: t.headcountPerUnit ?? 1,
-    earlyBirdOpen: isWithinEarlyBirdWindow(now, t.earlyBirdCutoff ?? null),
+    earlyBirdOpen,
   };
 }
 

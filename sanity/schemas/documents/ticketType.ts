@@ -154,6 +154,8 @@ export const ticketType = defineType({
           // app/(nos)/national-show/**, out of scope for this mission. See
           // .agent/memory/project/specs/ticketing-complete/goldens/f2-README.md §10.
           { title: 'Award Entry', value: 'exhibitor-entry' },
+          // Hidden: sold only through the password-protected committee link, never listed.
+          { title: 'Speakers Partner (hidden)', value: 'speakers-partner' },
         ],
       },
       description: 'Which purchase page this ticket type is sold on.',

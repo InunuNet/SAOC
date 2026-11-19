@@ -8,7 +8,11 @@
  * including why a Child ticket is deliberately NOT included here.
  */
 
-export type ProvisionalProductCategory = 'admission' | 'conference' | 'workshop-field-trip';
+export type ProvisionalProductCategory =
+  | 'admission'
+  | 'conference'
+  | 'workshop-field-trip'
+  | 'speakers-partner';
 
 export interface ProvisionalAdmissionProduct {
   slug: string;
@@ -67,9 +71,19 @@ export interface ProvisionalAdmissionProduct {
    *  per Brad's 2026-10-07 ticket news: "No Daypass on thursday"). See
    *  .agent/memory/project/specs/conference-workshop-tickets/goldens/f2-admission-evening-figures.golden.json. */
   excludedDays?: string[] | null;
+  /** True when the buyer completes the registration form before payment (Symposium, WOSA
+   *  Conference, Sunset Cocktails, Speakers Partner). Unset means false. */
+  requiresRegistration?: boolean;
 }
 
-export const EARLY_BIRD_CUTOFF = '2027-07-31';
+/**
+ * The one early-bird cut-off for every early-bird price (Brad and Lee-Ann, 19 Nov 2026: early
+ * bird access runs from launch, 1 Dec 2026, until the end of February 2027). Stored the way
+ * deriveVendorStandEarlyBirdCutoffIso stores a cut-off: the cut-off DAY at SAST midnight, so
+ * isWithinEarlyBirdWindow (which runs through the end of that day) closes the window at
+ * 28 Feb 2027 23:59:59 SAST, not at UTC midnight two hours later.
+ */
+export const EARLY_BIRD_CUTOFF = '2027-02-28T00:00:00+02:00';
 
 // F2 (conference-workshop-tickets, M1) — Brad's ticket news, 2026-10-07 (verbatim), message
 // 6: "500 early bird day v[i]stor tickets, 3 day booking and 1 day book[ing] all count to
@@ -133,7 +147,10 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
     price: 120,
     capacity: ADMISSION_EARLY_BIRD_POOL_CAPACITY,
     releasedQuantity: null,
-    earlyBirdCutoff: null,
+    // Lee-Ann's "Ticket Pricing" doc (16 Nov): Early bird Entrance R120. Brad, 19 Nov: early
+    // bird runs from launch until the end of February 2027. After the cut-off the hub falls
+    // back to the Day Visitor SKU's price (REGULAR_PRICE_SIBLING_SLUG).
+    earlyBirdCutoff: EARLY_BIRD_CUTOFF,
     capacityPool: ADMISSION_EARLY_BIRD_POOL_KEY,
     headcountPerUnit: 1,
     requiresDaySelection: true,
@@ -164,10 +181,9 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
     description: 'Full-weekend admission to the National Orchid Show.',
     price: 350,
     regularPrice: null,
-    // Carried over unchanged from before the early-bird split — FLAGGED OPEN QUESTION, not
-    // assumed: before the split this capped BOTH price tiers combined on one SKU; Brad's
-    // message 6 does not say whether 300 still caps this regular-price product alone,
-    // independent of weekend-pass-early-bird's own 500-ticket pool. See needs-Brad.
+    // Lee-Ann's "Ticket Pricing" doc (16 Nov): Weekend Pass R350. Brad, 19 Nov: the Weekend
+    // Pass has NO early-bird price, so the weekend-pass-early-bird SKU is retired. Capacity
+    // (300) is carried over unchanged.
     capacity: 300,
     releasedQuantity: null,
     earlyBirdCutoff: null,
@@ -180,40 +196,10 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
       "pass(R380) Early Bird(R360) 9h00 -17h00, except Sunday 9h00-15h00'; Brad's ticket " +
       "news, 2026-10-07 (verbatim), message 6 moves the R360 early-bird price to the new " +
       "weekend-pass-early-bird product and removes the date-cutoff mechanism from this slug " +
-      'entirely. Capacity (300) is carried over unchanged — not re-confirmed against the ' +
-      'split; see the capacity comment above. See .agent/memory/scratch/leeann-notes-2026-10-07.md ' +
-      'and .agent/memory/scratch/brad-ticket-news-2026-10-07.md.',
-  },
-  {
-    // F2 (conference-workshop-tickets, M1) — genuinely NEW product/SKU, not a renamed or
-    // recreated one. Required because a single SKU's own two-price-by-date shape cannot
-    // express "shared pool with a DIFFERENT product's sold count" — see
-    // goldens/f2-admission-evening-figures.golden.json "architectureChange_weekendPassSplit".
-    slug: 'weekend-pass-early-bird',
-    name: 'Weekend Pass (Early Bird)',
-    category: 'admission',
-    description: 'Full-weekend admission to the National Orchid Show at the early-bird price.',
-    // Not in Lee-Ann's 16 Nov price list; awaiting Brad's decision.
-    price: 360,
-    regularPrice: null,
-    // Declares the FULL shared-pool ceiling, same convention as every other pool sibling in
-    // this file (sunset-cocktails-single/couple) — not a sub-allocation of the 500 for this
-    // slug alone. Shares `ADMISSION_EARLY_BIRD_POOL_KEY` with the 'early-bird' slug above —
-    // combined sold+reserved units across BOTH count against the one ceiling.
-    capacity: ADMISSION_EARLY_BIRD_POOL_CAPACITY,
-    releasedQuantity: null,
-    earlyBirdCutoff: null,
-    capacityPool: ADMISSION_EARLY_BIRD_POOL_KEY,
-    headcountPerUnit: 1,
-    requiresDaySelection: false,
-    requiresAttendeeNames: false,
-    provisional: true,
-    sourceCitation:
-      "Lee-Ann's sheet (relayed by Brad, 2026-10-07), line 22 (R360 price); Brad's ticket " +
-      "news, 2026-10-07 (verbatim), message 6: '500 early bird day v[i]stor tickets, 3 day " +
-      "booking and 1 day book[ing] all count to 500' and 'Earlybird now ends after 500 " +
-      'tickets are sold not at a specific date\'. See .agent/memory/scratch/leeann-notes-2026-10-07.md ' +
-      'and .agent/memory/scratch/brad-ticket-news-2026-10-07.md.',
+      'entirely. Superseded by Brad (19 Nov 2026): no early-bird price for the Weekend Pass; ' +
+      "price R350 per Lee-Ann's 'Ticket Pricing' doc. See " +
+      '.agent/memory/scratch/leeann-notes-2026-10-07.md and ' +
+      '.agent/memory/scratch/brad-ticket-news-2026-10-07.md.',
   },
   {
     slug: 'vip',
@@ -279,15 +265,21 @@ export const DAY_VISITOR_SHAPED_SLUGS: readonly string[] = ADMISSION_PRODUCTS.fi
  * no longer present in this live array.
  */
 
-const SYMPOSIUM_WOSA_PRICE = 1500;
+// Lee-Ann's "Ticket Pricing" doc (16 Nov, approved): SAOC and WOSA Conference each R1 500
+// full price and R1 200 early bird (Brad, 19 Nov: early bird until end of February 2027).
+// The early-bird price is the stored `price`; `regularPrice` takes over after the cut-off.
+const SYMPOSIUM_WOSA_REGULAR_PRICE = 1500;
+const SYMPOSIUM_WOSA_EARLY_BIRD_PRICE = 1200;
 const SYMPOSIUM_WOSA_CAPACITY = 80;
 
 const SYMPOSIUM_WOSA_SOURCE_CITATION =
   "Brad's ticket news, 2026-10-07 (verbatim), messages 1/3/6 — R2000 each, 80 tickets, " +
   "separate products ('Each cost R2000 symposium and Confernec' -> separate products), no " +
-  "early-bird mechanism of any kind (message 6 directly answers and supersedes message 4's " +
-  "earlier same-day scarcity-tranche design: 'No early bird for Symposiums and confernec'). " +
-  'See .agent/memory/scratch/brad-ticket-news-2026-10-07.md.';
+  "early-bird mechanism (message 6: 'No early bird for Symposiums and confernec'). Both the " +
+  "R2000 and that ruling are superseded by Lee-Ann's 'Ticket Pricing' doc (16 Nov): 'SAOC " +
+  "Conference Full Price R1 500,00', 'SAOC Conference Early Bird R1 200,00' (likewise WOSA), " +
+  'with early bird until the end of February 2027 (Brad, 19 Nov 2026). See ' +
+  '.agent/memory/scratch/brad-ticket-news-2026-10-07.md.';
 
 export const CONFERENCE_PRODUCTS: ProvisionalAdmissionProduct[] = [
   {
@@ -295,12 +287,14 @@ export const CONFERENCE_PRODUCTS: ProvisionalAdmissionProduct[] = [
     name: 'National Orchid Show Symposium',
     category: 'conference',
     description: 'Full registration for the National Orchid Show Symposium track.',
-    price: SYMPOSIUM_WOSA_PRICE,
+    price: SYMPOSIUM_WOSA_EARLY_BIRD_PRICE,
+    regularPrice: SYMPOSIUM_WOSA_REGULAR_PRICE,
     capacity: SYMPOSIUM_WOSA_CAPACITY,
     releasedQuantity: null,
-    earlyBirdCutoff: null,
+    earlyBirdCutoff: EARLY_BIRD_CUTOFF,
     requiresDaySelection: false,
     requiresAttendeeNames: true,
+    requiresRegistration: true,
     // Settled, not a web-team estimate — Brad's direct, unambiguous ruling (messages 1/3/6),
     // same "genuinely settled by a direct ruling, cited via sourceCitation, not a council
     // confirmation" precedent the ProvisionalAdmissionProduct.provisional doc-comment above
@@ -313,12 +307,14 @@ export const CONFERENCE_PRODUCTS: ProvisionalAdmissionProduct[] = [
     name: 'WOSA Conference',
     category: 'conference',
     description: 'Full registration for the WOSA Conference track.',
-    price: SYMPOSIUM_WOSA_PRICE,
+    price: SYMPOSIUM_WOSA_EARLY_BIRD_PRICE,
+    regularPrice: SYMPOSIUM_WOSA_REGULAR_PRICE,
     capacity: SYMPOSIUM_WOSA_CAPACITY,
     releasedQuantity: null,
-    earlyBirdCutoff: null,
+    earlyBirdCutoff: EARLY_BIRD_CUTOFF,
     requiresDaySelection: false,
     requiresAttendeeNames: true,
+    requiresRegistration: true,
     // Settled, not a web-team estimate — Brad's direct, unambiguous ruling (messages 1/3/6),
     // same "genuinely settled by a direct ruling, cited via sourceCitation, not a council
     // confirmation" precedent the ProvisionalAdmissionProduct.provisional doc-comment above
@@ -327,6 +323,39 @@ export const CONFERENCE_PRODUCTS: ProvisionalAdmissionProduct[] = [
     sourceCitation: SYMPOSIUM_WOSA_SOURCE_CITATION,
   },
 ];
+
+// Brad, 19 Nov 2026 (meeting with Lee-Ann): a hidden "Speakers Partner" ticket, R950, one
+// ticket covering both the WOSA Conference and the Symposium, bought through a password-
+// protected link the committee emails to speakers. Lee-Ann's doc lists Spouse/Partner R950 for
+// each conference; Brad's single combined ticket replaces the two. Never listed on any public
+// page (category 'speakers-partner' is outside TICKET_CATEGORIES), never in the sitemap.
+export const SPEAKERS_PARTNER_SLUG = 'speakers-partner';
+export const SPEAKERS_PARTNER_CATEGORY = 'speakers-partner';
+const SPEAKERS_PARTNER_PRICE = 950;
+// Web-team placeholder ceiling, not from any client source: set in Sanity once the committee
+// knows how many speakers' partners to expect.
+// PLACEHOLDER: capacity not from any source — awaiting Brad
+const SPEAKERS_PARTNER_CAPACITY = 40;
+
+export const SPEAKERS_PARTNER_PRODUCT: ProvisionalAdmissionProduct = {
+  slug: SPEAKERS_PARTNER_SLUG,
+  name: 'Speakers Partner Ticket',
+  category: SPEAKERS_PARTNER_CATEGORY,
+  description:
+    "One ticket for a speaker's partner, covering both the National Orchid Show Symposium and " +
+    'the WOSA Conference.',
+  price: SPEAKERS_PARTNER_PRICE,
+  capacity: SPEAKERS_PARTNER_CAPACITY,
+  releasedQuantity: null,
+  earlyBirdCutoff: null,
+  requiresDaySelection: false,
+  requiresAttendeeNames: true,
+  requiresRegistration: true,
+  provisional: false,
+  sourceCitation:
+    "Brad's notes from the 19 Nov 2026 meeting with Lee-Ann, item 11: 'Partner Ticket R950 " +
+    "covers both access to WoSA Conference and the Symposium'; hidden, password protected.",
+};
 
 /**
  * F1 (conference-workshop-tickets, M1) — the four retired Conferences SKUs: the old
@@ -447,11 +476,14 @@ export const RETIRED_FIELD_TRIP_SLUGS = ['field-trip-single', 'field-trip-all-ou
 
 /**
  * Launch-weekend F10 (Brad, 2026-10-16): the older stand-alone Early-Bird Weekend Pass
- * document, superseded by the live `weekend-pass-early-bird` product above. Retired
- * (`active: false`, never deleted) in the Sanity dataset; listed here so a check can enforce
- * that exactly one active product exists per logical product.
+ * document. Brad, 2026-11-19: the Weekend Pass has no early-bird price at all, so
+ * `weekend-pass-early-bird` is retired too. Retired (`active: false`, never deleted) in the
+ * Sanity dataset; listed here so a check can enforce that no retired product is active.
  */
-export const RETIRED_ADMISSION_SLUGS = ['early-bird-weekend-pass'] as const;
+export const RETIRED_ADMISSION_SLUGS = [
+  'early-bird-weekend-pass',
+  'weekend-pass-early-bird',
+] as const;
 
 /**
  * F2 (conference-workshop-tickets, M1) — the Sunset Cocktails (Couple) SKU, retired
