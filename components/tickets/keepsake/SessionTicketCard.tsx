@@ -59,7 +59,7 @@ export function SessionTicketCard({
         ) : null}
         {card ? <TicketCount vm={card} partner={null} counts={counts} /> : null}
         {card ? (
-          <BuyBlock vm={card} name={session.title} product={product} session />
+          <BuyBlock vm={card} name={session.title} product={product} />
         ) : (
           <div className="nk-buy">
             <p className="nk-note">{TICKET_COPY.sessionNotOpen}</p>
