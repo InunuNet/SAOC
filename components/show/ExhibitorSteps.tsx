@@ -10,7 +10,7 @@
 // sequence the committee sets in Studio is the sequence that renders.
 // =============================================================
 
-import { PortableText } from '@portabletext/react';
+import { SaocPortableText } from '@/components/nos/SaocText';
 
 import type { ShowExhibitorStep } from '@/types';
 
@@ -77,7 +77,7 @@ export function ExhibitorSteps({
               )}
               {step.body && step.body.length > 0 ? (
                 <div className="mt-3 max-w-3xl space-y-3 font-sans text-[16px] leading-[1.55] text-ink/80">
-                  <PortableText value={step.body} />
+                  <SaocPortableText value={step.body} />
                 </div>
               ) : null}
             </div>

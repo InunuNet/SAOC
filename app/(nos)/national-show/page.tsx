@@ -45,6 +45,7 @@ import type { ShowVenue, ShowVisitorInfo } from '@/types';
 import { nosUrl } from '@/lib/site-hosts';
 import type { SanityImageSource } from '@sanity/image-url';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
+import { SaocText } from '@/components/nos/SaocText';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
@@ -356,7 +357,7 @@ export default async function NationalShowPage() {
         </h2>
         {LANDING_INTRO.paragraphs.map((paragraph, index) => (
           <p key={paragraph} className={index === 0 ? 'nos-hm-lead' : 'nos-hm-body'}>
-            {paragraph}
+            <SaocText>{paragraph}</SaocText>
           </p>
         ))}
       </NosSection>
@@ -365,7 +366,9 @@ export default async function NationalShowPage() {
         <h2 id="hm-about-h" className="nos-hm-h2">
           {ABOUT_HEADING}
         </h2>
-        <p className="nos-hm-lead">{ABOUT_LEAD}</p>
+        <p className="nos-hm-lead">
+          <SaocText>{ABOUT_LEAD}</SaocText>
+        </p>
         <p className="nos-hm-body">{ABOUT_BODY}</p>
         <Link href={nosPath(aboutLink.href)} className="nos-hm-link">
           {ABOUT_LINK_LABEL} <span aria-hidden="true">&rarr;</span>

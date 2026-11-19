@@ -9,7 +9,7 @@
 
 import type { ReactNode } from 'react';
 
-import { PortableText } from '@portabletext/react';
+import { SaocPortableText } from '@/components/nos/SaocText';
 
 import type { ExhibitorSection as ExhibitorSectionData, ExhibitorStatus } from '@/types';
 
@@ -64,7 +64,7 @@ export function ExhibitorSection({
 
       {body.length > 0 ? (
         <div className="mt-3 max-w-3xl space-y-4 font-sans text-[16px] leading-[1.55] text-ink/80">
-          <PortableText value={body} />
+          <SaocPortableText value={body} />
         </div>
       ) : null}
 

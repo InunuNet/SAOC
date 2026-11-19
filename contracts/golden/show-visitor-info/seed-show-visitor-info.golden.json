@@ -51,7 +51,7 @@
       "showDate": "2027-09-23T09:00:00+02:00",
       "showEndDate": "2027-09-26T16:00:00+02:00",
       "edition": 19,
-      "hostRegion": "Western Cape",
+      "hostRegion": "Western Cape Orchid Societies",
       "location": "leave entirely alone; it already holds 'Cape Town International Convention Centre'",
       "datesAreNotConfirmed": "AMENDED by the show-dates-purge-16-19-sept-2027 mission: the show committee has since confirmed the dates (Lee-Ann, 2027-09-16 to 2027-09-19), so confirmations.dates now seeds as 'confirmed' and the pending marker no longer applies to this block. Originally: confirmations.dates seeded as 'pending' and the landing page rendered a pending marker beside the hero meta grid, because the dates then mirrored the countdownDate already in the dataset without being a committee-confirmed claim."
     }

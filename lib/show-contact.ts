@@ -22,11 +22,5 @@ export function resolveShowQuestionsEmail(confirmed: boolean = SHOW_EMAIL_CONFIR
 /** The show venue's address, the two lines exactly as Lee-Ann wrote them in her Contact document. */
 export const SHOW_ADDRESS_LINES: readonly string[] = [
   'Stellenbosch Airfield',
-  'Hangar 25, Orca Aero Solutions, Stellenbosch Airfield, Stellenbosch, Western Cape.',
+  'Stellenbosch Aerodrome, Stellenbosch Airfield, Stellenbosch, Western Cape.',
 ];
-
-/** Her line beside the number: who answers it. */
-export const SHOW_OFFICE_CONTACT_LINE = 'Lee-Ann McCleland - Show co-ordinator';
-
-/** The number as a tel: link target (South African mobile, international form). */
-export const SHOW_OFFICE_PHONE_HREF = 'tel:+27734284398';

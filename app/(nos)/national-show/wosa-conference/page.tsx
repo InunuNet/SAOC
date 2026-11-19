@@ -1,4 +1,4 @@
-import { PortableText } from '@portabletext/react';
+import { SaocPortableText } from '@/components/nos/SaocText';
 import type { Metadata } from 'next';
 import { defineQuery } from 'next-sanity';
 
@@ -133,7 +133,7 @@ export default async function WosaConferencePage() {
                 {answered.map((faq) => (
                   <div key={faq._id}>
                     <h3>{faq.question}</h3>
-                    <PortableText value={faq.answer ?? []} />
+                    <SaocPortableText value={faq.answer ?? []} />
                   </div>
                 ))}
               </div>
