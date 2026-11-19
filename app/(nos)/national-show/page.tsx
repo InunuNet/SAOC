@@ -394,7 +394,7 @@ export default async function NationalShowPage() {
 
       <NosSection data-hm-section="plant-entry" aria-labelledby="hm-plant-entry-h">
         <h2 id="hm-plant-entry-h" className="nos-hm-h2">
-          {PLANT_ENTRY_HEADING}
+          <SaocText>{PLANT_ENTRY_HEADING}</SaocText>
         </h2>
         <div>
           {PLANT_ENTRY_STAGES.map(({ stage, title, description }) => (
