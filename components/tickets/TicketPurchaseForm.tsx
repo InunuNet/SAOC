@@ -58,6 +58,8 @@ interface TicketPurchaseFormProps {
   // The Day Pass's per-day counts, read server-side from the hub's own loader (rLC, r45 P3).
   dayCounts?: KeepsakeDay[] | null;
   showProvisional?: boolean;
+  // One ticket per order (the hidden Speakers Partner ticket): no quantity stepper is shown.
+  fixedQuantity?: boolean;
 }
 
 interface SummaryInput {
@@ -136,6 +138,7 @@ export function TicketPurchaseForm({
   showTestModeBanner = false,
   dayCounts = null,
   showProvisional = false,
+  fixedQuantity = false,
 }: TicketPurchaseFormProps) {
   const hydrated = useHydrated();
   const ticketType = ticketTypes[0];
@@ -307,6 +310,7 @@ export function TicketPurchaseForm({
         </fieldset>
       ) : null}
 
+      {fixedQuantity ? null : (
       <div className="nk-field">
         <label htmlFor="ticket-quantity" className="nk-field-label">
           {TICKET_COPY.numberOfTickets}
@@ -351,6 +355,7 @@ export function TicketPurchaseForm({
           </button>
         </div>
       </div>
+      )}
 
       {flagged ? (
         <RegistrationSection form={registration} ticketSlug={ticketType.slug} disabled={submitting} />

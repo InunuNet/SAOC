@@ -197,6 +197,16 @@ env:
     availability:
       - RUNTIME
 
+  # Hidden Speakers Partner ticket (Brad, 19 Nov 2026). The password is a Secret Manager secret
+  # Brad creates (`firebase apphosting:secrets:set SPEAKERS_PARTNER_PASSWORD`). The reference is
+  # commented out on purpose: App Hosting fails the rollout when a referenced secret does not
+  # exist yet, so uncomment it AFTER the secret is created. While it is unset the route fails
+  # closed (nobody can buy the ticket).
+  # - variable: SPEAKERS_PARTNER_PASSWORD
+  #   secret: SPEAKERS_PARTNER_PASSWORD
+  #   availability:
+  #     - RUNTIME
+
   # Beta password wall (mission beta-password-wall F1/F2) -- Basic Auth
   # credentials read per-request by proxy.ts's decideBasicAuth(). RUNTIME
   # only: the comparison happens per request, and a BUILD entry would bake
