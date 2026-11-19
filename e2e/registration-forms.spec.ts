@@ -57,6 +57,12 @@ async function captureCheckout(page: Page) {
 
 const form = (page: Page, n: number): Locator => page.getByRole('group', { name: `Attendee ${n}`, exact: true });
 const field = (page: Page, n: number, key: string): Locator => page.locator(`#registration-${n}-${key}`);
+/** Opens attendee n's card when it is collapsed (a single attendee has no toggle and is always open). */
+async function expand(page: Page, n: number) {
+  const toggle = page.locator(`#registration-${n}-toggle`);
+  if ((await toggle.count()) > 0 && (await toggle.getAttribute('aria-expanded')) === 'false') await toggle.click();
+}
+
 const societyPanel = (page: Page, n: number): Locator => form(page, n).getByRole('group', { name: SOCIETY_LABEL });
 
 async function setQuantity(page: Page, quantity: number) {
@@ -85,6 +91,7 @@ interface FillOptions {
 
 /** Fills one attendee as a non-judge with every default kept (country South Africa, judge No, dietary None). */
 async function fillAttendee(page: Page, n: number, opts: FillOptions = {}) {
+  await expand(page, n);
   await field(page, n, 'title').selectOption('Ms');
   await field(page, n, 'firstName').fill(`Test${n}`);
   await field(page, n, 'surname').fill('Person');
@@ -154,6 +161,7 @@ test.describe('registration form, flagged ticket', () => {
     await expect(button).toHaveAttribute('aria-expanded', 'true');
     await expect(societyPanel(page, 1)).toBeVisible();
     await expect(societyPanel(page, 1).getByRole('checkbox')).toHaveCount(25);
+    expect(await societyPanel(page, 1).getByRole('checkbox').evaluateAll((boxes) => boxes.slice(0, 4).map((b) => b.parentElement?.textContent))).toEqual(['None', 'Independent Member', 'Overseas visitor', 'Alfred County Orchid Society']);
     await page.keyboard.press('Tab'); // into the panel: first option is None
     await expect(societyPanel(page, 1).getByRole('checkbox', { name: 'None', exact: true })).toBeFocused();
     await page.keyboard.press('Space');
@@ -161,8 +169,19 @@ test.describe('registration form, flagged ticket', () => {
 
     await societyPanel(page, 1).getByLabel('Cape Orchid Society', { exact: true }).check();
     await expect(societyPanel(page, 1).getByRole('checkbox', { name: 'None', exact: true })).not.toBeChecked();
-    await societyPanel(page, 1).getByLabel('Overseas visitor', { exact: true }).check(); // no other rule: this mix is allowed
-    await expect(societyPanel(page, 1).getByLabel('Cape Orchid Society', { exact: true })).toBeChecked();
+    const panel = societyPanel(page, 1);
+    const box = (name: string) => panel.getByLabel(name, { exact: true });
+    await box('Overseas visitor').check(); // Overseas visitor stands alone: it clears the society
+    await expect(box('Cape Orchid Society')).not.toBeChecked();
+    await box('Independent Member').check(); // and Independent Member clears Overseas visitor
+    await expect(box('Overseas visitor')).not.toBeChecked();
+    await box('Cape Orchid Society').check(); // a society clears Independent Member
+    await expect(box('Independent Member')).not.toBeChecked();
+    await box('Natal Orchid Society').check(); // societies combine freely
+    await expect(box('Cape Orchid Society')).toBeChecked();
+    await box('Overseas visitor').check(); // Overseas visitor clears every society
+    await expect(box('Cape Orchid Society')).not.toBeChecked();
+    await expect(box('Natal Orchid Society')).not.toBeChecked();
     await societyPanel(page, 1).getByRole('checkbox', { name: 'None', exact: true }).check();
     await expect(societyPanel(page, 1).getByLabel('Cape Orchid Society', { exact: true })).not.toBeChecked();
     await expect(societyPanel(page, 1).getByLabel('Overseas visitor', { exact: true })).not.toBeChecked();
@@ -210,9 +229,8 @@ test.describe('registration form, flagged ticket', () => {
     const accreditation = field(page, 1, 'judgeAccreditation');
     expect(await optionsOf(page, 1, 'judgeAccreditation')).toEqual(['No', 'Yes, with SAOC', 'Yes, with AOS']);
     await expect(accreditation).toHaveValue('No'); // None/No preselected
-    // not gated on accreditation: shown while the answer is No
-    await expect(field(page, 1, 'judgeAvailable')).toBeVisible();
-    await expect(form(page, 1).getByLabel('Available as a show judge')).not.toBeChecked();
+    // only an accredited judge is asked about availability
+    await expect(field(page, 1, 'judgeAvailable')).toHaveCount(0);
     expect(await optionsOf(page, 1, 'judgeCommunication')).toEqual(['Yes', 'No']);
     expect(await optionsOf(page, 1, 'judgeForum')).toEqual(['Yes', 'No']);
     await expect(field(page, 1, 'judgeCommunication')).toHaveValue('No');
@@ -221,6 +239,7 @@ test.describe('registration form, flagged ticket', () => {
 
     await accreditation.selectOption('Yes, with AOS');
     for (const key of ['judgeAvailable', 'judgeCommunication', 'judgeForum']) await expect(field(page, 1, key)).toBeVisible();
+    await expect(form(page, 1).getByLabel('Available as a show judge')).not.toBeChecked();
 
     await field(page, 1, 'judgeAvailable').check();
     const dates = form(page, 1).getByRole('group', { name: DATE_LABEL });
@@ -232,8 +251,11 @@ test.describe('registration form, flagged ticket', () => {
     await field(page, 1, 'judgeAvailable').check();
     await expect(dates.getByLabel('22 September 2027', { exact: true })).not.toBeChecked(); // and cleared
 
-    await accreditation.selectOption('No'); // changing accreditation never touches availability or attendance
-    await expect(field(page, 1, 'judgeAvailable')).toBeChecked();
+    await accreditation.selectOption('No'); // switching to No hides and clears availability; attendance is untouched
+    await expect(field(page, 1, 'judgeAvailable')).toHaveCount(0);
+    await expect(dates).toHaveCount(0);
+    await accreditation.selectOption('Yes, with SAOC');
+    await expect(field(page, 1, 'judgeAvailable')).not.toBeChecked();
     await field(page, 1, 'judgeForum').selectOption('Yes');
     await accreditation.selectOption('Yes, with SAOC');
     await expect(field(page, 1, 'judgeForum')).toHaveValue('Yes');
@@ -260,6 +282,7 @@ test.describe('registration form, flagged ticket', () => {
     await expect(form(page, 4)).toHaveCount(0);
     await expect(form(page, 1).getByLabel('Same as above')).toHaveCount(0);
     for (const n of [2, 3]) {
+      await expand(page, n);
       await expect(page.locator(`#registration-${n}-same-contact`)).toBeVisible();
       await expect(page.locator(`#registration-${n}-same-membership`)).toBeVisible();
     }
@@ -267,6 +290,7 @@ test.describe('registration form, flagged ticket', () => {
 
   test('ticking Same as above hides the section; unticking shows it again with defaults', async ({ page }) => {
     await setQuantity(page, 2);
+    await expand(page, 2);
     await field(page, 2, 'mobile').fill('+27 11 000 0001');
     await page.locator('#registration-2-same-contact').check();
     for (const key of ['mobile', 'country', 'province']) await expect(field(page, 2, key)).toBeHidden();
@@ -374,16 +398,17 @@ test.describe('registration form, flagged ticket', () => {
     expect((reg.dietaryOther as string).trim()).toBe('No shellfish');
   });
 
-  test('a person who is not an accredited judge can still be available and attend the Forum', async ({ page }) => {
+  test('a person who is not an accredited judge is posted as not available, with no date, and can still attend the Forum', async ({ page }) => {
     const bodies = await captureCheckout(page);
     await fillAttendee(page, 1);
+    await field(page, 1, 'judgeAccreditation').selectOption('Yes, with SAOC');
     await field(page, 1, 'judgeAvailable').check();
-    await form(page, 1).getByRole('group', { name: DATE_LABEL }).getByLabel('23 September 2027', { exact: true }).check();
+    await field(page, 1, 'judgeAccreditation').selectOption('No'); // hides and clears the availability
     await field(page, 1, 'judgeForum').selectOption('Yes');
     await page.getByRole('button', { name: SUBMIT }).click();
     await expect.poll(() => bodies.length).toBe(1);
     const reg = bodies[0].lineItems[0].registration as Record<string, unknown>;
-    expect(reg).toMatchObject({ judgeAccredited: 'No', judgeOrganisation: 'Not applicable', judgeAvailable: 'Yes', judgeDate: '23-Sep', judgeCommunication: 'No', judgeForum: 'Yes' });
+    expect(reg).toMatchObject({ judgeAccredited: 'No', judgeOrganisation: 'Not applicable', judgeAvailable: 'No', judgeDate: 'None', judgeCommunication: 'No', judgeForum: 'Yes' });
   });
 
   test('an accredited judge not available is posted with availability No and date None; a single date is posted as is', async ({ page }) => {
@@ -460,5 +485,46 @@ test.describe('registration form, non-registration ticket unchanged', () => {
     await expect.poll(() => bodies.length).toBe(1);
     expect(bodies[0].lineItems).toHaveLength(1);
     expect(Object.keys(bodies[0].lineItems[0]).sort()).toEqual(['attendeeEmail', 'attendeeName', 'ticketType']);
+  });
+});
+
+test.describe('registration form, attendee accordion', () => {
+  test.use({ viewport: { width: 1280, height: 900 } });
+  test.beforeEach(async ({ page }) => {
+    await open(page, '?type=registration');
+    await setQuantity(page, 3);
+  });
+  const toggle = (page: Page, n: number): Locator => page.getByRole('button', { name: `Attendee ${n}`, exact: true });
+
+  test('one attendee card is open at a time; the first starts open and headers are real buttons', async ({ page }) => {
+    await expect(toggle(page, 1)).toHaveAttribute('aria-expanded', 'true');
+    await expect(toggle(page, 2)).toHaveAttribute('aria-expanded', 'false');
+    await expect(field(page, 1, 'firstName')).toBeVisible();
+    await expect(field(page, 2, 'firstName')).toBeHidden();
+    await toggle(page, 2).click();
+    await expect(toggle(page, 2)).toHaveAttribute('aria-expanded', 'true');
+    await expect(toggle(page, 1)).toHaveAttribute('aria-expanded', 'false');
+    await expect(field(page, 2, 'firstName')).toBeVisible();
+    await expect(field(page, 1, 'firstName')).toBeHidden();
+    await expect(toggle(page, 2)).toHaveAttribute('aria-controls', 'registration-2-panel');
+  });
+
+  test('values survive a card collapsing and opening again', async ({ page }) => {
+    await field(page, 1, 'firstName').fill('Keep');
+    await toggle(page, 2).click();
+    await toggle(page, 1).click();
+    await expect(field(page, 1, 'firstName')).toHaveValue('Keep');
+  });
+
+  test('a failed submit opens the first attendee with an error and focuses the summary', async ({ page }) => {
+    await fillAttendee(page, 1);
+    await toggle(page, 3).click();
+    await page.getByRole('button', { name: SUBMIT }).click();
+    await expect(page.locator('#checkout-error-summary')).toBeFocused();
+    await expect(toggle(page, 2)).toHaveAttribute('aria-expanded', 'true');
+    await expect(toggle(page, 3)).toHaveAttribute('aria-expanded', 'false');
+    await page.locator('#checkout-error-summary').getByRole('link', { name: /^Attendee 3/ }).first().click();
+    await expect(toggle(page, 3)).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator(':focus')).toHaveAttribute('id', /^registration-3-/);
   });
 });
