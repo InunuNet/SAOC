@@ -182,12 +182,13 @@ if (cmd === 'faq-fixture') {
   const { blocks, html } = await page('/contact');
   const flatBlocks = blocks;
   const constants = (await import('../../../lib/show-contact.ts').catch(() => null)) as { SHOW_ADDRESS_LINES?: string[] } | null;
-  const address = ['Stellenbosch Airfield', 'Hangar 25, Orca Aero Solutions, Stellenbosch Airfield, Stellenbosch, Western Cape.'];
+  const address = ['Stellenbosch Aerodrome', 'Stellenbosch, Western Cape.'];
   if (JSON.stringify(constants?.SHOW_ADDRESS_LINES) !== JSON.stringify(address)) fail('lib/show-contact.ts must export SHOW_ADDRESS_LINES = her two address lines verbatim');
-  assertVerbatimInOrder('/contact', [...address, '073 428 4398', 'Lee-Ann McCleland', 'Show co-ordinator'], flatBlocks);
+  assertVerbatimInOrder('/contact', [...address], flatBlocks);
   const hrefs = anchorsOf(html).map((a) => a.href);
-  if (!hrefs.some((h) => h === 'tel:+27734284398' || h === 'tel:0734284398')) fail('the phone number must be a tel: link');
+  if (hrefs.some((h) => h.startsWith('tel:'))) fail('/contact must not link a telephone number (removed 19 Nov 2026)');
   const flat = stripWs(flatBlocks.join(''));
+  if (flat.includes(stripWs('073 428 4398')) || flat.includes('0734284398')) fail('/contact must not print the show co-ordinator phone number');
   // Q-D6 default: no committee list. Q-D11 default: no email address is printed.
   for (const name of ['Hendrik Schoeman', 'Barry Deutschmann', 'Bernadette Smith', 'Otto and Nerine']) if (flat.includes(stripWs(name))) fail(`/contact must not list the committee yet ("${name}")`);
   for (const email of ['2027national@gmail.com', 'show@saoc.co.za']) if (flat.includes(stripWs(email))) fail(`/contact must not print ${email} until Q-D11 is answered`);

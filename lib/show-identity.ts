@@ -104,7 +104,7 @@ export function toShowIsoDate(value?: string | null): string | null {
 }
 
 /**
- * `Stellenbosch Airfield, R44, Stellenbosch, 7600, Western Cape` — the venue's postal
+ * `Stellenbosch Aerodrome, R44, Stellenbosch, 7600, Western Cape` — the venue's postal
  * address on one line, composed in the SAME order components/show/VenueCard.tsx renders it
  * so the rendered address and the structured-data address can never disagree.
  *

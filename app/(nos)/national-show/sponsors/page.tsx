@@ -15,6 +15,7 @@ import { sanityFetch } from '@/sanity/lib/fetch';
 import { urlFor } from '@/sanity/lib/image';
 import { showSponsorsQuery } from '@/sanity/queries';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
+import { SaocText } from '@/components/nos/SaocText';
 
 // NOS Design golden SP-1 (comms.md, 2026-10-25): hero, a 7/5 body with one sticky contact card, a
 // photo strip, then the sponsor wall. Own data scope: showSponsor, never the site-level `sponsor`
@@ -200,7 +201,9 @@ export default async function ShowSponsorsPage() {
         }
       >
         <div className="doc-prose nos-sp-main">
-          <p className="doc-standfirst">{STANDFIRST}</p>
+          <p className="doc-standfirst">
+            <SaocText>{STANDFIRST}</SaocText>
+          </p>
 
           <section className="doc-section" aria-labelledby="sp-theme">
             <h2 id="sp-theme" className="doc-h2">
@@ -273,7 +276,9 @@ export default async function ShowSponsorsPage() {
           <h2 id="sp-wall-title" className="doc-h2">
             Show sponsors
           </h2>
-          <p>{WALL_THANKS}</p>
+          <p>
+            <SaocText>{WALL_THANKS}</SaocText>
+          </p>
         </div>
         {groups.length === 0 ? (
           <div className="nos-sp-empty" data-nos-empty-state="sponsors">

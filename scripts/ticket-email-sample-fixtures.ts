@@ -9,7 +9,7 @@ import type { TicketPdfSchedule } from '@/lib/ticket-pdf';
 
 export const SAMPLE_FIRST_NAME = 'Thandi';
 export const SAMPLE_PRICE_RAND = 100;
-export const SAMPLE_VENUE_NAME = 'Hangar 25, Orca Aero Solutions';
+export const SAMPLE_VENUE_NAME = 'Stellenbosch Aerodrome';
 export const SAMPLE_SHOW_DATES = '23–26 September 2027';
 export const SAMPLE_SHOW_URL = 'nos.saoc.co.za';
 export const SAMPLE_QUESTIONS_EMAIL = 'info@saoc.co.za';

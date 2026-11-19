@@ -48,10 +48,9 @@ const DESIGNATED_PARKING =
 const E_HAILING =
   'If you plan to use e-hailing services to get to the National Orchid Show please note that they will have a designated drop off and pick up point. This will be provided by the Parking attendants at the venue.';
 const VENUE_SENTENCE =
-  'The show is held at Hangar 25, Orca Aero Solutions, on the R44 at Stellenbosch Airfield in the Cape Winelands.';
+  'The show is held at Stellenbosch Aerodrome, on the R44 in the Cape Winelands.';
 const VENUE_ADDRESS = [
-  'Hangar 25, Orca Aero Solutions',
-  'Stellenbosch Airfield',
+  'Stellenbosch Aerodrome',
   'R44',
   'Stellenbosch, 7600',
   'Western Cape',

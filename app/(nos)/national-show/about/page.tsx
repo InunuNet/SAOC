@@ -10,6 +10,7 @@ import { loadShowFacts } from '@/lib/data/show-facts';
 import { nosPath } from '@/lib/nos-paths';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
+import { SaocText } from '@/components/nos/SaocText';
 
 // AB-G1 (NOS Design, comms.md 2026-10-25): Lee-Ann's About text (Drive: National Show / About, v1.2),
 // published as she wrote it (straight quotes and hyphens included). Do not paraphrase or tighten this
@@ -117,11 +118,17 @@ export default async function NationalShowAboutPage() {
         }
       >
         <div className="doc-prose nos-ab-main">
-          <p className="doc-standfirst">{STANDFIRST}</p>
+          <p className="doc-standfirst">
+            <SaocText>{STANDFIRST}</SaocText>
+          </p>
           {BODY.map((paragraph) => (
-            <p key={paragraph}>{paragraph}</p>
+            <p key={paragraph}>
+              <SaocText>{paragraph}</SaocText>
+            </p>
           ))}
-          <p className="nos-ab-closing">{CLOSING}</p>
+          <p className="nos-ab-closing">
+            <SaocText>{CLOSING}</SaocText>
+          </p>
         </div>
       </DocumentLayout>
       <NosShowIndex current="/national-show/about" />

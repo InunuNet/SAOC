@@ -20,7 +20,8 @@ import { usePathname } from 'next/navigation';
 
 import { CONTACT_LINK } from '@/components/chrome/nav-config';
 import type { NavColumn, NavItem, NavLeaf } from '@/components/chrome/nav-config';
-import { FOOTER_ORG_NAME } from '@/components/chrome/footer-data';
+import { ExternalArrow } from '@/components/chrome/ExternalArrow';
+import { FOOTER_NEW_TAB_CUE, FOOTER_ORG_NAME } from '@/components/chrome/footer-data';
 import { anyNavCurrent, navAriaCurrent } from '@/lib/nav-current';
 import { nosPath } from '@/lib/nos-paths';
 import { SHOW_TITLE_EXPANDED } from '@/lib/show-title';
@@ -422,9 +423,13 @@ export function NosHeader({ nav, saocHomeHref, contactHref }: NosHeaderProps) {
             </li>
           </ul>
           {/* R1.4: after a rule, the SAOC credit as text only: the organisation's name, linking
-              to the SAOC site. */}
+              to the SAOC site in a new tab (Brad, 19 Nov 2026). */}
           <p className="nd-credit">
-            <a href={saocHomeHref}>{FOOTER_ORG_NAME}</a>
+            <a href={saocHomeHref} target="_blank" rel="noopener noreferrer">
+              {FOOTER_ORG_NAME}
+              <ExternalArrow />
+              <span className="sr-only"> {FOOTER_NEW_TAB_CUE}</span>
+            </a>
           </p>
         </div>
       </nav>

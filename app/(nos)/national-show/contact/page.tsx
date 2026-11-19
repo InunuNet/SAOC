@@ -5,9 +5,9 @@ import { ContactForm } from '@/components/contact/ContactForm';
 import { NosContactAside } from '@/components/contact/NosContactAside';
 import { NosHero } from '@/components/nos/NosHero';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
+import { SaocText } from '@/components/nos/SaocText';
 import { ShowContactDetails } from '@/components/nos/ShowContactDetails';
 import { buildPageMetadata } from '@/lib/seo';
-import { SHOW_OFFICE_CONTACT_LINE, SHOW_OFFICE_PHONE, SHOW_OFFICE_PHONE_HREF } from '@/lib/show-contact';
 import { SHOW_TITLE } from '@/lib/show-title';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 
@@ -21,7 +21,7 @@ export const metadata: Metadata = buildPageMetadata({
 // CT-G1 (NOS Design, comms.md): Lee-Ann's 2027 Show Contact information (Drive: National Show /
 // Contact, v1.1). The committee list is hers, word for word, split at her " - " into name and role.
 // Her row for Otto and Nerine (no surnames yet), the show's web address and her "Email address??"
-// notes are not rendered (owner item dddd). The address and telephone are in the card
+// notes are not rendered (owner item dddd). The address is in the card (the telephone number was removed 19 Nov 2026 at Brad's instruction)
 // (ShowContactDetails). The page is presentation only: ContactForm keeps every field and handler.
 const COMMITTEE_HEADING = 'Committee';
 const COMMITTEE: readonly { name: string; role: string }[] = [
@@ -35,9 +35,6 @@ const COMMITTEE: readonly { name: string; role: string }[] = [
   { name: 'Fiona Barnwell', role: 'Judging and show schedule' },
   { name: 'Cara Holmes', role: 'Venue Layout' },
 ];
-const FACT_PHONE = 'Telephone';
-const FACT_COORDINATOR = 'Show co-ordinator';
-const COORDINATOR_NAME = SHOW_OFFICE_CONTACT_LINE.split(' - ')[0];
 
 export default function NosContactPage() {
   return (
@@ -47,11 +44,6 @@ export default function NosContactPage() {
         className="nos-contact-hero"
         title={CONTACT_LINK.label}
         crumbLabel={CONTACT_LINK.label}
-        facts={[
-          { term: FACT_PHONE, value: SHOW_OFFICE_PHONE },
-          { term: FACT_COORDINATOR, value: COORDINATOR_NAME },
-        ]}
-        factLinks={{ [FACT_PHONE]: SHOW_OFFICE_PHONE_HREF }}
         priority
       />
       <div className="nos-ct-body saoc-container" data-doc-layout="" data-nos-contact="page">
@@ -71,7 +63,9 @@ export default function NosContactPage() {
               <div key={member.name}>
                 <dt>{member.name}</dt>
                 <dd>
-                  <p>{member.role}</p>
+                  <p>
+                    <SaocText>{member.role}</SaocText>
+                  </p>
                 </dd>
               </div>
             ))}

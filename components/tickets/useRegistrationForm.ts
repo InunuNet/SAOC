@@ -13,13 +13,14 @@ import {
   type RegistrationDraft,
   type RegistrationErrors,
 } from '@/components/tickets/registrationDraft';
-import { SOCIETY_NONE, type RegistrationShareSection } from '@/lib/registration';
+import { SOCIETY_EXCLUSIVE, type RegistrationShareSection } from '@/lib/registration';
 
 function selectSocieties(current: string[], option: string, checked: boolean): string[] {
-  // "None" stands alone: choosing it clears the societies, choosing a society clears "None".
+  // None, Independent Member and Overseas visitor each stand alone: choosing one clears every
+  // other choice, and choosing a society clears all three.
   if (!checked) return current.filter((entry) => entry !== option);
-  if (option === SOCIETY_NONE) return [SOCIETY_NONE];
-  return [...current.filter((entry) => entry !== SOCIETY_NONE), option];
+  if (SOCIETY_EXCLUSIVE.includes(option)) return [option];
+  return [...current.filter((entry) => !SOCIETY_EXCLUSIVE.includes(entry)), option];
 }
 
 // Ticking or unticking "Same as above" clears the section, so unticking shows it empty.
@@ -36,6 +37,8 @@ function withShared(
 export function useRegistrationForm(count: number, ticketSlug: string) {
   const [stored, setStored] = useState<RegistrationDraft[]>([]);
   const [errors, setErrors] = useState<RegistrationErrors[]>([]);
+  // Counts submit attempts, so the form can open the first card with an error after each one.
+  const [attempts, setAttempts] = useState(0);
 
   // A removed attendee's errors go with it, so a form added back later starts clean (the cart's
   // own attendee rows do the same). React re-renders at once when state is set during render.
@@ -59,6 +62,7 @@ export function useRegistrationForm(count: number, ticketSlug: string) {
   function setField(attendee: number, field: DraftTextField, value: string) {
     change(attendee, (draft) => ({ ...draft, [field]: value,
       ...(field === 'country' && value !== 'South Africa' ? { province: '' } : {}),
+      ...(field === 'judgeAccreditation' && !value.startsWith('Yes, with ') ? { judgeAvailable: false, judgeDates: [] } : {}),
       ...(field === 'dietary' && value !== 'Other' ? { dietaryOther: '' } : {}),
     }));
   }
@@ -86,8 +90,9 @@ export function useRegistrationForm(count: number, ticketSlug: string) {
   function validate() {
     const { errors: found, people } = checkDrafts(drafts, ticketSlug);
     setErrors(found);
+    setAttempts((count) => count + 1);
     return hasErrors(found) ? null : people;
   }
 
-  return { drafts, errors: shownErrors, setField, setSociety, setShared, setAvailability, setJudgeDate, validate };
+  return { drafts, errors: shownErrors, attempts, setField, setSociety, setShared, setAvailability, setJudgeDate, validate };
 }

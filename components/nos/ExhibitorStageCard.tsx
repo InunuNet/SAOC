@@ -6,6 +6,8 @@
 
 import type { ReactNode } from 'react';
 
+import { SaocText } from './SaocText';
+
 export interface NosExhibitorStageCardProps {
   stage: string;
   title: string;
@@ -25,7 +27,7 @@ export function ExhibitorStageCard({
       <p className="nos-stage-label">{`Stage ${stage}`}</p>
       <div>
         <h3 className="nos-stage-title">{title}</h3>
-        <p className="nos-stage-text">{description}</p>
+        <p className="nos-stage-text"><SaocText>{description}</SaocText></p>
         {confirmation}
       </div>
     </>

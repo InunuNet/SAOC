@@ -221,7 +221,8 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
       "OVERRIDE of Brad's direct ruling, 2026-09-08 (VIP Pass R625, 20% early-bird discount, " +
       "R500 early-bird, 120 capacity) — superseded by Lee-Ann's sheet (relayed by Brad, " +
       "2026-10-07), line 19: '23 VIP Thursday, Opening 3 Hours on thursday evening.(R300) " +
-      "16h00-19h00 Total # 200 total'. Team-lead's second-pass default (2026-10-07): " +
+      "16h00-19h00 Total # 200 total'. Brad (19 Nov 2026) locked VIP at 16h30-19h00, which wins over " +
+      "the 16h00 in her sheet. Team-lead's second-pass default (2026-10-07): " +
       'implemented as the working figure; the override itself is not yet separately ' +
       're-confirmed by Brad and remains on the needs-Brad list. See ' +
       '.agent/memory/scratch/leeann-notes-2026-10-07.md.',
