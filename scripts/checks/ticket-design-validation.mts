@@ -7,7 +7,7 @@ import path from 'node:path';
 
 import { themeFromDesign } from '../../emails/_shared/EmailShell';
 import { DEFAULT_DESIGN, loadShippedDesign, type ShippedDesign } from '../../lib/ticket-design';
-import { readSavedDesign } from '../../lib/ticket-design/saved';
+import { KNOWN_TICKET_TYPE_KEYS, readSavedDesign } from '../../lib/ticket-design/saved';
 import { tokenHex } from '../../lib/ticket-design/tokens';
 import { exportSamplesForKey } from '../generate-ticket-email-samples';
 import { SAMPLE_ORDERS } from '../ticket-email-sample-fixtures';
@@ -88,6 +88,16 @@ for (const falsy of [null, '', 0, false]) {
     await throws(() => buildTicketTypeEmail({ ...emailInput, design: falsy as unknown as ShippedDesign }))
   );
 }
+
+// readSavedDesign: unknown keys throw; a known key without a settings file falls back to default.
+for (const unknown of ['constructor', 'arbitrary-key', '../vip']) {
+  check(`readSavedDesign rejects unknown key "${unknown}"`, await throws(() => readSavedDesign(unknown)));
+}
+const noFileKey = KNOWN_TICKET_TYPE_KEYS.find((key) => key !== 'vip');
+check(
+  'readSavedDesign falls back to default for a known key with no file',
+  noFileKey !== undefined && (await readSavedDesign(noFileKey)) === DEFAULT_DESIGN
+);
 
 // Export reads the saved file at call time: change the accent on disk, export, bytes must differ.
 const VIP_FILE = path.join('lib', 'ticket-design', 'settings', 'vip.json');
