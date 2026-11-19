@@ -34,6 +34,7 @@ import { isAbsolute, nosBase } from './utils/site-urls';
 
 // The credit link carries a screen-reader new-tab cue after the name (Brad, 19 Nov 2026).
 const SAOC_CREDIT_TEXT = /^South African Orchid Council\b/;
+const NEW_TAB_CUE_PATTERN = /\(opens in a new tab\)/;
 const VIEWPORT_HEIGHT = 800;
 const PENDING_ROUTES = new Set<string>(pendingNosRoutes.pendingRoutes);
 
@@ -202,6 +203,9 @@ for (const width of [390, 320] as const) {
 
       const credit = panel.locator('.nd-credit a');
       await expect(credit).toHaveText(SAOC_CREDIT_TEXT);
+      await expect(credit).toHaveAttribute('target', '_blank');
+      await expect(credit).toHaveAttribute('rel', /noopener/);
+      await expect(credit.locator('.sr-only')).toHaveText(NEW_TAB_CUE_PATTERN);
       expect(new URL((await credit.getAttribute('href')) ?? '').pathname).toBe('/');
     });
   });

@@ -152,7 +152,7 @@ export default async function ExhibitorEntryGuidePage() {
         </div>
         {AWARD_SECTIONS.map((section) => (
           <section key={section.awardType} data-award-type={section.awardType}>
-            <h2 className="doc-h2 mt-10!">{section.heading}</h2>
+            <h2 className="doc-h2 mt-10!"><SaocText>{section.heading}</SaocText></h2>
             <p>
               <SaocText>{section.lede}</SaocText>
             </p>

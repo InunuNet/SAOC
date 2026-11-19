@@ -43,9 +43,18 @@ function isSpan(child: unknown): child is SpanLike {
   return candidate._type === 'span' && typeof candidate.text === 'string';
 }
 
+const LINK_MARK_TYPES = new Set(['link', SAOC_MENTION_MARK]);
+
+/** True when the span already sits inside a link annotation, so a second link would nest anchors. */
+function hasLinkMark(span: SpanLike, markDefs: BlockLike['markDefs']): boolean {
+  return (span.marks ?? []).some((mark) =>
+    (markDefs ?? []).some((def) => def._key === mark && LINK_MARK_TYPES.has(def._type)),
+  );
+}
+
 /**
  * Returns the blocks with every SAOC mention in a span moved into its own span that carries a
- * `saocLink` mark. Blocks and spans without a mention are returned untouched.
+ * `saocLink` mark. Blocks and spans without a mention, or already inside a link, are returned untouched.
  */
 export function linkSaocInBlocks<T extends { _type: string }>(blocks: readonly T[]): T[] {
   return blocks.map((original) => {
@@ -54,7 +63,7 @@ export function linkSaocInBlocks<T extends { _type: string }>(blocks: readonly T
     const markDefs = [...(block.markDefs ?? [])];
     const children: unknown[] = [];
     block.children.forEach((child, childIndex) => {
-      if (!isSpan(child) || !MENTION_SPLIT.test(child.text)) {
+      if (!isSpan(child) || !MENTION_SPLIT.test(child.text) || hasLinkMark(child, block.markDefs)) {
         children.push(child);
         return;
       }

@@ -138,7 +138,9 @@ export default async function WhatToExpectPage() {
                   <em>{THEME}</em>
                 </p>
               ) : (
-                <p key={paragraph}>{paragraph}</p>
+                <p key={paragraph}>
+                  <SaocText>{paragraph}</SaocText>
+                </p>
               ),
             )}
           </div>
