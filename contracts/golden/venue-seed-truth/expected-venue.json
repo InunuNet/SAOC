@@ -1,7 +1,7 @@
 {
   "_comment": "Canonical target values, captured live from the corrected Sanity dataset (nationalShow._id, showVisitorInfo._id) on 2026-08-12, after the CTICC-to-Hangar venue correction (427fbaf + follow-up). This is what every seed source in the repo must agree with. If a live re-query of nationalShow.venue.name ever disagrees with this file, THE FILE IS STALE, not the check (see A8 in contract-venue-seed-truth.yaml).",
   "name": "The Hangar, Stellenbosch Flying Club",
-  "addressLines": ["Stellenbosch Airfield", "R44"],
+  "addressLines": ["R44"],
   "city": "Stellenbosch",
   "province": "Western Cape",
   "postalCode": "7600",

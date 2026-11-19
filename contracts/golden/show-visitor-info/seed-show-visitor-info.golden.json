@@ -68,7 +68,7 @@
     "airportRoutes": [],
 
     "parking": "Parking arrangements have not been confirmed.",
-    "publicTransport": "Public transport options to Stellenbosch Airfield have not been confirmed.",
+    "publicTransport": "Public transport options to the venue have not been confirmed.",
 
     "accommodationIntro": "Accommodation guidance for the Stellenbosch area is still being put together.",
     "accommodation": [],
@@ -121,7 +121,7 @@
   },
 
   "showFaqDocuments": [
-    { "_id": "showFaq.getting-there.1", "category": "getting-there", "order": 1, "status": "pending", "question": "How do I get to the show from Cape Town International Airport?", "answer": "The show is at Stellenbosch Flying Club, on the R44 at Stellenbosch Airfield in the Cape Winelands. Public transport options to the venue have not been confirmed. Detailed travel guidance for the venue will be added to the Plan your visit page once it is confirmed." },
+    { "_id": "showFaq.getting-there.1", "category": "getting-there", "order": 1, "status": "pending", "question": "How do I get to the show from Cape Town International Airport?", "answer": "The show is at Stellenbosch Flying Club, on the R44 in the Cape Winelands. Public transport options to the venue have not been confirmed. Detailed travel guidance for the venue will be added to the Plan your visit page once it is confirmed." },
     { "_id": "showFaq.getting-there.2", "category": "getting-there", "order": 2, "status": "pending", "question": "Is there parking at the venue?", "answer": "Parking arrangements have not been confirmed by the show committee. We will publish rates and directions once the booking is confirmed." },
     { "_id": "showFaq.getting-there.3", "category": "getting-there", "order": 3, "status": "pending", "question": "Where exactly is the show being held?", "answer": "At the hangar at Stellenbosch Flying Club, Stellenbosch Airfield, on the R44 in the Cape Winelands. On-site details such as the entrance to use, parking and accessibility are still being worked out and will be published here as they are settled." },
 

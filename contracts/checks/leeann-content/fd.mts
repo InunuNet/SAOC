@@ -182,7 +182,7 @@ if (cmd === 'faq-fixture') {
   const { blocks, html } = await page('/contact');
   const flatBlocks = blocks;
   const constants = (await import('../../../lib/show-contact.ts').catch(() => null)) as { SHOW_ADDRESS_LINES?: string[] } | null;
-  const address = ['Stellenbosch Airfield', 'Stellenbosch Aerodrome, Stellenbosch Airfield, Stellenbosch, Western Cape.'];
+  const address = ['Stellenbosch Aerodrome', 'Stellenbosch, Western Cape.'];
   if (JSON.stringify(constants?.SHOW_ADDRESS_LINES) !== JSON.stringify(address)) fail('lib/show-contact.ts must export SHOW_ADDRESS_LINES = her two address lines verbatim');
   assertVerbatimInOrder('/contact', [...address], flatBlocks);
   const hrefs = anchorsOf(html).map((a) => a.href);

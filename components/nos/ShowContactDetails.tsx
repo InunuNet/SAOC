@@ -1,13 +1,14 @@
 // =============================================================
 // NOS — components/nos/ShowContactDetails.tsx
 // Server Component. The show's address, as Lee-Ann gave it in her Contact document (24 Oct 2026).
-// The telephone number was removed on 19 Nov 2026 (Brad, meeting with Lee-Ann). No email address is
-// printed: the show mailbox is unconfirmed (Q-D11). Constants live in lib/show-contact.ts.
+// The telephone number was removed on 19 Nov 2026 and info@saoc.co.za added (Brad, meeting with
+// Lee-Ann). Constants live in lib/show-contact.ts.
 // =============================================================
 
-import { SHOW_ADDRESS_LINES } from '@/lib/show-contact';
+import { SHOW_ADDRESS_LINES, SHOW_CONTACT_EMAIL } from '@/lib/show-contact';
 
 const HEADING_ADDRESS = 'Address of the show';
+const HEADING_EMAIL = 'Email';
 // The card's sentence-case label, shared with the gateway heading (nos-structure.css).
 const LABEL_CLASS = 'nos-ct-label';
 // The first address line is the place's name (CT-G1: Fraunces 400, 22px); the second is the address.
@@ -24,6 +25,12 @@ export function ShowContactDetails() {
             {line}
           </p>
         ))}
+      </section>
+      <section>
+        <h2 className={LABEL_CLASS}>{HEADING_EMAIL}</h2>
+        <p className={BODY_CLASS}>
+          <a href={`mailto:${SHOW_CONTACT_EMAIL}`}>{SHOW_CONTACT_EMAIL}</a>
+        </p>
       </section>
     </div>
   );

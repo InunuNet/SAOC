@@ -109,7 +109,7 @@ function keyed<T extends object>(ownerId: string, prefix: string, items: T[]): A
 
 const VENUE = {
   name: 'Stellenbosch Aerodrome',
-  addressLines: ['Stellenbosch Airfield', 'R44'],
+  addressLines: ['R44'],
   city: 'Stellenbosch',
   province: 'Western Cape',
   postalCode: '7600',
@@ -161,7 +161,7 @@ async function patchNationalShow(): Promise<void> {
 // ---------------------------------------------------------------------------
 
 // The venue changed from the previous working-venue assumption (a Cape Town
-// city-centre convention centre) to Stellenbosch Airfield. That travel research no
+// city-centre convention centre) to Stellenbosch Aerodrome. That travel research no
 // longer applies to the new venue and none of it has been redone yet, so these
 // arrays are cleared rather than reintroduce stale content or invent new
 // airfield-specific detail. Matches the live Sanity dataset, which was cleared the
@@ -248,7 +248,7 @@ async function seedVisitorInfo(): Promise<void> {
     airportRoutes: keyed(VISITOR_INFO_ID, 'route', AIRPORT_ROUTES),
 
     parking: 'Parking arrangements have not been confirmed.',
-    publicTransport: 'Public transport options to Stellenbosch Airfield have not been confirmed.',
+    publicTransport: 'Public transport options to the venue have not been confirmed.',
 
     accommodationIntro:
       'Accommodation guidance for the Stellenbosch area is still being put together.',
@@ -316,7 +316,7 @@ const FAQS: SeedFaq[] = [
     status: 'pending',
     question: 'How do I get to the show from Cape Town International Airport?',
     answer:
-      'The show is at Stellenbosch Aerodrome, on the R44 at Stellenbosch Airfield in the Cape ' +
+      'The show is at Stellenbosch Aerodrome, on the R44 in the Cape ' +
       'Winelands. Public transport options to the venue have not been confirmed. Detailed travel ' +
       'guidance for the venue will be added to the Plan your visit page once it is confirmed.',
   },
@@ -337,7 +337,7 @@ const FAQS: SeedFaq[] = [
     status: 'pending',
     question: 'Where exactly is the show being held?',
     answer:
-      'At Stellenbosch Aerodrome, Stellenbosch Airfield, on the R44 in the Cape ' +
+      'At Stellenbosch Aerodrome, on the R44 in the Cape ' +
       'Winelands. On-site details such as the entrance to use, parking and accessibility are ' +
       'still being worked out and will be published here as they are settled.',
   },

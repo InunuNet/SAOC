@@ -19,8 +19,14 @@ export function resolveShowQuestionsEmail(confirmed: boolean = SHOW_EMAIL_CONFIR
   return resolveReplyTo(confirmed ? 'nos' : 'saoc');
 }
 
-/** The show venue's address, the two lines exactly as Lee-Ann wrote them in her Contact document. */
+/**
+ * The show venue's address: Lee-Ann's Contact document lines with the Airfield line dropped
+ * (Brad, 19 Nov 2026: the venue is Stellenbosch Aerodrome).
+ */
 export const SHOW_ADDRESS_LINES: readonly string[] = [
-  'Stellenbosch Airfield',
-  'Stellenbosch Aerodrome, Stellenbosch Airfield, Stellenbosch, Western Cape.',
+  'Stellenbosch Aerodrome',
+  'Stellenbosch, Western Cape.',
 ];
+
+/** The email address the NOS contact page shows (Brad, 19 Nov 2026). No phone number is shown. */
+export const SHOW_CONTACT_EMAIL = 'info@saoc.co.za';
