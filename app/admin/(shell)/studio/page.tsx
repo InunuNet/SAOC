@@ -3,7 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { PageHeader, PageShell } from '@/components/admin/PageHeader';
 import { StudioClient } from '@/components/admin/studio/StudioClient';
 import { getAdminSession } from '@/lib/admin-auth';
-import { loadShippedDesign } from '@/lib/ticket-design';
+import { readSavedDesign } from '@/lib/ticket-design/saved';
 import { studioTypeOptions } from '@/lib/ticket-design/studio-samples';
 
 export const dynamic = 'force-dynamic';
@@ -32,7 +32,7 @@ export default async function StudioPage() {
       <StudioClient
         types={types}
         initialSlug={pilot.slug}
-        initialDesign={loadShippedDesign(pilot.slug)}
+        initialDesign={await readSavedDesign(pilot.slug)}
       />
     </PageShell>
   );

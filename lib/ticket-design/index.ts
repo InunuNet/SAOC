@@ -1,7 +1,7 @@
 import vipSettings from './settings/vip.json';
 import { validateDesign, type ShippedDesign } from './schema';
 
-export { validateDesign } from './schema';
+export { validateDesign, validateEmailDesign } from './schema';
 export type { EmailDesign, PdfDesign, ShippedDesign } from './schema';
 
 /** The values that reproduce the look of the renderers before the studio existed. */

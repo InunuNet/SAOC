@@ -1,4 +1,4 @@
-import { TOKENS, type TokenName } from './tokens';
+import { tokenHex, type TokenName } from './tokens';
 import type { ShippedDesign } from './schema';
 
 /** WCAG 2.2 SC 1.4.3: body-size text needs at least 4.5:1. */
@@ -14,7 +14,7 @@ function luminance(hex: string): number {
 }
 
 export function contrastRatio(foreground: TokenName, background: TokenName): number {
-  const [light, dark] = [luminance(TOKENS[foreground]), luminance(TOKENS[background])].sort(
+  const [light, dark] = [luminance(tokenHex(foreground)), luminance(tokenHex(background))].sort(
     (a, b) => b - a
   );
   return (light + 0.05) / (dark + 0.05);

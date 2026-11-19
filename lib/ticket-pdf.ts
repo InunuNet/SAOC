@@ -22,7 +22,7 @@ import {
 } from '@/lib/ticket-design';
 import {
   DENSITY_MULTIPLIER,
-  TOKENS,
+  tokenHex,
   TYPE_STEP_PDF_SCALE,
   type TokenName,
 } from '@/lib/ticket-design/tokens';
@@ -105,7 +105,7 @@ const hex = (value: string): Color =>
     parseInt(value.slice(3, 5), 16) / 255,
     parseInt(value.slice(5, 7), 16) / 255
   );
-const token = (name: TokenName): Color => hex(TOKENS[name]);
+const token = (name: TokenName): Color => hex(tokenHex(name));
 const GOLD_100 = token('gold-100');
 const GOLD_200 = token('gold-200');
 const INK = token('ink');

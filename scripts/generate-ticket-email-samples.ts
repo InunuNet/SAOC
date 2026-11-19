@@ -14,6 +14,8 @@ import { render } from '@react-email/components';
 import { PDFDocument } from 'pdf-lib';
 import { chromium, type Browser } from 'playwright';
 
+import type { ShippedDesign } from '@/lib/ticket-design';
+import { readSavedDesign } from '@/lib/ticket-design/saved';
 import { buildTicketTypeEmail } from '@/lib/ticket-type-email';
 import { generateBookingRefQrDataUri } from '@/lib/qr';
 import { buildTicketPdf } from '@/lib/ticket-pdf';
@@ -59,7 +61,7 @@ async function inlineEmailImages(html: string): Promise<string> {
   });
 }
 
-async function renderEmailHtml(order: SampleOrder): Promise<string> {
+async function renderEmailHtml(order: SampleOrder, design?: ShippedDesign): Promise<string> {
   const contentId = `${CONTENT_ID_PREFIX}${order.bookingReference}`;
   const fields = buildOrderEmailFields(SAMPLE_PRICE_RAND, order.chosenDay);
   const email = buildTicketTypeEmail({
@@ -82,6 +84,7 @@ async function renderEmailHtml(order: SampleOrder): Promise<string> {
       },
     ],
     recoveryUrl: null,
+    design,
   });
   const qrUri = await generateBookingRefQrDataUri(order.bookingReference);
   const html = (await render(email.react)).replaceAll(`cid:${contentId}`, qrUri);
@@ -120,32 +123,35 @@ async function htmlToPdf(browser: Browser, html: string): Promise<Uint8Array> {
   }
 }
 
-function buildSampleTicketPdf(order: SampleOrder): Promise<Uint8Array> {
-  return buildTicketPdf({
-    orderReference: null,
-    positions: [
-      {
-        bookingRef: order.bookingReference,
-        attendeeName: order.visitorName,
-        ticketType: order.title,
-        slug: order.slug,
-        schedule: order.schedule,
+function buildSampleTicketPdf(order: SampleOrder, design?: ShippedDesign): Promise<Uint8Array> {
+  return buildTicketPdf(
+    {
+      orderReference: null,
+      positions: [
+        {
+          bookingRef: order.bookingReference,
+          attendeeName: order.visitorName,
+          ticketType: order.title,
+          slug: order.slug,
+          schedule: order.schedule,
+        },
+      ],
+      visit: {
+        venueName: SAMPLE_VENUE_NAME,
+        venueAddress: null,
+        venueParking: null,
+        showDates: SAMPLE_SHOW_DATES,
+        showUrl: SAMPLE_SHOW_URL,
+        emergency: SAMPLE_EMERGENCY,
+        onSiteContact: null,
+        organiser: null,
+        showOffice: null,
+        questionsEmail: SAMPLE_QUESTIONS_EMAIL,
+        openingTimes: SAMPLE_OPENING_TIMES,
       },
-    ],
-    visit: {
-      venueName: SAMPLE_VENUE_NAME,
-      venueAddress: null,
-      venueParking: null,
-      showDates: SAMPLE_SHOW_DATES,
-      showUrl: SAMPLE_SHOW_URL,
-      emergency: SAMPLE_EMERGENCY,
-      onSiteContact: null,
-      organiser: null,
-      showOffice: null,
-      questionsEmail: SAMPLE_QUESTIONS_EMAIL,
-      openingTimes: SAMPLE_OPENING_TIMES,
     },
-  });
+    design
+  );
 }
 
 async function mergePdfs(parts: readonly Uint8Array[]): Promise<Uint8Array> {
@@ -193,12 +199,14 @@ export async function exportSamplesForKey(
 ): Promise<string[]> {
   const order = SAMPLE_ORDERS.find((candidate) => candidate.key === key);
   if (!order) throw new Error(`exportSamplesForKey: no sample order for ticket type "${key}"`);
+  // Read from disk now, not the module-load snapshot, so a save in this process is honoured.
+  const design = await readSavedDesign(key);
   await mkdir(outDir, { recursive: true });
 
   const browser = await chromium.launch();
   try {
-    const email = await htmlToPdf(browser, await renderEmailHtml(order));
-    const ticket = await buildSampleTicketPdf(order);
+    const email = await htmlToPdf(browser, await renderEmailHtml(order, design));
+    const ticket = await buildSampleTicketPdf(order, design);
     const emailPath = path.join(outDir, `email-${key}.pdf`);
     const ticketPath = path.join(outDir, `ticket-${key}.pdf`);
     await writeFile(emailPath, email);

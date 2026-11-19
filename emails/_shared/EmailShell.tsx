@@ -2,8 +2,8 @@ import type { CSSProperties, ReactNode } from 'react';
 import { Head, Html, Img, Preview } from '@react-email/components';
 
 import { FOOTER_REG } from '@/components/chrome/footer-data';
-import type { EmailDesign } from '@/lib/ticket-design';
-import { DENSITY_MULTIPLIER, TOKENS, TYPE_STEP_EMAIL_PX } from '@/lib/ticket-design/tokens';
+import { validateEmailDesign, type EmailDesign } from '@/lib/ticket-design';
+import { DENSITY_MULTIPLIER, tokenHex, TYPE_STEP_EMAIL_PX } from '@/lib/ticket-design/tokens';
 import { SHOW_TITLE_EXPANDED } from '@/lib/show-title';
 import { saocUrl } from '@/lib/site-hosts';
 
@@ -80,13 +80,15 @@ const NOS_THEME: ShellTheme = {
 };
 
 /** The NOS theme with the ticket-design controls applied; the default design returns NOS_THEME's values. */
-export function themeFromDesign(design: EmailDesign): ShellTheme {
+export function themeFromDesign(input: EmailDesign): ShellTheme {
+  // The design is untrusted until validated: its values reach inline CSS.
+  const design = validateEmailDesign(input);
   return {
     ...NOS_THEME,
-    outer: TOKENS[design.outerGround],
-    card: TOKENS[design.cardGround],
-    header: TOKENS[design.headerGround],
-    accent: TOKENS[design.accent],
+    outer: tokenHex(design.outerGround),
+    card: tokenHex(design.cardGround),
+    header: tokenHex(design.headerGround),
+    accent: tokenHex(design.accent),
     bodyPx: TYPE_STEP_EMAIL_PX[design.typeStep],
     space: DENSITY_MULTIPLIER[design.density],
     headerAlign: design.headerAlign,

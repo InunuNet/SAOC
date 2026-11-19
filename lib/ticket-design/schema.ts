@@ -76,6 +76,13 @@ function checkBlock(name: string, block: unknown, table: EnumTable): void {
   }
 }
 
+/** Validates the email half of a design on its own (themeFromDesign calls this). */
+export function validateEmailDesign(input: unknown): EmailDesign {
+  checkBlock('email', input, { ...DESIGN_ENUMS.shared, ...DESIGN_ENUMS.email });
+  // Every key and value was checked against the closed enums above.
+  return input as EmailDesign;
+}
+
 /** Throws on any unknown key or value; returns the same object, typed, when it is valid. */
 export function validateDesign(input: unknown): ShippedDesign {
   if (!isRecord(input)) throw new Error('design is not an object');

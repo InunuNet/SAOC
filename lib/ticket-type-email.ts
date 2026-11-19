@@ -45,7 +45,7 @@ export function buildTicketTypeEmail(input: TicketTypeEmailInput): TicketTypeEma
       recoveryUrl: input.recoveryUrl,
       testMode: input.testMode,
       // An explicit design is untrusted (studio request): validate before it reaches CSS.
-      design: (input.design ? validateDesign(input.design) : loadShippedDesign(input.key)).email,
+      design: (input.design !== undefined ? validateDesign(input.design) : loadShippedDesign(input.key)).email,
     }),
   };
 }
