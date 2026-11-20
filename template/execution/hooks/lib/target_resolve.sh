@@ -322,7 +322,7 @@ expand_target() {
 # trailing slash on the raw token is itself dropped by that pass). Requiring
 # `/` unconditionally made the directory reachable as a write target that
 # matched nothing.
-re_write_protpath='(^|/)\.claude/settings\.json$|(^|/)\.claude/settings\.local\.json$|(^|/)\.claude/hooks(/|$)|(^|/)execution/hooks(/|$)|(^|/)CLAUDE\.md$|(^|/)AGENTS\.md$|(^|/)GEMINI\.md$|(^|/)\.agent/autonomy_matrix\.json$|(^|/)init\.sh$|(^|/)full_boot\.sh$|(^|/)\.env$|(^|/)\.sops\.yaml$|(^|/)\.agent/enforcement_breakglass\.json$|(^|/)\.agent/privilege_permit\.json$|(^|/)execution/escalate\.py$'
+re_write_protpath='(^|/)\.claude/settings\.json$|(^|/)\.claude/settings\.local\.json$|(^|/)\.claude/hooks(/|$)|(^|/)execution/hooks(/|$)|(^|/)CLAUDE\.md$|(^|/)AGENTS\.md$|(^|/)GEMINI\.md$|(^|/)\.agent/autonomy_matrix\.json$|(^|/)init\.sh$|(^|/)full_boot\.sh$|(^|/)\.env$|(^|/)\.sops\.yaml$|(^|/)\.agent/enforcement_breakglass\.json$|(^|/)\.agent/privilege_permit\.json$|(^|/)\.agent/cred_sync_hosts\.json$|(^|/)execution/escalate\.py$'
 
 # ci_match <regex> <string> -- case-insensitive ERE match of one protected-
 # path regex, scoped to this one test (nocasematch is restored immediately
@@ -534,7 +534,7 @@ re_read_protpath_settings='(^|/)\.claude/settings\.json$|(^|/)\.claude/settings\
 # backslash. A prefilter that is too tight is a bypass; too loose only costs a
 # check_target call. RR_PREFILTER_WRITE adds the write-only names, for copies.
 RR_PREFILTER_READ='[.]ssh|[.]aws|[.]gnupg|secrets|[.]env|[.]sops[.]yaml|[.]pem$|[.]key$|settings[.]'
-RR_PREFILTER_WRITE="${RR_PREFILTER_READ}"'|init[.]sh|full_boot[.]sh|claude[.]md|agents[.]md|gemini[.]md|autonomy_matrix|enforcement_breakglass|privilege_permit|escalate[.]py|hooks'
+RR_PREFILTER_WRITE="${RR_PREFILTER_READ}"'|init[.]sh|full_boot[.]sh|claude[.]md|agents[.]md|gemini[.]md|autonomy_matrix|enforcement_breakglass|privilege_permit|cred_sync_hosts|escalate[.]py|hooks'
 
 # re_read_protpath — the union, unchanged in membership from before the split.
 # It is what the WRITE direction tests (a config file you may not read you
@@ -664,7 +664,8 @@ project_own_dotenv() {
        p=$(expand_target "${TR_CWD}/${p}") ;;
   esac
   case "$p" in
-    "$TR_PROJECT_ROOT"/.env|"$TR_PROJECT_ROOT"/.env.*) return 0 ;;
+    # .sops.yaml is config (creation rules, public recipients), never a key (Brad 2026-11-19).
+    "$TR_PROJECT_ROOT"/.env|"$TR_PROJECT_ROOT"/.env.*|"$TR_PROJECT_ROOT"/.sops.yaml) return 0 ;;
   esac
   return 1
 }

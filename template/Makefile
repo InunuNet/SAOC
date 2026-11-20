@@ -134,7 +134,9 @@ update-template:
 	@# Manifest-driven update — delegates to update_template.py for safe HARNESS/WORKSPACE/DERIVED/MERGE boundary enforcement.
 	@# delivery-integrity F1: the apply and the DERIVED regeneration run in ONE shell with the exit code
 	@# captured, so sync always runs and automation still sees the non-zero code.
-	@python3 execution/update_template.py --apply; rc=$$?; \
+	@# ARGS=--dry-run previews only: no --apply, no sync, nothing written.
+	@case " $(ARGS) " in *" --dry-run "*) exec python3 execution/update_template.py $(ARGS) ;; esac; \
+	python3 execution/update_template.py --apply $(ARGS); rc=$$?; \
 	echo "🔄 Regenerating DERIVED files from updated HARNESS sources..."; \
 	$(MAKE) sync || echo "⚠️  make sync failed — DERIVED files may be stale. Run 'make sync' manually."; \
 	exit $$rc

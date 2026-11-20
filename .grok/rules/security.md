@@ -22,3 +22,6 @@ echo a value.
 - Never commit a `.env`; use `.env.enc` (sops+age, `.sops.yaml`).
 - Never log an API key, token or password; mask before the write.
 - A secret in source makes the commit invalid. Keep credentials out of provider settings files.
+- Credentials move between machines only through `python3 execution/cred_sync.py push|pull <host>`
+  to a host in the operator-owned registry (`.agent/cred_sync_hosts.json`); never copy, `cat`,
+  or `rsync` credential files any other way, and never drop them silently from a copy.

@@ -4,12 +4,271 @@
 # Uses bash/jq only — no python3 startup cost per hooks.md rule
 # Session cache: <repo>/.tmp/athanor_autonomy_$PPID (cleared on new session)
 
+# The floor is bash 3.2 native (stock macOS): no associative arrays, mapfile
+# or ${x,,}; execution/tests/layer1_static/test_bash32_compat.sh keeps it so.
+# It used to need bash 4 and, under 3.2, errored its way to exit 0: the floor
+# FAILED OPEN (CI macos-latest, 2026-11-11). Anything older than 3.2 is denied.
+if [ "${BASH_VERSINFO[0]:-0}" -lt 3 ] \
+    || { [ "${BASH_VERSINFO[0]}" -eq 3 ] && [ "${BASH_VERSINFO[1]:-0}" -lt 2 ]; }; then
+  echo "⛔ AUTONOMY FLOOR: bash 3.2+ is required (running ${BASH_VERSION:-unknown}). Denying." >&2
+  exit 2
+fi
+
+# Windows Git Bash: native jq.exe emits CRLF for -r output; -b strips it.
+case "$(uname -s 2>/dev/null)" in
+  MINGW*|MSYS*|CYGWIN*)
+    if type -P jq >/dev/null 2>&1; then
+      # jq 1.6 has no -b: probe, else strip the CR from the output instead.
+      if command jq -b -n 1 >/dev/null 2>&1; then
+        jq() { command jq -b "$@"; }
+      else
+        jq() { command jq "$@" | tr -d '\r'; return "${PIPESTATUS[0]}"; }
+      fi
+    fi ;;
+esac
 INPUT=$(cat)
+# Fail closed without jq: every verdict below parses the payload with it, and an empty parse
+# falls through to "allow". Boot lists jq as a blocking essential (boot_panel essential.jq).
+if ! command -v jq >/dev/null 2>&1; then
+  echo "⛔ AUTONOMY FLOOR: jq is not on PATH, so the floor cannot read this tool call and refuses it. Install jq (brew install jq / apt install jq) and retry" >&2
+  exit 2
+fi
+# Windows host (Git bash / MSYS / Cygwin): tool-supplied paths arrive as C:\dir\file or
+# \\host\share\file, which no "/"-anchored floor pattern matches. Fold them to the POSIX form the
+# rest of the hook already judges before anything reads INPUT:
+#  - the project's own drive (from the payload cwd, any case) is dropped; any other drive letter or
+#    UNC host becomes an outside-project absolute path under /__foreign_drive__/;
+#  - backslashes become slashes in path fields, and in a Bash command only inside a token that
+#    BEGINS with a drive or UNC prefix, so quoted data such as printf '\x41' is never touched;
+#  - matching turns case-insensitive (nocasematch), as the Windows file system is.
+# POSIX hosts skip all of this: there a backslash is an ordinary file name character.
+case "$(uname -s 2>/dev/null)" in
+  MINGW*|MSYS*|CYGWIN*)
+    shopt -s nocasematch
+    _cwd_drive=$(printf '%s' "$INPUT" | jq -r '(.cwd // "") | if test("^[A-Za-z]:") then .[0:1] | ascii_downcase else "" end' 2>/dev/null)
+    # The project root as the host's own python spells it (drive letter and slashes folded), and
+    # as this shell spells it. An own-drive target under that root is rewritten onto the shell
+    # spelling, so the root and the target take one form and every later comparison agrees.
+    _pr=$(pwd -P 2>/dev/null)
+    _nr=$(python3 -c 'import os, sys
+print(os.path.realpath(sys.argv[1]))' "$_pr" 2>/dev/null | tr -d '\r' | tr '\\' '/')
+    case "$_nr" in [A-Za-z]:/*) _nr="${_nr#?:}" ;; *) _nr="" ;; esac
+    # Git Bash rewrites path-like arguments handed to a native jq.exe; --arg values are data.
+    _norm=$(printf '%s' "$INPUT" | MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' jq -c --arg cd "$_cwd_drive" --arg nr "$_nr" --arg pr "$_pr" '
+      def pre($d): if ($d | ascii_downcase) == $cd or $cd == "" then ""
+        else "/__foreign_drive__/" + ($d | ascii_upcase) end;
+      def q: [39] | implode;
+      def sent: "/__foreign_drive__/CLIMB/.ssh/above-drive-root";
+      def climbs: split("/") | (reduce .[] as $x ({d: 0, c: false};
+        if $x == "" or $x == "." then .
+        elif $x == ".." then (if .d == 0 then .c = true else .d -= 1 end)
+        else .d += 1 end)) | .c;
+      def own($d): ($d | ascii_downcase) == $cd or $cd == "";
+      def under($r): $nr != "" and (($r | ascii_downcase) == ($nr | ascii_downcase)
+        or ($r | ascii_downcase | startswith(($nr | ascii_downcase) + "/")));
+      def drive($d; $r): if ($r | climbs) then sent
+        elif own($d) and under($r) then $pr + $r[($nr | length):]
+        else pre($d) + $r end;
+      def unc($h; $s; $r): if ($r | climbs) then sent
+        else "/__foreign_drive__/unc/\($h)/\($s)\($r)" end;
+      def fp: if type == "string" then
+          . as $o | gsub("\\\\"; "/") as $s
+          | if ($o | test("^\\\\\\\\[^\\\\/]+[\\\\/][^\\\\/]+[\\\\/]")) then
+              ($s | capture("^//(?<h>[^/]+)/(?<s>[^/]+)(?<r>/.*)$")) as $m
+              | unc($m.h; $m.s; $m.r)
+            elif ($s | test("^[A-Za-z]:/")) then
+              ($s | capture("^(?<d>[A-Za-z]):(?<r>/.*)$")) as $m | drive($m.d; $m.r)
+            else $s end
+        else . end;
+      def cmd: if type == "string" then
+          gsub("(?<a>^|[\\s\(q)\"=<>])(?<d>[A-Za-z]):(?<p>[\\\\/][^\\s\(q)\"]*)";
+               .a + drive(.d; .p | gsub("\\\\"; "/")))
+          | gsub("(?<a>^|[\\s\(q)\"=<>])\\\\\\\\(?<h>[^\\\\/\\s\(q)\"]+)[\\\\/](?<s>[^\\\\/\\s\(q)\"]+)(?<p>[\\\\/][^\\s\(q)\"]*)?";
+                 .a + unc(.h; .s; (.p // "") | gsub("\\\\"; "/")))
+        else . end;
+      if (.tool_input | type) == "object" then
+        .tool_input |= (
+          (if has("file_path") then .file_path |= fp else . end)
+          | (if has("notebook_path") then .notebook_path |= fp else . end)
+          | (if has("path") then .path |= fp else . end)
+          | (if has("command") then .command |= cmd else . end))
+      else . end' 2>/dev/null) && [ -n "$_norm" ] && INPUT="$_norm"
+    ;;
+esac
 TOOL=$(echo "$INPUT" | jq -r '.tool_name // ""' 2>/dev/null || echo "")
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // ""' 2>/dev/null || echo "")
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // ""' 2>/dev/null || echo "")
 # Trim leading whitespace — prevents bypass via "  sudo ..." or "  rm -rf ..."
 COMMAND="${COMMAND#"${COMMAND%%[! ]*}"}"
+
+# Burn-rate brake: while the flag exists no subagent is dispatched (execution/burn_brake.py).
+case "$TOOL" in
+  Agent|Task)
+    if [ -e "$PWD/.agent/memory/scratch/BURN_BRAKE" ]; then
+      echo "⛔ BURN_BRAKE: quota is burning too fast; Agent dispatch denied while $PWD/.agent/memory/scratch/BURN_BRAKE exists. Release: python3 execution/burn_brake.py release (it also clears when the quota window resets)" >&2
+      exit 2
+    fi ;;
+esac
+
+# Voice lock: speech goes only through execution/voice_say.py (shared voice lock). Deny a Bash
+# command that runs macOS say/afplay or the Voice backend speak.py/speak.sh as a command token,
+# unless the same command runs voice_say.py (covers the VOICE_BACKEND_CMD env wrapper).
+if [ "$TOOL" = "Bash" ]; then
+  # Judge command tokens only: drop heredoc bodies, then quoted segments.
+  _vb_cmd=$(printf '%s\n' "$COMMAND" | awk '
+    hd { t=$0; sub(/^\t+/, "", t); if (t == term) hd=0; next }
+    { print
+      if (match($0, /<<-?[ \t]*[\047"]?[A-Za-z_][A-Za-z0-9_]*/) && substr($0, RSTART-1, 1) != "<") {
+        w=substr($0, RSTART, RLENGTH); sub(/^<<-?[ \t]*[\047"]?/, "", w); term=w; hd=1 } }' \
+    | tr '\n' '\001' | sed -E "s/\"[^\"]*\"/ /g; s/'[^']*'/ /g" | tr '\001' '\n')
+  _vb_sep=$'(^|[;&|(\n])[[:space:]]*'
+  _vb_pre="(([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*|env|command|exec|nohup|nice|time|caffeinate|xargs|sudo|-[^[:space:]]+)[[:space:]]+)*"
+  _vb_say="${_vb_sep}${_vb_pre}(/[^[:space:]]*/)?(say|afplay)([[:space:]]|\$)"
+  _vb_spk="${_vb_sep}${_vb_pre}([^[:space:];&|]*/)?(python[0-9.]*|bash|sh|zsh)[[:space:]]+([^;&|]*[[:space:]/])?speak\.(py|sh)([[:space:]]|\$)"
+  _vb_exe="${_vb_sep}${_vb_pre}[^[:space:];&|]*speak\.(py|sh)([[:space:]]|\$)"
+  if [[ "$COMMAND" != *execution/voice_say.py* ]] \
+     && { [[ "$_vb_cmd" =~ $_vb_say ]] || [[ "$_vb_cmd" =~ $_vb_spk ]] || [[ "$_vb_cmd" =~ $_vb_exe ]]; }; then
+    echo "⛔ AUTONOMY FLOOR: speaking outside the shared voice lock is denied. Use: python3 execution/voice_say.py --text \"...\"" >&2
+    exit 2
+  fi
+fi
+
+# Credential-store raw scan (P52s queue item 20). The tokenizer-based scanners below each closed
+# one spelling of a home store path and left the next open (quote splits, backslashes, heredoc
+# bodies, `$HOME`, `${HOME}`, `~user`, /Users/<u>, wrappers): the denylist history is a
+# whack-a-mole of 33 leaks in the golden. So before ANY unwrapping or parsing this scans the whole
+# raw command text, heredoc bodies included, fail closed. Normalise (join backslash-newline continuations, drop $ before a quote, drop quote characters and
+# backslashes, collapse // and /./, lowercase), then deny (1) a path COMPONENT named .ssh, .aws
+# or .gnupg anywhere (the same component rule the resolved-path check already applies to
+# */.ssh/*; `.ssh-fixture` and `foo.aws.json` are not components), or (2) a home-ish anchor
+# (~, ~user, $HOME, ${HOME}, the HOME value, /Users/u, /home/u, /root; NOT $PWD, ~+ or $( here,
+# so ordinary project globs pass; rule (1) still denies those anchors before a store name) followed by a first component (dotted or not) with a glob, brace or extglob char ( ( | ), which can
+# expand to a store. The project-credential exemption (nm_credential_exempt, a project's own
+# .env) does not apply here. Prose that merely names a store is denied too; use Edit/Write.
+# Known limit of a text scan: runtime-built strings (d=.ssh, $'\x2e', printf or base64 piped to
+# sh, file-fed paths) are out of scope.
+if [ "$TOOL" = "Bash" ]; then
+  _cr_t='~'
+  _cr_c="${COMMAND//$'\\\n'/}"
+  _cr_c="${_cr_c//\$[\'\"]/}"
+  _cr_s=$(printf '%s' "${_cr_c//[\'\"\\]/}" | tr '[:upper:]' '[:lower:]')
+  if [ "${#HOME}" -gt 1 ]; then
+    _cr_h=$(printf '%s' "$HOME" | tr '[:upper:]' '[:lower:]')
+    _cr_s="${_cr_s//"$_cr_h"/$_cr_t}"
+  fi
+  while [[ "$_cr_s" == *//* ]]; do _cr_s="${_cr_s//\/\///}"; done
+  while [[ "$_cr_s" == */./* ]]; do _cr_s="${_cr_s//\/.\///}"; done
+  _cr_b='[/[:space:];&|()<>`]'
+  _cr_comp="(^|${_cr_b}|=)(\.ssh|\.aws|\.gnupg)(${_cr_b}|\$)"
+  _cr_anchor='(~[a-z0-9._$-]*|\$home|\$\{home\}|/users/[^/[:space:]]+|/home/[^/[:space:]]+|/root)'
+  _cr_glob='/[^/[:space:]]*[*?[{(|]'
+  if [[ "$_cr_s" =~ $_cr_comp ]] || [[ "$_cr_s" =~ ${_cr_anchor}${_cr_glob} ]]; then
+    echo "⛔ AUTONOMY FLOOR: credential store path in command text (raw scan, fail-closed); name it without the home anchor, rephrase (search for ssh without the leading dot, or use the Grep tool), or use Edit/Write for prose" >&2
+    exit 2
+  fi
+fi
+
+# Transparent command wrappers (env, nice, timeout, xargs, ...) only prefix the command they run.
+# Every scanner judges that command, never the wrapper. uw_split WORD...: when WORD[0] is a
+# wrapper, set UW_REM to the words after the wrapper's own options and operands, UW_STR to a
+# payload the wrapper itself parses as a command line (env -S, flock -c, watch), and UW_FUZZY=1
+# when an option was not understood (then UW_REM holds every word after the wrapper and the caller
+# must judge each suffix of it as a command: fail closed, never skip). Returns 1 for a non-wrapper.
+UW_WRAPPERS=" env command builtin exec nice nohup time timeout stdbuf ionice chrt taskset setsid xargs busybox flock watch caffeinate "
+UW_MAX_DEPTH=12
+FL_UW_N=0
+UW_REM=(); UW_STR=""; UW_FUZZY=0
+uw_valopts() {
+  case "$1" in
+    env) echo " -u -C -P -a --unset --chdir --argv0 --default-signal --ignore-signal --block-signal " ;;
+    nice) echo " -n --adjustment " ;;
+    timeout) echo " -s -k --signal --kill-after " ;;
+    stdbuf) echo " -i -o -e --input --output --error " ;;
+    ionice) echo " -c -n -p -P -u --class --classdata --pid --pgid --uid " ;;
+    taskset) echo " -c --cpu-list " ;;
+    time) echo " -f -o --format --output " ;;
+    exec) echo " -a " ;;
+    flock) echo " -w -E --timeout --conflict-exit-code " ;;
+    watch) echo " -n --interval " ;;
+    caffeinate) echo " -t -w " ;;
+    xargs) echo " -I -n -L -P -s -d -E -a -R -S --max-args --max-lines --max-procs --max-chars --delimiter --eof --arg-file --replace " ;;
+    *) echo " " ;;
+  esac
+}
+uw_split() {
+  UW_REM=(); UW_STR=""; UW_FUZZY=0
+  [ "$#" -eq 0 ] && return 1
+  local -a w=("$@")
+  local n=${#w[@]} i=1 name="${w[0]##*/}" a vo letter k bad
+  while [ "${name#\\}" != "$name" ]; do name="${name#\\}"; done
+  [[ "$UW_WRAPPERS" == *" $name "* ]] || return 1
+  vo=$(uw_valopts "$name")
+  local posn=0
+  case "$name" in timeout|chrt|taskset|flock) posn=1 ;; esac
+  while [ "$i" -lt "$n" ]; do
+    a="${w[$i]}"
+    case "$a" in
+      --) i=$((i + 1)); break ;;
+      -S|--split-string)
+        if [ "$name" = env ]; then UW_STR="${w[$((i + 1))]:-}"; i=$((i + 2)); break; fi
+        UW_FUZZY=1; i=$((i + 1)) ;;
+      --split-string=*) UW_STR="${a#*=}"; i=$((i + 1)); break ;;
+      -S?*)
+        if [ "$name" = env ]; then UW_STR="${a#-S}"; i=$((i + 1)); break; fi
+        UW_FUZZY=1; i=$((i + 1)) ;;
+      -c|--command)
+        if [ "$name" = flock ]; then UW_STR="${w[$((i + 1))]:-}"; UW_REM=(); return 0; fi
+        if [ "$name" = taskset ] || [ "$name" = ionice ]; then posn=0; i=$((i + 2)); continue; fi
+        UW_FUZZY=1; i=$((i + 1)) ;;
+      --command=*|-c?*)
+        if [ "$name" = flock ]; then UW_STR="${a#*=}"; [ "${a:0:2}" = -c ] && [ "${a:0:3}" != --c ] && UW_STR="${a#-c}"; UW_REM=(); return 0; fi
+        case "$a" in --command=*) UW_FUZZY=1 ;; esac
+        if [ "$name" = taskset ]; then posn=0; fi
+        i=$((i + 1)) ;;
+      --cpu-list=*) posn=0; i=$((i + 1)) ;;
+      --*=*) i=$((i + 1)) ;;
+      --*) if [[ "$vo" == *" $a "* ]]; then i=$((i + 2)); else UW_FUZZY=1; i=$((i + 1)); fi ;;
+      -[0-9]*|-) i=$((i + 1)) ;;
+      -?*)
+        letter="-${a:1:1}"
+        if [[ "$vo" == *" $letter "* ]]; then
+          [ "${#a}" -eq 2 ] && i=$((i + 2)) || i=$((i + 1))
+        else
+          bad=0
+          for ((k = 2; k < ${#a}; k++)); do
+            [[ "$vo" == *" -${a:$k:1} "* ]] && bad=1
+          done
+          [ "$bad" = 1 ] && UW_FUZZY=1
+          i=$((i + 1))
+        fi ;;
+      *)
+        if [ "$posn" -gt 0 ]; then posn=$((posn - 1)); i=$((i + 1)); continue; fi
+        break ;;
+    esac
+  done
+  case "$name" in
+    command) for a in "${w[@]:1:$((i - 1))}"; do
+        case "$a" in -v|-V|-pv|-pV) return 0 ;; esac
+      done ;;
+    watch) UW_FUZZY=1; UW_STR="${w[*]:$i}" ;;
+    busybox) i=1; UW_FUZZY=0 ;;
+  esac
+  if [ "$UW_FUZZY" = 1 ]; then UW_REM=("${w[@]:1}"); else UW_REM=("${w[@]:$i}"); fi
+  # A plain payload (no quoting or expansion) is just more words of the command: splice it in
+  # so the caller keeps the pipeline context (`printf 'cmd' | env -S sh`).
+  if [ -n "$UW_STR" ] && [ "$name" = env ] && [[ "$UW_STR" != *[\'\"\\\$\`]* ]]; then
+    local -a uw_pw=()
+    read -r -a uw_pw <<< "$UW_STR"
+    UW_REM=("${uw_pw[@]}" "${UW_REM[@]}"); UW_STR=""
+  fi
+  return 0
+}
+# uw_quote WORD...: the words as one single-quoted command-line string.
+uw_quote() {
+  local q="" a
+  for a in "$@"; do q="$q '${a//\'/\'\\\'\'}'"; done
+  printf '%s' "$q"
+}
 
 # TR_CWD_KNOWN (lib/target_resolve.sh): a wildcard is judged against the
 # real filesystem only when the filesystem the hook sees IS the one the
@@ -252,6 +511,7 @@ floor_log_denial() {
     fi
     reason=$(printf '%s' "$1" | floor_mask)
     path=$(printf '%s' "${2:-}" | floor_mask)
+    MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' \
     jq -nc --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg tool "$TOOL" \
            --arg reason "$reason" --arg path "$path" --arg command "$cmd" \
            '{ts: $ts, tool: $tool, reason: $reason, path: (if $path == "" then null else $path end), command: $command}' \
@@ -289,8 +549,12 @@ if [ "$TOOL" = "Bash" ]; then
   # word after | ( { !, after builtin/command/time, or after an assignment word.
   # Elsewhere it is an operand (`find .`, `git diff -- .`).
   _src_dot='(^|[|({!]|(^|[[:space:]])(builtin|command|time)|[[:alnum:]_]=[^[:space:]]*)[[:space:]]*\.([[:space:]]|$)'
+  # A plain `|` pipeline (no ; & || backtick) keeps the location known even when a stage is not
+  # read-only (sort, uniq, jq): its globs expand against the filesystem the hook sees, and the
+  # expanded matches are still checked, so no pattern-only verdict is needed for `ls * | sort`.
   if { [ -z "$_session_cwd" ] || [ "$_session_cwd" -ef "$(pwd)" ]; } \
-     && { [[ "$_mcmd" != *[\;\&\|\`]* ]] || ro_pipeline "$_mcmd" || ro_sequence "$_mcmd"; } && [[ "$_mcmd" != *"$_nl"* ]] \
+     && { [[ "$_mcmd" != *[\;\&\|\`]* ]] || ro_pipeline "$_mcmd" || ro_sequence "$_mcmd" \
+          || { [[ "$_mcmd" != *[\;\&\`]* ]] && [[ "$_mcmd" != *"||"* ]]; }; } && [[ "$_mcmd" != *"$_nl"* ]] \
      && [[ "$_mcmd" != *'$('* ]] && [[ "$_mcmd" != *'<('* ]] && [[ "$_mcmd" != *'>('* ]] \
      && ! [[ "$_mcmd" =~ (^|[^[:alnum:]_.-])(cd|pushd|popd|eval|exec|source)([[:space:]\)]|$) ]] \
      && ! [[ "$_mcmd" =~ $_src_dot ]] && [[ "$_mcmd" != *'\'* ]] && [[ "$_mcmd" != *'$'* ]] && find_roots_inside "$COMMAND" \
@@ -396,9 +660,29 @@ del() { [ -n "$1" ] && [ -e "$1" ] && rm -f -- "$1"; }
 # partial normalization expand_target() does below for the ordinary floor
 # match. Works on paths that don't exist yet (a Write target usually
 # doesn't). Empty stdout on any error.
+CANON_HOST_WINDOWS=0
+case "$(uname -s 2>/dev/null)" in MINGW*|MSYS*|CYGWIN*) CANON_HOST_WINDOWS=1 ;; esac
 canon_path() {
-  python3 -c 'import os, sys
-print(os.path.realpath(sys.argv[1]))' "$1" 2>/dev/null
+  local out
+  out=$(python3 -c 'import os, sys
+print(os.path.realpath(sys.argv[1]))' "$1" 2>/dev/null)
+  # Windows Python prints CRLF; command substitution strips only the LF. Only a Windows host
+  # strips the CR: on POSIX a trailing CR is part of a real file name and must not be dropped.
+  # Windows paths also come back with backslashes; fold them so every guard and Route 1
+  # comparison sees one form. POSIX keeps them: a backslash is a legal file name character.
+  if [ "$CANON_HOST_WINDOWS" = 1 ]; then out="${out%$'\r'}"; out="${out//\\//}"; fi
+  printf '%s\n' "$out"
+}
+
+# hatch_is_abs <path> -- exit 0 when the path is absolute: a leading /, a drive letter with a
+# colon and a / or \ (C:\x, C:/x), or a UNC prefix (\\host). C:x, C:, 1:\x and the empty string
+# are relative. Windows Python hands the hook drive-letter paths; /* alone misses them.
+hatch_is_abs() {
+  case "$1" in
+    /*|\\\\*) return 0 ;;
+    [A-Za-z]:[/\\]*) return 0 ;;
+  esac
+  return 1
 }
 
 # route1_permit <target_canon> -- Route 1 (contract-backed). Runs the F6
@@ -415,6 +699,7 @@ route1_permit() {
   hook_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   resolver_out=$(python3 "${hook_dir}/lib/resolve_feature_contract.py" 2>/dev/null)
   rc=$?
+  resolver_out="${resolver_out%$'\r'}"
   [ "$rc" -ne 0 ] && return 1
   case "$resolver_out" in
     contract:*) contract_path="${resolver_out#contract:}" ;;
@@ -458,8 +743,9 @@ for entry in entries:
 
   local line line_abs line_canon matched=0
   while IFS= read -r line; do
+    line="${line%$'\r'}"
     [ -z "$line" ] && continue
-    if [[ "$line" = /* ]]; then line_abs="$line"; else line_abs="$(pwd)/${line}"; fi
+    if hatch_is_abs "$line"; then line_abs="$line"; else line_abs="$(pwd)/${line}"; fi
     line_canon=$(canon_path "$line_abs")
     [ -z "$line_canon" ] && continue
     if [ "$line_canon" = "$target_canon" ]; then matched=1; break; fi
@@ -580,6 +866,7 @@ route3_hard_denied() {
     */.agent/enforcement_breakglass.json|\
     */.agent/enforcement_emergency.json|\
     */.agent/privilege_permit.json|\
+    */.agent/cred_sync_hosts.json|\
     */execution/hooks/check_autonomy.sh)
       return 0 ;;
   esac
@@ -656,6 +943,7 @@ if dt.tzinfo is None:
     dt = dt.replace(tzinfo=timezone.utc)
 print(int(dt.timestamp()))
 ' "$p_created" 2>/dev/null) || return 1
+  created_epoch="${created_epoch%$'\r'}"
   [ -z "$created_epoch" ] && return 1
   age=$(( now_epoch - created_epoch ))
   # A clock-skewed future timestamp is not a fresh permit, it is an unreadable
@@ -674,6 +962,58 @@ print(int(dt.timestamp()))
   return 0
 }
 
+# project_free_edit <target_canon> -- 0 when the target is project-owned config an agent edits
+# freely while a mission is open: .claude/settings.json, execution/hooks/** and template/**.
+# Still guarded (a freely editable evaluator would remove every edge): check_autonomy.sh,
+# hooks/lib/** at the project root, the matrix, breakglass and permit files, credential stores
+# and .git. "Mission open" is the F6 resolver reporting anything but allow or an error.
+project_free_edit() {
+  local target="$1" root rel out rc
+  root="$TR_PROJECT_ROOT"
+  [ -z "$root" ] && return 1
+  case "$target" in "$root"/*) rel="${target#"$root"/}" ;; *) return 1 ;; esac
+  # Case-folded: the file system is case-insensitive, so CHECK_AUTONOMY.sh is the evaluator.
+  ci_match '^execution/hooks/(check_autonomy\.sh$|lib(/|$))' "$rel" && return 1
+  case "$rel" in
+    .claude/settings.json|execution/hooks/*) ;;
+    template/*)
+      ci_match '(^|/)(autonomy_matrix|enforcement_breakglass|privilege_permit|cred_sync_hosts)[^/]*$' "$rel" && return 1
+      ci_match '(^|/)(\.git|\.ssh|\.aws|\.gnupg|secrets)(/|$)' "$rel" && return 1
+      ci_match '(\.pem|\.key|\.env|\.sops\.yaml)$' "$rel" && return 1 ;;
+    *) return 1 ;;
+  esac
+  mission_open
+}
+
+# mission_open -- 0 only when the F6 resolver finds a contract for the current feature AND the
+# mission file active.json names exists inside the project with frontmatter status in_progress.
+# A resolver word such as `noncontract` (e.g. active.json naming a missing file) is not enough.
+mission_open() {
+  local out rc
+  out=$(python3 "${HOOK_DIR}/lib/resolve_feature_contract.py" 2>/dev/null)
+  rc=$?
+  out="${out%$'\r'}"
+  [ "$rc" -eq 0 ] && [ "${out#contract:}" != "$out" ] || return 1
+  python3 -c '
+import json, sys
+from pathlib import Path
+import yaml
+root = Path.cwd().resolve()
+try:
+    active = json.loads((root / ".agent/memory/project/missions/active.json").read_text())
+    mission = (root / (active.get("mission") or "")).resolve()
+    if not active.get("mission") or root not in mission.parents or not mission.is_file():
+        sys.exit(1)
+    text = mission.read_text()
+    if not text.startswith("---"):
+        sys.exit(1)
+    front = yaml.safe_load(text.split("---", 2)[1])
+    sys.exit(0 if isinstance(front, dict) and front.get("status") == "in_progress" else 1)
+except Exception:
+    sys.exit(1)
+' 2>/dev/null
+}
+
 # check_enforcement_hatch <raw_target> -- the single entry point both floor
 # surfaces (direct Write/Edit FILE_PATH, and the Bash-write resolved
 # target) call before denying. Returns 0 (and has already audited the
@@ -683,14 +1023,21 @@ print(int(dt.timestamp()))
 check_enforcement_hatch() {
   local raw="$1" target_abs target_canon
   [ -z "$raw" ] && return 1
-  if [[ "$raw" = /* ]]; then target_abs="$raw"; else target_abs="$(pwd)/${raw}"; fi
+  if hatch_is_abs "$raw"; then target_abs="$raw"; else target_abs="$(pwd)/${raw}"; fi
   target_canon=$(canon_path "$target_abs")
   [ -z "$target_canon" ] && return 1
+  # A path that climbed above a drive or UNC root was rewritten to the CLIMB sentinel at entry.
+  # No route may grant it, whatever a contract, breakglass or emergency file names.
+  case "$raw" in */__foreign_drive__/CLIMB/*) return 1 ;; esac
+  case "$target_canon" in */__foreign_drive__/CLIMB/*) return 1 ;; esac
   # The operator permit is never reachable through Routes 1-3: a route is agent-authored
   # evidence, and the permit is the one file only the operator's answer may create.
-  ci_match '(^|/)\.agent/privilege_permit\.json$' "$target_canon" && return 1
+  ci_match '(^|/)\.agent/(privilege_permit|cred_sync_hosts)\.json$' "$target_canon" && return 1
 
   HATCH_METHOD=""; HATCH_MISSION=""; HATCH_FEATURE=""; HATCH_CONTRACT=""
+  # Project-owned config needs no listing while a mission is active; the evaluator and
+  # credential stores are excluded inside project_free_edit.
+  project_free_edit "$target_canon" && return 0
   if route1_permit "$target_canon" || route2_permit "$target_canon" \
      || route3_permit "$target_canon"; then
     if ! audit_permit "$HATCH_METHOD" "$target_canon" "$HATCH_MISSION" "$HATCH_FEATURE" "$HATCH_CONTRACT"; then
@@ -708,7 +1055,7 @@ check_enforcement_hatch() {
 # human's answer to an AskUserQuestion (execution/escalate.py request) creates it. Out-of-project
 # paths covered by a live path grant get an explicit allow decision at the final exit. All parsing
 # and validation lives in lib/privilege_permit.py; any helper failure is a deny.
-# Design: docs/privileged-command-permit.md. Note: autonomy_matrix.json floor_denials.commands is
+# Design: docs/harness/privileged-command-permit.md. Note: autonomy_matrix.json floor_denials.commands is
 # inert (enforcement-owned, never read here); the verb set below is authoritative.
 PERMIT_HELPER="${HOOK_DIR}/lib/privilege_permit.py"
 PERMIT_FILE=".agent/privilege_permit.json"
@@ -785,7 +1132,7 @@ fl_elevate() {
         local r; r=$(expand_target "$f")
         if floor_glob_match "$f" || floor_glob_match "$r" || [[ "$r" =~ $re_write_protpath ]] \
            || ci_match "$re_read_protpath" "$r" \
-           || ci_match '(^|/)\.agent/privilege_permit\.json$' "$r"; then
+           || ci_match '(^|/)\.agent/(privilege_permit|cred_sync_hosts)\.json$' "$r"; then
           _blk=1; _why="$verb -e / sudoedit on protected path '$f'"; return
         fi
       done ;;
@@ -872,7 +1219,7 @@ permit_paths_covered() {
     Write|Edit|NotebookEdit|Read)
       p=$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // .tool_input.notebook_path // .tool_input.path // ""' 2>/dev/null)
       [ -n "$p" ] || return 1
-      declare -A VARS=()
+      local VARS_OFF=1
       p=$(expand_target "$p")
       path_in_project "$p" && return 1
       targets=("$p") ;;
@@ -937,8 +1284,8 @@ project_owned_secret() {
   # absolute form silently kept every ordinary command denied while the Write
   # tool worked, which is the worst of both.
   case "$resolved" in
-    "$root"/.env|"$root"/.env.*) return 0 ;;
-    .env|.env.*|./.env|./.env.*) return 0 ;;
+    "$root"/.env|"$root"/.env.*|"$root"/.sops.yaml) return 0 ;;
+    .env|.env.*|./.env|./.env.*|.sops.yaml|./.sops.yaml) return 0 ;;
   esac
   return 1
 }
@@ -958,6 +1305,7 @@ floor_glob_match() {
     */.agent/autonomy_matrix.json|.agent/autonomy_matrix.json|\
     */.agent/enforcement_breakglass.json|.agent/enforcement_breakglass.json|\
     */.agent/privilege_permit.json|.agent/privilege_permit.json|\
+    */.agent/cred_sync_hosts.json|.agent/cred_sync_hosts.json|\
     */execution/escalate.py|execution/escalate.py)
       return 0 ;;
   esac
@@ -974,13 +1322,13 @@ floor_glob_match() {
 # protected-path regexes. The raw form is still tested first so that no
 # denial that worked before can stop working.
 if [ -n "$FILE_PATH" ]; then
-  declare -A VARS=()
+  vars_reset
   FLOOR_RESOLVED=$(expand_target "$FILE_PATH")
-  if floor_glob_match "$FILE_PATH" \
+  if ! nm_credential_exempt "$FLOOR_RESOLVED" && { floor_glob_match "$FILE_PATH" \
      || floor_glob_match "$FLOOR_RESOLVED" \
      || [[ "$FLOOR_RESOLVED" =~ $re_write_protpath ]] \
      || [[ "$FLOOR_RESOLVED" =~ $re_read_protpath ]] \
-     || ci_match '(^|/)\.agent/privilege_permit\.json$' "$FLOOR_RESOLVED"; then
+     || ci_match '(^|/)\.agent/(privilege_permit|cred_sync_hosts)\.json$' "$FLOOR_RESOLVED"; }; then
     if project_owned_secret "$FLOOR_RESOLVED"; then
       exit 0
     fi
@@ -1011,7 +1359,16 @@ fi
 re_pyopen=$'open\\([[:space:]]*[\'\"]([^\'\"]+)[\'\"]'
 # re_code_open: open() WITH a mode argument. [2] is the mode; a mode carrying
 # w/a/x/+ opens for writing. A bare open('x') is a read and stays a read.
-re_code_open=$'open[[:space:]]*\\([[:space:]]*[\'\"]([^\'\"]+)[\'\"][[:space:]]*,[[:space:]]*[\'\"]([^\'\"]*)[\'\"]'
+# 2026-11-14 (P52s item 19): the first argument is ANY expression (`open(p,'w')`,
+# `open(sys.argv[1],'w')`) and the mode may be a keyword (`mode='w'`); [3] is the mode.
+# Which path is written is stage 2's job, as before.
+# Item 19 Codex r1: the first argument may hold one level of nested call (`Path('x')`) and
+# keywords may precede `mode=`. The mode literal is the LAST capture group (read via
+# ${BASH_REMATCH[-1]} semantics in scan_code_blob; POSIX ERE has no non-capturing groups).
+re_code_open=$'open[[:space:]]*\\([[:space:]]*(([^,()]|\\([^()]*\\))+)(,[[:space:]]*[A-Za-z_][A-Za-z0-9_]*[[:space:]]*=[^,)]*)*,[[:space:]]*(mode[[:space:]]*=[[:space:]]*)?[\'\"]([^\'\"]*)[\'\"]'
+# re_code_pathopen: pathlib's Path(...).open('w'), mode first. Anchored on a mode-shaped
+# literal so `.open('notes.txt')` stays a read.
+re_code_pathopen=$'\\.open[[:space:]]*\\([[:space:]]*(mode[[:space:]]*=[[:space:]]*)?[\'\"][rbt]*[waxWAX+][rwaxbtWAX+]*[\'\"]'
 # re_code_wverb: named write verbs an interpreter blob may use instead of
 # open() -- the classifier's vocabulary, not a substring scan of the command.
 # Presence of one of these decides that the blob WRITES; which path it writes
@@ -1021,7 +1378,9 @@ re_code_open=$'open[[:space:]]*\\([[:space:]]*[\'\"]([^\'\"]+)[\'\"][[:space:]]*
 # `s.replace(...)` and `os.path.exists(...)` must NOT read as writes.
 re_code_wverb=$'(write_text|write_bytes|writelines|writeFileSync|appendFileSync|createWriteStream|rmtree|makedirs|copyfile|copytree|copy2)[[:space:]]*\\(|(os|shutil|fs|FileUtils)\\.(write|copy|move|rename|replace|remove|unlink|truncate|mkdir|symlink|link)[A-Za-z_]*[[:space:]]*\\(|File\\.(write|delete|rename)|IO\\.write|(^|[[:space:];&|])(install|truncate|shred|sponge|tee|dd)[[:space:]]'
 
-_target_blk=0; _target_why=""; _target_path=""
+_target_blk=0; _target_why=""; _target_path=""; _target_hint=""
+# _code_write: set by scan_code_blob, 1 when the blob it just classified WRITES.
+_code_write=0
 
 # scan_read_token: the INVERTED read rule (SEC-P1-4c). The read direction no
 # longer asks "is this a known reader command?" — that allowlist can never be
@@ -1051,6 +1410,68 @@ scan_write_token() {
   check_target "write" "$t"
 }
 
+# ASSIGNED_RHS_AWK: prints the right-hand side of every `NAME = ...` statement (split on
+# `;`) whose NAME is in the -v names list (space-delimited): scan_code_blob's variable
+# write targets.
+read -r -d '' ASSIGNED_RHS_AWK <<'EOF'
+{
+  n = split($0, S, ";")
+  for (i = 1; i <= n; i++) {
+    s = S[i]
+    if (match(s, /^[ \t]*[A-Za-z_][A-Za-z0-9_]*[ \t]*(:[^=]*)?=[^=]/)) {
+      nm = substr(s, RSTART, RLENGTH)
+      sub(/^[ \t]+/, "", nm); sub(/[ \t]*[:=].*$/, "", nm)
+      if (index(names, " " nm " ")) print substr(s, index(s, "=") + 1)
+    }
+  }
+}
+EOF
+
+# HEREDOC_BODIES_AWK: HEREDOC_CODE_AWK with every heredoc kept apart. Each heredoc ends in a
+# marker line, \034I (fed to an interpreter, the lines above it are its program) or \034D
+# (data, no lines), so the caller can tell WHICH invocation's blob wrote.
+read -r -d '' HEREDOC_BODIES_AWK <<'EOF'
+BEGIN { state = 0; nq = 0; qi = 0 }
+{
+  line = $0
+  if (state == 1) {
+    t = line
+    gsub(/^[ \t]+|[ \t]+$/, "", t)
+    if (t == qd[qi]) {
+      printf "\034%s\n", (qe[qi] ? "I" : "D")
+      qi++
+      if (qi >= nq) { state = 0; nq = 0; qi = 0 }
+      next
+    }
+    if (qe[qi]) print line
+    next
+  }
+  # Every heredoc operator on the line is queued, in order; their bodies follow in order.
+  rest = line; consumed = 0
+  while (match(rest, /<<-?["\047]?[A-Za-z_][A-Za-z0-9_]*["\047]?/)) {
+    pre = substr(line, 1, consumed + RSTART - 1)
+    d = substr(rest, RSTART, RLENGTH)
+    consumed += RSTART + RLENGTH - 1
+    rest = substr(rest, RSTART + RLENGTH)
+    gsub(/^<<-?/, "", d)
+    gsub(/["\047]/, "", d)
+    qd[nq] = d
+    qe[nq] = (pre ~ /(^|[ \t;&|(])(python3?|perl|ruby|node|deno|php|sh|bash|zsh|dash|ksh)([ \t]|$)/) ? 1 : 0
+    nq++
+    state = 1
+  }
+}
+EOF
+
+# HEREDOC_STRIP_MARK_AWK: HEREDOC_STRIP_AWK that leaves a bare `<<` where each heredoc
+# operator was, so scan_rw can bind a heredoc to the command that introduced it. If the
+# library awk ever stops matching the pattern the copy is unchanged and the counts
+# disagree, which scan_rw already treats as "unbound" (fail closed).
+_hd_pat='    queue[nq] = d'
+_hd_rep='    out = out " << "; queue[nq] = d'
+HEREDOC_STRIP_MARK_AWK="${HEREDOC_STRIP_AWK/"$_hd_pat"/$_hd_rep}"
+unset _hd_pat _hd_rep
+
 # scan_code_blob <code> -- classifies one blob of interpreter code: the
 # argument of `python3 -c` / `ruby -e` / `sh -c`, or the body of a heredoc fed
 # to an interpreter. D35 finding 2: the previous version scanned such a blob
@@ -1069,7 +1490,7 @@ scan_write_token() {
 #      string literals instead. Prose is still safe in both: a token or
 #      literal containing whitespace is skipped.
 scan_code_blob() {
-  local code="$1" sub lit rest m0 m1 want_write=0
+  local code="$1" lang="${2:-}" sub lit rest m0 m1 want_write=0
   [ -z "$code" ] && return
 
   # Reads: every open() literal in the blob, not just the first. BASH_REMATCH
@@ -1085,29 +1506,51 @@ scan_code_blob() {
     [ "$_target_blk" = 1 ] && return
   done
 
-  # Stage 1 — write intent.
+  # Stage 1 — write intent. `sweep` = every string literal is a candidate target (a
+  # literal opened directly, or a named write verb). A write whose target is a variable
+  # (`open(p,'w')`) nominates only the literals ASSIGNED to that variable, so a read-only
+  # literal elsewhere in the blob is not mistaken for the write target.
+  local sweep=0 arg wnames=" " id
   rest="$code"
-  while [ "$want_write" = 0 ] && [[ "$rest" =~ $re_code_open ]]; do
-    m0="${BASH_REMATCH[0]}"; m1="${BASH_REMATCH[2]}"
+  while [[ "$rest" =~ $re_code_open ]]; do
+    m0="${BASH_REMATCH[0]}"; m1="${BASH_REMATCH[${#BASH_REMATCH[@]}-1]}"; arg="${BASH_REMATCH[1]}"
     [ -z "$m0" ] && break
     rest="${rest#*"$m0"}"
-    case "$m1" in *[waxWAX+]*) want_write=1 ;; esac
+    case "$m1" in *[waxWAX+]*)
+      want_write=1
+      case "$arg" in
+        *[\'\"]*) sweep=1 ;;
+        *) while IFS= read -r id; do wnames+="$id "; done \
+             < <(printf '%s\n' "$arg" | grep -oE '[A-Za-z_][A-Za-z0-9_]*') ;;
+      esac ;;
+    esac
   done
-  [ "$want_write" = 0 ] && [[ "$code" =~ $re_code_wverb ]] && want_write=1
+  [[ "$code" =~ $re_code_pathopen ]] && want_write=1 && sweep=1
+  [[ "$code" =~ $re_code_wverb ]] && want_write=1 && sweep=1
+  _code_write="$want_write"
 
   # Stage 2 — which path.
-  if [ "$want_write" = 1 ]; then
+  if [ "$sweep" = 1 ]; then
     while IFS= read -r lit; do
       scan_write_token "$lit"
       [ "$_target_blk" = 1 ] && return
     done < <(printf '%s\n' "$code" | awk "$QUOTED_LITERAL_AWK")
+  elif [ "$want_write" = 1 ]; then
+    while IFS= read -r lit; do
+      scan_write_token "$lit"
+      [ "$_target_blk" = 1 ] && return
+    done < <(printf '%s\n' "$code" | awk -v names="$wnames" "$ASSIGNED_RHS_AWK" \
+               | awk "$QUOTED_LITERAL_AWK")
   fi
 
   while IFS= read -r sub; do
     sub="${sub//$'\001'/$'\n'}"
     case "$sub" in W:*)
-      [ "$want_write" = 1 ] && scan_write_token "${sub#W:}"
+      [ "$sweep" = 1 ] && scan_write_token "${sub#W:}"
       [ "$_target_blk" = 1 ] && break
+      # In python/ruby/node code a bare identifier (`import secrets`) is a language word,
+      # not a path: real file operands arrive as open() literals, scanned above.
+      [ -n "$lang" ] && [[ "${sub#W:}" =~ ^[A-Za-z_][A-Za-z0-9_]*\;?$ ]] && continue
       scan_read_token "${sub#W:}" ;;
     esac
     [ "$_target_blk" = 1 ] && break
@@ -1171,7 +1614,7 @@ check_target() {
     # tested first so paths on both lists (.claude/settings.json, .env,
     # .sops.yaml) keep their "write to" message. component_glob_hit() closes
     # the same glob-spelling gap (R7) on the write side too.
-    if [ "$kind" = "write" ] && { ci_match "$re_write_protpath" "$resolved" || ci_match "$re_read_protpath" "$resolved" || component_glob_hit "$resolved"; }; then
+    if [ "$kind" = "write" ] && ! nm_credential_exempt "$resolved" && { ci_match "$re_write_protpath" "$resolved" || ci_match "$re_read_protpath" "$resolved" || component_glob_hit "$resolved"; }; then
       if project_owned_secret "$resolved"; then
         return
       fi
@@ -1186,6 +1629,14 @@ check_target() {
     # read_protected() itself applies the case-fold and glob-component checks.
     elif [ "$kind" = "read" ] && read_protected "$resolved"; then
       _target_blk=1; _target_path="$resolved"; _target_why="read of protected path '$resolved'"
+      _target_hint=""
+      # Denied only because the location is unknowable (a `;`/`&&` sequence with a
+      # stage that is not read-only): the same wildcard with the location known
+      # would pass. Say so; the verdict is unchanged. Subshell: TR_CWD_KNOWN stays 0.
+      if [ "${TR_CWD_KNOWN:-0}" != 1 ] && tr_has_glob "$resolved" \
+         && ( TR_CWD_KNOWN=1; ! read_protected "$resolved" ); then
+        _target_hint="; the wildcard cannot be checked inside this compound command, run the wildcard command on its own"
+      fi
       return
     fi
   done
@@ -1249,7 +1700,8 @@ recursive_reach() {
   done
 
   if [ "$follow" = 1 ] && [ "$depth" -lt "$RR_LINK_DEPTH" ]; then
-    mapfile -t hits < <(find -P "$rd" -name .git -prune -o -type l -print 2>/dev/null | head -n "$RR_CAP")
+    hits=(); while IFS= read -r _ln || [ -n "$_ln" ]; do hits+=("$_ln"); done \
+      < <(find -P "$rd" -name .git -prune -o -type l -print 2>/dev/null | head -n "$RR_CAP")
     for entry in "${hits[@]}"; do
       [ -z "$entry" ] && continue
       rr_check read "$entry" "$dir"
@@ -1263,7 +1715,7 @@ recursive_reach() {
 
   pf="$RR_PREFILTER_READ"
   [ "$kind" = copy ] && pf="$RR_PREFILTER_WRITE"
-  mapfile -t hits < <(find -P "$rd" -name .git -prune -o -print 2>/dev/null \
+  hits=(); while IFS= read -r _ln || [ -n "$_ln" ]; do hits+=("$_ln"); done < <(find -P "$rd" -name .git -prune -o -print 2>/dev/null \
     | awk -v cap="$RR_CAP" -v re="$pf" 'NR > cap { print "\001TOOBIG"; exit } tolower($0) ~ re { print }')
   for entry in "${hits[@]}"; do
     [ -z "$entry" ] && continue
@@ -1453,7 +1905,7 @@ recursive_dispatch() {
       if [ -n "$rtdir" ]; then
         rdest="$rtdir"; rsrcs=("${rops[@]}")
       elif [ "${#rops[@]}" -ge 2 ]; then
-        rdest="${rops[-1]}"; rsrcs=("${rops[@]:0:${#rops[@]}-1}")
+        rdest="${rops[${#rops[@]}-1]}"; rsrcs=("${rops[@]:0:${#rops[@]}-1}")
       fi
       # an rsync destination on another host is not a local write
       [[ "$rdest" == *:* && "$rdest" != /* ]] && rdest=""
@@ -1614,7 +2066,8 @@ ssh_code_values() {
     val="${opt#"$key"}"
     val="${val#"${val%%[![:space:]]*}"}"; val="${val#=}"
     val="${val#"${val%%[![:space:]]*}"}"
-    case "${key,,}" in
+    lc_ascii _key_lc "$key"
+    case "$_key_lc" in
       proxycommand|localcommand|remotecommand) [ -n "$val" ] && SSH_CODE+=("$val") ;;
     esac
   done
@@ -1622,7 +2075,7 @@ ssh_code_values() {
 }
 
 if [ -n "$COMMAND" ]; then
-  declare -A VARS=()
+  vars_reset
 
   # scan_rw <command-string> <depth> — the whole SEC-P1-4a read/write scan,
   # made recursive (R19/R24, #1407). It used to run once over $COMMAND with
@@ -1660,12 +2113,37 @@ if [ -n "$COMMAND" ]; then
     # it as a target list is precisely the D24 false positive. A heredoc fed to
     # an INTERPRETER is not data, it is the program. HEREDOC_CODE_AWK emits
     # exactly those bodies and nothing else; they are classified as code blobs.
-    local CODE_HEREDOC STRIPPED
-    CODE_HEREDOC=$(printf '%s\n' "$RW_SRC" | awk "$HEREDOC_CODE_AWK")
-    [ -n "$CODE_HEREDOC" ] && scan_code_blob "$CODE_HEREDOC"
+    # 2026-11-14 (P52s item 19): when such a blob WRITES, RW_CODE_WRITES makes the
+    # interpreter's own positional operands write targets (`python3 - FILE <<PY`,
+    # where the blob opens sys.argv[1]); see the python3|python arm below.
+    # Item 19 Codex r2: write intent is scoped to its OWN invocation. Each heredoc is
+    # classified apart (HD_WRITES, in source order) and bound to the `<<` operator that
+    # introduces it; HD_ANY is the fail-closed fallback when the two counts disagree.
+    local CODE_HEREDOC STRIPPED RW_CODE_WRITES=0 HD_ANY=0 HD_IDX=0 hd_body="" hd_ln
+    local -a HD_WRITES=()
+    CODE_HEREDOC=$(printf '%s\n' "$RW_SRC" | awk "$HEREDOC_BODIES_AWK")
+    if [ -n "$CODE_HEREDOC" ]; then
+      while IFS= read -r hd_ln; do
+        case "$hd_ln" in
+          $'\034'D) HD_WRITES+=(0); hd_body="" ;;
+          $'\034'I)
+            _code_write=0
+            scan_code_blob "$hd_body"
+            HD_WRITES+=("$_code_write"); [ "$_code_write" = 1 ] && HD_ANY=1
+            hd_body="" ;;
+          *) hd_body+="$hd_ln"$'\n' ;;
+        esac
+        [ "$_target_blk" = 1 ] && return
+      done <<< "$CODE_HEREDOC"
+      if [ -n "$hd_body" ]; then
+        _code_write=0
+        scan_code_blob "$hd_body"
+        [ "$_code_write" = 1 ] && HD_ANY=1
+      fi
+    fi
     [ "$_target_blk" = 1 ] && return
 
-    STRIPPED=$(printf '%s\n' "$RW_SRC" | awk "$HEREDOC_STRIP_AWK")
+    STRIPPED=$(printf '%s\n' "$RW_SRC" | awk "$HEREDOC_STRIP_MARK_AWK")
 
     # Command substitution (R19-adjacent, #1407 follow-up): find and erase
     # every $(...) / `...` span in STRIPPED (see cmdsub_scan()'s own
@@ -1685,12 +2163,13 @@ if [ -n "$COMMAND" ]; then
     done
 
     local -a TOKS
-    mapfile -t TOKS < <(printf '%s\n' "$STRIPPED" | awk -v oldlex="$(tr_oldlex_flag "$RW_SRC")" "$TOKENIZE_AWK")
+    TOKS=(); while IFS= read -r _ln || [ -n "$_ln" ]; do TOKS+=("$_ln"); done \
+      < <(printf '%s\n' "$STRIPPED" | awk -v oldlex="$(tr_oldlex_flag "$RW_SRC")" "$TOKENIZE_AWK")
     TOKS=("${TOKS[@]//$'\001'/$'\n'}")
 
     local -a cur_words=()
     local prev_op="" redir_gt="" redir_lt="" RW_LEAD_SEP="" RW_PIPE_SRC="" tok w
-    local RW_FIND_SEEN=0
+    local RW_FIND_SEEN=0 RW_UW_DEPTH=0
     local -a RW_FIND_ROOTS=()
 
     process_simple_cmd() {
@@ -1700,7 +2179,7 @@ if [ -n "$COMMAND" ]; then
     # simple two-step assignment: NAME=VALUE as the whole simple command
     if [ "$n" -eq 1 ] && [[ "${cur_words[0]}" =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]] && [ -z "$redir_gt" ] && [ -z "$redir_lt" ]; then
       local vn="${BASH_REMATCH[1]}" vv="${BASH_REMATCH[2]}"
-      VARS[$vn]=$(expand_target "$vv")
+      vars_set "$vn" "$(expand_target "$vv")"
       return
     fi
     check_target "write" "$redir_gt"
@@ -1743,6 +2222,36 @@ if [ -n "$COMMAND" ]; then
       fi
     fi
 
+    # A transparent wrapper (env, nice, timeout, xargs, ...) is judged as the command it runs:
+    # every word after its own options is re-scanned as a simple command, and an option that
+    # cannot be parsed makes every later suffix a candidate (fail closed).
+    local -a uw_in=("$cmdname" "${args[@]}")
+    if uw_split "${uw_in[@]}"; then
+      local -a uw_rem=("${UW_REM[@]}") uw_save=("${cur_words[@]}")
+      local uw_str="$UW_STR" uw_fuzzy="$UW_FUZZY" uw_i uw_from=0
+      redir_gt=""; redir_lt=""
+      RW_UW_DEPTH=$((RW_UW_DEPTH + 1))
+      if [ "$RW_UW_DEPTH" -gt "$UW_MAX_DEPTH" ]; then
+        _target_blk=1; _target_why="wrapper nesting exceeded depth limit ($UW_MAX_DEPTH)"
+      else
+        if [ -n "$uw_str" ]; then
+          scan_rw "$uw_str$(uw_quote "${uw_rem[@]}")" $((RW_DEPTH + 1))
+        fi
+        [ "$uw_fuzzy" = 1 ] && [ "${#uw_rem[@]}" -gt 0 ] \
+          && scan_rw "${uw_rem[*]}" $((RW_DEPTH + 1))
+        for ((uw_i = 0; uw_i <= ${#uw_rem[@]}; uw_i++)); do
+          [ "$_target_blk" = 1 ] && break
+          cur_words=("${uw_rem[@]:$uw_i}")
+          RW_PIPE_SRC_KEEP="$RW_PIPE_SRC"
+          process_simple_cmd
+          [ "$uw_fuzzy" = 1 ] || break
+        done
+      fi
+      RW_UW_DEPTH=$((RW_UW_DEPTH - 1))
+      cur_words=("${uw_save[@]}")
+      return
+    fi
+
     # Pipe-into-shell recursion (R24, #1407): `printf 'cat ~/.ssh/id_rsa' | sh`
     # — RW_PIPE_SRC was captured by an echo/printf simple command earlier in
     # THIS pipeline (set at the bottom of the echo|printf arm below) and is
@@ -1781,7 +2290,7 @@ if [ -n "$COMMAND" ]; then
         local is_i=0
         for a in "${args[@]}"; do case "$a" in -i|-i*) is_i=1 ;; esac; done
         if [ "$is_i" = 1 ]; then
-          [ "${#nonflag[@]}" -gt 0 ] && check_target "write" "${nonflag[-1]}"
+          [ "${#nonflag[@]}" -gt 0 ] && check_target "write" "${nonflag[${#nonflag[@]}-1]}"
         else
           for a in "${nonflag[@]:1}"; do check_target "read" "$a"; done
         fi ;;
@@ -1808,8 +2317,8 @@ if [ -n "$COMMAND" ]; then
           dest="$tdir"
           for s in "${nonflag[@]}"; do [ "$s" != "$tdir" ] && srcs+=("$s"); done
         elif [ "${#nonflag[@]}" -gt 0 ]; then
-          check_target "write" "${nonflag[-1]}"
-          dest="${nonflag[-1]}"
+          check_target "write" "${nonflag[${#nonflag[@]}-1]}"
+          dest="${nonflag[${#nonflag[@]}-1]}"
           srcs=("${nonflag[@]:0:${#nonflag[@]}-1}")
         fi
         # Copying INTO a directory writes <dir>/<basename of each source>:
@@ -1840,9 +2349,9 @@ if [ -n "$COMMAND" ]; then
       # `truncate` and friends create or clobber a file exactly as `cp` does,
       # and every one of them was a silent path to a floor-protected file.
       install)
-        [ "${#nonflag[@]}" -gt 1 ] && check_target "write" "${nonflag[-1]}" ;;
+        [ "${#nonflag[@]}" -gt 1 ] && check_target "write" "${nonflag[${#nonflag[@]}-1]}" ;;
       ln)
-        [ "${#nonflag[@]}" -gt 0 ] && check_target "write" "${nonflag[-1]}" ;;
+        [ "${#nonflag[@]}" -gt 0 ] && check_target "write" "${nonflag[${#nonflag[@]}-1]}" ;;
       truncate|touch|shred|unlink|rmdir|mkdir|sponge|patch)
         for a in "${nonflag[@]}"; do check_target "write" "$a"; done ;;
       rm)
@@ -1875,11 +2384,19 @@ if [ -n "$COMMAND" ]; then
         local i seen_c=0
         for i in "${!args[@]}"; do
           if [ "$seen_c" = 1 ]; then
-            scan_code_blob "${args[$i]}"
+            _code_write=0
+            scan_code_blob "${args[$i]}" lang
+            [ "$_code_write" = 1 ] && RW_CODE_WRITES=1
             break
           fi
           [ "${args[$i]}" = "-c" ] && seen_c=1
-        done ;;
+        done
+        # 2026-11-14 (P52s item 19): a writing blob makes the operands after the program
+        # write targets. A prose operand (the -c blob itself) is skipped by the token guard;
+        # an unresolvable $VAR expands to nothing protected, as for any other write.
+        if [ "$RW_CODE_WRITES" = 1 ]; then
+          for a in "${nonflag[@]}"; do scan_write_token "$a"; done
+        fi ;;
       sh|bash|zsh|dash|ksh|perl|ruby|node|deno|php|su|runuser)
         # `sh -c "cat ~/.ssh/id_rsa"` and `ruby -e 'File.read("…/.ssh/id_rsa")'`
         # hide the path inside one quoted word that the whitespace guard would
@@ -1889,10 +2406,21 @@ if [ -n "$COMMAND" ]; then
         local i seen_sc=0
         for i in "${!args[@]}"; do
           if [ "$seen_sc" = 1 ]; then
-            scan_code_blob "${args[$i]}"
+            case "$cmdname" in
+              sh|bash|zsh|dash|ksh|su|runuser) scan_code_blob "${args[$i]}" ;;
+              *) scan_code_blob "${args[$i]}" lang ;;
+            esac
+            # A shell's -c string is itself a command line: judge it as one, so a nested
+            # `sh -c '...'` or wrapper inside it is unwrapped too.
+            case "$cmdname" in
+              sh|bash|zsh|dash|ksh) scan_rw "${args[$i]}" $((RW_DEPTH + 1)) ;;
+            esac
             break
           fi
-          case "${args[$i]}" in -c|-e|-E|--eval) seen_sc=1 ;; esac
+          case "${args[$i]}" in
+            -c|-e|-E|--eval) seen_sc=1 ;;
+            -[!-]*c*) case "$cmdname" in sh|bash|zsh|dash|ksh) seen_sc=1 ;; esac ;;
+          esac
         done ;;
       eval)
         # `eval "cat ~/.ssh/id_rsa"` (R19, #1407) builds its program out of
@@ -2050,11 +2578,13 @@ if [ -n "$COMMAND" ]; then
     done
   }
 
+    local HD_OPS=0
+    for tok in "${TOKS[@]}"; do [ "$tok" = "OP:<<" ] && HD_OPS=$((HD_OPS + 1)); done
     for tok in "${TOKS[@]}"; do
       case "$tok" in
         "OP:;"|"OP:&&"|"OP:||"|"OP:|"|"OP:NL")
           process_simple_cmd
-          cur_words=(); redir_gt=""; redir_lt=""; prev_op=""
+          cur_words=(); redir_gt=""; redir_lt=""; prev_op=""; RW_CODE_WRITES=0
           # RW_LEAD_SEP is the separator that leads into the NEXT command —
           # only "|" makes that next command eligible to consume RW_PIPE_SRC.
           case "$tok" in
@@ -2064,7 +2594,14 @@ if [ -n "$COMMAND" ]; then
           ;;
         "OP:>>"|"OP:>") prev_op="gt" ;;
         "OP:<") prev_op="lt" ;;
-        "OP:<<") prev_op="" ;;
+        "OP:<<")
+          prev_op=""
+          if [ "$HD_OPS" = "${#HD_WRITES[@]}" ]; then
+            [ "${HD_WRITES[$HD_IDX]:-0}" = 1 ] && RW_CODE_WRITES=1
+          else
+            [ "$HD_ANY" = 1 ] && RW_CODE_WRITES=1
+          fi
+          HD_IDX=$((HD_IDX + 1)) ;;
         W:*)
           w="${tok#W:}"
           if [ "$prev_op" = "gt" ]; then redir_gt="$w"
@@ -2083,7 +2620,9 @@ if [ -n "$COMMAND" ]; then
 
   if [ "$_target_blk" = 1 ]; then
     floor_log_denial "$_target_why" "$_target_path"
-    echo "⛔ AUTONOMY FLOOR: $_target_why always denied" >&2
+    # The hint belongs to a wildcard read; any other reason set later drops it.
+    case "$_target_why" in "read of protected path "*) ;; *) _target_hint="" ;; esac
+    echo "⛔ AUTONOMY FLOOR: $_target_why always denied${_target_hint:-}" >&2
     exit 2
   fi
 fi
@@ -2206,7 +2745,8 @@ if [ -n "$COMMAND" ]; then
   FL_CRED_SHAPES=(id_rsa id_dsa id_ecdsa id_ed25519 .pem .key .p12 .pfx .env
     credentials .netrc .npmrc .pgpass .ssh .aws .gnupg secrets)
   fl_cred_shaped() {
-    local v="${1,,}" s
+    local v s
+    lc_ascii v "$1"
     for s in "${FL_CRED_SHAPES[@]}"; do
       [[ "$v" == *"$s"* ]] && return 0
     done
@@ -2327,7 +2867,7 @@ if [ -n "$COMMAND" ]; then
   # fl_data_target <path> — true when the path has a data-file extension.
   fl_data_target() {
     local b="${1##*/}"
-    b="${b,,}"
+    lc_ascii b "$b"
     [[ "$b" == *.* ]] || return 1
     [[ "$FL_DATA_EXTS" == *" ${b##*.} "* ]]
   }
@@ -2471,7 +3011,7 @@ if [ -n "$COMMAND" ]; then
   # hopped, repeatedly, until the path stops changing.
   fl_find_root() {
     local p="$1" r prev k
-    local -A VARS=()
+    local VARS_OFF=1
     FL_ROOT_IN=0; FL_ROOT_TMP=0
     [ "$FL_CWD_OK" = 1 ] && [ -n "$TR_CWD" ] && [ -n "$TR_PROJECT_ROOT" ] || return
     while [[ "$p" == */ && "$p" != / ]]; do p="${p%/}"; done
@@ -2493,7 +3033,7 @@ if [ -n "$COMMAND" ]; then
     [ "$_blk" = 1 ] && return
     local sep="$1"; shift
     local -a w=("$@")
-    local n=${#w[@]} i=0 j m a name sub wrap rec=0 frc=0 seen_c=0 guard=0
+    local n=${#w[@]} i=0 j m a name sub rec=0 frc=0 seen_c=0
     # A curl's pipeline wrote a file if any later stage redirects to one; the
     # stage's command name is judged below once it is known.
     if [ "$sep" != "|" ]; then FL_NET_PIPE=0
@@ -2528,34 +3068,33 @@ if [ -n "$COMMAND" ]; then
     done
     # Leading inline assignments (FOO=bar cmd …) are not the command.
     while [ "$i" -lt "$n" ] && [[ "${w[$i]}" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; do i=$((i + 1)); done
-    # Wrapper commands only prefix the real one: `xargs rm -rf`, `env rm -rf`
-    # and `exec rm -rf` delete recursively though their own first word does
-    # not say so.
-    while [ "$i" -lt "$n" ] && [ "$guard" -lt 8 ]; do
-      guard=$((guard + 1))
-      wrap="${w[$i]##*/}"
-      while [ "${wrap#\\}" != "$wrap" ]; do wrap="${wrap#\\}"; done
-      case "$wrap" in
-        xargs|env|nohup|command|nice|time|timeout|stdbuf|ionice|setsid|exec|builtin|watch|flock) ;;
-        *) break ;;
-      esac
-      i=$((i + 1))
-      while [ "$i" -lt "$n" ]; do
-        case "${w[$i]}" in
-          -*)
-            # `command -v sudo` only looks the name up; nothing runs.
-            case "$wrap:${w[$i]}" in command:-v|command:-V|command:-pv|command:-pV) return ;; esac
-            i=$((i + 1)) ;;
-          [0-9]*) case "$wrap" in timeout|nice|ionice|watch) i=$((i + 1)) ;; *) break ;; esac ;;
-          *) break ;;
-        esac
-      done
-      # flock takes the lock file as its first operand, then the command.
-      [ "$wrap" = flock ] && [ "$i" -lt "$n" ] && i=$((i + 1))
-    done
-    # `env NAME=value cmd`: the assignments after a wrapper are not the command.
-    while [ "$i" -lt "$n" ] && [[ "${w[$i]}" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; do i=$((i + 1)); done
+    # Wrapper commands only prefix the real one: `xargs <cmd>`, `env -u X <cmd>` and
+    # `timeout -s KILL 5 <cmd>` run <cmd> though their own first word does not say so.
+    # uw_split strips the wrapper; an option it cannot parse makes every later suffix a
+    # candidate command (fail closed).
     [ "$i" -ge "$n" ] && return
+    if uw_split "${w[@]:$i}"; then
+      local -a uw_rem=("${UW_REM[@]}")
+      local uw_str="$UW_STR" uw_fuzzy="$UW_FUZZY" uw_i
+      FL_TWO=0
+      FL_UW_N=$((FL_UW_N + 1))
+      if [ "$FL_UW_N" -gt "$UW_MAX_DEPTH" ]; then
+        _blk=1; _why="wrapper nesting exceeded depth limit ($UW_MAX_DEPTH)"
+      else
+        if [ -n "$uw_str" ]; then
+          fl_classify "$uw_str$(uw_quote "${uw_rem[@]}")" $((FL_DEPTH + 1))
+        fi
+        [ "$uw_fuzzy" = 1 ] && [ "${#uw_rem[@]}" -gt 0 ] \
+          && fl_classify "${uw_rem[*]}" $((FL_DEPTH + 1))
+        for ((uw_i = 0; uw_i < ${#uw_rem[@]}; uw_i++)); do
+          [ "$_blk" = 1 ] && break
+          fl_check_cmd "$sep" "${uw_rem[@]:$uw_i}"
+          [ "$uw_fuzzy" = 1 ] || break
+        done
+      fi
+      FL_UW_N=$((FL_UW_N - 1))
+      return
+    fi
 
     name="${w[$i]##*/}"
     while [ "${name#\\}" != "$name" ] || [ "${name#\$}" != "$name" ]; do name="${name#?}"; done
@@ -2813,7 +3352,8 @@ if [ -n "$COMMAND" ]; then
       fl_classify "$csp" $((FL_DEPTH + 1))
       [ "$_blk" = 1 ] && return
     done
-    mapfile -t toks < <(printf '%s\n' "$stripped" | awk -v oldlex="$(tr_oldlex_flag "$src")" "$TOKENIZE_AWK")
+    toks=(); while IFS= read -r _ln || [ -n "$_ln" ]; do toks+=("$_ln"); done \
+      < <(printf '%s\n' "$stripped" | awk -v oldlex="$(tr_oldlex_flag "$src")" "$TOKENIZE_AWK")
     toks=("${toks[@]//$'\001'/$'\n'}")
 
     # The data relaxations (curl | script, data download then script) apply only
@@ -2893,6 +3433,10 @@ if [ -n "$COMMAND" ]; then
   [ "$_blk" = 1 ] && {
     floor_log_denial "command denied at all levels ($_why)"
     echo "⛔ AUTONOMY FLOOR: command denied at all levels ($_why)" >&2
+    case "$_why" in
+      "curl/wget piped to shell"|"download-then-exec")
+        echo "   Allowed instead: pipe to jq or python3 -I -m json.tool, or download with curl -o <file>.json and parse it in a separate Bash call." >&2 ;;
+    esac
     exit 2
   }
   # A permitted elevation is audited only now that the whole command is allowed; an

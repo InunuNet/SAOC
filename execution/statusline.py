@@ -38,10 +38,11 @@ try:
     import fcntl
 except ImportError:  # Windows: no flock; the locked paths below degrade to no-ops
     fcntl = None
+import contextlib
+import io
 import json
 import os
 import re
-import sqlite3
 import time
 import subprocess
 import sys
@@ -52,7 +53,6 @@ from pathlib import Path
 WIDTH = 66
 BAR_WIDTH = 46
 GIT_TIMEOUT_SECONDS = 1.5
-BRAIN_TIMEOUT_SECONDS = 0.5
 QUOTA_STALE_AFTER_SECONDS = 30 * 60
 # Past this, a shared-cache reading is dated in the render rather than
 # presented as the current figure.
@@ -60,6 +60,7 @@ QUOTA_FRESH_SECONDS = 3 * 60
 USAGE_CACHE_NAME = "usage-cache.json"
 # LifeOS uses 60s; the usage API asks for no more than one poll a minute.
 USAGE_CACHE_TTL_SECONDS = 60
+USAGE_ATTEMPT_STAMP_NAME = "usage-refresh-attempt"
 # Context-bar heat thresholds.
 HEAT_AMBER_PCT = 60
 HEAT_RED_PCT = 85
@@ -73,6 +74,7 @@ CONTEXT_NOW_PRUNE_SECONDS = 24 * 3600
 DECIDER_PATH = Path(__file__).resolve().parent / "hooks" / "lib" / "autocompact_decider.py"
 QUOTA_WINDOWS = ("five_hour", "seven_day")
 ISO_UTC_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+QUOTA_HISTORY_KEEP_SECONDS = 20 * 60
 HEARTBEAT_REFRESH_SECONDS = 3600
 HEARTBEAT_PRUNE_SECONDS = 24 * 3600
 
@@ -92,7 +94,8 @@ MAGENTA = "\033[38;5;176m"
 
 # Global shared state. Common to every agent on this machine, maintained
 # outside Athanor, and read here without ever being written.
-GLOBAL_STATE = Path.home() / ".claude" / "MEMORY" / "STATE"
+GLOBAL_STATE = Path(os.environ.get("QUOTA_GLOBAL_STATE")
+                    or Path.home() / ".claude" / "MEMORY" / "STATE")
 
 
 # ── Rendering primitives — omission is enforced here, once ────────────────────
@@ -369,7 +372,7 @@ def quota_window(block, label: str) -> str:
         # five_hour while seven_day was at 95%). Show the gap rather than
         # silently dropping the segment, which read as the statusline
         # having lost it.
-        return f"{DIM}{label}: --{R}"
+        return ""  # a window the API no longer reports is omitted, not shown as "--"
     if not isinstance(block, dict):
         return ""
     used = block.get("utilization")
@@ -413,6 +416,38 @@ def quota_window(block, label: str) -> str:
     return out
 
 
+def _token_from_credentials_json(text: str) -> str:
+    """accessToken out of a Claude Code credentials JSON blob, '' on any defect."""
+    try:
+        return json.loads(text).get("claudeAiOauth", {}).get("accessToken", "") or ""
+    except (ValueError, AttributeError):
+        return ""
+
+
+def _oauth_token() -> str:
+    """OAuth token: macOS Keychain first, else <config dir>/.credentials.json.
+
+    Linux and Windows keep the same JSON in the file; the config dir is
+    $CLAUDE_CONFIG_DIR or ~/.claude. Never printed, logged or cached.
+    """
+    try:
+        cred = subprocess.run(
+            ["security", "find-generic-password",
+             "-s", "Claude Code-credentials", "-w"],
+            capture_output=True, text=True, timeout=3)
+        token = _token_from_credentials_json(cred.stdout) if cred.returncode == 0 else ""
+        if token:
+            return token
+    except (OSError, subprocess.SubprocessError):
+        pass
+    config_dir = os.environ.get("CLAUDE_CONFIG_DIR") or str(Path.home() / ".claude")
+    try:
+        return _token_from_credentials_json(
+            (Path(config_dir) / ".credentials.json").read_text())
+    except (OSError, ValueError):
+        return ""
+
+
 def refresh_usage_cache() -> None:
     """Refresh the shared usage cache when it is older than its TTL.
 
@@ -430,70 +465,117 @@ def refresh_usage_cache() -> None:
     if age is not None and age <= USAGE_CACHE_TTL_SECONDS:
         return
     try:
-        cred = subprocess.run(
-            ["security", "find-generic-password",
-             "-s", "Claude Code-credentials", "-w"],
-            capture_output=True, text=True, timeout=3)
-        token = (json.loads(cred.stdout).get("claudeAiOauth", {})
-                 .get("accessToken", "")) if cred.returncode == 0 else ""
-        if not token:
+        GLOBAL_STATE.mkdir(parents=True, exist_ok=True)
+        # Failure backoff, ahead of the Keychain lookup: stamp (mtime drives it; the
+        # text is the last failure reason) and skip while the last attempt is younger
+        # than the TTL. A future-dated stamp (clock skew) has a negative age and counts as expired.
+        attempt_age = global_age(USAGE_ATTEMPT_STAMP_NAME)
+        if attempt_age is not None and 0 <= attempt_age <= USAGE_CACHE_TTL_SECONDS:
             return
-        fetched = subprocess.run(
-            ["curl", "-s", "--max-time", "3",
-             "-H", f"Authorization: Bearer {token}",
-             "-H", "Content-Type: application/json",
-             "-H", "anthropic-beta: oauth-2025-04-20",
-             "https://api.anthropic.com/api/oauth/usage"],
-            capture_output=True, text=True, timeout=5)
-        data = json.loads(fetched.stdout)
-        if not isinstance(data, dict) or "five_hour" not in data:
-            return
-        # workspace_cost is populated by a slow admin-API call elsewhere; keep
-        # whatever the cache already holds rather than dropping it.
-        existing = global_json(USAGE_CACHE_NAME)
-        if isinstance(existing, dict) and existing.get("workspace_cost"):
-            data["workspace_cost"] = existing["workspace_cost"]
-        target = GLOBAL_STATE / USAGE_CACHE_NAME
-        tmp = target.with_suffix(".json.tmp")
-        tmp.write_text(json.dumps(data, indent=2))
-        tmp.replace(target)
-    except Exception:
+        stamp = GLOBAL_STATE / USAGE_ATTEMPT_STAMP_NAME
+        stamp.write_text("")
+        reason = _refresh_and_cache()
+        stamp.write_text(reason)
+    except Exception as exc:
+        _record_refresh_reason(re.sub(r"[^A-Za-z0-9_]", "", type(exc).__name__)[:64] or "error")
+
+
+def _record_refresh_reason(reason: str) -> None:
+    """Best-effort: store the one-token failure reason as the attempt stamp's text."""
+    try:
+        (GLOBAL_STATE / USAGE_ATTEMPT_STAMP_NAME).write_text(reason)
+    except OSError:
         return
 
 
-def mirror_quota(root: Path, block) -> None:
+def _refresh_and_cache() -> str:
+    """Fetch usage and cache it. Returns 'ok' or one short failure token (never token/body)."""
+    token = _oauth_token()
+    if not token:
+        return "no_token"
+    fetched = subprocess.run(
+        ["curl", "-s", "--max-time", "3",
+         "-H", f"Authorization: Bearer {token}",
+         "-H", "Content-Type: application/json",
+         "-H", "anthropic-beta: oauth-2025-04-20",
+         "https://api.anthropic.com/api/oauth/usage"],
+        capture_output=True, text=True, timeout=5)
+    if fetched.returncode != 0:
+        return f"curl_rc_{fetched.returncode}"
+    if not fetched.stdout.strip():
+        return "empty_response"
+    try:
+        data = json.loads(fetched.stdout)
+    except ValueError:
+        return "bad_json"
+    if not isinstance(data, dict) or not ("five_hour" in data or "seven_day" in data):
+        return "no_usage_windows"
+    # workspace_cost is populated by a slow admin-API call elsewhere; keep
+    # whatever the cache already holds rather than dropping it.
+    existing = global_json(USAGE_CACHE_NAME)
+    if isinstance(existing, dict) and existing.get("workspace_cost"):
+        data["workspace_cost"] = existing["workspace_cost"]
+    target = GLOBAL_STATE / USAGE_CACHE_NAME
+    tmp = target.with_suffix(".json.tmp")
+    try:
+        tmp.write_text(json.dumps(data, indent=2))
+        tmp.replace(target)
+    except OSError:
+        return "write_failed"
+    return "ok"
+
+
+def _window_reading(block):
+    """Return (used_pct, resets_at, seconds) for a live window block, else None."""
+    if not isinstance(block, dict) or not isinstance(block.get("utilization"), (int, float)):
+        return None
+    resets = block.get("resets_at")
+    seconds = None
+    if isinstance(resets, str):
+        when = datetime.fromisoformat(resets.replace("Z", "+00:00"))
+        seconds = int((when - datetime.now(timezone.utc)).total_seconds())
+        if seconds <= 0:
+            # Rolled over: the old figure describes a window that no longer exists.
+            return None
+    else:
+        resets = None
+    return block["utilization"], resets, seconds
+
+
+def mirror_quota_all(root: Path, cache) -> None:
     """Write the project quota mirror (read by quota.py) from the global cache.
 
     quota.py never reads the home dir, so this is the only path by which a live
-    figure reaches it. captured_at is the cache file's mtime, never now(): the
-    mirror must say when the reading was taken. Best-effort, nothing escapes.
+    figure reaches it. One mirror holds every live window under "windows"; the
+    legacy top-level fields follow five_hour, else seven_day. captured_at is the
+    cache file's mtime, never now(). No live window removes the mirror.
+    Best-effort, nothing escapes.
     """
     try:
-        if not isinstance(block, dict) or not isinstance(block.get("utilization"), (int, float)):
+        target = root / ".agent" / "memory" / "scratch" / ".quota_status.json"
+        windows = {}
+        for name in QUOTA_WINDOWS:
+            reading = _window_reading(cache.get(name)) if isinstance(cache, dict) else None
+            if reading:
+                windows[name] = {"used_pct": reading[0], "resets_at": reading[1],
+                                 "seconds_to_reset": reading[2]}
+        if not windows:
+            target.unlink(missing_ok=True)
             return
-        resets = block.get("resets_at")
-        seconds = None
-        if isinstance(resets, str):
-            when = datetime.fromisoformat(resets.replace("Z", "+00:00"))
-            seconds = int((when - datetime.now(timezone.utc)).total_seconds())
-            if seconds <= 0:
-                # Rolled over: the old figure describes a window that no longer exists.
-                (root / ".agent" / "memory" / "scratch" / ".quota_status.json").unlink(
-                    missing_ok=True)
-                return
-        else:
-            resets = None
+        primary = windows.get("five_hour") or windows["seven_day"]
         captured = datetime.fromtimestamp(
             (GLOBAL_STATE / USAGE_CACHE_NAME).stat().st_mtime, timezone.utc).isoformat()
-        target = root / ".agent" / "memory" / "scratch" / ".quota_status.json"
         target.parent.mkdir(parents=True, exist_ok=True)
         tmp = target.with_suffix(".json.tmp")
-        tmp.write_text(json.dumps({
-            "used_pct": block["utilization"], "resets_at": resets,
-            "seconds_to_reset": seconds, "captured_at": captured}))
+        tmp.write_text(json.dumps({**primary, "captured_at": captured, "windows": windows}))
         tmp.replace(target)
     except Exception:
         return
+
+
+def _mirror_segment(label: str, used) -> str:
+    return (f"{DIM}{label}:{R}{pressure(used)}{int(used)}% used↑{R}"
+            f" {DIM}·{R} {max(0, 100 - int(used))}% left")
 
 
 def quota(root: Path) -> str:
@@ -513,7 +595,7 @@ def quota(root: Path) -> str:
     cache = global_json(USAGE_CACHE_NAME)
     if isinstance(cache, dict):
         age = global_age(USAGE_CACHE_NAME)
-        mirror_quota(root, cache.get("five_hour"))
+        mirror_quota_all(root, cache)
         live = join(quota_window(cache.get("five_hour"), "5H"),
                     quota_window(cache.get("seven_day"), "WK"))
         if live:
@@ -539,8 +621,15 @@ def quota(root: Path) -> str:
         return ""
     if age > QUOTA_STALE_AFTER_SECONDS:
         return ""
-    return (f"{DIM}WK:{R}{pressure(used)}{int(used)}% used↑{R}"
-            f" {DIM}·{R} {max(0, 100 - int(used))}% left")
+    segments = []
+    windows = data.get("windows")
+    if isinstance(windows, dict):
+        for name, label in (("five_hour", "5H"), ("seven_day", "WK")):
+            figure = (windows.get(name) or {}).get("used_pct")
+            if isinstance(figure, (int, float)):
+                segments.append(_mirror_segment(label, figure))
+    # No windows dict: the top-level reading is the five-hour one.
+    return join(*segments) if segments else _mirror_segment("5H", used)
 
 
 # ── Source 3: the project tree ────────────────────────────────────────────────
@@ -651,22 +740,6 @@ def p0_count(root: Path) -> str:
     return str(sum(1 for line in text.splitlines() if BACKLOG_ITEM_RE.match(line)))
 
 
-def brain_sessions(root: Path) -> str:
-    db = root / ".agent" / "memory" / "brain" / "chroma.sqlite3"
-    if not db.is_file():
-        return ""
-    try:
-        con = sqlite3.connect(f"file:{db}?mode=ro&immutable=1", uri=True,
-                              timeout=BRAIN_TIMEOUT_SECONDS)
-        try:
-            row = con.execute("SELECT COUNT(*) FROM embeddings").fetchone()
-            return str(row[0]) if row else ""
-        finally:
-            con.close()
-    except Exception:
-        return ""
-
-
 def mission(root: Path) -> tuple[str, bool]:
     active = read_json(
         root / ".agent" / "memory" / "project" / "missions" / "active.json")
@@ -769,6 +842,66 @@ def record_exhaustion(payload: dict, root: Path) -> None:
         "recorded_at": iso_utc(now), "source": "statusline"})
 
 
+def record_quota_mirror(payload: dict, root: Path) -> None:
+    """Feed quota.py from the payload's live 5h reading, the one source that is always current.
+
+    The shared usage cache's writer is not ours and goes stale, which left quota.py at
+    state=unknown and every quota gate blind. captured_at is now: the payload is this render's.
+    """
+    brake = load_burn_brake()
+    with contextlib.redirect_stdout(io.StringIO()):
+        brake.release_if_reset(root)
+    limits = payload.get("rate_limits")
+    block = limits.get("five_hour") if isinstance(limits, dict) else None
+    used = block.get("used_percentage") if isinstance(block, dict) else None
+    if not isinstance(used, (int, float)) or isinstance(used, bool):
+        return
+    now = time.time()
+    resets = epoch_of(block.get("resets_at"))
+    if resets is not None and resets <= now:
+        return
+    write_json_atomic(root / ".agent" / "memory" / "scratch" / ".quota_status.json", {
+        "used_pct": float(used), "resets_at": iso_utc(resets) if resets is not None else None,
+        "seconds_to_reset": int(resets - now) if resets is not None else None,
+        "captured_at": iso_utc(now)})
+    record_quota_history(float(used), now, resets, root, brake)
+
+
+def load_burn_brake():
+    """burn_brake.py loaded from beside this file, so the render needs no subprocess."""
+    import importlib.util
+
+    path = Path(__file__).resolve().parent / "burn_brake.py"
+    spec = importlib.util.spec_from_file_location("burn_brake", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def record_quota_history(used: float, now: float, resets: float | None, root: Path,
+                         brake) -> None:
+    """Keep the last 20 minutes of readings and let the burn-rate brake judge them."""
+    scratch = root / ".agent" / "memory" / "scratch"
+    history = scratch / ".quota_history.jsonl"
+    cutoff = now - QUOTA_HISTORY_KEEP_SECONDS
+    kept = []
+    try:
+        lines = history.read_text().splitlines()
+    except OSError:
+        lines = []
+    for line in lines:
+        try:
+            if float(json.loads(line)["t"]) >= cutoff:
+                kept.append(line)
+        except (ValueError, KeyError, TypeError):
+            continue
+    kept.append(json.dumps({"t": now, "used_pct": used, "w": resets}))
+    scratch.mkdir(parents=True, exist_ok=True)
+    history.write_text("\n".join(kept) + "\n")
+    with contextlib.redirect_stdout(io.StringIO()):
+        brake.check(root, voice=True)
+
+
 def record_heartbeat(payload: dict, root: Path) -> None:
     """Move activity_at only when some session did work since it was last seen.
 
@@ -825,7 +958,7 @@ def update_heartbeat(target: Path, session: str, fingerprint: str,
 
 def record_quota_state(payload: dict, root: Path) -> None:
     """Best-effort: a recording failure must never cost the operator the panel."""
-    for record in (record_exhaustion, record_heartbeat, record_context_now):
+    for record in (record_quota_mirror, record_exhaustion, record_heartbeat, record_context_now):
         try:
             record(payload, root)
         except Exception:
@@ -893,6 +1026,14 @@ def header(title: str) -> str:
     return f'{RULE}— |{R} {BLUE}{title}{R} {RULE}| {"─" * dashes}{R}'
 
 
+def athanor_version(root: Path) -> str:
+    """The harness version this project carries, from .agent/version; empty when absent."""
+    try:
+        return (root / ".agent" / "version").read_text(encoding="utf-8").strip()
+    except OSError:
+        return ""
+
+
 def build(payload: dict, root: Path) -> list[str]:
     """Assemble the panel, dropping every line that has nothing to say."""
     name = project_name(root)
@@ -904,11 +1045,11 @@ def build(payload: dict, root: Path) -> list[str]:
 
     env = join(
         seg("CC", str(payload.get("version") or "")),
-        seg("Model", session_model(payload)),
-        seg("Style", str(dig(payload, "output_style", "name") or "")),
+        seg("MDL", session_model(payload)),
+        seg("ATH", athanor_version(root)),
         seg("SK", count_dir(root / ".claude" / "skills", "*")),
         seg("WF", count_dir(root / ".agent" / "workflows", "*.md")),
-        seg("Hooks", hook_count(root)),
+        seg("HK", hook_count(root)),
     )
     if env:
         lines.append(f'{DIM}ENV:{R} {env}')
@@ -932,9 +1073,9 @@ def build(payload: dict, root: Path) -> list[str]:
 
     where = join(
         f"{CYAN}{name}{R}" if name else "",
-        seg("Branch", branch, MAGENTA),
-        seg("Age", age),
-        seg("Sync", f"↑{ahead}" if ahead else ""),
+        seg("BR", branch, MAGENTA),
+        seg("Commit", f"{age} ago" if age else ""),
+        seg("Unpushed", ahead),
         session_diff(payload),
     )
     if where:
@@ -942,14 +1083,13 @@ def build(payload: dict, root: Path) -> list[str]:
 
     p0 = p0_count(root)
     memory = join(
-        seg("Sessions", brain_sessions(root)),
-        seg("P0", p0, RED if p0 not in ("", "0") else GREEN),
-        seg("Mission", mission_name),
+        seg("Mission", mission_name or "none"),
+        seg("Urgent", p0, RED if p0 not in ("", "0") else GREEN),
         seg("AUTO-RESUME", auto_resume_running(root), YELLOW),
     )
     if memory:
         warn = f' {RED}⚠ autonomy undecided{R}' if undecided else ""
-        lines.append(f'{GREEN}◎{R} {DIM}MEMORY:{R} {memory}{warn}')
+        lines.append(f'{GREEN}◎{R} {DIM}WORK:{R} {memory}{warn}')
 
     local = join(
         f"{CYAN}{location()}{R}" if location() else "",
@@ -969,7 +1109,17 @@ def build(payload: dict, root: Path) -> list[str]:
     return panel
 
 
+def force_utf8_streams() -> None:
+    """The panel uses non-ASCII glyphs; a cp1252 Windows console would raise on them."""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
+
 def main() -> int:
+    force_utf8_streams()
     payload = read_payload()
     root = project_root(payload)
     record_quota_state(payload, root)
