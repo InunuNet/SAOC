@@ -105,7 +105,7 @@ export const TICKET_PRODUCTS: Record<TicketProductId, TicketProduct> = {
     photo: '/images/stubs/stub-weekend-cattleya-lilac.jpg',
     focus: '40% 30%',
     fieldVar: '--ticket-field-weekend',
-    slugs: ['weekend-pass-early-bird', 'weekend-pass'],
+    slugs: ['weekend-pass'],
     partner: 'Day Pass',
     each: false,
   },
@@ -203,11 +203,11 @@ export function productIdForSlug(slug: string): TicketProductId | null {
   return PRODUCT_BY_SLUG[slug] ?? null;
 }
 
-/** The two early-bird SKUs of one pass pair and the regular SKU that replaces each at zero. */
-export const PASS_SKUS: Record<'weekend' | 'day', { earlyBird: string; regular: string }> = {
-  weekend: { earlyBird: 'weekend-pass-early-bird', regular: 'weekend-pass' },
+/** The Day Pass early-bird SKU and the regular SKU that replaces it at the cut-off; the Weekend Pass has no early bird (Brad, 19 Nov 2026). */
+export const PASS_SKUS = {
+  weekend: { earlyBird: null, regular: 'weekend-pass' },
   day: { earlyBird: 'early-bird', regular: 'day-visitor' },
-};
+} as const;
 
 export const TICKET_EMBLEM = '/images/nos/disa-graminifolia-emblem.svg';
 
@@ -226,6 +226,7 @@ export const TICKET_COPY = {
   soldOutStamp: 'Sold out',
   soldOutLine: 'This ticket has sold out.',
   pricePending: 'Price to follow',
+  comingSoon: 'Coming soon',
   chip: 'To be confirmed',
   pendingNote: 'The Council has not confirmed this price yet. Booking opens once it has.',
   earlyBirdEnded: 'Early bird ended',

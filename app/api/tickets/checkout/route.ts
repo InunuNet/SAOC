@@ -59,6 +59,12 @@ import {
   qaFixturesAllowed,
   ticketTypeMatchesActiveShow as sharedTicketTypeMatchesActiveShow,
 } from '@/lib/ticket-on-sale';
+import {
+  hasSpeakersPartnerAccess,
+  isRestrictedTicketSlug,
+  SPEAKERS_PARTNER_COOKIE_NAME,
+  SPEAKERS_PARTNER_FIXED_QUANTITY,
+} from '@/lib/speakers-partner';
 import { MAX_LINE_ITEMS, NATIONAL_SHOW_ID, RESERVATION_TTL_MINUTES } from '@/lib/tickets-constants';
 
 // Re-exported (not just imported) so contracts/checks/ticketing-multi-line-item-cart/
@@ -126,6 +132,9 @@ interface SanityTicketType {
   // F3 (conference-workshop-tickets, M2): optional day-exclusion list — unknown for the same
   // reason as every other field above.
   excludedDays: unknown;
+  // Computed in the GROQ query: a workshopSession links this ticket type (not yet on sale).
+  isWorkshopSession: unknown;
+  category: unknown;
 }
 
 // F1 (ticketing-foundation): the currently sellable `show`, per resolveActiveShow()'s
@@ -500,6 +509,36 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
+  // The hidden Speakers Partner ticket is bought only by someone who passed the password prompt
+  // (a signed, short-lived httpOnly cookie), one ticket per order. Checked here, before any CMS or
+  // Firestore work, so posting this checkout directly cannot reach the ticket. The refusal for a
+  // missing or invalid session is the same one an unknown ticket type gets.
+  if (parsedLineItems.some((lineItem) => isRestrictedTicketSlug(lineItem.ticketType))) {
+    const hasAccess = hasSpeakersPartnerAccess(
+      request.cookies.get(SPEAKERS_PARTNER_COOKIE_NAME)?.value,
+      process.env,
+      new Date()
+    );
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Unknown ticketType.' }, { status: 400 });
+    }
+    // (Entries are objects: parseLineItems above rejected anything else.) A line item is one ticket, so quantity is 1 by construction; a client that sends its own
+    // quantity on the raw line item must send exactly 1 (it is never trusted otherwise).
+    const rawQuantitiesOk = (body.lineItems as Record<string, unknown>[]).every(
+      (raw) => raw.quantity === undefined || raw.quantity === SPEAKERS_PARTNER_FIXED_QUANTITY
+    );
+    const onlyOneTicket =
+      rawQuantitiesOk &&
+      parsedLineItems.length === SPEAKERS_PARTNER_FIXED_QUANTITY &&
+      parsedLineItems.every((lineItem) => isRestrictedTicketSlug(lineItem.ticketType));
+    if (!onlyOneTicket) {
+      return NextResponse.json(
+        { error: 'A Speakers Partner ticket is one ticket per order, on its own.' },
+        { status: 400 }
+      );
+    }
+  }
+
   // gateway-picker-admin-only F1: the gateway is resolved server-side from the admin-set
   // Firestore doc, never trusted from the client — validated BEFORE the client/CMS guard
   // below, same positioning the old client-supplied providerId validation occupied. See
@@ -622,6 +661,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     if (onSale.reason === 'demo') {
       return NextResponse.json({ error: `Unknown ticketType: ${slug}` }, { status: 400 });
+    }
+    // Workshop tickets are not on sale yet (lib/workshop-sales.ts): refused whatever the client sent.
+    if (onSale.reason === 'coming-soon') {
+      return NextResponse.json(
+        { error: 'Workshop tickets are coming soon and cannot be bought yet.' },
+        { status: 403 }
+      );
     }
 
     // 500, not 400: the request was well-formed and the CMS document is misconfigured, so

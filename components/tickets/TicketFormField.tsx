@@ -38,12 +38,12 @@ const LABEL_CLASS = 'font-sans text-[14px] font-medium text-[var(--ink-700)]';
 interface TicketFormFieldProps {
   id: string;
   label: string;
-  type: 'text' | 'email' | 'tel';
+  type: 'text' | 'email' | 'tel' | 'password';
   value: string;
   onChange: (value: string) => void;
   disabled: boolean;
   error?: string;
-  autoComplete?: 'name' | 'email' | 'tel' | 'off';
+  autoComplete?: 'name' | 'email' | 'tel' | 'off' | 'current-password';
   maxLength?: number;
 }
 

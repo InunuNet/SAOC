@@ -16,11 +16,12 @@
 // order: the notice text precedes the body text in the rendered markup (assertion G6).
 // =============================================================
 
-import { PortableText, type PortableTextComponents } from '@portabletext/react';
+import type { PortableTextComponents } from '@portabletext/react';
 import type { ReactNode } from 'react';
 
 import type { ShowPageSection } from '@/lib/data/show-pages';
 
+import { SaocPortableText } from './SaocText';
 import { unwrapGatedProse } from './gated-prose-internal';
 
 export interface ShowPageProseProps {
@@ -64,7 +65,7 @@ export function ShowPageProse({ section }: ShowPageProseProps) {
         </p>
       ) : null}
       {section.heading ? <h2>{section.heading}</h2> : null}
-      <PortableText value={blocks} />
+      <SaocPortableText value={blocks} />
     </div>
   );
 }
@@ -94,7 +95,7 @@ export function showPageProseParts(section: ShowPageSection): ShowPageProseParts
   return {
     heading: section.heading,
     paragraphs: blocks.map((block) => (
-      <PortableText key={block._key} value={[block]} components={INLINE_PARAGRAPH} />
+      <SaocPortableText key={block._key} value={[block]} components={INLINE_PARAGRAPH} />
     )),
   };
 }

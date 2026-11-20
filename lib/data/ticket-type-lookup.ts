@@ -21,6 +21,7 @@ export interface SanityTicketType {
   requiresDaySelection?: boolean | null;
   requiresRegistration?: boolean | null;
   category?: string | null;
+  isWorkshopSession?: boolean | null;
   capacityPool?: string | null;
   headcountPerUnit?: number | null;
   excludedDays?: string[] | null;

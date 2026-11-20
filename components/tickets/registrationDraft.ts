@@ -86,6 +86,15 @@ export function emptyDraft(): RegistrationDraft {
   };
 }
 
+/** Availability to judge only counts for an accredited judge; the checkbox is hidden otherwise. */
+export function isAccreditedJudge(draft: RegistrationDraft): boolean {
+  return draft.judgeAccreditation.startsWith('Yes, with ');
+}
+
+function offersJudging(draft: RegistrationDraft): boolean {
+  return isAccreditedJudge(draft) && draft.judgeAvailable;
+}
+
 /** The sections a draft has ticked "Same as above", as the server expects them. */
 function sharedOf(draft: RegistrationDraft, index: number): RegistrationShareSection[] {
   if (index === 0) return [];
@@ -116,8 +125,8 @@ export function draftsToPeople(drafts: RegistrationDraft[], ticketSlug: string) 
       attending: ATTENDING_BY_TICKET[ticketSlug] ?? '',
       judgeAccredited: draft.judgeAccreditation === 'No' ? 'No' : draft.judgeAccreditation.startsWith('Yes, with ') ? 'Yes' : '',
       judgeOrganisation: draft.judgeAccreditation === 'No' ? 'Not applicable' : draft.judgeAccreditation.startsWith('Yes, with ') ? draft.judgeAccreditation.slice('Yes, with '.length) : '',
-      judgeAvailable: draft.judgeAvailable ? 'Yes' : 'No',
-      judgeDate: !draft.judgeAvailable ? 'None' : draft.judgeDates.length === 2 ? '22 & 23 Sept' : draft.judgeDates[0] ?? '',
+      judgeAvailable: offersJudging(draft) ? 'Yes' : 'No',
+      judgeDate: !offersJudging(draft) ? 'None' : draft.judgeDates.length === 2 ? '22 & 23 Sept' : draft.judgeDates[0] ?? '',
       judgeCommunication: draft.judgeCommunication,
       judgeForum: draft.judgeForum,
       dietary: draft.dietary,

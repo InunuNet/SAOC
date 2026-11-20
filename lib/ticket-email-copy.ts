@@ -44,7 +44,7 @@ export interface TicketEmailCopy {
 
 const VENUE_PARKING: readonly CopyBlock[] = [
   { kind: 'heading', text: 'Venue and parking' },
-  { kind: 'text', lines: ['Hangar 25, Stellenbosch Airfield, Stellenbosch, Western Cape (R44).'] },
+  { kind: 'text', lines: ['Stellenbosch Aerodrome, Stellenbosch, Western Cape (R44).'] },
   { kind: 'text', lines: ['Parking will be available at the venue. Further parking and access instructions will be provided closer to the event.'] },
 ];
 
@@ -76,7 +76,7 @@ export const TICKET_EMAIL_COPY: Record<TicketEmailKey, TicketEmailCopy> = {
     blocks: [
       { kind: 'text', lines: ['Dear {first_name},'] },
       { kind: 'text', lines: ['Thank you for booking your Early Bird Exhibition Ticket for the National Orchid Show – Western Cape 2027.'] },
-      { kind: 'text', lines: ['We look forward to welcoming you to Hangar 25 at Stellenbosch Airfield for an exceptional celebration of orchids.'] },
+      { kind: 'text', lines: ['We look forward to welcoming you to Stellenbosch Aerodrome for an exceptional celebration of orchids.'] },
       { kind: 'heading', text: 'Your booking details' },
       {
         kind: 'details',
@@ -113,7 +113,7 @@ export const TICKET_EMAIL_COPY: Record<TicketEmailKey, TicketEmailCopy> = {
     blocks: [
       { kind: 'text', lines: ['Dear {first_name},'] },
       { kind: 'text', lines: ['Thank you for booking your Day Visitor Ticket for the National Orchid Show – Western Cape 2027.'] },
-      { kind: 'text', lines: ['We look forward to welcoming you to Hangar 25 at Stellenbosch Airfield.'] },
+      { kind: 'text', lines: ['We look forward to welcoming you to Stellenbosch Aerodrome.'] },
       { kind: 'heading', text: 'Your booking details' },
       {
         kind: 'details',
@@ -372,6 +372,8 @@ const SLUG_TO_KEY: Readonly<Record<string, TicketEmailKey>> = {
   'saoc-symposium': 'saoc-symposium',
   'wosa-conference': 'wosa-conference',
   'saoc-wosa-joint': 'saoc-wosa-joint',
+  // The hidden Speakers Partner ticket covers both events: Lee-Ann's joint email fits it.
+  'speakers-partner': 'saoc-wosa-joint',
 };
 
 /** The email for a stored ticket type slug, or null when none is mapped (generic email is sent). */

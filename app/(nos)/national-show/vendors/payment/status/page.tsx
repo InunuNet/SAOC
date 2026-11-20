@@ -3,6 +3,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 
 import { initAdmin } from '@/lib/firebase-admin';
 import { NosHero } from '@/components/nos/NosHero';
+import { SaocText } from '@/components/nos/SaocText';
 import { VENDOR_STAND_ORDERS_COLLECTION } from '@/lib/vendor-stand-orders';
 import {
   resolveVendorStandReturnState,
@@ -71,7 +72,7 @@ export default async function VendorStandPaymentStatusPage({
         <h2 className="font-serif text-[20px] font-normal text-ink">{copy.heading}</h2>
         <p className="mt-4 font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink">{copy.body}</p>
         <p className="mt-4 font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink">
-          Please contact SAOC if you believe this is an error.
+          <SaocText>Please contact SAOC if you believe this is an error.</SaocText>
         </p>
       </div>
     </>

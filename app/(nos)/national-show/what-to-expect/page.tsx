@@ -9,6 +9,7 @@ import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
 import { loadShowFacts } from '@/lib/data/show-facts';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
+import { SaocText } from '@/components/nos/SaocText';
 
 // Lee-Ann's What to Expect (Drive: National Show / What to expect, v1.0), published as she wrote it
 // (typos included: docs/rules/no-invention.md). Her struck lines (the build's own held-back
@@ -72,7 +73,7 @@ const THEME_INDEX = 4;
 const ADMISSION_ROWS = [
   { id: 'ticketType-vip', slug: 'vip', name: 'VIP Ticket' },
   { id: 'ticketType-sunset-cocktails-single', slug: 'sunset-cocktails-single', name: 'Sunset Cocktails (Single)' },
-  { id: 'ticketType-weekend-pass-early-bird', slug: 'weekend-pass-early-bird', name: 'Weekend Pass (Early Bird)' },
+  { id: 'ticketType-weekend-pass', slug: 'weekend-pass', name: 'Weekend Pass' },
   { id: 'ticketType-early-bird', slug: 'early-bird', name: 'Early-Bird Exhibition Ticket' },
   { id: 'ticketType-day-visitor', slug: 'day-visitor', name: 'Day Pass Ticket' },
 ] as const;
@@ -117,7 +118,9 @@ export default async function WhatToExpectPage() {
             <section key={block.title} className="nos-we-block">
               <h2 className="doc-h2">{block.title}</h2>
               {block.paragraphs.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
+                <p key={paragraph}>
+                  <SaocText>{paragraph}</SaocText>
+                </p>
               ))}
             </section>
           ))}
@@ -135,7 +138,9 @@ export default async function WhatToExpectPage() {
                   <em>{THEME}</em>
                 </p>
               ) : (
-                <p key={paragraph}>{paragraph}</p>
+                <p key={paragraph}>
+                  <SaocText>{paragraph}</SaocText>
+                </p>
               ),
             )}
           </div>

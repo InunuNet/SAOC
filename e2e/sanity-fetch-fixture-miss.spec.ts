@@ -56,7 +56,10 @@ async function loadFetchWith(client: StubClient): Promise<FetchModule> {
   for (const id of Object.keys(require.cache)) {
     if (id.includes(FETCH_MODULE)) delete require.cache[id];
   }
-  return import('../sanity/lib/fetch');
+  // require, not import(): import() is cached by the ESM loader, so a module loaded by an earlier
+  // test in the same worker would keep its stale client and ignore the cache eviction above.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- see the comment above
+  return require('../sanity/lib/fetch') as FetchModule;
 }
 
 test.describe('sanityFetch and the Sanity fixture', () => {
