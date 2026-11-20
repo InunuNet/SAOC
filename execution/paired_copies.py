@@ -221,12 +221,32 @@ class PairProblem(Exception):
     """A registry row that cannot be enforced as written."""
 
 
+
+NO_UPDATE_REL = ".agent/no-update"
+
+
+def pinned(root, copy):
+    """True when the project lists this clone path verbatim in .agent/no-update:
+    it has declared the file its own (SAOC keeps its own CLAUDE.md, 2026-11-20),
+    so the pair is skipped, never regenerated, never failed."""
+    try:
+        with open(os.path.join(root, NO_UPDATE_REL), encoding="utf-8") as fh:
+            lines = [ln.strip() for ln in fh]
+    except OSError:
+        return False
+    want = copy[2:] if copy.startswith("./") else copy
+    return any(ln in (want, "./" + want) for ln in lines if ln and not ln.startswith("#"))
+
+
 def classify(root, row):
     """Return (line, ok) describing the pair's current state. Read-only."""
     copy, source = row["copy"], row["source"]
     mode = row.get("enforce", DEFAULT_MODE)
     if mode not in SUPPORTED_MODES:
         return ("CLONE-ENFORCE-UNKNOWN %s (mode %s)" % (copy, mode), False)
+    if mode == "clone" and pinned(root, copy):
+        return ("CLONE-PINNED %s (listed in %s; kept as the project's own file)"
+                % (copy, NO_UPDATE_REL), True)
 
     copy_path = os.path.join(root, copy)
     source_path = os.path.join(root, source)
@@ -262,7 +282,7 @@ def cmd_check(root, rows):
         print("CLONE-CHECK %d pair(s) wrong. Edit the SOURCE, then run "
               "`make sync-clones`." % bad)
         return EXIT_VIOLATION
-    print("CLONE-CHECK %d pair(s) identical to their source" % len(rows))
+    print("CLONE-CHECK %d pair(s) identical to their source or pinned" % len(rows))
     return EXIT_OK
 
 
@@ -273,6 +293,9 @@ def sync_one(root, row, force):
     mode = row.get("enforce", DEFAULT_MODE)
     if mode not in SUPPORTED_MODES:
         raise PairProblem("CLONE-ENFORCE-UNKNOWN %s (mode %s)" % (copy, mode))
+    if mode == "clone" and pinned(root, copy):
+        return ("CLONE-PINNED %s (listed in %s; kept as the project's own file)"
+                % (copy, NO_UPDATE_REL))
 
     copy_path = os.path.join(root, copy)
     source_path = os.path.join(root, source)

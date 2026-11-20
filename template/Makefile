@@ -139,6 +139,7 @@ update-template:
 	python3 execution/update_template.py --apply $(ARGS); rc=$$?; \
 	echo "🔄 Regenerating DERIVED files from updated HARNESS sources..."; \
 	$(MAKE) sync || echo "⚠️  make sync failed — DERIVED files may be stale. Run 'make sync' manually."; \
+	if [ $$rc -eq 3 ]; then echo "❌ NOT UPDATED: the GitHub fetch failed, so no new Athanor release was installed (see the NOT UPDATED line above)."; fi; \
 	exit $$rc
 
 bump-version:

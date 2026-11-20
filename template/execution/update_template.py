@@ -5414,6 +5414,8 @@ def main():
             print("[fetch] WARN: gh fetch failed — falling back to local template/")
             source = Path("template")
             source_is_authoritative = False
+            global _FETCH_FELL_BACK
+            _FETCH_FELL_BACK = True
             # We won't use fetched_tmpdir but we still own it; finally will clean it.
     else:
         source = Path(args.source)
@@ -6479,6 +6481,27 @@ def main():
             shutil.rmtree(fetched_tmpdir, ignore_errors=True)
 
 
+# Set when the GitHub fetch failed and the run fell back to the local template/
+# mirror. That mirror is whatever this workspace last received, so the run
+# re-applies the release it already has: it must never read as an update
+# (update-fallback-silent, 2026-11-20: five sessions were told to update).
+_FETCH_FELL_BACK = False
+FALLBACK_EXIT = 3
+
+
+def _not_updated_line() -> str:
+    try:
+        have = (Path("template") / ".agent" / "version").read_text(encoding="utf-8").strip()
+    except OSError:
+        have = "unknown"
+    return (
+        f"NOT UPDATED: the GitHub fetch failed, so this run used the local "
+        f"template/ copy ({have}), not the latest Athanor release. Fix gh auth or "
+        "the network and re-run `make update-template`, or point it at an Athanor "
+        "checkout: python3 execution/update_template.py --apply --source <path to Athanor>"
+    )
+
+
 if __name__ == "__main__":
     _console_safe_streams()
     # Digest taken BEFORE main() so the comparison spans the whole run,
@@ -6491,3 +6514,8 @@ if __name__ == "__main__":
         main()
     finally:
         _warn_if_self_replaced(_source_before)
+        if _FETCH_FELL_BACK:
+            sys.stdout.flush()  # buffered stdout would otherwise land after this line
+            print(_not_updated_line(), file=sys.stderr)
+    if _FETCH_FELL_BACK:
+        sys.exit(FALLBACK_EXIT)
