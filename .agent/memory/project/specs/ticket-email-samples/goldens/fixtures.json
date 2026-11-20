@@ -3,7 +3,7 @@
   "first_name": "Thandi",
   "amount_paid": "R100.00",
   "payment_status": "Paid",
-  "venue_from_sanity": "Hangar 25, Orca Aero Solutions",
+  "venue_from_sanity": "Stellenbosch Aerodrome",
   "types": {
     "early-bird":      {"slug": "early-bird", "title": "Early Bird Exhibition Ticket", "visitor_name": "Thandi Nkosi", "quantity": 1, "booking_reference": "NOS-SAMPLE-0001", "selected_visit_date": "Saturday, 25 September 2027"},
     "day-visitor":     {"slug": "day-visitor", "title": "Day Visitor Ticket", "visitor_name": "Thandi Nkosi", "quantity": 1, "booking_reference": "NOS-SAMPLE-0002", "selected_visit_date": "Friday, 24 September 2027"},

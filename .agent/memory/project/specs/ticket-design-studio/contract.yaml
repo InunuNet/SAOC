@@ -84,7 +84,7 @@ assertions:
     - id: A13
       description: F1 to F5 the ticket-email-live switch and the other mission's files are untouched by this mission
       command: >-
-        git diff --quiet $(git merge-base HEAD preview/local) HEAD -- lib/ticket-type-emails-switch.ts lib/ticket-email-copy.ts lib/show-contact.ts scripts/ticket-email-sample-fixtures.ts
+        git diff --quiet $(git merge-base HEAD origin/main) HEAD -- lib/ticket-type-emails-switch.ts lib/ticket-email-copy.ts lib/show-contact.ts scripts/ticket-email-sample-fixtures.ts
     - id: A14
       description: F3 the export route writes only under samples/ticket-emails
       command: >-
