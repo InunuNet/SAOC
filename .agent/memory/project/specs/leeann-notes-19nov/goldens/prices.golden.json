@@ -1,0 +1,17 @@
+{
+  "source": "Lee-Ann Drive doc 'Ticket Pricing.docx' (15B8Wh4fj1AiEnXUQYE4qIxsxqxS_TkRw, 16 Nov 2026) + Brad 19 Nov 2026 (early bird 1 Dec 2026 to end Feb 2027; Weekend Pass no early bird; Speakers Partner R950; workshops coming soon)",
+  "earlyBirdCutoff": "2027-02-28T00:00:00+02:00",
+  "active": {
+    "early-bird": { "price": 120, "regularPrice": null, "earlyBirdCutoff": true },
+    "day-visitor": { "price": 150, "regularPrice": null, "earlyBirdCutoff": false },
+    "weekend-pass": { "price": 350, "regularPrice": null, "earlyBirdCutoff": false },
+    "vip": { "price": 350, "regularPrice": null, "earlyBirdCutoff": false },
+    "saoc-symposium": { "price": 1200, "regularPrice": 1500, "earlyBirdCutoff": true },
+    "wosa-conference": { "price": 1200, "regularPrice": 1500, "earlyBirdCutoff": true },
+    "field-trip": { "price": 150, "regularPrice": null, "earlyBirdCutoff": false },
+    "sunset-cocktails-single": { "price": 350, "regularPrice": null, "earlyBirdCutoff": false }
+  },
+  "hidden": { "speakers-partner": { "price": 950 } },
+  "retired": ["weekend-pass-early-bird"],
+  "workshopSessionPrice": 100
+}

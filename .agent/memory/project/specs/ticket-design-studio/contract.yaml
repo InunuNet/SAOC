@@ -1,0 +1,107 @@
+schema: athanor.contract/v1
+slug: ticket-design-studio
+goal: An admin-only, dev-only design studio with live preview for the confirmation email and ticket PDF of every ticket type, whose saved settings are committed JSON read by the one real renderer, piloted on VIP then rolled out, with sample export for N13.
+created_at: '2026-11-19'
+autonomy: high
+
+features:
+  - id: F1
+    name: Design object (closed enums, token map, settings JSON) threaded through the one email renderer and the one ticket PDF renderer with byte-identical defaults
+    status: pending
+  - id: F2
+    name: Studio page and preview/save APIs behind admin session and a dev-only flag, VIP pilot
+    status: pending
+  - id: F3
+    name: Per-type sample export button plus docs, VIP pilot
+    status: pending
+  - id: F4
+    name: Rollout to every ticket type key in TICKET_EMAIL_COPY with a type picker
+    status: pending
+  - id: F5
+    name: Fresh sample export of all types for N13 sign-off
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/ticket-design-studio/goldens/spec.md
+  - .agent/memory/project/specs/ticket-design-studio/goldens/design-schema.json
+  - .agent/memory/project/specs/ticket-design-studio/goldens/token-allowlist.json
+  - .agent/memory/project/specs/ticket-design-studio/goldens/vip.default.json
+  - .agent/memory/project/specs/ticket-design-studio/goldens/checks/check_design_schema.py
+  - .agent/memory/project/specs/ticket-design-studio/goldens/checks/check_token_hexes.py
+  - .agent/memory/project/specs/ticket-design-studio/goldens/checks/parity.mts
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: F1 every committed settings file validates against the closed-enum schema
+      command: >-
+        python3 .agent/memory/project/specs/ticket-design-studio/goldens/checks/check_design_schema.py lib/ticket-design/settings/vip.json
+    - id: A2
+      description: F1 the token table holds only hexes from the approved token allowlist
+      command: >-
+        python3 .agent/memory/project/specs/ticket-design-studio/goldens/checks/check_token_hexes.py lib/ticket-design/tokens.ts
+    - id: A3
+      description: F1 settings files carry token names only, never a hex literal
+      command: >-
+        ! grep -rEq "#[0-9a-fA-F]{3,6}" lib/ticket-design/settings
+    - id: A4
+      description: F1 default design renders the email HTML and ticket PDF exactly as before the studio
+      command: >-
+        pnpm exec tsx .agent/memory/project/specs/ticket-design-studio/goldens/checks/parity.mts
+    - id: A5
+      description: F1 both renderers accept a design argument
+      command: >-
+        grep -q "design" lib/ticket-pdf.ts && grep -q "design" lib/ticket-type-email.ts && grep -q "theme" emails/_shared/EmailShell.tsx
+    - id: A6
+      description: F1 Lee-Ann's copy still renders verbatim in every per-type email
+      command: >-
+        pnpm exec tsx scripts/checks/per-type-confirmation-send.mts .agent/memory/project/specs/ticket-email-samples/goldens
+    - id: A7
+      description: F2 the studio page checks the admin session, 404s without the dev flag and is noindex
+      command: >-
+        grep -q "getAdminSession" "app/admin/(shell)/studio/page.tsx" && grep -q "TICKET_STUDIO_ENABLED" "app/admin/(shell)/studio/page.tsx" && grep -q "index: false" "app/admin/(shell)/studio/page.tsx"
+    - id: A8
+      description: F2 every studio API route checks the admin session and the dev flag and sends noindex
+      command: >-
+        for f in app/api/admin/studio/*/route.ts; do grep -q "getAdminSession" "$f" && grep -q "TICKET_STUDIO_ENABLED" "$f" && grep -q "noindex" "$f" || exit 1; done
+    - id: A9
+      description: F2 nothing in the studio can send mail
+      command: >-
+        ! grep -rEq "resend|sendConfirmationEmail|lib/email'|mailer" "app/admin/(shell)/studio" app/api/admin/studio components/admin/studio lib/ticket-design
+    - id: A10
+      description: F2 the preview uses the real builders and no second renderer exists
+      command: >-
+        grep -rq "buildTicketPdf" app/api/admin/studio && grep -rq "buildTicketTypeEmail" app/api/admin/studio && ! grep -rq "from 'pdf-lib'" app/api/admin/studio components/admin/studio
+    - id: A11
+      description: F2 the save route refuses in production and validates before writing
+      command: >-
+        grep -q "production" app/api/admin/studio/save/route.ts && grep -q "validateDesign" app/api/admin/studio/save/route.ts
+    - id: A12
+      description: F2 the dev flag is never set in the App Hosting config
+      command: >-
+        ! grep -rq "TICKET_STUDIO_ENABLED" apphosting.yaml
+    - id: A13
+      description: F1 to F5 the ticket-email-live switch and the other mission's files are untouched by this mission
+      command: >-
+        git diff --quiet $(git merge-base HEAD preview/local) HEAD -- lib/ticket-type-emails-switch.ts lib/ticket-email-copy.ts lib/show-contact.ts scripts/ticket-email-sample-fixtures.ts
+    - id: A14
+      description: F3 the export route writes only under samples/ticket-emails
+      command: >-
+        grep -q "samples/ticket-emails" app/api/admin/studio/export/route.ts && grep -q "getAdminSession" app/api/admin/studio/export/route.ts
+    - id: A15
+      description: F3 the studio is documented
+      command: >-
+        test -s docs/ticket-design-studio.md
+    - id: A16
+      description: F1 to F5 the project type-checks
+      command: >-
+        pnpm exec tsc --noEmit
+    - id: A17
+      description: F4 a settings file exists for every key in TICKET_EMAIL_COPY and each validates
+      command: >-
+        python3 .agent/memory/project/specs/ticket-design-studio/goldens/checks/check_design_schema.py lib/ticket-design/settings/*.json && test "$(ls lib/ticket-design/settings | wc -l)" -eq "$(grep -cE "^  '[a-z-]+': \{$" lib/ticket-email-copy.ts)"
+    - id: A18
+      description: F5 the fresh sample set has eight or more email PDFs and ticket PDFs and a cover
+      command: >-
+        test "$(ls samples/ticket-emails/email-*.pdf | wc -l)" -ge 8 && test "$(ls samples/ticket-emails/ticket-*.pdf | wc -l)" -ge 8 && test -f samples/ticket-emails/00-cover.pdf

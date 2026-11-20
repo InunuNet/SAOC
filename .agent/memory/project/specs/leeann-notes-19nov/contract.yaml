@@ -1,0 +1,98 @@
+schema: athanor.contract/v1
+slug: leeann-notes-19nov
+goal: Lee-Ann 19 Nov meeting items N1-N12 built on four feature branches, QA'd and previewed on dev.saoc.co.za for Brad's approval; N13 sample regeneration handed to the studio mission; N14 blocked on the lawyer.
+created_at: '2026-11-19'
+autonomy: high
+features:
+- id: F1
+  name: 'NOS content (N1 N2 N3 N4 N9): extend PR 219 fix/nos-content-19nov'
+  status: pending
+- id: F2
+  name: 'Registration form (N6 N7 N8): extend PR 220 fix/reg-form-19nov'
+  status: pending
+- id: F3
+  name: 'Ticket prices, Speakers Partner, workshops coming soon (N5 N10 N11 N12): branch fix/ticket-pricing-19nov from the uncommitted worktree'
+  status: pending
+- id: F4
+  name: 'Integration: regenerate email and PDF samples, Drive Questions doc and copy mirror (N9 N13 prep)'
+  status: pending
+goldens:
+- .agent/memory/project/specs/leeann-notes-19nov/goldens/prices.golden.json
+- .agent/memory/project/specs/leeann-notes-19nov/goldens/check_prices.mts
+- .agent/memory/project/specs/leeann-notes-19nov/goldens/check_speakers_partner.mts
+- .agent/memory/project/specs/leeann-notes-19nov/goldens/speakers-partner-security.md
+assertions:
+  phase: 4
+  checks:
+  - id: A1
+    description: '[F1] No Hangar 25 left in rendered source (app, lib, components, content)'
+    command: '! grep -rqI "Hangar 25" "${CHECK_ROOT:-.}/app" "${CHECK_ROOT:-.}/lib" "${CHECK_ROOT:-.}/components" "${CHECK_ROOT:-.}/content"'
+  - id: A2
+    description: '[F1] No Stellenbosch Airfield left in rendered source (Brad 19 Nov: dropped from the address)'
+    command: '! grep -rqI "Stellenbosch Airfield" "${CHECK_ROOT:-.}/app" "${CHECK_ROOT:-.}/lib" "${CHECK_ROOT:-.}/components" "${CHECK_ROOT:-.}/content"'
+  - id: A3
+    description: '[F1] NOS contact shows info@saoc.co.za'
+    command: grep -q "info@saoc.co.za" "${CHECK_ROOT:-.}/lib/show-contact.ts"
+  - id: A4
+    description: '[F1] NOS contact component no longer renders the show-office phone'
+    command: '! grep -qE "SHOW_OFFICE_PHONE|073 428" "${CHECK_ROOT:-.}/components/nos/ShowContactDetails.tsx"'
+  - id: A5
+    description: '[F1] VIP hours question removed from the sample cover page (VIP locked 16h30-19h00)'
+    command: test -f "${CHECK_ROOT:-.}/scripts/ticket-email-sample-cover.ts" && ! grep -q "VIP hours" "${CHECK_ROOT:-.}/scripts/ticket-email-sample-cover.ts"
+  - id: A6
+    description: '[F1] Sanity venue-address patch script supports --verify'
+    command: grep -q -- "--verify" "${CHECK_ROOT:-.}/scripts/fix-nos-address-19nov.mjs"
+  - id: A7
+    description: '[F1] Sanity venue-address patch script supports --dry-run'
+    command: grep -q -- "--dry-run" "${CHECK_ROOT:-.}/scripts/fix-nos-address-19nov.mjs"
+  - id: A8
+    description: '[F1] NOS mobile menu and nav reachability e2e pass (the two specs that failed on PR 219 CI)'
+    command: pnpm --dir "${CHECK_ROOT:-.}" exec playwright test e2e/mobile-nav-reaches-every-section.spec.ts e2e/nav-rendered-reachability.spec.ts
+  - id: A9
+    description: '[F2] Judge availability gated on accreditation in the draft helper'
+    command: grep -q "export function isAccreditedJudge" "${CHECK_ROOT:-.}/components/tickets/registrationDraft.ts"
+  - id: A10
+    description: '[F2] Registration form e2e (membership order and exclusivity, judge checkbox, attendee accordion) and server rules pass'
+    command: pnpm --dir "${CHECK_ROOT:-.}" exec playwright test e2e/registration-forms.spec.ts e2e/registration-server-rules.spec.ts
+  - id: A11
+    description: '[F3] Product prices, early-bird cut-off, retired Weekend Pass early bird and Speakers Partner R950 match the golden table'
+    command: CHECK_ROOT="${CHECK_ROOT:-.}" pnpm --dir "${CHECK_ROOT:-.}" exec tsx .agent/memory/project/specs/leeann-notes-19nov/goldens/check_prices.mts
+  - id: A12
+    description: '[F3] Speakers Partner access logic: fails closed when unset, signed expiring session, rotation invalidates, tamper refused'
+    command: CHECK_ROOT="${CHECK_ROOT:-.}" pnpm --dir "${CHECK_ROOT:-.}" exec tsx .agent/memory/project/specs/leeann-notes-19nov/goldens/check_speakers_partner.mts
+  - id: A13
+    description: '[F3] Speakers Partner endpoint spec passes (no cookie 400, two tickets 400, unset env 400, page noindex, absent from hub and sitemap)'
+    command: pnpm --dir "${CHECK_ROOT:-.}" exec playwright test e2e/speakers-partner.spec.ts
+  - id: A14
+    description: '[F3] Speakers Partner never in sitemap or robots.txt (robots would advertise the path)'
+    command: '! grep -rqs "speakers-partner" "${CHECK_ROOT:-.}/app/sitemap.ts" "${CHECK_ROOT:-.}/app/robots.ts" "${CHECK_ROOT:-.}/public/robots.txt"'
+  - id: A15
+    description: '[F3] Password env var is declared blank in the example env file'
+    command: grep -qx "SPEAKERS_PARTNER_PASSWORD=" "${CHECK_ROOT:-.}/.env.local.example"
+  - id: A16
+    description: '[F3] apphosting.yaml secret reference stays commented until Brad creates the secret'
+    command: '! grep -qE "^  - variable: SPEAKERS_PARTNER_PASSWORD" "${CHECK_ROOT:-.}/apphosting.yaml"'
+  - id: A17
+    description: '[F3] Workshop tickets switch is off (coming soon)'
+    command: grep -q "WORKSHOP_TICKETS_ON_SALE = false" "${CHECK_ROOT:-.}/lib/workshop-sales.ts"
+  - id: A18
+    description: '[F3] Workshop coming-soon e2e passes (card shows Coming soon, no stepper or buy link, checkout 403)'
+    command: pnpm --dir "${CHECK_ROOT:-.}" exec playwright test e2e/workshop-coming-soon.spec.ts
+  - id: A19
+    description: '[F3] Live Sanity prices match the plan (read-only verify, run only after the lead applies the patch)'
+    command: pnpm --dir "${CHECK_ROOT:-.}" exec node --import tsx/esm scripts/fix-ticket-prices-19nov.ts --verify
+  - id: A20
+    description: '[F4] Regenerated combined sample PDF names Stellenbosch Aerodrome'
+    command: pdftotext -raw "${CHECK_ROOT:-.}/samples/ticket-emails/ticket-emails-combined.pdf" - | grep -q "Stellenbosch Aerodrome"
+  - id: A21
+    description: '[F4] Regenerated combined sample PDF has no Hangar 25 and no Airfield'
+    command: '! pdftotext -raw "${CHECK_ROOT:-.}/samples/ticket-emails/ticket-emails-combined.pdf" - | grep -qE "Hangar 25|Airfield"'
+  - id: A22
+    description: '[F4] Regenerated VIP sample states 16:30-19:00'
+    command: pdftotext -raw "${CHECK_ROOT:-.}/samples/ticket-emails/email-vip.pdf" - | grep -q "16:30"
+  - id: A23
+    description: '[ALL] Typecheck passes'
+    command: pnpm --dir "${CHECK_ROOT:-.}" type-check
+  - id: A24
+    description: '[ALL] Lint passes with no errors'
+    command: pnpm --dir "${CHECK_ROOT:-.}" lint --quiet

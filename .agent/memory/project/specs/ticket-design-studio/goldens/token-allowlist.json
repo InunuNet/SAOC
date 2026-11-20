@@ -1,0 +1,17 @@
+{
+  "note": "The closed colour set the studio may offer. Every hex here is already in the approved repo. Adding one needs Brad's instruction, not a dev's judgement.",
+  "tokens": {
+    "royal":      {"hex": "#211a57", "source": "app/globals.css --nos-royal-purple; layout-spec.md royal"},
+    "purple-700": {"hex": "#33296f", "source": "app/globals.css --nos-purple-700"},
+    "gold-200":   {"hex": "#f3f2d6", "source": "app/globals.css --nos-pale-gold; layout-spec.md stub"},
+    "gold-100":   {"hex": "#fbfaf0", "source": "layout-spec.md page; emails/_shared/EmailShell.tsx GOLD_100"},
+    "white":      {"hex": "#ffffff", "source": "layout-spec.md white (QR tile)"},
+    "olive":      {"hex": "#a7a841", "source": "layout-spec.md olive (rule under ticket title)"},
+    "olive-700":  {"hex": "#6a6829", "source": "app/globals.css --nos-olive-700"},
+    "ink":        {"hex": "#3a3654", "source": "layout-spec.md ink; EmailShell INK_700"},
+    "muted":      {"hex": "#6a6780", "source": "layout-spec.md muted"},
+    "muted-email":{"hex": "#55507e", "source": "EmailShell NOS_INK_MUTED"},
+    "rule":       {"hex": "#e3e1c9", "source": "layout-spec.md; EmailShell NOS_RULE"}
+  },
+  "textOnGroundContrastMin": 4.5
+}

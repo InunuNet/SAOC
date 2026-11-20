@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "note": "Closed enums only. Settings files hold token NAMES and step names, never a hex, a px, a font name or a copy string.",
+  "shared": {
+    "accent":      ["royal", "purple-700", "olive-700"],
+    "headerGround":["royal", "purple-700"],
+    "typeStep":    ["sm", "md", "lg"],
+    "density":     ["compact", "standard", "relaxed"],
+    "footerMark":  [true, false]
+  },
+  "email": {
+    "outerGround": ["gold-200", "gold-100", "white"],
+    "cardGround":  ["gold-100", "white", "gold-200"],
+    "headerAlign": ["left", "centre"],
+    "qrPx":        [160, 200, 240],
+    "cardPosition":["after-intro", "top"]
+  },
+  "pdf": {
+    "stubGround":  ["gold-200", "gold-100", "white"],
+    "ruleColour":  ["olive", "royal"],
+    "qrMm":        [50, 55, 60]
+  }
+}

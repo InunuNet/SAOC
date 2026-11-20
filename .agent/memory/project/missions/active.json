@@ -1,16 +1,16 @@
 {
-  "mission": ".agent/memory/project/missions/2026-11-10-ticket-email-samples.md",
+  "mission": ".agent/memory/project/missions/2026-11-19-leeann-notes-19nov.md",
   "checkpoint": {
     "milestone": null,
     "feature": null
   },
-  "activated_at": "2026-11-10T11:02:19.306910+00:00",
+  "activated_at": "2026-11-19T17:31:06.779900+00:00",
   "autonomy": {
     "level": "high",
     "normalized": "autonomous",
     "permission_tier": "high",
-    "updated_at": "2026-11-10T11:02:19.307564+00:00",
-    "decided_at": "2026-11-10T11:02:19.307564+00:00",
+    "updated_at": "2026-11-19T17:31:06.780131+00:00",
+    "decided_at": "2026-11-19T17:31:06.780131+00:00",
     "decided_by": "workspace default (profile.json)"
   }
 }

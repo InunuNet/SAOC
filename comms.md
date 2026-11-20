@@ -3437,3 +3437,7 @@ Claude needs your permission. Waiting: AskUserQuestion {"questions": [{"question
 ## [SAOC -> OPERATOR] 2026-11-16 15:29 — session waiting on a permission prompt
 
 Claude needs your permission. Waiting: AskUserQuestion {"questions": [{"question": "Lee-Ann's registration sheet notes the partner block is for the 'SAOC or WOSA conference'. Should the WOSA conference tickets get the same registration form as the SAOC symposium and cocktail evening?", "header": "WOSA", "options": [{"label": "Yes, include WOSA (Recommen Nothing proceeds until someone answers it in the terminal. (permission_gate.sh; one notice per 30 min)
+
+## [SAOC -> OPERATOR] 2026-11-19 17:50 — session waiting on a permission prompt
+
+Claude needs your permission. Waiting: AskUserQuestion {"questions": [{"question": "NOS Contact page: the cell number is gone, but no email shows there because the show mailbox was never confirmed. Which email should the page show?", "header": "Contact email", "options": [{"label": "SAOC general email", "description": "Show the SAOC address that ticket  Nothing proceeds until someone answers it in the terminal. (permission_gate.sh; one notice per 30 min)

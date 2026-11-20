@@ -4,3 +4,4 @@
 {"date": "2026-11-02", "note": "claude-md-slim: Slim always-loaded CLAUDE.md to at most 7 KB by moving detail to docs/project-guide.md (Brad 2026-11-02 lean order)", "ts": "2026-11-02T21:29:58.100236+00:00"}
 {"date": "2026-11-08", "note": "2026-11-08 Brad AFK GO run (SAOC): 9 local branches built, none pushed (copy freeze kept): sharp 0.35.5; runtime transitive patches; A10 live-types check; LT-3/", "ts": "2026-11-08T09:06:04.504554+00:00"}
 {"date": "2026-11-08", "note": "2026-11-08 afternoon (SAOC, conservative): Codex QA on all branches. PASS: transitive, lazy-firebase, header-lt3, a11y-at1-mn1. Held: sharp (hero AVIF output ch", "ts": "2026-11-08T13:05:11.358300+00:00"}
+{"date": "2026-11-19", "note": "18-19 Nov: hero scaling QA'd (Gemini PASS, Codex phone-control trade-off overruled), #218 and #217 merged to main, Sanity VIP 16.30-19.00 + show end Sun 16:00. ", "ts": "2026-11-19T16:13:08.910595+00:00"}
