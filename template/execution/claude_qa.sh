@@ -25,6 +25,10 @@
 # inconclusive). Timeout: 1200s, override with
 # CLAUDE_QA_TIMEOUT=<seconds>.
 set -u
+# -h/--help anywhere prints this header and exits 0 without dispatching a review.
+for _a in "$@"; do
+    case "$_a" in -h|--help) awk 'NR == 1 { next } /^#/ { sub(/^# ?/, ""); print; next } { exit }' "$0"; exit 0 ;; esac
+done
 
 STANDARD_MODEL="claude-sonnet-5-5"
 APEX_MODEL="claude-opus-5-5"

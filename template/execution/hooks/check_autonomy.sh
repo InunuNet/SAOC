@@ -866,6 +866,7 @@ route3_hard_denied() {
     */.agent/enforcement_breakglass.json|\
     */.agent/enforcement_emergency.json|\
     */.agent/privilege_permit.json|\
+    */.agent/cred_sync_hosts.json|\
     */execution/hooks/check_autonomy.sh)
       return 0 ;;
   esac
@@ -976,7 +977,7 @@ project_free_edit() {
   case "$rel" in
     .claude/settings.json|execution/hooks/*) ;;
     template/*)
-      ci_match '(^|/)(autonomy_matrix|enforcement_breakglass|privilege_permit)[^/]*$' "$rel" && return 1
+      ci_match '(^|/)(autonomy_matrix|enforcement_breakglass|privilege_permit|cred_sync_hosts)[^/]*$' "$rel" && return 1
       ci_match '(^|/)(\.git|\.ssh|\.aws|\.gnupg|secrets)(/|$)' "$rel" && return 1
       ci_match '(\.pem|\.key|\.env|\.sops\.yaml)$' "$rel" && return 1 ;;
     *) return 1 ;;
@@ -1031,7 +1032,7 @@ check_enforcement_hatch() {
   case "$target_canon" in */__foreign_drive__/CLIMB/*) return 1 ;; esac
   # The operator permit is never reachable through Routes 1-3: a route is agent-authored
   # evidence, and the permit is the one file only the operator's answer may create.
-  ci_match '(^|/)\.agent/privilege_permit\.json$' "$target_canon" && return 1
+  ci_match '(^|/)\.agent/(privilege_permit|cred_sync_hosts)\.json$' "$target_canon" && return 1
 
   HATCH_METHOD=""; HATCH_MISSION=""; HATCH_FEATURE=""; HATCH_CONTRACT=""
   # Project-owned config needs no listing while a mission is active; the evaluator and
@@ -1131,7 +1132,7 @@ fl_elevate() {
         local r; r=$(expand_target "$f")
         if floor_glob_match "$f" || floor_glob_match "$r" || [[ "$r" =~ $re_write_protpath ]] \
            || ci_match "$re_read_protpath" "$r" \
-           || ci_match '(^|/)\.agent/privilege_permit\.json$' "$r"; then
+           || ci_match '(^|/)\.agent/(privilege_permit|cred_sync_hosts)\.json$' "$r"; then
           _blk=1; _why="$verb -e / sudoedit on protected path '$f'"; return
         fi
       done ;;
@@ -1283,8 +1284,8 @@ project_owned_secret() {
   # absolute form silently kept every ordinary command denied while the Write
   # tool worked, which is the worst of both.
   case "$resolved" in
-    "$root"/.env|"$root"/.env.*) return 0 ;;
-    .env|.env.*|./.env|./.env.*) return 0 ;;
+    "$root"/.env|"$root"/.env.*|"$root"/.sops.yaml) return 0 ;;
+    .env|.env.*|./.env|./.env.*|.sops.yaml|./.sops.yaml) return 0 ;;
   esac
   return 1
 }
@@ -1304,6 +1305,7 @@ floor_glob_match() {
     */.agent/autonomy_matrix.json|.agent/autonomy_matrix.json|\
     */.agent/enforcement_breakglass.json|.agent/enforcement_breakglass.json|\
     */.agent/privilege_permit.json|.agent/privilege_permit.json|\
+    */.agent/cred_sync_hosts.json|.agent/cred_sync_hosts.json|\
     */execution/escalate.py|execution/escalate.py)
       return 0 ;;
   esac
@@ -1326,7 +1328,7 @@ if [ -n "$FILE_PATH" ]; then
      || floor_glob_match "$FLOOR_RESOLVED" \
      || [[ "$FLOOR_RESOLVED" =~ $re_write_protpath ]] \
      || [[ "$FLOOR_RESOLVED" =~ $re_read_protpath ]] \
-     || ci_match '(^|/)\.agent/privilege_permit\.json$' "$FLOOR_RESOLVED"; }; then
+     || ci_match '(^|/)\.agent/(privilege_permit|cred_sync_hosts)\.json$' "$FLOOR_RESOLVED"; }; then
     if project_owned_secret "$FLOOR_RESOLVED"; then
       exit 0
     fi

@@ -19,6 +19,10 @@
 # key=value token/model lines for the caller's ledger row. QA_LEDGER_BY_CALLER=1 (set by qa.sh)
 # suppresses this script's own ledger row.
 set -u
+# -h/--help anywhere prints this header and exits 0 without dispatching a review.
+for _a in "$@"; do
+    case "$_a" in -h|--help) awk 'NR == 1 { next } /^#/ { sub(/^# ?/, ""); print; next } { exit }' "$0"; exit 0 ;; esac
+done
 
 EVIDENCE_MAX_LINES=200
 LOW_QUOTA_PERCENT=3

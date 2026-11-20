@@ -25,8 +25,5 @@ your judgment; if a feature needs more, ask in one line.
   defect; record it and stop.
 - When quota is short, say so and narrow: finish and commit what you started, report what you
   did not reach.
-- Compaction is yours to schedule: about 100k is your working context and 350k the hard ceiling.
-  Check `python3 execution/compact.py status` at every commit; past 100k, commit, write your
-  checkpoint, then `python3 execution/compact.py now` and `compact.py restore` once resumed. 500k is only the automatic
-  fallback and should never be what compacts you; mid-task `compact.py delay`, then `restore`.
+- Compaction is yours to schedule: see `compaction.md` (always loaded).
 - Reading scratch results: tool reads of `.agent/memory/scratch/*-result.md` are head/tail capped (`head -40` / `tail -20`), never the whole file; the 10-line reply is the summary.

@@ -25,6 +25,10 @@
 # files, designing adversarial inputs); bounded single-question prompts
 # return in 7-14s regardless and are unaffected by a higher ceiling.
 set -u
+# -h/--help anywhere prints this header and exits 0 without dispatching a review.
+for _a in "$@"; do
+    case "$_a" in -h|--help) awk 'NR == 1 { next } /^#/ { sub(/^# ?/, ""); print; next } { exit }' "$0"; exit 0 ;; esac
+done
 
 usage_error() {
     echo "codex_qa.sh: $1" >&2
