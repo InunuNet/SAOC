@@ -3,3 +3,4 @@ execution/gh_closure_scan.py
 execution/ingest_pulse.sh
 execution/pulse_runner.sh
 CLAUDE.md
+template/execution/contract.py

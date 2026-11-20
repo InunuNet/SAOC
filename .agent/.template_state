@@ -1,11 +1,8 @@
 {
-  "template_version": "3.8.57",
-  "applied_at": "2026-11-20T20:33:58Z",
-  "delivery": "partial",
+  "template_version": "3.8.164",
+  "applied_at": "2026-11-20T20:47:18Z",
+  "delivery": "complete",
   "workspace_id": "0508fe91e31545b0",
-  "withheld": [
-    "template/execution/contract.py"
-  ],
   "bootstrap_unresolved": {
     "anchor": "3.8.57",
     "paths": {
