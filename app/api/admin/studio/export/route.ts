@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { getAdminSession } from '@/lib/admin-auth';
-import { isStudioPilotSlug } from '@/lib/ticket-design/studio-samples';
+import { isStudioSlug } from '@/lib/ticket-design/studio-samples';
 import { exportSamplesForKey } from '@/scripts/generate-ticket-email-samples';
 
 /**
@@ -32,9 +32,9 @@ export async function POST(request: Request) {
   } catch {
     return reject('body must be { slug }', 400);
   }
-  // The pilot allowlist keeps the slug out of the file name until it is known to be safe.
-  if (typeof slug !== 'string' || !isStudioPilotSlug(slug)) {
-    return reject('ticket type is not in the studio pilot', 400);
+  // The ticket-type allowlist keeps the slug out of the file name until it is known to be safe.
+  if (typeof slug !== 'string' || !isStudioSlug(slug)) {
+    return reject('ticket type is not a known studio ticket type', 400);
   }
 
   try {

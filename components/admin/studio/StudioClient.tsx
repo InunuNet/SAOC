@@ -17,7 +17,7 @@ const CONTRAST_DECIMALS = 1;
 interface StudioClientProps {
   types: StudioTypeOption[];
   initialSlug: string;
-  initialDesign: ShippedDesign;
+  designs: Record<string, ShippedDesign>;
 }
 
 type SharedKey = keyof typeof DESIGN_ENUMS.shared;
@@ -28,10 +28,16 @@ type ExportState =
   | { kind: 'done'; paths: string[] }
   | { kind: 'error'; message: string };
 
-export function StudioClient({ types, initialSlug, initialDesign }: StudioClientProps) {
+function withoutKey(drafts: Record<string, ShippedDesign>, slug: string): Record<string, ShippedDesign> {
+  return Object.fromEntries(Object.entries(drafts).filter(([key]) => key !== slug));
+}
+
+export function StudioClient({ types, initialSlug, designs }: StudioClientProps) {
   const [slug, setSlug] = useState(initialSlug);
-  const [saved, setSaved] = useState(initialDesign);
-  const [design, setDesign] = useState(initialDesign);
+  const [savedByType, setSavedByType] = useState(designs);
+  const [drafts, setDrafts] = useState<Record<string, ShippedDesign>>({});
+  const saved = savedByType[slug];
+  const design = drafts[slug] ?? saved;
   const [saving, setSaving] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>({ kind: 'idle' });
   const [exporting, setExporting] = useState(false);
@@ -45,20 +51,30 @@ export function StudioClient({ types, initialSlug, initialDesign }: StudioClient
     if (dirty) setSaveState({ kind: 'idle' });
   }, [dirty]);
 
+  function setDesign(next: ShippedDesign) {
+    setDrafts((current) => ({ ...current, [slug]: next }));
+  }
+
   function setShared<K extends SharedKey>(key: K, value: EmailDesign[K] & PdfDesign[K]) {
-    setDesign((current) => ({
-      ...current,
-      email: { ...current.email, [key]: value },
-      pdf: { ...current.pdf, [key]: value },
-    }));
+    setDesign({
+      ...design,
+      email: { ...design.email, [key]: value },
+      pdf: { ...design.pdf, [key]: value },
+    });
   }
 
   function setEmail<K extends keyof EmailDesign>(key: K, value: EmailDesign[K]) {
-    setDesign((current) => ({ ...current, email: { ...current.email, [key]: value } }));
+    setDesign({ ...design, email: { ...design.email, [key]: value } });
   }
 
   function setPdf<K extends keyof PdfDesign>(key: K, value: PdfDesign[K]) {
-    setDesign((current) => ({ ...current, pdf: { ...current.pdf, [key]: value } }));
+    setDesign({ ...design, pdf: { ...design.pdf, [key]: value } });
+  }
+
+  function handleTypeChange(next: string) {
+    setSlug(next);
+    setSaveState({ kind: 'idle' });
+    setExportState({ kind: 'idle' });
   }
 
   async function handleSave() {
@@ -71,7 +87,8 @@ export function StudioClient({ types, initialSlug, initialDesign }: StudioClient
       });
       const body: { saved?: string; error?: string } = await res.json();
       if (!res.ok || !body.saved) throw new Error(body.error ?? 'Save failed');
-      setSaved(design);
+      setSavedByType((current) => ({ ...current, [slug]: design }));
+      setDrafts((current) => withoutKey(current, slug));
       setSaveState({ kind: 'saved', path: body.saved });
     } catch (error) {
       setSaveState({ kind: 'error', message: error instanceof Error ? error.message : 'Save failed' });
@@ -108,17 +125,16 @@ export function StudioClient({ types, initialSlug, initialDesign }: StudioClient
           <select
             id="studio-type"
             value={slug}
-            onChange={(event) => setSlug(event.target.value)}
+            onChange={(event) => handleTypeChange(event.target.value)}
             className="mt-1 min-h-[44px] w-full rounded-[2px] border border-rule bg-ivory px-3 font-sans text-[14px] text-ink"
           >
             {types.map((type) => (
-              <option key={type.slug} value={type.slug} disabled={!type.enabled}>
+              <option key={type.slug} value={type.slug}>
                 {type.label}
-                {type.enabled ? '' : ' (not yet)'}
               </option>
             ))}
           </select>
-          <p className="mt-2 font-sans text-[13px] text-muted">VIP is the pilot; other types follow.</p>
+          <p className="mt-2 font-sans text-[13px] text-muted">Each ticket type has its own saved design. Unsaved changes are kept per type until you save or reset.</p>
         </section>
 
         <section className={`${CARD_CLASS} flex flex-col gap-4`}>
@@ -166,7 +182,7 @@ export function StudioClient({ types, initialSlug, initialDesign }: StudioClient
           <button type="button" className={BUTTON_PRIMARY} disabled={saving || blocked || !dirty} onClick={() => void handleSave()}>
             {saving ? 'Saving…' : 'Save to settings file'}
           </button>
-          <button type="button" className={BUTTON_SECONDARY} disabled={!dirty} onClick={() => setDesign(saved)}>
+          <button type="button" className={BUTTON_SECONDARY} disabled={!dirty} onClick={() => setDrafts((current) => withoutKey(current, slug))}>
             Reset
           </button>
           <button type="button" className={BUTTON_SECONDARY} disabled={exporting || dirty} onClick={() => void handleExport()}>

@@ -17,26 +17,24 @@ import {
 
 /**
  * ticket-design-studio (F2) — the made-up order the studio previews, from the sample fixtures.
- * Pilot: only the types listed in STUDIO_PILOT_SLUGS can be edited and saved.
+ * Every key in TICKET_EMAIL_COPY can be edited and saved; VIP is the default selection.
  */
-export const STUDIO_PILOT_SLUGS: readonly string[] = ['vip'];
+export const STUDIO_DEFAULT_SLUG = 'vip';
 
 export interface StudioTypeOption {
   slug: string;
   label: string;
-  enabled: boolean;
 }
 
 export function studioTypeOptions(): StudioTypeOption[] {
   return SAMPLE_ORDERS.map((order) => ({
     slug: order.key,
     label: order.title,
-    enabled: STUDIO_PILOT_SLUGS.includes(order.key),
   }));
 }
 
-export function isStudioPilotSlug(slug: string): boolean {
-  return STUDIO_PILOT_SLUGS.includes(slug);
+export function isStudioSlug(slug: string): boolean {
+  return SAMPLE_ORDERS.some((order) => order.key === slug);
 }
 
 export function studioSampleOrder(slug: string): SampleOrder {

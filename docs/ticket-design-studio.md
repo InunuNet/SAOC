@@ -1,6 +1,6 @@
 # Ticket design studio
 
-The studio lets you choose from the approved design options for a ticket type and watch the real confirmation email and ticket PDF update. It never changes wording and never sends mail. Only VIP is enabled for now; the other types show "(not yet)".
+The studio lets you choose from the approved design options for a ticket type and watch the real confirmation email and ticket PDF update. It never changes wording and never sends mail. Every ticket type in `lib/ticket-email-copy.ts` is editable: pick one in the "Ticket type" list (VIP is selected first). Each type has its own settings file in `lib/ticket-design/settings/<key>.json` (`early-bird`, `day-visitor`, `weekend-pass`, `vip`, `sunset-cocktails`, `saoc-symposium`, `wosa-conference`, `saoc-wosa-joint`). All start on the same default design, so every email and ticket renders exactly as before the studio. Preview, save and export always act on the selected type, and unsaved changes are kept per type until you save or reset. A new key in `TICKET_EMAIL_COPY` needs a matching settings file, an import in `lib/ticket-design/index.ts` and a sample order in `scripts/ticket-email-sample-fixtures.ts`.
 
 ## Run it
 

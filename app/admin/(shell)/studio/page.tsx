@@ -4,7 +4,7 @@ import { PageHeader, PageShell } from '@/components/admin/PageHeader';
 import { StudioClient } from '@/components/admin/studio/StudioClient';
 import { getAdminSession } from '@/lib/admin-auth';
 import { readSavedDesign } from '@/lib/ticket-design/saved';
-import { studioTypeOptions } from '@/lib/ticket-design/studio-samples';
+import { STUDIO_DEFAULT_SLUG, studioTypeOptions } from '@/lib/ticket-design/studio-samples';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Ticket design studio', robots: { index: false, follow: false } };
@@ -20,8 +20,11 @@ export default async function StudioPage() {
   if (!session.ok) redirect('/admin/login');
 
   const types = studioTypeOptions();
-  const pilot = types.find((type) => type.enabled);
-  if (!pilot) notFound();
+  if (!types.some((type) => type.slug === STUDIO_DEFAULT_SLUG)) notFound();
+  const entries = await Promise.all(
+    types.map(async (type) => [type.slug, await readSavedDesign(type.slug)] as const),
+  );
+  const designs = Object.fromEntries(entries);
 
   return (
     <PageShell>
@@ -31,8 +34,8 @@ export default async function StudioPage() {
       />
       <StudioClient
         types={types}
-        initialSlug={pilot.slug}
-        initialDesign={await readSavedDesign(pilot.slug)}
+        initialSlug={STUDIO_DEFAULT_SLUG}
+        designs={designs}
       />
     </PageShell>
   );

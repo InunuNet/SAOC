@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "slug": "saoc-wosa-joint",
+  "email": {
+    "accent": "royal", "headerGround": "royal", "typeStep": "md", "density": "standard",
+    "footerMark": true, "outerGround": "gold-200", "cardGround": "gold-100",
+    "headerAlign": "left", "qrPx": 200, "cardPosition": "after-intro"
+  },
+  "pdf": {
+    "accent": "royal", "headerGround": "royal", "typeStep": "md", "density": "standard",
+    "footerMark": true, "stubGround": "gold-200", "ruleColour": "olive", "qrMm": 55
+  }
+}
