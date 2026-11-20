@@ -34,7 +34,7 @@ features:
 - id: F4
   name: 'Integration N9 N13 prep: regenerate email and PDF samples, Drive Questions doc and copy mirror'
   milestone: M2
-  status: pending
+  status: done
   spec: .agent/memory/project/specs/leeann-notes-19nov/contract.yaml
 milestones:
 - id: M1
@@ -48,7 +48,7 @@ milestones:
   features:
   - F4
   name: Merge to preview/local, regenerate samples, hand to the studio mission
-  status: pending
+  status: done
 ---
 
 # Mission: Lee-Ann 19 Nov meeting items N1-N14 (backlog section NEXT MISSION) built, QA'd and previewed on dev.saoc.co.za for Brad's approval; nothing to beta until he approves
@@ -112,3 +112,15 @@ N14 legal docs (waiting on the lawyer). STUDIO (separate mission).
 ## Notes
 
 Gaps carried: Codex QA unavailable until 22 Nov. Vendor fees R3 500 in the pricing doc have no home in code or Sanity (vendor flow is not ticketing), left untouched. The pricing doc's "Complimentary R0" has no purchasable SKU, no change.
+
+## F4 close-out (20 Nov 2026)
+
+- Samples: regenerated all 18 PDFs in samples/ticket-emails with `pnpm samples:ticket-emails` on origin/main d14c3e76. A20, A21 and A22 are green (no Hangar 25, Airfield or R360; VIP shows 16:30).
+- Questions doc (1C2_2EKYvJwzB5ejtwf0wpm5bk7z916-c8UQQrkQmSjc): both VIP-time questions and their answers removed, dated 20 Nov block added. Before/after in .tmp/sandbox/qdoc-before-20nov.txt and qdoc-after-20nov.txt.
+- Source docs mirrored (.docx, files.update on the same ID; pre-edit revision pinned keepForever; comment added):
+  - What to Expect 1UPPsvb7MNGkj-y5nV7CDDH5KyrblZMNi, pinned 0B8dEtk7a9gtGQXJZSytRVW9OK0Fsb1hydjVNdkNiekJSbEJNPQ, comment doco.zmFB4bkDmEC0yJICkWunuw
+  - Frequently Asked Questions 1geaHIB3EYfSaVqEXqA6LvuXDDh3qPKdt, pinned 0B8dEtk7a9gtGdmNOSGZIdGZOZjhRSW11WTNBd094bGNwWHdNPQ, comment doco.0jwCq4LSRgmb62ZkjcVVRg
+  - 2027 Show Contact information 138RAX1j-qkhuc40LBcpG7gTxB8MHKh-1, pinned 0B8dEtk7a9gtGNnYwd1NleHFNblhFZEdud1NFQlZqd2s2a240PQ, comment doco.YurbuUA-BnFu5BM_BmWujQ
+  - PLAN YOUR VISIT 1QwqjMxhC1WVFGUNouB17OKNDj_XmKicu, pinned 0B8dEtk7a9gtGdlJ4cjJCbmhLbTdlZ21na3RIUWtmcUNTeTNnPQ, comment doco.E5sZDXmgfoXZ_8i2dtv9pA
+- Left as her wording in PLAN YOUR VISIT (no site counterpart or site keeps it): the "Stellenbosch Flying Club has not been worked out yet" line, the parking line, the "To be Provided ... site map from the R44 to the Hangar" line.
+- Samples go to the STUDIO mission next (Brad edits, then Lee-Ann signs off, N13). No send, no live switch.

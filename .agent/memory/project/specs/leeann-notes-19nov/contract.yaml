@@ -15,7 +15,7 @@ features:
   status: pending
 - id: F4
   name: 'Integration: regenerate email and PDF samples, Drive Questions doc and copy mirror (N9 N13 prep)'
-  status: pending
+  status: done
 goldens:
 - .agent/memory/project/specs/leeann-notes-19nov/goldens/prices.golden.json
 - .agent/memory/project/specs/leeann-notes-19nov/goldens/check_prices.mts
