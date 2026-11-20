@@ -5,34 +5,39 @@ goal: Lee-Ann 19 Nov meeting items N1-N14 (backlog section NEXT MISSION) built, 
   and previewed on dev.saoc.co.za for Brad's approval; nothing to beta until he approves
 created_at: '2026-11-19T17:31:06.779427+00:00'
 started_at: null
-last_active_at: null
+last_active_at: '2026-11-20T20:46:02.389718+00:00'
 status: pending
 cost_estimate:
   features: 0
   milestones: 0
   total_calls: 0
 last_checkpoint:
-  milestone: null
-  feature: null
-  ts: null
+  milestone: M1
+  feature: F3
+  ts: '2026-11-20T20:46:02.389718+00:00'
 features:
 - id: F1
   name: 'NOS content N1 N2 N3 N4 N9: extend PR 219 (branch fix/nos-content-19nov)'
   milestone: M1
-  status: pending
+  status: done
   spec: .agent/memory/project/specs/leeann-notes-19nov/contract.yaml
+  completed_at: '2026-11-20T20:46:00.492346+00:00'
 - id: F2
   name: 'Registration form N6 N7 N8: extend PR 220 (branch fix/reg-form-19nov)'
   milestone: M1
-  status: pending
+  status: done
   spec: .agent/memory/project/specs/leeann-notes-19nov/contract.yaml
+  completed_at: '2026-11-20T20:46:01.491311+00:00'
 - id: F3
-  name: 'Ticket prices, Speakers Partner, workshops coming soon N5 N10 N11 N12: branch fix/ticket-pricing-19nov'
+  name: 'Ticket prices, Speakers Partner, workshops coming soon N5 N10 N11 N12: branch
+    fix/ticket-pricing-19nov'
   milestone: M1
-  status: pending
+  status: done
   spec: .agent/memory/project/specs/leeann-notes-19nov/contract.yaml
+  completed_at: '2026-11-20T20:46:02.389532+00:00'
 - id: F4
-  name: 'Integration N9 N13 prep: regenerate email and PDF samples, Drive Questions doc and copy mirror'
+  name: 'Integration N9 N13 prep: regenerate email and PDF samples, Drive Questions
+    doc and copy mirror'
   milestone: M2
   status: done
   spec: .agent/memory/project/specs/leeann-notes-19nov/contract.yaml

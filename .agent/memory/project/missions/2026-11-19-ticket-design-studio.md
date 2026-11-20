@@ -6,42 +6,49 @@ goal: 'Email and ticket-PDF design studio: live-preview controls within the appr
   feeding N13 sample sign-off'
 created_at: '2026-11-19T17:31:03.919985+00:00'
 started_at: null
-last_active_at: null
+last_active_at: '2026-11-20T20:45:55.382550+00:00'
 status: pending
 cost_estimate:
   features: 0
   milestones: 0
   total_calls: 0
 last_checkpoint:
-  milestone: null
-  feature: null
-  ts: null
+  milestone: M2
+  feature: F5
+  ts: '2026-11-20T20:45:55.382550+00:00'
 features:
 - id: F1
-  name: Design object and settings JSON threaded through the one email renderer and the one ticket PDF renderer, defaults byte-identical
+  name: Design object and settings JSON threaded through the one email renderer and
+    the one ticket PDF renderer, defaults byte-identical
   milestone: M1
-  status: pending
+  status: done
   spec: .agent/memory/project/specs/ticket-design-studio/contract.yaml
+  completed_at: '2026-11-20T20:45:51.479513+00:00'
 - id: F2
-  name: Studio page and preview/save APIs behind admin session and dev-only flag, VIP pilot
+  name: Studio page and preview/save APIs behind admin session and dev-only flag,
+    VIP pilot
   milestone: M1
-  status: pending
+  status: done
   spec: .agent/memory/project/specs/ticket-design-studio/contract.yaml
+  completed_at: '2026-11-20T20:45:52.970714+00:00'
 - id: F3
   name: Per-type sample export button plus docs, VIP pilot
   milestone: M1
-  status: pending
+  status: done
   spec: .agent/memory/project/specs/ticket-design-studio/contract.yaml
+  completed_at: '2026-11-20T20:45:53.778389+00:00'
 - id: F4
   name: Rollout to every ticket type key in TICKET_EMAIL_COPY with a type picker
   milestone: M2
-  status: pending
+  status: done
   spec: .agent/memory/project/specs/ticket-design-studio/contract.yaml
+  completed_at: '2026-11-20T20:45:54.568819+00:00'
 - id: F5
   name: Fresh sample export of all types for N13 sign-off
   milestone: M2
-  status: pending
+  status: done
   spec: .agent/memory/project/specs/ticket-design-studio/contract.yaml
+  completed_at: '2026-11-20T20:45:55.382337+00:00'
 milestones:
 - id: M1
   name: Pilot on the VIP ticket, previewable on dev.saoc.co.za
