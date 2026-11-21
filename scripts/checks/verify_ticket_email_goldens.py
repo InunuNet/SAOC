@@ -80,12 +80,16 @@ def check_source(gdir):
 def check_pdf(pdf, golden):
     text = subprocess.run(['pdftotext', pdf, '-'], capture_output=True, text=True, check=True).stdout
     hay = norm(text)
+    for banned in ('Testing only', 'No real payment'):
+        if norm(banned) in hay:
+            print('FAIL test-mode treatment present:', banned)
+            return 1
     body, markers = split_golden(golden)
     cursor = 0
     for line in body:
         line = strip_bullet(line)
         if line.startswith('Subject: '):
-            line = line[len('Subject: '):]  # the rendered subject may carry the test-mode prefix
+            line = line[len('Subject: '):]  # the rendered subject line
         needle = norm(line)
         at = hay.find(needle, cursor)
         if at < 0:

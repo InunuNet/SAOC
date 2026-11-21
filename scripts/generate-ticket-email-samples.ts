@@ -82,6 +82,8 @@ async function renderEmailHtml(order: SampleOrder): Promise<string> {
       },
     ],
     recoveryUrl: null,
+    // Samples show the live look; the site's own test mode is unchanged.
+    testMode: false,
   });
   const qrUri = await generateBookingRefQrDataUri(order.bookingReference);
   const html = (await render(email.react)).replaceAll(`cid:${contentId}`, qrUri);
@@ -121,31 +123,35 @@ async function htmlToPdf(browser: Browser, html: string): Promise<Uint8Array> {
 }
 
 function buildSampleTicketPdf(order: SampleOrder): Promise<Uint8Array> {
-  return buildTicketPdf({
-    orderReference: null,
-    positions: [
-      {
-        bookingRef: order.bookingReference,
-        attendeeName: order.visitorName,
-        ticketType: order.title,
-        slug: order.slug,
-        schedule: order.schedule,
+  return buildTicketPdf(
+    {
+      orderReference: null,
+      positions: [
+        {
+          bookingRef: order.bookingReference,
+          attendeeName: order.visitorName,
+          ticketType: order.title,
+          slug: order.slug,
+          schedule: order.schedule,
+        },
+      ],
+      visit: {
+        venueName: SAMPLE_VENUE_NAME,
+        venueAddress: null,
+        venueParking: null,
+        showDates: SAMPLE_SHOW_DATES,
+        showUrl: SAMPLE_SHOW_URL,
+        emergency: SAMPLE_EMERGENCY,
+        onSiteContact: null,
+        organiser: null,
+        showOffice: null,
+        questionsEmail: SAMPLE_QUESTIONS_EMAIL,
+        openingTimes: SAMPLE_OPENING_TIMES,
       },
-    ],
-    visit: {
-      venueName: SAMPLE_VENUE_NAME,
-      venueAddress: null,
-      venueParking: null,
-      showDates: SAMPLE_SHOW_DATES,
-      showUrl: SAMPLE_SHOW_URL,
-      emergency: SAMPLE_EMERGENCY,
-      onSiteContact: null,
-      organiser: null,
-      showOffice: null,
-      questionsEmail: SAMPLE_QUESTIONS_EMAIL,
-      openingTimes: SAMPLE_OPENING_TIMES,
     },
-  });
+    // Samples show the live look; the site's own test mode is unchanged.
+    { testMode: false }
+  );
 }
 
 async function mergePdfs(parts: readonly Uint8Array[]): Promise<Uint8Array> {
