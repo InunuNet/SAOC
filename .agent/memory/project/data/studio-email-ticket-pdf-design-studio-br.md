@@ -1,0 +1,3 @@
+# studio-email-ticket-pdf-design-studio-br
+
+**STUDIO — Email & ticket-PDF design studio (Brad 19 Nov)**: a tool covering every ticket type (confirmation email + ticket PDF) that gives Brad controls, adjustments and options to dial each design in, with a live preview; his chosen settings become the shipped templates. Plan it first (architect: what's adjustable — layout, type scale, spacing, colours within the approved handoff tokens, which blocks show, copy fields from Lee-Ann's docs; where settings persist; how a setting reaches the real email/PDF render path; export of sample PDFs for Lee-Ann). Pilot on ONE ticket type, then roll out to all. Feeds N13.
