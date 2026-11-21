@@ -18,6 +18,7 @@ const SOLD_BY_DAY_KEYS = { 'day-visitor::2027-09-24': 2, 'early-bird::2027-09-25
 
 function loadModule() {
   const cacheCalls = [];
+  const cachedReads = { count: 0 };
   const scans = { plain: 0, byDay: 0 };
   const noop = {};
   const stubs = {
@@ -25,14 +26,17 @@ function loadModule() {
       // Identity wrapper that records how the function was registered.
       unstable_cache: (fn, keyParts, options) => {
         cacheCalls.push({ keyParts, options });
-        return fn;
+        return (...args) => {
+          cachedReads.count += 1;
+          return fn(...args);
+        };
       },
     },
     '@/sanity/lib/fetch': { sanityFetch: async () => null },
     '@/sanity/queries': {},
     '@/lib/checkout-reservation': { effectiveCapacity: () => 0, planPooledCapacity: () => ({}) },
     '@/lib/data/ticket-card-view-models': noop,
-    '@/lib/data/ticket-hub-source': { buildHubCards: () => ({}), TICKET_CATEGORIES: [] },
+    '@/lib/data/ticket-hub-source': { buildHubCards: () => ({ cards: {} }), TICKET_CATEGORIES: [] },
     '@/lib/data/tickets': {
       getSoldCountsByTicketType: async () => {
         scans.plain += 1;
@@ -63,7 +67,7 @@ function loadModule() {
     { module: loaded, exports: loaded.exports, require: resolve, Object, Set, Promise, Math, console, Error },
     { filename: FILE, timeout: 5000 },
   );
-  return { exports: loaded.exports, cacheCalls, scans };
+  return { exports: loaded.exports, cacheCalls, scans, cachedReads };
 }
 
 test('the display stock read is registered with a 60 second revalidate and the ticket-stock tag', () => {
@@ -84,4 +88,22 @@ test('the cached read returns the same shape the live scans produce', async () =
     byDay: { 'day-visitor': { '2027-09-24': 2 }, 'early-bird': { '2027-09-25': 4 } },
   });
   assert.deepEqual(scans, { plain: 1, byDay: 1 });
+});
+
+test('live: true never calls the cached read and scans Firestore directly', async () => {
+  const { exports, scans, cachedReads } = loadModule();
+  await exports.getAdmissionSoldOutBySlug([], null, { live: true });
+  assert.equal(cachedReads.count, 0);
+  assert.equal(scans.plain, 1);
+  const result = await exports.loadTicketCardViewModels({ live: true });
+  assert.equal(result.stockKnown, true);
+  assert.equal(cachedReads.count, 0);
+  assert.deepEqual(scans, { plain: 3, byDay: 1 });
+});
+
+test('the default (display) path reads through the cache', async () => {
+  const { exports, cachedReads } = loadModule();
+  await exports.getAdmissionSoldOutBySlug([], null);
+  await exports.loadTicketCardViewModels();
+  assert.equal(cachedReads.count, 3); // sold-out helper, then stock + sold-out inside the loader
 });

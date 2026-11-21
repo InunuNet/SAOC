@@ -51,7 +51,10 @@ export async function getAdmissionSoldOutBySlug(
   { live = false }: { live?: boolean } = {}
 ): Promise<Record<string, boolean>> {
   try {
-    const { sold: soldCounts } = await getCachedStockReading();
+    // `live` is the single-type buy screens: a direct Firestore count, never the display cache.
+    const soldCounts = live
+      ? await getSoldCountsByTicketType(NATIONAL_SHOW_ID)
+      : (await getCachedStockReading()).sold;
     const poolConfigByType: Record<string, CapacityPoolConfig> = {};
     const capacityByType: Record<string, number> = {};
     for (const t of types) {
@@ -146,9 +149,10 @@ interface StockReading {
  * Display-only stock cache. The two scans cost about 2 x (paid + reserved ticket documents)
  * Firestore reads each, so an uncached read per page view and per sitemap fetch would exhaust the
  * free 50k reads/day as sales grow. One scan per TICKET_STOCK_REVALIDATE_SECONDS serves every page
- * that shows stock. Checkout never reads through this: it counts live, inside its own
- * transaction, via getSoldCountsByTicketType(showId, transaction) in lib/data/tickets.ts, so a
- * stale display number can never oversell. The scans stay full scans rather than count()
+ * that shows stock; `live: true` callers (the buy screens) bypass it. Checkout never reads
+ * through this: it counts live, inside its own transaction, via
+ * getSoldCountsByTicketType(showId, transaction) in lib/data/tickets.ts, so a stale display
+ * number can never oversell. The scans stay full scans rather than count()
  * aggregations: seat expiry (stillHoldsSeat) is evaluated in memory because an `expiresAt`
  * range filter needs a composite index this project does not deploy, and the by-day split needs
  * per-document grouping.
@@ -170,9 +174,10 @@ export const getCachedStockReading = unstable_cache(scanStock, [TICKET_STOCK_CAC
   tags: [TICKET_STOCK_CACHE_TAG],
 });
 
-async function readStock(): Promise<StockReading | null> {
+/** `live` (the single-type buy screens) never touches the cache: it scans Firestore directly. */
+async function readStock(live: boolean): Promise<StockReading | null> {
   try {
-    return await getCachedStockReading();
+    return live ? await scanStock() : await getCachedStockReading();
   } catch (error) {
     const name = error instanceof Error ? error.name : 'UnknownError';
     console.error(`[lib/data/admission-availability] stock read failed (${name})`);
@@ -211,7 +216,7 @@ export async function loadTicketCardViewModels(
     ]);
     const salesOpen = salesState?.salesOpen === true;
     const cmsTypes = filterPubliclyListableTicketTypes(byCategory.flatMap((rows) => rows ?? []));
-    const stock = await readStock();
+    const stock = await readStock(live);
     const activeShowId = resolveActiveShow(shows ?? []);
 
     const built = buildHubCards({
