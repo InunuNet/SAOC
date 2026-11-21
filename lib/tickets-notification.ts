@@ -8,6 +8,7 @@ import {
   markOrderPaymentPendingByPaymentId,
 } from '@/lib/orders';
 import { deliverConfirmationEmailAfterCommit, sendConfirmationEmail } from '@/lib/confirmation-email';
+import { safeErrorType } from '@/lib/safe-log';
 import { saocUrl } from '@/lib/site-hosts';
 import { loadChosenDays } from '@/lib/ticket-pdf-data';
 import { buildOrderEmailFields } from '@/lib/ticket-order-fields';
@@ -48,9 +49,16 @@ import { sendTicketSaleAdminNotice } from '@/lib/ticket-sale-admin-notice';
  */
 const AMOUNT_MATCH_TOLERANCE_CENTS = 1;
 
-/** Always 200 — the gateway must stop retrying regardless of validation outcome. */
+/** 200 for every definitive outcome — the gateway must stop retrying a notification we have
+ *  settled, duplicated or deliberately rejected (bad hash, amount mismatch, unknown order). */
 function acknowledge(): NextResponse {
   return NextResponse.json({ received: true }, { status: 200 });
+}
+
+/** 503 for a transient failure (order lookup threw, gateway status confirmation unreachable or
+ *  5xx): the gateway retries a non-2xx, so a paid order is not left reserved by a blip. */
+function retryLater(): NextResponse {
+  return NextResponse.json({ received: false }, { status: 503 });
 }
 
 /**
@@ -139,9 +147,9 @@ export async function POST(
     console.error('[tickets/itn] Order lookup failed — rejecting notification', {
       provider: paymentProvider.id,
       reference,
-      error,
+      error: safeErrorType(error),
     });
-    return acknowledge();
+    return retryLater();
   }
 
   if (lookup.status === 'not-found') {
@@ -258,7 +266,7 @@ export async function POST(
       reference,
       reason: confirmation.reason,
     });
-    return acknowledge();
+    return confirmation.reason === 'request-failed' ? retryLater() : acknowledge();
   }
 
   // 10. Atomic idempotent order+position two-write. The gateway retries notification delivery
@@ -339,7 +347,7 @@ export async function POST(
         provider: paymentProvider.id,
         reference,
         orderId: outcome.orderId,
-        error,
+        error: safeErrorType(error),
       });
     }
   );

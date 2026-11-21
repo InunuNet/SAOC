@@ -1,6 +1,9 @@
 import { getSecret, secretsEnv } from '@/lib/secrets';
 import { NextRequest, NextResponse } from 'next/server';
 import { isBodyWithinLimit } from '@/lib/request-guards';
+import { clientIpFromForwardedFor } from '@/lib/client-ip';
+import { consumeRateLimit } from '@/lib/newsletter-rate-limit';
+import { createAttemptStore, scopeAttemptsToRequest } from '@/lib/newsletter-rate-store';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
 import { generateBookingRef } from '@/lib/booking-ref';
@@ -469,6 +472,15 @@ async function fetchSoldOutMessage(): Promise<string> {
 // This cap is the effective ceiling for attendeeName, which parseLineItems() does not bound.
 const MAX_BODY_BYTES = 131072;
 
+// Per-IP checkout limit (security audit F1): each call reads every reserved/paid ticket, makes
+// several Sanity calls and holds up to 20 seats for the reservation TTL. 10 per 10 minutes is
+// ample for a real buyer (and a venue address with a few of them). Per server instance, like
+// the status route's limiter. A replay of an existing Idempotency-Key counts as an attempt.
+const CHECKOUT_RATE_LIMIT_MAX_ATTEMPTS = 10;
+const CHECKOUT_RATE_LIMIT_WINDOW_MS = 10 * 60_000;
+
+const checkoutAttempts = createAttemptStore(CHECKOUT_RATE_LIMIT_WINDOW_MS);
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!isBodyWithinLimit(request.headers.get('content-length'), MAX_BODY_BYTES)) {
     return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
@@ -483,6 +495,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json(
       { error: `A valid UUID ${IDEMPOTENCY_KEY_HEADER} header is required.` },
       { status: 400 }
+    );
+  }
+
+  const ip = clientIpFromForwardedFor(request.headers.get('x-forwarded-for'));
+  const limit = consumeRateLimit(
+    { now: new Date(), ...scopeAttemptsToRequest(checkoutAttempts) },
+    `ticket-checkout:${ip ?? 'unknown'}`,
+    CHECKOUT_RATE_LIMIT_MAX_ATTEMPTS,
+    CHECKOUT_RATE_LIMIT_WINDOW_MS,
+  );
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: 'Too many attempts. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } },
     );
   }
 

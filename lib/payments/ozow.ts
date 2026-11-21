@@ -46,6 +46,14 @@ import type {
  */
 
 /** Ozow's six documented Status values (F31 maps all six; anything else is 'unknown'). */
+const STATUS_REQUEST_TIMEOUT_MS = 10_000;
+const HTTP_SERVER_ERROR_MIN = 500;
+const HTTP_REQUEST_TIMEOUT = 408;
+const HTTP_TOO_MANY_REQUESTS = 429;
+const TRANSIENT_CLIENT_STATUSES: ReadonlySet<number> = new Set([
+  HTTP_REQUEST_TIMEOUT,
+  HTTP_TOO_MANY_REQUESTS,
+]);
 const STATUS_COMPLETE = 'Complete';
 const STATUS_PENDING = 'Pending';
 const STATUS_PENDING_INVESTIGATION = 'PendingInvestigation';
@@ -395,6 +403,7 @@ export function createOzowProvider(deps?: OzowProviderDeps): PaymentProvider {
         response = await readFetch()(url, {
           method: 'GET',
           headers: { ApiKey: apiKey, Accept: 'application/json' },
+          signal: AbortSignal.timeout(STATUS_REQUEST_TIMEOUT_MS),
         });
       } catch (error) {
         console.error('[payments/ozow] Transaction status request failed:', {
@@ -409,7 +418,12 @@ export function createOzowProvider(deps?: OzowProviderDeps): PaymentProvider {
           reference: notification.reference,
           status: response.status,
         });
-        return { confirmed: false, reason: 'not-valid' };
+        // A 5xx (or 408/429) says nothing about the payment; the gateway must retry the
+        // notification. Any other non-2xx is a definitive refusal and stays 'not-valid'.
+        const transient =
+          response.status >= HTTP_SERVER_ERROR_MIN ||
+          TRANSIENT_CLIENT_STATUSES.has(response.status);
+        return { confirmed: false, reason: transient ? 'request-failed' : 'not-valid' };
       }
 
       let body: unknown;

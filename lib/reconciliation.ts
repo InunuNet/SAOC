@@ -28,6 +28,14 @@ const TICKETS_COLLECTION = 'tickets';
  *  elapses — this is a recurring reminder, not a permanent one-shot silence. */
 export const RE_ALERT_WINDOW_MS = 6 * 60 * 60 * 1000; // 6 hours
 
+/** Only reservations that expired within this window are candidates. Older ones are abandoned
+ *  carts, not stranded payments, and re-alerting them forever costs writes and buries the real
+ *  signal. A stranded paid order still alerts several times (every 6 h) inside the window. */
+export const STRANDED_LOOKBACK_MS = 48 * 60 * 60 * 1000; // 48 hours
+
+/** Upper bound on candidates per run, so one run's reads and writes are bounded. */
+export const STRANDED_CANDIDATE_LIMIT = 50;
+
 // ---------------------------------------------------------------------------------------------
 // Deliberately narrow structural interfaces matching only the read/write surface this module
 // actually calls, so the real `Firestore` class already satisfies them with zero adapter code
@@ -48,7 +56,8 @@ export interface ReconciliationQuerySnapshotLike {
 }
 
 export interface ReconciliationQueryLike {
-  where(field: string, op: '==' | '<', value: unknown): ReconciliationQueryLike;
+  where(field: string, op: '==' | '<' | '>', value: unknown): ReconciliationQueryLike;
+  limit(count: number): ReconciliationQueryLike;
   get(): Promise<ReconciliationQuerySnapshotLike>;
 }
 
@@ -60,7 +69,7 @@ export interface ReconciliationDocRefLike {
 }
 
 export interface ReconciliationCollectionLike {
-  where(field: string, op: '==' | '<', value: unknown): ReconciliationQueryLike;
+  where(field: string, op: '==' | '<' | '>', value: unknown): ReconciliationQueryLike;
   doc(id: string): ReconciliationDocRefLike;
 }
 
@@ -86,7 +95,8 @@ function defaultDb(): ReconciliationFirestoreLike {
 export type StrandedOrder = Omit<Order, 'id'> & { orderId: string };
 
 /**
- * Queries `orders` for `status == 'reserved' AND expiresAt < now` — necessary but not
+ * Queries `orders` for `status == 'reserved'` expired within STRANDED_LOOKBACK_MS (at most
+ * STRANDED_CANDIDATE_LIMIT rows) — necessary but not
  * sufficient on its own to prove "stranded": an abandoned mid-checkout cart also matches
  * `status == 'reserved'`, and `expiresAt < now` is exactly what excludes it (a live checkout's
  * `expiresAt` is still in the future). See check-detects-stranded-orders.mjs (A2) for the full
@@ -100,10 +110,13 @@ export async function findStrandedOrders(
   deps: { db?: ReconciliationFirestoreLike } = {}
 ): Promise<StrandedOrder[]> {
   const db = deps.db ?? defaultDb();
+  const windowStart = Timestamp.fromMillis(now.toMillis() - STRANDED_LOOKBACK_MS);
   const snapshot = await db
     .collection(ORDERS_COLLECTION)
     .where('status', '==', 'reserved')
     .where('expiresAt', '<', now)
+    .where('expiresAt', '>', windowStart)
+    .limit(STRANDED_CANDIDATE_LIMIT)
     .get();
 
   return snapshot.docs.map((doc) => ({
