@@ -3,7 +3,7 @@
 Open items only. Everything else, including older open items and closed work: `archive/backlog-history.md`. Grep it, do not read whole.
 
 - [ ] **P0 TOP — Re-quote SAOC/Lee-Ann for the website work (Brad 2026-11-09, keep at the top until finalised).** Original: SAOC_Website_Proposal v9 (14 May 2026, emailed 28 May; Gmail 19e6eee671d2f5ed), Phase 1 R12,375 ex VAT = 15h at R825/h (+~5h donated). Brad: restructure using the original pricing (R825/h) to cover the full updated spec (two sites, Ozow ticketing, vendors, symposium/WOSA/workshops, admin, etc.). Timesheet rate set to R825/h 2026-11-09 (was R750). Working draft: .tmp/sandbox/requote/.
-- [ ] P0 Purge test orders, sandbox-paid orders/tickets, legacy positions, stock inflation (dry-run first; apply needs Brad) -> lines 3064, 3088, 3090, 1944, 1954, 2965
+- [x] P0 (done 21 Nov: 129 docs purged, backups in .tmp/sandbox/purge-21nov) Purge test orders, sandbox-paid orders/tickets, legacy positions, stock inflation (dry-run first; apply needs Brad) -> lines 3064, 3088, 3090, 1944, 1954, 2965
 _Last compacted: 2026-11-02 by backlog_trim.py. Full history: git log on this file._
 - [ ] P0 Reconcile cron engineering half: secret in apphosting.yaml + scheduler job (enablement is Brad's; /spec first) -> lines 3083, 2951
 - [x] P1 CI: timeout + cache for Playwright install -> line 3017 — closed 2026-11-07: #169 23113989
