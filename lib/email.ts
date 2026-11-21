@@ -108,7 +108,6 @@ export async function sendEmail({
   from,
   attachments,
   site,
-  idempotencyKey,
 }: {
   to: string;
   subject: string;
@@ -116,12 +115,9 @@ export async function sendEmail({
   from: string;
   attachments?: EmailAttachment[];
   site?: Site;
-  /** Resend's Idempotency-Key header (CreateEmailRequestOptions in resend 6.x). */
-  idempotencyKey?: string;
 }): Promise<void> {
-  const payload = buildEmailPayload({ to, subject, react, from, attachments, site });
-  const { error } = await (idempotencyKey
-    ? getResend().emails.send(payload, { idempotencyKey })
-    : getResend().emails.send(payload));
+  const { error } = await getResend().emails.send(
+    buildEmailPayload({ to, subject, react, from, attachments, site })
+  );
   if (error) throw new Error(`Resend send failed: ${error.message}`);
 }

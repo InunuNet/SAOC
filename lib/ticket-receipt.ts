@@ -30,7 +30,13 @@ export const RECEIPT_RETRY_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000;
 export const RECEIPT_RETRY_BATCH_LIMIT = 20;
 /** Failed-receipt documents read per run; the attempts cap is applied in memory. */
 export const RECEIPT_RETRY_SCAN_LIMIT = 100;
-/** The retry stops starting new sends once it has run this long; the rest wait for the next run. */
+/** The retry stops starting new sends once it has run this long; the rest wait for the next run.
+ *  It does not cut off a send already in flight: that send runs to completion or its own failure.
+ *
+ *  Accepted trade-off (lead ruling 22 Nov 2026): if a receipt is delivered but the 'sent' write is
+ *  lost, the order stays 'failed' and the next run re-sends, so a buyer can get at most one
+ *  duplicate per retry, bounded by RECEIPT_MAX_ATTEMPTS. No idempotency key is used: the receipt
+ *  PDF is not byte-identical between sends, and a reused key with a different body is rejected. */
 export const RECEIPT_RETRY_TIME_BUDGET_MS = 20 * 1000;
 /** A retry claim also stamps lastAttemptAt; an order attempted more recently than this is left
  *  alone, which is what stops two overlapping reconcile runs from both re-sending. */
@@ -62,9 +68,6 @@ export async function sendOrderReceipt(facts: ReceiptOrderFacts): Promise<void> 
     orderReference: facts.reference,
     positions: facts.positions,
     ...buildOrderEmailFields(facts.amount, firstChosenDay),
-    // One stable key per order, on the first send and on every retry: if a delivered receipt's
-    // 'sent' write is lost, the re-send is recognised by the mailer instead of reaching the buyer.
-    idempotencyKey: `receipt-${facts.orderId}`,
   });
 }
 

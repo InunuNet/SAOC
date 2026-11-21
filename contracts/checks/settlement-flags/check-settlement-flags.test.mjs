@@ -25,7 +25,7 @@ const RESPONSE_CAP_MS = 3500; // the 2 s assessment cap plus the 2 s write cap n
 
 const store = { orders: new Map(), tickets: new Map(), updates: 0 };
 const counters = { soldCountReads: 0, soldReadStatuses: [], sanityCalls: 0, sanityAborts: 0 };
-const mail = { deliveries: 0, keys: new Set(), sends: [], alerts: 0 };
+const mail = { deliveries: 0, sends: [], alerts: 0 };
 const events = [];
 const behaviour = {
   mailFails: false,
@@ -134,14 +134,12 @@ mock.module(new URL('../../../lib/email.ts', import.meta.url).href, {
     },
   },
 });
-// The mailer is a fake that behaves like Resend's idempotency key: a repeated key delivers once.
+// The mailer is a plain fake: every send that does not throw is one delivery (no idempotency).
 mock.module(new URL('../../../lib/confirmation-email.ts', import.meta.url).href, {
   exports: {
     sendConfirmationEmail: async (input) => {
       mail.sends.push(input);
       if (behaviour.mailFails) throw new Error('mailer down for buyer@saoc-check.invalid');
-      if (input.idempotencyKey && mail.keys.has(input.idempotencyKey)) return;
-      if (input.idempotencyKey) mail.keys.add(input.idempotencyKey);
       mail.deliveries += 1;
     },
     deliverConfirmationEmailAfterCommit: async (send, onError) => {
@@ -276,7 +274,7 @@ beforeEach(() => {
   store.updates = 0;
   events.length = 0;
   Object.assign(counters, { soldCountReads: 0, soldReadStatuses: [], sanityCalls: 0, sanityAborts: 0 });
-  Object.assign(mail, { deliveries: 0, keys: new Set(), sends: [], alerts: 0 });
+  Object.assign(mail, { deliveries: 0, sends: [], alerts: 0 });
   Object.assign(behaviour, {
     mailFails: false,
     receiptIndexMissing: false,
@@ -398,7 +396,7 @@ test('duplicate notification neither recomputes nor rewrites the flag, nor re-se
   assert.equal(store.orders.get('order-1').settlement, flag, 'the flag object is untouched');
 });
 
-test('receipt failure is recorded as failed, with the error type only; the first send carries a stable key', async () => {
+test('receipt failure is recorded as failed, with the error type only', async () => {
   behaviour.mailFails = true;
   seedOrder({ expiresAtMs: NOW_MS + HOUR_MS });
   const response = await POST(provider, request);
@@ -409,7 +407,6 @@ test('receipt failure is recorded as failed, with the error type only; the first
   assert.equal(order.receiptEmail.attempts, 1);
   assert.equal(order.receiptEmail.lastErrorType, 'Error');
   assert.equal(JSON.stringify(order.receiptEmail).includes('buyer@'), false, 'raw error never stored');
-  assert.equal(mail.sends[0].idempotencyKey, 'receipt-order-1');
 });
 
 function seedPaidOrder(id, receiptEmail, purchasedAtMs = NOW_MS - 2 * HOUR_MS) {
@@ -455,17 +452,33 @@ test('reconcile retry resends once and marks sent; a second run sends nothing', 
   assert.equal(mail.sends.length, 1, 'no second send at all');
 });
 
-test('QA repro 4: delivered receipt whose sent-write fails is not delivered again on the next run', async () => {
+// Accepted, documented trade-off (lead ruling 22 Nov 2026): no idempotency key is used, because the
+// receipt PDF differs between sends and a reused key with a different body is rejected. A delivered
+// receipt whose 'sent' write is lost is therefore re-sent: at most one duplicate per retry, and the
+// 3-attempt cap bounds the total.
+test('QA repro 4: a lost sent-write can duplicate the receipt once per retry, bounded by the cap', async () => {
   seedPaidOrder('o1', failedRecord(1));
   behaviour.sentWriteFailsOnce = true;
   await retryFailedReceipts(Timestamp.fromMillis(NOW_MS));
   assert.equal(mail.deliveries, 1);
   assert.equal(store.orders.get('o1').receiptEmail.status, 'failed', 'the sent write was lost');
   await retryFailedReceipts(Timestamp.fromMillis(NOW_MS + HOUR_MS));
-  assert.equal(mail.sends.length, 2, 'the retry re-sent');
-  assert.equal(mail.sends[0].idempotencyKey, mail.sends[1].idempotencyKey, 'with the same stable key');
-  assert.equal(mail.deliveries, 1, 'so the buyer received one receipt');
-  assert.equal(store.orders.get('o1').receiptEmail.status, 'sent');
+  assert.equal(mail.deliveries, 2, 'the retry re-sent: one duplicate');
+  assert.equal(store.orders.get('o1').receiptEmail.status, 'sent', 'and this time the write landed');
+  await retryFailedReceipts(Timestamp.fromMillis(NOW_MS + 2 * HOUR_MS));
+  assert.equal(mail.deliveries, 2, 'a sent order is never sent again');
+});
+
+test('QA repro 4, worst case: every sent-write lost still stops at the 3-attempt cap', async () => {
+  seedPaidOrder('o1', failedRecord(1));
+  let clock = NOW_MS;
+  for (let run = 0; run < 5; run += 1) {
+    behaviour.sentWriteFailsOnce = true;
+    await retryFailedReceipts(Timestamp.fromMillis(clock));
+    clock += HOUR_MS;
+  }
+  assert.equal(mail.deliveries, RECEIPT_MAX_ATTEMPTS - 1, 'attempts 2 and 3 only');
+  assert.equal(store.orders.get('o1').receiptEmail.attempts, RECEIPT_MAX_ATTEMPTS);
 });
 
 test('attempts cap at 3 in total, then the order is left alone', async () => {

@@ -317,11 +317,15 @@ threw," both rendered as a success-shaped body. Fixed by `reconcile-response-acc
   wrong for a paid order, so query `settlement.overCapacity == true` in the console instead.
 - **Receipt email.** `orders/{id}.receiptEmail = { status: 'sent' | 'failed', attempts,
   lastAttemptAt, lastErrorType }` is written after settlement (`lib/ticket-receipt.ts`). Each
-  reconcile run, after the stranded-order alert has been sent, re-sends the same receipt (same
-  per-order Resend idempotency key) for paid orders whose status is `failed` with fewer than
-  3 attempts, paid in the last 7 days, at most 20 per run and no new send after 20 s (the rest is
-  reported as `deferred`), claiming the attempt in a transaction
-  first so a `sent` order, a capped order or an overlapping run never produces a second email. The
+  reconcile run, after the stranded-order alert has been sent, re-sends the same receipt for
+  paid orders whose status is `failed` with fewer than 3 attempts, paid in the last 7 days, at
+  most 20 per run and no new send after 20 s (the rest is reported as `deferred`; a send already in
+  flight is not cut off), claiming the attempt in a transaction first so a `sent` order, a capped
+  order or an overlapping run never produces a second email. **Accepted trade-off (lead ruling
+  22 Nov 2026):** if a receipt is delivered but the `sent` write is lost, the order stays `failed`
+  and the next run re-sends, so a buyer can get at most one duplicate per retry, bounded by the
+  3-attempt cap. No Resend idempotency key is used: the receipt PDF is not byte-identical between
+  sends, and a reused key with a different body is rejected. The
   query needs the `(receiptEmail.status, purchasedAt desc)` index in `firestore.indexes.json`
   (deploy it with `firebase deploy --only firestore:indexes`); until it is built the step logs a
   warning, reports `receiptRetry.skipped: "missing-index"` and the rest of the run is unaffected.
