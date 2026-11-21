@@ -80,11 +80,12 @@ const validBody = JSON.stringify({
   ],
 });
 
-function post(ip, key, body) {
+function post(ip, key, body, extraHeaders = {}) {
   const headers = {
     'x-forwarded-for': `${ip}, 10.0.0.1`,
     'content-type': 'application/json',
     'content-length': String(Buffer.byteLength(body)),
+    ...extraHeaders,
   };
   if (key) headers['idempotency-key'] = key;
   return POST(new NextRequest('http://localhost/api/tickets/checkout', { method: 'POST', headers, body }));
@@ -155,8 +156,34 @@ test('a different IP is not affected', async () => {
   assert.equal((await post(freshIp(), freshKey(), 'not json')).status, 400);
 });
 
-test('a missing Idempotency-Key is still 400 and uses no allowance', async () => {
+test('under the limit: a missing Idempotency-Key is still 400 and an oversized body still 413', async () => {
   const ip = freshIp();
-  for (let i = 0; i < 12; i++) assert.equal((await post(ip, '', 'not json')).status, 400);
-  assert.equal((await post(ip, freshKey(), 'not json')).status, 400);
+  assert.equal((await post(ip, '', 'not json')).status, 400);
+  assert.equal((await post(ip, freshKey(), 'not json', { 'content-length': '131073' })).status, 413);
+});
+
+test('over the limit: no Idempotency-Key and an oversized body both get the same uniform 429', async () => {
+  const ip = freshIp();
+  await tripLimiter(ip);
+  reset();
+  const baseline = await snapshotOf(await post(ip, freshKey(), validBody));
+  const noKey = await snapshotOf(await post(ip, '', 'not json'));
+  const oversized = await snapshotOf(
+    await post(ip, freshKey(), 'not json', { 'content-length': '131073' })
+  );
+  assert.equal(baseline.status, 429);
+  assert.deepEqual(noKey, baseline);
+  assert.deepEqual(oversized, baseline);
+  assert.equal(calls.firestore, 0);
+  assert.equal(calls.cms, 0);
+});
+
+test('requests without a key or with an oversized body count toward the limit', async () => {
+  const ip = freshIp();
+  for (let i = 0; i < 5; i++) assert.equal((await post(ip, '', 'not json')).status, 400);
+  for (let i = 0; i < 5; i++) {
+    const res = await post(ip, freshKey(), 'not json', { 'content-length': '131073' });
+    assert.equal(res.status, 413);
+  }
+  assert.equal((await post(ip, freshKey(), 'not json')).status, 429);
 });

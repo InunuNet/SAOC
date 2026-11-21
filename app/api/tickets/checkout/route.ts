@@ -488,6 +488,20 @@ const CHECKOUT_RATE_LIMIT_WINDOW_MS = 10 * 60_000;
 const checkoutAttempts = createAttemptStore(CHECKOUT_RATE_LIMIT_WINDOW_MS);
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const ip = clientIpFromForwardedFor(request.headers.get('x-forwarded-for'));
+  const limit = consumeRateLimit(
+    { now: new Date(), ...scopeAttemptsToRequest(checkoutAttempts) },
+    `ticket-checkout:${ip ?? 'unknown'}`,
+    CHECKOUT_RATE_LIMIT_MAX_ATTEMPTS,
+    CHECKOUT_RATE_LIMIT_WINDOW_MS
+  );
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: 'Too many attempts. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } }
+    );
+  }
+
   if (!isBodyWithinLimit(request.headers.get('content-length'), MAX_BODY_BYTES)) {
     return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
   }
@@ -501,20 +515,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json(
       { error: `A valid UUID ${IDEMPOTENCY_KEY_HEADER} header is required.` },
       { status: 400 }
-    );
-  }
-
-  const ip = clientIpFromForwardedFor(request.headers.get('x-forwarded-for'));
-  const limit = consumeRateLimit(
-    { now: new Date(), ...scopeAttemptsToRequest(checkoutAttempts) },
-    `ticket-checkout:${ip ?? 'unknown'}`,
-    CHECKOUT_RATE_LIMIT_MAX_ATTEMPTS,
-    CHECKOUT_RATE_LIMIT_WINDOW_MS
-  );
-  if (!limit.allowed) {
-    return NextResponse.json(
-      { error: 'Too many attempts. Please try again later.' },
-      { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } }
     );
   }
 
