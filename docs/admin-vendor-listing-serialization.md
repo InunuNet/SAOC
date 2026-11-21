@@ -130,7 +130,7 @@ The secret `VENDOR_REGISTRATION_TOKEN_SECRET` existed and was readable at runtim
 Granting access by hand to the inferred service account did not work. The fix was:
 
 ```bash
-firebase apphosting:secrets:grantaccess VENDOR_REGISTRATION_TOKEN_SECRET --backend saoc-prod
+firebase apphosting:secrets:grantaccess SAOC_APP_SECRETS --backend saoc-prod
 ```
 
 Nothing deployed for two hours; the site served old code with no visible signal of the build failure.

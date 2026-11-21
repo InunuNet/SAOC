@@ -1,3 +1,4 @@
+import { secretsEnv } from '@/lib/secrets';
 import { promises as dns } from 'node:dns';
 
 import {
@@ -177,7 +178,7 @@ function parseAmountToCents(raw: string): number | null {
 
 export function createPayfastProvider(deps?: PayfastProviderDeps): PaymentProvider {
   // Every accessor below is called PER REQUEST, not at construction — see PayfastProviderDeps.env.
-  const readEnv = (): Record<string, string | undefined> => deps?.env ?? process.env;
+  const readEnv = (): Record<string, string | undefined> => deps?.env ?? secretsEnv();
   const readFetch = (): typeof fetch => deps?.fetch ?? globalThis.fetch;
   const readTrustedIps = (): (() => Promise<Set<string>>) =>
     deps?.resolveTrustedIps ?? resolvePayfastIps;

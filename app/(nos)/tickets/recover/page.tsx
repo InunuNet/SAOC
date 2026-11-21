@@ -1,3 +1,4 @@
+import { getSecret } from '@/lib/secrets';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
@@ -27,7 +28,7 @@ export default async function RecoverTicketsPage({
   // anchor: recover-resolve
   const access = await resolveRecoveryAccess({
     rawToken: token,
-    secret: process.env.RECOVERY_TOKEN_SECRET,
+    secret: getSecret('RECOVERY_TOKEN_SECRET'),
     now: new Date(),
     loadOrder: getOrderRecoveryRecord,
   });

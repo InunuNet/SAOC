@@ -1,3 +1,4 @@
+import { secretsEnv } from '@/lib/secrets';
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { clientIpFromForwardedFor } from '@/lib/client-ip';
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
   recordAttempt(key, now);
 
-  const password = speakersPartnerPassword(process.env);
+  const password = speakersPartnerPassword(secretsEnv());
   const candidate = await readPassword(request);
   if (!isSpeakersPartnerPasswordCorrect(candidate, password) || password === null) {
     return NextResponse.json({ error: REFUSED_MESSAGE }, { status: 403 });

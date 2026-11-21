@@ -1,3 +1,4 @@
+import { getSecret } from '@/lib/secrets';
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore } from 'firebase-admin/firestore';
 
@@ -61,7 +62,7 @@ export async function POST(
     );
   }
 
-  const secret = process.env.VENDOR_STAND_PAYMENT_TOKEN_SECRET;
+  const secret = getSecret('VENDOR_STAND_PAYMENT_TOKEN_SECRET');
   if (!secret) {
     console.error(
       '[admin/vendors/resend-photo-link] VENDOR_STAND_PAYMENT_TOKEN_SECRET is unset; link refused.',

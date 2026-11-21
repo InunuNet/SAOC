@@ -1,3 +1,4 @@
+import { secretsEnv } from '@/lib/secrets';
 import {
   buildOzowConcatString,
   generateOzowHash,
@@ -242,7 +243,7 @@ function deriveOzowBankReference(reference: string): string {
 
 export function createOzowProvider(deps?: OzowProviderDeps): PaymentProvider {
   // Every accessor below is called PER REQUEST, not at construction — see OzowProviderDeps.env.
-  const readEnv = (): Record<string, string | undefined> => deps?.env ?? process.env;
+  const readEnv = (): Record<string, string | undefined> => deps?.env ?? secretsEnv();
   const readFetch = (): typeof fetch => deps?.fetch ?? globalThis.fetch;
 
   return {

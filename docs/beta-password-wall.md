@@ -272,8 +272,9 @@ above for why).
 
 ## Credentials
 
-Stored in Secret Manager as `BETA_BASIC_AUTH_USER` and `BETA_BASIC_AUTH_PASSWORD`,
-wired into `apphosting.yaml` as RUNTIME-only secret references (never BUILD —
+Stored as keys `BETA_BASIC_AUTH_USER` and `BETA_BASIC_AUTH_PASSWORD` inside the
+`SAOC_APP_SECRETS` bundle (see [secret-bundles.md](secret-bundles.md)), which is
+wired into `apphosting.yaml` as a RUNTIME-only secret reference (never BUILD —
 a BUILD entry would bake the value into the publicly-inspectable client
 bundle, defeating the wall). The same values are mirrored in `.env.local` for
 local use; both are left **unset by default** in `.env.local.example` so
@@ -281,20 +282,9 @@ local use; both are left **unset by default** in `.env.local.example` so
 setup. Setting them locally deliberately opts a developer into testing the
 wall itself against a local server.
 
-**Retrieve:**
-
-```bash
-firebase apphosting:secrets:access BETA_BASIC_AUTH_PASSWORD --project saoc-webapp
-```
-
-**Rotate:** generate a new random value, then:
-
-```bash
-firebase apphosting:secrets:set BETA_BASIC_AUTH_PASSWORD --data-file=- --project saoc-webapp
-```
-
-piping the value via stdin (never argv, so it never appears in a shell history
-or tool-call record), then redeploy so the new value takes effect.
+**Retrieve and rotate:** follow [secret-bundles.md](secret-bundles.md). A rotation
+is one in-memory edit of the bundle plus ONE `secrets:set` of the whole JSON,
+then a redeploy so the new value takes effect.
 
 Never write a credential value into this document, a commit, or a chat
 transcript.

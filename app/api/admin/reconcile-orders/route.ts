@@ -1,3 +1,4 @@
+import { getSecret } from '@/lib/secrets';
 import { NextRequest, NextResponse } from 'next/server';
 import { Timestamp } from 'firebase-admin/firestore';
 
@@ -47,7 +48,7 @@ function extractBearerToken(request: NextRequest): string | null {
 export async function POST(request: NextRequest): Promise<NextResponse> {
   // Fail closed if the secret itself is unset — an unset secret must never be treated as "no
   // auth required", same posture as the ITN route's PAYFAST_SANDBOX_PASSPHRASE guard.
-  const expectedSecret = process.env.RECONCILIATION_CRON_SECRET;
+  const expectedSecret = getSecret('RECONCILIATION_CRON_SECRET');
   if (!expectedSecret) {
     console.error('[admin/reconcile-orders] Missing RECONCILIATION_CRON_SECRET env var — rejecting');
     return unauthorized();

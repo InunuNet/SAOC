@@ -1,3 +1,4 @@
+import { getSecret } from './secrets';
 import { cookies } from 'next/headers';
 import { getAuth, type DecodedIdToken } from 'firebase-admin/auth';
 
@@ -28,7 +29,7 @@ export type AdminAuthResult =
 let loggedAllowlistLength = false;
 
 function parseAllowlist(): string[] {
-  const raw = process.env.ADMIN_EMAIL_ALLOWLIST ?? '';
+  const raw = getSecret('ADMIN_EMAIL_ALLOWLIST') ?? '';
   const parsed = raw
     .split(',')
     .map((entry) => entry.trim().toLowerCase())

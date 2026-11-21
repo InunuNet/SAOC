@@ -1,10 +1,11 @@
+import { getSecret } from '@/lib/secrets';
 import { revalidateTag } from 'next/cache';
 import type { NextRequest } from 'next/server';
 
 import { constantTimeStringEqual } from '@/lib/recovery-token';
 
 export async function POST(request: NextRequest) {
-  const expected = process.env.SANITY_REVALIDATE_SECRET;
+  const expected = getSecret('SANITY_REVALIDATE_SECRET');
   const provided = request.headers.get('x-sanity-secret') ?? request.nextUrl.searchParams.get('secret');
 
   if (!expected || provided === null || !constantTimeStringEqual(provided, expected)) {

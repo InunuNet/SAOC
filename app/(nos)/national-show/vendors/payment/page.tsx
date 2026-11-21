@@ -1,3 +1,4 @@
+import { getSecret } from '@/lib/secrets';
 import type { Metadata } from 'next';
 import { getFirestore } from 'firebase-admin/firestore';
 
@@ -117,7 +118,7 @@ async function resolveUsability(token: string): Promise<UsabilityResult> {
   };
   if (!token) return fallback;
 
-  const secret = process.env.VENDOR_STAND_PAYMENT_TOKEN_SECRET;
+  const secret = getSecret('VENDOR_STAND_PAYMENT_TOKEN_SECRET');
   if (!secret) {
     console.error(
       '[vendors/payment/page] VENDOR_STAND_PAYMENT_TOKEN_SECRET is unset; refusing all stand-payment sessions.'

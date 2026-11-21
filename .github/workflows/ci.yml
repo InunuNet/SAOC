@@ -75,6 +75,9 @@ jobs:
       - name: Buy-path live reads (AST)
         run: pnpm exec tsx scripts/checks/buy-path-live-reads.mts
 
+      - name: Secret bundle loader tests
+        run: pnpm exec tsx --test lib/secrets.test.ts
+
       - name: Cache-header probe selftest
         run: node scripts/checks/cache-headers-probe.mjs --selftest
 

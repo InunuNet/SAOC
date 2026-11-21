@@ -1,3 +1,4 @@
+import { getSecret } from './secrets';
 import { Resend } from 'resend';
 import { JSX } from 'react';
 
@@ -7,7 +8,7 @@ let resend: Resend | null = null;
 
 function getResend(): Resend {
   if (!resend) {
-    resend = new Resend(process.env.RESEND_API_KEY);
+    resend = new Resend(getSecret('RESEND_API_KEY'));
   }
   return resend;
 }

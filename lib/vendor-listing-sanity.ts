@@ -1,3 +1,4 @@
+import { getSecret } from './secrets';
 import { createClient } from '@sanity/client';
 
 import { apiVersion, dataset, projectId } from '@/sanity/env';
@@ -13,7 +14,7 @@ export class SanityNotConfiguredError extends Error {
 
 /** Server-only Sanity write client, narrowed to the two methods the listing publish may use. */
 export function createListingSanityClient(): ListingSanityClient {
-  const token = process.env.SANITY_API_TOKEN;
+  const token = getSecret('SANITY_API_TOKEN');
   if (!token) throw new SanityNotConfiguredError();
   const client = createClient({ projectId, dataset, apiVersion, token, useCdn: false });
   return {

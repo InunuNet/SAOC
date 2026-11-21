@@ -1,3 +1,4 @@
+import { getSecret } from '@/lib/secrets';
 import { NextRequest, NextResponse } from 'next/server';
 import { FieldValue, getFirestore, Timestamp } from 'firebase-admin/firestore';
 
@@ -129,7 +130,7 @@ export async function POST(
     // the real cause. The secret is only READ here (never used) precisely because this route no
     // longer mints anything -- it is an availability precondition, checked at the point of no
     // return. Fails closed with an operator-facing 503, application untouched and still pending.
-    if (!process.env.VENDOR_REGISTRATION_TOKEN_SECRET) {
+    if (!getSecret('VENDOR_REGISTRATION_TOKEN_SECRET')) {
       console.error(
         '[admin/vendors/applications/review] VENDOR_REGISTRATION_TOKEN_SECRET is unset; approval refused (application left pending).',
       );
