@@ -219,6 +219,9 @@ assertions:
 
     - id: A8
       description: >-
+        [RETIRED 2026-11-22] The script now exits 77 (SUPERSEDED): it only pinned file hashes
+        for mission sequencing and protected no behaviour (see contracts/checks/ozow-m1-f1/RETIRED.md). Original text
+        follows.
         THIS FEATURE IS ADDITIVE ONLY — neither route, nor the provider registry, nor any PayFast
         file is touched. ⚠️ GOES RED THE MOMENT F2 LEGITIMATELY BEGINS, by design: F2's whole job
         is provider-registry wiring and route changes. A red A8 after F2 has started is the

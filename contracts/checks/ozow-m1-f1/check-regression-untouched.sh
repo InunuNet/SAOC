@@ -11,5 +11,5 @@
 #
 # The script stays only so a reference to it does not dangle; it asserts nothing. See RETIRED.md
 # in this folder.
-echo "RETIRED A8: sha256 pins of the payments seam and ticket routes (milestone sequencing only); see contracts/checks/ozow-m1-f1/RETIRED.md"
-exit 0
+echo "SUPERSEDED: A8 retired 2026-11-22 -- sha256 pins of the payments seam and ticket routes were milestone sequencing only and protected no behaviour; see contracts/checks/ozow-m1-f1/RETIRED.md" >&2
+exit 77

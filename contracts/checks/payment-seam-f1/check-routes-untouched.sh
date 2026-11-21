@@ -11,5 +11,5 @@
 #
 # The script stays only so contracts/contract-payment-seam-f1.yaml (A10) does not point at a
 # missing file; it asserts nothing. See RETIRED.md in this folder.
-echo "RETIRED A10: sha256 pins of the checkout/ITN routes and lib/payfast.ts (mission sequencing only); see contracts/checks/payment-seam-f1/RETIRED.md"
-exit 0
+echo "SUPERSEDED: A10 retired 2026-11-22 -- sha256 pins of the checkout/ITN routes and lib/payfast.ts were mission sequencing only and protected no behaviour; see contracts/checks/payment-seam-f1/RETIRED.md" >&2
+exit 77

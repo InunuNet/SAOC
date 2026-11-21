@@ -50,11 +50,12 @@ if [ -f "$HELPER" ]; then
 fi
 
 if [ -f "$PAYFAST_ROUTE" ] && [ -f "$OZOW_ROUTE" ] && [ -n "${HELPER_SYMBOL:-}" ]; then
-  grep -qE "import \{ POST as [A-Za-z0-9_]+ \} from" "$PAYFAST_ROUTE" \
-    && grep -qE "from ['\"]@?/?lib/tickets-notification['\"]|from ['\"]\.\./\.\./\.\./\.\./lib/tickets-notification['\"]" "$PAYFAST_ROUTE" \
+  # ONE pattern, so POST itself must come from lib/tickets-notification: a POST imported from a
+  # copy module plus an unrelated import from the real module does not satisfy it.
+  HELPER_IMPORT="import \{[^}]*\bPOST( as [A-Za-z0-9_]+)?\b[^}]*\} from ['\"](@/|(\.\./)+)lib/tickets-notification['\"]"
+  grep -qE "$HELPER_IMPORT" "$PAYFAST_ROUTE" \
     || fail "(d) $PAYFAST_ROUTE does not import $HELPER_SYMBOL from $HELPER"
-  grep -qE "import \{ POST as [A-Za-z0-9_]+ \} from" "$OZOW_ROUTE" \
-    && grep -qE "from ['\"]@?/?lib/tickets-notification['\"]|from ['\"]\.\./\.\./\.\./\.\./lib/tickets-notification['\"]" "$OZOW_ROUTE" \
+  grep -qE "$HELPER_IMPORT" "$OZOW_ROUTE" \
     || fail "(d) $OZOW_ROUTE does not import $HELPER_SYMBOL from $HELPER"
 
   # (e) each route names exactly one provider, never both.

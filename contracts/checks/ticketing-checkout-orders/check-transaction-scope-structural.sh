@@ -60,10 +60,13 @@ if [[ -z "$ROUTE_CALLS" ]]; then
   exit 1
 fi
 
+TOTAL_COUNT=$(echo "$ROUTE_CALLS" | grep -c . || true)
 MULTI_COUNT=$(echo "$ROUTE_CALLS" | grep -c 'writeMultiReservationPair(' || true)
-if [[ "$MULTI_COUNT" -ne 1 ]]; then
-  echo "FAIL: expected exactly one call to writeMultiReservationPair() in $ROUTE_FILE, found $MULTI_COUNT."
-  echo "      (More than one means it may have been added to a second branch, e.g. the replay path.)"
+if [[ "$TOTAL_COUNT" -ne 1 || "$MULTI_COUNT" -ne 1 ]]; then
+  echo "FAIL: expected exactly one writer call in $ROUTE_FILE, and it must be writeMultiReservationPair();"
+  echo "      found $TOTAL_COUNT call(s) of either writer, $MULTI_COUNT of writeMultiReservationPair()."
+  echo "      (A legacy writeReservationPair() or a second call may sit in the replay branch or a second"
+  echo "      branch, writing a duplicate order for one retried checkout.)"
   exit 1
 fi
 

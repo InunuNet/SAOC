@@ -91,6 +91,13 @@ const routeSource = readFileSync(new URL('../../../app/api/tickets/checkout/rout
 // `body?.providerId`, `(body as X).providerId`, `body['providerId']`, and destructuring such as
 // `const { providerId } = body as X`. The route has no legitimate read of a `providerId` member:
 // the resolved gateway is the local `providerId` variable, which is a plain identifier.
+// The key a destructuring element reads: `providerId`, `'providerId'` or the computed
+// `['providerId']` (a computed key holding a plain string literal is the same read).
+function destructuredKeyName(nameNode) {
+  const keyNode = ts.isComputedPropertyName(nameNode) ? nameNode.expression : nameNode;
+  return ts.isIdentifier(keyNode) || ts.isStringLiteralLike(keyNode) ? keyNode.text : null;
+}
+
 function findProviderIdReads(source) {
   const sourceFile = ts.createSourceFile('route.ts', source, ts.ScriptTarget.ES2022, true);
   const hits = [];
@@ -107,7 +114,7 @@ function findProviderIdReads(source) {
     } else if (
       ts.isBindingElement(node) &&
       ts.isObjectBindingPattern(node.parent) &&
-      (node.propertyName ?? node.name).getText(sourceFile).replace(/['"]/g, '') === 'providerId'
+      destructuredKeyName(node.propertyName ?? node.name) === 'providerId'
     ) {
       hits.push(`line ${line(node)}: providerId destructured from an object`);
     }

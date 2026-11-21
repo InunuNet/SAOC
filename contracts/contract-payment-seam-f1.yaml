@@ -235,6 +235,9 @@ assertions:
 
     - id: A10
       description: >-
+        [RETIRED 2026-11-22] The script now exits 77 (SUPERSEDED): it only pinned file hashes
+        for mission sequencing and protected no behaviour (see contracts/checks/payment-seam-f1/RETIRED.md). Original text
+        follows.
         F1 IS ADDITIVE — NEITHER ROUTE NOR lib/payfast.ts IS TOUCHED. ⚠️ THIS IS AN F1-WINDOW
         ASSERTION AND GOES RED THE MOMENT F2 LEGITIMATELY BEGINS, by design: F2's whole job is to
         rewire these routes. A red A10 after F2 has started is the assertion working, not a
