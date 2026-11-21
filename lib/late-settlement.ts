@@ -14,6 +14,8 @@ import {
  * Late-payment settlement: a payment that lands after the reservation hold lapsed still
  * settles (the buyer has paid, so the ticket is always issued), but the capacity the lapsed
  * hold no longer protected is rechecked so an oversell is recorded on the order for a human.
+ * The recheck runs only AFTER the settlement committed (lib/late-settlement-flag.ts); nothing
+ * here is ever part of the paid transaction.
  *
  * This module is pure. It mirrors the capacity arithmetic app/api/tickets/checkout/route.ts
  * runs at reservation time (the same planPooledCapacity, the same day-cap pooling and the same
@@ -47,6 +49,8 @@ export interface LateSettlementCapacity {
 export type LoadLateCapacity = (input: {
   showId: string;
   positions: LatePosition[];
+  /** Aborted when the caller's time cap runs out, so the CMS requests stop too. */
+  signal?: AbortSignal;
 }) => Promise<LateSettlementCapacity | null>;
 
 export function hasDayCapPositions(capacity: LateSettlementCapacity): boolean {
@@ -87,8 +91,8 @@ function addLegacyNoChosenDayHeads(
 
 /**
  * True when the live sold counts plus this order's own positions exceed capacity in either the
- * shared pool or a per-day cap. The order's own expired positions no longer count in
- * `soldCounts` (an expired reservation stops holding its seat), so adding them back is what
+ * shared pool or a per-day cap. `soldCounts` must NOT include this order's own positions (the
+ * caller subtracts them: see subtractCounts), so adding them as the requested quantity is what
  * "once this order is counted" means.
  */
 export function isOverCapacityAfterLateSettlement(input: {
@@ -137,4 +141,25 @@ export function registerDayCapPool(
       headcountPerUnit: 1,
     };
   }
+}
+
+/** `counts` minus one unit per key, never below zero. After the commit the order's own positions
+ *  are 'paid' and already inside the live sold counts, so they are taken out before the planner
+ *  adds them back as the "requested" quantity. */
+export function subtractCounts(
+  counts: Record<string, number>,
+  keys: string[]
+): Record<string, number> {
+  const remaining = { ...counts };
+  for (const key of keys) {
+    if (key in remaining) remaining[key] = Math.max(0, remaining[key] - 1);
+  }
+  return remaining;
+}
+
+/** The key getSoldCountsByTicketTypeAndDay files a position under. */
+export function dayCountKey(position: LatePosition): string {
+  return DAY_VISITOR_SHAPED_SLUGS.includes(position.ticketType) && position.chosenDay
+    ? `${position.ticketType}::${position.chosenDay}`
+    : position.ticketType;
 }

@@ -14,10 +14,10 @@ import { ticketTypeBySlugQuery, ticketTypesByPoolQuery } from '@/sanity/queries'
  * the same rules checkout used when it reserved the seats (effective capacity = capacity capped
  * by releasedQuantity, shared pools keyed by `capacityPool`, day-visitor's per-day cap).
  *
- * Runs outside the paid transaction, and only when the hold had already expired. Returns null when
- * the capacity cannot be established (a CMS read failed, or a type is missing or unusable): the
- * order then settles with `overCapacity: null` (unverified) rather than being refused, because
- * the buyer has already paid.
+ * Runs after the settlement committed (never inside or before the paid transaction), and only
+ * when the hold had already expired; the caller aborts it through `signal` when its time cap runs
+ * out. Returns null when the capacity cannot be established (a CMS read failed, or a type is
+ * missing or unusable): the order is then flagged `overCapacity: null` (unverified).
  */
 
 interface CapacityTypeDoc {
@@ -63,8 +63,12 @@ interface UsableTypeDoc {
 }
 
 /** The validated capacity facts for one type, or null when it is missing or unusable. */
-async function fetchTypeDoc(slug: string): Promise<UsableTypeDoc | null> {
-  const doc = await sanityClient().fetch<CapacityTypeDoc | null>(ticketTypeBySlugQuery, { slug });
+async function fetchTypeDoc(slug: string, signal?: AbortSignal): Promise<UsableTypeDoc | null> {
+  const doc = await sanityClient().fetch<CapacityTypeDoc | null>(
+    ticketTypeBySlugQuery,
+    { slug },
+    { signal }
+  );
   if (!doc) return null;
   const { capacity, releasedQuantity, capacityPool, headcountPerUnit } = doc;
   if (!usableCapacity(capacity) || !usableReleased(releasedQuantity)) return null;
@@ -79,7 +83,8 @@ async function fetchTypeDoc(slug: string): Promise<UsableTypeDoc | null> {
 
 async function addPoolSiblings(
   poolConfigByType: Record<string, CapacityPoolConfig>,
-  showId: string
+  showId: string,
+  signal?: AbortSignal
 ): Promise<boolean> {
   const poolKeys = new Set(
     Object.values(poolConfigByType)
@@ -88,7 +93,11 @@ async function addPoolSiblings(
   );
   for (const pool of poolKeys) {
     const siblings =
-      (await sanityClient().fetch<PoolSiblingDoc[]>(ticketTypesByPoolQuery, { pool, showId })) ?? [];
+      (await sanityClient().fetch<PoolSiblingDoc[]>(
+        ticketTypesByPoolQuery,
+        { pool, showId },
+        { signal }
+      )) ?? [];
     for (const sibling of siblings) {
       if (!sibling.slug || sibling.slug in poolConfigByType) continue;
       if (!usableHeadcount(sibling.headcountPerUnit)) return false;
@@ -100,7 +109,8 @@ async function addPoolSiblings(
 
 async function buildCapacity(
   showId: string,
-  positions: { ticketType: string; chosenDay: string | null }[]
+  positions: { ticketType: string; chosenDay: string | null }[],
+  signal?: AbortSignal
 ): Promise<LateSettlementCapacity | null> {
   const capacity: LateSettlementCapacity = {
     capacityByType: {},
@@ -114,7 +124,7 @@ async function buildCapacity(
   let dayVisitorCapacity: number | undefined;
 
   for (const slug of slugs) {
-    const doc = await fetchTypeDoc(slug);
+    const doc = await fetchTypeDoc(slug, signal);
     if (!doc) return null;
     if (doc.requiresDaySelection) daySelectionSlugs.add(slug);
     if (slug === DAY_VISITOR_DAY_CAP_POOL_KEY) {
@@ -129,12 +139,12 @@ async function buildCapacity(
     capacity.poolConfigByType[slug] = { pool: doc.pool, headcountPerUnit: doc.headcountPerUnit };
   }
 
-  if (!(await addPoolSiblings(capacity.poolConfigByType, showId))) return null;
+  if (!(await addPoolSiblings(capacity.poolConfigByType, showId, signal))) return null;
 
   const dayCapPositions = positions.filter((position) => daySelectionSlugs.has(position.ticketType));
   if (dayCapPositions.length === 0) return capacity;
   if (dayVisitorCapacity === undefined) {
-    const dayVisitor = await fetchTypeDoc(DAY_VISITOR_DAY_CAP_POOL_KEY);
+    const dayVisitor = await fetchTypeDoc(DAY_VISITOR_DAY_CAP_POOL_KEY, signal);
     if (!dayVisitor) return null;
     dayVisitorCapacity = dayVisitor.ceiling;
   }
@@ -148,9 +158,13 @@ async function buildCapacity(
   return capacity;
 }
 
-export const loadLateSettlementCapacity: LoadLateCapacity = async ({ showId, positions }) => {
+export const loadLateSettlementCapacity: LoadLateCapacity = async ({
+  showId,
+  positions,
+  signal,
+}) => {
   try {
-    return await buildCapacity(showId, positions);
+    return await buildCapacity(showId, positions, signal);
   } catch (error) {
     console.warn('[late-settlement] Capacity lookup failed; settling with capacity unverified', {
       errorType: safeErrorType(error),

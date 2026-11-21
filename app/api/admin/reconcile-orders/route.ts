@@ -34,11 +34,12 @@ import { retryFailedReceipts, type ReceiptRetrySummary } from '@/lib/ticket-rece
 
 const BEARER_PREFIX = 'Bearer ';
 
-/** The receipt retry is a side task of this run: whatever goes wrong in it is logged and
- *  reported in the response, and never stops the stranded-order check below. */
-async function retryReceiptsSoftly(now: Timestamp): Promise<ReceiptRetrySummary | null> {
+/** The receipt retry is a side task that runs after the stranded-order alert: whatever goes wrong
+ *  in it is logged and reported in the response, and never affects the alert. It stops starting
+ *  new sends after RECEIPT_RETRY_TIME_BUDGET_MS and reports how many it deferred. */
+async function retryReceiptsSoftly(): Promise<ReceiptRetrySummary | null> {
   try {
-    return await retryFailedReceipts(now);
+    return await retryFailedReceipts(Timestamp.now());
   } catch (error) {
     console.warn('[admin/reconcile-orders] Receipt retry failed; continuing without it', {
       errorType: error instanceof Error ? error.name : typeof error,
@@ -81,7 +82,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const now = Timestamp.now();
-  const receiptRetry = await retryReceiptsSoftly(now);
 
   let stranded;
   try {
@@ -97,6 +97,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     .map((order) => order.orderId);
 
   if (needingAlert.length === 0) {
+    const receiptRetry = await retryReceiptsSoftly();
     return NextResponse.json(
       {
         alertedNow: [],
@@ -137,6 +138,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // regression this project shipped once already: two callers each holding half the picture,
   // with the half that actually explains WHY discarded before either could log it.
 
+  // The alert is sent and stamped by now; the receipt retry is a time-boxed side task that runs
+  // last and can change nothing about the alert's result.
+  const receiptRetry = await retryReceiptsSoftly();
   return NextResponse.json(
     {
       alertedNow,

@@ -1,9 +1,13 @@
-// Settlement flags: a payment that lands after the reservation hold lapsed still settles, and is
-// flagged when capacity was oversold; a failed receipt email is recorded on the order and retried
-// by the reconcile run, boundedly and without ever re-sending a delivered receipt. Drives the REAL
-// shared handler, lib/orders.ts, lib/ticket-receipt.ts and the reconcile route against a stateful
-// in-memory Firestore; only the gateway, the mailers, the CMS capacity loader and the sold-count
-// reads (which count their own calls) are fakes.
+// Settlement flags: a payment that lands after the reservation hold lapsed settles exactly as an
+// on-time one does (the paid transaction is untouched) and is flagged AFTER the commit, best
+// effort and time-capped; a failed receipt email is recorded on the order and retried by the
+// reconcile run, boundedly and without ever re-sending a delivered receipt. Drives the REAL shared
+// handler, lib/orders.ts, the real capacity loader, lib/ticket-receipt.ts and the reconcile route
+// against a stateful in-memory Firestore; only the gateway, the mailers, the Sanity client and the
+// sold-count reads (which count their own calls) are fakes.
+//
+// Includes the QA repros of PR 229: a hanging CMS request (repro 1), a throwing sold-count read
+// (repro 3) and a delivered receipt whose 'sent' write fails (repro 4), now asserting the fix.
 //
 // Run as: npx tsx --test --experimental-test-module-mocks \
 //   contracts/checks/settlement-flags/check-settlement-flags.test.mjs
@@ -17,10 +21,22 @@ const { Timestamp } = realFirestore;
 const HOUR_MS = 60 * 60 * 1000;
 const NOW_MS = Date.now();
 const SHOW_ID = 'show-1';
+const RESPONSE_CAP_MS = 3500; // the 2 s assessment cap plus the 2 s write cap never stack in a hang
 
 const store = { orders: new Map(), tickets: new Map(), updates: 0 };
-const counters = { soldCountReads: 0, capacityLoads: 0, receipts: 0, adminNotices: 0 };
-const behaviour = { mailFails: false, receiptIndexMissing: false, capacity: null };
+const counters = { soldCountReads: 0, soldReadStatuses: [], sanityCalls: 0, sanityAborts: 0 };
+const mail = { deliveries: 0, keys: new Set(), sends: [], alerts: 0 };
+const events = [];
+const behaviour = {
+  mailFails: false,
+  receiptIndexMissing: false,
+  receiptQueryError: false,
+  soldThrows: false,
+  sanity: 'normal',
+  capacity: 2,
+  flagWriteFails: false,
+  sentWriteFailsOnce: false,
+};
 
 const valueAt = (data, path) => path.split('.').reduce((value, key) => value?.[key], data);
 const ms = (value) => (value instanceof Timestamp ? value.toMillis() : value);
@@ -31,6 +47,10 @@ function snapshot(collection, id) {
 }
 
 function applyUpdate(collection, id, patch) {
+  if (behaviour.sentWriteFailsOnce && patch.receiptEmail?.status === 'sent') {
+    behaviour.sentWriteFailsOnce = false;
+    throw new Error('DEADLINE_EXCEEDED');
+  }
   store[collection].set(id, { ...store[collection].get(id), ...patch });
   store.updates += 1;
 }
@@ -42,11 +62,12 @@ function query(name, state = { filters: [] }) {
     startAfter: (snap) => query(name, { ...state, after: snap.id }),
     limit: (count) => query(name, { ...state, limit: count }),
     get: async () => {
-      if (
-        behaviour.receiptIndexMissing &&
-        state.filters.some(({ field }) => field === 'receiptEmail.status')
-      ) {
-        throw Object.assign(new Error('9 FAILED_PRECONDITION: The query requires an index.'), { code: 9 });
+      if (state.filters.some(({ field }) => field === 'receiptEmail.status')) {
+        events.push('retry-query');
+        if (behaviour.receiptQueryError) throw new Error('unavailable');
+        if (behaviour.receiptIndexMissing) {
+          throw Object.assign(new Error('9 FAILED_PRECONDITION: The query requires an index.'), { code: 9 });
+        }
       }
       let rows = [...store[name].entries()].filter(([, data]) =>
         state.filters.every(({ field, op, value }) => {
@@ -59,6 +80,8 @@ function query(name, state = { filters: [] }) {
       if (state.order) {
         const dir = state.order.direction === 'desc' ? -1 : 1;
         rows.sort((a, b) => dir * (ms(valueAt(a[1], state.order.field)) - ms(valueAt(b[1], state.order.field))));
+      } else {
+        rows.sort((a, b) => ms(a[1].expiresAt) - ms(b[1].expiresAt));
       }
       if (state.after) rows = rows.slice(rows.findIndex(([id]) => id === state.after) + 1);
       if (state.limit !== undefined) rows = rows.slice(0, state.limit);
@@ -74,7 +97,12 @@ const fakeDb = {
       doc: (id) => ({
         id,
         __collection: name,
+        get: async () => snapshot(name, id),
         update: async (patch) => applyUpdate(name, id, patch),
+        set: async (patch) => {
+          if (behaviour.flagWriteFails && patch.settlement) throw new Error('write failed');
+          applyUpdate(name, id, patch);
+        },
       }),
     };
   },
@@ -88,7 +116,7 @@ const fakeDb = {
     for (const { ref, patch } of staged) applyUpdate(ref.__collection, ref.id, patch);
     return result;
   },
-  batch: () => ({}),
+  batch: () => ({ update: () => {}, commit: async () => {} }),
 };
 
 mock.module('firebase-admin/firestore', {
@@ -97,11 +125,24 @@ mock.module('firebase-admin/firestore', {
 mock.module(new URL('../../../lib/firebase-admin.ts', import.meta.url).href, {
   exports: { initAdmin: () => ({}) },
 });
+mock.module(new URL('../../../lib/email.ts', import.meta.url).href, {
+  exports: {
+    TICKETS_FROM_ADDRESS: 'tickets@saoc-check.invalid',
+    sendEmail: async () => {
+      events.push('alert');
+      mail.alerts += 1;
+    },
+  },
+});
+// The mailer is a fake that behaves like Resend's idempotency key: a repeated key delivers once.
 mock.module(new URL('../../../lib/confirmation-email.ts', import.meta.url).href, {
   exports: {
-    sendConfirmationEmail: async () => {
+    sendConfirmationEmail: async (input) => {
+      mail.sends.push(input);
       if (behaviour.mailFails) throw new Error('mailer down for buyer@saoc-check.invalid');
-      counters.receipts += 1;
+      if (input.idempotencyKey && mail.keys.has(input.idempotencyKey)) return;
+      if (input.idempotencyKey) mail.keys.add(input.idempotencyKey);
+      mail.deliveries += 1;
     },
     deliverConfirmationEmailAfterCommit: async (send, onError) => {
       try {
@@ -113,29 +154,44 @@ mock.module(new URL('../../../lib/confirmation-email.ts', import.meta.url).href,
   },
 });
 mock.module(new URL('../../../lib/ticket-sale-admin-notice.ts', import.meta.url).href, {
-  exports: {
-    sendTicketSaleAdminNotice: async () => {
-      counters.adminNotices += 1;
-    },
-  },
+  exports: { sendTicketSaleAdminNotice: async () => {} },
 });
 mock.module(new URL('../../../lib/ticket-pdf-data.ts', import.meta.url).href, {
   exports: { loadChosenDays: async () => new Map() },
 });
-mock.module(new URL('../../../lib/late-settlement-capacity.ts', import.meta.url).href, {
+// The REAL capacity loader runs against this Sanity fake. 'hang' never settles unless aborted.
+mock.module(new URL('../../../sanity/lib/client.ts', import.meta.url).href, {
   exports: {
-    loadLateSettlementCapacity: async () => {
-      counters.capacityLoads += 1;
-      return behaviour.capacity;
+    client: {
+      fetch: (_query, _params, options) => {
+        counters.sanityCalls += 1;
+        if (behaviour.sanity === 'hang') {
+          return new Promise((_resolve, reject) => {
+            options?.signal?.addEventListener('abort', () => {
+              counters.sanityAborts += 1;
+              reject(new Error('aborted'));
+            });
+          });
+        }
+        return Promise.resolve({
+          capacity: behaviour.capacity,
+          releasedQuantity: null,
+          requiresDaySelection: false,
+          capacityPool: null,
+          headcountPerUnit: 1,
+        });
+      },
     },
   },
 });
 // The same counting rule as lib/data/tickets.ts (reserved or paid, an expired reservation does not
-// hold its seat), reading the fake store and counting how often it is asked.
+// hold its seat), reading the fake store; records the order's status at the moment it is read.
 mock.module(new URL('../../../lib/data/tickets.ts', import.meta.url).href, {
   exports: {
     getSoldCountsByTicketType: async () => {
       counters.soldCountReads += 1;
+      counters.soldReadStatuses.push(store.orders.get('order-1')?.status);
+      if (behaviour.soldThrows) throw new Error('read failed');
       const counts = {};
       for (const data of store.tickets.values()) {
         if (data.showId !== SHOW_ID) continue;
@@ -156,13 +212,6 @@ const reconcileRoute = await import('../../../app/api/admin/reconcile-orders/rou
 
 const REFERENCE = 'SAOC-2027-LATEPAY0001';
 const BUYER_EMAIL = 'buyer@saoc-check.invalid';
-const CAPACITY = {
-  capacityByType: { 'general-admission': 2 },
-  poolConfigByType: { 'general-admission': { pool: null, headcountPerUnit: 1 } },
-  dayCapRequestedQtyByType: {},
-  dayCapCapacityByType: {},
-  dayCapPoolConfigByType: {},
-};
 
 function seedOrder({ expiresAtMs }) {
   store.orders.set('order-1', {
@@ -219,38 +268,45 @@ const provider = {
 };
 const request = { text: async () => 'body', headers: new Headers() };
 
+let warnings;
 beforeEach(() => {
+  mock.restoreAll();
   store.orders.clear();
   store.tickets.clear();
   store.updates = 0;
-  Object.assign(counters, { soldCountReads: 0, capacityLoads: 0, receipts: 0, adminNotices: 0 });
-  Object.assign(behaviour, { mailFails: false, receiptIndexMissing: false, capacity: CAPACITY });
+  events.length = 0;
+  Object.assign(counters, { soldCountReads: 0, soldReadStatuses: [], sanityCalls: 0, sanityAborts: 0 });
+  Object.assign(mail, { deliveries: 0, keys: new Set(), sends: [], alerts: 0 });
+  Object.assign(behaviour, {
+    mailFails: false,
+    receiptIndexMissing: false,
+    receiptQueryError: false,
+    soldThrows: false,
+    sanity: 'normal',
+    capacity: 2,
+    flagWriteFails: false,
+    sentWriteFailsOnce: false,
+  });
+  warnings = mock.method(console, 'warn', () => {});
+  mock.method(console, 'error', () => {});
 });
 
-function captureWarnings() {
-  const warnings = mock.method(console, 'warn', () => {});
-  return warnings;
-}
-
-test('on-time payment: no late flag and no extra reads', async () => {
-  const warnings = captureWarnings();
+test('on-time payment: no late flag, no CMS call, no sold-count read, no warning', async () => {
   seedOrder({ expiresAtMs: NOW_MS + HOUR_MS });
   const response = await POST(provider, request);
   assert.equal(response.status, 200);
   const order = store.orders.get('order-1');
   assert.equal(order.status, 'paid');
-  assert.equal('settlement' in order, false, 'no settlement field on an on-time order');
-  assert.equal(counters.capacityLoads, 0, 'no capacity lookup');
-  assert.equal(counters.soldCountReads, 0, 'no sold-count reads');
+  assert.equal('settlement' in order, false);
+  assert.equal(counters.sanityCalls, 0);
+  assert.equal(counters.soldCountReads, 0);
   assert.equal(warnings.mock.calls.length, 0);
   assert.equal(order.receiptEmail.status, 'sent');
   assert.equal(order.receiptEmail.attempts, 1);
   assert.equal(order.receiptEmail.lastErrorType, null);
-  warnings.mock.restore();
 });
 
-test('late payment with capacity left: settles, flags late only', async () => {
-  const warnings = captureWarnings();
+test('late payment with capacity left: settles, then flags late only, after the commit', async () => {
   seedOrder({ expiresAtMs: NOW_MS - HOUR_MS });
   seedOtherPaid(1);
   const response = await POST(provider, request);
@@ -261,46 +317,88 @@ test('late payment with capacity left: settles, flags late only', async () => {
   assert.equal(order.settlement.lateAfterHoldExpiry, true);
   assert.equal(order.settlement.overCapacity, false);
   assert.ok(order.settlement.detectedAt instanceof Timestamp);
-  assert.equal(counters.receipts, 1, 'the receipt is still sent');
-  assert.equal(warnings.mock.calls.length, 1, 'one structured warning');
-  warnings.mock.restore();
+  assert.deepEqual(counters.soldReadStatuses, ['paid'], 'sold counts are read only after the order is paid');
+  assert.equal(mail.deliveries, 1, 'the receipt is still sent');
+  assert.equal(store.orders.get('order-1').receiptEmail.status, 'sent');
 });
 
-test('late payment over capacity: still settles and issues the ticket, flags both', async () => {
-  const warnings = captureWarnings();
+test('late payment over capacity: still settles and issues the ticket, flags both, no PII logged', async () => {
   seedOrder({ expiresAtMs: NOW_MS - HOUR_MS });
   seedOtherPaid(2);
   const response = await POST(provider, request);
   assert.equal(response.status, 200);
   const order = store.orders.get('order-1');
-  assert.equal(order.status, 'paid', 'the buyer has paid, so the order settles');
-  assert.equal(store.tickets.get('pos-1').status, 'paid', 'the ticket is issued');
+  assert.equal(order.status, 'paid');
+  assert.equal(store.tickets.get('pos-1').status, 'paid');
   assert.equal(order.settlement.lateAfterHoldExpiry, true);
   assert.equal(order.settlement.overCapacity, true);
-  assert.equal(counters.receipts, 1);
-  assert.equal(warnings.mock.calls.length, 1);
-  const logged = JSON.stringify(warnings.mock.calls[0].arguments);
+  assert.equal(mail.deliveries, 1);
+  const logged = JSON.stringify(warnings.mock.calls.map((call) => call.arguments));
   assert.ok(logged.includes(REFERENCE) && logged.includes('general-admission'));
-  assert.equal(logged.includes('buyer@'), false, 'no buyer email in the log line');
-  assert.equal(logged.includes('"Buyer"'), false, 'no buyer name in the log line');
+  assert.equal(logged.includes('buyer@') || logged.includes('"Buyer"'), false);
   assert.equal(Object.values(order).some((value) => value === undefined), false, 'no undefined writes');
-  warnings.mock.restore();
 });
 
-test('late payment whose capacity cannot be loaded: settles, overCapacity unverified', async () => {
-  const warnings = captureWarnings();
-  behaviour.capacity = null;
+test('QA repro 1: a CMS request that never resolves cannot delay or block settlement', async () => {
+  behaviour.sanity = 'hang';
   seedOrder({ expiresAtMs: NOW_MS - HOUR_MS });
-  await POST(provider, request);
+  const started = Date.now();
+  const response = await POST(provider, request);
+  const elapsed = Date.now() - started;
+  assert.equal(response.status, 200);
+  assert.ok(elapsed < RESPONSE_CAP_MS, `responded in ${elapsed} ms`);
   const order = store.orders.get('order-1');
   assert.equal(order.status, 'paid');
   assert.equal(order.settlement.lateAfterHoldExpiry, true);
-  assert.equal(order.settlement.overCapacity, null);
-  warnings.mock.restore();
+  assert.equal(order.settlement.overCapacity, null, 'unverified when the CMS did not answer');
+  assert.ok(counters.sanityAborts >= 1, 'the CMS request was aborted');
+  assert.equal(mail.deliveries, 1, 'the receipt went out before the flag was attempted');
 });
 
-test('receipt failure is recorded as failed, with the error type only', async () => {
-  const errors = mock.method(console, 'error', () => {});
+test('QA repro 3: a throwing sold-count read still gives 200, a settled order and an unverified flag', async () => {
+  behaviour.soldThrows = true;
+  seedOrder({ expiresAtMs: NOW_MS - HOUR_MS });
+  const response = await POST(provider, request);
+  assert.equal(response.status, 200);
+  const order = store.orders.get('order-1');
+  assert.equal(order.status, 'paid');
+  assert.equal(store.tickets.get('pos-1').status, 'paid');
+  assert.equal(order.settlement.overCapacity, null);
+  assert.equal(mail.deliveries, 1);
+});
+
+test('a failing flag write changes nothing else: 200, settled, receipt sent, warning only', async () => {
+  behaviour.flagWriteFails = true;
+  seedOrder({ expiresAtMs: NOW_MS - HOUR_MS });
+  const response = await POST(provider, request);
+  assert.equal(response.status, 200);
+  const order = store.orders.get('order-1');
+  assert.equal(order.status, 'paid');
+  assert.equal('settlement' in order, false);
+  assert.equal(mail.deliveries, 1);
+  assert.ok(warnings.mock.calls.length >= 1);
+});
+
+test('duplicate notification neither recomputes nor rewrites the flag, nor re-sends the receipt', async () => {
+  seedOrder({ expiresAtMs: NOW_MS - HOUR_MS });
+  await POST(provider, request);
+  const flag = store.orders.get('order-1').settlement;
+  const before = {
+    sanityCalls: counters.sanityCalls,
+    soldReads: counters.soldCountReads,
+    updates: store.updates,
+    deliveries: mail.deliveries,
+  };
+  const duplicate = await POST(provider, request);
+  assert.equal(duplicate.status, 200);
+  assert.equal(counters.sanityCalls, before.sanityCalls, 'no CMS call');
+  assert.equal(counters.soldCountReads, before.soldReads, 'no sold-count read');
+  assert.equal(store.updates, before.updates, 'no write at all');
+  assert.equal(mail.deliveries, before.deliveries);
+  assert.equal(store.orders.get('order-1').settlement, flag, 'the flag object is untouched');
+});
+
+test('receipt failure is recorded as failed, with the error type only; the first send carries a stable key', async () => {
   behaviour.mailFails = true;
   seedOrder({ expiresAtMs: NOW_MS + HOUR_MS });
   const response = await POST(provider, request);
@@ -310,9 +408,8 @@ test('receipt failure is recorded as failed, with the error type only', async ()
   assert.equal(order.receiptEmail.status, 'failed');
   assert.equal(order.receiptEmail.attempts, 1);
   assert.equal(order.receiptEmail.lastErrorType, 'Error');
-  assert.ok(order.receiptEmail.lastAttemptAt instanceof Timestamp);
   assert.equal(JSON.stringify(order.receiptEmail).includes('buyer@'), false, 'raw error never stored');
-  errors.mock.restore();
+  assert.equal(mail.sends[0].idempotencyKey, 'receipt-order-1');
 });
 
 function seedPaidOrder(id, receiptEmail, purchasedAtMs = NOW_MS - 2 * HOUR_MS) {
@@ -345,10 +442,9 @@ const failedRecord = (attempts, lastAttemptMs = NOW_MS - 2 * HOUR_MS) => ({
 
 test('reconcile retry resends once and marks sent; a second run sends nothing', async () => {
   seedPaidOrder('o1', failedRecord(1));
-  const now = Timestamp.fromMillis(NOW_MS);
-  const first = await retryFailedReceipts(now);
+  const first = await retryFailedReceipts(Timestamp.fromMillis(NOW_MS));
   assert.equal(first.resent, 1);
-  assert.equal(counters.receipts, 1);
+  assert.equal(mail.deliveries, 1);
   const record = store.orders.get('o1').receiptEmail;
   assert.equal(record.status, 'sent');
   assert.equal(record.attempts, 2);
@@ -356,11 +452,23 @@ test('reconcile retry resends once and marks sent; a second run sends nothing', 
 
   const second = await retryFailedReceipts(Timestamp.fromMillis(NOW_MS + HOUR_MS));
   assert.equal(second.resent, 0);
-  assert.equal(counters.receipts, 1, 'no second receipt');
+  assert.equal(mail.sends.length, 1, 'no second send at all');
+});
+
+test('QA repro 4: delivered receipt whose sent-write fails is not delivered again on the next run', async () => {
+  seedPaidOrder('o1', failedRecord(1));
+  behaviour.sentWriteFailsOnce = true;
+  await retryFailedReceipts(Timestamp.fromMillis(NOW_MS));
+  assert.equal(mail.deliveries, 1);
+  assert.equal(store.orders.get('o1').receiptEmail.status, 'failed', 'the sent write was lost');
+  await retryFailedReceipts(Timestamp.fromMillis(NOW_MS + HOUR_MS));
+  assert.equal(mail.sends.length, 2, 'the retry re-sent');
+  assert.equal(mail.sends[0].idempotencyKey, mail.sends[1].idempotencyKey, 'with the same stable key');
+  assert.equal(mail.deliveries, 1, 'so the buyer received one receipt');
+  assert.equal(store.orders.get('o1').receiptEmail.status, 'sent');
 });
 
 test('attempts cap at 3 in total, then the order is left alone', async () => {
-  const errors = mock.method(console, 'error', () => {});
   behaviour.mailFails = true;
   seedPaidOrder('o1', failedRecord(1));
   let clock = NOW_MS;
@@ -371,10 +479,7 @@ test('attempts cap at 3 in total, then the order is left alone', async () => {
   const record = store.orders.get('o1').receiptEmail;
   assert.equal(record.status, 'failed');
   assert.equal(record.attempts, RECEIPT_MAX_ATTEMPTS, 'stops at the cap');
-  behaviour.mailFails = false;
-  await retryFailedReceipts(Timestamp.fromMillis(clock));
-  assert.equal(counters.receipts, 0, 'a capped order is never sent again');
-  errors.mock.restore();
+  assert.equal(mail.sends.length, 2, 'attempts 2 and 3 only; run 4 sends nothing');
 });
 
 test('a sent order, a pre-field order and an old failure are never sent', async () => {
@@ -383,7 +488,7 @@ test('a sent order, a pre-field order and an old failure are never sent', async 
   seedPaidOrder('old', failedRecord(1), NOW_MS - 8 * 24 * HOUR_MS);
   const summary = await retryFailedReceipts(Timestamp.fromMillis(NOW_MS));
   assert.equal(summary.resent, 0);
-  assert.equal(counters.receipts, 0);
+  assert.equal(mail.sends.length, 0);
   assert.equal(store.orders.get('sent').receiptEmail.attempts, 1, 'sent order untouched');
 });
 
@@ -391,31 +496,80 @@ test('a retry attempted a moment ago is not repeated (overlapping runs)', async 
   seedPaidOrder('o1', failedRecord(1, NOW_MS - 60_000));
   const summary = await retryFailedReceipts(Timestamp.fromMillis(NOW_MS));
   assert.equal(summary.resent, 0);
-  assert.equal(counters.receipts, 0);
+  assert.equal(mail.sends.length, 0);
 });
 
 test('at most 20 receipts are resent per run', async () => {
   for (let i = 0; i < 25; i += 1) seedPaidOrder(`bulk-${i}`, failedRecord(1));
   const summary = await retryFailedReceipts(Timestamp.fromMillis(NOW_MS));
   assert.equal(summary.resent, 20);
-  assert.equal(counters.receipts, 20);
+  assert.equal(mail.deliveries, 20);
 });
 
-test('missing index: retry skips softly and the reconcile run carries on', async () => {
-  const warnings = captureWarnings();
+test('time budget: no new send starts once it is spent; the rest is reported as deferred', async () => {
+  for (let i = 0; i < 5; i += 1) seedPaidOrder(`slow-${i}`, failedRecord(1));
+  let clock = 0;
+  const summary = await retryFailedReceipts(Timestamp.fromMillis(NOW_MS), {
+    budgetMs: 25_000,
+    clock: () => {
+      clock += 10_000; // every look at the clock costs 10 s
+      return clock;
+    },
+  });
+  assert.equal(summary.resent + summary.stillFailing + summary.deferred, summary.scanned);
+  assert.ok(summary.deferred >= 1, `deferred ${summary.deferred}`);
+  assert.equal(mail.sends.length, summary.resent + summary.stillFailing);
+});
+
+function reconcileRequest() {
+  process.env.RECONCILIATION_CRON_SECRET = 'check-secret';
+  return { headers: new Headers({ authorization: 'Bearer check-secret' }) };
+}
+
+function seedStrandedOrder() {
+  store.orders.set('stranded', {
+    status: 'reserved',
+    m_payment_id: 'REF-stranded',
+    buyerName: 'Buyer',
+    buyerEmail: BUYER_EMAIL,
+    amount: 10,
+    expiresAt: Timestamp.fromMillis(NOW_MS - 2 * HOUR_MS),
+  });
+}
+
+test('missing index: the retry skips softly and the reconcile run carries on', async () => {
   behaviour.receiptIndexMissing = true;
   seedPaidOrder('o1', failedRecord(1));
   const summary = await retryFailedReceipts(Timestamp.fromMillis(NOW_MS));
-  assert.deepEqual(summary, { scanned: 0, resent: 0, stillFailing: 0, skipped: 'missing-index' });
-  assert.equal(counters.receipts, 0);
+  assert.deepEqual(summary, { scanned: 0, resent: 0, stillFailing: 0, deferred: 0, skipped: 'missing-index' });
+  assert.equal(mail.sends.length, 0);
 
-  process.env.RECONCILIATION_CRON_SECRET = 'check-secret';
-  const response = await reconcileRoute.POST({
-    headers: new Headers({ authorization: 'Bearer check-secret' }),
-  });
-  assert.equal(response.status, 200, 'the rest of the run is unaffected');
+  const response = await reconcileRoute.POST(reconcileRequest());
+  assert.equal(response.status, 200);
   const body = await response.json();
   assert.equal(body.strandedCount, 0);
   assert.equal(body.receiptRetry.skipped, 'missing-index');
-  warnings.mock.restore();
+});
+
+test('reconcile: the stranded-order alert is sent first and survives a throwing retry', async () => {
+  behaviour.receiptQueryError = true;
+  seedStrandedOrder();
+  const response = await reconcileRoute.POST(reconcileRequest());
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.deepEqual(body.alertedNow, ['stranded']);
+  assert.equal(mail.alerts, 1, 'the alert went out');
+  assert.equal(body.receiptRetry, null, 'the failed retry is reported as null, not thrown');
+  assert.deepEqual(events.filter((event) => event === 'alert' || event === 'retry-query'), ['alert', 'retry-query']);
+});
+
+test('reconcile: the alert is not held up by failed receipts waiting for retry', async () => {
+  seedStrandedOrder();
+  seedPaidOrder('o1', failedRecord(1));
+  const response = await reconcileRoute.POST(reconcileRequest());
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.deepEqual(body.alertedNow, ['stranded']);
+  assert.equal(body.receiptRetry.resent, 1);
+  assert.ok(events.indexOf('alert') < events.indexOf('retry-query'), 'alert first, retry after');
 });

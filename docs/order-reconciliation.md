@@ -306,16 +306,21 @@ threw," both rendered as a success-shaped body. Fixed by `reconcile-response-acc
 ## Late settlements and failed receipts
 
 - **Late payment.** A payment that arrives after the 30-minute hold lapsed still settles (the
-  buyer has paid, so the ticket is always issued). The paid transaction records
+  buyer has paid, so the ticket is always issued), and the paid transaction is unchanged. After
+  the commit, the receipt and the admin notice, the handler flags the order
+  (`lib/late-settlement-flag.ts`, best effort, 2 s cap, never changes the response):
   `orders/{id}.settlement = { lateAfterHoldExpiry: true, overCapacity: true | false | null,
-  detectedAt }`; `null` means capacity could not be loaded. On-time orders carry no field and
-  cost no extra reads. One `console.warn` (reference and ticket types only) is logged. These
+  detectedAt }`, written once with set-merge; `null` means capacity could not be checked in time.
+  On-time orders and replayed notifications cost no extra reads. One `console.warn` (reference and
+  ticket types only) is logged. These
   orders are not in the reconcile alert email: its wording says "still reserved", which would be
   wrong for a paid order, so query `settlement.overCapacity == true` in the console instead.
 - **Receipt email.** `orders/{id}.receiptEmail = { status: 'sent' | 'failed', attempts,
   lastAttemptAt, lastErrorType }` is written after settlement (`lib/ticket-receipt.ts`). Each
-  reconcile run re-sends the same receipt for paid orders whose status is `failed` with fewer than
-  3 attempts, paid in the last 7 days, at most 20 per run, claiming the attempt in a transaction
+  reconcile run, after the stranded-order alert has been sent, re-sends the same receipt (same
+  per-order Resend idempotency key) for paid orders whose status is `failed` with fewer than
+  3 attempts, paid in the last 7 days, at most 20 per run and no new send after 20 s (the rest is
+  reported as `deferred`), claiming the attempt in a transaction
   first so a `sent` order, a capped order or an overlapping run never produces a second email. The
   query needs the `(receiptEmail.status, purchasedAt desc)` index in `firestore.indexes.json`
   (deploy it with `firebase deploy --only firestore:indexes`); until it is built the step logs a

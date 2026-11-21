@@ -62,6 +62,9 @@ export interface SendConfirmationEmailInput {
   paymentStatus?: string;
   /** Display string of the chosen visit day. Absent renders as "[To be confirmed]". */
   visitDate?: string;
+  /** Passed to the mailer as its idempotency key so a re-send of the same receipt is not
+   *  delivered twice. Never affects the email content. */
+  idempotencyKey?: string;
 }
 
 export interface TicketPdfEmailInput {
@@ -79,6 +82,7 @@ export interface ConfirmationEmailMailer {
     react: ReactElement;
     attachments?: EmailAttachment[];
     site?: Site;
+    idempotencyKey?: string;
   }): Promise<void>;
 }
 
@@ -230,6 +234,7 @@ export async function sendConfirmationEmail(
     from: NOS_TICKETS_FROM_ADDRESS,
     site: 'nos',
     attachments,
+    ...(input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : {}),
   });
 }
 

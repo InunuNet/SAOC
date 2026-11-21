@@ -30,6 +30,8 @@ export const RECEIPT_RETRY_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000;
 export const RECEIPT_RETRY_BATCH_LIMIT = 20;
 /** Failed-receipt documents read per run; the attempts cap is applied in memory. */
 export const RECEIPT_RETRY_SCAN_LIMIT = 100;
+/** The retry stops starting new sends once it has run this long; the rest wait for the next run. */
+export const RECEIPT_RETRY_TIME_BUDGET_MS = 20 * 1000;
 /** A retry claim also stamps lastAttemptAt; an order attempted more recently than this is left
  *  alone, which is what stops two overlapping reconcile runs from both re-sending. */
 export const RECEIPT_RETRY_MIN_INTERVAL_MS = 10 * 60 * 1000;
@@ -60,6 +62,9 @@ export async function sendOrderReceipt(facts: ReceiptOrderFacts): Promise<void> 
     orderReference: facts.reference,
     positions: facts.positions,
     ...buildOrderEmailFields(facts.amount, firstChosenDay),
+    // One stable key per order, on the first send and on every retry: if a delivered receipt's
+    // 'sent' write is lost, the re-send is recognised by the mailer instead of reaching the buyer.
+    idempotencyKey: `receipt-${facts.orderId}`,
   });
 }
 
@@ -142,6 +147,8 @@ export interface ReceiptRetrySummary {
   resent: number;
   /** Retries attempted that failed again. */
   stillFailing: number;
+  /** Candidates left unstarted because the time budget ran out; the next run picks them up. */
+  deferred: number;
   /** Set when the composite index for the query is missing; the retry step was skipped. */
   skipped: 'missing-index' | null;
 }
@@ -245,7 +252,7 @@ async function loadReceiptFacts(
  */
 export async function retryFailedReceipts(
   now: Timestamp,
-  deps: { db?: ReceiptFirestoreLike } = {}
+  deps: { db?: ReceiptFirestoreLike; budgetMs?: number; clock?: () => number } = {}
 ): Promise<ReceiptRetrySummary> {
   const db = deps.db ?? defaultDb();
   let candidates: ReceiptDocSnapshotLike[];
@@ -257,16 +264,23 @@ export async function retryFailedReceipts(
       '[ticket-receipt] Failed-receipt query needs the (receiptEmail.status, purchasedAt) index; retry skipped',
       { errorType: safeErrorType(error) }
     );
-    return { scanned: 0, resent: 0, stillFailing: 0, skipped: 'missing-index' };
+    return { scanned: 0, resent: 0, stillFailing: 0, deferred: 0, skipped: 'missing-index' };
   }
 
   const summary: ReceiptRetrySummary = {
     scanned: candidates.length,
     resent: 0,
     stillFailing: 0,
+    deferred: 0,
     skipped: null,
   };
+  const clock = deps.clock ?? Date.now;
+  const deadline = clock() + (deps.budgetMs ?? RECEIPT_RETRY_TIME_BUDGET_MS);
   for (const candidate of candidates) {
+    if (clock() >= deadline) {
+      summary.deferred += 1;
+      continue;
+    }
     const claim = await claimRetry(db, candidate.id, now);
     if (!claim) continue;
     const ref = db.collection(ORDERS_COLLECTION).doc(candidate.id);

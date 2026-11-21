@@ -1,15 +1,6 @@
-import { getFirestore, Timestamp, type Transaction } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
-import { getSoldCountsByTicketType, getSoldCountsByTicketTypeAndDay } from '@/lib/data/tickets';
 import { initAdmin } from '@/lib/firebase-admin';
-import {
-  hasDayCapPositions,
-  isOverCapacityAfterLateSettlement,
-  type LateSettlementCapacity,
-  type LoadLateCapacity,
-  type OrderSettlementFlags,
-} from '@/lib/late-settlement';
-import { DAY_VISITOR_SHAPED_SLUGS } from '@/lib/provisional-figures';
 import { PENDING_PAYMENT_HOLD_MINUTES } from '@/lib/payments/pending-hold';
 import type { OrderRecoveryRecord } from '@/lib/recovery-access';
 import { generateBookingRefQrDataUri } from '@/lib/qr';
@@ -241,8 +232,8 @@ export type FindReservedOrderResult =
       amount: number;
       orderId: string;
       expectedGatewayAmount: number | null;
-      /** The hold's expiry as read here (non-transactional), so the notification handler can tell
-       *  whether a late-payment capacity lookup may be needed. */
+      /** The hold's expiry as this (already-made) read saw it; the notification handler uses it
+       *  after the commit to tell whether the payment landed late. */
       expiresAt: Timestamp | null;
     };
 
@@ -300,8 +291,6 @@ export type MarkOrderPaidOutcome =
         ticketType: TicketType;
         chosenDay: string | null;
       }[];
-      /** Present only when the hold had already expired when the payment settled. */
-      settlement?: OrderSettlementFlags;
     }
   | {
       committed: false;
@@ -343,14 +332,6 @@ export interface MarkOrderAndPositionPaidInput {
    * transaction, same place and same reasoning as the existing order-payment-id-mismatch guard.
    */
   expectedGateway: string;
-  /**
-   * The order's hold expiry as the caller's own earlier read saw it. Only a hint that a
-   * late-payment capacity lookup may be needed: the transaction below re-reads the order and
-   * decides lateness itself. Omitted or in the future means the on-time path costs no extra read.
-   */
-  expiresAtHint?: Timestamp | null;
-  /** Loads capacity for a late settlement; called outside the transaction, only when late. */
-  loadLateCapacity?: LoadLateCapacity;
 }
 
 /**
@@ -385,9 +366,8 @@ export async function markOrderAndPositionPaidByPaymentId(
   const orderRef = orders.doc(orderRefId);
 
   const positionSnapshot = await tickets.where('orderId', '==', orderRef.id).get();
-  const lateCapacity = await loadCapacityIfHoldExpired(input, positionSnapshot.docs);
 
-  const outcome = await db.runTransaction<MarkOrderPaidOutcome>(async (transaction) => {
+  return db.runTransaction(async (transaction) => {
     const orderDoc = await transaction.get(orderRef);
     if (!orderDoc.exists) {
       // F2 (orders-query-race-spec §3 "D") — distinct from the pre-transaction query miss
@@ -448,7 +428,17 @@ export async function markOrderAndPositionPaidByPaymentId(
       return { committed: false, reason: 'position-not-found' };
     }
 
+    transaction.update(orderRef, {
+      status: 'paid',
+      gatewayPaymentId: input.gatewayPaymentId,
+      purchasedAt: input.now,
+    });
+
     const positions = positionRefs.map((positionRef, index) => {
+      transaction.update(positionRef, {
+        status: 'paid',
+        purchasedAt: input.now,
+      });
       const position = positionDocs[index].data() as Partial<Ticket> | undefined;
       return {
         bookingRef: (position?.bookingRef as string | undefined) ?? positionRef.id,
@@ -458,31 +448,6 @@ export async function markOrderAndPositionPaidByPaymentId(
       };
     });
 
-    // Late payment: the hold lapsed before the money arrived. The order still settles (the buyer
-    // has paid, so the ticket is always issued); what is recorded is whether the capacity the
-    // lapsed hold no longer protected has since been sold on. Every read stays before the writes
-    // below, and the on-time path never reaches the counting reads.
-    const settlement = await detectLateSettlement({
-      transaction,
-      order,
-      now: input.now,
-      positions,
-      capacity: lateCapacity,
-    });
-
-    transaction.update(orderRef, {
-      status: 'paid',
-      gatewayPaymentId: input.gatewayPaymentId,
-      purchasedAt: input.now,
-      ...(settlement ? { settlement } : {}),
-    });
-    for (const positionRef of positionRefs) {
-      transaction.update(positionRef, {
-        status: 'paid',
-        purchasedAt: input.now,
-      });
-    }
-
     return {
       committed: true,
       orderId: orderRef.id,
@@ -490,77 +455,8 @@ export async function markOrderAndPositionPaidByPaymentId(
       buyerName: order?.buyerName ?? '',
       recoveryToken: (order?.recoveryToken as string | null | undefined) ?? null,
       positions,
-      ...(settlement ? { settlement } : {}),
     };
   });
-
-  if (outcome.committed && outcome.settlement) {
-    // Reference and ticket types only: no buyer name or email in a log line.
-    console.warn('[orders] Payment settled after the reservation hold expired', {
-      reference: input.m_payment_id,
-      ticketTypes: [...new Set(outcome.positions.map((position) => position.ticketType))],
-      overCapacity: outcome.settlement.overCapacity,
-    });
-  }
-  return outcome;
-}
-
-/** Calls the caller's capacity loader, outside the transaction, only when the caller's own read
- *  already showed the hold as expired. The on-time path returns null without any read. */
-async function loadCapacityIfHoldExpired(
-  input: MarkOrderAndPositionPaidInput,
-  positionDocs: OrdersDocSnapshotLike[]
-): Promise<LateSettlementCapacity | null> {
-  const hint = input.expiresAtHint;
-  if (!input.loadLateCapacity || !hint || hint.toMillis() > input.now.toMillis()) return null;
-  const facts = positionDocs.map((doc) => doc.data() ?? {});
-  const showId = facts.map((data) => data['showId']).find((id) => typeof id === 'string');
-  if (typeof showId !== 'string') return null;
-  return input.loadLateCapacity({
-    showId,
-    positions: facts.map((data) => ({
-      ticketType: String(data['ticketType']),
-      chosenDay: typeof data['chosenDay'] === 'string' ? data['chosenDay'] : null,
-    })),
-  });
-}
-
-/** The `settlement` record for an order whose hold had expired when it was paid, else null. */
-async function detectLateSettlement(args: {
-  transaction: OrdersTransactionRwLike;
-  order: Partial<Order> | undefined;
-  now: Timestamp;
-  positions: { ticketType: string; chosenDay: string | null }[];
-  capacity: LateSettlementCapacity | null;
-}): Promise<OrderSettlementFlags | null> {
-  const { order, now, capacity } = args;
-  const expiresAt = order?.expiresAt;
-  if (!(expiresAt instanceof Timestamp) || expiresAt.toMillis() > now.toMillis()) return null;
-  const flags: OrderSettlementFlags = {
-    lateAfterHoldExpiry: true,
-    overCapacity: null,
-    detectedAt: now,
-  };
-  if (!capacity || typeof order?.showId !== 'string') return flags;
-
-  // The shared counting helpers take the real firebase-admin Transaction; the object in this
-  // function is that same transaction (or, in contract checks, a fake that satisfies get()).
-  const transaction = args.transaction as unknown as Transaction;
-  const soldCounts = await getSoldCountsByTicketType(order.showId, transaction);
-  const soldCountsByDay = hasDayCapPositions(capacity)
-    ? await getSoldCountsByTicketTypeAndDay(
-        order.showId,
-        new Set(DAY_VISITOR_SHAPED_SLUGS),
-        transaction
-      )
-    : null;
-  flags.overCapacity = isOverCapacityAfterLateSettlement({
-    positions: args.positions,
-    capacity,
-    soldCounts,
-    soldCountsByDay,
-  });
-  return flags;
 }
 
 /** The only gateway-reported states the pending writer records: Ozow's Pending and
