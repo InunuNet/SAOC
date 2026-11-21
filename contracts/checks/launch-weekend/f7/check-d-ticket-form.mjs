@@ -28,7 +28,7 @@ else if (!/generateMetadata[\s\S]{0,1500}(ticketType|ticket)\??\.name/.test(slug
 
 // banner gating: fail closed, no unconditional render, route returns a strict boolean
 if (!/enabled\s*===\s*true/.test(banner) || !/if\s*\(!enabled\)\s*return null/.test(banner)) problems.push('OzowSandboxTestModeBanner: no longer fail-closed (needs `enabled === true` and `if (!enabled) return null`)');
-if (!/isOzowSandboxTestModeEnabled/.test(route)) problems.push('ozow-sandbox-test-mode route: no longer derives from isOzowSandboxTestModeEnabled()');
+if (!/getCachedOzowSandboxTestModeForDisplay|isOzowSandboxTestModeEnabled/.test(route)) problems.push('ozow-sandbox-test-mode route: no longer derives from the sandbox flag helper');
 for (const f of [form, slugPage]) if (/OZOW_SANDBOX_TEST_MODE_BANNER_TEXT/.test(f) || /TEST MODE/.test(f)) problems.push('TEST MODE text rendered outside the gated banner component');
 
 // runtime

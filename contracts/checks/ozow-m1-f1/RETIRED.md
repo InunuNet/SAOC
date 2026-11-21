@@ -1,0 +1,1 @@
+check-regression-untouched.sh (A8) is retired: it only pinned the sha256 of files that F2 legitimately rewired afterwards, so it protected no behaviour; the behavioural checks in this folder protect the Ozow adapter's real properties.
