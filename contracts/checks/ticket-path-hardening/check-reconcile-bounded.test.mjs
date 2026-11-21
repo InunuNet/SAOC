@@ -20,7 +20,7 @@ const NOW = Timestamp.fromMillis(Date.UTC(2027, 0, 20, 12, 0, 0));
 const HOUR_MS = 60 * 60 * 1000;
 
 // Fake store that evaluates every clause it is given: where, orderBy, startAfter, limit.
-function fakeDb(orders) {
+function fakeDb(orders, { missingDescIndex = false, otherError = null } = {}) {
   const seen = { limits: [] };
   const ms = (v) => (v instanceof Timestamp ? v.toMillis() : v);
   const query = (state) => ({
@@ -32,6 +32,10 @@ function fakeDb(orders) {
       return query({ ...state, limit: count });
     },
     get: async () => {
+      if (otherError) throw otherError;
+      if (missingDescIndex && state.order?.direction === 'desc') {
+        throw Object.assign(new Error('9 FAILED_PRECONDITION: The query requires an index.'), { code: 9 });
+      }
       let rows = [...orders].filter(([, data]) =>
         state.filters.every(({ field, op, value }) => {
           if (op === '==') return ms(data[field]) === ms(value);
@@ -39,6 +43,7 @@ function fakeDb(orders) {
           return ms(data[field]) > ms(value);
         })
       );
+      if (!state.order) rows.sort((a, b) => ms(a[1].expiresAt) - ms(b[1].expiresAt)); // range field implies asc
       if (state.order) {
         const dir = state.order.direction === 'desc' ? -1 : 1;
         rows.sort((a, b) => dir * (ms(a[1][state.order.field]) - ms(b[1][state.order.field])));
@@ -142,4 +147,48 @@ test('under the ceiling no warning is logged', async () => {
     console.warn = original;
   }
   assert.equal(warned, false);
+});
+
+function captureWarnings() {
+  const warnings = [];
+  const original = console.warn;
+  console.warn = (...args) => warnings.push(args);
+  return { warnings, restore: () => (console.warn = original) };
+}
+
+test('missing descending index: falls back to the ascending query, same 7-day window, and warns', async () => {
+  const orders = new Map([
+    ['recent', reservedExpired(2)],
+    ['three-days', reservedExpired(72)],
+    ['old', reservedExpired(200)],
+  ]);
+  const { db, seen } = fakeDb(orders, { missingDescIndex: true });
+  const capture = captureWarnings();
+  try {
+    const found = await findStrandedOrders(NOW, { db });
+    assert.deepEqual(found.map((o) => o.orderId), ['three-days', 'recent'], 'oldest first, 7-day window kept');
+    assert.ok(seen.limits.length >= 1);
+  } finally {
+    capture.restore();
+  }
+  assert.equal(capture.warnings.length, 1);
+  assert.match(String(capture.warnings[0][0]), /index unavailable/);
+});
+
+test('fallback still pages up to the 500 ceiling', async () => {
+  const orders = new Map();
+  for (let i = 0; i < 600; i++) orders.set(`ord${i}`, reservedExpired(1 + i * 0.2));
+  const { db } = fakeDb(orders, { missingDescIndex: true });
+  const capture = captureWarnings();
+  try {
+    const found = await findStrandedOrders(NOW, { db });
+    assert.equal(found.length, 500);
+  } finally {
+    capture.restore();
+  }
+});
+
+test('an unrelated Firestore error is not swallowed by the fallback', async () => {
+  const { db } = fakeDb(new Map(), { otherError: Object.assign(new Error('boom'), { code: 14 }) });
+  await assert.rejects(() => findStrandedOrders(NOW, { db }), /boom/);
 });

@@ -118,18 +118,51 @@ export async function findStrandedOrders(
 ): Promise<StrandedOrder[]> {
   const db = deps.db ?? defaultDb();
   const windowStart = Timestamp.fromMillis(now.toMillis() - STRANDED_LOOKBACK_MS);
-  const base = db
+  const window = db
     .collection(ORDERS_COLLECTION)
     .where('status', '==', 'reserved')
     .where('expiresAt', '<', now)
-    .where('expiresAt', '>', windowStart)
-    .orderBy('expiresAt', 'desc');
+    .where('expiresAt', '>', windowStart);
 
+  try {
+    return await collectCandidates(window.orderBy('expiresAt', 'desc'), 'newest-first');
+  } catch (error) {
+    if (!isMissingIndexError(error)) throw error;
+    // The descending composite index is not deployed (or still building). Fall back to the
+    // ascending order the original (status, expiresAt) index serves, so the 6-hourly check keeps
+    // running instead of failing outright. Same window, same paging and ceiling.
+    console.warn(
+      '[reconciliation] Descending (status, expiresAt) index unavailable; using ascending order',
+      { code: errorCode(error) }
+    );
+    return collectCandidates(window, 'oldest-first');
+  }
+}
+
+/** Firestore reports a missing or still-building composite index as gRPC FAILED_PRECONDITION. */
+const FAILED_PRECONDITION_CODE = 9;
+
+function errorCode(error: unknown): number | string | null {
+  if (typeof error !== 'object' || error === null) return null;
+  const code = (error as { code?: unknown }).code;
+  return typeof code === 'number' || typeof code === 'string' ? code : null;
+}
+
+function isMissingIndexError(error: unknown): boolean {
+  const code = errorCode(error);
+  return code === FAILED_PRECONDITION_CODE || code === 'failed-precondition';
+}
+
+/** Pages through `query` PAGE_SIZE at a time until it runs out or the ceiling is reached. */
+async function collectCandidates(
+  query: ReconciliationQueryLike,
+  direction: 'newest-first' | 'oldest-first'
+): Promise<StrandedOrder[]> {
   const found: StrandedOrder[] = [];
   let cursor: ReconciliationDocSnapshotLike | null = null;
   while (found.length < STRANDED_CANDIDATE_CEILING) {
     const pageSize = Math.min(STRANDED_PAGE_SIZE, STRANDED_CANDIDATE_CEILING - found.length);
-    const page = await (cursor ? base.startAfter(cursor) : base).limit(pageSize).get();
+    const page = await (cursor ? query.startAfter(cursor) : query).limit(pageSize).get();
     for (const doc of page.docs) {
       found.push({ ...(doc.data() as Omit<Order, 'id'>), orderId: doc.id });
     }
@@ -137,10 +170,11 @@ export async function findStrandedOrders(
     cursor = page.docs[page.docs.length - 1];
   }
 
-  // The last page was full and the ceiling is reached: there may be more, older candidates.
-  console.warn('[reconciliation] Stranded-order candidate ceiling reached; older ones not scanned', {
+  // The last page was full and the ceiling is reached: there may be more candidates beyond it.
+  console.warn('[reconciliation] Stranded-order candidate ceiling reached; some not scanned', {
     ceiling: STRANDED_CANDIDATE_CEILING,
     lookbackMs: STRANDED_LOOKBACK_MS,
+    direction,
   });
   return found;
 }

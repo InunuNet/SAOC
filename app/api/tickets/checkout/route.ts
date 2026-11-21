@@ -2,6 +2,7 @@ import { getSecret, secretsEnv } from '@/lib/secrets';
 import { NextRequest, NextResponse } from 'next/server';
 import { isBodyWithinLimit } from '@/lib/request-guards';
 import { clientIpFromForwardedFor } from '@/lib/client-ip';
+import { findStoredReplay, type ReplayRequestLineItem } from '@/lib/checkout-over-limit-replay';
 import { consumeRateLimit } from '@/lib/newsletter-rate-limit';
 import { createAttemptStore, scopeAttemptsToRequest } from '@/lib/newsletter-rate-store';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
@@ -477,61 +478,100 @@ const MAX_BODY_BYTES = 131072;
 // ample for a real buyer (and a venue address with a few of them). Per server instance, like
 // the status route's limiter.
 //
-// A replay of an Idempotency-Key that already created an order is a buyer retrying their own
-// purchase (double-click, flaky network, back button), so it must still get its original
-// response when the limiter trips: one cheap indexed lookup decides. Replays that pass this way
-// draw on their own, larger allowance so one real key cannot be used to bypass the limit.
+// A buyer retrying their own purchase (double-click, flaky network, back button) replays an
+// Idempotency-Key that already created a reservation, and must still get the original hand-off
+// when the limiter trips. That over-limit path is deliberately narrow, because it is reachable by
+// anyone: it spends its own allowance (checked first, before any read), it never reaches Sanity
+// or the stock scan, and it answers from Firestore alone, only when the request body matches the
+// stored reservation. Every refusal on it is the one identical 429, so an existing key cannot be
+// told apart from an unused one.
 const CHECKOUT_RATE_LIMIT_MAX_ATTEMPTS = 10;
 const CHECKOUT_REPLAY_RATE_LIMIT_MAX_ATTEMPTS = 30;
 const CHECKOUT_RATE_LIMIT_WINDOW_MS = 10 * 60_000;
+const TOO_MANY_ATTEMPTS_MESSAGE = 'Too many attempts. Please try again later.';
 
 const checkoutAttempts = createAttemptStore(CHECKOUT_RATE_LIMIT_WINDOW_MS);
 const checkoutReplayAttempts = createAttemptStore(CHECKOUT_RATE_LIMIT_WINDOW_MS);
 
-/** True when a ticket already exists under this idempotency key. One read, `limit(1)`, no stock
- *  scan and no Sanity. Fails closed (false) when Firestore errors, so a lookup failure can only
- *  ever leave the request limited, never widen access. */
-async function idempotencyKeyHasReservation(idempotencyKey: string): Promise<boolean> {
-  try {
-    const snapshot = await getFirestore(initAdmin())
-      .collection(TICKETS_COLLECTION)
-      .where('idempotencyKey', '==', idempotencyKey)
-      .limit(1)
-      .get();
-    return !snapshot.empty;
-  } catch (error) {
-    console.error('[tickets/checkout] Replay lookup failed while rate limited:', error);
-    return false;
-  }
+function tooManyAttemptsResponse(retryAfterSeconds: number): NextResponse {
+  return NextResponse.json(
+    { error: TOO_MANY_ATTEMPTS_MESSAGE },
+    { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } }
+  );
 }
 
-/** Null when the request may proceed; otherwise the 429 to return. */
-async function checkoutRateLimitResponse(
+/** Parses and validates the request body with no I/O, the same checks the normal path applies
+ *  before it touches anything. Null for anything the over-limit path will not act on. */
+async function parseOverLimitBody(
+  request: NextRequest
+): Promise<ReplayRequestLineItem[] | null> {
+  let body: CheckoutRequestBody;
+  try {
+    body = (await request.json()) as CheckoutRequestBody;
+  } catch {
+    return null;
+  }
+  if (typeof body !== 'object' || body === null || !isValidShowId(body.showId)) return null;
+  const lineItems = parseLineItems(body.lineItems);
+  if (!lineItems) return null;
+  if (lineItems.some((lineItem) => isRestrictedTicketSlug(lineItem.ticketType))) {
+    const hasAccess = hasSpeakersPartnerAccess(
+      request.cookies.get(SPEAKERS_PARTNER_COOKIE_NAME)?.value,
+      secretsEnv(),
+      new Date()
+    );
+    if (!hasAccess) return null;
+  }
+  return lineItems.map((lineItem) => ({
+    ticketType: lineItem.ticketType,
+    attendeeEmail: lineItem.attendeeEmail.trim().toLowerCase(),
+    // The normal path drops chosenDay for types that take none, which needs Sanity; here it is
+    // compared as sent, so a mismatch simply stays refused.
+    chosenDay: lineItem.chosenDay ?? null,
+  }));
+}
+
+/**
+ * Over-limit branch, in this order: (a) the replay allowance is spent, 429 with no read;
+ * (b) the body is unusable, 429; (c) one Firestore lookup by key and (d) the stored reservation
+ * must be payable and match the body, else 429; only then is the stored hand-off returned,
+ * built from Firestore data alone.
+ */
+async function overLimitResponse(
+  request: NextRequest,
   ip: string | null,
-  idempotencyKey: string
-): Promise<NextResponse | null> {
-  const ipKey = ip ?? 'unknown';
-  const limit = consumeRateLimit(
-    { now: new Date(), ...scopeAttemptsToRequest(checkoutAttempts) },
-    `ticket-checkout:${ipKey}`,
-    CHECKOUT_RATE_LIMIT_MAX_ATTEMPTS,
+  idempotencyKey: string,
+  mainRetryAfterSeconds: number
+): Promise<NextResponse> {
+  const replayLimit = consumeRateLimit(
+    { now: new Date(), ...scopeAttemptsToRequest(checkoutReplayAttempts) },
+    `ticket-checkout-replay:${ip ?? 'unknown'}`,
+    CHECKOUT_REPLAY_RATE_LIMIT_MAX_ATTEMPTS,
     CHECKOUT_RATE_LIMIT_WINDOW_MS
   );
-  if (limit.allowed) return null;
+  if (!replayLimit.allowed) return tooManyAttemptsResponse(replayLimit.retryAfterSeconds);
 
-  if (await idempotencyKeyHasReservation(idempotencyKey)) {
-    const replayLimit = consumeRateLimit(
-      { now: new Date(), ...scopeAttemptsToRequest(checkoutReplayAttempts) },
-      `ticket-checkout-replay:${ipKey}`,
-      CHECKOUT_REPLAY_RATE_LIMIT_MAX_ATTEMPTS,
-      CHECKOUT_RATE_LIMIT_WINDOW_MS
-    );
-    if (replayLimit.allowed) return null;
+  const refused = tooManyAttemptsResponse(mainRetryAfterSeconds);
+  const requested = await parseOverLimitBody(request);
+  if (!requested) return refused;
+
+  const stored = await findStoredReplay(idempotencyKey, requested);
+  if (!stored || !Object.prototype.hasOwnProperty.call(NOTIFY_PATH_BY_PROVIDER_ID, stored.gateway)) {
+    return refused;
   }
-  return NextResponse.json(
-    { error: 'Too many attempts. Please try again later.' },
-    { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } }
-  );
+  const paymentProvider = resolveProvider(stored.gateway);
+  if (!paymentProvider) return refused;
+
+  const handoff = await buildHandoffResponse({
+    reference: stored.reference,
+    amount: stored.amount,
+    positions: stored.positions,
+    expectedGatewayAmount: stored.expectedGatewayAmount,
+    providerId: stored.gateway,
+    paymentProvider,
+    status: 200,
+  });
+  return handoff ?? refused;
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -552,8 +592,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const ip = clientIpFromForwardedFor(request.headers.get('x-forwarded-for'));
-  const limited = await checkoutRateLimitResponse(ip, idempotencyKey);
-  if (limited) return limited;
+  const limit = consumeRateLimit(
+    { now: new Date(), ...scopeAttemptsToRequest(checkoutAttempts) },
+    `ticket-checkout:${ip ?? 'unknown'}`,
+    CHECKOUT_RATE_LIMIT_MAX_ATTEMPTS,
+    CHECKOUT_RATE_LIMIT_WINDOW_MS
+  );
+  if (!limit.allowed) {
+    return overLimitResponse(request, ip, idempotencyKey, limit.retryAfterSeconds);
+  }
 
   let body: CheckoutRequestBody;
   try {
@@ -1135,9 +1182,50 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
+  const handoff = await buildHandoffResponse({
+    reference: outcome.reference,
+    amount: outcome.amount,
+    positions: outcome.positions,
+    expectedGatewayAmount: outcome.expectedGatewayAmount,
+    providerId,
+    paymentProvider,
+    // A fresh reservation is 201, an idempotent replay is 200, so the two remain
+    // distinguishable to a client that wants to know whether it actually created one.
+    status: outcome.kind === 'created' ? 201 : 200,
+  });
+  if (!handoff) {
+    // The gateway credential guard again, and this is DEFENCE IN DEPTH rather than redundancy:
+    // config is read per call by design, so it can genuinely change between the readiness probe
+    // above and this hand-off. 500 and not 4xx is deliberate: the request was well-formed and the
+    // misconfiguration is ours, so a 4xx would tell the buyer to fix something they cannot see.
+    // Status and message are byte-identical to the pre-F2 refusal
+    // (contracts/golden/payment-seam-f1/fail-closed-guards.golden.md).
+    return NextResponse.json(
+      { error: 'Payment gateway is not configured. Please try again later.' },
+      { status: 500 }
+    );
+  }
+  return handoff;
+}
+
+/** Everything the hand-off needs, all server-derived: the stored or just-created reservation,
+ *  never the request body. */
+interface HandoffInput {
+  reference: string;
+  amount: number;
+  positions: ReservationPosition[];
+  expectedGatewayAmount: number | null;
+  providerId: string;
+  paymentProvider: PaymentProvider;
+  status: 200 | 201;
+}
+
+/** Builds the buyer's payment hand-off response. Null when the payment provider refuses to
+ *  initiate (not configured); each caller decides what that refusal looks like. */
+async function buildHandoffResponse(input: HandoffInput): Promise<NextResponse | null> {
   // A replay is re-authenticated here from the STORED, server-derived amount — never from a
   // stored hand-off payload and never from the request body.
-  const { reference, amount, positions, expectedGatewayAmount } = outcome;
+  const { reference, amount, positions, expectedGatewayAmount, providerId, paymentProvider } = input;
   const amountFormatted = amount.toFixed(2);
 
   // F2 (payment-provider-seam): this route no longer knows which gateway it is handing off to.
@@ -1158,26 +1246,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     notifyUrl: nosUrl(NOTIFY_PATH_BY_PROVIDER_ID[providerId]),
   });
 
-  // The gateway credential guard again, and this is DEFENCE IN DEPTH rather than redundancy:
-  // config is read per call by design, so it can genuinely change between the readiness probe
-  // above and this hand-off. 500 and not 4xx is deliberate: the request was well-formed and the
-  // misconfiguration is ours, so a 4xx would tell the buyer to fix something they cannot see.
-  // Status and message are byte-identical to the pre-F2 refusal
-  // (contracts/golden/payment-seam-f1/fail-closed-guards.golden.md).
+  // Compile-time exhaustiveness, not decoration: 'not-configured' is the only refusal the
+  // interface can currently produce, and this annotation breaks the build if it ever grows
+  // another, forcing the callers to decide what that new refusal means.
   if (!initiation.ok) {
-    // Compile-time exhaustiveness, not decoration: 'not-configured' is the only refusal the
-    // interface can currently produce, and this annotation breaks the build if it ever grows
-    // another — forcing this route to decide what that new refusal means rather than silently
-    // folding it into the same 500.
     const refusal: 'not-configured' = initiation.reason;
     console.error('[tickets/checkout] Payment provider refused the hand-off', {
       reference,
       reason: refusal,
     });
-    return NextResponse.json(
-      { error: 'Payment gateway is not configured. Please try again later.' },
-      { status: 500 }
-    );
+    return null;
   }
 
   return NextResponse.json(
@@ -1198,9 +1276,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       amount: amountFormatted,
       providerId,
     },
-    // A fresh reservation is 201, an idempotent replay is 200, so the two remain
-    // distinguishable to a client that wants to know whether it actually created one.
-    { status: outcome.kind === 'created' ? 201 : 200 }
+    { status: input.status }
   );
 }
 
