@@ -110,9 +110,21 @@ if (!feedCallMatch) {
   fail('could not locate the resolveExpectedGatewayAmount(...) call feeding reserveTicket()\'s input, in code (non-comment) text');
 } else {
   const afterFeedCall = stripped.slice(feedCallMatch.index + feedCallMatch[0].length);
-  if (/\bozowSandboxTestModeEnabled\b/.test(afterFeedCall)) {
+  // REPAIRED 2026-11-22: since SEC-06 F4 (#69) the SAME single flag read is also handed to the
+  // reservation input as `ozowSandboxTestMode: ozowSandboxTestModeEnabled` (it marks test-issued
+  // tickets), on the line right after the feed call. That is the one allowed extra use: it is
+  // inside the reserveTicket() input, not a re-read feeding initiate(). Strip exactly that
+  // field, then the identifier must still not appear anywhere in code after the feed call.
+  const withoutReservationInputField = afterFeedCall.replace(
+    /\bozowSandboxTestMode\s*:\s*ozowSandboxTestModeEnabled\b/,
+    ''
+  );
+  if (withoutReservationInputField === afterFeedCall) {
+    fail('the reservation input no longer carries `ozowSandboxTestMode: ozowSandboxTestModeEnabled` (SEC-06 F4); re-derive this check');
+  }
+  if (/\bozowSandboxTestModeEnabled\b/.test(withoutReservationInputField)) {
     fail(
-      'ozowSandboxTestModeEnabled is referenced in code AFTER the resolveExpectedGatewayAmount(...) call that feeds reserveTicket() — the handoff must derive the initiate() amount from the reservation outcome, not a second live flag read'
+      'ozowSandboxTestModeEnabled is referenced in code AFTER the resolveExpectedGatewayAmount(...) call that feeds reserveTicket() (other than the reservation input field) — the handoff must derive the initiate() amount from the reservation outcome, not a second live flag read'
     );
   }
 }

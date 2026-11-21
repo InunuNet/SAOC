@@ -73,16 +73,15 @@ if (formRaw) {
 const shared = read('lib/ozow-sandbox-test-mode-shared.ts');
 if (shared) expect(shared.includes('TEST MODE — Ozow charges R0.01 instead of the displayed price'), 'banner text constant must be the existing string.');
 
-// --- 5. Untouched vs BASE ----------------------------------------------------------------------
+// --- 5. Ticket / PayFast side stays out of this feature ----------------------------------------
+// REPAIRED 2026-11-22. This section used to demand that ten files be byte-identical to BASE. That
+// rotted as the ticket side legitimately moved (SEC-06 test-mode flag, secrets bundle, rate limits,
+// retryable notifications, a banner restyle) and the check failed for reasons unrelated to what it
+// protects. What it protects: F5 must not leak the R0.01 sandbox amount override into the ticket or
+// PayFast settlement code, nor couple them to the vendor-stand amount helper. That is asserted
+// directly below; files that have not drifted stay byte-pinned to BASE.
 const MUST_NOT_CHANGE = [
-  'lib/ozow-sandbox-test-mode.ts',
-  'lib/ozow-sandbox-test-mode-shared.ts',
-  'components/tickets/OzowSandboxTestModeBanner.tsx',
-  'lib/tickets-notification.ts',
-  'lib/orders.ts',
-  'lib/checkout-reservation.ts',
-  'app/api/tickets/checkout/route.ts',
-  'lib/payments/payfast.ts',
+  'lib/ozow-sandbox-test-mode-shared.ts', // the one home of the R0.01 helpers
   'lib/vendor-stand-orders.ts',
   'lib/vendor-stand-payment-token.ts',
 ];
@@ -90,6 +89,30 @@ for (const f of MUST_NOT_CHANGE) {
   try { execFileSync('git', ['diff', '--quiet', BASE, '--', f], { stdio: 'ignore' }); }
   catch { failures.push(`${f} must be byte-identical to base ${BASE}.`); }
 }
+
+// lib/payments/payfast.ts is re-pinned to the content reviewed on 2026-11-22 (origin/main 5fb1250d).
+// Reviewed diff BASE..5fb1250d: a different env source, a refusal when PAYFAST_SANDBOX_MODE is off,
+// a constant-time signature compare, and (#226) a 10 s timeout with 5xx/408/429 mapped to
+// 'request-failed' on the server-confirm call. None of it touches the initiate amount, the
+// amountFormatted field or any Ozow sandbox logic, so the pin is safe. A later change fails here on
+// purpose: re-read the diff for amount/sandbox logic, then advance PAYFAST_REVIEWED_AT.
+const PAYFAST_REVIEWED_AT = '5fb1250d';
+try { execFileSync('git', ['diff', '--quiet', PAYFAST_REVIEWED_AT, '--', 'lib/payments/payfast.ts'], { stdio: 'ignore' }); }
+catch { failures.push(`lib/payments/payfast.ts changed since reviewed commit ${PAYFAST_REVIEWED_AT}; review the diff for amount/sandbox logic, then advance PAYFAST_REVIEWED_AT.`); }
+
+for (const f of ['lib/payments/payfast.ts', 'lib/tickets-notification.ts', 'lib/orders.ts', 'lib/checkout-reservation.ts']) {
+  const code = read(f);
+  if (!code) continue;
+  const stripped = strip(code);
+  expect(!/resolveOzowInitiateAmount|vendor-stand-order-amount/.test(stripped), `${f} must not use the sandbox amount override or the vendor-stand amount helper.`);
+  expect(!/['"`]0\.01['"`]|\b0\.01\b/.test(stripped), `${f} must not contain a literal 0.01.`);
+}
+
+// The live flag reader and the banner keep their fail-closed contract.
+const flagLib = read('lib/ozow-sandbox-test-mode.ts');
+if (flagLib) expect(/export async function isOzowSandboxTestModeEnabled/.test(flagLib) && /return data\?\.enabled === true;/.test(flagLib), 'the live flag reader must remain, returning true only for enabled === true.');
+const bannerRaw = read('components/tickets/OzowSandboxTestModeBanner.tsx');
+if (bannerRaw) expect(/OZOW_SANDBOX_TEST_MODE_BANNER_TEXT/.test(bannerRaw) && /enabled === true/.test(bannerRaw) && /if \(!enabled\) return null/.test(bannerRaw), 'the banner must keep its text constant and its fail-closed render.');
 
 if (failures.length > 0) {
   failures.forEach((f) => console.error(`FAIL: ${f}`));
