@@ -1,9 +1,13 @@
+import { revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore } from 'firebase-admin/firestore';
 
 import { getAdminSession, hasCapability, type AdminAuthResult } from '@/lib/admin-auth';
 import { initAdmin } from '@/lib/firebase-admin';
-import { isOzowSandboxTestModeEnabled } from '@/lib/ozow-sandbox-test-mode';
+import {
+  isOzowSandboxTestModeEnabled,
+  OZOW_SANDBOX_BANNER_CACHE_TAG,
+} from '@/lib/ozow-sandbox-test-mode';
 import { writeAuditedSettingChange } from '@/lib/payment-settings-audit';
 import { resolveShowWindowLookup } from '@/lib/show-window-lookup';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
@@ -79,6 +83,8 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
       next: { enabled },
       actor: { uid: session.decodedToken.uid, email: session.decodedToken.email ?? null },
     });
+    // The public banner reads a 60 s cache; expire it so the toggle shows immediately.
+    revalidateTag(OZOW_SANDBOX_BANNER_CACHE_TAG, { expire: 0 });
     return NextResponse.json({ enabled, changed: result.changed });
   } catch (error) {
     console.error(

@@ -1,4 +1,5 @@
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
+import { unstable_cache } from 'next/cache';
 
 import { initAdmin } from '@/lib/firebase-admin';
 import {
@@ -39,3 +40,19 @@ export async function isOzowSandboxTestModeEnabled(deps?: {
     return false;
   }
 }
+
+/**
+ * DISPLAY ONLY. The public checkout banner polls this flag on every page view, so that read goes
+ * through a short tagged cache (one Firestore read per OZOW_SANDBOX_BANNER_REVALIDATE_SECONDS).
+ * The admin PUT route calls revalidateTag(OZOW_SANDBOX_BANNER_CACHE_TAG) so a toggle shows at
+ * once. Never use this to decide sandbox vs live: checkout, the vendor stand payment and the admin
+ * screens all call isOzowSandboxTestModeEnabled() directly, uncached.
+ */
+export const OZOW_SANDBOX_BANNER_CACHE_TAG = 'ozow-sandbox-banner';
+export const OZOW_SANDBOX_BANNER_REVALIDATE_SECONDS = 60;
+
+export const getCachedOzowSandboxTestModeForDisplay = unstable_cache(
+  () => isOzowSandboxTestModeEnabled(),
+  [OZOW_SANDBOX_BANNER_CACHE_TAG],
+  { revalidate: OZOW_SANDBOX_BANNER_REVALIDATE_SECONDS, tags: [OZOW_SANDBOX_BANNER_CACHE_TAG] },
+);

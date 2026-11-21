@@ -27,9 +27,15 @@ try {
   process.exit(1);
 }
 
-// It must call the shared fail-closed helper — not reimplement its own Firestore read.
-if (!/isOzowSandboxTestModeEnabled\s*\(/.test(src)) {
-  fail('route does not call isOzowSandboxTestModeEnabled() from lib/ozow-sandbox-test-mode');
+// It must call the shared fail-closed helper (through the display-only 60 s cache wrapper) — not
+// reimplement its own Firestore read. The wrapper itself must delegate to
+// isOzowSandboxTestModeEnabled(), so the fail-closed read stays the single source.
+if (!/getCachedOzowSandboxTestModeForDisplay\s*\(/.test(src)) {
+  fail('route does not call getCachedOzowSandboxTestModeForDisplay() from lib/ozow-sandbox-test-mode');
+}
+const lib = readFileSync('lib/ozow-sandbox-test-mode.ts', 'utf8');
+if (!/unstable_cache\(\s*\(\)\s*=>\s*isOzowSandboxTestModeEnabled\(\)/.test(lib)) {
+  fail('getCachedOzowSandboxTestModeForDisplay must wrap isOzowSandboxTestModeEnabled() via unstable_cache');
 }
 
 // It must NOT import/call the admin gate — this route is deliberately public.

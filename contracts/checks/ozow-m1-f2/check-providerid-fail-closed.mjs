@@ -1,31 +1,27 @@
 #!/usr/bin/env node
-// A2 — providerId VALIDATION IS FAIL-CLOSED: A 400 ON MISSING/INVALID, NEVER A SILENT PAYFAST
-// DEFAULT. This is the explicit @architect decision (spec §3, M2/F3) the mission brief calls out
-// as "not left to @dev's judgement" and demands as "a positive contract assertion" — proof it
-// 400s, not merely that valid ids work.
+// A2 (REPAIRED 2026-11-22) — THE GATEWAY IS FAIL-CLOSED: NO ACTIVE GATEWAY CONFIGURED MEANS A 500,
+// NEVER A SILENT PAYFAST DEFAULT, AND A CLIENT-SUPPLIED providerId CAN NEVER CHOOSE THE GATEWAY.
 //
-// THE OFFLINE TRICK: with NEXT_PUBLIC_SANITY_PROJECT_ID unset, `client` (sanity/lib/client.ts) is
-// `null`, and checkout/route.ts's OWN existing code already refuses with 500 "CMS is not
-// configured" the moment it reaches `if (!client)`. That refusal is a real, pre-existing landmark
-// this feature does not add. Requiring providerId validation to run BEFORE that landmark — not
-// merely "somewhere before the reservation write" — makes the two failure modes MUTUALLY
-// OBSERVABLE without touching Firestore/Sanity at all: a bad providerId must produce a 400 with
-// this feature's own error text, and a valid providerId (with the CMS still unconfigured) must
-// produce the PRE-EXISTING 500, proving the code actually walked past the providerId gate rather
-// than the gate being unreachable/decorative. If providerId validation were placed AFTER the
-// Sanity fetch (or omitted entirely), every case below would return the SAME 500, and cases 1-6
-// would not discriminate between "the providerId check ran and passed" and "the providerId check
-// never ran" — the CMS-not-configured control at the bottom of this script exists specifically to
-// rule that out.
+// Why this check changed: it originally proved that a missing/invalid CLIENT providerId returned
+// 400. Mission gateway-picker-admin-only F1 deliberately removed that parameter: the route now
+// resolves the gateway server-side from the admin-set Firestore doc (resolveActiveGateway) and
+// ignores whatever the client sends. The old 400 assertions therefore failed for a good reason
+// (the product changed on purpose; this is not a payment regression). The property they protected,
+// "no silent default gateway; the client cannot pick one", is asserted here against the new shape.
 //
-// WHAT MAKES THIS FAIL: providerId omitted, empty, wrong-case, or an unrecognised string ever
-// returning anything other than 400; a 400 for a bad providerId that is indistinguishable from the
-// existing showId/lineItems 400 (case 7 requires provider-specific response text, so a client can
-// tell the two apart); a valid providerId ('payfast' or 'ozow') failing to reach the CMS-not-
-// configured 500 (would mean the gate never ran, or ran and wrongly rejected something valid);
-// EITHER 'payfast' or 'ozow' rejected (the allow-list must include BOTH, not just the new one).
+// THE OFFLINE TRICK: with the Firebase admin credentials unset, resolveActiveGateway() cannot read
+// the settings doc and returns null, so checkout must refuse with the gateway-not-configured 500.
+// That refusal runs BEFORE the CMS guard, so every case below returns the same gateway 500 and
+// never the later "CMS is not configured" 500 (which would mean the gate was skipped) and never a
+// 2xx or a redirect to a gateway (which would mean a default was silently chosen).
 //
-// Run as: NEXT_PUBLIC_SANITY_PROJECT_ID= npx tsx contracts/checks/ozow-m1-f2/check-providerid-fail-closed.mjs
+// WHAT MAKES THIS FAIL: any providerId value (omitted, invalid, or a valid 'payfast'/'ozow') that
+// gets anything other than the gateway-not-configured 500 while no gateway is configured; the
+// route source reading `providerId` off the request body again (a client-chosen gateway).
+//
+// Run as: NEXT_PUBLIC_SANITY_PROJECT_ID= pnpm exec tsx contracts/checks/ozow-m1-f2/check-providerid-fail-closed.mjs
+
+import { readFileSync } from 'node:fs';
 
 process.env.NEXT_PUBLIC_SANITY_PROJECT_ID = '';
 // Deliberately absent so ANY code path that reaches Firestore throws loudly rather than hanging
@@ -68,45 +64,34 @@ async function callCheckout(bodyOverrides) {
   return { status: response.status, json };
 }
 
-// Cases 1-6: invalid providerId values must all 400, never anything else (never 500, never a
-// 2xx that would mean a purchase silently proceeded against a default gateway).
-const invalidCases = [
+// Every client-supplied providerId, valid or not, must hit the same fail-closed gateway 500 while
+// no gateway is configured: the value is ignored, there is no default, and nothing proceeds.
+const cases = [
   ['omitted', {}],
   ['empty string', { providerId: '' }],
   ['unrecognised string', { providerId: 'stripe' }],
   ['wrong case', { providerId: 'PayFast' }],
   ['null', { providerId: null }],
   ['non-string (number)', { providerId: 1 }],
+  ['valid payfast', { providerId: 'payfast' }],
+  ['valid ozow', { providerId: 'ozow' }],
 ];
-for (const [label, overrides] of invalidCases) {
+for (const [label, overrides] of cases) {
   const { status, json } = await callCheckout(overrides);
-  ok(`case (${label}): providerId=${JSON.stringify(overrides.providerId)} returns 400`,
-    status === 400, `actual status: ${status}, body: ${JSON.stringify(json)}`);
-}
-
-// Case 7: the providerId-specific 400 carries its own distinguishable error text — not the
-// generic showId/lineItems message, so a client (and this check) can tell WHICH validation failed.
-{
-  const { json } = await callCheckout({ providerId: 'stripe' });
-  const message = String(json?.error ?? '');
-  ok('case 7: invalid-providerId 400 has its own error text (mentions providerId)',
-    /providerId/i.test(message), `actual error: ${JSON.stringify(message)}`);
-}
-
-// Cases 8-9 (THE CONTROL): a VALID providerId must walk PAST the providerId gate and reach the
-// pre-existing "CMS is not configured" 500 — proving the gate ran and passed, not that it was
-// skipped or unreachable. Without this control, cases 1-6 all returning 400 could just as easily
-// mean "everything 400s regardless of providerId" (e.g. a route that 400s before parsing the body
-// at all) rather than "the providerId gate specifically discriminates."
-for (const providerId of ['payfast', 'ozow']) {
-  const { status, json } = await callCheckout({ providerId });
-  ok(`case (control, providerId=${providerId}): passes the providerId gate and reaches the CMS-not-configured 500`,
-    status === 500 && /CMS is not configured/i.test(String(json?.error ?? '')),
+  ok(`case (${label}): no active gateway returns the gateway-not-configured 500`,
+    status === 500 && /Payment gateway is not configured/i.test(String(json?.error ?? '')),
     `actual status: ${status}, body: ${JSON.stringify(json)}`);
 }
+
+// The gateway must never be read off the request body: that would re-open a client-chosen gateway.
+const routeSource = readFileSync(new URL('../../../app/api/tickets/checkout/route.ts', import.meta.url), 'utf8');
+ok('route does not read providerId from the request body',
+  !/body\.providerId|body\[['"]providerId['"]\]/.test(routeSource));
+ok('route resolves the gateway server-side via resolveActiveGateway()',
+  /await resolveActiveGateway\(\)/.test(routeSource));
 
 if (failures.length > 0) {
   console.error(`FAIL — ${failures.length} case(s):\n\n${failures.join('\n\n')}`);
   process.exit(1);
 }
-console.log('PASS — providerId validation is fail-closed (400 on missing/invalid) with no silent PayFast default.');
+console.log('PASS — the gateway is resolved server-side and fails closed (500) with no silent PayFast default.');
