@@ -46,9 +46,8 @@ const rateLimitStore = createInMemoryVendorRegistrationCodeVerifyRateLimitStore(
  * Distinct key namespace (`vendor-register-code-verify-ip:*`) from the register route's own
  * (`vendor-register-ip:*`).
  */
-function deriveRateLimitKey(request: NextRequest): string {
-  const ip = clientIpFromForwardedFor(request.headers.get('x-forwarded-for'));
-  return `vendor-register-code-verify-ip:${ip ?? 'unknown'}`;
+function deriveClientIp(request: NextRequest): string {
+  return clientIpFromForwardedFor(request.headers.get('x-forwarded-for')) ?? 'unknown';
 }
 
 /**
@@ -79,6 +78,8 @@ function toCandidate(doc: FirebaseFirestore.QueryDocumentSnapshot): VendorRegist
     registrationCodeConsumedAt:
       data.registrationTokenConsumedAt?.toDate?.() ?? data.registrationCodeConsumedAt?.toDate?.() ?? null,
     registrationCodeLockedAt: data.registrationCodeLockedAt?.toDate?.() ?? null,
+    registrationCodeFailedAttempts:
+      typeof data.registrationCodeFailedAttempts === 'number' ? data.registrationCodeFailedAttempts : null,
   };
 }
 
@@ -125,6 +126,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
+  const clientIp = deriveClientIp(request);
   initAdmin();
   const db = getFirestore();
   const now = new Date();
@@ -138,7 +140,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     { businessName, codeId },
     {
       now,
-      rateLimitKey: deriveRateLimitKey(request),
+      rateLimitKey: `vendor-register-code-verify-ip:${clientIp}`,
+      clientIp,
       getPriorAttempts: (key) => rateLimitStore.getPriorAttempts(key),
       recordAttempt: (key, at) => rateLimitStore.recordAttempt(key, at),
       findCandidates: async (normalizedNameSlug) => {

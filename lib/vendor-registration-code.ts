@@ -21,11 +21,19 @@ import type {
  * redefined.
  */
 
-/** 5 failed attempts locks the application (per-application, not per-IP -- see the golden
- *  README's "Verification, rate limiting, and lockout thresholds" for the full reasoning: at
- *  5 attempts against a 10,000-value space, an attacker gets at most a 0.05% chance of success
- *  before locking). No auto-expiry -- only an operator reissue (F25) clears a lockout. */
+/** Every 5th failed attempt soft-locks the application for
+ *  VENDOR_REGISTRATION_CODE_LOCK_COOLDOWN_MS. It slows a guesser instead of shutting the vendor
+ *  out: anyone who knows a public business name could previously lock that vendor out with 5
+ *  bad guesses (audit F7). */
 export const VENDOR_REGISTRATION_CODE_LOCK_THRESHOLD = 5;
+
+/** How long a soft lock lasts before the vendor can try again. */
+export const VENDOR_REGISTRATION_CODE_LOCK_COOLDOWN_MS = 15 * 60 * 1000;
+
+/** Cumulative failed attempts after which the lock becomes permanent (no auto-expiry; only an
+ *  operator reissue (F25) clears it). This is the brute-force ceiling: 25 guesses against a
+ *  10,000-value space is a 0.25% chance of success per issued code. */
+export const VENDOR_REGISTRATION_CODE_HARD_LOCK_THRESHOLD = 25;
 
 /** Reuses the exact 14-day value already used for VENDOR_REGISTRATION_TOKEN_DEFAULT_TTL_MS --
  *  the vendor-facing TTL is unchanged by this mission; only what gets issued changes. */
@@ -71,6 +79,8 @@ export interface VendorRegistrationCodeCandidate {
   registrationCodeExpiresAt: Date | null | undefined;
   registrationCodeConsumedAt: Date | null | undefined;
   registrationCodeLockedAt: Date | null | undefined;
+  /** Cumulative failed attempts. Absent on a locked candidate means a legacy permanent lock. */
+  registrationCodeFailedAttempts?: number | null;
 }
 
 export interface VerifyVendorRegistrationCodeInput {
@@ -84,6 +94,16 @@ export type VerifyVendorRegistrationCodeResult =
   | { ok: true; applicationId: string }
   | { ok: false };
 
+function isCandidateLocked(candidate: VendorRegistrationCodeCandidate, now: Date): boolean {
+  const lockedAt = candidate.registrationCodeLockedAt;
+  if (!lockedAt) return false;
+  const attempts = candidate.registrationCodeFailedAttempts;
+  // A lock with no readable counter predates soft locks: keep it permanent (fail closed).
+  if (typeof attempts !== 'number') return true;
+  if (attempts >= VENDOR_REGISTRATION_CODE_HARD_LOCK_THRESHOLD) return true;
+  return now.getTime() < lockedAt.getTime() + VENDOR_REGISTRATION_CODE_LOCK_COOLDOWN_MS;
+}
+
 function isEligibleCandidate(
   candidate: VendorRegistrationCodeCandidate,
   typedNameSlug: string,
@@ -91,7 +111,7 @@ function isEligibleCandidate(
 ): boolean {
   if (candidate.registrationCodeNameSlug !== typedNameSlug) return false;
   if (candidate.status !== 'approved') return false;
-  if (candidate.registrationCodeLockedAt) return false;
+  if (isCandidateLocked(candidate, now)) return false;
   if (candidate.registrationCodeConsumedAt) return false;
   if (!candidate.registrationCodeExpiresAt) return false;
   if (now.getTime() >= candidate.registrationCodeExpiresAt.getTime()) return false;
@@ -166,7 +186,9 @@ export async function recordFailedVendorRegistrationCodeAttempt(
           ? (data['registrationCodeFailedAttempts'] as number)
           : 0;
       const nextAttempts = currentAttempts + 1;
-      const locked = nextAttempts >= VENDOR_REGISTRATION_CODE_LOCK_THRESHOLD;
+      const locked =
+        nextAttempts >= VENDOR_REGISTRATION_CODE_HARD_LOCK_THRESHOLD ||
+        nextAttempts % VENDOR_REGISTRATION_CODE_LOCK_THRESHOLD === 0;
 
       const patch: Record<string, unknown> = { registrationCodeFailedAttempts: nextAttempts };
       if (locked) {
