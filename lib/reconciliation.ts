@@ -28,6 +28,18 @@ const TICKETS_COLLECTION = 'tickets';
  *  elapses — this is a recurring reminder, not a permanent one-shot silence. */
 export const RE_ALERT_WINDOW_MS = 6 * 60 * 60 * 1000; // 6 hours
 
+/** Only reservations that expired within this window are candidates. Older ones are abandoned
+ *  carts, not stranded payments, and re-alerting them forever costs writes and buries the real
+ *  signal. 7 days survives a multi-day outage of the cron without dropping a real stranded order. */
+export const STRANDED_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+/** Documents fetched per query page. */
+export const STRANDED_PAGE_SIZE = 50;
+
+/** Hard ceiling on candidates per run, so one run's reads and writes stay bounded. The window is
+ *  read newest first, so if the ceiling is ever hit it is the oldest candidates that are cut. */
+export const STRANDED_CANDIDATE_CEILING = 500;
+
 // ---------------------------------------------------------------------------------------------
 // Deliberately narrow structural interfaces matching only the read/write surface this module
 // actually calls, so the real `Firestore` class already satisfies them with zero adapter code
@@ -48,7 +60,10 @@ export interface ReconciliationQuerySnapshotLike {
 }
 
 export interface ReconciliationQueryLike {
-  where(field: string, op: '==' | '<', value: unknown): ReconciliationQueryLike;
+  where(field: string, op: '==' | '<' | '>', value: unknown): ReconciliationQueryLike;
+  orderBy(field: string, direction: 'asc' | 'desc'): ReconciliationQueryLike;
+  startAfter(snapshot: ReconciliationDocSnapshotLike): ReconciliationQueryLike;
+  limit(count: number): ReconciliationQueryLike;
   get(): Promise<ReconciliationQuerySnapshotLike>;
 }
 
@@ -60,7 +75,7 @@ export interface ReconciliationDocRefLike {
 }
 
 export interface ReconciliationCollectionLike {
-  where(field: string, op: '==' | '<', value: unknown): ReconciliationQueryLike;
+  where(field: string, op: '==' | '<' | '>', value: unknown): ReconciliationQueryLike;
   doc(id: string): ReconciliationDocRefLike;
 }
 
@@ -86,7 +101,9 @@ function defaultDb(): ReconciliationFirestoreLike {
 export type StrandedOrder = Omit<Order, 'id'> & { orderId: string };
 
 /**
- * Queries `orders` for `status == 'reserved' AND expiresAt < now` — necessary but not
+ * Queries `orders` for `status == 'reserved'` that expired within STRANDED_LOOKBACK_MS, newest
+ * first, paged by STRANDED_PAGE_SIZE up to STRANDED_CANDIDATE_CEILING (a warning is logged,
+ * with no order data, if the ceiling is hit) — necessary but not
  * sufficient on its own to prove "stranded": an abandoned mid-checkout cart also matches
  * `status == 'reserved'`, and `expiresAt < now` is exactly what excludes it (a live checkout's
  * `expiresAt` is still in the future). See check-detects-stranded-orders.mjs (A2) for the full
@@ -100,16 +117,66 @@ export async function findStrandedOrders(
   deps: { db?: ReconciliationFirestoreLike } = {}
 ): Promise<StrandedOrder[]> {
   const db = deps.db ?? defaultDb();
-  const snapshot = await db
+  const windowStart = Timestamp.fromMillis(now.toMillis() - STRANDED_LOOKBACK_MS);
+  const window = db
     .collection(ORDERS_COLLECTION)
     .where('status', '==', 'reserved')
     .where('expiresAt', '<', now)
-    .get();
+    .where('expiresAt', '>', windowStart);
 
-  return snapshot.docs.map((doc) => ({
-    ...(doc.data() as Omit<Order, 'id'>),
-    orderId: doc.id,
-  }));
+  try {
+    return await collectCandidates(window.orderBy('expiresAt', 'desc'), 'newest-first');
+  } catch (error) {
+    if (!isMissingIndexError(error)) throw error;
+    // The descending composite index is not deployed (or still building). Fall back to the
+    // ascending order the original (status, expiresAt) index serves, so the 6-hourly check keeps
+    // running instead of failing outright. Same window, same paging and ceiling.
+    console.warn(
+      '[reconciliation] Descending (status, expiresAt) index unavailable; using ascending order',
+      { code: errorCode(error) }
+    );
+    return collectCandidates(window, 'oldest-first');
+  }
+}
+
+/** Firestore reports a missing or still-building composite index as gRPC FAILED_PRECONDITION. */
+const FAILED_PRECONDITION_CODE = 9;
+
+function errorCode(error: unknown): number | string | null {
+  if (typeof error !== 'object' || error === null) return null;
+  const code = (error as { code?: unknown }).code;
+  return typeof code === 'number' || typeof code === 'string' ? code : null;
+}
+
+function isMissingIndexError(error: unknown): boolean {
+  const code = errorCode(error);
+  return code === FAILED_PRECONDITION_CODE || code === 'failed-precondition';
+}
+
+/** Pages through `query` PAGE_SIZE at a time until it runs out or the ceiling is reached. */
+async function collectCandidates(
+  query: ReconciliationQueryLike,
+  direction: 'newest-first' | 'oldest-first'
+): Promise<StrandedOrder[]> {
+  const found: StrandedOrder[] = [];
+  let cursor: ReconciliationDocSnapshotLike | null = null;
+  while (found.length < STRANDED_CANDIDATE_CEILING) {
+    const pageSize = Math.min(STRANDED_PAGE_SIZE, STRANDED_CANDIDATE_CEILING - found.length);
+    const page = await (cursor ? query.startAfter(cursor) : query).limit(pageSize).get();
+    for (const doc of page.docs) {
+      found.push({ ...(doc.data() as Omit<Order, 'id'>), orderId: doc.id });
+    }
+    if (page.docs.length < pageSize) return found;
+    cursor = page.docs[page.docs.length - 1];
+  }
+
+  // The last page was full and the ceiling is reached: there may be more candidates beyond it.
+  console.warn('[reconciliation] Stranded-order candidate ceiling reached; some not scanned', {
+    ceiling: STRANDED_CANDIDATE_CEILING,
+    lookbackMs: STRANDED_LOOKBACK_MS,
+    direction,
+  });
+  return found;
 }
 
 /**

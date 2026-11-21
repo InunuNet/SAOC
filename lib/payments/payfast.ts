@@ -42,6 +42,14 @@ import type {
  */
 
 /** The one gateway status that may settle an order. Strict, case-sensitive, untrimmed. */
+const VALIDATE_REQUEST_TIMEOUT_MS = 10_000;
+const HTTP_SERVER_ERROR_MIN = 500;
+const HTTP_REQUEST_TIMEOUT = 408;
+const HTTP_TOO_MANY_REQUESTS = 429;
+const TRANSIENT_CLIENT_STATUSES: ReadonlySet<number> = new Set([
+  HTTP_REQUEST_TIMEOUT,
+  HTTP_TOO_MANY_REQUESTS,
+]);
 const COMPLETE_STATUS = 'COMPLETE';
 
 /** PayFast's documented server-confirm success body, after trimming. */
@@ -312,7 +320,18 @@ export function createPayfastProvider(deps?: PayfastProviderDeps): PaymentProvid
           method: 'POST',
           headers: { 'Content-Type': CONTENT_TYPE_FORM_URLENCODED },
           body: buildPayfastNotifyParamString(fields),
+          signal: AbortSignal.timeout(VALIDATE_REQUEST_TIMEOUT_MS),
         });
+        if (
+          response.status >= HTTP_SERVER_ERROR_MIN ||
+          TRANSIENT_CLIENT_STATUSES.has(response.status)
+        ) {
+          console.error('[payments/payfast] Server confirmation got a transient HTTP status.', {
+            reference: notification.reference,
+            status: response.status,
+          });
+          return { confirmed: false, reason: 'request-failed' };
+        }
         const text = (await response.text()).trim();
         if (text !== VALID_CONFIRMATION) {
           console.error('[payments/payfast] Server confirmation did not return VALID.', {
