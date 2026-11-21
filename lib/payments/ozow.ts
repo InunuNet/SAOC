@@ -426,15 +426,21 @@ export function createOzowProvider(deps?: OzowProviderDeps): PaymentProvider {
         return { confirmed: false, reason: transient ? 'request-failed' : 'not-valid' };
       }
 
+      // response.json() rejects with a SyntaxError only for a body that ARRIVED in full but is not
+      // valid JSON: a definitive refusal. Any other rejection (the 10s timeout firing mid-body,
+      // a dropped connection) means the body was never received: transient, so retryable.
       let body: unknown;
       try {
         body = await response.json();
       } catch (error) {
-        console.error('[payments/ozow] Transaction status response was not valid JSON.', {
+        console.error('[payments/ozow] Transaction status response body was not usable.', {
           reference: notification.reference,
           error,
         });
-        return { confirmed: false, reason: 'not-valid' };
+        return {
+          confirmed: false,
+          reason: error instanceof SyntaxError ? 'not-valid' : 'request-failed',
+        };
       }
       if (!Array.isArray(body)) {
         console.error('[payments/ozow] Transaction status response was not an array.', {

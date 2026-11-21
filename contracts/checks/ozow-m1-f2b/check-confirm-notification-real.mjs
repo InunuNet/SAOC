@@ -156,10 +156,18 @@ await runCase('response array has no matching TransactionReference', {
 });
 
 // Case 5 — non-2xx
-await runCase('non-2xx HTTP response', {
+// Case 5 — non-2xx. A definitive 4xx refusal stays 'not-valid'; a 5xx is transient and now maps to
+// 'request-failed' so the notification handler answers 503 and the gateway retries (ticket-path
+// hardening fix 2).
+await runCase('non-2xx HTTP response (400, definitive)', {
+  env: REAL_ENV,
+  fetchImpl: async () => jsonResponse({ error: 'nope' }, false, 400),
+  expect: { confirmed: false, reason: 'not-valid' },
+});
+await runCase('non-2xx HTTP response (500, transient)', {
   env: REAL_ENV,
   fetchImpl: async () => jsonResponse({ error: 'nope' }, false, 500),
-  expect: { confirmed: false, reason: 'not-valid' },
+  expect: { confirmed: false, reason: 'request-failed' },
 });
 
 // Case 6 — thrown fetch error

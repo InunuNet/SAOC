@@ -30,11 +30,15 @@ export const RE_ALERT_WINDOW_MS = 6 * 60 * 60 * 1000; // 6 hours
 
 /** Only reservations that expired within this window are candidates. Older ones are abandoned
  *  carts, not stranded payments, and re-alerting them forever costs writes and buries the real
- *  signal. A stranded paid order still alerts several times (every 6 h) inside the window. */
-export const STRANDED_LOOKBACK_MS = 48 * 60 * 60 * 1000; // 48 hours
+ *  signal. 7 days survives a multi-day outage of the cron without dropping a real stranded order. */
+export const STRANDED_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-/** Upper bound on candidates per run, so one run's reads and writes are bounded. */
-export const STRANDED_CANDIDATE_LIMIT = 50;
+/** Documents fetched per query page. */
+export const STRANDED_PAGE_SIZE = 50;
+
+/** Hard ceiling on candidates per run, so one run's reads and writes stay bounded. The window is
+ *  read newest first, so if the ceiling is ever hit it is the oldest candidates that are cut. */
+export const STRANDED_CANDIDATE_CEILING = 500;
 
 // ---------------------------------------------------------------------------------------------
 // Deliberately narrow structural interfaces matching only the read/write surface this module
@@ -57,6 +61,8 @@ export interface ReconciliationQuerySnapshotLike {
 
 export interface ReconciliationQueryLike {
   where(field: string, op: '==' | '<' | '>', value: unknown): ReconciliationQueryLike;
+  orderBy(field: string, direction: 'asc' | 'desc'): ReconciliationQueryLike;
+  startAfter(snapshot: ReconciliationDocSnapshotLike): ReconciliationQueryLike;
   limit(count: number): ReconciliationQueryLike;
   get(): Promise<ReconciliationQuerySnapshotLike>;
 }
@@ -95,8 +101,9 @@ function defaultDb(): ReconciliationFirestoreLike {
 export type StrandedOrder = Omit<Order, 'id'> & { orderId: string };
 
 /**
- * Queries `orders` for `status == 'reserved'` expired within STRANDED_LOOKBACK_MS (at most
- * STRANDED_CANDIDATE_LIMIT rows) — necessary but not
+ * Queries `orders` for `status == 'reserved'` that expired within STRANDED_LOOKBACK_MS, newest
+ * first, paged by STRANDED_PAGE_SIZE up to STRANDED_CANDIDATE_CEILING (a warning is logged,
+ * with no order data, if the ceiling is hit) — necessary but not
  * sufficient on its own to prove "stranded": an abandoned mid-checkout cart also matches
  * `status == 'reserved'`, and `expiresAt < now` is exactly what excludes it (a live checkout's
  * `expiresAt` is still in the future). See check-detects-stranded-orders.mjs (A2) for the full
@@ -111,18 +118,31 @@ export async function findStrandedOrders(
 ): Promise<StrandedOrder[]> {
   const db = deps.db ?? defaultDb();
   const windowStart = Timestamp.fromMillis(now.toMillis() - STRANDED_LOOKBACK_MS);
-  const snapshot = await db
+  const base = db
     .collection(ORDERS_COLLECTION)
     .where('status', '==', 'reserved')
     .where('expiresAt', '<', now)
     .where('expiresAt', '>', windowStart)
-    .limit(STRANDED_CANDIDATE_LIMIT)
-    .get();
+    .orderBy('expiresAt', 'desc');
 
-  return snapshot.docs.map((doc) => ({
-    ...(doc.data() as Omit<Order, 'id'>),
-    orderId: doc.id,
-  }));
+  const found: StrandedOrder[] = [];
+  let cursor: ReconciliationDocSnapshotLike | null = null;
+  while (found.length < STRANDED_CANDIDATE_CEILING) {
+    const pageSize = Math.min(STRANDED_PAGE_SIZE, STRANDED_CANDIDATE_CEILING - found.length);
+    const page = await (cursor ? base.startAfter(cursor) : base).limit(pageSize).get();
+    for (const doc of page.docs) {
+      found.push({ ...(doc.data() as Omit<Order, 'id'>), orderId: doc.id });
+    }
+    if (page.docs.length < pageSize) return found;
+    cursor = page.docs[page.docs.length - 1];
+  }
+
+  // The last page was full and the ceiling is reached: there may be more, older candidates.
+  console.warn('[reconciliation] Stranded-order candidate ceiling reached; older ones not scanned', {
+    ceiling: STRANDED_CANDIDATE_CEILING,
+    lookbackMs: STRANDED_LOOKBACK_MS,
+  });
+  return found;
 }
 
 /**

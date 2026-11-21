@@ -71,3 +71,31 @@ test('verification is not weakened: a Complete row still confirms, a non-Complet
   const no = await confirmWith(() => ({ ok: true, status: 200, json: async () => row('Cancelled') }));
   assert.deepEqual(no.result, { confirmed: false, reason: 'not-valid' });
 });
+
+test('body read failing mid-stream (timeout/abort/network) is retryable, not a refusal', async () => {
+  for (const make of [
+    () => new DOMException('The operation timed out.', 'TimeoutError'),
+    () => new DOMException('This operation was aborted', 'AbortError'),
+    () => new TypeError('terminated'),
+  ]) {
+    const { result } = await confirmWith(() => ({
+      ok: true,
+      status: 200,
+      json: async () => {
+        throw make();
+      },
+    }));
+    assert.deepEqual(result, { confirmed: false, reason: 'request-failed' });
+  }
+});
+
+test('a body that arrived in full but is malformed stays a definitive refusal', async () => {
+  const { result } = await confirmWith(() => ({
+    ok: true,
+    status: 200,
+    json: async () => {
+      throw new SyntaxError('Unexpected token < in JSON');
+    },
+  }));
+  assert.deepEqual(result, { confirmed: false, reason: 'not-valid' });
+});

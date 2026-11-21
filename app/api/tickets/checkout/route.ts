@@ -475,11 +475,64 @@ const MAX_BODY_BYTES = 131072;
 // Per-IP checkout limit (security audit F1): each call reads every reserved/paid ticket, makes
 // several Sanity calls and holds up to 20 seats for the reservation TTL. 10 per 10 minutes is
 // ample for a real buyer (and a venue address with a few of them). Per server instance, like
-// the status route's limiter. A replay of an existing Idempotency-Key counts as an attempt.
+// the status route's limiter.
+//
+// A replay of an Idempotency-Key that already created an order is a buyer retrying their own
+// purchase (double-click, flaky network, back button), so it must still get its original
+// response when the limiter trips: one cheap indexed lookup decides. Replays that pass this way
+// draw on their own, larger allowance so one real key cannot be used to bypass the limit.
 const CHECKOUT_RATE_LIMIT_MAX_ATTEMPTS = 10;
+const CHECKOUT_REPLAY_RATE_LIMIT_MAX_ATTEMPTS = 30;
 const CHECKOUT_RATE_LIMIT_WINDOW_MS = 10 * 60_000;
 
 const checkoutAttempts = createAttemptStore(CHECKOUT_RATE_LIMIT_WINDOW_MS);
+const checkoutReplayAttempts = createAttemptStore(CHECKOUT_RATE_LIMIT_WINDOW_MS);
+
+/** True when a ticket already exists under this idempotency key. One read, `limit(1)`, no stock
+ *  scan and no Sanity. Fails closed (false) when Firestore errors, so a lookup failure can only
+ *  ever leave the request limited, never widen access. */
+async function idempotencyKeyHasReservation(idempotencyKey: string): Promise<boolean> {
+  try {
+    const snapshot = await getFirestore(initAdmin())
+      .collection(TICKETS_COLLECTION)
+      .where('idempotencyKey', '==', idempotencyKey)
+      .limit(1)
+      .get();
+    return !snapshot.empty;
+  } catch (error) {
+    console.error('[tickets/checkout] Replay lookup failed while rate limited:', error);
+    return false;
+  }
+}
+
+/** Null when the request may proceed; otherwise the 429 to return. */
+async function checkoutRateLimitResponse(
+  ip: string | null,
+  idempotencyKey: string
+): Promise<NextResponse | null> {
+  const ipKey = ip ?? 'unknown';
+  const limit = consumeRateLimit(
+    { now: new Date(), ...scopeAttemptsToRequest(checkoutAttempts) },
+    `ticket-checkout:${ipKey}`,
+    CHECKOUT_RATE_LIMIT_MAX_ATTEMPTS,
+    CHECKOUT_RATE_LIMIT_WINDOW_MS
+  );
+  if (limit.allowed) return null;
+
+  if (await idempotencyKeyHasReservation(idempotencyKey)) {
+    const replayLimit = consumeRateLimit(
+      { now: new Date(), ...scopeAttemptsToRequest(checkoutReplayAttempts) },
+      `ticket-checkout-replay:${ipKey}`,
+      CHECKOUT_REPLAY_RATE_LIMIT_MAX_ATTEMPTS,
+      CHECKOUT_RATE_LIMIT_WINDOW_MS
+    );
+    if (replayLimit.allowed) return null;
+  }
+  return NextResponse.json(
+    { error: 'Too many attempts. Please try again later.' },
+    { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } }
+  );
+}
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!isBodyWithinLimit(request.headers.get('content-length'), MAX_BODY_BYTES)) {
@@ -499,18 +552,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const ip = clientIpFromForwardedFor(request.headers.get('x-forwarded-for'));
-  const limit = consumeRateLimit(
-    { now: new Date(), ...scopeAttemptsToRequest(checkoutAttempts) },
-    `ticket-checkout:${ip ?? 'unknown'}`,
-    CHECKOUT_RATE_LIMIT_MAX_ATTEMPTS,
-    CHECKOUT_RATE_LIMIT_WINDOW_MS,
-  );
-  if (!limit.allowed) {
-    return NextResponse.json(
-      { error: 'Too many attempts. Please try again later.' },
-      { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } },
-    );
-  }
+  const limited = await checkoutRateLimitResponse(ip, idempotencyKey);
+  if (limited) return limited;
 
   let body: CheckoutRequestBody;
   try {
