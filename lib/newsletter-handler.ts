@@ -1,3 +1,5 @@
+import type { DecodedIdToken } from 'firebase-admin/auth';
+
 import type { AdminAuthResult } from './admin-auth';
 import {
   applySubscribe,
@@ -372,6 +374,8 @@ export async function handleAdminNewsletterUnsubscribe(
 
 export interface ExportDeps {
   getSession(): Promise<AdminAuthResult>;
+  // Subscribers are buyer data: a signed-in admin without the export capability is refused 403.
+  hasCapability(decodedToken: DecodedIdToken): Promise<boolean>;
   origin: UnsubscribeOrigin;
   // A bulletin export holds subscribed addresses only, and only those on this list.
   list: NewsletterListFilter;
@@ -409,6 +413,9 @@ export async function handleNewsletterExport(deps: ExportDeps): Promise<ExportRe
       body: unauthenticated ? 'Unauthorized' : 'Forbidden',
       headers: { 'Cache-Control': 'no-store' },
     };
+  }
+  if (!(await deps.hasCapability(session.decodedToken))) {
+    return { status: HTTP_FORBIDDEN, body: 'Forbidden', headers: { 'Cache-Control': 'no-store' } };
   }
   const rows = (await deps.listSubscribers()).filter((row) => rowMatches(row, deps.list, 'subscribed'));
   return {
