@@ -27,3 +27,10 @@ export function isBodyWithinLimit(contentLength: string | null, maxBytes: number
   if (contentLength === null || !DECIMAL_INTEGER.test(contentLength)) return false;
   return Number(contentLength) <= maxBytes;
 }
+
+const FIRESTORE_AUTO_ID = /^[A-Za-z0-9]{20}$/;
+
+/** True for the 20-character shape Firestore gives an auto-generated document id. */
+export function isFirestoreAutoId(id: string): boolean {
+  return FIRESTORE_AUTO_ID.test(id);
+}
