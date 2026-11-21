@@ -1,17 +1,5 @@
 {
-  "mission": ".agent/memory/project/missions/2026-11-19-leeann-notes-19nov.md",
-  "checkpoint": {
-    "milestone": "M1",
-    "feature": "F3",
-    "ts": "2026-11-20T20:46:02.389718+00:00"
-  },
-  "activated_at": "2026-11-19T17:31:06.779900+00:00",
-  "autonomy": {
-    "level": "high",
-    "normalized": "autonomous",
-    "permission_tier": "high",
-    "updated_at": "2026-11-19T17:31:06.780131+00:00",
-    "decided_at": "2026-11-19T17:31:06.780131+00:00",
-    "decided_by": "workspace default (profile.json)"
-  }
+  "mission": null,
+  "checkpoint": null,
+  "note": "mission complete"
 }
