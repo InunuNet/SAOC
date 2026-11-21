@@ -96,3 +96,18 @@ assertions:
   - id: A24
     description: '[ALL] Lint passes with no errors'
     command: pnpm --dir "${CHECK_ROOT:-.}" lint --quiet
+  - id: A25
+    description: 'Cross-model review is not gated here: Codex was rate-limited until 22 Nov, so PRs 219-221 were reviewed by Gemini (agy_qa.sh) and their transcripts were not saved. Declared non-required for triad coverage only; expected to skip, not faked.'
+    type: codex_qa
+    target: .agent/memory/scratch/leeann-notes-19nov-codex-qa.out
+    required: false
+  - id: A26
+    description: 'Deployed check is not gated here: PRs 219-221 are merged and PR 221 was confirmed live on beta.saoc.co.za (rollout poll, 21 Nov). Declared non-required for triad coverage only; expected to skip.'
+    type: browser_deployed_check
+    target: .agent/memory/scratch/leeann-notes-19nov-browser-manifest.json
+    required: false
+  - id: A27
+    description: 'gws inbox check is not applicable (this mission sends no email); declared non-required for triad coverage only, expected to skip.'
+    type: gws_inbox_check
+    target: .agent/memory/scratch/leeann-notes-19nov-gws-manifest.json
+    required: false

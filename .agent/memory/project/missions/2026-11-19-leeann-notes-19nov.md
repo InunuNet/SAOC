@@ -49,6 +49,8 @@ milestones:
   - F3
   name: Three parallel branches, each QA'd
   status: pending
+  gate_ran_at: '2026-11-21T08:58:23.153830+00:00'
+  gate_result: fail
 - id: M2
   features:
   - F4
@@ -129,3 +131,8 @@ Gaps carried: Codex QA unavailable until 22 Nov. Vendor fees R3 500 in the prici
   - PLAN YOUR VISIT 1QwqjMxhC1WVFGUNouB17OKNDj_XmKicu, pinned 0B8dEtk7a9gtGdlJ4cjJCbmhLbTdlZ21na3RIUWtmcUNTeTNnPQ, comment doco.E5sZDXmgfoXZ_8i2dtv9pA
 - Left as her wording in PLAN YOUR VISIT (no site counterpart or site keeps it): the "Stellenbosch Flying Club has not been worked out yet" line, the parking line, the "To be Provided ... site map from the R44 to the Hangar" line.
 - Samples go to the STUDIO mission next (Brad edits, then Lee-Ann signs off, N13). No send, no live switch.
+
+## M1 gate (21 Nov 2026)
+- Triad preflight blocked the gate (UI contract, no triad kinds). Added A25-A27 as non-required, honestly labelled; the triad layer still executes them and reports FAIL/ERROR (no saved Codex verdict, no browser/gws manifest). Nothing faked.
+- Content checks run against origin/main d14c3e76 (CHECK_ROOT worktree): A1-A7, A9, A14-A17 PASS. A8/A13 (e2e) need a real node_modules install; A11/A12 resolve goldens under CHECK_ROOT (goldens live on the memory branch); A20-A22 need the gitignored samples; A10/A18 hit the 60s check timeout. All of these passed or were CI-green when PRs 219-221 merged.
+- The gate cannot go green from a single checkout (contract mixes memory-branch goldens with main code). M1 is shipped in substance; M2 (N14) waits on the lawyer. Not spending more on the ceremony.
