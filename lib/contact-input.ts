@@ -6,7 +6,9 @@
 // route already had for message.
 export const CONTACT_FIELD_MAX_LENGTHS = { name: 100, email: 254, subject: 200, message: 5000 } as const;
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { SINGLE_EMAIL_PATTERN } from './single-email-address';
+
+const EMAIL_PATTERN = SINGLE_EMAIL_PATTERN;
 
 export interface ContactInput {
   name: string;

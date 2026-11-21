@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 
 import { csvField } from './csv-field';
+import { SINGLE_EMAIL_PATTERN } from './single-email-address';
 import {
   NEWSLETTER_REMOVAL_VIAS,
   NEWSLETTER_TOPICS,
@@ -48,7 +49,7 @@ export interface NewsletterCsvRow {
   unsubscribeToken: string;
 }
 
-const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_SHAPE = SINGLE_EMAIL_PATTERN;
 const UNSUBSCRIBE_TOKEN_SHAPE = /^[A-Za-z0-9_-]{43}$/;
 const TOKEN_BYTES = 32;
 const CSV_HEADER = 'email,source,subscribedAt,unsubscribeUrl,topics,listUnsubscribeHeader';
