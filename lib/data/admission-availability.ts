@@ -5,6 +5,8 @@
 //
 // This is a DISPLAY HINT. Checkout re-checks capacity authoritatively, so a failure here is
 // logged by error name only and yields no sold-out flags rather than blocking the page.
+import { unstable_cache } from 'next/cache';
+
 import { sanityFetch } from '@/sanity/lib/fetch';
 import {
   activeShowWindowQuery,
@@ -49,7 +51,7 @@ export async function getAdmissionSoldOutBySlug(
   { live = false }: { live?: boolean } = {}
 ): Promise<Record<string, boolean>> {
   try {
-    const soldCounts = await getSoldCountsByTicketType(NATIONAL_SHOW_ID);
+    const { sold: soldCounts } = await getCachedStockReading();
     const poolConfigByType: Record<string, CapacityPoolConfig> = {};
     const capacityByType: Record<string, number> = {};
     for (const t of types) {
@@ -140,13 +142,37 @@ interface StockReading {
   byDay: Record<string, Record<string, number>>;
 }
 
+/**
+ * Display-only stock cache. The two scans cost about 2 x (paid + reserved ticket documents)
+ * Firestore reads each, so an uncached read per page view and per sitemap fetch would exhaust the
+ * free 50k reads/day as sales grow. One scan per TICKET_STOCK_REVALIDATE_SECONDS serves every page
+ * that shows stock. Checkout never reads through this: it counts live, inside its own
+ * transaction, via getSoldCountsByTicketType(showId, transaction) in lib/data/tickets.ts, so a
+ * stale display number can never oversell. The scans stay full scans rather than count()
+ * aggregations: seat expiry (stillHoldsSeat) is evaluated in memory because an `expiresAt`
+ * range filter needs a composite index this project does not deploy, and the by-day split needs
+ * per-document grouping.
+ */
+export const TICKET_STOCK_CACHE_TAG = 'ticket-stock';
+export const TICKET_STOCK_REVALIDATE_SECONDS = 60;
+
+/** The live scan behind the cache. A failure throws, so unstable_cache never stores it. */
+async function scanStock(): Promise<StockReading> {
+  const [sold, soldDayKeys] = await Promise.all([
+    getSoldCountsByTicketType(NATIONAL_SHOW_ID),
+    getSoldCountsByTicketTypeAndDay(NATIONAL_SHOW_ID, new Set(DAY_VISITOR_SHAPED_SLUGS)),
+  ]);
+  return { sold, byDay: splitSoldByDay(soldDayKeys) };
+}
+
+export const getCachedStockReading = unstable_cache(scanStock, [TICKET_STOCK_CACHE_TAG], {
+  revalidate: TICKET_STOCK_REVALIDATE_SECONDS,
+  tags: [TICKET_STOCK_CACHE_TAG],
+});
+
 async function readStock(): Promise<StockReading | null> {
   try {
-    const [sold, soldDayKeys] = await Promise.all([
-      getSoldCountsByTicketType(NATIONAL_SHOW_ID),
-      getSoldCountsByTicketTypeAndDay(NATIONAL_SHOW_ID, new Set(DAY_VISITOR_SHAPED_SLUGS)),
-    ]);
-    return { sold, byDay: splitSoldByDay(soldDayKeys) };
+    return await getCachedStockReading();
   } catch (error) {
     const name = error instanceof Error ? error.name : 'UnknownError';
     console.error(`[lib/data/admission-availability] stock read failed (${name})`);

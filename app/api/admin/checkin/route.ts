@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { getAdminSession } from '@/lib/admin-auth';
+import { adminHasCapability } from '@/lib/admin-capability-gate';
 import { checkInByBookingRef, type CheckinRefusalCode } from '@/lib/checkin';
 import {
   logAuditWriteFailure,
@@ -17,14 +18,10 @@ import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
  * ticket. Nothing is read from or written to Firestore before auth passes.
  *
  * F7 (ticketing-foundation) adds an append-only checkinAttempts audit record for every
- * outcome below (contracts/golden/ticketing-f7-checkin-audit/README.md). Deliberately NOT
- * wired here: a hard `scan-checkin` capability refusal via `hasCapability()`. The golden
- * README's own "Judgement call 3" flags that live enforcement as unsafe to ship before
- * `scripts/admin-migrate-roles.ts --apply` has run — today it hasn't, zero accounts hold a
- * `roles` claim, and switching this on would refuse every door scanner, including Brad's, with
- * no gate to catch it. The `'not-authorized'` outcome exists in the type and is proven
- * end-to-end against the pure module (see contract A3); it simply has no live trigger in this
- * route yet. See the README's "Hard prerequisite" before adding one.
+ * outcome below (contracts/golden/ticketing-f7-checkin-audit/README.md). A signed-in admin
+ * without the `scan-checkin` capability (door-staff, manager and owner hold it) is refused 403
+ * and audited as 'not-authorized', exactly like a failed session. Nothing is read from or
+ * written to Firestore for admission before both checks pass.
  */
 
 /** Maps lib/checkin.ts's refusal codes onto F7's honestly-wider outcome
@@ -41,20 +38,29 @@ const REFUSAL_CODE_TO_OUTCOME: Record<CheckinRefusalCode, CheckinAttemptOutcome>
   wrong_day: 'wrong_day',
 };
 
+/** Refuses the request as 'not-authorized': audits the attempt (never throwing) and answers. */
+async function refuseNotAuthorized(status: 401 | 403): Promise<NextResponse> {
+  const error = status === 401 ? 'Unauthorized' : 'Forbidden';
+  const bookingRef = null;
+  const showId = null;
+  const outcome = 'not-authorized';
+  const result = await recordCheckinAttempt(createFirestoreCheckinAttemptsStore(), {
+    bookingRef, showId, orderId: null, outcome, refusalReason: error,
+    scannedByUid: null, now: new Date(),
+  });
+  if (!result.recorded) logAuditWriteFailure({ bookingRef, showId, outcome, error: result.error });
+  return NextResponse.json({ success: false, code: 'not-authorized', error }, { status });
+}
+
 export async function POST(request: Request) {
   const session = await getAdminSession();
   if (!session.ok) {
-    const status = session.reason === 'no-session' || session.reason === 'invalid-session' ? 401 : 403;
-    const error = status === 401 ? 'Unauthorized' : 'Forbidden';
-    const bookingRef = null;
-    const showId = null;
-    const outcome = 'not-authorized';
-    const result = await recordCheckinAttempt(createFirestoreCheckinAttemptsStore(), {
-      bookingRef, showId, orderId: null, outcome, refusalReason: error,
-      scannedByUid: null, now: new Date(),
-    });
-    if (!result.recorded) logAuditWriteFailure({ bookingRef, showId, outcome, error: result.error });
-    return NextResponse.json({ success: false, code: 'not-authorized', error }, { status });
+    return refuseNotAuthorized(
+      session.reason === 'no-session' || session.reason === 'invalid-session' ? 401 : 403
+    );
+  }
+  if (!(await adminHasCapability(session.decodedToken, 'scan-checkin'))) {
+    return refuseNotAuthorized(403);
   }
 
   const scannedByUid = session.decodedToken.uid;

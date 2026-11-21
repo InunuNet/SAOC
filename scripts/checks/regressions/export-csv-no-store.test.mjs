@@ -18,6 +18,7 @@ function loadRoute(session) {
   const stubs = {
     'firebase-admin/firestore': { getFirestore: () => db },
     '@/lib/admin-auth': { getAdminSession: async () => session },
+    '@/lib/admin-capability-gate': { adminHasCapability: async () => true },
     '@/lib/csv-field': { csvField: (value) => value },
     '@/lib/firebase-admin': { initAdmin: () => ({}) },
     '@/lib/registration': { formatDietary: (r) => r.dietary === 'Other' && r.dietaryOther ? `Other: ${r.dietaryOther}` : (r.dietary ?? '') },

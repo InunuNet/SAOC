@@ -1,6 +1,7 @@
 import { getFirestore } from 'firebase-admin/firestore';
 
 import { getAdminSession } from '@/lib/admin-auth';
+import { adminHasCapability } from '@/lib/admin-capability-gate';
 import { csvField } from '@/lib/csv-field';
 import { initAdmin } from '@/lib/firebase-admin';
 import { formatDietary } from '@/lib/registration';
@@ -16,6 +17,10 @@ export async function GET() {
       status,
       headers: { 'Cache-Control': 'no-store' },
     });
+  }
+
+  if (!(await adminHasCapability(session.decodedToken, 'export-buyer-data'))) {
+    return new Response('Forbidden', { status: 403, headers: { 'Cache-Control': 'no-store' } });
   }
 
   const db = getFirestore(initAdmin());
