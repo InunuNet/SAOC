@@ -1,3 +1,4 @@
+import { getSecret } from '@/lib/secrets';
 import { randomBytes } from 'node:crypto';
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return genericTokenRefusal();
   }
 
-  const secret = process.env.VENDOR_STAND_PAYMENT_TOKEN_SECRET;
+  const secret = getSecret('VENDOR_STAND_PAYMENT_TOKEN_SECRET');
   if (!secret) {
     console.error(
       '[vendors/stand-payment/initiate] VENDOR_STAND_PAYMENT_TOKEN_SECRET is unset; refusing all stand payments.',

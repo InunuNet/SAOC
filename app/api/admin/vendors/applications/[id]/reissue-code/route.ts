@@ -1,3 +1,4 @@
+import { getSecret } from '@/lib/secrets';
 import { NextRequest, NextResponse } from 'next/server';
 import { FieldValue, getFirestore, Timestamp } from 'firebase-admin/firestore';
 
@@ -68,7 +69,7 @@ export async function POST(
   // gone wrong for a vendor, so minting a code that can never be redeemed fails at the worst
   // possible moment. Both refuse before the single ref.update(), leaving the application's
   // existing code, lockout state and generation exactly as they were.
-  if (!process.env.VENDOR_REGISTRATION_TOKEN_SECRET) {
+  if (!getSecret('VENDOR_REGISTRATION_TOKEN_SECRET')) {
     console.error(
       '[admin/vendors/applications/reissue-code] VENDOR_REGISTRATION_TOKEN_SECRET is unset; reissue refused (application unchanged).',
     );

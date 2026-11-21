@@ -1,3 +1,4 @@
+import { getSecret } from './secrets';
 import React from 'react';
 
 import { sendEmail, NOS_FORMS_FROM_ADDRESS } from '@/lib/email';
@@ -41,7 +42,7 @@ export interface SendVendorRegistrationConfirmationDeps {
 }
 
 function resolvePhotoUploadUrl(vendorSubmissionId: string | undefined): string | undefined {
-  const secret = process.env.VENDOR_STAND_PAYMENT_TOKEN_SECRET;
+  const secret = getSecret('VENDOR_STAND_PAYMENT_TOKEN_SECRET');
   if (!vendorSubmissionId || !secret) return undefined;
 
   const siteUrl = nosUrl('');

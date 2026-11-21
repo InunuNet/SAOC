@@ -1,3 +1,4 @@
+import { getSecret } from '@/lib/secrets';
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore } from 'firebase-admin/firestore';
 
@@ -135,7 +136,7 @@ export async function POST(
       // never be rolled back or hidden behind an error because this follow-on step failed. An
       // operator can always recover a lost/failed send via
       // POST /api/admin/vendors/[id]/resend-payment-link.
-      const paymentTokenSecret = process.env.VENDOR_STAND_PAYMENT_TOKEN_SECRET;
+      const paymentTokenSecret = getSecret('VENDOR_STAND_PAYMENT_TOKEN_SECRET');
       if (!paymentTokenSecret) {
         console.error(
           '[admin/vendors/review] VENDOR_STAND_PAYMENT_TOKEN_SECRET is unset; stand-payment link not sent (approval unaffected).',

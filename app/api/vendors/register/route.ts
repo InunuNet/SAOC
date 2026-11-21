@@ -1,3 +1,4 @@
+import { getSecret } from '@/lib/secrets';
 import { NextRequest, NextResponse } from 'next/server';
 import { isBodyWithinLimit } from '@/lib/request-guards';
 import { cookies } from 'next/headers';
@@ -120,7 +121,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const vendorSubmissionInput = rawBody as Record<string, unknown>;
 
-  const secret = process.env.VENDOR_REGISTRATION_TOKEN_SECRET;
+  const secret = getSecret('VENDOR_REGISTRATION_TOKEN_SECRET');
   if (!secret) {
     console.error(
       '[vendors/register/route] VENDOR_REGISTRATION_TOKEN_SECRET is unset; refusing all registrations.',

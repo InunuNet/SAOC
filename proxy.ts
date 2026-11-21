@@ -22,6 +22,7 @@
 // which exposes only `matcher`/`regions`/`unstable_allowDynamic`), so this file
 // uses only Web-standard globals (`crypto.subtle`, `atob`, `TextEncoder`) — never
 // `node:crypto`'s `timingSafeEqual` or `Buffer`, neither of which is available here.
+import { getSecret } from '@/lib/secrets';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
@@ -299,8 +300,8 @@ export async function proxy(request: NextRequest): Promise<Response> {
   const allowed = await decideBasicAuth({
     pathname: request.nextUrl.pathname,
     authorizationHeader: request.headers.get('authorization'),
-    expectedUser: process.env.BETA_BASIC_AUTH_USER,
-    expectedPassword: process.env.BETA_BASIC_AUTH_PASSWORD,
+    expectedUser: getSecret('BETA_BASIC_AUTH_USER'),
+    expectedPassword: getSecret('BETA_BASIC_AUTH_PASSWORD'),
     isProduction: process.env.NODE_ENV === 'production',
     publiclyLaunched,
     passwordWallOff: isPasswordWallOff(process.env.BETA_PASSWORD_WALL_OFF),

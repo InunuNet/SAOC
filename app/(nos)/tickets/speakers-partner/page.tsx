@@ -1,3 +1,4 @@
+import { secretsEnv } from '@/lib/secrets';
 import { viewerIsVerifiedAdmin } from '@/lib/admin-viewer';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
@@ -46,7 +47,7 @@ export default async function SpeakersPartnerPage() {
   const cookieStore = await cookies();
   const hasAccess = hasSpeakersPartnerAccess(
     cookieStore.get(SPEAKERS_PARTNER_COOKIE_NAME)?.value,
-    process.env,
+    secretsEnv(),
     new Date()
   );
   const crumbs = <TicketBuyCrumbs name={PAGE_TITLE} />;

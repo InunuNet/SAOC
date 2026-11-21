@@ -1,3 +1,4 @@
+import { getSecret, secretsEnv } from '@/lib/secrets';
 import { NextRequest, NextResponse } from 'next/server';
 import { isBodyWithinLimit } from '@/lib/request-guards';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
@@ -516,7 +517,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (parsedLineItems.some((lineItem) => isRestrictedTicketSlug(lineItem.ticketType))) {
     const hasAccess = hasSpeakersPartnerAccess(
       request.cookies.get(SPEAKERS_PARTNER_COOKIE_NAME)?.value,
-      process.env,
+      secretsEnv(),
       new Date()
     );
     if (!hasAccess) {
@@ -971,7 +972,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const recoveryTokenSecret = process.env.RECOVERY_TOKEN_SECRET;
+  const recoveryTokenSecret = getSecret('RECOVERY_TOKEN_SECRET');
 
   // Fail closed, same posture as the gateway credential refusal above: an unset secret must
   // refuse the purchase before any Firestore write, never silently mint a never-verifiable-

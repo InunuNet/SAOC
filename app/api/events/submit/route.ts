@@ -1,3 +1,4 @@
+import { getSecret } from '@/lib/secrets';
 import { NextRequest, NextResponse } from 'next/server';
 import { isBodyWithinLimit } from '@/lib/request-guards';
 import { getAuth } from 'firebase-admin/auth';
@@ -116,7 +117,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (!ipLimit.allowed) return tooManyAttempts(ipLimit.retryAfterSeconds);
 
   // 5. Build write client
-  const sanityToken = process.env.SANITY_API_TOKEN;
+  const sanityToken = getSecret('SANITY_API_TOKEN');
   if (!projectId || !sanityToken) {
     return NextResponse.json({ error: 'CMS not configured' }, { status: 500 });
   }

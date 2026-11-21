@@ -1,3 +1,4 @@
+import { secretsEnv } from '@/lib/secrets';
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import path from 'node:path';
 
@@ -486,7 +487,7 @@ async function loadShowPageSettings(options?: {
 // credentials set, the same predicate proxy.ts uses). Matches are exact and fail closed,
 // like lib/beta-public-launch.ts.
 export function withholdPlaceholderProse(
-  env: Record<string, string | undefined> = process.env,
+  env: Record<string, string | undefined> = secretsEnv(),
 ): boolean {
   const previewOptedIn = env.SHOW_PLACEHOLDER_PREVIEW === 'true';
   const wallUp =

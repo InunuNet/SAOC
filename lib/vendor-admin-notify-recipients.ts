@@ -1,6 +1,6 @@
 /**
  * G1 (vendor-flow-notifications) -- shared recipient resolver for the three new admin-notice
- * senders. Reads `process.env.ADMIN_EMAIL_ALLOWLIST` with the exact same parse the `/admin`
+ * senders. Reads the ADMIN_EMAIL_ALLOWLIST secret (via getSecret) with the exact same parse the `/admin`
  * login authorization module's private `parseAllowlist()` already uses (comma-split, trim,
  * lowercase, filter empty). This is the ONLY function in the new notification surface that
  * reads `process.env`.
@@ -16,8 +16,10 @@
  *
  * Contains no `console.*` call of any kind -- the resolved recipient list is never logged.
  */
+import { getSecret } from './secrets';
+
 export function getVendorAdminNotifyRecipients(): string[] {
-  const raw = process.env.ADMIN_EMAIL_ALLOWLIST ?? '';
+  const raw = getSecret('ADMIN_EMAIL_ALLOWLIST') ?? '';
   return raw
     .split(',')
     .map((entry) => entry.trim().toLowerCase())

@@ -1,3 +1,4 @@
+import { getSecret } from '@/lib/secrets';
 import { draftMode } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { NextRequest } from 'next/server';
@@ -7,7 +8,7 @@ import { safeNextPath } from '@/lib/safe-next-path';
 
 export async function GET(request: NextRequest) {
   const secret = request.nextUrl.searchParams.get('secret');
-  const expected = process.env.SANITY_REVALIDATE_SECRET;
+  const expected = getSecret('SANITY_REVALIDATE_SECRET');
 
   if (!expected || secret === null || !constantTimeStringEqual(secret, expected)) {
     return new Response('Invalid secret', { status: 401 });

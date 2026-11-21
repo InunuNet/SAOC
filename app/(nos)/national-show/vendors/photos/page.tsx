@@ -1,3 +1,4 @@
+import { getSecret } from '@/lib/secrets';
 import type { Metadata } from 'next';
 import { getFirestore } from 'firebase-admin/firestore';
 
@@ -44,7 +45,7 @@ export default async function VendorPhotosPage({ searchParams }: VendorPhotosPag
   const resolvedSearchParams = await searchParams;
   const token = typeof resolvedSearchParams.token === 'string' ? resolvedSearchParams.token : '';
 
-  const secret = process.env.VENDOR_STAND_PAYMENT_TOKEN_SECRET;
+  const secret = getSecret('VENDOR_STAND_PAYMENT_TOKEN_SECRET');
   if (!secret) {
     console.error(
       '[vendors/photos/page] VENDOR_STAND_PAYMENT_TOKEN_SECRET is unset; refusing all photo-resume sessions.'

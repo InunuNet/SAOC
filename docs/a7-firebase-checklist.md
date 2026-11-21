@@ -42,14 +42,9 @@ firebase projects:list  # verify saoc-website shows (current)
 
 ## 4. Secrets (run from project root)
 
-App Hosting injects these at build/runtime via Secret Manager:
-
-```bash
-firebase apphosting:secrets:set SANITY_API_TOKEN --project saoc-website
-firebase apphosting:secrets:set SANITY_REVALIDATE_SECRET --project saoc-website
-```
-
-Paste each secret when prompted. Grant access to the App Hosting service account when asked.
+Every server-side secret lives in two JSON bundles (`SAOC_APP_SECRETS`,
+`SAOC_PAYMENT_SECRETS`), not one Secret Manager secret each. See
+[secret-bundles.md](secret-bundles.md) for the layout and how to add or rotate a value.
 
 ## 5. Verification
 

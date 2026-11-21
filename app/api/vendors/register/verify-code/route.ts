@@ -1,3 +1,4 @@
+import { getSecret } from '@/lib/secrets';
 import { NextRequest, NextResponse } from 'next/server';
 import { isBodyWithinLimit } from '@/lib/request-guards';
 import { cookies } from 'next/headers';
@@ -113,7 +114,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const { businessName, codeId } = rawBody as { businessName: string; codeId: string };
 
-  const secret = process.env.VENDOR_REGISTRATION_TOKEN_SECRET;
+  const secret = getSecret('VENDOR_REGISTRATION_TOKEN_SECRET');
   if (!secret) {
     console.error(
       '[vendors/register/verify-code] VENDOR_REGISTRATION_TOKEN_SECRET is unset; refusing all code verifications.',

@@ -1,3 +1,4 @@
+import { getSecret } from './secrets';
 import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
 
 let adminApp: App;
@@ -14,8 +15,8 @@ export function initAdmin(): App {
   }
 
   const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
-  const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n');
+  const clientEmail = getSecret('FIREBASE_ADMIN_CLIENT_EMAIL');
+  const privateKey = getSecret('FIREBASE_ADMIN_PRIVATE_KEY')?.replace(/\\n/g, '\n');
 
   if (!projectId || !clientEmail || !privateKey) {
     throw new Error(

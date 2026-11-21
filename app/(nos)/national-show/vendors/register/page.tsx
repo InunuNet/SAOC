@@ -1,3 +1,4 @@
+import { getSecret } from '@/lib/secrets';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -108,7 +109,7 @@ type VendorRegistrationSession =
 const SESSION_UNUSABLE: VendorRegistrationSession = { usable: false };
 
 async function readVendorRegistrationSession(): Promise<VendorRegistrationSession> {
-  const secret = process.env.VENDOR_REGISTRATION_TOKEN_SECRET;
+  const secret = getSecret('VENDOR_REGISTRATION_TOKEN_SECRET');
   if (!secret) {
     console.error(
       '[vendors/register/page] VENDOR_REGISTRATION_TOKEN_SECRET is unset; refusing all registration sessions.'
