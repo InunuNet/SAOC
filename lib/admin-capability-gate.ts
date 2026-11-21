@@ -6,14 +6,14 @@ import { resolveShowWindowLookup } from '@/lib/show-window-lookup';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 
 /**
- * LEGACY_ADMIN_FALLBACK: an admin session with no `roles` claim at all (absent or null) is
- * treated as the full-access admin it was before roles existed. It exists only because
+ * LEGACY_ADMIN_FALLBACK: an admin session whose token has no `roles` key at all (absent or
+ * undefined) is treated as the full-access admin it was before roles existed. It exists only because
  * `scripts/admin-migrate-roles.ts --apply` has not been run (.agent/memory/project/
  * needs-human.md), so every working admin today is exactly such an account and strict
  * enforcement would lock them all out of door check-in and the exports.
  *
- * It is NOT a bypass for role-bearing accounts: the moment a `roles` claim exists (including an
- * empty one left by a revoke) the capability is enforced strictly, so a door-staff account stays
+ * It is NOT a bypass for role-bearing accounts: the moment a `roles` claim exists (null, a
+ * string, an array, or the empty one left by a revoke) the capability is enforced strictly, so a door-staff account stays
  * restricted. REMOVE this fallback, and the branch below, once the migration has been applied.
  *
  * Only the four admin data routes (export-csv, newsletter export-csv, tickets list, checkin)
@@ -21,8 +21,8 @@ import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
  */
 export function hasLegacyAdminFallback(decodedToken: DecodedIdToken): boolean {
   if (!isAdminToken(decodedToken)) return false;
-  const roles: unknown = decodedToken.roles;
-  return roles === undefined || roles === null;
+  // Only a missing key counts: every writer of the claim omits it or writes an object, never null.
+  return decodedToken.roles === undefined;
 }
 
 /**

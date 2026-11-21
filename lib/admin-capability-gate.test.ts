@@ -9,7 +9,7 @@ import { adminHasCapability } from './admin-capability-gate';
 import type { Capability } from './admin-roles';
 
 // Minimal verified, allowlisted admin token; `roles` is the only thing each case varies.
-function token(roles?: Record<string, string[]> | null): DecodedIdToken {
+function token(roles?: unknown): DecodedIdToken {
   return {
     uid: 'staff',
     email: 'staff@example.org',
@@ -29,7 +29,6 @@ const ROUTE_CAPABILITIES: Record<string, Capability> = {
 for (const [route, capability] of Object.entries(ROUTE_CAPABILITIES)) {
   test(`${route}: a legacy admin with no roles claim keeps access`, async () => {
     assert.equal(await adminHasCapability(token(), capability), true);
-    assert.equal(await adminHasCapability(token(null), capability), true);
   });
 }
 
@@ -49,6 +48,13 @@ test('manager is allowed all four routes', async () => {
 
 test('an empty roles claim (left by a revoke) is strict, not legacy', async () => {
   assert.equal(await adminHasCapability(token({}), 'export-buyer-data'), false);
+});
+
+test('a present but malformed roles claim is strict, never legacy', async () => {
+  for (const roles of [null, 'owner', ['owner']]) {
+    assert.equal(await adminHasCapability(token(roles), 'export-buyer-data'), false, String(roles));
+    assert.equal(await adminHasCapability(token(roles), 'scan-checkin'), false, String(roles));
+  }
 });
 
 test('a non-admin token never passes, roles or not', async () => {
