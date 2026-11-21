@@ -148,7 +148,7 @@ function errorCode(error: unknown): number | string | null {
   return typeof code === 'number' || typeof code === 'string' ? code : null;
 }
 
-function isMissingIndexError(error: unknown): boolean {
+export function isMissingIndexError(error: unknown): boolean {
   const code = errorCode(error);
   return code === FAILED_PRECONDITION_CODE || code === 'failed-precondition';
 }

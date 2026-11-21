@@ -10,6 +10,7 @@ import {
   reconcileStatusFor,
   sendReconciliationAlert,
 } from '@/lib/reconciliation';
+import { retryFailedReceipts, type ReceiptRetrySummary } from '@/lib/ticket-receipt';
 
 /**
  * order-reconciliation F1 — POST /api/admin/reconcile-orders.
@@ -32,6 +33,19 @@ import {
  */
 
 const BEARER_PREFIX = 'Bearer ';
+
+/** The receipt retry is a side task of this run: whatever goes wrong in it is logged and
+ *  reported in the response, and never stops the stranded-order check below. */
+async function retryReceiptsSoftly(now: Timestamp): Promise<ReceiptRetrySummary | null> {
+  try {
+    return await retryFailedReceipts(now);
+  } catch (error) {
+    console.warn('[admin/reconcile-orders] Receipt retry failed; continuing without it', {
+      errorType: error instanceof Error ? error.name : typeof error,
+    });
+    return null;
+  }
+}
 
 function unauthorized(): NextResponse {
   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -67,6 +81,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const now = Timestamp.now();
+  const receiptRetry = await retryReceiptsSoftly(now);
 
   let stranded;
   try {
@@ -88,6 +103,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         alertBookkeepingFailed: [],
         skippedRecentlyAlerted,
         strandedCount: stranded.length,
+        receiptRetry,
       },
       { status: 200 }
     );
@@ -122,7 +138,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // with the half that actually explains WHY discarded before either could log it.
 
   return NextResponse.json(
-    { alertedNow, alertBookkeepingFailed, skippedRecentlyAlerted, strandedCount: stranded.length },
+    {
+      alertedNow,
+      alertBookkeepingFailed,
+      skippedRecentlyAlerted,
+      strandedCount: stranded.length,
+      receiptRetry,
+    },
     { status: reconcileStatusFor(alertBookkeepingFailed) }
   );
 }

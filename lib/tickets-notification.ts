@@ -7,11 +7,11 @@ import {
   markOrderAndPositionPaidByPaymentId,
   markOrderPaymentPendingByPaymentId,
 } from '@/lib/orders';
-import { deliverConfirmationEmailAfterCommit, sendConfirmationEmail } from '@/lib/confirmation-email';
+import { deliverConfirmationEmailAfterCommit } from '@/lib/confirmation-email';
+import { loadLateSettlementCapacity } from '@/lib/late-settlement-capacity';
 import { safeErrorType } from '@/lib/safe-log';
 import { saocUrl } from '@/lib/site-hosts';
-import { loadChosenDays } from '@/lib/ticket-pdf-data';
-import { buildOrderEmailFields } from '@/lib/ticket-order-fields';
+import { recordFirstReceiptAttempt, sendOrderReceipt } from '@/lib/ticket-receipt';
 import { sendTicketSaleAdminNotice } from '@/lib/ticket-sale-admin-notice';
 
 /**
@@ -294,6 +294,11 @@ export async function POST(
     // notification is only ever allowed to settle an order that was created under THIS SAME
     // provider; see MarkOrderAndPositionPaidInput.expectedGateway for the full rationale.
     expectedGateway: paymentProvider.id,
+    // Late payment: when the hold had already lapsed, the write path rechecks capacity (outside
+    // the transaction for the CMS read, inside it for the counts) and flags the order. The buyer
+    // has paid, so the order settles and the ticket is issued either way.
+    expiresAtHint: lookup.expiresAt,
+    loadLateCapacity: loadLateSettlementCapacity,
   });
 
   if (!outcome.committed) {
@@ -326,23 +331,24 @@ export async function POST(
   // 11. Post-commit confirmation email hookup. deliverConfirmationEmailAfterCommit isolates any
   // failure from this response: the payment is already committed above and must never be rolled
   // back, retried, or hidden behind a 5xx because a delivery receipt failed to send.
+  // The outcome is recorded on the order (receiptEmail) so a failed delivery is visible and the
+  // reconcile run can retry it; see lib/ticket-receipt.ts.
+  let receiptFailed = false;
+  let receiptError: unknown;
   await deliverConfirmationEmailAfterCommit(
-    async () => {
-      // Per-ticket-type email facts (used only once TICKET_TYPE_EMAILS_LIVE is on): the stored
-      // order price, and the buyer's chosen day read back from the paid order (never throws).
-      const chosenDays = await loadChosenDays(reference);
-      const firstChosenDay = chosenDays.get(outcome.positions[0]?.bookingRef) ?? null;
-      await sendConfirmationEmail({
+    () =>
+      sendOrderReceipt({
         orderId: outcome.orderId,
+        reference,
         buyerEmail: outcome.buyerEmail,
         buyerName: outcome.buyerName,
         recoveryToken: outcome.recoveryToken,
-        orderReference: reference,
+        amount: lookup.amount,
         positions: outcome.positions,
-        ...buildOrderEmailFields(lookup.amount, firstChosenDay),
-      });
-    },
+      }),
     (error) => {
+      receiptFailed = true;
+      receiptError = error;
       console.error('[tickets/itn] Confirmation email failed — payment already committed, not rolled back', {
         provider: paymentProvider.id,
         reference,
@@ -351,6 +357,12 @@ export async function POST(
       });
     }
   );
+  await recordFirstReceiptAttempt({
+    orderId: outcome.orderId,
+    now: Timestamp.now(),
+    failed: receiptFailed,
+    error: receiptError,
+  });
 
   // 12. Admin ticket-sale notice, once per order. Reached only when THIS call's transaction moved
   // the order from 'reserved' to 'paid' (the `!outcome.committed` return above), so a re-sent

@@ -303,6 +303,24 @@ threw," both rendered as a success-shaped body. Fixed by `reconcile-response-acc
 - `firestore.indexes.json` — composite index on `orders(status, expiresAt)`
 - `firebase.json` — added the `firestore` key pointing at `firestore.indexes.json`
 
+## Late settlements and failed receipts
+
+- **Late payment.** A payment that arrives after the 30-minute hold lapsed still settles (the
+  buyer has paid, so the ticket is always issued). The paid transaction records
+  `orders/{id}.settlement = { lateAfterHoldExpiry: true, overCapacity: true | false | null,
+  detectedAt }`; `null` means capacity could not be loaded. On-time orders carry no field and
+  cost no extra reads. One `console.warn` (reference and ticket types only) is logged. These
+  orders are not in the reconcile alert email: its wording says "still reserved", which would be
+  wrong for a paid order, so query `settlement.overCapacity == true` in the console instead.
+- **Receipt email.** `orders/{id}.receiptEmail = { status: 'sent' | 'failed', attempts,
+  lastAttemptAt, lastErrorType }` is written after settlement (`lib/ticket-receipt.ts`). Each
+  reconcile run re-sends the same receipt for paid orders whose status is `failed` with fewer than
+  3 attempts, paid in the last 7 days, at most 20 per run, claiming the attempt in a transaction
+  first so a `sent` order, a capped order or an overlapping run never produces a second email. The
+  query needs the `(receiptEmail.status, purchasedAt desc)` index in `firestore.indexes.json`
+  (deploy it with `firebase deploy --only firestore:indexes`); until it is built the step logs a
+  warning, reports `receiptRetry.skipped: "missing-index"` and the rest of the run is unaffected.
+
 ## Sources
 
 - `.agent/memory/project/specs/order-reconciliation/contract-f1.yaml` — the scored contract,
