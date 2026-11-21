@@ -1604,6 +1604,8 @@
 46dd217f7e05c4b3ea68ce18072fc0345f71900a execution/update_template.sha256.json
 46dd217f7e05c4b3ea68ce18072fc0345f71900a template/execution/update_template.sha256.json
 46e451662835b2fba2d16fb1d17eb500238014de .claude/rules/behavior.md
+46ed730153e4d2557137522dedfc1b0cb7932f18 .agent/version
+46ed730153e4d2557137522dedfc1b0cb7932f18 template/.agent/version
 46ee22a2e883b9694b136164578a9ff08c0f5f61 execution/tests/ghost-project/lodestar/lodestar.py
 46fbaa7717e85cfc75c046ea66f9279a10340d8b execution/update_template.sha256.json
 46fbaa7717e85cfc75c046ea66f9279a10340d8b template/execution/update_template.sha256.json
@@ -1920,6 +1922,7 @@
 564d4a0520d2d4849b0ad48b34f63f01b4c79b19 template/.agent/providers/gemini-cli.json
 56610951ea5eb83ce201fb1bc47cabd204a0cfff .agent/workflows/autonomy.md
 566721b5aeb7b0128ef05a915e19e48c258b9148 execution/tests/test_handoff.py
+56674a27c173831756feb9ac8774223c1fbe71ea Makefile
 566fec86e4e4bea3a50647d43fe4e10eee9c13f1 .agent/workflows/boot.md
 5685908d49a1aafcb578e9191cf1365ebac222b5 .agent/agents/designer.md
 569189aa65abaa74e322667a40400ef9d26ad267 execution/shipped_blobs.txt
@@ -1984,6 +1987,7 @@
 58da9cefdf43eba9b77ac8d74d982468eb8836ab .agent/version
 58da9cefdf43eba9b77ac8d74d982468eb8836ab template/.agent/version
 58fbb23a9e2293c1a078da76a9566314c790cddd template/.agent/paired-copies.yaml
+5926e92001ce5cdd7ef68ba805f43ab7630d1819 template/Makefile
 5932ddbc77caa6ab5f5b4ee1f5fc75cf6c706194 execution/context_audit.py
 5932ddbc77caa6ab5f5b4ee1f5fc75cf6c706194 template/execution/context_audit.py
 5952a8fca3ff60987c1b185f41784e259be39c3c template/.agent/pulse/registry/auto_fix_issues.sh
@@ -2030,6 +2034,8 @@
 5bde6cb21c77a55e98b68ba350716bf905646d99 .agent/version
 5bde6cb21c77a55e98b68ba350716bf905646d99 template/.agent/version
 5bdf95f8a6694580f8948bd1ff890e18638a9485 execution/tests/ghost-project/lodestar/tests/fixtures/schema.json
+5be037749153187728de1ca815a6632c9400304b execution/shipped_blobs.txt
+5be037749153187728de1ca815a6632c9400304b template/execution/shipped_blobs.txt
 5be47efa1e7f0b91c0220f0242508cf7b5b7a427 execution/checks/_archive/verify_f3_close_out_single_wrapup.sh
 5be47efa1e7f0b91c0220f0242508cf7b5b7a427 execution/checks/verify_f3_close_out_single_wrapup.sh
 5bedbb3418b72f65093ff56d7985f50624448d5e execution/sync_agents.sh
@@ -3194,6 +3200,8 @@
 92aea63d73f41b0b91f5ec3bb541891a04634593 template/execution/shipped_blobs.txt
 92bc72ae40e414036a4f49bb3580ceafd0ee4f7a execution/skills/tests/check_secret_guard.sh
 92bfa9fef0abb4e951580bcfed4549847c5064f6 .agent/providers/claude-code.json
+92cbb1b8dfe143354275f07e77cfe0eed6b095fd execution/update_template.sha256.json
+92cbb1b8dfe143354275f07e77cfe0eed6b095fd template/execution/update_template.sha256.json
 92cd58cc0284781dea6f3388508f8ec4c2599ab9 execution/tests/ghost-project/merger/tests/fixtures/merger_basic_expected.txt
 92d8660e5dfdbb3716bc53fde14ac5f10812062d .agent/skills/gws-sheets-read.md
 92d8660e5dfdbb3716bc53fde14ac5f10812062d template/.agent/skills/gws-sheets-read.md
@@ -5030,6 +5038,8 @@ e816095484b24c9a5d5122fc42f276444a7b9b16 execution/update_template.sha256.json
 e816095484b24c9a5d5122fc42f276444a7b9b16 template/execution/update_template.sha256.json
 e821b8a9a5e3dfdb48183448efaaa3c01c71b90a execution/dispatch_ledger.py
 e821b8a9a5e3dfdb48183448efaaa3c01c71b90a template/execution/dispatch_ledger.py
+e826e811beecfae831fb1a687840968f9e33ed9f execution/update_template.py
+e826e811beecfae831fb1a687840968f9e33ed9f template/execution/update_template.py
 e831cdcc59e2827589ef2238fdcedc8ae54478a1 .agent/version
 e831cdcc59e2827589ef2238fdcedc8ae54478a1 template/.agent/version
 e8521404e51ef4bde813cd1fe010218e429e48c8 .agent/version
@@ -5286,6 +5296,8 @@ f389d1c6aaf3da37ee5f8e277922cd59bde8c4e0 .grok/rules/gws.md
 f389d1c6aaf3da37ee5f8e277922cd59bde8c4e0 template/.agent/rules/_core/gws.md
 f38c297195ddfbcf231d06680d3081e11e16f8ce .agent/version
 f38c297195ddfbcf231d06680d3081e11e16f8ce template/.agent/version
+f39e67a5d672244bf10a73443db5c9720bd3ade1 execution/tests/update_fallback_loud_test.sh
+f39e67a5d672244bf10a73443db5c9720bd3ade1 template/execution/tests/update_fallback_loud_test.sh
 f3a17181acf418993296e1018e7fde9d17b7c541 execution/hooks/README.md
 f3a4fd6d8aca80176cfc5890b8be059f37c041fb .agent/version
 f3a4fd6d8aca80176cfc5890b8be059f37c041fb template/.agent/version

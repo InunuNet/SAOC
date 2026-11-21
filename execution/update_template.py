@@ -2679,7 +2679,8 @@ def write_template_state(
         # inherited one keeps the foreign receipt forever.
         and _stamp_is_from_this_workspace(current)
     ):
-        return f"  unchanged .template_state ({new_version}, delivery={delivery})"
+        held = f", held below incoming {new_version}" if stamp_version != new_version else ""
+        return f"  unchanged .template_state ({stamp_version}{held}, delivery={delivery})"
 
     # F10 (#9): same fixed-workspace-relative-path caveat as
     # update_profile_version()'s local .agent/version write above.
