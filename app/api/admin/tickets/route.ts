@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getFirestore } from 'firebase-admin/firestore';
 
 import { getAdminSession } from '@/lib/admin-auth';
+import { adminHasCapability } from '@/lib/admin-capability-gate';
 import { initAdmin } from '@/lib/firebase-admin';
 import type { Ticket, TicketType, TicketStatus } from '@/types/index';
 
@@ -10,6 +11,10 @@ export async function GET() {
   if (!session.ok) {
     const status = session.reason === 'no-session' || session.reason === 'invalid-session' ? 401 : 403;
     return NextResponse.json({ error: status === 401 ? 'Unauthorized' : 'Forbidden' }, { status });
+  }
+
+  if (!(await adminHasCapability(session.decodedToken, 'search-buyers'))) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const db = getFirestore(initAdmin());

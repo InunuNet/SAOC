@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server';
 
 import { getAdminSession } from '@/lib/admin-auth';
+import { adminHasCapability } from '@/lib/admin-capability-gate';
 import { handleNewsletterExport } from '@/lib/newsletter-handler';
 import { NEWSLETTER_LIST_FILTERS, type NewsletterListFilter } from '@/lib/newsletter-preferences';
 import { listAllSubscribers } from '@/lib/newsletter-store';
@@ -25,6 +26,7 @@ function listFilterOf(request: NextRequest): NewsletterListFilter {
 export async function GET(request: NextRequest) {
   const result = await handleNewsletterExport({
     getSession: getAdminSession,
+    hasCapability: (decodedToken) => adminHasCapability(decodedToken, 'export-buyer-data'),
     origin: unsubscribeOrigin,
     list: listFilterOf(request),
     listSubscribers: listAllSubscribers,
