@@ -110,7 +110,7 @@ for (const f of ['lib/payments/payfast.ts', 'lib/tickets-notification.ts', 'lib/
 
 // The live flag reader and the banner keep their fail-closed contract.
 const flagLib = read('lib/ozow-sandbox-test-mode.ts');
-if (flagLib) expect(/export async function isOzowSandboxTestModeEnabled/.test(flagLib) && /return data\?\.enabled === true;/.test(flagLib), 'the live flag reader must remain, returning true only for enabled === true.');
+if (flagLib) expect(/export async function isOzowSandboxTestModeEnabled/.test(flagLib) && /return snapshot\.data\(\)\?\.enabled === true;/.test(flagLib), 'the live flag reader must remain, returning true only for enabled === true.');
 const bannerRaw = read('components/tickets/OzowSandboxTestModeBanner.tsx');
 if (bannerRaw) expect(/OZOW_SANDBOX_TEST_MODE_BANNER_TEXT/.test(bannerRaw) && /enabled === true/.test(bannerRaw) && /if \(!enabled\) return null/.test(bannerRaw), 'the banner must keep its text constant and its fail-closed render.');
 

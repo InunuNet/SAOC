@@ -34,8 +34,8 @@ if (!/getCachedOzowSandboxTestModeForDisplay\s*\(/.test(src)) {
   fail('route does not call getCachedOzowSandboxTestModeForDisplay() from lib/ozow-sandbox-test-mode');
 }
 const lib = readFileSync('lib/ozow-sandbox-test-mode.ts', 'utf8');
-if (!/unstable_cache\(\s*\(\)\s*=>\s*isOzowSandboxTestModeEnabled\(\)/.test(lib)) {
-  fail('getCachedOzowSandboxTestModeForDisplay must wrap isOzowSandboxTestModeEnabled() via unstable_cache');
+if (!/unstable_cache\(\s*\(\)\s*=>\s*readOzowSandboxTestMode\(\)/.test(lib)) {
+  fail('getCachedOzowSandboxTestModeForDisplay must cache the throwing raw read readOzowSandboxTestMode() (never the swallowing isOzowSandboxTestModeEnabled(), which would cache a failure as false)');
 }
 
 // It must NOT import/call the admin gate — this route is deliberately public.

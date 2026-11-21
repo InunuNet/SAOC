@@ -28,31 +28,48 @@ export async function isOzowSandboxTestModeEnabled(deps?: {
   db?: Pick<Firestore, 'collection'>;
 }): Promise<boolean> {
   try {
-    const db = deps?.db ?? getFirestore(initAdmin());
-    const snapshot = await db
-      .collection(OZOW_SANDBOX_TEST_MODE_COLLECTION)
-      .doc(OZOW_SANDBOX_TEST_MODE_DOC_ID)
-      .get();
-    if (!snapshot.exists) return false;
-    const data = snapshot.data();
-    return data?.enabled === true;
+    return await readOzowSandboxTestMode(deps?.db);
   } catch {
     return false;
   }
 }
 
+/** The raw read. A Firestore failure throws, so a caching wrapper never stores it as `false`. */
+async function readOzowSandboxTestMode(db?: Pick<Firestore, 'collection'>): Promise<boolean> {
+  const firestore = db ?? getFirestore(initAdmin());
+  const snapshot = await firestore
+    .collection(OZOW_SANDBOX_TEST_MODE_COLLECTION)
+    .doc(OZOW_SANDBOX_TEST_MODE_DOC_ID)
+    .get();
+  if (!snapshot.exists) return false;
+  return snapshot.data()?.enabled === true;
+}
+
 /**
  * DISPLAY ONLY. The public checkout banner polls this flag on every page view, so that read goes
- * through a short tagged cache (one Firestore read per OZOW_SANDBOX_BANNER_REVALIDATE_SECONDS).
- * The admin PUT route calls revalidateTag(OZOW_SANDBOX_BANNER_CACHE_TAG) so a toggle shows at
- * once. Never use this to decide sandbox vs live: checkout, the vendor stand payment and the admin
+ * through a short tagged cache (one Firestore read per OZOW_SANDBOX_BANNER_REVALIDATE_SECONDS per
+ * server instance). The admin PUT route calls revalidateTag(OZOW_SANDBOX_BANNER_CACHE_TAG), which
+ * clears only the instance that handled the PUT; the other instance (apphosting.yaml allows two,
+ * with no shared cache handler) can show the old state for up to the 60 s revalidate window.
+ * Never use this to decide sandbox vs live: checkout, the vendor stand payment and the admin
  * screens all call isOzowSandboxTestModeEnabled() directly, uncached.
+ *
+ * The function inside the cache throws on a read failure, so a failed read is never stored; the
+ * catch that maps it to the fail-closed `false` sits outside the cache.
  */
 export const OZOW_SANDBOX_BANNER_CACHE_TAG = 'ozow-sandbox-banner';
 export const OZOW_SANDBOX_BANNER_REVALIDATE_SECONDS = 60;
 
-export const getCachedOzowSandboxTestModeForDisplay = unstable_cache(
-  () => isOzowSandboxTestModeEnabled(),
+const readBannerFlagCached = unstable_cache(
+  () => readOzowSandboxTestMode(),
   [OZOW_SANDBOX_BANNER_CACHE_TAG],
   { revalidate: OZOW_SANDBOX_BANNER_REVALIDATE_SECONDS, tags: [OZOW_SANDBOX_BANNER_CACHE_TAG] },
 );
+
+export async function getCachedOzowSandboxTestModeForDisplay(): Promise<boolean> {
+  try {
+    return await readBannerFlagCached();
+  } catch {
+    return false;
+  }
+}

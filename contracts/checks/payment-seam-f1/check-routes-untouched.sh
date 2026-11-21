@@ -1,50 +1,15 @@
 #!/usr/bin/env bash
-# A10 — F1 IS ADDITIVE: NEITHER ROUTE NOR lib/payfast.ts IS TOUCHED.
+# A10 (RETIRED 2026-11-22) — was: "F1 IS ADDITIVE, NEITHER ROUTE NOR lib/payfast.ts IS TOUCHED".
 #
-# Route rewiring is F2. Keeping F1 purely additive is what gives F3's live sandbox purchase ONE
-# candidate cause if it regresses instead of two — the stated reason this mission was split this
-# way. These three sha256 values were taken from the working tree on 2026-08-19, before any code
-# moved.
+# It pinned sha256 values of app/api/tickets/checkout/route.ts, app/api/tickets/itn/route.ts and
+# lib/payfast.ts taken on 2026-08-19, purely as a mission-sequencing boundary (keep F1 additive so
+# F3's live sandbox purchase has one candidate cause). F2 then rewired those routes on purpose, and
+# they have changed many times since, so the pin protected nothing nameable and failed on every
+# legitimate edit. The properties that matter now are covered by checks that read behaviour or
+# structure: the checkout wiring and transaction-scope checks, the payment-seam fail-closed,
+# inbound-verify and server-confirm checks in this folder.
 #
-# WHAT MAKES THIS FAIL: @dev rewiring either route inside F1 (i.e. F1 silently becoming F1+F2);
-# any edit to lib/payfast.ts, whose primitives four other contracts' checks import by that path.
-#
-# NOTE — PRE-EXISTING, FLAGGED NOT FIXED: the ITN route's OTHER four pins (ticketing-f1-show-
-# collision, ticketing-m1-m2, ticketing-f10-itn-repin, ticketing-hardening) are all STALE against
-# the current file, almost certainly from the 2026-08-18 source-IP "logged, not enforced" change.
-# The value pinned here is the CURRENT file only, as an "F1 did not touch this" boundary — it is
-# deliberately NOT an endorsement of that content, and re-pinning the other four is a ceremony F2
-# must plan. See contracts/golden/payment-seam-f1/fail-closed-guards.golden.md.
-#
-# Run as: bash contracts/checks/payment-seam-f1/check-routes-untouched.sh
-set -uo pipefail
-
-EXPECTED_CHECKOUT="b458ed702c72f5551b97503a6683e8856d4a973db1fc6e804aa2fa5940a55309"
-EXPECTED_ITN="a71f9505a21775425c9952dccf3e02abbe06fef0e2b58a1529cb3a2408f395d1"
-EXPECTED_PAYFAST_LIB="b5ab57a236758f16946a6477f61bae1ad90195cba6064bd99368158b805c2066"
-
-status=0
-check() {
-  local path="$1" expected="$2"
-  if [ ! -f "$path" ]; then
-    echo "FAIL A10: $path is missing."
-    status=1
-    return
-  fi
-  local actual
-  actual=$(shasum -a 256 "$path" | cut -d' ' -f1)
-  if [ "$actual" != "$expected" ]; then
-    echo "FAIL A10: $path changed during F1."
-    echo "         expected $expected"
-    echo "         actual   $actual"
-    echo "         F1 is additive only — route rewiring is F2."
-    status=1
-  fi
-}
-
-check app/api/tickets/checkout/route.ts "$EXPECTED_CHECKOUT"
-check app/api/tickets/itn/route.ts "$EXPECTED_ITN"
-check lib/payfast.ts "$EXPECTED_PAYFAST_LIB"
-
-[ "$status" -eq 0 ] && echo "PASS A10: both routes and lib/payfast.ts are byte-identical to their pre-F1 state."
-exit "$status"
+# The script stays only so contracts/contract-payment-seam-f1.yaml (A10) does not point at a
+# missing file; it asserts nothing. See RETIRED.md in this folder.
+echo "RETIRED A10: sha256 pins of the checkout/ITN routes and lib/payfast.ts (mission sequencing only); see contracts/checks/payment-seam-f1/RETIRED.md"
+exit 0

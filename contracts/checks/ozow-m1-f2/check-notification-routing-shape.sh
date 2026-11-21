@@ -40,18 +40,20 @@ HELPER="lib/tickets-notification.ts"
 [ -f "$OZOW_ROUTE" ] || fail "(b) $OZOW_ROUTE does not exist — the new dedicated Ozow route is missing"
 [ -f "$HELPER" ] || fail "(c) $HELPER does not exist — no extracted shared helper"
 
+# REPAIRED 2026-11-22: the shared handler is the helper's exported POST (the routes import it as
+# `POST as handleNotification`). The old detection took the FIRST exported function of the file,
+# which became notificationAmountMatches when the amount matcher was added above the handler.
+HELPER_SYMBOL="POST"
 if [ -f "$HELPER" ]; then
-  HELPER_SYMBOL=$(grep -oE 'export (async )?function [A-Za-z0-9_]+' "$HELPER" | head -1 | awk '{print $NF}')
-  if [ -z "${HELPER_SYMBOL:-}" ]; then
-    fail "(c) $HELPER exports no named function — cannot identify the shared handler symbol"
-  fi
+  grep -qE '^export async function POST\(' "$HELPER" \
+    || fail "(c) $HELPER does not export the shared handler POST"
 fi
 
 if [ -f "$PAYFAST_ROUTE" ] && [ -f "$OZOW_ROUTE" ] && [ -n "${HELPER_SYMBOL:-}" ]; then
-  grep -q "$HELPER_SYMBOL" "$PAYFAST_ROUTE" \
+  grep -qE "import \{ POST as [A-Za-z0-9_]+ \} from" "$PAYFAST_ROUTE" \
     && grep -qE "from ['\"]@?/?lib/tickets-notification['\"]|from ['\"]\.\./\.\./\.\./\.\./lib/tickets-notification['\"]" "$PAYFAST_ROUTE" \
     || fail "(d) $PAYFAST_ROUTE does not import $HELPER_SYMBOL from $HELPER"
-  grep -q "$HELPER_SYMBOL" "$OZOW_ROUTE" \
+  grep -qE "import \{ POST as [A-Za-z0-9_]+ \} from" "$OZOW_ROUTE" \
     && grep -qE "from ['\"]@?/?lib/tickets-notification['\"]|from ['\"]\.\./\.\./\.\./\.\./lib/tickets-notification['\"]" "$OZOW_ROUTE" \
     || fail "(d) $OZOW_ROUTE does not import $HELPER_SYMBOL from $HELPER"
 

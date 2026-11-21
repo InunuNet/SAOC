@@ -23,6 +23,8 @@
 
 import { readFileSync } from 'node:fs';
 
+import ts from 'typescript';
+
 process.env.NEXT_PUBLIC_SANITY_PROJECT_ID = '';
 // Deliberately absent so ANY code path that reaches Firestore throws loudly rather than hanging
 // or silently succeeding against a real project.
@@ -85,8 +87,38 @@ for (const [label, overrides] of cases) {
 
 // The gateway must never be read off the request body: that would re-open a client-chosen gateway.
 const routeSource = readFileSync(new URL('../../../app/api/tickets/checkout/route.ts', import.meta.url), 'utf8');
-ok('route does not read providerId from the request body',
-  !/body\.providerId|body\[['"]providerId['"]\]/.test(routeSource));
+// Found by walking the syntax tree, so every spelling is caught: `body.providerId`,
+// `body?.providerId`, `(body as X).providerId`, `body['providerId']`, and destructuring such as
+// `const { providerId } = body as X`. The route has no legitimate read of a `providerId` member:
+// the resolved gateway is the local `providerId` variable, which is a plain identifier.
+function findProviderIdReads(source) {
+  const sourceFile = ts.createSourceFile('route.ts', source, ts.ScriptTarget.ES2022, true);
+  const hits = [];
+  const line = (node) => sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1;
+  const visit = (node) => {
+    if (ts.isPropertyAccessExpression(node) && node.name.text === 'providerId') {
+      hits.push(`line ${line(node)}: .providerId member access`);
+    } else if (
+      ts.isElementAccessExpression(node) &&
+      ts.isStringLiteralLike(node.argumentExpression) &&
+      node.argumentExpression.text === 'providerId'
+    ) {
+      hits.push(`line ${line(node)}: ['providerId'] element access`);
+    } else if (
+      ts.isBindingElement(node) &&
+      ts.isObjectBindingPattern(node.parent) &&
+      (node.propertyName ?? node.name).getText(sourceFile).replace(/['"]/g, '') === 'providerId'
+    ) {
+      hits.push(`line ${line(node)}: providerId destructured from an object`);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return hits;
+}
+const providerIdReads = findProviderIdReads(routeSource);
+ok('route does not read providerId from the request body (member, bracket, cast or destructuring)',
+  providerIdReads.length === 0, providerIdReads.join('; '));
 ok('route resolves the gateway server-side via resolveActiveGateway()',
   /await resolveActiveGateway\(\)/.test(routeSource));
 

@@ -75,6 +75,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
 
   const enabled = (body as { enabled: boolean }).enabled;
 
+  let changed: boolean;
   try {
     const { session } = gate;
     const db = getFirestore(initAdmin());
@@ -83,9 +84,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
       next: { enabled },
       actor: { uid: session.decodedToken.uid, email: session.decodedToken.email ?? null },
     });
-    // The public banner reads a 60 s cache; expire it so the toggle shows immediately.
-    revalidateTag(OZOW_SANDBOX_BANNER_CACHE_TAG, { expire: 0 });
-    return NextResponse.json({ enabled, changed: result.changed });
+    changed = result.changed;
   } catch (error) {
     console.error(
       '[admin/settings/ozow-sandbox-test-mode] Failed to write flag:',
@@ -93,4 +92,17 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
     );
     return NextResponse.json({ error: 'Failed to update Ozow sandbox test mode.' }, { status: 500 });
   }
+
+  // The public banner reads a 60 s cache. This clears it on THIS instance only; another instance
+  // can show the old banner for up to 60 s. The write above already saved, so a failure here is
+  // logged and never turns the saved toggle into an error response.
+  try {
+    revalidateTag(OZOW_SANDBOX_BANNER_CACHE_TAG, { expire: 0 });
+  } catch (error) {
+    console.warn(
+      '[admin/settings/ozow-sandbox-test-mode] Banner cache expiry failed:',
+      error instanceof Error ? error.name : 'unknown error',
+    );
+  }
+  return NextResponse.json({ enabled, changed });
 }
