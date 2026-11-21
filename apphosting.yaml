@@ -146,6 +146,10 @@ env:
     secret: RECOVERY_TOKEN_SECRET
     availability:
       - RUNTIME
+  - variable: RECONCILIATION_CRON_SECRET
+    secret: RECONCILIATION_CRON_SECRET
+    availability:
+      - RUNTIME
   - variable: RESEND_API_KEY
     secret: RESEND_API_KEY
     availability:
