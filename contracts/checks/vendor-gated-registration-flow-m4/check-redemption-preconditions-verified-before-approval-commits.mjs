@@ -1,4 +1,13 @@
 #!/usr/bin/env node
+// LIMITS, stated plainly: this is a STRUCTURAL LINT, not a proof. It checks that both routes
+// contain an unconditional-looking, returning refusal on the same secret read the same way. It
+// cannot prove control flow: a dead condition (`if (false)`), an early exit before the guard, or
+// a guard that returns the wrong response all pass here. The proof is the behavioural arms A
+// (approve with the secret unset -> 503, nothing written) and D (redeem with the secret unset ->
+// generic 403, no cookie, no Firestore access) in check-approval-redemption-behavioural.mjs.
+// The comment/string masking below does not handle regex literals or backticks nested inside
+// template-literal interpolations; neither route uses them today.
+//
 // vendor-gated-registration-flow M4 -- GENERAL, A42-style standing invariant (architect pass 5,
 // team-lead review). Supersedes the narrower framing A50 shipped with, which only proved "the
 // code is generated before the commit" -- a property that happened to be true of the OLD
@@ -168,27 +177,48 @@ const preCommitApproval = approveRange ? approval.masked.slice(...approveRange) 
 
 // -------------------------------------------------------------------------------------------
 // (A) Environment preconditions. A guard is a refusal on a secret/env read, in either shape:
-//   const X = ACCESSOR('NAME'); ... if (!X) { <no braces> return ...
-//   if (!ACCESSOR('NAME')) { <no braces> return ...
-// where ACCESSOR is process.env.NAME, process.env['NAME'] or getSecret('NAME'). The `return`
-// must be inside the guard's own block (no `{` or `}` between the opening brace and it), so a
-// log-only guard followed by an unrelated later `return` does not count. Each guard is recorded
-// as "accessor:NAME": both routes must read a secret the SAME way, because getSecret() lets a
-// bundle value win over process.env, so a process.env guard and a getSecret guard can disagree.
-// A control-flow proof (`if (false) return`) is beyond a regex; the behavioural check
-// check-approval-redemption-behavioural.mjs is the real proof.
+//   const X = ACCESSOR('NAME'); ... if (!X) { ... return ... }
+//   if (!ACCESSOR('NAME')) { ... return ... }
+// where ACCESSOR is process.env.NAME, process.env['NAME'] or getSecret('NAME'). Two structural
+// rules, both measured with brace depth on the literal-masked source:
+//   - the guard must be UNCONDITIONAL: it sits at the top level of the approve block (approval)
+//     or of the POST handler body (redemption), not wrapped in an `if`/loop/callback that could
+//     skip it. Neither real route wraps its guard in a try or any other block.
+//   - the guard block must contain a `return` at ITS OWN top level (nested blocks and object
+//     literals before it are fine; a return that lives only in a nested `if` or callback does
+//     not count), so a log-only guard followed by an unrelated later `return` is rejected.
+// Each guard is recorded as "accessor:NAME": both routes must read a secret the SAME way,
+// because getSecret() lets a bundle value win over process.env, so a process.env guard and a
+// getSecret guard can disagree.
 // -------------------------------------------------------------------------------------------
 const ACCESSOR =
   /(?:process\.env\.(\w+)|process\.env\[\s*['"](_+)['"]\s*\]|getSecret\(\s*['"](_+)['"]\s*\))/
     .source;
 const guardAfterConst = new RegExp(
-  `const\\s+(\\w+)\\s*=\\s*${ACCESSOR}\\s*;[\\s\\S]{0,300}?if\\s*\\(\\s*!\\s*\\1\\s*\\)\\s*\\{[^{}]*?\\breturn\\b`,
+  `const\\s+(\\w+)\\s*=\\s*${ACCESSOR}\\s*;[\\s\\S]{0,300}?if\\s*\\(\\s*!\\s*\\1\\s*\\)\\s*\\{`,
   'dg',
 );
-const guardInline = new RegExp(
-  `if\\s*\\(\\s*!\\s*${ACCESSOR}\\s*\\)\\s*\\{[^{}]*?\\breturn\\b`,
-  'dg',
-);
+const guardInline = new RegExp(`if\\s*\\(\\s*!\\s*${ACCESSOR}\\s*\\)\\s*\\{`, 'dg');
+
+// depth[i] = number of `{` still open (relative to the start of `masked`) before character i.
+function braceDepths(masked) {
+  const depth = new Int32Array(masked.length + 1);
+  let open = 0;
+  for (let i = 0; i < masked.length; i++) {
+    if (masked[i] === '}') open--;
+    depth[i] = open;
+    if (masked[i] === '{') open++;
+  }
+  return depth;
+}
+
+// `masked` with everything inside a nested { } blanked, so only top-level text remains.
+function topLevelText(masked) {
+  const depth = braceDepths(masked);
+  let out = '';
+  for (let i = 0; i < masked.length; i++) out += depth[i] === 0 ? masked[i] : ' ';
+  return out;
+}
 
 // Reads "accessor:NAME" out of a match whose accessor groups start at `first` (1-based).
 function guardKey(match, clean, first) {
@@ -199,24 +229,51 @@ function guardKey(match, clean, first) {
   return `getSecret:${clean.slice(bundled[0], bundled[1])}`;
 }
 
+// Guards in the region [from, to) of `source` that sit at the region's top level and whose own
+// block contains a top-level `return`.
 function findGuards(source, from, to) {
   const masked = source.masked.slice(from, to);
   const clean = source.clean.slice(from, to);
+  const depth = braceDepths(masked);
   const keys = new Set();
-  for (const m of masked.matchAll(guardAfterConst)) keys.add(guardKey(m, clean, 2));
-  for (const m of masked.matchAll(guardInline)) keys.add(guardKey(m, clean, 1));
+  const consider = (m, first, startAt) => {
+    const open = m.index + m[0].length - 1;
+    if (depth[startAt] !== 0 || depth[open] !== 0) return;
+    const close = matchingBrace(masked, open);
+    if (close === -1) return;
+    if (/\breturn\b/.test(topLevelText(masked.slice(open + 1, close)))) {
+      keys.add(guardKey(m, clean, first));
+    }
+  };
+  for (const m of masked.matchAll(guardAfterConst)) consider(m, 2, m.index);
+  for (const m of masked.matchAll(guardInline)) consider(m, 1, m.index);
   return keys;
 }
 
-const redemptionGuards = findGuards(redemption, 0, redemption.masked.length);
-const approvalGuards = approveRange ? findGuards(approval, ...approveRange) : new Set();
+// The body of the route's `export async function POST(...) { ... }`, as [from, to).
+function handlerBody(source) {
+  const head = /export\s+async\s+function\s+POST\s*\([^)]*\)[^{]*\{/.exec(source.masked);
+  if (!head) return null;
+  const open = head.index + head[0].length - 1;
+  const close = matchingBrace(source.masked, open);
+  return close === -1 ? null : [open + 1, close];
+}
+
+const redemptionBody = handlerBody(redemption);
+if (!redemptionBody) {
+  failures.push(`${REDEMPTION_ROUTE}: could not locate the body of \`export async function POST\`.`);
+}
+const redemptionGuards = redemptionBody ? findGuards(redemption, ...redemptionBody) : new Set();
+const approvalGuards = approveRange
+  ? findGuards(approval, approveRange[0] + 1, approveRange[1])
+  : new Set();
 
 if (redemptionGuards.size === 0) {
   failures.push(
     `${REDEMPTION_ROUTE}: found ZERO env-var/secret refusal guards -- either this route no ` +
       'longer has one (fine, update this check\'s expectation), or the extraction pattern above ' +
       'no longer matches its current shape (a silent false negative, which this check must not ' +
-      'report as green), or its guard no longer returns inside its own block. Given the ' +
+      'report as green), or its guard no longer returns at its own top level or is no longer unconditional. Given the ' +
       'redemption route is known to read VENDOR_REGISTRATION_TOKEN_SECRET as of this check\'s ' +
       'authoring, treat an empty result as a FAIL until confirmed otherwise.',
   );
