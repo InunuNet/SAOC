@@ -263,21 +263,31 @@ assertions:
     # ---------- A3-A4 — env var gap closure (config correctness, not deployed-site checks) ----------
     - id: A3
       description: >-
-        apphosting.yaml declares SANITY_REVALIDATE_SECRET as a RUNTIME secret, closing the
-        gap that leaves app/api/draft/route.ts and app/api/revalidate/route.ts fail-closed
-        in prod today.
+        SANITY_REVALIDATE_SECRET is carried by the SAOC_APP_SECRETS bundle, which apphosting.yaml
+        binds RUNTIME-only (never BUILD), and app/api/draft/route.ts and
+        app/api/revalidate/route.ts each read it through getSecret('SANITY_REVALIDATE_SECRET'),
+        so both stay fail-closed when it is unset and live when the bundle carries it. Re-pointed
+        after PR #225 replaced the per-secret `variable: NAME` entries with two bundles
+        (apphosting.yaml comment at the top of env:). Name checks only, no secret value is read.
+        Defeating mutation: dropping RUNTIME or adding BUILD on the bundle, removing the name from
+        the bundle's membership comment, or a route reading the name only in a comment.
       command: >-
-        grep -A2 "variable: SANITY_REVALIDATE_SECRET" apphosting.yaml | grep -q "secret:
-        SANITY_REVALIDATE_SECRET"
+        python3 contracts/checks/_shared/check_bundled_secret.py --secret SANITY_REVALIDATE_SECRET
+        --bundle SAOC_APP_SECRETS --reader app/api/draft/route.ts --reader
+        app/api/revalidate/route.ts
 
     - id: A4
       description: >-
-        apphosting.yaml declares SANITY_API_TOKEN as a RUNTIME secret, closing the gap that
-        leaves app/api/events/submit/route.ts's public event-submission write client
-        fail-closed in prod today.
+        SANITY_API_TOKEN is carried by the SAOC_APP_SECRETS bundle, which apphosting.yaml binds
+        RUNTIME-only (never BUILD), and the code that uses it reads it through
+        getSecret('SANITY_API_TOKEN'): app/api/events/submit/route.ts's public event-submission
+        write client and lib/vendor-listing-sanity.ts. Re-pointed after PR #225 (bundles replaced
+        the per-secret `variable: NAME` entries). Name checks only, no secret value is read.
+        Defeating mutation: as A3.
       command: >-
-        grep -A2 "variable: SANITY_API_TOKEN" apphosting.yaml | grep -q "secret:
-        SANITY_API_TOKEN"
+        python3 contracts/checks/_shared/check_bundled_secret.py --secret SANITY_API_TOKEN
+        --bundle SAOC_APP_SECRETS --reader app/api/events/submit/route.ts --reader
+        lib/vendor-listing-sanity.ts
 
     # A5/A6 (RESEND_API_KEY / RESEND_FROM_ADDRESS) intentionally NOT included — see goal's
     # "Deliberately deferred" note. No Resend account exists yet, so no Secret Manager value

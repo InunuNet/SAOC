@@ -24,7 +24,13 @@ if (!/type="radio"/.test(picker) || !/role="radiogroup"/.test(picker)) failures.
 if (!/min-h-\[44px\]/.test(picker)) failures.push('OptionPicker chips are not min-h-[44px]');
 if (!/hashchange/.test(picker) || !/replaceState/.test(picker)) failures.push('OptionPicker does not sync the selection to the URL hash (hashchange + history.replaceState)');
 if (!/hidden/.test(picker) || !/data-option=/.test(picker)) failures.push('OptionPicker does not render every panel with data-option and hide the unselected ones');
-if (!/peer-checked:font-semibold|peer-checked:font-bold/.test(picker) || !/peer-checked:ring-/.test(picker)) failures.push('the selected chip must be visible without colour alone: peer-checked:font-semibold (or bold) plus a peer-checked:ring-* (NOS Design ruling)');
+// The selected-state indicator that is not colour alone. SDC F1a (b2694c56, "media-kit selected state
+// is an inset border, not a second ring") deliberately replaced `peer-checked:ring-2` with an inset
+// 1px shadow so the chip carries the one SAOC focus ring only; a ring OR an inset shadow qualifies.
+const SELECTED_INDICATOR = /peer-checked:ring-|peer-checked:shadow-\[inset/;
+// Comments are stripped first so a comment naming the class cannot satisfy it.
+const stripComments = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`])\/\/.*$/gm, '$1');
+if (!/peer-checked:font-semibold|peer-checked:font-bold/.test(picker) || !SELECTED_INDICATOR.test(stripComments(picker))) failures.push('the selected chip must be visible without colour alone: peer-checked:font-semibold (or bold) plus a peer-checked:ring-* or inset peer-checked:shadow-[inset...] (NOS Design ruling)');
 if (/tabIndex=\{[^}]*[1-9]/.test(picker)) failures.push('OptionPicker sets a positive tabIndex (focus order must follow the DOM: radios, preview, downloads)');
 if (/backgroundColor|#[0-9a-fA-F]{6}\b|\bhex\b/.test(picker)) failures.push('OptionPicker carries a colour or hex (swatches are not supplied for these options; text only)');
 if (/<legend\b(?![^>]*sr-only)/.test(picker)) failures.push('OptionPicker legend must be visually hidden (sr-only): the visible words are the section heading');
@@ -35,7 +41,7 @@ if (!/^'use client';/m.test(lockup)) failures.push("LockupPicker is not a client
 if ((lockup.match(/role="radiogroup"/g) ?? []).length < 2 || !/type="radio"/.test(lockup)) failures.push('LockupPicker needs two radio groups (family toggle and variants)');
 if (!/min-h-\[44px\]/.test(lockup)) failures.push('LockupPicker chips are not min-h-[44px]');
 if (!/hashchange/.test(lockup) || !/replaceState/.test(lockup)) failures.push('LockupPicker does not sync to the URL hash');
-if (!/peer-checked:font-semibold|peer-checked:font-bold/.test(lockup) || !/peer-checked:ring-/.test(lockup)) failures.push('LockupPicker selected state must be weight plus ring, not colour alone');
+if (!/peer-checked:font-semibold|peer-checked:font-bold/.test(lockup) || !SELECTED_INDICATOR.test(stripComments(lockup))) failures.push('LockupPicker selected state must be weight plus a ring or inset shadow, not colour alone');
 if (/tabIndex=\{[^}]*[1-9]/.test(lockup)) failures.push('LockupPicker sets a positive tabIndex');
 const body = tryRead('app/(marketing)/media-kit/MediaKitPageBody.tsx');
 if (!/<LockupPicker\b/.test(body)) failures.push('MediaKitPageBody does not render <LockupPicker>');

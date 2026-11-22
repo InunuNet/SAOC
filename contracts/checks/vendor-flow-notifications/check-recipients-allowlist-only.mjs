@@ -21,6 +21,8 @@ import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
+import { envReadNames, secretCallNames } from '../_shared/secret-reads.mjs';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '../../..');
 
@@ -38,6 +40,20 @@ const ALL_NEW_MODULES = [
 ];
 
 const failures = [];
+
+// ADMIN_EMAIL_ALLOWLIST lives in the SAOC_APP_SECRETS bundle since PR #225, and production binds
+// only the bundles, so it is only visible through a REAL getSecret('ADMIN_EMAIL_ALLOWLIST') call. A
+// direct process.env read of any name is a failure here (it would see nothing in production for a
+// bundled name, and anything else is a second roster). Matching is on comment-blanked, string-masked
+// text (_shared/secret-reads.mjs), so a log string or comment cannot stand in for the call.
+const ALLOWLIST_NAME = 'ADMIN_EMAIL_ALLOWLIST';
+
+function secretAccesses(source) {
+  return [
+    ...secretCallNames(source).map((name) => ({ accessor: `getSecret('${name}')`, name, direct: false })),
+    ...envReadNames(source).map((name) => ({ accessor: `process.env.${name}`, name, direct: true })),
+  ];
+}
 
 for (const rel of ADMIN_NOTICE_MODULES) {
   const target = path.join(REPO_ROOT, rel);
@@ -98,10 +114,9 @@ for (const rel of ADMIN_NOTICE_MODULES) {
   // No second admin-roster env var: the ONLY process.env reference in an admin-notice module,
   // if any (there should be none — recipient resolution is delegated to the resolver), must not
   // name a second allowlist-shaped variable.
-  const envMatches = [...source.matchAll(/process\.env\.(\w+)/g)];
-  for (const m of envMatches) {
-    if (m[1] !== 'ADMIN_EMAIL_ALLOWLIST') {
-      failures.push(`${rel}: references process.env.${m[1]} directly — recipient env access must live only in lib/vendor-admin-notify-recipients.ts`);
+  for (const read of secretAccesses(source)) {
+    if (read.direct || read.name !== ALLOWLIST_NAME) {
+      failures.push(`${rel}: references ${read.accessor} directly — recipient secret access must live only in lib/vendor-admin-notify-recipients.ts`);
     }
   }
 }
@@ -113,13 +128,15 @@ for (const rel of ADMIN_NOTICE_MODULES) {
     failures.push(`${RESOLVER_MODULE}: does not exist`);
   } else {
     const source = readFileSync(target, 'utf8');
-    if (!/process\.env\.ADMIN_EMAIL_ALLOWLIST/.test(source)) {
-      failures.push(`${RESOLVER_MODULE}: does not read process.env.ADMIN_EMAIL_ALLOWLIST`);
+    const reads = secretAccesses(source);
+    if (!reads.some((r) => !r.direct && r.name === ALLOWLIST_NAME)) {
+      failures.push(`${RESOLVER_MODULE}: has no real getSecret('${ALLOWLIST_NAME}') call`);
     }
-    const envMatches = [...source.matchAll(/process\.env\.(\w+)/g)];
-    for (const m of envMatches) {
-      if (m[1] !== 'ADMIN_EMAIL_ALLOWLIST') {
-        failures.push(`${RESOLVER_MODULE}: references a second env var process.env.${m[1]} — only ADMIN_EMAIL_ALLOWLIST is permitted`);
+    for (const read of reads) {
+      if (read.direct) {
+        failures.push(`${RESOLVER_MODULE}: reads ${read.accessor} directly from process.env — a bundled secret is only visible through getSecret() in production`);
+      } else if (read.name !== ALLOWLIST_NAME) {
+        failures.push(`${RESOLVER_MODULE}: reads a second secret via ${read.accessor} — only ${ALLOWLIST_NAME} is permitted`);
       }
     }
     if (/lib\/admin-auth|lib\/admin-roles/.test(source)) {

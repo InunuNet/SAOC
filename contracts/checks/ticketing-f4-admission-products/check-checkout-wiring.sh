@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # A6 — app/api/tickets/checkout/route.ts must actually WIRE effectiveCapacity()/
-# isWithinEarlyBirdWindow() into the per-ticketType validation loop, and the early-bird refusal
+# resolveEffectivePrice() (which applies isWithinEarlyBirdWindow()) into the per-ticketType validation loop, and the early-bird refusal
 # must textually precede reserveTicket() — same anchor-ordering technique as
 # contracts/checks/ticketing-checkout-orders/check-fail-closed-secret-guard.sh proves for
 # RECOVERY_TOKEN_SECRET. A stored-but-ignored field (schema field exists, never read at checkout)
 # is the exact failure mode the architect brief's non-negotiable #4 rules out — this check proves
 # the wiring, not just the data's existence (A7/A8 already cover that).
 #
-# On the CURRENT, unmodified tree this fails: neither function is imported/called in route.ts yet.
+# (Historical: written before the wiring existed; it now passes on the real tree.)
 #
 # Run as: bash contracts/checks/ticketing-f4-admission-products/check-checkout-wiring.sh
 
@@ -27,38 +27,99 @@ if ! grep -q 'effectiveCapacity' "$ROUTE_FILE"; then
   exit 1
 fi
 
-if ! grep -q 'isWithinEarlyBirdWindow' "$ROUTE_FILE"; then
-  echo "FAIL: app/api/tickets/checkout/route.ts never references isWithinEarlyBirdWindow() — the"
-  echo "      early-bird cutoff is stored on the ticketType document but never enforced at"
-  echo "      checkout."
-  exit 1
-fi
+# RE-POINTED (ticketing-flow-redesign F1): the early-bird window is no longer tested inline in the
+# route. The route calls resolveEffectivePrice() (lib/checkout-reservation.ts), which applies
+# isWithinEarlyBirdWindow() and yields null when the window has closed and there is no regular
+# price; the route refuses on that null. The protection is therefore proven in two halves, both
+# matched on comment-stripped CODE (code_lines.py) so a comment cannot satisfy them:
+#   route: calls resolveEffectivePrice(, refuses on `effectivePrice === null`, both textually
+#          BEFORE `await reserveTicket(`;
+#   lib:   resolveEffectivePrice applies isWithinEarlyBirdWindow(input.now, input.earlyBirdCutoff)
+#          and, past the window, returns input.regularPrice (null when there is none) — never
+#          input.price.
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+LIB_FILE="$ROOT/lib/checkout-reservation.ts"
+CODE_LINES="$ROOT/contracts/checks/payment-seam-f2/code_lines.py"
 
-# The early-bird refusal must appear (as a negated call — `!isWithinEarlyBirdWindow(`) textually
-# BEFORE reserveTicket( is called, same as every other precondition in this route (salesOpen,
-# gateway readiness, RECOVERY_TOKEN_SECRET) — a guard placed after the reservation attempt cannot
-# prevent it.
-GUARD_LINE=$(grep -n '!isWithinEarlyBirdWindow(' "$ROUTE_FILE" | head -1 | cut -d: -f1 || true)
-CALL_LINE=$(grep -n 'await reserveTicket(' "$ROUTE_FILE" | head -1 | cut -d: -f1 || true)
+[[ -f "$LIB_FILE" ]] || { echo "FAIL: $LIB_FILE does not exist."; exit 1; }
 
-if [[ -z "$GUARD_LINE" ]]; then
-  echo "FAIL: no negated '!isWithinEarlyBirdWindow(' guard found — the cutoff must actively REFUSE"
-  echo "      the request when the window has closed, not merely be referenced."
-  exit 1
-fi
+# first_code FILE LITERAL [AFTER] -> line number of first CODE line containing LITERAL, or empty.
+# code_lines.py exits 1 with no output for an absence; any other failure aborts the check.
+first_code() {
+  local out rc
+  out=$(python3 "$CODE_LINES" --first "$1" "$2" "${3:-0}") && rc=0 || rc=$?
+  if [[ "$rc" -gt 1 ]]; then
+    echo "FAIL (INSTRUMENT): code_lines.py failed on $1 looking for '$2'."
+    exit 1
+  fi
+  echo "$out"
+}
+
+CALL_LINE=$(first_code "$ROUTE_FILE" 'await reserveTicket(')
+PRICE_LINE=$(first_code "$ROUTE_FILE" 'resolveEffectivePrice(')
+REFUSE_LINE=$(first_code "$ROUTE_FILE" 'effectivePrice === null' "${PRICE_LINE:-0}")
 
 if [[ -z "$CALL_LINE" ]]; then
-  echo "FAIL: reserveTicket( is not called anywhere in $ROUTE_FILE — nothing to guard yet."
+  echo "FAIL: 'await reserveTicket(' is not called anywhere in $ROUTE_FILE — nothing to guard yet."
+  exit 1
+fi
+if [[ -z "$PRICE_LINE" ]]; then
+  echo "FAIL: $ROUTE_FILE never calls resolveEffectivePrice( — the early-bird cutoff is stored on"
+  echo "      the ticketType document but never enforced at checkout."
+  exit 1
+fi
+if [[ -z "$REFUSE_LINE" ]]; then
+  echo "FAIL: $ROUTE_FILE calls resolveEffectivePrice( but never refuses on 'effectivePrice === null'"
+  echo "      afterwards — a closed window would sail through instead of being refused."
+  exit 1
+fi
+# The refusal must actually REFUSE: the guard's own block must contain a top-level `return`
+# (structural lint on comment-blanked, string-masked text, see _shared/secret_reads.py; not a
+# control-flow proof). `void NextResponse.json(...)` in place of the return would fall through to
+# the reservation.
+SECRET_READS="$ROOT/contracts/checks/_shared/secret_reads.py"
+python3 "$SECRET_READS" --guard-returns "$ROUTE_FILE" 'effectivePrice === null' "$PRICE_LINE" \
+  && rc=0 || rc=$?
+if [[ "$rc" -ne 0 ]]; then
+  echo "FAIL: the 'effectivePrice === null' guard (line $REFUSE_LINE) has no top-level return in its"
+  echo "      own block (secret_reads.py exit $rc) — a closed early-bird window would fall through to"
+  echo "      the reservation instead of being refused."
+  exit 1
+fi
+if (( REFUSE_LINE > CALL_LINE )); then
+  echo "FAIL: the early-bird refusal (line $REFUSE_LINE) appears AFTER reserveTicket( is called"
+  echo "      (line $CALL_LINE) — too late to prevent the reservation it's meant to block."
   exit 1
 fi
 
-if (( GUARD_LINE > CALL_LINE )); then
-  echo "FAIL: the '!isWithinEarlyBirdWindow(' guard (line $GUARD_LINE) appears AFTER reserveTicket("
-  echo "      is called (line $CALL_LINE) — too late to prevent the reservation it's meant to block."
+# Lib half: resolveEffectivePrice must really apply the window and fall back to regularPrice.
+DECL_LINE=$(first_code "$LIB_FILE" 'export function resolveEffectivePrice(')
+WINDOW_DECL=$(first_code "$LIB_FILE" 'export function isWithinEarlyBirdWindow(')
+if [[ -z "$DECL_LINE" || -z "$WINDOW_DECL" ]]; then
+  echo "FAIL: lib/checkout-reservation.ts no longer exports resolveEffectivePrice and"
+  echo "      isWithinEarlyBirdWindow."
+  exit 1
+fi
+APPLY_LINE=$(first_code "$LIB_FILE" 'isWithinEarlyBirdWindow(input.now, input.earlyBirdCutoff)' "$DECL_LINE")
+FALLBACK_LINE=$(first_code "$LIB_FILE" 'return input.regularPrice' "${APPLY_LINE:-$DECL_LINE}")
+if [[ -z "$APPLY_LINE" ]]; then
+  echo "FAIL: resolveEffectivePrice does not apply isWithinEarlyBirdWindow(input.now,"
+  echo "      input.earlyBirdCutoff) — the early-bird window is no longer enforced."
+  exit 1
+fi
+if [[ -z "$FALLBACK_LINE" ]]; then
+  echo "FAIL: resolveEffectivePrice no longer falls back to 'return input.regularPrice' after the"
+  echo "      window check — a closed window would keep the early-bird price."
+  exit 1
+fi
+if ! python3 "$CODE_LINES" --first "$LIB_FILE" 'now.getTime() < cutoffEndExclusive.getTime()' \
+    "$WINDOW_DECL" >/dev/null; then
+  echo "FAIL: isWithinEarlyBirdWindow no longer compares now against the cutoff — it cannot close."
   exit 1
 fi
 
-echo "PASS: app/api/tickets/checkout/route.ts wires effectiveCapacity() into capacityByType AND"
-echo "      refuses (line $GUARD_LINE) ahead of reserveTicket() (line $CALL_LINE) when the"
-echo "      early-bird window has closed."
+echo "PASS: app/api/tickets/checkout/route.ts wires effectiveCapacity() into capacityByType, calls"
+echo "      resolveEffectivePrice() (line $PRICE_LINE) and refuses on a null price (line $REFUSE_LINE)"
+echo "      ahead of reserveTicket() (line $CALL_LINE); resolveEffectivePrice applies the early-bird"
+echo "      window and falls back to regularPrice."
 exit 0

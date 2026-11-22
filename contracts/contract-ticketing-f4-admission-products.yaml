@@ -168,9 +168,12 @@ assertions:
     - id: A6
       description: >-
         app/api/tickets/checkout/route.ts actually WIRES effectiveCapacity() into
-        capacityByType and refuses (with a guard textually preceding reserveTicket()) when
-        isWithinEarlyBirdWindow() is false — proving real enforcement, not a schema field that
-        is stored and never read (architect brief non-negotiable #4).
+        capacityByType, calls resolveEffectivePrice() and refuses on a null price (a guard
+        textually preceding reserveTicket()), and that resolveEffectivePrice() in
+        lib/checkout-reservation.ts applies isWithinEarlyBirdWindow() and falls back to
+        regularPrice once the window closes — proving real enforcement, not a schema field that
+        is stored and never read (architect brief non-negotiable #4). Re-pointed from an inline
+        isWithinEarlyBirdWindow() guard after ticketing-flow-redesign F1 moved the logic.
       command: >-
         bash contracts/checks/ticketing-f4-admission-products/check-checkout-wiring.sh
 

@@ -39,7 +39,11 @@ CODE_LINES=contracts/checks/payment-seam-f2/code_lines.py
 # Path overrides exist ONLY so check-ordering-mutations.sh can run this logic against deliberately
 # broken copies. Every committed invocation leaves them unset and reads the real routes.
 CHECKOUT="${CHECKOUT_PATH_OVERRIDE:-app/api/tickets/checkout/route.ts}"
-ITN="${ITN_PATH_OVERRIDE:-app/api/tickets/itn/route.ts}"
+# The eleven-step logic lives in the shared handler (lib/tickets-notification.ts) since the F2
+# extraction; app/api/tickets/itn/route.ts is a thin pass-through that must still delegate to it.
+# ITN is the file holding the LOGIC; ITN_ROUTE is the route that must call it.
+ITN="${ITN_PATH_OVERRIDE:-lib/tickets-notification.ts}"
+ITN_ROUTE="${ITN_ROUTE_PATH_OVERRIDE:-app/api/tickets/itn/route.ts}"
 status=0
 
 # First CODE line (strictly after $3) containing the LITERAL substring $2.
@@ -91,9 +95,18 @@ first_code() {  # sets FIRST_CODE; aborts the whole check if the instrument itse
 fail() { echo "FAIL A4: $*"; status=1; }
 
 # --- Part 1: positive control. Both routes exist and go through the seam. ----------------------
-for f in "$CHECKOUT" "$ITN"; do
+for f in "$CHECKOUT" "$ITN" "$ITN_ROUTE"; do
   [ -f "$f" ] || { echo "FAIL A4: $f does not exist."; exit 1; }
 done
+# The route must delegate end to end: it imports the shared handler under the name
+# handleNotification and RETURNS a call to it with the PayFast provider. Matched on comment-stripped
+# code lines, so a doc comment naming handleNotification cannot satisfy it.
+first_code "$ITN_ROUTE" "POST as handleNotification"
+[ -n "$FIRST_CODE" ] || fail "$ITN_ROUTE no longer imports the shared handler (POST as handleNotification from lib/tickets-notification)."
+first_code "$ITN_ROUTE" "from '@/lib/tickets-notification'"
+[ -n "$FIRST_CODE" ] || fail "$ITN_ROUTE no longer imports from '@/lib/tickets-notification', where the eleven steps live."
+first_code "$ITN_ROUTE" "return handleNotification(payfastProvider"
+[ -n "$FIRST_CODE" ] || fail "$ITN_ROUTE does not return handleNotification(payfastProvider, ...) — the notification route no longer delegates to the shared handler."
 grep -q 'paymentProvider' "$ITN"      || fail "$ITN never references paymentProvider."
 grep -q 'paymentProvider' "$CHECKOUT" || fail "$CHECKOUT never references paymentProvider."
 
@@ -142,7 +155,7 @@ done
 # --- Part 3: FINDING 1 — the asymmetry. ---------------------------------------------------------
 # Neither route may read a gateway credential from the environment any more; that is the provider's
 # job, and a route that still reads one has not actually been rewired.
-for f in "$CHECKOUT" "$ITN"; do
+for f in "$CHECKOUT" "$ITN" "$ITN_ROUTE"; do
   envhits=$(grep -nE "process\.env\.[A-Z_]*(MERCHANT|PASSPHRASE|GATEWAY|PAYMENT)" "$f" || true)
   [ -n "$envhits" ] && fail "$f still reads a gateway credential from the environment:
 $envhits"
@@ -159,14 +172,44 @@ grep -qE "status: 500" "$ITN" \
   && fail "$ITN returns a 500. Every ITN outcome is HTTP 200 so the gateway stops retrying; a 5xx here re-opens the retry storm."
 
 # --- Part 4: FINDING 3 — the recovery-secret guard, by POSITION. --------------------------------
-first_code "$CHECKOUT" "process.env.RECOVERY_TOKEN_SECRET"; secret_guard="$FIRST_CODE"
+# RECOVERY_TOKEN_SECRET lives in the SAOC_APP_SECRETS bundle (PR #225), which production binds
+# instead of one env var per secret. It is therefore only visible through a REAL getSecret(
+# 'RECOVERY_TOKEN_SECRET') call (secret_reads.py matches on comment-blanked, string-masked text, so a
+# log string or comment cannot stand in for the call), and a direct process.env.RECOVERY_TOKEN_SECRET
+# read would silently see nothing: it must NOT be present.
+SECRET_READS=contracts/checks/_shared/secret_reads.py
+secret_guard=$(python3 "$SECRET_READS" --first-call "$CHECKOUT" RECOVERY_TOKEN_SECRET 2>"$CODE_LINES_ERR"); rc=$?
+if [ "$rc" -gt 1 ] || [ -s "$CODE_LINES_ERR" ]; then
+  echo "FAIL A4 (INSTRUMENT): secret_reads.py failed on $CHECKOUT, so NO verdict is possible."
+  sed 's/^/         /' "$CODE_LINES_ERR"
+  exit 1
+fi
+if python3 "$SECRET_READS" --env-reads "$CHECKOUT" RECOVERY_TOKEN_SECRET >/dev/null 2>&1; then
+  fail "$CHECKOUT reads RECOVERY_TOKEN_SECRET directly from process.env; it is a bundled secret and only getSecret('RECOVERY_TOKEN_SECRET') sees it in production."
+fi
 first_code "$CHECKOUT" "reserveTicket("; reserve_call="$FIRST_CODE"
 if [ -z "$secret_guard" ]; then
-  fail "$CHECKOUT no longer reads RECOVERY_TOKEN_SECRET — the fail-closed recovery guard is gone."
+  fail "$CHECKOUT no longer calls getSecret('RECOVERY_TOKEN_SECRET') — the fail-closed recovery guard is gone."
 elif [ -z "$reserve_call" ]; then
   fail "$CHECKOUT no longer calls reserveTicket() — cannot verify the guard's position."
 elif [ "$secret_guard" -ge "$reserve_call" ]; then
   fail "the RECOVERY_TOKEN_SECRET guard (line $secret_guard) no longer precedes the reservation write (line $reserve_call). An unset secret must refuse BEFORE any Firestore write, never mint a never-verifiable-again recovery token."
+else
+  # The read alone is not a guard: the value must be negatively tested and refused, between the
+  # read and the reservation write.
+  first_code "$CHECKOUT" "if (!recoveryTokenSecret)" "$secret_guard"; refusal="$FIRST_CODE"
+  if [ -z "$refusal" ] || [ "$refusal" -ge "$reserve_call" ]; then
+    fail "$CHECKOUT reads RECOVERY_TOKEN_SECRET (line $secret_guard) but never refuses on it (if (!recoveryTokenSecret)) before the reservation write (line $reserve_call) — the guard fails open."
+  fi
+  # ...and the refusal block must RETURN (top-level, in its own block): `void NextResponse.json(...)`
+  # in place of the return would log and fall through to the reservation. Structural lint on
+  # comment-blanked, string-masked text (_shared/secret_reads.py), not a control-flow proof.
+  if [ -n "$refusal" ] && [ "$refusal" -lt "$reserve_call" ]; then
+    python3 "$SECRET_READS" --guard-returns "$CHECKOUT" '!recoveryTokenSecret' "$secret_guard"; grc=$?
+    if [ "$grc" -ne 0 ]; then
+      fail "the 'if (!recoveryTokenSecret)' block in $CHECKOUT (line $refusal) has no top-level return (secret_reads.py exit $grc) — an unset secret would fall through to the reservation write."
+    fi
+  fi
 fi
 
 # --- Part 5: the checkout export four other contracts import must survive. ----------------------
