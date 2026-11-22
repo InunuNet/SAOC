@@ -140,6 +140,18 @@ open(dst, "w").write(text.replace(real, "console.error(\"getSecret('RECOVERY_TOK
 PY
 expect_red "P6 (call replaced by a string literal naming it)" "$WORK/P6.ts"
 
+# --- P7: the refusal block stops returning (`return` -> `void`): an unset secret falls through.
+python3 - "$CHECKOUT" "$WORK/P7.ts" <<'PY'
+import sys
+src, dst = sys.argv[1], sys.argv[2]
+text = open(src).read()
+real = ("    console.error('[tickets/checkout] Missing RECOVERY_TOKEN_SECRET env var.');\n"
+        "    return NextResponse.json(")
+assert real in text, "recovery-secret refusal return not found; mutation would be vacuous"
+open(dst, "w").write(text.replace(real, real.replace("return NextResponse.json(", "void NextResponse.json("), 1))
+PY
+expect_red "P7 (recovery refusal no longer returns: return -> void)" "$WORK/P7.ts"
+
 # --- Q1: the amount comparison replaced by a constant, name kept in a trailing comment.
 #     The logic now lives in the shared handler, so it is driven through the ITN override.
 python3 - lib/tickets-notification.ts "$WORK/Q1-itn.ts" <<'PY'
@@ -259,5 +271,5 @@ else
   status=1
 fi
 
-[ "$status" -eq 0 ] && echo "PASS A10: A4 and A9 are both green on real source and red on all thirteen recorded mutations."
+[ "$status" -eq 0 ] && echo "PASS A10: A4 and A9 are both green on real source and red on all fourteen recorded mutations."
 exit "$status"

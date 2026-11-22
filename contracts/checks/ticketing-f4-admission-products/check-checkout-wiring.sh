@@ -73,6 +73,19 @@ if [[ -z "$REFUSE_LINE" ]]; then
   echo "      afterwards — a closed window would sail through instead of being refused."
   exit 1
 fi
+# The refusal must actually REFUSE: the guard's own block must contain a top-level `return`
+# (structural lint on comment-blanked, string-masked text, see _shared/secret_reads.py; not a
+# control-flow proof). `void NextResponse.json(...)` in place of the return would fall through to
+# the reservation.
+SECRET_READS="$ROOT/contracts/checks/_shared/secret_reads.py"
+python3 "$SECRET_READS" --guard-returns "$ROUTE_FILE" 'effectivePrice === null' "$PRICE_LINE" \
+  && rc=0 || rc=$?
+if [[ "$rc" -ne 0 ]]; then
+  echo "FAIL: the 'effectivePrice === null' guard (line $REFUSE_LINE) has no top-level return in its"
+  echo "      own block (secret_reads.py exit $rc) — a closed early-bird window would fall through to"
+  echo "      the reservation instead of being refused."
+  exit 1
+fi
 if (( REFUSE_LINE > CALL_LINE )); then
   echo "FAIL: the early-bird refusal (line $REFUSE_LINE) appears AFTER reserveTicket( is called"
   echo "      (line $CALL_LINE) — too late to prevent the reservation it's meant to block."

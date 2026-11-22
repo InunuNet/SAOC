@@ -201,6 +201,15 @@ else
   if [ -z "$refusal" ] || [ "$refusal" -ge "$reserve_call" ]; then
     fail "$CHECKOUT reads RECOVERY_TOKEN_SECRET (line $secret_guard) but never refuses on it (if (!recoveryTokenSecret)) before the reservation write (line $reserve_call) — the guard fails open."
   fi
+  # ...and the refusal block must RETURN (top-level, in its own block): `void NextResponse.json(...)`
+  # in place of the return would log and fall through to the reservation. Structural lint on
+  # comment-blanked, string-masked text (_shared/secret_reads.py), not a control-flow proof.
+  if [ -n "$refusal" ] && [ "$refusal" -lt "$reserve_call" ]; then
+    python3 "$SECRET_READS" --guard-returns "$CHECKOUT" '!recoveryTokenSecret' "$secret_guard"; grc=$?
+    if [ "$grc" -ne 0 ]; then
+      fail "the 'if (!recoveryTokenSecret)' block in $CHECKOUT (line $refusal) has no top-level return (secret_reads.py exit $grc) — an unset secret would fall through to the reservation write."
+    fi
+  fi
 fi
 
 # --- Part 5: the checkout export four other contracts import must survive. ----------------------
