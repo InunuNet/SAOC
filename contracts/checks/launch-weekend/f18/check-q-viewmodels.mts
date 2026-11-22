@@ -86,7 +86,7 @@ else {
     for (const [k, v] of Object.entries(c.expect as Obj)) if ((out[k] ?? null) !== v) fail(`ledes "${c.name as string}": ${k} want ${JSON.stringify(v)}, got ${JSON.stringify(out[k] ?? null)}`);
   }
   const DATE_LITERAL = /\b2[3-6]\s+(Sept|September)\b|\b(Thursday|Friday|Saturday|Sunday)\s+2[3-6]\b|2027-09-2\d/;
-  for (const f of [LEDES, 'app/(marketing)/national-show/tickets/page.tsx']) {
+  for (const f of [LEDES, 'app/(nos)/national-show/tickets/page.tsx']) {
     const code = (existsSync(f) ? readFileSync(f, 'utf8') : '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
     if (DATE_LITERAL.test(code)) fail(`${f}: a show date is typed in the source (R24: interpolate from the nationalShow singleton)`);
   }

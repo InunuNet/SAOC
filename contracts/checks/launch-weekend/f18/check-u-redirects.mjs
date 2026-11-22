@@ -24,7 +24,7 @@ await main('F18-A30 retired ticket URLs redirect', async (r) => {
     const res = await fetch(`${BASE}${path}`, { redirect: 'manual', headers: httpAuth() });
     if (res.status !== 200) r.fail(`${path}: HTTP ${res.status}, want 200 (the payment return page stays)`);
   }
-  const files = execFileSync('git', ['ls-files', 'app', 'components', 'lib'], { encoding: 'utf8' }).split('\n').filter((f) => /\.(tsx?|json)$/.test(f) && f !== 'app/(marketing)/tickets/page.tsx');
+  const files = execFileSync('git', ['ls-files', 'app', 'components', 'lib'], { encoding: 'utf8' }).split('\n').filter((f) => /\.(tsx?|json)$/.test(f) && f !== 'app/(nos)/tickets/page.tsx');
   for (const f of files) {
     const src = readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
     if (/href=\{?["'`]\/tickets["'`]\}?|\bhref:\s*['"]\/tickets['"]|url:\s*['"]\/tickets['"]|path:\s*['"]\/tickets['"]/.test(src)) r.fail(`${f}: still links the retired bare /tickets (link to ${K.redirectTarget})`);

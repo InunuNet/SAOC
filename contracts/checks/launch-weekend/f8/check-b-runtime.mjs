@@ -9,6 +9,8 @@ const BANNED = [/AI-generated/i, /Placeholder copy/, /has not been written or ap
 const headingsOf = (html) => [...html.matchAll(/<(h[12])\b[^>]*>([\s\S]*?)<\/\1>/gi)].map((m) => ({ tag: m[1].toLowerCase(), text: stripTags(m[2]).trim() }));
 const norm = (s) => s.replace(/\s+/g, ' ').trim();
 const leak = golden.sections;
+// Routes whose page is a designed board rather than ShowContentState prose (no content-gap state by design).
+const BOARD_ROUTES = new Set(['/national-show/programme']);
 
 for (const route of ROUTES) {
   const { status, text } = await get(route);
@@ -40,7 +42,12 @@ for (const route of ROUTES) {
     if (!mainText.includes(norm(s.firstWords).slice(0, 40))) problems.push(`${route} lost preserved section ${s.sectionKey}`);
     if (s.heading && !heads.some((h) => h.tag === 'h2' && h.text === s.heading)) problems.push(`${route} lost the h2 "${s.heading}" of preserved section ${s.sectionKey}`);
   }
-  if (gone.length > 0) {
+  if (BOARD_ROUTES.has(route)) {
+    // PG-G1 (PR #106): /programme is the timetable board with no ShowContentState prose block, so no holding statement
+    // and no gap chip. The withheld prose must still be absent (asserted above); a gap element here would be a regression.
+    const gaps = (main.match(/data-nos-content-gap/g) || []).length;
+    if (gaps !== 0) problems.push(`${route} has ${gaps} data-nos-content-gap element(s); the PG-G1 board renders no holding statement`);
+  } else if (gone.length > 0) {
     const gaps = (main.match(/data-nos-content-gap/g) || []).length;
     if (gaps !== 1) problems.push(`${route} has ${gaps} data-nos-content-gap element(s), expected exactly 1 (placeholder sections collapse to one)`);
     if (!mainText.includes(PENDING_LABEL)) problems.push(`${route} lacks the pending chip text "${PENDING_LABEL}"`);
@@ -54,7 +61,10 @@ for (const route of ROUTES) {
   }
 }
 
-// /programme: one h1, no duplicate "Programme", links to Symposium and Workshops in the marked container.
+// /programme (NOS Design PG-G1 board, PR #106): one h1, no duplicate "Programme" heading, the timetable board renders,
+// and a visitor can reach Symposium (the Friday session tile) and Workshops (the ruled "later" row) from it. The old
+// data-nos-programme-links container no longer exists. Selectors match gate-standard.mjs (data-programme-body,
+// data-programme-board, the per-day links, the workshops link outside nav and hero).
 {
   const { status, text } = await get('/national-show/programme');
   if (status === 200) {
@@ -63,9 +73,23 @@ for (const route of ROUTES) {
     const h1s = heads.filter((h) => h.tag === 'h1');
     if (h1s.length !== 1 || h1s[0].text !== 'Programme') problems.push(`/programme h1s: ${JSON.stringify(h1s.map((h) => h.text))}, expected exactly ["Programme"]`);
     if (heads.filter((h) => h.text === 'Programme').length > 1) problems.push('/programme still has "Programme" as both h1 and h2');
-    const box = main.match(/<([a-z]+)[^>]*data-nos-programme-links[^>]*>[\s\S]*?<\/\1>/i)?.[0] ?? '';
-    for (const href of ['/national-show/symposium', '/national-show/workshops']) {
-      if (!box.includes(`href="${href}"`)) problems.push(`/programme data-nos-programme-links lacks a link to ${href}`);
+    const body = main.match(/<([a-z]+)[^>]*data-programme-body[^>]*>[\s\S]*<\/\1>/i)?.[0] ?? '';
+    const board = body.match(/<ol[^>]*data-programme-board[^>]*>[\s\S]*?<\/ol>/i)?.[0] ?? '';
+    if (!board) problems.push('/programme does not render the PG-G1 timetable board (ol[data-programme-board] inside [data-programme-body])');
+    const days = (board.match(/<li\b/gi) || []).length;
+    if (days !== 4) problems.push(`/programme board has ${days} day(s), expected 4`);
+    // Symposium: a session tile link inside the board. Workshops: a link in the body below the board.
+    const hrefsIn = (html) => [...html.matchAll(/<a\b[^>]*\bhref="([^"]+)"/gi)].map((m) => m[1]);
+    if (!hrefsIn(board).some((h) => /\/symposium$/.test(h))) problems.push('/programme board has no session tile linking /symposium');
+    // The ruled row sits in the board's own section, after the board and before the section closes (the ticket cards and the
+    // Explore index that follow also link /workshops and must not satisfy this).
+    const afterBoard = body.slice(body.indexOf(board) + board.length).split('</section>')[0];
+    if (!hrefsIn(afterBoard).some((h) => /\/workshops$/.test(h))) problems.push('/programme has no Workshops row linking /workshops below the board');
+    // NosShowIndex (nav "Explore the show pages") lists both pages; on the NOS host the prefix may be dropped (nosPath).
+    const index = main.match(/<nav\b[^>]*aria-label="Explore the show pages"[^>]*>[\s\S]*?<\/nav>/i)?.[0] ?? '';
+    if (!index) problems.push('/programme does not render the Explore index (nav "Explore the show pages")');
+    for (const page of ['symposium', 'workshops']) {
+      if (!hrefsIn(index).some((h) => new RegExp(`^(/national-show)?/${page}$`).test(h))) problems.push(`/programme Explore index does not link ${page}`);
     }
   }
 }

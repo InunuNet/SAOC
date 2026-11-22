@@ -772,6 +772,12 @@
    "match": "route-runner/fixture-payments\\.mjs'\\)",
    "note": "real stand route handlers run in process under contracts/harness/route-runner/preload.cjs: firebase-admin/firestore and init, payments, active gateway, show window, confirmation and admin-notice mailers are fixtures; the POST is a Request object handed straight to the handler (http://localhost is never fetched)",
    "target": "in-memory route-runner store and fixtures; no SDK, network or live service"
+  },
+  "contracts/checks/launch-weekend/f8/check-a-programme-mutations.sh": {
+   "class": "STATIC_FP",
+   "match": "(?m)^mutate\\(\\) \\{\\n  local id=\"\\$1\" file=\"\\$2\" old=\"\\$3\" new=\"\\$4\" fragment=\"\\$5\" tree rc",
+   "note": "the MUT signal is the local shell function mutate(): it copies nine repo source files into a mktemp directory, git-inits that copy, edits one string in it with python3 and runs check-a-static.mjs against the copy via F8_ROOT; the working tree is never written, the temp directory is removed by an EXIT trap, and no network, Firestore, Sanity or other live service is touched",
+   "target": "source text only (throwaway temp copy)"
   }
  }
 }

@@ -7,7 +7,9 @@ import { ROOT, PENDING_LABEL, read, report } from './_lib.mjs';
 const problems = [];
 const sp = read('lib/data/show-pages.ts');
 const prose = read('components/nos/ShowPageProse.tsx');
-const programme = read('app/(marketing)/national-show/programme/page.tsx');
+const programme = read('app/(nos)/national-show/programme/page.tsx');
+const presentation = read('lib/data/ticket-presentation.ts');
+const showIndex = read('components/nos/NosShowIndex.tsx');
 const state = read('components/show/nos/ShowContentState.tsx');
 const proxy = read('proxy.ts');
 const launch = read('lib/beta-public-launch.ts');
@@ -31,9 +33,37 @@ if (!/export function buildAbsentShowPage\(/.test(sp)) problems.push('buildAbsen
 const fallbackBranch = state.match(/state === 'fallback-unpublished'[\s\S]*?\) : layout === 'listing'/)?.[0] ?? '';
 if (!/afterProse/.test(fallbackBranch)) problems.push('ShowContentState fallback-unpublished branch does not render afterProse');
 if (!/data-nos-content-gap/.test(prose)) problems.push('ShowPageProse.tsx does not emit data-nos-content-gap');
-if (!/data-nos-programme-links/.test(programme)) problems.push('programme/page.tsx lacks the data-nos-programme-links container');
+// The programme page is the NOS Design PG-G1 board (PR #106 replaced the old data-nos-programme-links container; the
+// golden is .agent/memory/project/specs/nos-content-standard/goldens/spec.md, "/programme (PG-G1 ...)"). The original
+// intent stands: a visitor on /programme can reach the Symposium and Workshops pages. Today that means the board
+// renders, the Symposium session tile links the ticket product's detail page, the Workshops row links WORKSHOPS_HREF,
+// and the page ends with NosShowIndex, which also lists both pages.
+if (!/data-programme-board/.test(programme)) problems.push('programme/page.tsx does not render the PG-G1 timetable board (data-programme-board)');
+if (!/data-programme-body/.test(programme)) problems.push('programme/page.tsx lacks the PG-G1 full-width body (data-programme-body)');
+const SYMPOSIUM_HREF = '/symposium';
+const WORKSHOPS_PATH = '/workshops';
+const detailHrefs = presentation.match(/export const TICKET_DETAIL_HREFS[\s\S]*?\n};/)?.[0] ?? '';
+if (detailHrefs.match(/symposium:\s*'([^']*)'/)?.[1] !== SYMPOSIUM_HREF) problems.push(`lib/data/ticket-presentation.ts TICKET_DETAIL_HREFS.symposium is not exactly '${SYMPOSIUM_HREF}'`);
+if (!/TICKET_DETAIL_HREFS\[id\]/.test(programme)) problems.push('programme/page.tsx does not take session tile hrefs from TICKET_DETAIL_HREFS');
+if (!/<Link[^>]*href=\{session\.href\}[^>]*className="nos-pg-session"/.test(programme)) problems.push('programme/page.tsx does not render the session tile as a link (nos-pg-session with session.href)');
+// A tile or a row renders only if its product is listed AND dated (or undated) the right way, so those source conditions are asserted too.
+const programmeProducts = presentation.match(/export const PROGRAMME_PRODUCTS[\s\S]*?\];/)?.[0] ?? '';
+if (!/'symposium'/.test(programmeProducts)) problems.push('PROGRAMME_PRODUCTS does not include the symposium, so no Symposium tile is placed on the board');
+if (!/'workshops'/.test(programmeProducts)) problems.push('PROGRAMME_PRODUCTS does not include workshops, so undatedProducts() yields no Workshops row');
+const showDays = [...programme.matchAll(/weekday:\s*'(\w+)',\s*day:\s*'(\d+)'/g)].map((m) => `${m[1]} ${m[2]} `);
+if (showDays.length !== 4) problems.push(`programme/page.tsx SHOW_DAYS parsed ${showDays.length} day(s), expected 4`);
+const whenOf = (id) => presentation.match(new RegExp(`\\n  ${id}: \\{[\\s\\S]*?\\n    when: '([^']*)'`))?.[1];
+const symposiumWhen = whenOf('symposium');
+if (symposiumWhen === undefined || !showDays.some((d) => symposiumWhen.startsWith(d))) problems.push(`TICKET_PRODUCTS.symposium.when ("${symposiumWhen}") does not name a show day, so sessionsOn() places no Symposium tile`);
+const workshopsWhen = whenOf('workshops');
+if (workshopsWhen === undefined) problems.push('TICKET_PRODUCTS.workshops.when not found');
+else if (showDays.some((d) => workshopsWhen.startsWith(d))) problems.push(`TICKET_PRODUCTS.workshops.when ("${workshopsWhen}") names a show day, so undatedProducts() drops the Workshops row`);
+if (!/undatedProducts\(\)\.map\(/.test(programme)) problems.push('programme/page.tsx does not render the undated products (the Workshops row) from undatedProducts()');
+if (programme.match(/const WORKSHOPS_HREF = '([^']*)'/)?.[1] !== WORKSHOPS_PATH) problems.push(`programme/page.tsx WORKSHOPS_HREF is not exactly '${WORKSHOPS_PATH}'`);
+if (!/<Link[^>]*href=\{WORKSHOPS_HREF\}[^>]*className="nos-pg-later"/.test(programme)) problems.push('programme/page.tsx lacks the ruled Workshops row (nos-pg-later linking WORKSHOPS_HREF)');
+if (!/<NosShowIndex current="\/national-show\/programme"/.test(programme)) problems.push('programme/page.tsx does not render NosShowIndex');
 for (const href of ['/national-show/symposium', '/national-show/workshops']) {
-  if (!programme.includes(href)) problems.push(`programme/page.tsx does not link ${href}`);
+  if (!showIndex.includes(`'${href}'`)) problems.push(`components/nos/NosShowIndex.tsx does not list ${href}`);
 }
 
 // llms generator must never query showPage; seo fields of showPage must stay unconsumed outside the loader.
@@ -49,7 +79,8 @@ for (const dir of ['app', 'components']) {
 const git = (...a) => execFileSync('git', ['-C', ROOT, ...a], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
 let base = process.env.BASE_REF;
 if (!base) { try { base = git('merge-base', 'HEAD', 'origin/main').trim(); } catch { base = 'origin/main'; } }
-const files = ['lib/data/show-pages.ts', 'components/nos/ShowPageProse.tsx', 'app/(marketing)/national-show/programme/page.tsx'];
+// The programme page is not diffed: PR #106 rewrote it deliberately (PG-G1), so its copy is the golden's, not F8's.
+const files = ['lib/data/show-pages.ts', 'components/nos/ShowPageProse.tsx'];
 const added = git('diff', '-U0', base, '--', ...files).split('\n').filter((l) => l.startsWith('+') && !l.startsWith('+++') && !/^\+\s*(\/\/|\*|\/\*)/.test(l));
 const isClassString = (lit) => lit.split(/\s+/).every((t) => /^[a-z0-9:\[\]\-_./%()#]+$/.test(t)) && /[-\[]/.test(lit);
 for (const line of added) {

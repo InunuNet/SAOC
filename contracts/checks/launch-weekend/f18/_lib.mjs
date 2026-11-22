@@ -3,17 +3,14 @@
 //   node --import tsx/esm contracts/checks/launch-weekend/f18/<check>.mjs        (pnpm exec tsx for the .mts render checks: they import with the "@/" alias)
 // Runtime checks reuse the F17 lib (and through it the NOS F3 lib): NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 against a server you started
 // (ports 3670-3679 only). Exit 1 = finding, 2 = infrastructure. cwd = the tree under test. Runtime checks read the CMS read-only and never mutate it.
-import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { T } from './_static.mjs';
 
 process.env.F17_PORT = process.env.F18_PORT || process.env.F17_PORT || '3672';
 const f17 = await import('../f17/_lib.mjs');
 
-export const { main, openPage, withBrowser, BASE, norm, near, VP } = f17;
+export * from './_static.mjs';
 
-export const GOLDEN_DIR = '.agent/memory/project/specs/launch-weekend/goldens/f18';
-export const readGolden = (name) => JSON.parse(readFileSync(`${GOLDEN_DIR}/${name}`, 'utf8'));
-export const T = readGolden('tokens.json');
+export const { main, openPage, withBrowser, BASE, norm, near, VP } = f17;
 
 // The single-ticket checkout page keeps its route (design-cb): /tickets/<slug>, pinned by the lead (the /national-show/ prefix in the ruling was a slip). It must answer 200 with the form marker.
 export const CHECKOUT_PATH_RE = /^\/tickets\/[^/]+$/;
@@ -24,33 +21,6 @@ export async function findCheckout() {
   }
   return null;
 }
-// A10's scope base. Main moves on (NOS batches, F19) and the dev merges it in; those files are not F18 work. The scope base is merge-base(HEAD, main), so only what this branch added beyond the main it has merged is judged. F18_MAIN_REF overrides 'main' (then origin/main is tried); the result is never older than F18_BASE_REF, and with no resolvable main ref it falls back to F18_BASE_REF.
-export function scopeBase() {
-  const base = baseRef();
-  for (const ref of [process.env.F18_MAIN_REF, 'main', 'origin/main'].filter(Boolean)) {
-    try {
-      const mb = execFileSync('git', ['merge-base', 'HEAD', ref], { encoding: 'utf8' }).trim();
-      execFileSync('git', ['merge-base', '--is-ancestor', base, mb], { stdio: 'ignore' });
-      return mb;
-    } catch {
-      // ref missing, or its merge-base predates F18_BASE_REF: try the next ref
-    }
-  }
-  return base;
-}
-export const git = (...a) => execFileSync('git', a, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
-export const gitLines = (...a) => git(...a).split('\n').filter(Boolean);
-export const readText = (file) => (existsSync(file) ? readFileSync(file, 'utf8') : null);
-
-// The diff base: F18_BASE_REF pins the commit the dev branched from (main bcf8684b, NOS batch 2 merged, plus this spec branch merged in).
-export function baseRef() {
-  if (process.env.F18_BASE_REF) return process.env.F18_BASE_REF;
-  console.error('INFRA: set F18_BASE_REF to the commit the F18 dev branched from (the spec records main bcf8684b)');
-  process.exit(2);
-}
-
-// Typographic normalisation for copy comparison: straight and curly quotes and all whitespace compare equal, the words may not differ.
-export const flat = (t) => (t ?? '').replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, ' ').trim();
 
 export const httpAuth = () => (process.env.BETA_BASIC_AUTH_USER ? { authorization: `Basic ${Buffer.from(`${process.env.BETA_BASIC_AUTH_USER}:${process.env.BETA_BASIC_AUTH_PASSWORD}`).toString('base64')}` } : {});
 export async function fetchHtml(route) {

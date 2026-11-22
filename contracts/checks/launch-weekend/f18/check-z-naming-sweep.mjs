@@ -10,7 +10,7 @@
 // Usage: node contracts/checks/launch-weekend/f18/check-z-naming-sweep.mjs   (cwd = implementation worktree)
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { readText } from './_lib.mjs';
+import { readText } from './_static.mjs';
 
 const problems = [];
 const notes = [];
@@ -52,13 +52,13 @@ export const probe = () => {
       else r.fail(`${f}: ${hits} occurrence(s) of "${OLD}" in code (the product is "${NEW}")`);
     }
   }
-  for (const f of ['lib/ticket-taxonomy.ts', 'lib/provisional-figures.ts', 'app/(marketing)/national-show/conferences/page.tsx']) {
+  for (const f of ['lib/ticket-taxonomy.ts', 'lib/provisional-figures.ts', 'app/(nos)/national-show/conferences/page.tsx']) {
     const code = readText(f);
     if (code === null) { r.fail(`${f} is missing`); continue; }
     if (!stripComments(code).includes(NEW)) r.fail(`${f} does not say "${NEW}"`);
   }
-  const sym = readText('app/(marketing)/national-show/symposium/page.tsx');
-  if (sym === null) r.fail('app/(marketing)/national-show/symposium/page.tsx is missing');
+  const sym = readText('app/(nos)/national-show/symposium/page.tsx');
+  if (sym === null) r.fail('app/(nos)/national-show/symposium/page.tsx is missing');
   else if (!stripComments(sym).includes(NEW)) r.fail(`the symposium page does not say "${NEW}" (h1 stays Brad's "${NEW}")`);
   const ledes = readText('lib/data/ticket-section-ledes.ts');
   if (ledes === null) r.fail('lib/data/ticket-section-ledes.ts is missing');
