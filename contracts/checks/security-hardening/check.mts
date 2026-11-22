@@ -105,14 +105,14 @@ const modes: Record<string, () => Promise<void> | void> = {
     same('hp null body', g.isHoneypotHit(null), false);
     same('limit 5MiB', g.base64BodyLimitBytes(5 * 1024 * 1024), 7_006_892);
     const max = 1000;
-    same('cl null', g.isBodyWithinLimit(null, max), false);
-    same('cl empty', g.isBodyWithinLimit('', max), false);
-    same('cl nan', g.isBodyWithinLimit('abc', max), false);
-    same('cl float', g.isBodyWithinLimit('10.5', max), false);
-    same('cl negative', g.isBodyWithinLimit('-1', max), false);
-    same('cl over', g.isBodyWithinLimit('1001', max), false);
-    same('cl exact', g.isBodyWithinLimit('1000', max), true);
-    same('cl zero', g.isBodyWithinLimit('0', max), true);
+    same('cl null', g.isDeclaredLengthWithinLimit(null, max), true);
+    same('cl empty', g.isDeclaredLengthWithinLimit('', max), false);
+    same('cl nan', g.isDeclaredLengthWithinLimit('abc', max), false);
+    same('cl float', g.isDeclaredLengthWithinLimit('10.5', max), false);
+    same('cl negative', g.isDeclaredLengthWithinLimit('-1', max), false);
+    same('cl over', g.isDeclaredLengthWithinLimit('1001', max), false);
+    same('cl exact', g.isDeclaredLengthWithinLimit('1000', max), true);
+    same('cl zero', g.isDeclaredLengthWithinLimit('0', max), true);
   },
   // M5: magic-byte sniff
   async sniff() {
@@ -121,19 +121,16 @@ const modes: Record<string, () => Promise<void> | void> = {
     for (const c of f.sniff) same(`sniff ${c.name}`, mod.sniffFileType(hex(c.hex)), c.expected);
     for (const c of f.matches) same(`matches ${c.hex.slice(0, 8)} ${c.mime}`, mod.matchesDeclaredMime(hex(c.hex), c.mime), c.expected);
   },
-  // M5: routes check Content-Length before parsing; handlers sniff
+  // M5: routes cap the streamed body before parsing; handlers sniff
   uploadwiring() {
     for (const [route, constant] of [
       ['app/api/vendors/[id]/proof-of-payment/route.ts', 'PROOF_OF_PAYMENT_MAX_BYTES'],
       ['app/api/vendors/[id]/marketing-asset/route.ts', 'MARKETING_ASSET_MAX_BYTES'],
     ] as const) {
       const source = code(route);
-      const lengthAt = source.search(/content-length/i);
-      const parseAt = source.indexOf('request.json()');
-      if (lengthAt < 0) fail(`${route}: no content-length read`);
-      if (parseAt < 0 || lengthAt > parseAt) fail(`${route}: content-length must be read before request.json()`);
       mustMatch(`${route} 413`, source, /413/);
-      mustMatch(`${route} isBodyWithinLimit`, source, /isBodyWithinLimit\(/);
+      mustMatch(`${route} streamed cap`, source, /readJsonBodyWithinLimit\(/);
+      mustNotMatch(`${route} unbounded parse`, source, /request\.json\(\)/);
       mustMatch(`${route} derives limit`, source, new RegExp(`base64BodyLimitBytes\\(\\s*${constant}\\s*\\)`));
     }
     for (const handler of ['lib/vendor-proof-of-payment-handler.ts', 'lib/vendor-marketing-upload-handler.ts']) {
@@ -253,8 +250,8 @@ const modes: Record<string, () => Promise<void> | void> = {
       mustMatch(`${route} key`, source, new RegExp(key));
       mustMatch(`${route} honeypot`, source, /isHoneypotHit\(/);
       const limitAt = source.indexOf('consumeRateLimit(');
-      const parseAt = source.indexOf('request.json()');
-      if (limitAt < 0 || parseAt < 0 || limitAt > parseAt) fail(`${route}: rate limit must run before request.json()`);
+      const parseAt = source.indexOf('readJsonBodyWithinLimit(request');
+      if (limitAt < 0 || parseAt < 0 || limitAt > parseAt) fail(`${route}: rate limit must run before the body is read`);
     }
     mustMatch('contact validation', code('app/api/contact/route.ts'), /validateContactInput\(/);
   },

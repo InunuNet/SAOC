@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isBodyWithinLimit } from '@/lib/request-guards';
+import { readJsonBodyWithinLimit } from '@/lib/request-guards';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
 import { deliverConfirmationEmailAfterCommit } from '@/lib/confirmation-email';
@@ -64,21 +64,16 @@ async function notify(id: string, doc: SponsorEnquiryDoc): Promise<void> {
   ]);
 }
 
-// Cap on the request body, checked against Content-Length before the body is buffered.
+// Cap on the request body, counted as it streams in (the Content-Length header is not trusted).
 const MAX_BODY_BYTES = 32768;
 
 export async function POST(request: NextRequest) {
-  if (!isBodyWithinLimit(request.headers.get('content-length'), MAX_BODY_BYTES)) {
+  const parsed = await readJsonBodyWithinLimit(request, MAX_BODY_BYTES);
+  if (!parsed.ok && parsed.reason === 'too-large') {
     return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
   }
-  let body: unknown;
-  let malformed = false;
-  try {
-    body = await request.json();
-  } catch {
-    body = null;
-    malformed = true;
-  }
+  const body: unknown = parsed.ok ? parsed.value : null;
+  const malformed = !parsed.ok;
   const ip = clientIpFromForwardedFor(request.headers.get('x-forwarded-for'));
   const requestAttempts = scopeAttemptsToRequest(attempts);
   // The site comes from the Host, never from the body: a spoofed host is not the NOS site.

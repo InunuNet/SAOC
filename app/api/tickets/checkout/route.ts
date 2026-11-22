@@ -1,6 +1,6 @@
 import { getSecret, secretsEnv } from '@/lib/secrets';
 import { NextRequest, NextResponse } from 'next/server';
-import { isBodyWithinLimit } from '@/lib/request-guards';
+import { readJsonBodyWithinLimit } from '@/lib/request-guards';
 import { clientIpFromForwardedFor } from '@/lib/client-ip';
 import { consumeRateLimit } from '@/lib/newsletter-rate-limit';
 import { createAttemptStore, scopeAttemptsToRequest } from '@/lib/newsletter-rate-store';
@@ -468,7 +468,8 @@ async function fetchSoldOutMessage(): Promise<string> {
   }
 }
 
-// Cap on the request body, checked against Content-Length before the body is buffered.
+// Cap on the request body: a declared Content-Length over it is refused up front, and the
+// bytes actually read are counted as they stream in.
 // This cap is the effective ceiling for attendeeName, which parseLineItems() does not bound.
 const MAX_BODY_BYTES = 131072;
 
@@ -502,7 +503,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  if (!isBodyWithinLimit(request.headers.get('content-length'), MAX_BODY_BYTES)) {
+  const parsed = await readJsonBodyWithinLimit(request, MAX_BODY_BYTES);
+  if (!parsed.ok && parsed.reason === 'too-large') {
     return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
   }
   // Before anything is read or written: without a well-formed key, duplicate protection
@@ -518,13 +520,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  let body: CheckoutRequestBody;
-  try {
-    body = (await request.json()) as CheckoutRequestBody;
-  } catch (error) {
-    console.error('[tickets/checkout] Failed to parse request body:', error);
+  if (!parsed.ok) {
+    console.error('[tickets/checkout] Failed to parse request body:', parsed.reason);
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
   }
+  // Untrusted JSON: every field is validated below before use, as before.
+  const body = parsed.value as CheckoutRequestBody;
 
   if (!isValidShowId(body.showId)) {
     return NextResponse.json(

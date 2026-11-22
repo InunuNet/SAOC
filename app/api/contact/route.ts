@@ -9,7 +9,7 @@ import {
   PUBLIC_FORM_RATE_LIMIT_MAX_ATTEMPTS,
   PUBLIC_FORM_RATE_LIMIT_WINDOW_MS,
 } from '@/lib/public-form-rate-limit';
-import { isBodyWithinLimit, isHoneypotHit } from '@/lib/request-guards';
+import { isDeclaredLengthWithinLimit, isHoneypotHit, readJsonBodyWithinLimit } from '@/lib/request-guards';
 import { buildContactSubmissionDoc, sendContactAcknowledgement } from '@/lib/contact-submission';
 import { siteForHost } from '@/lib/site-hosts';
 import { deliverContactEmails } from '@/lib/contact-delivery';
@@ -22,11 +22,12 @@ const HTTP_TOO_MANY_REQUESTS = 429;
 
 const attempts = createAttemptStore(PUBLIC_FORM_RATE_LIMIT_WINDOW_MS);
 
-// Cap on the request body, checked against Content-Length before the body is buffered.
+// Cap on the request body: a declared Content-Length over it is refused up front, and the
+// bytes actually read are counted as they stream in.
 const MAX_BODY_BYTES = 32768;
 
 export async function POST(request: NextRequest) {
-  if (!isBodyWithinLimit(request.headers.get('content-length'), MAX_BODY_BYTES)) {
+  if (!isDeclaredLengthWithinLimit(request.headers.get('content-length'), MAX_BODY_BYTES)) {
     return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
   }
   const ip = clientIpFromForwardedFor(request.headers.get('x-forwarded-for'));
@@ -44,12 +45,13 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      return NextResponse.json({ error: 'Invalid request body.' }, { status: HTTP_BAD_REQUEST });
+    const parsed = await readJsonBodyWithinLimit(request, MAX_BODY_BYTES);
+    if (!parsed.ok) {
+    return parsed.reason === 'too-large'
+      ? NextResponse.json({ error: 'Request body too large.' }, { status: 413 })
+      : NextResponse.json({ error: 'Invalid request body.' }, { status: HTTP_BAD_REQUEST });
     }
+    const body = parsed.value;
 
     // A bot filled the hidden field: answer as if it worked, store and send nothing.
     if (isHoneypotHit(body)) {

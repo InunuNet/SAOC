@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isBodyWithinLimit } from '@/lib/request-guards';
+import { readBodyTextWithinLimit, readJsonBodyWithinLimit } from '@/lib/request-guards';
 import { getFirestore } from 'firebase-admin/firestore';
 
 import { NEWSLETTER_COPY } from '@/components/chrome/newsletter-copy';
@@ -42,32 +42,19 @@ function isOneClick(request: NextRequest): boolean {
   return (request.headers.get('content-type') ?? '').toLowerCase().startsWith(ONE_CLICK_CONTENT_TYPE);
 }
 
-async function readText(request: NextRequest): Promise<string | null> {
-  try {
-    return await request.text();
-  } catch {
-    return null;
-  }
-}
-
-async function readJson(request: NextRequest): Promise<unknown> {
-  try {
-    return await request.json();
-  } catch {
-    return null;
-  }
-}
-
-// Cap on the request body, checked against Content-Length before the body is buffered.
+// Cap on the request body: a declared Content-Length over it is refused up front, and the
+// bytes actually read are counted as they stream in.
 const MAX_BODY_BYTES = 4096;
 
 export async function POST(request: NextRequest) {
-  if (!isBodyWithinLimit(request.headers.get('content-length'), MAX_BODY_BYTES)) {
+  const oneClick = isOneClick(request);
+  // The one-click form is read as text, the link form as JSON; both under the streamed cap.
+  const form = oneClick ? await readBodyTextWithinLimit(request, MAX_BODY_BYTES) : null;
+  const parsed = oneClick ? null : await readJsonBodyWithinLimit(request, MAX_BODY_BYTES);
+  if ((oneClick && form === null) || (parsed && !parsed.ok && parsed.reason === 'too-large')) {
     return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
   }
-  const oneClick = isOneClick(request);
-  const form = oneClick ? await readText(request) : null;
-  const body = oneClick ? null : await readJson(request);
+  const body: unknown = parsed?.ok ? parsed.value : null;
 
   try {
     initAdmin();

@@ -2,6 +2,7 @@ import { secretsEnv } from '@/lib/secrets';
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { clientIpFromForwardedFor } from '@/lib/client-ip';
+import { readJsonBodyWithinLimit } from '@/lib/request-guards';
 import { decideRateLimit, type RateLimitAttempt } from '@/lib/resend-rate-limit';
 import {
   isSpeakersPartnerPasswordCorrect,
@@ -37,18 +38,17 @@ function recordAttempt(key: string, now: Date): void {
 }
 
 async function readPassword(request: NextRequest): Promise<string | null> {
-  const length = Number(request.headers.get('content-length') ?? '0');
-  if (Number.isFinite(length) && length > MAX_BODY_BYTES) return null;
-  try {
-    const body: unknown = await request.json();
-    if (typeof body !== 'object' || body === null) return null;
-    const { password } = body as { password?: unknown };
-    return typeof password === 'string' && password.length <= MAX_BODY_BYTES ? password : null;
-  } catch (error) {
-    const kind = error instanceof Error ? error.name : 'unknown';
-    console.error('[speakers-partner/auth] unreadable request body:', kind);
+  const parsed = await readJsonBodyWithinLimit(request, MAX_BODY_BYTES);
+  if (!parsed.ok) {
+    if (parsed.reason === 'invalid-json') {
+      console.error('[speakers-partner/auth] unreadable request body:', parsed.reason);
+    }
     return null;
   }
+  const body = parsed.value;
+  if (typeof body !== 'object' || body === null) return null;
+  const { password } = body as { password?: unknown };
+  return typeof password === 'string' && password.length <= MAX_BODY_BYTES ? password : null;
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
