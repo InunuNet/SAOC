@@ -71,7 +71,7 @@ goldens:
 #    still noise outside this bug's scope.
 #
 # 4. Run the corrected script once against the live dataset as part of landing this
-#    fix: `node --import tsx/esm scripts/seed-page-singletons.ts`. This performs the
+#    fix: `node --import tsx/esm scripts/seed-page-singletons.ts --apply`. This performs the
 #    DATA half — the createOrReplace against the pinned "homePage" _id patches the
 #    live 4-item array in place, backfilling `_key` via step 2's reuse path (it will
 #    NOT re-upload the 4 existing images, since their asset refs are already

@@ -238,7 +238,7 @@ Added 4 document types (2 singletons, 2 collections), bringing the total registe
 2. Run:
 
 ```bash
-pnpm seed
+pnpm seed --apply
 ```
 
 The script logs each upserted document type and exits 0 on success.

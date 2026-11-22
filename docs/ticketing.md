@@ -1554,7 +1554,7 @@ The `scripts/seed-ticketing.ts` script is **additive and non-destructive**, unli
 ### Run the Script
 
 ```bash
-node --import tsx/esm scripts/seed-ticketing.ts
+node --import tsx/esm scripts/seed-ticketing.ts --apply
 ```
 
 Requires `.env.local` to have:
@@ -1668,7 +1668,7 @@ once the lazy TTL passes.
 ```bash
 cp .env.local.example .env.local
 # Fill in Firebase + Sanity credentials
-node --import tsx/esm scripts/seed-ticketing.ts  # Seed once
+node --import tsx/esm scripts/seed-ticketing.ts --apply  # Seed once (a bare run is a dry run)
 pnpm dev
 ```
 

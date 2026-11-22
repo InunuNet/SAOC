@@ -39,13 +39,17 @@
  *   NEXT_PUBLIC_SANITY_DATASET
  *   SANITY_API_TOKEN — write-enabled Editor token
  *
- * Run with: pnpm seed:exhibitor
+ * Run with: pnpm seed:exhibitor --apply
+ * A bare run is a dry run: it reads the dataset, logs what it would write, writes nothing.
  */
 
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { createClient, type SanityClient } from '@sanity/client';
+
+// Safe by default: writes need an explicit --apply; a bare run is a dry run.
+const DRY_RUN = !process.argv.includes('--apply');
 
 // ---------------------------------------------------------------------------
 // Env
@@ -678,7 +682,7 @@ async function seedDocument(
   // run — idempotent in content, not in the dataset.
   let existing = (await client.getDocument(id)) as Record<string, unknown> | undefined;
   if (!existing) {
-    await client.createIfNotExists({ _id: id, _type: type });
+    if (!DRY_RUN) await client.createIfNotExists({ _id: id, _type: type });
     existing = {};
   }
 
@@ -686,6 +690,11 @@ async function seedDocument(
 
   if (Object.keys(missing).length === 0) {
     console.log(`  ${id}: already populated — no write issued`);
+    return;
+  }
+
+  if (DRY_RUN) {
+    console.log(`  ${id}: dry run: would setIfMissing ${Object.keys(missing).join(', ')}`);
     return;
   }
 
@@ -710,6 +719,7 @@ async function main(): Promise<void> {
     });
   }
 
+  if (DRY_RUN) console.log('Dry run, pass --apply to write.');
   console.log('Done. Nothing was seeded as committee-confirmed fact.');
 }
 

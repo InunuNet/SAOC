@@ -33,22 +33,10 @@ function hasOldPolarity(code) {
   return (code.match(DRY_RUN_DECL) ?? []).some((stmt) => !stmt.includes('--apply'));
 }
 
-// Known gaps, left unchanged on purpose and reported in the PR. An entry that starts
-// passing must be removed from this list (asserted below), so the list only shrinks.
-const KNOWN_UNGATED = new Set([
-  'scripts/_tmp_empty_array_test.ts',
-  'scripts/backfill-award-fields.ts',
-  'scripts/patch-tickets-terms-note.ts',
-  'scripts/seed-event-slugs.mjs',
-  'scripts/seed-page-singletons.ts',
-  'scripts/seed-province-order.ts',
-  'scripts/seed-qa-fixture-ticket-type.ts',
-  'scripts/seed-sanity.ts',
-  'scripts/seed-show-exhibitor-info.ts',
-  'scripts/seed-show-visitor-info.ts',
-  'scripts/seed-ticketing.ts',
-  'scripts/update-about-judging-copy.ts',
-]);
+// Known gaps, left unchanged on purpose and reported in the PR. Empty now: every writer is
+// gated. An entry that starts passing must be removed from this list (asserted below), so
+// the list only shrinks.
+const KNOWN_UNGATED = new Set([]);
 
 // Reviewed by hand and safe, though they trip the rule: both declare
 // `const dry = argv.includes('--dry-run')` in a statement of its own, but parseMode()

@@ -182,7 +182,7 @@ every run) and was deliberately not extended. `showVisitorInfo` and every `showF
 `setIfMissing`, so a re-run can never overwrite an editor's correction. Portable-text `_key`
 values are derived from the document `_id`, not random, so idempotence holds. Verified twice by
 QA (`_rev`/`_updatedAt` diffed across two runs — no drift, no duplicates, no empty strings) and
-by contract check A24. Runnable as `pnpm seed:visitor` (added this round; previously only
+by contract check A24. Runnable as `pnpm seed:visitor --apply` (a bare run is a dry run; added this round; previously only
 runnable via `npx tsx`).
 
 Seeded venue (client-confirmed 2026-08-12): **The Hangar, Stellenbosch Flying Club**,

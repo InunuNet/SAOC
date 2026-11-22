@@ -29,13 +29,18 @@
  *   NEXT_PUBLIC_SANITY_DATASET
  *   SANITY_API_TOKEN — write-enabled Editor token
  *
- * Run with: node --import tsx/esm scripts/seed-show-visitor-info.ts
+ * Run with: node --import tsx/esm scripts/seed-show-visitor-info.ts [--apply]
+ * (or `pnpm seed:visitor --apply`). A bare run is a dry run: it reads the dataset, logs
+ * what it would write, and writes nothing.
  */
 
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { createClient, type SanityClient } from '@sanity/client';
+
+// Safe by default: writes need an explicit --apply; a bare run is a dry run.
+const DRY_RUN = !process.argv.includes('--apply');
 
 // ---------------------------------------------------------------------------
 // Env — parsed directly from .env.local (see file header).
@@ -152,6 +157,11 @@ async function patchNationalShow(): Promise<void> {
     return;
   }
 
+  if (DRY_RUN) {
+    console.log(`    dry run: would patch with setIfMissing: ${Object.keys(missing).join(', ')}`);
+    return;
+  }
+
   await client.patch(NATIONAL_SHOW_ID).setIfMissing(missing).commit({ autoGenerateArrayKeys: false });
   console.log(`    patched with setIfMissing: ${Object.keys(missing).join(', ')}`);
 }
@@ -229,6 +239,10 @@ async function seedVisitorInfo(): Promise<void> {
   console.log('  showVisitorInfo:');
   if (await client.getDocument(VISITOR_INFO_ID)) {
     console.log('    already exists — no write issued');
+    return;
+  }
+  if (DRY_RUN) {
+    console.log('    dry run: would createIfNotExists showVisitorInfo');
     return;
   }
   await client.createIfNotExists({
@@ -477,6 +491,10 @@ async function seedFaqs(): Promise<void> {
       console.log(`    ${faq.id} (already exists — no write issued)`);
       continue;
     }
+    if (DRY_RUN) {
+      console.log(`    ${faq.id} (dry run: would createIfNotExists)`);
+      continue;
+    }
     await client.createIfNotExists({
       _id: faq.id,
       _type: 'showFaq',
@@ -502,7 +520,7 @@ async function main(): Promise<void> {
   await patchNationalShow();
   await seedVisitorInfo();
   await seedFaqs();
-  console.log('Seed complete.');
+  console.log(DRY_RUN ? 'Dry run, pass --apply to write.' : 'Seed complete.');
 }
 
 main().catch((err: unknown) => {

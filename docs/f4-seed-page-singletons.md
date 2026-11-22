@@ -9,7 +9,7 @@ with copy migrated verbatim from the hardcoded fallbacks already present in
 ## What was seeded
 
 Script: `scripts/seed-page-singletons.ts`, run with
-`node --import tsx/esm scripts/seed-page-singletons.ts`.
+`node --import tsx/esm scripts/seed-page-singletons.ts --apply` (a bare run is a dry run).
 
 Six documents, one per singleton type, each written at `_id === <type name>` (matching
 Sanity's standard singleton pattern, and the ids F3 pinned in `sanity/structure.ts`):

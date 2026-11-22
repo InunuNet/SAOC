@@ -21,7 +21,8 @@
  *   NEXT_PUBLIC_SANITY_DATASET
  *   SANITY_API_TOKEN — write-enabled Editor token
  *
- * Run with: node --import tsx/esm scripts/update-about-judging-copy.ts
+ * Run with: node --import tsx/esm scripts/update-about-judging-copy.ts [--apply]
+ * A bare run is a dry run: it logs which fields it would patch and writes nothing.
  */
 
 import { readFileSync } from 'node:fs';
@@ -29,6 +30,9 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 
 import { createClient, type SanityClient } from '@sanity/client';
+
+// Safe by default: writes need an explicit --apply; a bare run is a dry run.
+const DRY_RUN = !process.argv.includes('--apply');
 
 function readEnvLocal(): Record<string, string> {
   const raw = readFileSync(path.resolve(process.cwd(), '.env.local'), 'utf8');
@@ -80,11 +84,18 @@ function paragraphs(...texts: string[]) {
   }));
 }
 
+/** The only write in this script; a no-op (log only) unless --apply was passed. */
+async function setFields(id: string, fields: Record<string, unknown>): Promise<void> {
+  if (DRY_RUN) {
+    console.log(`    dry run: would patch ${id}: ${Object.keys(fields).join(', ')}`);
+    return;
+  }
+  await client.patch(id).set(fields).commit();
+}
+
 async function updateAboutPage(): Promise<void> {
   console.log('  aboutPage:');
-  await client
-    .patch('aboutPage')
-    .set({
+  await setFields('aboutPage', {
       pillars: paragraphs(
         'SAOC exists to promote the culture, hybridisation and appreciation of orchids in cultivation across South Africa. We do this through a federated network of 21 affiliated societies, a nationally accredited judging system standardised in 1990, and our annual publication Orchids South Africa.',
         'Our remit is orchids in cultivation — on the show bench, in the greenhouse, and in the community. For indigenous species in the wild, our partner organisation Wild Orchids of Southern Africa leads that work.',
@@ -95,16 +106,13 @@ async function updateAboutPage(): Promise<void> {
         'In 1990, SAOC standardised its judging system nationally, replacing regional variation with a single set of published criteria used by accredited judges at every affiliated show.',
         'Today SAOC coordinates 21 affiliated societies across all nine provinces and has hosted 18 national shows, continuing the work its founders began in 1968.',
       ),
-    })
-    .commit();
+  });
   console.log('    patched pillars, timelineNodes');
 }
 
 async function updateJudgingPage(): Promise<void> {
   console.log('  judgingPage:');
-  await client
-    .patch('judgingPage')
-    .set({
+  await setFields('judgingPage', {
       intro: paragraphs(
         'SAOC operates a national orchid judging system, standardised in 1990 to replace regional variation with a single set of published criteria. Accredited judges assess plants on form, colour, size, and cultural condition at affiliated shows across the country.',
       ),
@@ -114,8 +122,7 @@ async function updateJudgingPage(): Promise<void> {
       becomingAJudge: paragraphs(
         'Judging accreditation is earned through a structured training programme run by SAOC. Speak to your affiliated society to begin the pathway toward becoming an accredited judge.',
       ),
-    })
-    .commit();
+  });
   console.log('    patched intro, howItWorks, becomingAJudge');
 }
 
@@ -123,7 +130,7 @@ async function main(): Promise<void> {
   console.log(`Patching about/judging copy in Sanity dataset "${dataset}" (project ${projectId})`);
   await updateAboutPage();
   await updateJudgingPage();
-  console.log('Patch complete.');
+  console.log(DRY_RUN ? 'Dry run, pass --apply to write.' : 'Patch complete.');
 }
 
 main().catch((err: unknown) => {

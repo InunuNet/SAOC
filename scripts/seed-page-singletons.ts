@@ -23,7 +23,9 @@
  *   NEXT_PUBLIC_SANITY_DATASET
  *   SANITY_API_TOKEN — write-enabled Editor token
  *
- * Run with: node --import tsx/esm scripts/seed-page-singletons.ts
+ * Run with: node --import tsx/esm scripts/seed-page-singletons.ts [--apply]
+ * A bare run is a dry run: it reads existing documents, logs what it would write, and
+ * neither uploads assets nor replaces documents.
  */
 
 import { readFileSync } from 'node:fs';
@@ -31,6 +33,9 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 
 import { createClient, type SanityClient } from '@sanity/client';
+
+// Safe by default: writes need an explicit --apply; a bare run is a dry run.
+const DRY_RUN = !process.argv.includes('--apply');
 
 // ---------------------------------------------------------------------------
 // Env — parsed directly from .env.local, no dotenv (see file header).
@@ -104,6 +109,14 @@ function isWellFormedImageRef(img: unknown): img is { _type: string; asset: { _r
 
 /** Upload a public/images/ file as a Sanity image asset, returning an image field value. */
 async function uploadImage(relPath: string) {
+  if (DRY_RUN) {
+    console.log(`    dry run: would upload ${relPath}`);
+    return {
+      _type: 'image' as const,
+      _key: randomUUID(),
+      asset: { _type: 'reference' as const, _ref: 'image-dry-run-not-uploaded' },
+    };
+  }
   const filePath = path.resolve(process.cwd(), 'public', 'images', relPath);
   const buffer = readFileSync(filePath);
   const asset = await client.assets.upload('image', buffer, { filename: relPath });
@@ -153,6 +166,17 @@ async function imageArrayFieldOrReuse(
   return uploaded;
 }
 
+type SingletonDoc = Parameters<SanityClient['createOrReplace']>[0];
+
+/** The only document write in this script; a no-op (log only) unless --apply was passed. */
+async function writeDoc(doc: SingletonDoc): Promise<void> {
+  if (DRY_RUN) {
+    console.log(`    dry run: would createOrReplace ${doc._id}`);
+    return;
+  }
+  await client.createOrReplace(doc);
+}
+
 async function fetchExisting(id: string): Promise<Record<string, unknown> | null> {
   return client.fetch(`*[_id == $id][0]`, { id });
 }
@@ -173,7 +197,7 @@ async function seedHomePage(): Promise<void> {
     'orchid-dark.jpg',
   ]);
 
-  await client.createOrReplace({
+  await writeDoc({
     _id: 'homePage',
     _type: 'homePage',
     title: 'South African Orchid Council',
@@ -186,7 +210,7 @@ async function seedHomePage(): Promise<void> {
 
 async function seedAboutPage(): Promise<void> {
   console.log('  aboutPage:');
-  await client.createOrReplace({
+  await writeDoc({
     _id: 'aboutPage',
     _type: 'aboutPage',
     // title: absent — never read, no hardcoded analog (golden gap).
@@ -206,7 +230,7 @@ async function seedNationalShow(): Promise<void> {
   const existing = await fetchExisting('nationalShow');
   const hero = await imageFieldOrReuse(existing?.hero, 'orchid-yellow.jpg');
 
-  await client.createOrReplace({
+  await writeDoc({
     _id: 'nationalShow',
     _type: 'nationalShow',
     title: 'The National Orchid Show',
@@ -223,7 +247,7 @@ async function seedNationalShow(): Promise<void> {
 
 async function seedContactPage(): Promise<void> {
   console.log('  contactPage:');
-  await client.createOrReplace({
+  await writeDoc({
     _id: 'contactPage',
     _type: 'contactPage',
     title: 'Contact SAOC',
@@ -241,7 +265,7 @@ async function seedContactPage(): Promise<void> {
 
 async function seedJudgingPage(): Promise<void> {
   console.log('  judgingPage:');
-  await client.createOrReplace({
+  await writeDoc({
     _id: 'judgingPage',
     _type: 'judgingPage',
     title: 'Judging at SAOC',
@@ -266,7 +290,7 @@ async function seedJudgingPage(): Promise<void> {
 async function seedMembersPage(): Promise<void> {
   console.log('  membersPage:');
   // Brad's decision (2026-07-29): document must exist with zero content.
-  await client.createOrReplace({
+  await writeDoc({
     _id: 'membersPage',
     _type: 'membersPage',
   });
@@ -285,7 +309,7 @@ async function main(): Promise<void> {
   await seedContactPage();
   await seedJudgingPage();
   await seedMembersPage();
-  console.log('Seed complete.');
+  console.log(DRY_RUN ? 'Dry run, pass --apply to write.' : 'Seed complete.');
 }
 
 main().catch((err: unknown) => {

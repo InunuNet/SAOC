@@ -50,7 +50,7 @@ export const NATIONAL_SHOW_ID = 'nationalShow';
 /**
  * Ticket type used by the capacity / idempotency round trips. 'qa-fixture-ticket' is a
  * DEDICATED Sanity ticketType document (Studio id `ticketType-qa-fixture`) — seeded
- * idempotently by `node --import tsx/esm scripts/seed-qa-fixture-ticket-type.ts`, not a
+ * idempotently by `node --import tsx/esm scripts/seed-qa-fixture-ticket-type.ts --apply`, not a
  * one-off manual mutation. If this doc is missing (deleted, or the suite is pointed at
  * a fresh/staging dataset), sanityCapacity() below throws pointing at that script — run
  * it and re-run the check. price 0, capacity 50 (small enough to fill quickly), and
@@ -487,7 +487,7 @@ export async function sanityCapacity(slug = TARGET_TICKET_TYPE) {
     throw new Error(
       `Ticket type '${slug}' not found or inactive in Sanity (dataset "${dataset}"). ` +
         (slug === TARGET_TICKET_TYPE
-          ? 'FIXTURE MISSING: run `node --import tsx/esm scripts/seed-qa-fixture-ticket-type.ts` ' +
+          ? 'FIXTURE MISSING: run `node --import tsx/esm scripts/seed-qa-fixture-ticket-type.ts --apply` ' +
             'to (re-)create it, then re-run this check.'
           : 'Not the QA fixture — check the real ticketType data for this slug.')
     );
