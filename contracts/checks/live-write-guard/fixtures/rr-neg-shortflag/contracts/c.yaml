@@ -9,5 +9,5 @@ assertions:
   phase: 4
   checks:
     - id: A1
-      description: -xr is not the -r flag
-      command: 'somecmd -xr contracts/harness/route-runner/preload.cjs && npx tsx scripts/rr.mjs'
+      description: an -r that ends a longer option name (--x-r) is not the -r flag
+      command: 'NODE_OPTIONS="--x-r contracts/harness/route-runner/preload.cjs" npx tsx scripts/rr.mjs'

@@ -25,9 +25,6 @@ const OVERRIDES = {
   '@/lib/vendor-payment-admin-notice': 'fixture-vendor-payment-admin-notice.mjs',
 };
 
-// Every harness module imports require-preload.mjs, which throws unless this in-process flag
-// is set, so a check run without the preload fails closed. Set where the stubs are installed.
-globalThis[Symbol.for('saoc.route-runner.preload')] = true;
 const originalLoad = Module._load;
 Module._load = function (request, ...rest) {
   const target = OVERRIDES[request];
@@ -37,3 +34,7 @@ Module._load = function (request, ...rest) {
   }
   return originalLoad.call(this, request, ...rest);
 };
+// Every harness module imports require-preload.mjs, which throws unless this in-process flag
+// is set, so a check run without the preload fails closed. Set only after Module._load is patched,
+// so the flag can never be true without the stubs.
+globalThis[Symbol.for('saoc.route-runner.preload')] = true;
