@@ -1,6 +1,6 @@
 import { getSecret } from '@/lib/secrets';
 import { NextRequest, NextResponse } from 'next/server';
-import { isBodyWithinLimit } from '@/lib/request-guards';
+import { readJsonBodyWithinLimit } from '@/lib/request-guards';
 import { cookies } from 'next/headers';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
@@ -101,19 +101,17 @@ function invalidTokenResponse(): NextResponse {
   return NextResponse.json({ error: GENERIC_INVALID_TOKEN_MESSAGE }, { status: 403 });
 }
 
-// Cap on the request body, checked against Content-Length before the body is buffered.
+// Cap on the request body, counted as it streams in (the Content-Length header is not trusted).
 const MAX_BODY_BYTES = 262144;
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  if (!isBodyWithinLimit(request.headers.get('content-length'), MAX_BODY_BYTES)) {
-    return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
+  const parsed = await readJsonBodyWithinLimit(request, MAX_BODY_BYTES);
+  if (!parsed.ok) {
+    return parsed.reason === 'too-large'
+      ? NextResponse.json({ error: 'Request body too large.' }, { status: 413 })
+      : NextResponse.json({ error: 'Malformed JSON body.' }, { status: 400 });
   }
-  let rawBody: unknown;
-  try {
-    rawBody = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'Malformed JSON body.' }, { status: 400 });
-  }
+  const rawBody = parsed.value;
 
   if (typeof rawBody !== 'object' || rawBody === null) {
     return invalidTokenResponse();

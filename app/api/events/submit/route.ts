@@ -1,6 +1,6 @@
 import { getSecret } from '@/lib/secrets';
 import { NextRequest, NextResponse } from 'next/server';
-import { isBodyWithinLimit } from '@/lib/request-guards';
+import { isDeclaredLengthWithinLimit, readJsonBodyWithinLimit } from '@/lib/request-guards';
 import { getAuth } from 'firebase-admin/auth';
 import { createClient } from '@sanity/client';
 
@@ -50,11 +50,12 @@ function tooManyAttempts(retryAfterSeconds: number): NextResponse {
   );
 }
 
-// Cap on the request body, checked against Content-Length before the body is buffered.
+// Cap on the request body: a declared Content-Length over it is refused up front, and the
+// bytes actually read are counted as they stream in.
 const MAX_BODY_BYTES = 32768;
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  if (!isBodyWithinLimit(req.headers.get('content-length'), MAX_BODY_BYTES)) {
+  if (!isDeclaredLengthWithinLimit(req.headers.get('content-length'), MAX_BODY_BYTES)) {
     return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
   }
   // 1. Extract bearer token
@@ -86,12 +87,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (!limit.allowed) return tooManyAttempts(limit.retryAfterSeconds);
 
   // 4. Parse + validate body
-  let raw: unknown;
-  try {
-    raw = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  const parsed = await readJsonBodyWithinLimit(req, MAX_BODY_BYTES);
+  if (!parsed.ok) {
+    return parsed.reason === 'too-large'
+      ? NextResponse.json({ error: 'Request body too large.' }, { status: 413 })
+      : NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
+  const raw = parsed.value;
 
   const validation = validateEventSubmission(raw, new Date());
   if (!validation.ok) {

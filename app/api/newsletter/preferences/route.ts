@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isBodyWithinLimit } from '@/lib/request-guards';
+import { readJsonBodyWithinLimit } from '@/lib/request-guards';
 import { getFirestore } from 'firebase-admin/firestore';
 
 import { NEWSLETTER_COPY } from '@/components/chrome/newsletter-copy';
@@ -35,19 +35,15 @@ function rateLimitKeyFor(request: NextRequest): string {
   return `newsletter-preferences:${ip ?? 'unknown'}`;
 }
 
-// Cap on the request body, checked against Content-Length before the body is buffered.
+// Cap on the request body, counted as it streams in (the Content-Length header is not trusted).
 const MAX_BODY_BYTES = 4096;
 
 export async function POST(request: NextRequest) {
-  if (!isBodyWithinLimit(request.headers.get('content-length'), MAX_BODY_BYTES)) {
+  const parsed = await readJsonBodyWithinLimit(request, MAX_BODY_BYTES);
+  if (!parsed.ok && parsed.reason === 'too-large') {
     return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
   }
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    body = null;
-  }
+  const body: unknown = parsed.ok ? parsed.value : null;
 
   try {
     initAdmin();

@@ -9,7 +9,7 @@ import {
   PUBLIC_FORM_RATE_LIMIT_MAX_ATTEMPTS,
   PUBLIC_FORM_RATE_LIMIT_WINDOW_MS,
 } from '@/lib/public-form-rate-limit';
-import { isBodyWithinLimit, isHoneypotHit } from '@/lib/request-guards';
+import { isDeclaredLengthWithinLimit, isHoneypotHit, readJsonBodyWithinLimit } from '@/lib/request-guards';
 import {
   VENDOR_APPLICATIONS_COLLECTION,
   buildVendorApplication,
@@ -41,11 +41,12 @@ import { saocUrl } from '@/lib/site-hosts';
 
 const attempts = createAttemptStore(PUBLIC_FORM_RATE_LIMIT_WINDOW_MS);
 
-// Cap on the request body, checked against Content-Length before the body is buffered.
+// Cap on the request body: a declared Content-Length over it is refused up front, and the
+// bytes actually read are counted as they stream in.
 const MAX_BODY_BYTES = 16384;
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  if (!isBodyWithinLimit(request.headers.get('content-length'), MAX_BODY_BYTES)) {
+  if (!isDeclaredLengthWithinLimit(request.headers.get('content-length'), MAX_BODY_BYTES)) {
     return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
   }
   const ip = clientIpFromForwardedFor(request.headers.get('x-forwarded-for'));
@@ -62,12 +63,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  let rawInput: unknown;
-  try {
-    rawInput = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'Malformed JSON body.' }, { status: 400 });
+  const parsed = await readJsonBodyWithinLimit(request, MAX_BODY_BYTES);
+  if (!parsed.ok) {
+    return parsed.reason === 'too-large'
+      ? NextResponse.json({ error: 'Request body too large.' }, { status: 413 })
+      : NextResponse.json({ error: 'Malformed JSON body.' }, { status: 400 });
   }
+  const rawInput = parsed.value;
 
   // A bot filled the hidden field: answer as if it worked, store and send nothing.
   if (isHoneypotHit(rawInput)) {
