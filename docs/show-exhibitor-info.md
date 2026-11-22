@@ -66,7 +66,7 @@ it can never silently read as confirmed.
 
 ## Seeding
 
-`scripts/seed-show-exhibitor-info.ts` (run via `pnpm seed:exhibitor`) is a **new, separate**
+`scripts/seed-show-exhibitor-info.ts` (run via `pnpm seed:exhibitor --apply`; a bare run is a dry run) is a **new, separate**
 script — it does not touch or extend `scripts/seed-page-singletons.ts`, which uses
 `createOrReplace` and would silently revert any editor change on every run.
 
@@ -207,7 +207,7 @@ mode: a mutating check was killed mid-run before it could restore.
    If its recorded pid is dead, it will now self-reap on the next run; you don't need to delete it
    by hand under normal conditions.
 2. Restore the affected fields (`showExhibitorInfo.keyDates`, `showExhibitorInfo.confirmations.sales`)
-   in Studio to their last known-good values, or re-run `pnpm seed:exhibitor` (safe — it only
+   in Studio to their last known-good values, or re-run `pnpm seed:exhibitor --apply` (safe — it only
    patches genuinely-missing fields, never overwrites existing ones).
 3. Re-run A36 standalone with its full timeout to confirm the dataset is clean before trusting the
    gate again.

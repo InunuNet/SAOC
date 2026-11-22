@@ -121,7 +121,7 @@ export async function fetchExhibitorInfo() {
   const doc = await client.fetch(`*[_id == $id][0]`, { id: INFO_DOC_ID });
   if (!doc) {
     throw new Error(
-      `FAIL: no ${INFO_DOC_ID} document in the dataset. Run the seed (pnpm seed:exhibitor) first. ` +
+      `FAIL: no ${INFO_DOC_ID} document in the dataset. Run the seed (pnpm seed:exhibitor --apply) first. ` +
         'This is a hard failure, never a skip — a check that passes against a missing document ' +
         'is exactly the false green this contract exists to prevent.',
     );

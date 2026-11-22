@@ -104,7 +104,7 @@ The seed script populates all 21 societies, board members, events, shows, partne
 
 ```bash
 # With .env.local filled in (SANITY_API_TOKEN must be the editor/write token):
-pnpm seed
+pnpm seed --apply
 ```
 
 Expected output: upserted messages for each record. Safe to re-run — it uses `createOrReplace`.

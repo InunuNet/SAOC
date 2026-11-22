@@ -45,7 +45,7 @@ await runCheck('check-confirmation-markers', async (r) => {
     );
 
     if (!info) {
-      r.fail('showVisitorInfo singleton exists', 'run scripts/seed-show-visitor-info.ts');
+      r.fail('showVisitorInfo singleton exists', 'run scripts/seed-show-visitor-info.ts --apply');
       return;
     }
 

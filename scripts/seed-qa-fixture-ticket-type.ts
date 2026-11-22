@@ -28,7 +28,8 @@
  *   NEXT_PUBLIC_SANITY_DATASET
  *   SANITY_API_TOKEN — write-enabled Editor token
  *
- * Run with: node --import tsx/esm scripts/seed-qa-fixture-ticket-type.ts
+ * Run with: node --import tsx/esm scripts/seed-qa-fixture-ticket-type.ts [--apply]
+ * A bare run is a dry run: it reads the fixture, logs what it would write, writes nothing.
  */
 
 import { readFileSync } from 'node:fs';
@@ -38,6 +39,9 @@ import { createClient, type SanityClient } from '@sanity/client';
 
 import { resolveActiveShow, type ShowActivationFields } from '../lib/show-resolution';
 import { ticketType } from '../sanity/schemas/documents/ticketType';
+
+// Safe by default: writes need an explicit --apply; a bare run is a dry run.
+const DRY_RUN = !process.argv.includes('--apply');
 
 // ---------------------------------------------------------------------------
 // Env — parsed directly from .env.local, no dotenv (see file header).
@@ -126,6 +130,15 @@ async function main(): Promise<void> {
     requiresAttendeeNames: false,
     show: { _type: 'reference' as const, _ref: activeShowId },
   };
+
+  if (DRY_RUN) {
+    const existing = await client.getDocument<Record<string, unknown>>(QA_FIXTURE_TICKET_TYPE_ID);
+    console.log(
+      `Dry run, pass --apply to write: would ${existing ? 'converge' : 'create and converge'} ` +
+        `${QA_FIXTURE_TICKET_TYPE_ID} (fields: ${Object.keys(document).join(', ')}).`
+    );
+    return;
+  }
 
   // createIfNotExists — never overwrites, never deletes; only creates the doc when it's
   // genuinely absent. Safe to re-run.

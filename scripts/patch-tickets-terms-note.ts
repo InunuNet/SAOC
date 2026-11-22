@@ -12,7 +12,8 @@
  *   NEXT_PUBLIC_SANITY_DATASET
  *   SANITY_API_TOKEN — write-enabled Editor token
  *
- * Run with: node --import tsx/esm scripts/patch-tickets-terms-note.ts
+ * Run with: node --import tsx/esm scripts/patch-tickets-terms-note.ts [--apply]
+ * A bare run is a dry run: it reads the current value and writes nothing.
  */
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -22,6 +23,9 @@ import { createClient } from '@sanity/client';
 const NEW_TERMS_NOTE =
   'Admission tickets may be transferred to another attendee by emailing info@saoc.co.za ' +
   'before the show. Please bring your booking reference to the door.';
+
+// Safe by default: writes need an explicit --apply; a bare run is a dry run.
+const DRY_RUN = !process.argv.includes('--apply');
 
 function loadEnvLocal(): Record<string, string> {
   const envPath = path.join(process.cwd(), '.env.local');
@@ -54,6 +58,12 @@ async function main() {
   const exists = await client.fetch<boolean>(`defined(*[_id == "ticketsPage"][0]._id)`);
   if (!exists) {
     console.log('No ticketsPage document exists yet — nothing to patch (seed-ticketing.ts will create it with the corrected copy).');
+    return;
+  }
+
+  if (DRY_RUN) {
+    console.log('Would set ticketsPage.termsNote to:', NEW_TERMS_NOTE);
+    console.log('Dry run, pass --apply to write.');
     return;
   }
 

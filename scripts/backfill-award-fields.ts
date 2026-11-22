@@ -5,7 +5,8 @@
  * CBR, JC) already live via the static import. Uses patch() (field-level update),
  * not createOrReplace, so no other field on these documents is touched.
  *
- * Run with: pnpm exec tsx scripts/backfill-award-fields.ts
+ * Run with: pnpm exec tsx scripts/backfill-award-fields.ts [--apply]
+ * A bare run is a dry run: it logs what it would patch and writes nothing.
  *
  * Required env (from .env.local):
  *   NEXT_PUBLIC_SANITY_PROJECT_ID
@@ -28,6 +29,9 @@ if (!projectId || !dataset || !token) {
   );
 }
 
+// Safe by default: writes need an explicit --apply; a bare run is a dry run.
+const DRY_RUN = !process.argv.includes('--apply');
+
 const client = createClient({
   projectId,
   dataset,
@@ -49,6 +53,16 @@ const BACKFILL: Record<string, { threshold: string; order: number }> = {
 
 async function main(): Promise<void> {
   console.log(`Backfilling award threshold/order in dataset "${dataset}" (project ${projectId})`);
+
+  if (DRY_RUN) {
+    for (const [id, fields] of Object.entries(BACKFILL)) {
+      console.log(`  would patch ${id}: ${JSON.stringify(fields)}`);
+    }
+    console.log(
+      `Dry run, pass --apply to write: would backfill ${Object.keys(BACKFILL).length} award documents.`,
+    );
+    return;
+  }
 
   const tx = client.transaction();
   for (const [id, fields] of Object.entries(BACKFILL)) {

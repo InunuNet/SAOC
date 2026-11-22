@@ -47,7 +47,7 @@ const client = createClient({ projectId, dataset, apiVersion: '2024-01-01', toke
 
 async function runSeed() {
   try {
-    await execFileAsync('node', ['--import', 'tsx/esm', 'scripts/seed-page-singletons.ts'], {
+    await execFileAsync('node', ['--import', 'tsx/esm', 'scripts/seed-page-singletons.ts', '--apply'], {
       cwd: process.cwd(),
     });
   } catch (err) {

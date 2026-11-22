@@ -84,7 +84,7 @@ await runCheck('check-marker-fail-closed', async (r) => {
       { id: DOC_ID },
     );
     if (!info) {
-      r.fail('showVisitorInfo singleton exists', 'run scripts/seed-show-visitor-info.ts');
+      r.fail('showVisitorInfo singleton exists', 'run scripts/seed-show-visitor-info.ts --apply');
       return;
     }
     assertUsableBaseline('showVisitorInfo.pendingLabel', info.pendingLabel);

@@ -4,7 +4,7 @@
  * Imports typed data arrays from lib/data and upserts them into the
  * configured Sanity dataset using deterministic IDs + createOrReplace.
  *
- * Run with: pnpm seed
+ * Run with: pnpm seed --apply   (a bare `pnpm seed` is a dry run: nothing is written)
  *
  * Required env:
  *   NEXT_PUBLIC_SANITY_PROJECT_ID — Sanity project id
@@ -28,6 +28,9 @@ import {
 // ---------------------------------------------------------------------------
 // Client
 // ---------------------------------------------------------------------------
+
+// Safe by default: writes need an explicit --apply; a bare run is a dry run.
+const DRY_RUN = !process.argv.includes('--apply');
 
 const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
 const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET;
@@ -130,6 +133,10 @@ async function seedBatch(label: string, docs: Record<string, unknown>[]): Promis
     console.log(`  ${label}: 0 docs (skipped)`);
     return;
   }
+  if (DRY_RUN) {
+    console.log(`  ${label}: ${docs.length} docs would be upserted`);
+    return;
+  }
   let tx = client.transaction();
   for (const doc of docs) {
     tx = tx.createOrReplace(doc as { _id: string; _type: string });
@@ -148,7 +155,7 @@ async function main(): Promise<void> {
   // (societies-content F1). Re-seeding the old placeholders would resurrect hidden societies.
   await seedBatch('showClasses', mapShowClasses());
 
-  console.log('Seed complete.');
+  console.log(DRY_RUN ? 'Dry run, pass --apply to write.' : 'Seed complete.');
 }
 
 main().catch((err: unknown) => {

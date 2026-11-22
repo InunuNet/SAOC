@@ -23,7 +23,8 @@
  *   NEXT_PUBLIC_SANITY_DATASET
  *   SANITY_API_TOKEN — write-enabled Editor token
  *
- * Run with: node --import tsx/esm scripts/seed-event-slugs.mjs
+ * Run with: node --import tsx/esm scripts/seed-event-slugs.mjs [--apply]
+ * A bare run is a dry run: it logs the slugs it would assign and writes nothing.
  */
 
 import { readFileSync } from 'node:fs';
@@ -32,6 +33,9 @@ import path from 'node:path';
 import { createClient } from '@sanity/client';
 
 import { deriveSlugs } from '../contracts/checks/f5-event-slugs/_slugify.mjs';
+
+// Safe by default: writes need an explicit --apply; a bare run is a dry run.
+const DRY_RUN = !process.argv.includes('--apply');
 
 // ---------------------------------------------------------------------------
 // Env — parsed directly from .env.local, no dotenv (see file header).
@@ -105,11 +109,16 @@ async function main() {
   const toDerive = missing.map((e) => ({ id: e._id, title: e.title, date: e.date }));
   const derived = deriveSlugs(toDerive, existingSlugs);
 
-  const tx = client.transaction();
+  const tx = DRY_RUN ? null : client.transaction();
   for (const doc of missing) {
     const slug = derived.get(doc._id);
-    tx.patch(doc._id, (p) => p.set({ slug: { _type: 'slug', current: slug } }));
+    tx?.patch(doc._id, (p) => p.set({ slug: { _type: 'slug', current: slug } }));
     console.log(`  ${doc._id} ("${doc.title}") -> "${slug}"`);
+  }
+
+  if (!tx) {
+    console.log(`Dry run, pass --apply to write: would assign ${missing.length} slug(s).`);
+    return;
   }
 
   await tx.commit();

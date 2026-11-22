@@ -31,7 +31,8 @@
  *   NEXT_PUBLIC_SANITY_DATASET
  *   SANITY_API_TOKEN — write-enabled Editor token
  *
- * Run with: node --import tsx/esm scripts/seed-ticketing.ts
+ * Run with: node --import tsx/esm scripts/seed-ticketing.ts [--apply]
+ * A bare run is a dry run: it reads the dataset, logs what it would write, writes nothing.
  */
 
 import { readFileSync } from 'node:fs';
@@ -46,6 +47,9 @@ import {
   WORKSHOP_FIELD_TRIP_PRODUCTS,
   type ProvisionalAdmissionProduct,
 } from '../lib/provisional-figures';
+
+// Safe by default: writes need an explicit --apply; a bare run is a dry run.
+const DRY_RUN = !process.argv.includes('--apply');
 
 // ---------------------------------------------------------------------------
 // Env — parsed directly from .env.local (see file header). Read only from inside
@@ -181,6 +185,10 @@ async function seedTicketTypes(client: SanityClient, showId: string): Promise<vo
     SPEAKERS_PARTNER_PRODUCT,
   ];
   for (const [index, product] of allProducts.entries()) {
+    if (DRY_RUN) {
+      console.log(`    ${product.slug} (dry run: would createIfNotExists)`);
+      continue;
+    }
     await client.createIfNotExists(buildTicketTypeDoc(product, index, showId));
     console.log(`    ${product.slug} (createIfNotExists)`);
   }
@@ -193,6 +201,10 @@ async function seedTicketTypes(client: SanityClient, showId: string): Promise<vo
       console.log(`    ${slug} (no document — nothing to retire)`);
       continue;
     }
+    if (DRY_RUN) {
+      console.log(`    ${slug} -> active: false (dry run: would patch)`);
+      continue;
+    }
     await client.patch(docId).set({ active: false }).commit({ autoGenerateArrayKeys: false });
     console.log(`    ${slug} -> active: false`);
   }
@@ -200,6 +212,10 @@ async function seedTicketTypes(client: SanityClient, showId: string): Promise<vo
 
 async function seedTicketsPage(client: SanityClient): Promise<void> {
   console.log('  ticketsPage:');
+  if (DRY_RUN) {
+    console.log('    dry run: would createIfNotExists ticketsPage');
+    return;
+  }
   await client.createIfNotExists({
     _id: 'ticketsPage',
     _type: 'ticketsPage',
@@ -245,6 +261,10 @@ async function seedTicketsPage(client: SanityClient): Promise<void> {
 
 async function patchNationalShowSalesOpen(client: SanityClient): Promise<void> {
   console.log('  nationalShow.salesOpen:');
+  if (DRY_RUN) {
+    console.log('    dry run: would patch with setIfMissing');
+    return;
+  }
   await client.patch(NATIONAL_SHOW_ID).setIfMissing({ salesOpen: false }).commit({
     autoGenerateArrayKeys: false,
   });
@@ -263,7 +283,7 @@ async function main(): Promise<void> {
   await seedTicketTypes(client, showId);
   await seedTicketsPage(client);
   await patchNationalShowSalesOpen(client);
-  console.log('Seed complete.');
+  console.log(DRY_RUN ? 'Dry run, pass --apply to write.' : 'Seed complete.');
 }
 
 // Guard against module-scope side effects: importing this file (e.g. to test

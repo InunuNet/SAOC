@@ -49,7 +49,7 @@ import {
   withDatasetLock,
 } from './_mutation-guard.mjs';
 
-const SEED_CMD = ['pnpm', ['seed:exhibitor']];
+const SEED_CMD = ['pnpm', ['seed:exhibitor', '--apply']];
 
 function runSeed(label) {
   console.log(`--- running the seed (${label}) ---`);
@@ -84,7 +84,7 @@ async function proveIdempotent(r, client) {
   if (!before.info) {
     r.fail(
       `${INFO_DOC_ID} exists before the idempotence check`,
-      'run `pnpm seed:exhibitor` once first. A check that seeds from scratch would prove creation, not idempotence.',
+      'run `pnpm seed:exhibitor --apply` once first. A check that seeds from scratch would prove creation, not idempotence.',
     );
     return false;
   }

@@ -21,13 +21,17 @@
  *   NEXT_PUBLIC_SANITY_DATASET
  *   SANITY_API_TOKEN — write-enabled Editor token
  *
- * Run with: node --import tsx/esm scripts/seed-province-order.ts
+ * Run with: node --import tsx/esm scripts/seed-province-order.ts [--apply] [--force]
+ * A bare run is a dry run: it logs the patches it would make and writes nothing.
  */
 
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { createClient, type SanityClient } from '@sanity/client';
+
+// Safe by default: writes need an explicit --apply; a bare run is a dry run.
+const DRY_RUN = !process.argv.includes('--apply');
 
 const GOLDEN_PATH =
   '.agent/memory/project/specs/cms-wiring-cleanup/goldens/province-chip-order.golden.json';
@@ -109,7 +113,7 @@ async function main(): Promise<void> {
     '*[_type == "province"]{ _id, code, name, order }',
   );
   if (docs.length === 0) {
-    throw new Error('No `province` documents found — run `pnpm seed` first.');
+    throw new Error('No `province` documents found — run `pnpm seed --apply` first.');
   }
 
   console.log(`Seeding chip order onto ${docs.length} province document(s):`);
@@ -130,6 +134,11 @@ async function main(): Promise<void> {
       skipped += 1;
       continue;
     }
+    if (DRY_RUN) {
+      console.log(`  ${code}: would set order ${order}`);
+      written += 1;
+      continue;
+    }
     const patch = client.patch(doc._id);
     await (force ? patch.set({ order }) : patch.setIfMissing({ order })).commit();
     console.log(`  ${code}: order ${order}`);
@@ -141,6 +150,10 @@ async function main(): Promise<void> {
       `WARNING: ${unknown.length} province document(s) have no entry in the golden and were ` +
         `left untouched: ${unknown.join(', ')}`,
     );
+  }
+  if (DRY_RUN) {
+    console.log(`Dry run, pass --apply to write: would patch ${written}, ${skipped} already ordered.`);
+    return;
   }
   console.log(`Done — ${written} patched, ${skipped} already ordered.`);
 }

@@ -31,7 +31,7 @@ await runCheck('check-venue-single-source', async (r) => {
     if (!show?.venue) {
       r.fail(
         'nationalShow.venue exists in the dataset',
-        'no venue object — run scripts/seed-show-visitor-info.ts',
+        'no venue object — run scripts/seed-show-visitor-info.ts --apply',
       );
       return;
     }
