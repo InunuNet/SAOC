@@ -7,7 +7,7 @@
  * Env is read from .env.local (NEXT_PUBLIC_SANITY_PROJECT_ID, NEXT_PUBLIC_SANITY_DATASET,
  * SANITY_API_TOKEN); nothing secret is printed.
  *
- * Run:    node scripts/fix-nos-venue-host-19nov.mjs [--dry-run]
+ * Run:    node scripts/fix-nos-venue-host-19nov.mjs [--apply]  (bare run = dry run, nothing written)
  * Verify: node scripts/fix-nos-venue-host-19nov.mjs --verify
  */
 
@@ -51,7 +51,8 @@ const client = createClient({
   perspective: 'raw',
 });
 
-const DRY_RUN = process.argv.includes('--dry-run');
+// Safe by default: writes need an explicit --apply; --dry-run is accepted and always wins.
+const DRY_RUN = !process.argv.includes('--apply') || process.argv.includes('--dry-run');
 const VERIFY = process.argv.includes('--verify');
 
 /** Collects every { id, path, value } string leaf, with Sanity-style paths (keyed array items). */

@@ -23,7 +23,7 @@
  *   NEXT_PUBLIC_SANITY_DATASET
  *   SANITY_API_TOKEN — write-enabled Editor token
  *
- * Run with: node --import tsx/esm scripts/fix-show-dates-2027.ts [--dry-run]
+ * Run with: node --import tsx/esm scripts/fix-show-dates-2027.ts [--apply]  (bare run = dry run, nothing written)
  * Verify with: node --import tsx/esm scripts/fix-show-dates-2027.ts --verify
  */
 
@@ -77,7 +77,8 @@ const client: SanityClient = createClient({
   useCdn: false,
 });
 
-const DRY_RUN = process.argv.includes('--dry-run');
+// Safe by default: writes need an explicit --apply; --dry-run is accepted and always wins.
+const DRY_RUN = !process.argv.includes('--apply') || process.argv.includes('--dry-run');
 const VERIFY = process.argv.includes('--verify');
 
 const NATIONAL_SHOW_ID = 'nationalShow';

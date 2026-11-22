@@ -11,7 +11,7 @@
  * Required env in .env.local (never printed): NEXT_PUBLIC_SANITY_PROJECT_ID,
  * NEXT_PUBLIC_SANITY_DATASET, SANITY_API_TOKEN (write-enabled).
  *
- * Run: node --import tsx/esm scripts/fix-ticket-prices-19nov.ts [--dry-run] [--with-partner]
+ * Run: node --import tsx/esm scripts/fix-ticket-prices-19nov.ts [--apply] [--with-partner]  (bare run = dry run, nothing written)
  * Verify only: node --import tsx/esm scripts/fix-ticket-prices-19nov.ts --verify
  */
 
@@ -72,7 +72,8 @@ const client: SanityClient = createClient({
   useCdn: false,
 });
 
-const DRY_RUN = process.argv.includes('--dry-run');
+// Safe by default: writes need an explicit --apply; --dry-run is accepted and always wins.
+const DRY_RUN = !process.argv.includes('--apply') || process.argv.includes('--dry-run');
 const VERIFY = process.argv.includes('--verify');
 // Create the hidden ticket only after the code that protects it is deployed: before that the
 // generic /tickets/<slug> page of the live site would serve it with no password.

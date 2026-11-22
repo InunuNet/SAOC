@@ -228,7 +228,7 @@ export function warnMissingCategoryFallback(
       console.warn(
         `ticketType "${product.slug}" is missing its category field and is being shown on ` +
           `/tickets via the admission-only null-category fallback — run ` +
-          `scripts/migrate-ticket-type-category.ts to backfill it permanently.`,
+          `scripts/migrate-ticket-type-category.ts with --apply to backfill it permanently.`,
       );
     }
   }
@@ -321,13 +321,13 @@ Now importing the module for testing never triggers a live seed as a side effect
 Backfills the `category` field onto pre-existing `ticketType` documents in the target Sanity dataset:
 
 ```bash
-node --import tsx/esm scripts/migrate-ticket-type-category.ts [--dry-run]
+node --import tsx/esm scripts/migrate-ticket-type-category.ts [--apply]
 ```
 
 **Follows the established pattern** (`scripts/migrate-show-sales-fields.ts`):
 - Uses `setIfMissing`, never `.set()` — a second run or an editor's changes between runs are always a no-op
 - Keyed off `lib/provisional-figures.ts`'s three product arrays (the same single source of truth the contract verifies)
-- Supports `--dry-run`: prints which documents would be patched, without writing
+- Dry run by default (`--dry-run` is accepted as a no-op): prints which documents would be patched; writes only with `--apply`
 
 **DEFECT REPAIR (from golden README item 8):** The real live dataset has only 10 `ticketType` documents total, and only 5 are covered by this feature's three product arrays. The other 5 are legacy/inactive (`adult`, `child`, `exhibitor`, `pensioner`, `saoc-member`), harmless since they're excluded by `active == true` in every query. The 6 conference + 4 workshop products have not been seeded yet — the seed script handles that separately.
 
