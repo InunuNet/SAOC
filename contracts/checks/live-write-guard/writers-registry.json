@@ -582,7 +582,7 @@
   },
   "scripts/seed-sanity.ts": {
    "class": "REAL_SANITY",
-   "note": "contract-dotenv-supply-chain-f1 A6 runs it for real under timeout 15",
+   "note": "writes only with --apply (a bare run is a dry run since #235); contract-dotenv-supply-chain-f1 A6 is manual_only and runs it bare under timeout 15, so a dry run; class stays REAL_SANITY because --apply writes live",
    "target": "Sanity 26yfbug4/production, transaction().createOrReplace of every seeded doc (line 135)"
   },
   ".agent/memory/project/specs/backlog-wave-1028/gate-hygiene/checks/check-checkout-day-null.mts": {
