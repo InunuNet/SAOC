@@ -15,14 +15,6 @@
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "expiresAt", "order": "DESCENDING" }
       ]
-    },
-    {
-      "collectionGroup": "orders",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "receiptEmail.status", "order": "ASCENDING" },
-        { "fieldPath": "purchasedAt", "order": "DESCENDING" }
-      ]
     }
   ],
   "fieldOverrides": []

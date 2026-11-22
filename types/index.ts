@@ -247,11 +247,9 @@ export interface Order {
     detectedAt: Timestamp;
   };
   /** Delivery record of the buyer's receipt email, written after settlement
-   *  (lib/ticket-receipt.ts). Absent on orders that predate it. */
+   *  (lib/receipt-record.ts). Absent on orders that predate it. */
   receiptEmail?: {
-    /** 'abandoned': the last attempt failed; terminal, never retried again. */
-    status: 'sent' | 'failed' | 'abandoned';
-    attempts: number;
+    status: 'sent' | 'failed';
     lastAttemptAt: Timestamp;
     lastErrorType: string | null;
   };

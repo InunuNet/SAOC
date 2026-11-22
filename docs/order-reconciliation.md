@@ -315,24 +315,13 @@ threw," both rendered as a success-shaped body. Fixed by `reconcile-response-acc
   ticket types only) is logged. These
   orders are not in the reconcile alert email: its wording says "still reserved", which would be
   wrong for a paid order, so query `settlement.overCapacity == true` in the console instead.
-- **Receipt email.** `orders/{id}.receiptEmail = { status: 'sent' | 'failed', attempts,
-  lastAttemptAt, lastErrorType }` is written after settlement (`lib/ticket-receipt.ts`). Each
-  reconcile run, after the stranded-order alert has been sent, re-sends the same receipt for
-  paid orders whose status is `failed` with fewer than 3 attempts, paid in the last 7 days, at
-  most 20 per run and no new send after 20 s (the rest is reported as `deferred`). Each send is cut
-  off after 10 s (counted as a failed attempt; it may still deliver), and the whole step, scan
-  included, has a hard 25 s deadline after which the route returns its alert result with
-  `receiptRetry.skipped: "timeout"`. An order whose third attempt fails becomes `abandoned`
-  (terminal, never queried again), so capped orders cannot hide older eligible ones. Each retry is
-  claimed in a transaction first, so a `sent` or `abandoned` order or an overlapping run never
-  produces a second email. **Accepted trade-off (lead ruling
-  22 Nov 2026):** if a receipt is delivered but the `sent` write is lost, the order stays `failed`
-  and the next run re-sends, so a buyer can get at most one duplicate per retry, bounded by the
-  3-attempt cap. No Resend idempotency key is used: the receipt PDF is not byte-identical between
-  sends, and a reused key with a different body is rejected. The
-  query needs the `(receiptEmail.status, purchasedAt desc)` index in `firestore.indexes.json`
-  (deploy it with `firebase deploy --only firestore:indexes`); until it is built the step logs a
-  warning, reports `receiptRetry.skipped: "missing-index"` and the rest of the run is unaffected.
+- **Receipt email.** After the one receipt send, the handler makes one best-effort write
+  (`lib/receipt-record.ts`, capped at 2 s, never throws, only from the call that settled the
+  order): `orders/{id}.receiptEmail = { status: 'sent' | 'failed', lastAttemptAt, lastErrorType }`
+  (error type name only). A failed receipt is therefore visible as `receiptEmail.status ==
+  'failed'`; for now it is resent manually. An automatic retry and an admin resend are future
+  work (a retry was built and withdrawn before launch as too much concurrent state on the payment
+  path).
 
 ## Sources
 

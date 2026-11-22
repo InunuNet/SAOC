@@ -7,12 +7,14 @@ import {
   markOrderAndPositionPaidByPaymentId,
   markOrderPaymentPendingByPaymentId,
 } from '@/lib/orders';
-import { deliverConfirmationEmailAfterCommit } from '@/lib/confirmation-email';
+import { deliverConfirmationEmailAfterCommit, sendConfirmationEmail } from '@/lib/confirmation-email';
 import { loadLateSettlementCapacity } from '@/lib/late-settlement-capacity';
 import { flagLateSettlement } from '@/lib/late-settlement-flag';
+import { recordReceiptOutcome } from '@/lib/receipt-record';
 import { safeErrorType } from '@/lib/safe-log';
 import { saocUrl } from '@/lib/site-hosts';
-import { recordFirstReceiptAttempt, sendOrderReceipt } from '@/lib/ticket-receipt';
+import { loadChosenDays } from '@/lib/ticket-pdf-data';
+import { buildOrderEmailFields } from '@/lib/ticket-order-fields';
 import { sendTicketSaleAdminNotice } from '@/lib/ticket-sale-admin-notice';
 
 /**
@@ -328,21 +330,24 @@ export async function POST(
   // 11. Post-commit confirmation email hookup. deliverConfirmationEmailAfterCommit isolates any
   // failure from this response: the payment is already committed above and must never be rolled
   // back, retried, or hidden behind a 5xx because a delivery receipt failed to send.
-  // The outcome is recorded on the order (receiptEmail) so a failed delivery is visible and the
-  // reconcile run can retry it; see lib/ticket-receipt.ts.
   let receiptFailed = false;
   let receiptError: unknown;
   await deliverConfirmationEmailAfterCommit(
-    () =>
-      sendOrderReceipt({
+    async () => {
+      // Per-ticket-type email facts (used only once TICKET_TYPE_EMAILS_LIVE is on): the stored
+      // order price, and the buyer's chosen day read back from the paid order (never throws).
+      const chosenDays = await loadChosenDays(reference);
+      const firstChosenDay = chosenDays.get(outcome.positions[0]?.bookingRef) ?? null;
+      await sendConfirmationEmail({
         orderId: outcome.orderId,
-        reference,
         buyerEmail: outcome.buyerEmail,
         buyerName: outcome.buyerName,
         recoveryToken: outcome.recoveryToken,
-        amount: lookup.amount,
+        orderReference: reference,
         positions: outcome.positions,
-      }),
+        ...buildOrderEmailFields(lookup.amount, firstChosenDay),
+      });
+    },
     (error) => {
       receiptFailed = true;
       receiptError = error;
@@ -354,7 +359,11 @@ export async function POST(
       });
     }
   );
-  await recordFirstReceiptAttempt({
+
+  // The receipt outcome is recorded on the order (best effort, capped at 2 s, never throws) so a
+  // failed receipt is visible; see lib/receipt-record.ts. It sits after the send and before the
+  // admin notice, and only this call, the one that settled the order, reaches it.
+  await recordReceiptOutcome({
     orderId: outcome.orderId,
     now: Timestamp.now(),
     failed: receiptFailed,

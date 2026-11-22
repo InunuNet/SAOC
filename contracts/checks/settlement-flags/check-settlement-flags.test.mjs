@@ -1,13 +1,13 @@
 // Settlement flags: a payment that lands after the reservation hold lapsed settles exactly as an
 // on-time one does (the paid transaction is untouched) and is flagged AFTER the commit, best
-// effort and time-capped; a failed receipt email is recorded on the order and retried by the
-// reconcile run, boundedly and without ever re-sending a delivered receipt. Drives the REAL shared
-// handler, lib/orders.ts, the real capacity loader, lib/ticket-receipt.ts and the reconcile route
-// against a stateful in-memory Firestore; only the gateway, the mailers, the Sanity client and the
-// sold-count reads (which count their own calls) are fakes.
+// effort and time-capped; the receipt outcome is recorded on the order by one capped write after
+// the single send. Drives the REAL shared handler, lib/orders.ts, the real capacity loader and
+// lib/receipt-record.ts against a stateful in-memory Firestore; only the gateway, the mailer, the
+// Sanity client and the sold-count reads (which count their own calls) are fakes.
 //
-// Includes the QA repros of PR 229: a hanging CMS request (repro 1), a throwing sold-count read
-// (repro 3) and a delivered receipt whose 'sent' write fails (repro 4), now asserting the fix.
+// Includes the QA repros of PR 229: a hanging CMS request (repro 1) and a throwing sold-count read
+// (repro 3). The receipt outcome is one best-effort, 2 s-capped write after the single send; there
+// is no automatic retry.
 //
 // Run as: npx tsx --test --experimental-test-module-mocks \
 //   contracts/checks/settlement-flags/check-settlement-flags.test.mjs
@@ -25,20 +25,14 @@ const RESPONSE_CAP_MS = 3500; // the 2 s assessment cap plus the 2 s write cap n
 
 const store = { orders: new Map(), tickets: new Map(), updates: 0 };
 const counters = { soldCountReads: 0, soldReadStatuses: [], sanityCalls: 0, sanityAborts: 0 };
-const mail = { deliveries: 0, sends: [], alerts: 0 };
-const events = [];
+const mail = { deliveries: 0, sends: [] };
 const behaviour = {
   mailFails: false,
-  receiptIndexMissing: false,
-  receiptQueryError: false,
-  receiptQueryHang: false,
-  receiptQueryHostile: false,
-  mailHangs: false,
+  recordWrite: 'normal', // 'normal' | 'hang' | 'throw' (the receiptEmail status write)
   soldThrows: false,
   sanity: 'normal',
   capacity: 2,
   flagWriteFails: false,
-  sentWriteFailsOnce: false,
 };
 
 const valueAt = (data, path) => path.split('.').reduce((value, key) => value?.[key], data);
@@ -50,10 +44,6 @@ function snapshot(collection, id) {
 }
 
 function applyUpdate(collection, id, patch) {
-  if (behaviour.sentWriteFailsOnce && patch.receiptEmail?.status === 'sent') {
-    behaviour.sentWriteFailsOnce = false;
-    throw new Error('DEADLINE_EXCEEDED');
-  }
   store[collection].set(id, { ...store[collection].get(id), ...patch });
   store.updates += 1;
 }
@@ -65,23 +55,6 @@ function query(name, state = { filters: [] }) {
     startAfter: (snap) => query(name, { ...state, after: snap.id }),
     limit: (count) => query(name, { ...state, limit: count }),
     get: async () => {
-      if (state.filters.some(({ field }) => field === 'receiptEmail.status')) {
-        events.push('retry-query');
-        if (behaviour.receiptQueryHang) return new Promise(() => {});
-        if (behaviour.receiptQueryHostile) {
-          const hostile = new Error('hostile');
-          Object.defineProperty(hostile, 'name', {
-            get() {
-              throw new Error('name getter ran for buyer@saoc-check.invalid');
-            },
-          });
-          throw hostile;
-        }
-        if (behaviour.receiptQueryError) throw new Error('unavailable');
-        if (behaviour.receiptIndexMissing) {
-          throw Object.assign(new Error('9 FAILED_PRECONDITION: The query requires an index.'), { code: 9 });
-        }
-      }
       let rows = [...store[name].entries()].filter(([, data]) =>
         state.filters.every(({ field, op, value }) => {
           const actual = ms(valueAt(data, field));
@@ -111,7 +84,11 @@ const fakeDb = {
         id,
         __collection: name,
         get: async () => snapshot(name, id),
-        update: async (patch) => applyUpdate(name, id, patch),
+        update: async (patch) => {
+          if (patch.receiptEmail && behaviour.recordWrite === 'hang') return new Promise(() => {});
+          if (patch.receiptEmail && behaviour.recordWrite === 'throw') throw new Error('write failed');
+          applyUpdate(name, id, patch);
+        },
         set: async (patch) => {
           if (behaviour.flagWriteFails && patch.settlement) throw new Error('write failed');
           applyUpdate(name, id, patch);
@@ -129,7 +106,6 @@ const fakeDb = {
     for (const { ref, patch } of staged) applyUpdate(ref.__collection, ref.id, patch);
     return result;
   },
-  batch: () => ({ update: () => {}, commit: async () => {} }),
 };
 
 mock.module('firebase-admin/firestore', {
@@ -138,24 +114,11 @@ mock.module('firebase-admin/firestore', {
 mock.module(new URL('../../../lib/firebase-admin.ts', import.meta.url).href, {
   exports: { initAdmin: () => ({}) },
 });
-mock.module(new URL('../../../lib/email.ts', import.meta.url).href, {
-  exports: {
-    TICKETS_FROM_ADDRESS: 'tickets@saoc-check.invalid',
-    sendEmail: async () => {
-      events.push('alert');
-      mail.alerts += 1;
-    },
-  },
-});
 // The mailer is a plain fake: every send that does not throw is one delivery (no idempotency).
 mock.module(new URL('../../../lib/confirmation-email.ts', import.meta.url).href, {
   exports: {
     sendConfirmationEmail: async (input) => {
       mail.sends.push(input);
-      if (behaviour.mailHangs) {
-        behaviour.mailHangs = false; // only the first send hangs
-        return new Promise(() => {});
-      }
       if (behaviour.mailFails) throw new Error('mailer down for buyer@saoc-check.invalid');
       mail.deliveries += 1;
     },
@@ -235,8 +198,6 @@ mock.module(new URL('../../../lib/data/tickets.ts', import.meta.url).href, {
 });
 
 const { POST } = await import('../../../lib/tickets-notification.ts');
-const { retryFailedReceipts, RECEIPT_MAX_ATTEMPTS } = await import('../../../lib/ticket-receipt.ts');
-const reconcileRoute = await import('../../../app/api/admin/reconcile-orders/route.ts');
 
 const REFERENCE = 'SAOC-2027-LATEPAY0001';
 const BUYER_EMAIL = 'buyer@saoc-check.invalid';
@@ -302,21 +263,15 @@ beforeEach(() => {
   store.orders.clear();
   store.tickets.clear();
   store.updates = 0;
-  events.length = 0;
   Object.assign(counters, { soldCountReads: 0, soldReadStatuses: [], sanityCalls: 0, sanityAborts: 0 });
-  Object.assign(mail, { deliveries: 0, sends: [], alerts: 0 });
+  Object.assign(mail, { deliveries: 0, sends: [] });
   Object.assign(behaviour, {
     mailFails: false,
-    receiptIndexMissing: false,
-    receiptQueryError: false,
-    receiptQueryHang: false,
-    receiptQueryHostile: false,
-    mailHangs: false,
+    recordWrite: 'normal',
     soldThrows: false,
     sanity: 'normal',
     capacity: 2,
     flagWriteFails: false,
-    sentWriteFailsOnce: false,
   });
   warnings = mock.method(console, 'warn', () => {});
   mock.method(console, 'error', () => {});
@@ -333,7 +288,7 @@ test('on-time payment: no late flag, no CMS call, no sold-count read, no warning
   assert.equal(counters.soldCountReads, 0);
   assert.equal(warnings.mock.calls.length, 0);
   assert.equal(order.receiptEmail.status, 'sent');
-  assert.equal(order.receiptEmail.attempts, 1);
+  assert.equal('attempts' in order.receiptEmail, false, 'no attempts counter');
   assert.equal(order.receiptEmail.lastErrorType, null);
 });
 
@@ -437,275 +392,72 @@ test('receipt failure is recorded as failed, with the error type only', async ()
   const order = store.orders.get('order-1');
   assert.equal(order.status, 'paid', 'a failed receipt never undoes the payment');
   assert.equal(order.receiptEmail.status, 'failed');
-  assert.equal(order.receiptEmail.attempts, 1);
+  assert.equal('attempts' in order.receiptEmail, false, 'no attempts counter');
   assert.equal(order.receiptEmail.lastErrorType, 'Error');
   assert.equal(JSON.stringify(order.receiptEmail).includes('buyer@'), false, 'raw error never stored');
 });
 
-function seedPaidOrder(id, receiptEmail, purchasedAtMs = NOW_MS - 2 * HOUR_MS) {
-  store.orders.set(id, {
-    status: 'paid',
-    showId: SHOW_ID,
-    m_payment_id: `REF-${id}`,
-    amount: 10,
-    buyerEmail: BUYER_EMAIL,
-    buyerName: 'Buyer',
-    recoveryToken: null,
-    purchasedAt: Timestamp.fromMillis(purchasedAtMs),
-    ...(receiptEmail ? { receiptEmail } : {}),
-  });
-  store.tickets.set(`pos-${id}`, {
-    bookingRef: `pos-${id}`,
-    orderId: id,
-    status: 'paid',
-    attendeeName: 'Buyer',
-    ticketType: 'general-admission',
-  });
-}
-
-const failedRecord = (attempts, lastAttemptMs = NOW_MS - 2 * HOUR_MS) => ({
-  status: 'failed',
-  attempts,
-  lastAttemptAt: Timestamp.fromMillis(lastAttemptMs),
-  lastErrorType: 'Error',
-});
-
-test('reconcile retry resends once and marks sent; a second run sends nothing', async () => {
-  seedPaidOrder('o1', failedRecord(1));
-  const first = await retryFailedReceipts(Timestamp.fromMillis(NOW_MS));
-  assert.equal(first.resent, 1);
-  assert.equal(mail.deliveries, 1);
-  const record = store.orders.get('o1').receiptEmail;
+test('receipt sent: records sent, with no error type', async () => {
+  seedOrder({ expiresAtMs: NOW_MS + HOUR_MS });
+  await POST(provider, request);
+  const record = store.orders.get('order-1').receiptEmail;
   assert.equal(record.status, 'sent');
-  assert.equal(record.attempts, 2);
   assert.equal(record.lastErrorType, null);
-
-  const second = await retryFailedReceipts(Timestamp.fromMillis(NOW_MS + HOUR_MS));
-  assert.equal(second.resent, 0);
-  assert.equal(mail.sends.length, 1, 'no second send at all');
+  assert.ok(record.lastAttemptAt instanceof Timestamp);
+  assert.deepEqual(Object.keys(record).sort(), ['lastAttemptAt', 'lastErrorType', 'status']);
 });
 
-// Accepted, documented trade-off (lead ruling 22 Nov 2026): no idempotency key is used, because the
-// receipt PDF differs between sends and a reused key with a different body is rejected. A delivered
-// receipt whose 'sent' write is lost is therefore re-sent: at most one duplicate per retry, and the
-// 3-attempt cap bounds the total.
-test('QA repro 4: a lost sent-write can duplicate the receipt once per retry, bounded by the cap', async () => {
-  seedPaidOrder('o1', failedRecord(1));
-  behaviour.sentWriteFailsOnce = true;
-  await retryFailedReceipts(Timestamp.fromMillis(NOW_MS));
-  assert.equal(mail.deliveries, 1);
-  assert.equal(store.orders.get('o1').receiptEmail.status, 'failed', 'the sent write was lost');
-  await retryFailedReceipts(Timestamp.fromMillis(NOW_MS + HOUR_MS));
-  assert.equal(mail.deliveries, 2, 'the retry re-sent: one duplicate');
-  assert.equal(store.orders.get('o1').receiptEmail.status, 'sent', 'and this time the write landed');
-  await retryFailedReceipts(Timestamp.fromMillis(NOW_MS + 2 * HOUR_MS));
-  assert.equal(mail.deliveries, 2, 'a sent order is never sent again');
+test('the receipt send is made exactly once, with the unchanged arguments', async () => {
+  seedOrder({ expiresAtMs: NOW_MS + HOUR_MS });
+  await POST(provider, request);
+  assert.equal(mail.sends.length, 1);
+  assert.deepEqual(Object.keys(mail.sends[0]).sort(), [
+    'amountPaid',
+    'buyerEmail',
+    'buyerName',
+    'orderId',
+    'orderReference',
+    'paymentStatus',
+    'positions',
+    'recoveryToken',
+  ]);
 });
 
-test('QA repro 4, worst case: every sent-write lost still stops at the 3-attempt cap', async () => {
-  seedPaidOrder('o1', failedRecord(1));
-  let clock = NOW_MS;
-  for (let run = 0; run < 5; run += 1) {
-    behaviour.sentWriteFailsOnce = true;
-    await retryFailedReceipts(Timestamp.fromMillis(clock));
-    clock += HOUR_MS;
-  }
-  assert.equal(mail.deliveries, RECEIPT_MAX_ATTEMPTS - 1, 'attempts 2 and 3 only');
-  assert.equal(store.orders.get('o1').receiptEmail.attempts, RECEIPT_MAX_ATTEMPTS);
-});
-
-test('attempts cap at 3 in total, then the order is left alone', async () => {
-  behaviour.mailFails = true;
-  seedPaidOrder('o1', failedRecord(1));
-  let clock = NOW_MS;
-  for (let run = 0; run < 4; run += 1) {
-    await retryFailedReceipts(Timestamp.fromMillis(clock));
-    clock += HOUR_MS;
-  }
-  const record = store.orders.get('o1').receiptEmail;
-  assert.equal(record.status, 'abandoned', 'the failed last attempt is terminal');
-  assert.equal(record.attempts, RECEIPT_MAX_ATTEMPTS, 'stops at the cap');
-  assert.equal(mail.sends.length, 2, 'attempts 2 and 3 only; run 4 sends nothing');
-});
-
-test('a sent order, a pre-field order and an old failure are never sent', async () => {
-  seedPaidOrder('sent', { ...failedRecord(1), status: 'sent', lastErrorType: null });
-  seedPaidOrder('legacy', null);
-  seedPaidOrder('old', failedRecord(1), NOW_MS - 8 * 24 * HOUR_MS);
-  const summary = await retryFailedReceipts(Timestamp.fromMillis(NOW_MS));
-  assert.equal(summary.resent, 0);
-  assert.equal(mail.sends.length, 0);
-  assert.equal(store.orders.get('sent').receiptEmail.attempts, 1, 'sent order untouched');
-});
-
-test('a retry attempted a moment ago is not repeated (overlapping runs)', async () => {
-  seedPaidOrder('o1', failedRecord(1, NOW_MS - 60_000));
-  const summary = await retryFailedReceipts(Timestamp.fromMillis(NOW_MS));
-  assert.equal(summary.resent, 0);
-  assert.equal(mail.sends.length, 0);
-});
-
-test('at most 20 receipts are resent per run', async () => {
-  for (let i = 0; i < 25; i += 1) seedPaidOrder(`bulk-${i}`, failedRecord(1));
-  const summary = await retryFailedReceipts(Timestamp.fromMillis(NOW_MS));
-  assert.equal(summary.resent, 20);
-  assert.equal(mail.deliveries, 20);
-});
-
-test('time budget: no new send starts once it is spent; the rest is reported as deferred', async () => {
-  for (let i = 0; i < 5; i += 1) seedPaidOrder(`slow-${i}`, failedRecord(1));
-  let clock = 0;
-  const summary = await retryFailedReceipts(Timestamp.fromMillis(NOW_MS), {
-    budgetMs: 25_000,
-    clock: () => {
-      clock += 10_000; // every look at the clock costs 10 s
-      return clock;
-    },
-  });
-  assert.equal(summary.resent + summary.stillFailing + summary.deferred, summary.scanned);
-  assert.ok(summary.deferred >= 1, `deferred ${summary.deferred}`);
-  assert.equal(mail.sends.length, summary.resent + summary.stillFailing);
-});
-
-function reconcileRequest() {
-  process.env.RECONCILIATION_CRON_SECRET = 'check-secret';
-  return { headers: new Headers({ authorization: 'Bearer check-secret' }) };
-}
-
-function seedStrandedOrder() {
-  store.orders.set('stranded', {
-    status: 'reserved',
-    m_payment_id: 'REF-stranded',
-    buyerName: 'Buyer',
-    buyerEmail: BUYER_EMAIL,
-    amount: 10,
-    expiresAt: Timestamp.fromMillis(NOW_MS - 2 * HOUR_MS),
-  });
-}
-
-test('missing index: the retry skips softly and the reconcile run carries on', async () => {
-  behaviour.receiptIndexMissing = true;
-  seedPaidOrder('o1', failedRecord(1));
-  const summary = await retryFailedReceipts(Timestamp.fromMillis(NOW_MS));
-  assert.deepEqual(summary, {
-    scanned: 0,
-    resent: 0,
-    stillFailing: 0,
-    deferred: 0,
-    abandoned: 0,
-    skipped: 'missing-index',
-  });
-  assert.equal(mail.sends.length, 0);
-
-  const response = await reconcileRoute.POST(reconcileRequest());
-  assert.equal(response.status, 200);
-  const body = await response.json();
-  assert.equal(body.strandedCount, 0);
-  assert.equal(body.receiptRetry.skipped, 'missing-index');
-});
-
-test('reconcile: the stranded-order alert is sent first and survives a throwing retry', async () => {
-  behaviour.receiptQueryError = true;
-  seedStrandedOrder();
-  const response = await reconcileRoute.POST(reconcileRequest());
-  assert.equal(response.status, 200);
-  const body = await response.json();
-  assert.deepEqual(body.alertedNow, ['stranded']);
-  assert.equal(mail.alerts, 1, 'the alert went out');
-  assert.equal(body.receiptRetry, null, 'the failed retry is reported as null, not thrown');
-  assert.deepEqual(events.filter((event) => event === 'alert' || event === 'retry-query'), ['alert', 'retry-query']);
-});
-
-test('reconcile: the alert is not held up by failed receipts waiting for retry', async () => {
-  seedStrandedOrder();
-  seedPaidOrder('o1', failedRecord(1));
-  const response = await reconcileRoute.POST(reconcileRequest());
-  assert.equal(response.status, 200);
-  const body = await response.json();
-  assert.deepEqual(body.alertedNow, ['stranded']);
-  assert.equal(body.receiptRetry.resent, 1);
-  assert.ok(events.indexOf('alert') < events.indexOf('retry-query'), 'alert first, retry after');
-});
-
-// --- Codex review fixes -----------------------------------------------------------------------
-
-test('hung query: the retry step returns at its deadline with what it had, and says so', async () => {
-  behaviour.receiptQueryHang = true;
-  seedPaidOrder('o1', failedRecord(1));
+test('the record write hanging: 200 within the cap, and the late flag still runs', async () => {
+  behaviour.recordWrite = 'hang';
+  seedOrder({ expiresAtMs: NOW_MS - HOUR_MS });
   const started = Date.now();
-  const summary = await retryFailedReceipts(Timestamp.fromMillis(NOW_MS), { deadlineMs: 150 });
-  assert.ok(Date.now() - started < 2000);
-  assert.equal(summary.skipped, 'timeout');
-  assert.equal(mail.sends.length, 0);
-});
-
-test('hung query: the reconcile route still returns the alert result at the 25 s deadline', async () => {
-  behaviour.receiptQueryHang = true;
-  seedStrandedOrder();
-  mock.timers.enable({ apis: ['setTimeout'] });
-  try {
-    const pending = reconcileRoute.POST(reconcileRequest());
-    // Let the alert run (no timers involved) and reach the hung query, then pass the deadline.
-    for (let i = 0; i < 20; i += 1) await new Promise((resolve) => setImmediate(resolve));
-    mock.timers.tick(25_000);
-    const response = await pending;
-    assert.equal(response.status, 200);
-    const body = await response.json();
-    assert.deepEqual(body.alertedNow, ['stranded'], 'the alert result is intact');
-    assert.equal(mail.alerts, 1);
-    assert.equal(body.receiptRetry.skipped, 'timeout');
-  } finally {
-    mock.timers.reset();
-  }
-});
-
-test('hung send: it is cut off at its own timeout, counted as failed, and the next order still goes', async () => {
-  seedPaidOrder('hung', failedRecord(1), NOW_MS - HOUR_MS);
-  seedPaidOrder('fine', failedRecord(1), NOW_MS - 2 * HOUR_MS);
-  behaviour.mailHangs = true;
-  const summary = await retryFailedReceipts(Timestamp.fromMillis(NOW_MS), { sendTimeoutMs: 100 });
-  assert.equal(summary.stillFailing, 1, 'the hung send counts as a failed attempt');
-  assert.equal(summary.resent, 1, 'the next order was not starved');
-  const hung = store.orders.get('hung').receiptEmail;
-  assert.equal(hung.status, 'failed');
-  assert.equal(hung.attempts, 2);
-  assert.equal(hung.lastErrorType, 'TimeoutError');
-});
-
-test('hostile error name: the route survives, logs and returns only a safe label', async () => {
-  behaviour.receiptQueryHostile = true;
-  seedStrandedOrder();
-  const response = await reconcileRoute.POST(reconcileRequest());
+  const response = await POST(provider, request);
+  const elapsed = Date.now() - started;
   assert.equal(response.status, 200);
-  const body = await response.json();
-  assert.deepEqual(body.alertedNow, ['stranded']);
-  assert.equal(body.receiptRetry, null);
-  const logged = JSON.stringify(warnings.mock.calls.map((call) => call.arguments));
-  assert.equal(logged.includes('name getter ran'), false);
-  assert.equal(logged.includes('buyer@'), false);
-  assert.ok(logged.includes('"errorType":"Error"') || logged.includes('"errorType":"unknown"'));
+  assert.ok(elapsed < 3500, `responded in ${elapsed} ms`);
+  const order = store.orders.get('order-1');
+  assert.equal(order.status, 'paid');
+  assert.equal('receiptEmail' in order, false, 'the hung write recorded nothing');
+  assert.equal(order.settlement.lateAfterHoldExpiry, true, 'the late flag still ran');
 });
 
-test('starvation: 100 newer capped orders do not hide an older eligible one', async () => {
-  for (let i = 0; i < 100; i += 1) {
-    seedPaidOrder(`capped-${i}`, failedRecord(RECEIPT_MAX_ATTEMPTS), NOW_MS - i * 1000 - 1000);
-  }
-  seedPaidOrder('older', failedRecord(1), NOW_MS - 3 * HOUR_MS);
-  const summary = await retryFailedReceipts(Timestamp.fromMillis(NOW_MS));
-  assert.equal(summary.resent, 1, 'the older order was found and sent');
-  assert.equal(store.orders.get('older').receiptEmail.status, 'sent');
-  assert.equal(summary.abandoned, 100);
-  assert.equal(store.orders.get('capped-0').receiptEmail.status, 'abandoned');
-  assert.equal(mail.sends.length, 1, 'capped orders are not sent');
-  const second = await retryFailedReceipts(Timestamp.fromMillis(NOW_MS + HOUR_MS));
-  assert.equal(second.scanned, 0, 'abandoned orders never come back from the query');
+test('the record write throwing changes nothing else', async () => {
+  behaviour.recordWrite = 'throw';
+  seedOrder({ expiresAtMs: NOW_MS - HOUR_MS });
+  const response = await POST(provider, request);
+  assert.equal(response.status, 200);
+  const order = store.orders.get('order-1');
+  assert.equal(order.status, 'paid');
+  assert.equal('receiptEmail' in order, false);
+  assert.equal(order.settlement.lateAfterHoldExpiry, true);
+  assert.equal(mail.deliveries, 1);
 });
 
-test('an abandoned order is never claimed or sent', async () => {
-  seedPaidOrder('done', { ...failedRecord(RECEIPT_MAX_ATTEMPTS), status: 'abandoned' });
-  const summary = await retryFailedReceipts(Timestamp.fromMillis(NOW_MS));
-  assert.equal(summary.scanned, 0);
-  assert.equal(mail.sends.length, 0);
+test('a duplicate notification writes no receipt record', async () => {
+  seedOrder({ expiresAtMs: NOW_MS + HOUR_MS });
+  await POST(provider, request);
+  const record = store.orders.get('order-1').receiptEmail;
+  const updates = store.updates;
+  await POST(provider, request);
+  assert.equal(store.updates, updates, 'no write at all');
+  assert.equal(store.orders.get('order-1').receiptEmail, record);
+  assert.equal(mail.sends.length, 1);
 });
 
 // Codex repro: a late multi-line order with an UNDATED day-shaped position plus a dated day ticket.

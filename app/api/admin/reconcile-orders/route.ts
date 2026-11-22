@@ -10,8 +10,6 @@ import {
   reconcileStatusFor,
   sendReconciliationAlert,
 } from '@/lib/reconciliation';
-import { safeErrorType } from '@/lib/safe-log';
-import { retryFailedReceipts, type ReceiptRetrySummary } from '@/lib/ticket-receipt';
 
 /**
  * order-reconciliation F1 — POST /api/admin/reconcile-orders.
@@ -34,24 +32,6 @@ import { retryFailedReceipts, type ReceiptRetrySummary } from '@/lib/ticket-rece
  */
 
 const BEARER_PREFIX = 'Bearer ';
-
-/** The receipt retry is a side task that runs after the stranded-order alert: whatever goes wrong
- *  in it is logged and reported in the response, and never affects the alert. It stops starting
- *  new sends after RECEIPT_RETRY_TIME_BUDGET_MS, cuts each send off after RECEIPT_SEND_TIMEOUT_MS
- *  and is bounded overall by RECEIPT_RETRY_DEADLINE_MS (scan included), reporting
- *  `skipped: 'timeout'` when that deadline passes. */
-async function retryReceiptsSoftly(): Promise<ReceiptRetrySummary | null> {
-  try {
-    return await retryFailedReceipts(Timestamp.now());
-  } catch (error) {
-    console.warn('[admin/reconcile-orders] Receipt retry failed; continuing without it', {
-      // safeErrorType never throws (a hostile `name` getter or Proxy is contained) and returns
-      // only a built-in type label, never a raw error field.
-      errorType: safeErrorType(error),
-    });
-    return null;
-  }
-}
 
 function unauthorized(): NextResponse {
   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -102,14 +82,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     .map((order) => order.orderId);
 
   if (needingAlert.length === 0) {
-    const receiptRetry = await retryReceiptsSoftly();
     return NextResponse.json(
       {
         alertedNow: [],
         alertBookkeepingFailed: [],
         skippedRecentlyAlerted,
         strandedCount: stranded.length,
-        receiptRetry,
       },
       { status: 200 }
     );
@@ -143,17 +121,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // regression this project shipped once already: two callers each holding half the picture,
   // with the half that actually explains WHY discarded before either could log it.
 
-  // The alert is sent and stamped by now; the receipt retry is a time-boxed side task that runs
-  // last and can change nothing about the alert's result.
-  const receiptRetry = await retryReceiptsSoftly();
   return NextResponse.json(
-    {
-      alertedNow,
-      alertBookkeepingFailed,
-      skippedRecentlyAlerted,
-      strandedCount: stranded.length,
-      receiptRetry,
-    },
+    { alertedNow, alertBookkeepingFailed, skippedRecentlyAlerted, strandedCount: stranded.length },
     { status: reconcileStatusFor(alertBookkeepingFailed) }
   );
 }
