@@ -1,3 +1,4 @@
+import './require-preload.mjs';
 // Overrides '@/lib/vendor-payment-admin-notice' (vendor-payment-confirmation mission, F1) --
 // added alongside fixture-vendor-payment-confirmation.mjs so a settlement-behaviour check can
 // count and inspect BOTH emails the paid path fires, deterministically and network-free.

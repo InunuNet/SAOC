@@ -1,3 +1,4 @@
+import './require-preload.mjs';
 export const cookieJar = new Map();
 export async function cookies() {
   return {

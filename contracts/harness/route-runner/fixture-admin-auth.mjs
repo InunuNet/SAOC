@@ -1,3 +1,4 @@
+import './require-preload.mjs';
 // Shared admin-auth fixture for every route-runner check/demo. Defaults to an authenticated,
 // fully-capable admin session (unchanged from before) so every EXISTING check that never sets
 // FIXTURE_ADMIN_DENIED keeps behaving exactly as it always has.

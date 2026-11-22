@@ -1,3 +1,4 @@
+import './require-preload.mjs';
 // Overrides '@/lib/show-window-lookup' (route-runner harness). Was a permanent stub whose
 // resolveShowWindowLookup() returned a lookup function that always answered `null` (no check
 // exercised its return value behaviourally); extended by vendor-stand-early-bird-pricing (F1)

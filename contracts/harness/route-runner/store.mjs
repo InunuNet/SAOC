@@ -3,6 +3,8 @@
 // the same harness can exercise vendorApplications, vendorSubmissions and vendorStandOrders
 // documents inside ONE transaction, the way the real settlement handler
 // (lib/vendor-stand-payment-notification.ts) does.
+import './require-preload.mjs';
+
 const collections = new Map();
 
 export function getCollectionMap(name) {

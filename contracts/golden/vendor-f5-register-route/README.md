@@ -124,7 +124,7 @@ per-branch coverage. F5 chooses the cheaper, more precise proof.
 
 4. **`app/api/vendors/register/route.ts` (new)** — the thin wrapper. Reads the raw JSON body
    (malformed JSON → 400 before the handler is even called), derives a rate-limit key from the
-   request's `x-forwarded-for` header (see "Judgement calls" below for why this is a documented
+   request's headers with `rateLimitKeyFromHeaders()` (see "Judgement calls" below for why this is a documented
    best-effort, not a security boundary), wires the **real** Admin SDK write (`initAdmin()` +
    `getFirestore().collection(VENDOR_SUBMISSIONS_COLLECTION).add(built)`), the real confirmation
    email, and the real in-memory rate-limit store singleton (created once at module scope, so it
@@ -189,7 +189,8 @@ comment (F4) verbatim: nothing here grants a capability, admin surface access, o
   server process (the only thing an ephemeral-port `next dev` instance can demonstrate); it
   cannot prove or disprove cross-instance consistency, which depends on Firebase App Hosting's
   actual scaling behaviour and is out of scope for an offline gate.
-- **`x-forwarded-for` reflects the true original client IP in the deployed environment.** This
-  contract proves the route reads and uses whatever value is in that header — not that Firebase
-  App Hosting's front end can be trusted not to let a caller override it. See "Judgement calls"
-  above.
+- **The client address from `x-fah-client-ip` and `x-forwarded-for` is the true original client
+  IP in the deployed environment.** This contract proves the route reads and uses whatever
+  `rateLimitKeyFromHeaders()` returns for those headers (see "Judgement calls" above for the
+  resolution rule) — not that the platform's front end can be trusted not to let a caller
+  override them.

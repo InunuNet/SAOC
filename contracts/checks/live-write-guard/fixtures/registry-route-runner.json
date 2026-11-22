@@ -1,0 +1,1 @@
+{"schema": "saoc.writer-registry/v1", "scripts": {"scripts/rr.mjs": {"class": "FAKE", "route_runner": true, "match": "rrfixture-store", "target": "fixture", "note": "fixture route-runner check, FAKE only under the preload"}, "scripts/plain.mjs": {"class": "FAKE", "match": "plainfixture-fake", "target": "fixture", "note": "fixture FAKE check that does not use the route runner"}}}
