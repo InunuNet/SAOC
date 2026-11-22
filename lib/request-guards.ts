@@ -69,11 +69,6 @@ export async function readBodyTextWithinLimit(
   return text + decoder.decode();
 }
 
-/** True for a parsed JSON object: not null, not an array, not a scalar. */
-export function isJsonObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 export type JsonBodyResult =
   | { ok: true; value: unknown }
   | { ok: false; reason: 'too-large' | 'invalid-json' };

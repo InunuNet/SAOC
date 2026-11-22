@@ -1,6 +1,6 @@
 import { getSecret, secretsEnv } from '@/lib/secrets';
 import { NextRequest, NextResponse } from 'next/server';
-import { isDeclaredLengthWithinLimit, isJsonObject, readJsonBodyWithinLimit } from '@/lib/request-guards';
+import { isDeclaredLengthWithinLimit, readJsonBodyWithinLimit } from '@/lib/request-guards';
 import { clientIpFromForwardedFor } from '@/lib/client-ip';
 import { consumeRateLimit } from '@/lib/newsletter-rate-limit';
 import { createAttemptStore, scopeAttemptsToRequest } from '@/lib/newsletter-rate-store';
@@ -523,15 +523,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!parsed.ok && parsed.reason === 'too-large') {
     return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
   }
-  if (!parsed.ok || !isJsonObject(parsed.value)) {
+  if (!parsed.ok || parsed.value === null) {
     console.error(
       '[tickets/checkout] Failed to parse request body:',
-      parsed.ok ? 'not-an-object' : parsed.reason,
+      parsed.ok ? 'null-body' : parsed.reason,
     );
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
   }
-  // Untrusted JSON: every field is validated below before use, as before.
-  const body = parsed.value as unknown as CheckoutRequestBody; // an object here; fields checked below
+  // Untrusted JSON, never null here. Property reads on any other JSON value are safe (they
+  // give undefined), and every field is validated below before use, as with request.json().
+  const body = parsed.value as CheckoutRequestBody;
 
   if (!isValidShowId(body.showId)) {
     return NextResponse.json(
