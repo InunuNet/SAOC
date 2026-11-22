@@ -1,0 +1,51 @@
+# Static contract gate
+
+`.github/workflows/ci.yml` job `static-contract-gate` runs `run_static_assertions.py` on every push
+and pull request. The contract gate (`python3 execution/contract.py gate`) does not run in CI, so
+source-text assertions went stale silently when code was refactored: on 22 Nov 2026, 16 of 51 swept
+were stale and none was a real regression. This job runs a reviewed allowlist of them.
+
+## What runs
+
+`allowlist.json` lists each assertion by contract yaml path and id. `python3
+contracts/checks/static-gate/run_static_assertions.py --list` prints exactly what runs. The runner
+loads each yaml, takes the assertion's `command`, and runs it with `bash -c` from the repo root with
+only `PATH`, `HOME`, `LANG` and `LC_ALL` in the environment (no secret can reach a check). It exits 1
+when an assertion fails or times out (60 s), and also when an allowlisted contract or id no longer
+exists, is not a shell check, or is duplicated: a deleted or renamed assertion cannot silently drop
+out of the gate. Exit 2 means the allowlist itself is unreadable.
+
+## Admission rules for an allowlist entry
+
+An assertion belongs here only when all of these hold:
+
+1. Its command only reads files in the repo checkout (grep, test, node, python or bash scripts).
+   No network, no Firebase, Sanity, Ozow, Resend or deployed-site call, no dev server, no build.
+2. It needs nothing beyond the Node, Python (with PyYAML) and bash a bare checkout has. Commands
+   that need `node_modules` (`node --import tsx/esm ...`, `pnpm exec`) are out; CI does not install.
+3. It depends on no git state other than the checked-out files: no `origin/main`, `BASE_REF`,
+   `git diff <base>`, `git log`, or byte-identical-to-a-commit pins. Those are point-in-time guards.
+4. It does not read the clock or a mutable external file, and every path it names exists (a
+   negated grep on a missing file passes vacuously).
+5. It passes on current main in a shallow clone (`git clone --depth 1`), with network and every
+   write outside a temp dir denied. Local-only temp copies (the mutation harnesses
+   `payment-seam-f2/check-ordering-mutations.sh`, `launch-weekend/f8/check-a-programme-mutations.sh`)
+   are allowed and are registered in `../live-write-guard/writers-registry.json` where the guard
+   asked for it.
+6. It asserts a standing property of the source, not a copy or price literal that Lee-Ann's
+   documents change on purpose (ticket prices, show dates, listed times, photo filenames).
+
+To add an entry: put `{contract, id}` in `allowlist.json`, run the runner, and keep it only if it is
+green. To retire one, remove it here in the same change that retires or rewrites the assertion.
+
+## Not allowlisted
+
+Red on current main (static, not fixed here): `contracts/contract-payment-seam-f1.yaml` A8,
+`contract-payment-seam-f2.yaml` A1, A2, A15, `beta-password-wall/contract-f1.yaml` A1 to A4
+(goldens differ from live files), `ticketing-f4-admission-products` A3 (price literals),
+`launch-weekend/contract-f18.yaml` A27 (check q, stale pricing golden), A36 (check z, naming decision) and A30 (check u, broken
+`nos f3lib`, also needs a server).
+
+Green but left out because they are not provably stable or need install: `launch-weekend/contract-f8`
+F8-A1 and `contract-f30` F30-A4 (diff against `origin/main`: PR-scope guards), `contract-f18` A21
+and `contract-ticketing-f4-roles-claim` / `ticketing-f5-buyers` A6 (`node --import tsx/esm`).

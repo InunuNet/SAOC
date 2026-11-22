@@ -204,6 +204,26 @@ jobs:
       - name: No contract runs a live-production write in the default gate
         run: python3 contracts/checks/live-write-guard/verify_no_ungated_writers.py
 
+  # ADDED 2026-11-22. The contract gate does not run in CI, so source-text assertions went stale
+  # silently when code was refactored (16 of 51 swept on 22 Nov, none a real regression). This runs
+  # the reviewed allowlist in contracts/checks/static-gate/allowlist.json. No secrets, no network, no
+  # build, no pnpm install: every allowlisted command only reads the checkout (admission rules in
+  # contracts/checks/static-gate/README.md). Fails when an assertion is red or an id is gone.
+  static-contract-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python3 -m pip install pyyaml
+      - name: Static, credential-free contract assertions
+        run: python3 contracts/checks/static-gate/run_static_assertions.py
+
   firestore-residue-guard:
     runs-on: ubuntu-latest
     steps:
