@@ -34,11 +34,14 @@ const require = createRequire(import.meta.url);
 const { applications } = require('../../../contracts/harness/route-runner/store.mjs');
 const { sentEmails } = require('../../../contracts/harness/route-runner/fixture-approval-email.mjs');
 const { cookieJar } = require('../../../contracts/harness/route-runner/fixture-next-headers.mjs');
+const { getSecret, SECRET_BUNDLE_VARS } = await import('../../../lib/secrets.ts');
 
 const REVIEW = '../../../app/api/admin/vendors/applications/[id]/review/route.ts';
 const VERIFY = '../../../app/api/vendors/register/verify-code/route.ts';
 
+const SECRET_NAME = 'VENDOR_REGISTRATION_TOKEN_SECRET';
 const TEST_SECRET = 'test-secret-not-a-real-credential';
+const STORE_METHODS = ['get', 'has', 'set', 'delete', 'clear', 'entries', 'values', 'keys', 'forEach'];
 const failures = [];
 
 const { POST: reviewPost } = await import(REVIEW);
@@ -76,18 +79,46 @@ function check(condition, message) {
   if (!condition) failures.push(message);
 }
 
+// getSecret() reads the SAOC_*_SECRETS bundles BEFORE process.env, so "unset" must clear the
+// bundle variables as well as the plain variable, and is proved by getSecret() itself.
+function unsetSecret() {
+  delete process.env[SECRET_NAME];
+  for (const bundleVar of SECRET_BUNDLE_VARS) delete process.env[bundleVar];
+  check(getSecret(SECRET_NAME) === undefined, `${SECRET_NAME} is still readable via getSecret() after unsetSecret() -- the "unset" arms prove nothing.`);
+}
+
+// Counts every call made on the shared in-memory applications store, so "no Firestore access"
+// is asserted, not assumed. Returns { count, restore }.
+function spyOnStore() {
+  const spy = { count: 0 };
+  const originals = {};
+  for (const name of STORE_METHODS) {
+    originals[name] = applications[name];
+    applications[name] = (...args) => {
+      spy.count++;
+      return originals[name].apply(applications, args);
+    };
+  }
+  spy.restore = () => {
+    for (const name of STORE_METHODS) applications[name] = originals[name];
+  };
+  return spy;
+}
+
 // -------------------------------------------------------------------------------------------
 // A: VENDOR_REGISTRATION_TOKEN_SECRET unset -- approval must refuse, application stays pending,
 // no code, no email. This is the exact defect Codex found: without this, the OLD behaviour was
 // a 200, an emailed code, and a permanently unredeemable credential.
 // -------------------------------------------------------------------------------------------
 {
-  delete process.env.VENDOR_REGISTRATION_TOKEN_SECRET;
+  unsetSecret();
   seed('app-a', 'Fynbos Pottery');
+  const before = JSON.stringify(applications.get('app-a'));
   const result = await approve('app-a');
   const stored = applications.get('app-a');
 
-  check(result.status !== 200, `A (missing secret): approval returned HTTP ${result.status}, expected a refusal (non-200).`);
+  check(result.status === 503, `A (missing secret): approval returned HTTP ${result.status}, expected the operator-facing 503 refusal.`);
+  check(JSON.stringify(stored) === before, 'A (missing secret): the application record changed -- the refused approval must write nothing.');
   check(stored.status === 'pending', `A (missing secret): application status is "${stored.status}", expected it to remain "pending".`);
   check(!stored.registrationCodeId, `A (missing secret): a registrationCodeId (${JSON.stringify(stored.registrationCodeId)}) was committed despite the missing secret.`);
   check(sentEmails.length === 0, `A (missing secret): ${sentEmails.length} approval email(s) were sent despite the refused approval.`);
@@ -137,6 +168,32 @@ function check(condition, message) {
     check(verified.status === 200, `C (positive control): verify-code with the EMAILED code returned HTTP ${verified.status} ${JSON.stringify(verified.body)}, expected 200 -- the credential this approval issued does not actually redeem.`);
     check(cookieJar.has('vendor_registration_session'), 'C (positive control): a successful verify-code did not set the session cookie.');
   }
+
+  // ---------------------------------------------------------------------------------------
+  // D: redemption with the secret unset -- the route must refuse with the generic 403, set no
+  // session cookie, and touch no Firestore data at all (the guard precedes the lookup). The
+  // code is the REAL one just emailed in C, which verified 200 a moment ago with the secret set,
+  // so the refusal here is attributable to the missing secret and nothing else.
+  // ---------------------------------------------------------------------------------------
+  if (emailedCode) {
+    unsetSecret();
+    cookieJar.clear();
+    const spy = spyOnStore();
+    let refused;
+    try {
+      refused = await verify('Fynbos Pottery', emailedCode, '203.0.113.10');
+    } catch (error) {
+      failures.push(`D (redeem, secret unset): verify-code threw ${error?.name ?? 'an error'} instead of refusing with the generic 403.`);
+    } finally {
+      spy.restore();
+    }
+    if (refused) {
+      check(refused.status === 403, `D (redeem, secret unset): verify-code returned HTTP ${refused.status}, expected the generic 403.`);
+      check(typeof refused.body.error === 'string' && refused.body.error.includes("didn't match"), `D (redeem, secret unset): body ${JSON.stringify(refused.body)} is not the generic "didn't match" refusal.`);
+      check(!cookieJar.has('vendor_registration_session'), 'D (redeem, secret unset): a session cookie was set despite the missing secret.');
+      check(spy.count === 0, `D (redeem, secret unset): the route made ${spy.count} Firestore store call(s); the secret guard must refuse before any data access.`);
+    }
+  }
 }
 
 if (failures.length > 0) {
@@ -148,7 +205,9 @@ if (failures.length > 0) {
 console.log(
   'PASS (behavioural, real routes via the route-runner harness): approval refuses to commit -- ' +
     'application stays pending, no code, no email -- when VENDOR_REGISTRATION_TOKEN_SECRET is ' +
-    'unset OR the business name normalises to an empty slug, and (positive control) a normal ' +
+    'unset (503, nothing written; bundles cleared too) OR the business name normalises to an ' +
+    'empty slug, redeeming with the secret unset returns the generic 403 with no cookie and no ' +
+    'Firestore access, and (positive control) a normal ' +
     'approval both succeeds AND the exact code it emails genuinely redeems at the real ' +
     'POST /api/vendors/register/verify-code route, minting a real session cookie.',
 );
