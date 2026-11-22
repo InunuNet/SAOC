@@ -63,6 +63,6 @@ assertions:
       target: .agent/memory/scratch/onsale-followups-gws-manifest.json
       required: false
     - id: A10
-      description: RUN AFTER DEPLOY from the project root (needs .env.local, which a worktree lacks, so it is inconclusive/exit 2 inside the gate), non-required, not a pre-deploy gate assertion. Plain check (not the browser_deployed_check kind, see A8) that the deployed NOS /national-show Event JSON-LD has the active show's VIP offer price (EXPECT_VIP_PRICE, default 300) and no 999 or wrong-show offer; reads BETA_BASIC_AUTH_USER/PASSWORD inside the script, never printed. Exit 77 (contract.py skip) if credentials are absent; the gate then needs --allow-skips.
-      command: node --env-file-if-exists=.env.local contracts/checks/onsale-followups/check-deployed-nos-jsonld.mjs
+      description: RUN AFTER DEPLOY from the project root (needs .env.local, which a worktree lacks, so it is inconclusive/exit 2 inside the gate), non-required, not a pre-deploy gate assertion. Plain check (not the browser_deployed_check kind, see A8) that the deployed NOS /national-show Event JSON-LD offers equal the PINNED set in EXPECT_OFFERS exactly (update that value when a ticket price or product legitimately changes), VIP at EXPECT_VIP_PRICE (default 350), and no 999 or wrong-show offer; reads BETA_BASIC_AUTH_USER/PASSWORD inside the script, never printed. Exit 77 (contract.py skip) if credentials are absent; the gate then needs --allow-skips.
+      command: EXPECT_OFFERS="vip:350,sunset-cocktails-single:350,saoc-symposium:1200,wosa-conference:1200,weekend-pass:350,early-bird:120" node --env-file-if-exists=.env.local contracts/checks/onsale-followups/check-deployed-nos-jsonld.mjs
       required: false
