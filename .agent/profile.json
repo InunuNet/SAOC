@@ -37,7 +37,7 @@
     ]
   },
   "created_at": "2026-04-21T12:12:52Z",
-  "template_version": "3.8.165",
+  "template_version": "3.8.167",
   "identity": {
     "agent_name": "SAOC",
     "project_role": "primary maintainer"

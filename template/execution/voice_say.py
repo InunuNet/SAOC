@@ -256,10 +256,35 @@ def _backend(home, text):
     return [str(python), str(script), text]
 
 
+def _sleep_until(flag):
+    """Epoch named by an `until=<ISO 8601>` line in the sleep flag, or None for a plain
+    goodnight flag (Brad 2026-11-22: "voice off till 6:30am, then you may resume")."""
+    try:
+        for line in flag.read_text(encoding="utf-8", errors="replace").splitlines():
+            key, _, value = line.partition("=")
+            if key.strip() == "until" and value.strip():
+                stamp = datetime.fromisoformat(value.strip())
+                if stamp.tzinfo is None:
+                    stamp = stamp.astimezone()
+                return stamp.timestamp()
+    except (OSError, ValueError):
+        return None
+    return None
+
+
 def _silenced(home, project_dir):
     if not (home / ".enabled").exists() or (project_dir / UNATTENDED_REL).exists():
         return True
-    return (home / SLEEP_NAME).exists() and not (project_dir / VOICE_ON_REL).exists()
+    flag = home / SLEEP_NAME
+    if flag.exists():
+        until = _sleep_until(flag)
+        if until is not None and time.time() >= until:
+            try:
+                flag.unlink()
+            except OSError:
+                pass
+            return False
+    return flag.exists() and not (project_dir / VOICE_ON_REL).exists()
 
 
 def _sleep_limit():
@@ -290,8 +315,11 @@ def _on_prompt(home, project_dir):
     the fleet sleeps; a goodnight removes it."""
     flag = home / SLEEP_NAME
     try:
-        if flag.exists() and time.time() - flag.stat().st_mtime >= _sleep_limit():
-            flag.unlink()
+        if flag.exists():
+            until = _sleep_until(flag)
+            due = until if until is not None else flag.stat().st_mtime + _sleep_limit()
+            if time.time() >= due:
+                flag.unlink()
         raw = sys.stdin.read(MAX_PROMPT_BYTES)
         prompt = json.loads(raw).get("prompt") if raw.strip() else None
         if isinstance(prompt, str) and GOODNIGHT.search(prompt):
