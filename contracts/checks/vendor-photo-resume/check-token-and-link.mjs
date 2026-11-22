@@ -105,11 +105,13 @@ expect(bareSigned.ok === false && bareSigned.reason === 'bad-signature', 'signat
 expect(typeof payload.s === 'undefined', 'photo-resume payload must not carry an `s` key (stand-payment domain).');
 
 // --- link builder -------------------------------------------------------------------------
-expect(VENDOR_PHOTO_UPLOAD_PATH === '/national-show/vendors/photos', 'VENDOR_PHOTO_UPLOAD_PATH must be /national-show/vendors/photos.');
+// Path is host-relative to the NOS site since the NOS split (commit 774029a3): the page is
+// served at nos.saoc.co.za/vendors/photos, the NOS host rewrites it onto app/(nos)/national-show/.
+expect(VENDOR_PHOTO_UPLOAD_PATH === '/vendors/photos', 'VENDOR_PHOTO_UPLOAD_PATH must be /vendors/photos.');
 const url = buildVendorPhotoUploadUrl({ siteUrl: 'https://example.test///', token: 'a.b/c+d' });
-expect(url === `https://example.test/national-show/vendors/photos?token=${encodeURIComponent('a.b/c+d')}`, `builder must trim trailing slashes and encode the token; got ${url}.`);
+expect(url === `https://example.test/vendors/photos?token=${encodeURIComponent('a.b/c+d')}`, `builder must trim trailing slashes and encode the token; got ${url}.`);
 const mintedUrl = mintVendorPhotoUploadUrl({ vendorSubmissionId: ID, secret: SECRET, now: NOW, siteUrl: 'https://example.test' });
-expect(mintedUrl.url.startsWith('https://example.test/national-show/vendors/photos?token='), 'minted URL must use the photos path.');
+expect(mintedUrl.url.startsWith('https://example.test/vendors/photos?token='), 'minted URL must use the photos path.');
 const roundTripToken = decodeURIComponent(new URL(mintedUrl.url).searchParams.get('token') ?? '');
 const rt = verifyVendorPhotoResumeToken({ token: roundTripToken, secret: SECRET, now: NOW });
 expect(rt.ok === true && rt.vendorSubmissionId === ID, 'URL token must round-trip to the submission id.');

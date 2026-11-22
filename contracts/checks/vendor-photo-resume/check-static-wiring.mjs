@@ -19,7 +19,8 @@ const read = (rel) => {
 };
 
 // --- 1. The resume page ---------------------------------------------------------------------
-const PAGE = 'app/(marketing)/national-show/vendors/photos/page.tsx';
+// Moved by the NOS site split (commit 774029a3): national-show pages live under app/(nos)/.
+const PAGE = 'app/(nos)/national-show/vendors/photos/page.tsx';
 const pageRaw = read(PAGE);
 if (pageRaw) {
   const page = strip(pageRaw);
@@ -97,7 +98,14 @@ if (tableRaw) {
   const table = strip(tableRaw);
   expect(/resend-photo-link/.test(table), 'VendorReviewTable must call /resend-photo-link.');
   expect(/VendorPhotoLinkControl/.test(table), 'VendorReviewTable must render VendorPhotoLinkControl.');
-  expect(/!uploadsComplete/.test(table), 'the control must be offered only while photos are incomplete (!uploadsComplete).');
+  // The admin redesign (commit 7877fffc) replaced the `!uploadsComplete` local with this inline
+  // condition; same rule: offered only while fewer than the required photos are uploaded, and
+  // never for a rejected submission.
+  expect(
+    /showPhotoLink\s*=\s*uploadedProductPhotoCount\s*<\s*REQUIRED_PRODUCT_PHOTO_COUNT\s*&&\s*row\.status\s*!==\s*'rejected'/.test(table),
+    'the control must be offered only while photos are incomplete (uploaded count < REQUIRED_PRODUCT_PHOTO_COUNT) and the submission is not rejected.',
+  );
+  expect(/\{showPhotoLink\s*&&\s*\(\s*<VendorPhotoLinkControl/.test(table), 'VendorPhotoLinkControl must render only behind showPhotoLink.');
 }
 
 // --- 4. Confirmation email carries the link ---------------------------------------------------
@@ -138,20 +146,31 @@ for (const f of ['apphosting.yaml', '.env.local.example']) {
 }
 
 // --- 7. Untouched: the single-use gate and the upload API --------------------------------------
+// The token / claim modules were never edited after BASE and stay pinned to it.
 const UNTOUCHED = [
-  'app/api/vendors/[id]/marketing-asset/route.ts',
-  'lib/vendor-marketing-upload-handler.ts',
   'lib/vendor-marketing-upload.ts',
   'lib/vendor-stand-payment-token.ts',
   'lib/vendor-registration-token.ts',
   'lib/vendor-registration-token-claim.ts',
-  'app/api/vendors/register/route.ts',
-  'app/(marketing)/national-show/vendors/register/page.tsx',
 ];
-try {
-  execFileSync('git', ['diff', '--quiet', BASE, '--', ...UNTOUCHED], { stdio: 'pipe' });
-} catch (err) {
-  failures.push(`one of the single-use-gate / upload-API files differs from base ${BASE} (exit ${err.status}); this feature must not change: ${UNTOUCHED.join(', ')}`);
+// These four were legitimately edited AFTER BASE by unrelated work, none of it photo-resume:
+// the NOS site split moved the register page to app/(nos)/ (774029a3); the security hardening
+// passes added the streamed body cap, IPv6 rate-limit key, upload content sniffing and the
+// auto-id guard (b8a29185, d493daaa, 1c6b9cb8). They are pinned to the last such commit
+// (1c6b9cb8) so any LATER edit, in particular by this feature, still fails the check.
+const HARDENED_BASE = '1c6b9cb8';
+const UNTOUCHED_SINCE_HARDENING = [
+  'app/api/vendors/[id]/marketing-asset/route.ts',
+  'lib/vendor-marketing-upload-handler.ts',
+  'app/api/vendors/register/route.ts',
+  'app/(nos)/national-show/vendors/register/page.tsx',
+];
+for (const [base, files] of [[BASE, UNTOUCHED], [HARDENED_BASE, UNTOUCHED_SINCE_HARDENING]]) {
+  try {
+    execFileSync('git', ['diff', '--quiet', base, '--', ...files], { stdio: 'pipe' });
+  } catch (err) {
+    failures.push(`one of the single-use-gate / upload-API files differs from base ${base} (exit ${err.status}); this feature must not change: ${files.join(', ')}`);
+  }
 }
 
 if (failures.length > 0) {

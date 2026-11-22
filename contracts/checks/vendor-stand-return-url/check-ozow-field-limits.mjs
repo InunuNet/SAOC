@@ -50,13 +50,15 @@ if (vso.ok) checkFields('vendor-stand', vso.fields);
 // /tickets/cancelled?ref=<22 chars> template (63 on prod) must keep working, untouched.
 const TICKET_ROUTE = 'app/api/tickets/checkout/route.ts';
 const routeSrc = existsSync(TICKET_ROUTE) ? readFileSync(TICKET_ROUTE, 'utf8') : '';
-const tmpl = (key) => new RegExp(`${key}:\\s*\`([^\`]*)\``).exec(routeSrc)?.[1];
+// Since the NOS site split (commit 774029a3) the route builds these as nosUrl(`/tickets/...`),
+// i.e. the template is a bare path that nosUrl() prefixes with the NOS origin.
+const tmpl = (key) => new RegExp(`${key}:\\s*nosUrl\\(\`([^\`]*)\`\\)`).exec(routeSrc)?.[1];
 const ticketReturnT = tmpl('returnUrl');
 const ticketCancelT = tmpl('cancelUrl');
 expect(Boolean(ticketReturnT && ticketCancelT), 'could not extract ticket checkout returnUrl/cancelUrl templates.');
 if (ticketReturnT && ticketCancelT) {
-  const expand = (t, host) => t.replace('${siteUrl}', host).replace('${reference}', TICKET_REF);
-  for (const host of ['https://saoc.co.za', 'https://beta.saoc.co.za', SITE]) {
+  const expand = (t, host) => `${host}${t.replace('${reference}', TICKET_REF)}`;
+  for (const host of ['https://nos.saoc.co.za', 'https://saoc.co.za', 'https://beta.saoc.co.za', SITE]) {
     const ticket = await provider.initiate({ reference: TICKET_REF, amountFormatted: '250.00', itemName: 'x', returnUrl: expand(ticketReturnT, host), cancelUrl: expand(ticketCancelT, host), notifyUrl: `${host}/api/tickets/ozow-itn` }).then((r) => r, (e) => ({ ok: false, error: e.message }));
     expect(ticket.ok === true, `ticket initiate on ${host} must succeed (cancelUrl ${expand(ticketCancelT, host).length} chars, cap 150): ${ticket.error ?? ''}`);
     if (ticket.ok) checkFields(`ticket@${host}`, ticket.fields);

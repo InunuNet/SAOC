@@ -43,7 +43,7 @@ const hold = stripComments(read('lib/payments/pending-hold.ts'));
 must('hold constant exported', hold.includes('export const PENDING_PAYMENT_HOLD_MINUTES'));
 const initiate = stripComments(read('app/api/vendors/stand-payment/initiate/route.ts'));
 must('initiate refuses re-initiate during an active pending hold', initiate.includes('isPendingPaymentHoldActive') && /409/.test(initiate));
-const page = stripComments(read('app/(marketing)/national-show/vendors/payment/page.tsx'));
+const page = stripComments(read('app/(nos)/national-show/vendors/payment/page.tsx'));
 must('vendor payment page branches on the pending hold', page.includes('isPendingPaymentHoldActive'));
 
 // No new user-facing copy: the buyer-facing pending strings must be the EXISTING poller strings, reused verbatim.
