@@ -1,0 +1,13 @@
+schema: athanor.contract/v1
+slug: fx-rr-neg-shortflag
+goal: fixture for the route-runner preload rule
+created_at: '2026-11-22'
+autonomy: high
+features: [{id: F1, name: x, status: pending}]
+goldens: []
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: an -r that ends a longer option name (--x-r) is not the -r flag
+      command: 'NODE_OPTIONS="--x-r contracts/harness/route-runner/preload.cjs" npx tsx scripts/rr.mjs'

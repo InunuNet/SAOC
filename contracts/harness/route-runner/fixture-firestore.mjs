@@ -1,3 +1,4 @@
+import './require-preload.mjs';
 import { getCollectionMap, FakeTimestamp, INCREMENT } from './store.mjs';
 
 export const Timestamp = FakeTimestamp;

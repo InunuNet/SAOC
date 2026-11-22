@@ -289,9 +289,11 @@ and the two route files, never in the upload-metadata validator.
   second Firebase App Hosting instance. Same gap F5's own README documents for its identical
   in-memory store; a real distributed limiter (Firestore- or Redis-backed) is future work, not
   this contract's scope.
-- That `x-forwarded-for`'s first hop is a trustworthy client identifier — it is
-  client-suppliable and therefore spoofable by a direct caller who sets the header itself
-  (mirrors F5's own `deriveRateLimitKey()` caveat exactly; see that route's golden README).
+- That the rate-limit client address is a trustworthy identifier. `lib/client-ip.ts` uses a
+  valid `x-fah-client-ip` first; otherwise the third entry from the end of `x-forwarded-for`
+  when there are three or more entries, the last entry when there are one or two, and null when
+  there are none. Entries before the platform-appended ones are client-supplied and spoofable
+  (mirrors F5's own caveat; see that route's golden README).
   The rate limit is a best-effort abuse deterrent, not a security boundary.
 
 ## Verification

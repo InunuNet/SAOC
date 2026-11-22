@@ -1,0 +1,22 @@
+schema: athanor.contract/v1
+slug: fx-rr-pos
+goal: fixture for the route-runner preload rule
+created_at: '2026-11-22'
+autonomy: high
+features: [{id: F1, name: x, status: pending}]
+goldens: []
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: route-runner check with the preload
+      command: 'NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx scripts/rr.mjs'
+    - id: A2
+      description: plain FAKE check without the preload is unaffected
+      command: 'node scripts/plain.mjs'
+    - id: A3
+      description: repo-relative -r form in the same segment
+      command: 'NODE_OPTIONS="-r contracts/harness/route-runner/preload.cjs" npx tsx scripts/rr.mjs && node scripts/plain.mjs'
+    - id: A4
+      description: preload in an earlier chained segment does not matter when the check segment carries it
+      command: 'node scripts/plain.mjs && NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx scripts/rr.mjs'

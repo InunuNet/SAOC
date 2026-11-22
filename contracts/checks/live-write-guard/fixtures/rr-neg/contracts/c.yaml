@@ -1,0 +1,13 @@
+schema: athanor.contract/v1
+slug: fx-rr-neg
+goal: fixture for the route-runner preload rule
+created_at: '2026-11-22'
+autonomy: high
+features: [{id: F1, name: x, status: pending}]
+goldens: []
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: route-runner check without the preload
+      command: 'node scripts/rr.mjs'

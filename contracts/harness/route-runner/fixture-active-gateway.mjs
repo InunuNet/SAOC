@@ -1,3 +1,4 @@
+import './require-preload.mjs';
 // Overrides '@/lib/payments/active-gateway' (M3, vendor-gated-registration-flow) -- a
 // harness-controlled stand-in for the adminSettings/activePaymentGateway Firestore read.
 export const GATEWAY_IDS = ['ozow', 'payfast'];
