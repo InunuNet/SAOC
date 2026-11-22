@@ -9,8 +9,7 @@
 # check-checkout-wiring.sh already proves for the early-bird guard. A stored-but-ignored field is
 # the same failure mode F4's non-negotiable #4 already ruled out for this route.
 #
-# On the CURRENT, unmodified tree this fails: none of these symbols are referenced in route.ts
-# yet, and it still fetches allShowActivationQuery only.
+# (Historical: written before the wiring existed; it now passes on the real tree.)
 #
 # Run as: bash contracts/checks/ticketing-f5-day-attendees/check-checkout-wiring.sh
 
@@ -48,9 +47,20 @@ grep -q 'requiresAttendeeNames' "$ROUTE_FILE" || fail \
 
 # Both refusal guards must appear (as negated calls) textually BEFORE reserveTicket( is called —
 # a guard placed after the reservation attempt cannot prevent it.
-DAY_GUARD_LINE=$(grep -n '!isValidChosenDay(' "$ROUTE_FILE" | head -1 | cut -d: -f1 || true)
-NAME_GUARD_LINE=$(grep -n '!isNamedAttendeeSatisfied(' "$ROUTE_FILE" | head -1 | cut -d: -f1 || true)
-CALL_LINE=$(grep -n 'reserveTicket(' "$ROUTE_FILE" | head -1 | cut -d: -f1 || true)
+# Matched on comment-stripped CODE with code_lines.py, and the call anchor is the real
+# `await reserveTicket(`: the first plain `reserveTicket(` in the file is a doc comment (the
+# line-item type's JSDoc), far above both guards, so the old anchor reported every guard as "after"
+# the reservation. A comment can satisfy neither a guard nor the call anchor now.
+CODE_LINES="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)/contracts/checks/payment-seam-f2/code_lines.py"
+first_code() {  # echoes the first CODE line number containing the literal, or nothing
+  local out rc
+  out=$(python3 "$CODE_LINES" --first "$ROUTE_FILE" "$1") && rc=0 || rc=$?
+  [[ "$rc" -le 1 ]] || fail "(INSTRUMENT) code_lines.py failed while scanning for '$1'."
+  echo "$out"
+}
+DAY_GUARD_LINE=$(first_code '!isValidChosenDay(')
+NAME_GUARD_LINE=$(first_code '!isNamedAttendeeSatisfied(')
+CALL_LINE=$(first_code 'await reserveTicket(')
 
 [[ -n "$DAY_GUARD_LINE" ]] || fail \
   "no negated '!isValidChosenDay(' guard found — an out-of-window chosenDay must actively REFUSE the request, not merely be referenced."
@@ -58,7 +68,7 @@ CALL_LINE=$(grep -n 'reserveTicket(' "$ROUTE_FILE" | head -1 | cut -d: -f1 || tr
 [[ -n "$NAME_GUARD_LINE" ]] || fail \
   "no negated '!isNamedAttendeeSatisfied(' guard found — a missing required attendee name must actively REFUSE the request, not merely be referenced."
 
-[[ -n "$CALL_LINE" ]] || fail "reserveTicket( is not called anywhere in $ROUTE_FILE — nothing to guard yet."
+[[ -n "$CALL_LINE" ]] || fail "'await reserveTicket(' is not called anywhere in $ROUTE_FILE — nothing to guard yet."
 
 if (( DAY_GUARD_LINE > CALL_LINE )); then
   fail "the '!isValidChosenDay(' guard (line $DAY_GUARD_LINE) appears AFTER reserveTicket( (line $CALL_LINE) — too late to prevent the reservation it's meant to block."
