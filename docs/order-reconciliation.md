@@ -319,9 +319,13 @@ threw," both rendered as a success-shaped body. Fixed by `reconcile-response-acc
   lastAttemptAt, lastErrorType }` is written after settlement (`lib/ticket-receipt.ts`). Each
   reconcile run, after the stranded-order alert has been sent, re-sends the same receipt for
   paid orders whose status is `failed` with fewer than 3 attempts, paid in the last 7 days, at
-  most 20 per run and no new send after 20 s (the rest is reported as `deferred`; a send already in
-  flight is not cut off), claiming the attempt in a transaction first so a `sent` order, a capped
-  order or an overlapping run never produces a second email. **Accepted trade-off (lead ruling
+  most 20 per run and no new send after 20 s (the rest is reported as `deferred`). Each send is cut
+  off after 10 s (counted as a failed attempt; it may still deliver), and the whole step, scan
+  included, has a hard 25 s deadline after which the route returns its alert result with
+  `receiptRetry.skipped: "timeout"`. An order whose third attempt fails becomes `abandoned`
+  (terminal, never queried again), so capped orders cannot hide older eligible ones. Each retry is
+  claimed in a transaction first, so a `sent` or `abandoned` order or an overlapping run never
+  produces a second email. **Accepted trade-off (lead ruling
   22 Nov 2026):** if a receipt is delivered but the `sent` write is lost, the order stays `failed`
   and the next run re-sends, so a buyer can get at most one duplicate per retry, bounded by the
   3-attempt cap. No Resend idempotency key is used: the receipt PDF is not byte-identical between

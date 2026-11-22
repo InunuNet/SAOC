@@ -157,9 +157,18 @@ export function subtractCounts(
   return remaining;
 }
 
-/** The key getSoldCountsByTicketTypeAndDay files a position under. */
-export function dayCountKey(position: LatePosition): string {
-  return DAY_VISITOR_SHAPED_SLUGS.includes(position.ticketType) && position.chosenDay
-    ? `${position.ticketType}::${position.chosenDay}`
-    : position.ticketType;
+/**
+ * The per-day sold-count key to take this order's own position OUT of before planning, or null
+ * when it must stay in.
+ *
+ * A day-shaped position with no chosenDay is filed under its plain slug by
+ * getSoldCountsByTicketTypeAndDay, and the planner (like checkout's) counts every such plain-slug
+ * sale as a legacy undated head against EVERY per-day pool. The planner never re-adds an undated
+ * position as a requested quantity, so subtracting it would drop it from that legacy count and
+ * under-count. Leaving it in counts it exactly once, the way checkout counts any earlier undated
+ * sale: that is the symmetric treatment, so it returns null for it.
+ */
+export function dayCountKey(position: LatePosition): string | null {
+  if (!DAY_VISITOR_SHAPED_SLUGS.includes(position.ticketType)) return position.ticketType;
+  return position.chosenDay ? `${position.ticketType}::${position.chosenDay}` : null;
 }

@@ -105,7 +105,7 @@ async function assessCapacity(
   const soldCountsByDay = hasDayCapPositions(capacity)
     ? subtractCounts(
         await getSoldCountsByTicketTypeAndDay(showId, new Set(DAY_VISITOR_SHAPED_SLUGS)),
-        input.positions.map(dayCountKey)
+        input.positions.flatMap((position) => dayCountKey(position) ?? [])
       )
     : null;
   return {

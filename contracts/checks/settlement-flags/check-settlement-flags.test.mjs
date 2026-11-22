@@ -31,6 +31,9 @@ const behaviour = {
   mailFails: false,
   receiptIndexMissing: false,
   receiptQueryError: false,
+  receiptQueryHang: false,
+  receiptQueryHostile: false,
+  mailHangs: false,
   soldThrows: false,
   sanity: 'normal',
   capacity: 2,
@@ -64,6 +67,16 @@ function query(name, state = { filters: [] }) {
     get: async () => {
       if (state.filters.some(({ field }) => field === 'receiptEmail.status')) {
         events.push('retry-query');
+        if (behaviour.receiptQueryHang) return new Promise(() => {});
+        if (behaviour.receiptQueryHostile) {
+          const hostile = new Error('hostile');
+          Object.defineProperty(hostile, 'name', {
+            get() {
+              throw new Error('name getter ran for buyer@saoc-check.invalid');
+            },
+          });
+          throw hostile;
+        }
         if (behaviour.receiptQueryError) throw new Error('unavailable');
         if (behaviour.receiptIndexMissing) {
           throw Object.assign(new Error('9 FAILED_PRECONDITION: The query requires an index.'), { code: 9 });
@@ -139,6 +152,10 @@ mock.module(new URL('../../../lib/confirmation-email.ts', import.meta.url).href,
   exports: {
     sendConfirmationEmail: async (input) => {
       mail.sends.push(input);
+      if (behaviour.mailHangs) {
+        behaviour.mailHangs = false; // only the first send hangs
+        return new Promise(() => {});
+      }
       if (behaviour.mailFails) throw new Error('mailer down for buyer@saoc-check.invalid');
       mail.deliveries += 1;
     },
@@ -200,7 +217,20 @@ mock.module(new URL('../../../lib/data/tickets.ts', import.meta.url).href, {
       }
       return counts;
     },
-    getSoldCountsByTicketTypeAndDay: async () => ({}),
+    // Same keying as lib/data/tickets.ts: a day-shaped type with a chosenDay is filed under
+    // `${type}::${day}`, an undated one under its plain slug.
+    getSoldCountsByTicketTypeAndDay: async (_showId, dayQualifiedTypes) => {
+      const counts = {};
+      for (const data of store.tickets.values()) {
+        if (data.showId !== SHOW_ID || (data.status !== 'paid' && data.status !== 'reserved')) continue;
+        const key =
+          dayQualifiedTypes.has(data.ticketType) && data.chosenDay
+            ? `${data.ticketType}::${data.chosenDay}`
+            : data.ticketType;
+        counts[key] = (counts[key] ?? 0) + 1;
+      }
+      return counts;
+    },
   },
 });
 
@@ -279,6 +309,9 @@ beforeEach(() => {
     mailFails: false,
     receiptIndexMissing: false,
     receiptQueryError: false,
+    receiptQueryHang: false,
+    receiptQueryHostile: false,
+    mailHangs: false,
     soldThrows: false,
     sanity: 'normal',
     capacity: 2,
@@ -490,7 +523,7 @@ test('attempts cap at 3 in total, then the order is left alone', async () => {
     clock += HOUR_MS;
   }
   const record = store.orders.get('o1').receiptEmail;
-  assert.equal(record.status, 'failed');
+  assert.equal(record.status, 'abandoned', 'the failed last attempt is terminal');
   assert.equal(record.attempts, RECEIPT_MAX_ATTEMPTS, 'stops at the cap');
   assert.equal(mail.sends.length, 2, 'attempts 2 and 3 only; run 4 sends nothing');
 });
@@ -554,7 +587,14 @@ test('missing index: the retry skips softly and the reconcile run carries on', a
   behaviour.receiptIndexMissing = true;
   seedPaidOrder('o1', failedRecord(1));
   const summary = await retryFailedReceipts(Timestamp.fromMillis(NOW_MS));
-  assert.deepEqual(summary, { scanned: 0, resent: 0, stillFailing: 0, deferred: 0, skipped: 'missing-index' });
+  assert.deepEqual(summary, {
+    scanned: 0,
+    resent: 0,
+    stillFailing: 0,
+    deferred: 0,
+    abandoned: 0,
+    skipped: 'missing-index',
+  });
   assert.equal(mail.sends.length, 0);
 
   const response = await reconcileRoute.POST(reconcileRequest());
@@ -585,4 +625,152 @@ test('reconcile: the alert is not held up by failed receipts waiting for retry',
   assert.deepEqual(body.alertedNow, ['stranded']);
   assert.equal(body.receiptRetry.resent, 1);
   assert.ok(events.indexOf('alert') < events.indexOf('retry-query'), 'alert first, retry after');
+});
+
+// --- Codex review fixes -----------------------------------------------------------------------
+
+test('hung query: the retry step returns at its deadline with what it had, and says so', async () => {
+  behaviour.receiptQueryHang = true;
+  seedPaidOrder('o1', failedRecord(1));
+  const started = Date.now();
+  const summary = await retryFailedReceipts(Timestamp.fromMillis(NOW_MS), { deadlineMs: 150 });
+  assert.ok(Date.now() - started < 2000);
+  assert.equal(summary.skipped, 'timeout');
+  assert.equal(mail.sends.length, 0);
+});
+
+test('hung query: the reconcile route still returns the alert result at the 25 s deadline', async () => {
+  behaviour.receiptQueryHang = true;
+  seedStrandedOrder();
+  mock.timers.enable({ apis: ['setTimeout'] });
+  try {
+    const pending = reconcileRoute.POST(reconcileRequest());
+    // Let the alert run (no timers involved) and reach the hung query, then pass the deadline.
+    for (let i = 0; i < 20; i += 1) await new Promise((resolve) => setImmediate(resolve));
+    mock.timers.tick(25_000);
+    const response = await pending;
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.deepEqual(body.alertedNow, ['stranded'], 'the alert result is intact');
+    assert.equal(mail.alerts, 1);
+    assert.equal(body.receiptRetry.skipped, 'timeout');
+  } finally {
+    mock.timers.reset();
+  }
+});
+
+test('hung send: it is cut off at its own timeout, counted as failed, and the next order still goes', async () => {
+  seedPaidOrder('hung', failedRecord(1), NOW_MS - HOUR_MS);
+  seedPaidOrder('fine', failedRecord(1), NOW_MS - 2 * HOUR_MS);
+  behaviour.mailHangs = true;
+  const summary = await retryFailedReceipts(Timestamp.fromMillis(NOW_MS), { sendTimeoutMs: 100 });
+  assert.equal(summary.stillFailing, 1, 'the hung send counts as a failed attempt');
+  assert.equal(summary.resent, 1, 'the next order was not starved');
+  const hung = store.orders.get('hung').receiptEmail;
+  assert.equal(hung.status, 'failed');
+  assert.equal(hung.attempts, 2);
+  assert.equal(hung.lastErrorType, 'TimeoutError');
+});
+
+test('hostile error name: the route survives, logs and returns only a safe label', async () => {
+  behaviour.receiptQueryHostile = true;
+  seedStrandedOrder();
+  const response = await reconcileRoute.POST(reconcileRequest());
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.deepEqual(body.alertedNow, ['stranded']);
+  assert.equal(body.receiptRetry, null);
+  const logged = JSON.stringify(warnings.mock.calls.map((call) => call.arguments));
+  assert.equal(logged.includes('name getter ran'), false);
+  assert.equal(logged.includes('buyer@'), false);
+  assert.ok(logged.includes('"errorType":"Error"') || logged.includes('"errorType":"unknown"'));
+});
+
+test('starvation: 100 newer capped orders do not hide an older eligible one', async () => {
+  for (let i = 0; i < 100; i += 1) {
+    seedPaidOrder(`capped-${i}`, failedRecord(RECEIPT_MAX_ATTEMPTS), NOW_MS - i * 1000 - 1000);
+  }
+  seedPaidOrder('older', failedRecord(1), NOW_MS - 3 * HOUR_MS);
+  const summary = await retryFailedReceipts(Timestamp.fromMillis(NOW_MS));
+  assert.equal(summary.resent, 1, 'the older order was found and sent');
+  assert.equal(store.orders.get('older').receiptEmail.status, 'sent');
+  assert.equal(summary.abandoned, 100);
+  assert.equal(store.orders.get('capped-0').receiptEmail.status, 'abandoned');
+  assert.equal(mail.sends.length, 1, 'capped orders are not sent');
+  const second = await retryFailedReceipts(Timestamp.fromMillis(NOW_MS + HOUR_MS));
+  assert.equal(second.scanned, 0, 'abandoned orders never come back from the query');
+});
+
+test('an abandoned order is never claimed or sent', async () => {
+  seedPaidOrder('done', { ...failedRecord(RECEIPT_MAX_ATTEMPTS), status: 'abandoned' });
+  const summary = await retryFailedReceipts(Timestamp.fromMillis(NOW_MS));
+  assert.equal(summary.scanned, 0);
+  assert.equal(mail.sends.length, 0);
+});
+
+// Codex repro: a late multi-line order with an UNDATED day-shaped position plus a dated day ticket.
+// The undated position is a legacy head against every per-day pool and must stay counted once.
+const { flagLateSettlement } = await import('../../../lib/late-settlement-flag.ts');
+const { DAY_VISITOR_SHAPED_SLUGS } = await import('../../../lib/provisional-figures.ts');
+
+function legacyScenario(otherDatedSales) {
+  const day = '2027-09-24';
+  const shaped = DAY_VISITOR_SHAPED_SLUGS.find((slug) => slug !== 'day-visitor');
+  store.orders.set('late-1', { status: 'paid', showId: SHOW_ID, m_payment_id: 'REF-late-1' });
+  const own = (id, ticketType, chosenDay) =>
+    store.tickets.set(id, {
+      orderId: 'late-1',
+      showId: SHOW_ID,
+      status: 'paid',
+      ticketType,
+      ...(chosenDay ? { chosenDay } : {}),
+    });
+  own('own-undated', shaped, null);
+  own('own-dated', 'day-visitor', day);
+  for (let i = 0; i < otherDatedSales; i += 1) {
+    store.tickets.set(`other-${i}`, {
+      orderId: `o-${i}`,
+      showId: SHOW_ID,
+      status: 'paid',
+      ticketType: 'day-visitor',
+      chosenDay: day,
+    });
+  }
+  const capacity = {
+    capacityByType: { [shaped]: 100 },
+    poolConfigByType: { [shaped]: { pool: null, headcountPerUnit: 1 } },
+    dayCapRequestedQtyByType: { [`day-visitor::${day}`]: 1 },
+    dayCapCapacityByType: { [`day-visitor::${day}`]: 3 },
+    dayCapPoolConfigByType: Object.fromEntries(
+      DAY_VISITOR_SHAPED_SLUGS.map((slug) => [
+        `${slug}::${day}`,
+        { pool: `day-visitor::${day}`, headcountPerUnit: 1 },
+      ])
+    ),
+  };
+  return {
+    input: {
+      orderId: 'late-1',
+      reference: 'REF-late-1',
+      positions: [
+        { ticketType: shaped, chosenDay: null },
+        { ticketType: 'day-visitor', chosenDay: day },
+      ],
+      expiresAt: Timestamp.fromMillis(NOW_MS - HOUR_MS),
+      settledAt: Timestamp.fromMillis(NOW_MS),
+    },
+    deps: { loadCapacity: async () => capacity },
+  };
+}
+
+test('legacy count: an undated day-shaped position of the order itself is counted once, not dropped', async () => {
+  const { input, deps } = legacyScenario(2); // 2 dated + 1 legacy undated + this dated = 4 > 3
+  await flagLateSettlement(input, deps);
+  assert.equal(store.orders.get('late-1').settlement.overCapacity, true);
+});
+
+test('legacy count, control: one fewer dated sale is exactly at the cap, not over', async () => {
+  const { input, deps } = legacyScenario(1); // 1 dated + 1 legacy + this dated = 3 <= 3
+  await flagLateSettlement(input, deps);
+  assert.equal(store.orders.get('late-1').settlement.overCapacity, false);
 });

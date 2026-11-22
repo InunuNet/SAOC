@@ -10,6 +10,7 @@ import {
   reconcileStatusFor,
   sendReconciliationAlert,
 } from '@/lib/reconciliation';
+import { safeErrorType } from '@/lib/safe-log';
 import { retryFailedReceipts, type ReceiptRetrySummary } from '@/lib/ticket-receipt';
 
 /**
@@ -36,13 +37,17 @@ const BEARER_PREFIX = 'Bearer ';
 
 /** The receipt retry is a side task that runs after the stranded-order alert: whatever goes wrong
  *  in it is logged and reported in the response, and never affects the alert. It stops starting
- *  new sends after RECEIPT_RETRY_TIME_BUDGET_MS and reports how many it deferred. */
+ *  new sends after RECEIPT_RETRY_TIME_BUDGET_MS, cuts each send off after RECEIPT_SEND_TIMEOUT_MS
+ *  and is bounded overall by RECEIPT_RETRY_DEADLINE_MS (scan included), reporting
+ *  `skipped: 'timeout'` when that deadline passes. */
 async function retryReceiptsSoftly(): Promise<ReceiptRetrySummary | null> {
   try {
     return await retryFailedReceipts(Timestamp.now());
   } catch (error) {
     console.warn('[admin/reconcile-orders] Receipt retry failed; continuing without it', {
-      errorType: error instanceof Error ? error.name : typeof error,
+      // safeErrorType never throws (a hostile `name` getter or Proxy is contained) and returns
+      // only a built-in type label, never a raw error field.
+      errorType: safeErrorType(error),
     });
     return null;
   }
