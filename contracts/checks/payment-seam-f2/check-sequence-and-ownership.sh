@@ -172,15 +172,24 @@ grep -qE "status: 500" "$ITN" \
   && fail "$ITN returns a 500. Every ITN outcome is HTTP 200 so the gateway stops retrying; a 5xx here re-opens the retry storm."
 
 # --- Part 4: FINDING 3 — the recovery-secret guard, by POSITION. --------------------------------
-# Application code reads secrets through getSecret('NAME') (lib/secrets.ts, PR #225); the legacy
-# process.env accessor is still accepted. Either way the read is a CODE construct, not a bare name.
-first_code "$CHECKOUT" "getSecret('RECOVERY_TOKEN_SECRET')"; secret_guard="$FIRST_CODE"
-if [ -z "$secret_guard" ]; then
-  first_code "$CHECKOUT" "process.env.RECOVERY_TOKEN_SECRET"; secret_guard="$FIRST_CODE"
+# RECOVERY_TOKEN_SECRET lives in the SAOC_APP_SECRETS bundle (PR #225), which production binds
+# instead of one env var per secret. It is therefore only visible through a REAL getSecret(
+# 'RECOVERY_TOKEN_SECRET') call (secret_reads.py matches on comment-blanked, string-masked text, so a
+# log string or comment cannot stand in for the call), and a direct process.env.RECOVERY_TOKEN_SECRET
+# read would silently see nothing: it must NOT be present.
+SECRET_READS=contracts/checks/_shared/secret_reads.py
+secret_guard=$(python3 "$SECRET_READS" --first-call "$CHECKOUT" RECOVERY_TOKEN_SECRET 2>"$CODE_LINES_ERR"); rc=$?
+if [ "$rc" -gt 1 ] || [ -s "$CODE_LINES_ERR" ]; then
+  echo "FAIL A4 (INSTRUMENT): secret_reads.py failed on $CHECKOUT, so NO verdict is possible."
+  sed 's/^/         /' "$CODE_LINES_ERR"
+  exit 1
+fi
+if python3 "$SECRET_READS" --env-reads "$CHECKOUT" RECOVERY_TOKEN_SECRET >/dev/null 2>&1; then
+  fail "$CHECKOUT reads RECOVERY_TOKEN_SECRET directly from process.env; it is a bundled secret and only getSecret('RECOVERY_TOKEN_SECRET') sees it in production."
 fi
 first_code "$CHECKOUT" "reserveTicket("; reserve_call="$FIRST_CODE"
 if [ -z "$secret_guard" ]; then
-  fail "$CHECKOUT no longer reads RECOVERY_TOKEN_SECRET (getSecret or process.env) — the fail-closed recovery guard is gone."
+  fail "$CHECKOUT no longer calls getSecret('RECOVERY_TOKEN_SECRET') — the fail-closed recovery guard is gone."
 elif [ -z "$reserve_call" ]; then
   fail "$CHECKOUT no longer calls reserveTicket() — cannot verify the guard's position."
 elif [ "$secret_guard" -ge "$reserve_call" ]; then

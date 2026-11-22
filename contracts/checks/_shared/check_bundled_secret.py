@@ -12,9 +12,14 @@ This check asserts the same two protections where they live now:
      publicly inspectable client bundle), AND the yaml's own bundle-membership comment lists NAME
      under that bundle. (The bundle's JSON keys live in Secret Manager and cannot be read from a
      committed file; that comment is the only committed record of membership.)
-  2. READ PATH. Every --reader file contains the CODE construct getSecret('NAME') -- comments and
-     log strings do not count (code_lines.py strips comments string-aware) -- or, as the accepted
-     legacy accessor, process.env.NAME.
+  2. READ PATH. Every --reader file contains a real getSecret('NAME') call, matched on text with
+     comments blanked and string contents masked (secret_reads.py), so a log string or a comment
+     naming the call does not count; and contains NO direct process.env.NAME read. Production binds
+     only the bundles, so a direct env read of a bundled name returns nothing there. (No real
+     reader of these names reads both; checked when this rule was added.)
+  3. ONE BINDING. The bundle variable appears exactly once in apphosting.yaml env; every entry
+     found is validated, and a duplicate entry is itself a failure (a second, BUILD-available
+     entry must not hide behind a correct first one).
 
 Name checks on committed files only: no secret value is read, parsed or printed.
 
@@ -24,28 +29,18 @@ Name checks on committed files only: no secret value is read, parsed or printed.
 Exit 0 = every assertion holds, 1 = a protection is missing, 2 = usage / unreadable input.
 """
 import argparse
-import importlib.util
 import re
 import sys
 from pathlib import Path
 
 import yaml
 
-CODE_LINES = Path(__file__).resolve().parent.parent / "payment-seam-f2" / "code_lines.py"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import secret_reads  # noqa: E402
 
 
-def load_code_lines():
-    spec = importlib.util.spec_from_file_location("code_lines", CODE_LINES)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-def bundle_entry(doc, bundle):
-    for entry in (doc.get("env") or []):
-        if entry.get("variable") == bundle:
-            return entry
-    return None
+def bundle_entries(doc, bundle):
+    return [e for e in (doc.get("env") or []) if e.get("variable") == bundle]
 
 
 def membership_comment(text, bundle):
@@ -70,17 +65,21 @@ def check_declaration(args, failures):
     path = Path(args.apphosting)
     text = path.read_text(encoding="utf-8")
     doc = yaml.safe_load(text)
-    entry = bundle_entry(doc, args.bundle)
-    if entry is None:
+    entries = bundle_entries(doc, args.bundle)
+    if not entries:
         failures.append(f"{path}: no `variable: {args.bundle}` entry in env")
+    if len(entries) > 1:
+        failures.append(f"{path}: {len(entries)} `variable: {args.bundle}` entries in env; exactly one is allowed")
+    for entry in entries:
+        if entry.get("secret") != args.bundle:
+            failures.append(f"{path}: a {args.bundle} entry is not bound to `secret: {args.bundle}`")
+        availability = entry.get("availability") or []
+        if "RUNTIME" not in availability:
+            failures.append(f"{path}: a {args.bundle} entry is not RUNTIME-available")
+        if "BUILD" in availability:
+            failures.append(f"{path}: a {args.bundle} entry has BUILD availability; it must be RUNTIME only")
+    if not entries:
         return
-    if entry.get("secret") != args.bundle:
-        failures.append(f"{path}: {args.bundle} is not bound to `secret: {args.bundle}`")
-    availability = entry.get("availability") or []
-    if "RUNTIME" not in availability:
-        failures.append(f"{path}: {args.bundle} is not RUNTIME-available")
-    if "BUILD" in availability:
-        failures.append(f"{path}: {args.bundle} has BUILD availability; it must be RUNTIME only")
     members = membership_comment(text, args.bundle)
     if members is None:
         failures.append(f"{path}: no `# {args.bundle}:` membership comment, cannot show where {args.secret} lives")
@@ -89,14 +88,19 @@ def check_declaration(args, failures):
 
 
 def check_readers(args, failures):
-    code_lines = load_code_lines()
-    needles = [f"getSecret('{args.secret}')", f'getSecret("{args.secret}")', f"process.env.{args.secret}"]
     for reader in args.reader:
-        if not Path(reader).is_file():
-            failures.append(f"{reader}: reader file does not exist")
+        try:
+            raw = Path(reader).read_text(encoding="utf-8")
+        except OSError:
+            failures.append(f"{reader}: reader file does not exist or is unreadable")
             continue
-        if not any(code_lines.first(reader, needle) for needle in needles):
-            failures.append(f"{reader}: no code reads {args.secret} via getSecret('{args.secret}')")
+        if not secret_reads.call_lines(raw, args.secret):
+            failures.append(f"{reader}: no real getSecret('{args.secret}') call in code")
+        if secret_reads.env_read_lines(raw, args.secret):
+            failures.append(
+                f"{reader}: reads {args.secret} directly from process.env; a bundled secret is only "
+                f"visible through getSecret() in production"
+            )
 
 
 def main():

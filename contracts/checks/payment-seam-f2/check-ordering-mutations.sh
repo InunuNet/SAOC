@@ -118,6 +118,28 @@ open(dst, "w").write(text)
 PY
 expect_red "P4 (read kept, refusal on unset value disabled)" "$WORK/P4.ts"
 
+# --- P5: the bundled secret read through process.env instead of getSecret (invisible in production).
+python3 - "$CHECKOUT" "$WORK/P5.ts" <<'PY'
+import sys
+src, dst = sys.argv[1], sys.argv[2]
+text = open(src).read()
+real = "getSecret('RECOVERY_TOKEN_SECRET')"
+assert real in text, "recovery-secret read not found; mutation would be vacuous"
+open(dst, "w").write(text.replace(real, "process.env.RECOVERY_TOKEN_SECRET", 1))
+PY
+expect_red "P5 (bundled secret read via process.env, not getSecret)" "$WORK/P5.ts"
+
+# --- P6: the real call replaced by a string literal that merely contains the call text.
+python3 - "$CHECKOUT" "$WORK/P6.ts" <<'PY'
+import sys
+src, dst = sys.argv[1], sys.argv[2]
+text = open(src).read()
+real = "getSecret('RECOVERY_TOKEN_SECRET')"
+assert real in text, "recovery-secret read not found; mutation would be vacuous"
+open(dst, "w").write(text.replace(real, "console.error(\"getSecret('RECOVERY_TOKEN_SECRET')\")", 1))
+PY
+expect_red "P6 (call replaced by a string literal naming it)" "$WORK/P6.ts"
+
 # --- Q1: the amount comparison replaced by a constant, name kept in a trailing comment.
 #     The logic now lives in the shared handler, so it is driven through the ITN override.
 python3 - lib/tickets-notification.ts "$WORK/Q1-itn.ts" <<'PY'
@@ -237,5 +259,5 @@ else
   status=1
 fi
 
-[ "$status" -eq 0 ] && echo "PASS A10: A4 and A9 are both green on real source and red on all eleven recorded mutations."
+[ "$status" -eq 0 ] && echo "PASS A10: A4 and A9 are both green on real source and red on all thirteen recorded mutations."
 exit "$status"

@@ -3,6 +3,7 @@
 // Run from the repo root: node contracts/checks/launch-weekend/f30/check-d-static.mjs
 import { existsSync, readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import { envReadNames, secretCallNames } from '../../_shared/secret-reads.mjs';
 
 const problems = [];
 const must = (name, cond) => { if (!cond) problems.push(name); };
@@ -44,9 +45,12 @@ for (const [f, body] of [[LIB, lib], [ADAPTER, adapter], [ROUTE, route]]) {
 must('lib uses createIfNotExists', lib.includes('createIfNotExists'));
 
 // Secrets
-// Secrets are read through getSecret('NAME') since PR #225 (bundles, then process.env fallback);
-// either accessor is accepted. `adapter` is comment-stripped, so a comment cannot satisfy this.
-must('adapter reads SANITY_API_TOKEN from the server secret store', /\bgetSecret\(\s*['"]SANITY_API_TOKEN['"]\s*\)|process\.env\.SANITY_API_TOKEN/.test(adapter));
+// SANITY_API_TOKEN lives in the SAOC_APP_SECRETS bundle (PR #225), and production binds only the
+// bundles, so the adapter must read it through a REAL getSecret('SANITY_API_TOKEN') call and must not
+// read it directly from process.env (it would see nothing). Matched on comment-blanked, string-masked
+// text, so a comment or a log string naming the call cannot satisfy it.
+must('adapter reads SANITY_API_TOKEN through getSecret()', secretCallNames(read(ADAPTER)).includes('SANITY_API_TOKEN'));
+must('adapter does not read SANITY_API_TOKEN directly from process.env', !envReadNames(read(ADAPTER)).includes('SANITY_API_TOKEN'));
 must('no NEXT_PUBLIC token', !/NEXT_PUBLIC_[A-Z_]*TOKEN/.test(adapter + route + lib));
 must('adapter is not a client module', !/['"]use client['"]/.test(adapter));
 
