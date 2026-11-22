@@ -248,11 +248,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     activeGateway,
     ozowSandboxTestModeEnabled,
   );
-  // SEC-06 -- record-only stamp, derived exactly as tickets derive it from the SAME flag value
-  // read once above. Written by the .set() below (create-or-overwrite), so a re-initiate
-  // re-derives it: the stamp always describes the CURRENT attempt (the one whose attemptId is
-  // live), the only attempt settlement accepts, even if the mode changed since an earlier one.
-  // Always a boolean, never undefined. Settlement only .update()s other fields, so it persists.
+  // SEC-06 -- record-only stamp, derived exactly as tickets derive it (isIssuanceTestMode, from
+  // the SAME flag value read once above). It means "this order was created while ANY test
+  // condition was on", using the same deliberately conservative rule as tickets (see the header
+  // of lib/ticket-issuance-mode.ts). It does NOT mean this attempt was paid at the sandbox
+  // amount: it can be true while expectedGatewayAmount is null, for example PayFast active with
+  // the Ozow sandbox toggle on (the full price is sent). Written by the .set() below
+  // (create-or-overwrite), so a re-initiate re-derives it: the stamp always describes the CURRENT
+  // attempt (the one whose attemptId is live), the only attempt settlement accepts, even if the
+  // mode changed since an earlier one. Always a boolean, never undefined. Settlement only
+  // .update()s other fields, so it persists.
   const issuedInTestMode = isIssuanceTestMode({ ozowSandboxTestMode: ozowSandboxTestModeEnabled });
 
   // ONE Firestore transaction: re-read (a document that reached 'paid' between the earlier
