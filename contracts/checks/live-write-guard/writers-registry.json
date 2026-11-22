@@ -642,6 +642,18 @@
    "note": "real stand route handlers run in process under contracts/harness/route-runner/preload.cjs: firebase-admin/firestore and init, payments, active gateway, show window, confirmation and admin-notice mailers are fixtures; the POST is a Request object handed straight to the handler (http://localhost is never fetched)",
    "target": "in-memory route-runner store and fixtures; no SDK, network or live service"
   },
+  "contracts/checks/vendor-gated-registration-flow-m4/check-approval-redemption-behavioural.mjs": {
+   "class": "FAKE",
+   "match": "route-runner/fixture-approval-email\\.mjs'\\)",
+   "note": "real admin approval and verify-code route handlers run in process under contracts/harness/route-runner/preload.cjs: firebase-admin/firestore and init, admin auth, show window, next/headers and the approval mailer are fixtures; the POST is a Request object handed straight to the handler (http://localhost is never fetched)",
+   "target": "in-memory route-runner store and fixtures; no SDK, network or live service"
+  },
+  "contracts/checks/vendor-gated-registration-flow-m4/check-reissue-redemption-and-revocation-behavioural.mjs": {
+   "class": "FAKE",
+   "match": "route-runner/fixture-approval-email\\.mjs'\\)",
+   "note": "real admin reissue-code and verify-code route handlers run in process under contracts/harness/route-runner/preload.cjs: firebase-admin/firestore and init, admin auth, show window, next/headers and the approval mailer are fixtures; the POST is a Request object handed straight to the handler (http://localhost is never fetched)",
+   "target": "in-memory route-runner store and fixtures; no SDK, network or live service"
+  },
   "contracts/checks/vendor-payment-confirmation/check-settlement-sends-both-emails.mjs": {
    "class": "FAKE",
    "match": "route-runner/fixture-payments\\.mjs'\\)",
