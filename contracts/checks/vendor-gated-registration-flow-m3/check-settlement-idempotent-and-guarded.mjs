@@ -18,6 +18,7 @@ const { vendorSubmissions, vendorStandOrders, resetAllCollections, FakeTimestamp
   '../../harness/route-runner/store.mjs',
 );
 const { resetPaymentsFixture } = require('../../harness/route-runner/fixture-payments.mjs');
+const { confirmNotificationCalls, payfastProvider } = require('../../harness/route-runner/fixture-payments.mjs');
 const { setActiveGateway } = require('../../harness/route-runner/fixture-active-gateway.mjs');
 const { setShowWindowFixture } = require('../../harness/route-runner/fixture-show-window-lookup.mjs');
 
@@ -68,11 +69,15 @@ function mintToken(vendorSubmissionId) {
   return mintVendorStandPaymentToken({ vendorSubmissionId, secret: TEST_SECRET, now: new Date() }).token;
 }
 
+// initiate rate-limits per client IP (10 per 10 minutes); each seeded order comes from its own
+// fake client so the number of scenarios in this file never trips the limiter.
+let seedCounter = 0;
+
 async function seedPendingOrder(vendorSubmissionId, gateway) {
   vendorSubmissions.set(vendorSubmissionId, { status: 'approved', businessName: 'Fynbos Pottery', contactEmail: 'jane@example.com' });
   setActiveGateway(gateway);
   const token = mintToken(vendorSubmissionId);
-  const result = await initiatePost(new Request("http://localhost/api/vendors/stand-payment/initiate", { method: "POST", body: JSON.stringify(({ token, boothSize: 1 })) }));
+  const result = await initiatePost(new Request("http://localhost/api/vendors/stand-payment/initiate", { method: "POST", headers: { 'x-forwarded-for': `203.0.113.${(seedCounter += 1)}` }, body: JSON.stringify(({ token, boothSize: 1 })) }));
   if (result.status !== 200) throw new Error(`fixture setup failed: initiate returned ${result.status}`);
   // Initiate mints a per-attempt id (commit dde56d6a); settlement only accepts a notification whose
   // reference echoes it back (`VSO-<id>::<attemptId>`), exactly as a real gateway does.
@@ -167,6 +172,78 @@ assert(
 );
 assert(orderPaid && submissionPaid, 'expected both the order and the submission to have settled to paid.');
 
+// =============================================================================================
+// 5. Each guard copy is proven on its own. settle() checks gateway / status / attempt / amount
+//    TWICE: once on a non-transactional pre-read (before the confirm round trip) and again inside
+//    db.runTransaction (the copy that actually protects against a race). Sections 1-3 alone pass
+//    if EITHER copy is deleted, because the surviving copy rejects the same input.
+// =============================================================================================
+
+// 5a. Pre-read copy: a notification it must reject never spends a confirm round trip. With only
+//     the in-transaction copy left the order still stays unsettled, but confirm WOULD be called.
+const GUARD_PAID = { rawStatus: 'paid', grossAmountCents: 145000 };
+
+resetAllCollections();
+resetPaymentsFixture();
+const preCrossRef = await seedPendingOrder('sub-pre-cross', 'payfast');
+await callItn(ozowItnPost, { reference: preCrossRef, ...GUARD_PAID, gatewayPaymentId: 'oz-pre' });
+assert(confirmNotificationCalls.length === 0, 'pre-read gateway guard missing: a cross-gateway notification reached confirmNotification().');
+
+resetAllCollections();
+resetPaymentsFixture();
+const preStatusRef = await seedPendingOrder('sub-pre-status', 'payfast');
+await callItn(payfastItnPost, { reference: preStatusRef, ...GUARD_PAID, gatewayPaymentId: 'pf-pre-1' });
+const confirmCallsAfterSettle = confirmNotificationCalls.length;
+await callItn(payfastItnPost, { reference: preStatusRef, ...GUARD_PAID, gatewayPaymentId: 'pf-pre-1' });
+assert(confirmNotificationCalls.length === confirmCallsAfterSettle, 'pre-read status guard missing: a duplicate notification for a settled order reached confirmNotification().');
+
+resetAllCollections();
+resetPaymentsFixture();
+const preAttemptRef = await seedPendingOrder('sub-pre-attempt', 'payfast');
+await callItn(payfastItnPost, {
+  reference: buildVendorStandOrderReference('sub-pre-attempt', 'stale-attempt-id'),
+  ...GUARD_PAID,
+  gatewayPaymentId: 'pf-pre-2',
+});
+assert(preAttemptRef && confirmNotificationCalls.length === 0, 'pre-read attempt guard missing: a stale-attempt notification reached confirmNotification().');
+
+resetAllCollections();
+resetPaymentsFixture();
+const preAmountRef = await seedPendingOrder('sub-pre-amount', 'payfast');
+await callItn(payfastItnPost, { reference: preAmountRef, rawStatus: 'paid', grossAmountCents: 1, gatewayPaymentId: 'pf-pre-3' });
+assert(confirmNotificationCalls.length === 0, 'pre-read amount guard missing: a tampered-amount notification reached confirmNotification().');
+
+// 5b. In-transaction copy: simulate a race. The stored order passes every pre-read guard, then
+//     changes DURING the confirm round trip (after the pre-read, before the transaction reads),
+//     so only the in-transaction re-check can reject. Each case must leave the order untouched
+//     and must not reach the paid-transition write (Timestamp.now() never called).
+const originalConfirm = payfastProvider.confirmNotification;
+async function raceDuringConfirm(label, mutateOrder, expectedStatus) {
+  resetAllCollections();
+  resetPaymentsFixture();
+  const raceId = `sub-race-${label}`;
+  const reference = await seedPendingOrder(raceId, 'payfast');
+  payfastProvider.confirmNotification = async (notification) => {
+    Object.assign(vendorStandOrders.get(raceId), mutateOrder);
+    return originalConfirm.call(payfastProvider, notification);
+  };
+  timestampNowCallCount = 0;
+  try {
+    await callItn(payfastItnPost, { reference, ...GUARD_PAID, gatewayPaymentId: `pf-race-${label}` });
+  } finally {
+    payfastProvider.confirmNotification = originalConfirm;
+  }
+  assert(confirmNotificationCalls.length === 1, `race "${label}" setup: expected the notification to pass the pre-read guards and reach confirmNotification() once, got ${confirmNotificationCalls.length}.`);
+  assert(vendorStandOrders.get(raceId)?.status === expectedStatus, `in-transaction ${label} guard missing: order status changed from "${expectedStatus}" after a race.`);
+  assert(timestampNowCallCount === 0, `in-transaction ${label} guard missing: the paid-transition write ran after the order changed mid-flight.`);
+  assert(!vendorSubmissions.get(raceId)?.paymentReceived, `in-transaction ${label} guard missing: paymentReceived flipped after the order changed mid-flight.`);
+}
+
+await raceDuringConfirm('gateway', { gateway: 'ozow' }, 'pending');
+await raceDuringConfirm('status', { status: 'paid' }, 'paid');
+await raceDuringConfirm('attempt', { attemptId: 'superseding-attempt-id' }, 'pending');
+await raceDuringConfirm('amount', { amount: 999 }, 'pending');
+
 if (failures.length > 0) {
   console.error(`FAIL: ${failures.length} failure(s).\n`);
   for (const failure of failures) console.error(`  - ${failure}`);
@@ -176,7 +253,8 @@ if (failures.length > 0) {
 console.log(
   'PASS: settlement settles once and produces zero additional writes on a duplicate ' +
     'notification, refuses a tampered amount, refuses a cross-gateway notification in both ' +
-    'directions, and always moves the order and submission together, never one without the ' +
+    'directions, enforces each guard both before confirm and again inside the transaction ' +
+    '(simulated mid-flight race), and always moves the order and submission together, never one without the ' +
     'other.',
 );
 process.exit(0);
