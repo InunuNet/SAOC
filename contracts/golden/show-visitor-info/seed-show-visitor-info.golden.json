@@ -3,7 +3,7 @@
     "F1 — the seed payload for scripts/seed-show-visitor-info.ts.",
     "Copy scripts/seed-ticketing.ts's structure exactly: readEnvLocal() from .env.local (NOT the",
     "dotenv package), @sanity/client with useCdn:false, deterministic _ids, createIfNotExists.",
-    "Run with: node --import tsx/esm scripts/seed-show-visitor-info.ts"
+    "Run with: node --import tsx/esm scripts/seed-show-visitor-info.ts [--apply]"
   ],
 
   "hardRules": {
