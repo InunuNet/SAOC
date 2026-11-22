@@ -1,0 +1,13 @@
+schema: athanor.contract/v1
+slug: fx-rr-neg-noop
+goal: fixture for the route-runner preload rule
+created_at: '2026-11-22'
+autonomy: high
+features: [{id: F1, name: x, status: pending}]
+goldens: []
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: path with a suffix after preload.cjs does not count
+      command: 'NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs.noop" npx tsx scripts/rr.mjs'

@@ -1,3 +1,4 @@
+import './require-preload.mjs';
 // Overrides '@/lib/vendor-stand-payment-notice' (M3, vendor-gated-registration-flow) --
 // captures what the stand-payment-ready email WOULD have been sent, so the harness can read
 // the token the vendor actually receives (and verify it against a real initiate call), instead

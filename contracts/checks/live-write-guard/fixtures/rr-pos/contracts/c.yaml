@@ -14,3 +14,9 @@ assertions:
     - id: A2
       description: plain FAKE check without the preload is unaffected
       command: 'node scripts/plain.mjs'
+    - id: A3
+      description: repo-relative -r form in the same segment
+      command: 'NODE_OPTIONS="-r contracts/harness/route-runner/preload.cjs" npx tsx scripts/rr.mjs && node scripts/plain.mjs'
+    - id: A4
+      description: preload in an earlier chained segment does not matter when the check segment carries it
+      command: 'node scripts/plain.mjs && NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx scripts/rr.mjs'

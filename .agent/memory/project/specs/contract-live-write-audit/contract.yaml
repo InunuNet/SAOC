@@ -15,6 +15,15 @@ goldens:
   - contracts/checks/live-write-guard/fixtures/rr-neg/contracts/c.yaml
   - contracts/checks/live-write-guard/fixtures/rr-neg-mixed/contracts/c.yaml
   - contracts/checks/live-write-guard/fixtures/rr-neg-unref/contracts/c.yaml
+  - contracts/checks/live-write-guard/fixtures/registry-route-runner-imports.json
+  - contracts/checks/live-write-guard/fixtures/rr-neg-noop/contracts/c.yaml
+  - contracts/checks/live-write-guard/fixtures/rr-neg-foreignpath/contracts/c.yaml
+  - contracts/checks/live-write-guard/fixtures/rr-neg-shortflag/contracts/c.yaml
+  - contracts/checks/live-write-guard/fixtures/rr-neg-segment/contracts/c.yaml
+  - contracts/checks/live-write-guard/fixtures/rr-neg-echo/contracts/c.yaml
+  - contracts/checks/live-write-guard/fixtures/rr-neg-sideeffect/contracts/c.yaml
+  - contracts/checks/live-write-guard/fixtures/rr-neg-template/contracts/c.yaml
+  - contracts/checks/live-write-guard/fixtures/route-runner-guard/check-harness-refuses-without-preload.mjs
   - contracts/checks/live-write-guard/fixtures/neg/contracts/c.yaml
   - contracts/checks/live-write-guard/fixtures/pos/contracts/c.yaml
 assertions:
@@ -58,3 +67,27 @@ assertions:
     - id: A12
       description: negative control - a route_runner entry that no contract command runs is a violation, because the preload cannot be verified
       command: '! python3 contracts/checks/live-write-guard/verify_no_ungated_writers.py --root contracts/checks/live-write-guard/fixtures/rr-neg-unref --registry contracts/checks/live-write-guard/fixtures/registry-route-runner.json'
+    - id: A13
+      description: negative control - a preload path with a suffix after preload.cjs does not count as loading it
+      command: '! python3 contracts/checks/live-write-guard/verify_no_ungated_writers.py --root contracts/checks/live-write-guard/fixtures/rr-neg-noop --registry contracts/checks/live-write-guard/fixtures/registry-route-runner.json'
+    - id: A14
+      description: negative control - a preload.cjs under a different directory does not count as loading it
+      command: '! python3 contracts/checks/live-write-guard/verify_no_ungated_writers.py --root contracts/checks/live-write-guard/fixtures/rr-neg-foreignpath --registry contracts/checks/live-write-guard/fixtures/registry-route-runner.json'
+    - id: A15
+      description: negative control - a -xr token is not the -r flag, so it does not count as loading the preload
+      command: '! python3 contracts/checks/live-write-guard/verify_no_ungated_writers.py --root contracts/checks/live-write-guard/fixtures/rr-neg-shortflag --registry contracts/checks/live-write-guard/fixtures/registry-route-runner.json'
+    - id: A16
+      description: negative control - a preload on an earlier chained command does not cover the route-runner check in a later segment
+      command: '! python3 contracts/checks/live-write-guard/verify_no_ungated_writers.py --root contracts/checks/live-write-guard/fixtures/rr-neg-segment --registry contracts/checks/live-write-guard/fixtures/registry-route-runner.json'
+    - id: A17
+      description: negative control - the --require text inside an echo segment does not cover the route-runner check in a later segment
+      command: '! python3 contracts/checks/live-write-guard/verify_no_ungated_writers.py --root contracts/checks/live-write-guard/fixtures/rr-neg-echo --registry contracts/checks/live-write-guard/fixtures/registry-route-runner.json'
+    - id: A18
+      description: negative control - an unmarked FAKE script that imports the route-runner harness for side effects (import '...';) is reported
+      command: '! python3 contracts/checks/live-write-guard/verify_no_ungated_writers.py --root contracts/checks/live-write-guard/fixtures/rr-neg-sideeffect --registry contracts/checks/live-write-guard/fixtures/registry-route-runner-imports.json'
+    - id: A19
+      description: negative control - an unmarked FAKE script that imports the route-runner harness through a template literal is reported
+      command: '! python3 contracts/checks/live-write-guard/verify_no_ungated_writers.py --root contracts/checks/live-write-guard/fixtures/rr-neg-template --registry contracts/checks/live-write-guard/fixtures/registry-route-runner-imports.json'
+    - id: A20
+      description: negative control - with only the old SAOC_ROUTE_RUNNER_PRELOAD environment variable set and no preload.cjs loaded, store.mjs and every fixture-*.mjs refuse to load (asserts on the thrown error only, touches no Firebase)
+      command: node contracts/checks/live-write-guard/fixtures/route-runner-guard/check-harness-refuses-without-preload.mjs

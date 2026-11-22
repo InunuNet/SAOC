@@ -1,3 +1,4 @@
+import './require-preload.mjs';
 // Fake PaymentProvider pair (M3, vendor-gated-registration-flow) -- overrides '@/lib/payments',
 // '@/lib/payments/payfast' and '@/lib/payments/ozow' so the real initiate/settlement routes can
 // be exercised without a real gateway. verifyNotification() reads a harness-controlled JSON

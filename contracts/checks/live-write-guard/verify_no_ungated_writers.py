@@ -16,7 +16,9 @@ reason of at least MIN_REASON characters.
 
 A registry entry marked `"route_runner": true` is FAKE only because contracts/harness/route-runner/
 preload.cjs stubs Firebase while the check runs. It is a violation unless every contract command that
-runs the file loads that preload (`--require <path>/preload.cjs`, usually via NODE_OPTIONS), the marker
+runs the file loads that preload in the same command segment (split on && || ; |) as the
+invocation (a standalone `--require`/`-r` token ending at contracts/harness/route-runner/preload.cjs,
+repo-relative or $PWD/-prefixed, usually via NODE_OPTIONS), the marker
 is present on every FAKE file that imports the route-runner harness (and only on such files), and at
 least one command runs the file (an unreferenced entry cannot be proven preloaded, so it fails).
 
@@ -79,8 +81,15 @@ INLINE_WRITE = re.compile(
 )
 LOCAL_ONLY = re.compile(r"(127\.0\.0\.1|localhost)")
 FIXTURE_ENV = "SAOC_FIXTURE_REPLAY"
-ROUTE_RUNNER_IMPORT = re.compile(r"""(?:from|require\(|import\()\s*['"][^'"]*harness/route-runner/""")
-PRELOAD_FLAG = re.compile(r"(?:--require|-r)[ =]['\"]?\S*harness/route-runner/preload\.cjs")
+# from '...', require('...'), import('...'), import '...' (side effect) and template literals.
+ROUTE_RUNNER_IMPORT = re.compile(r"""(?:\bfrom|\brequire\s*\(|\bimport\s*\(?)\s*['"`][^'"`]*harness/route-runner/""")
+# A standalone --require / -r token whose path is repo-relative or $PWD/-prefixed and ends at
+# preload.cjs (the only forms real commands use: NODE_OPTIONS="--require $PWD/contracts/...").
+PRELOAD_FLAG = re.compile(
+    r"""(?:^|[\s"'])(?:--require|-r)(?:\s+|=)['"]?(?:\$PWD/|\./)?"""
+    r"""contracts/harness/route-runner/preload\.cjs(?=['"\s]|$)"""
+)
+SEGMENT_SPLIT = re.compile(r"&&|\|\||;|\|")
 # A safe-class evidence regex that matches any of these proves nothing about the script it names.
 TRIVIAL_SAMPLES = ("", "x", "console.log(1)\n", "#!/usr/bin/env bash\necho ok\n")
 
@@ -95,6 +104,12 @@ def contract_files(root):
                 continue
             seen.add(f)
     return sorted(seen)
+
+
+def segments_running(cmd, script):
+    """Command segments (split on && || ; |) that execute `script`."""
+    return [seg for seg in SEGMENT_SPLIT.split(cmd)
+            if script in set(EXEC_RX.findall(seg)) | set(EXEC_DOT_RX.findall(seg))]
 
 
 def command_of(check):
@@ -213,7 +228,7 @@ def scan(root, registry):
                         stats["safe"] += 1
                         if entry.get("route_runner") is True:
                             route_runner_seen.add(s)
-                            if not PRELOAD_FLAG.search(cmd):
+                            if not all(PRELOAD_FLAG.search(seg) for seg in segments_running(cmd, s)):
                                 violations.append((rel, cid, s, ROUTE_RUNNER_NO_PRELOAD))
                 else:
                     violations.append((rel, cid, s, f"registry class {cls!r} unknown"))

@@ -1,3 +1,4 @@
+import './require-preload.mjs';
 // Overrides '@/lib/vendor-payment-confirmation' (vendor-payment-confirmation mission, F1) --
 // the NEW vendor-facing "your stand payment is confirmed" receipt. Captures every call the
 // real settlement handler (lib/vendor-stand-payment-notification.ts) makes to

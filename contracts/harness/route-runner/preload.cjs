@@ -7,8 +7,6 @@ const Module = require('node:module');
 const path = require('node:path');
 
 const HERE = __dirname;
-// store.mjs refuses to load unless this is set, so a check run without the preload fails closed.
-process.env.SAOC_ROUTE_RUNNER_PRELOAD = '1';
 const OVERRIDES = {
   '@/lib/admin-auth': 'fixture-admin-auth.mjs',
   '@/lib/firebase-admin': 'fixture-firebase-admin.mjs',
@@ -27,6 +25,9 @@ const OVERRIDES = {
   '@/lib/vendor-payment-admin-notice': 'fixture-vendor-payment-admin-notice.mjs',
 };
 
+// Every harness module imports require-preload.mjs, which throws unless this in-process flag
+// is set, so a check run without the preload fails closed. Set where the stubs are installed.
+globalThis[Symbol.for('saoc.route-runner.preload')] = true;
 const originalLoad = Module._load;
 Module._load = function (request, ...rest) {
   const target = OVERRIDES[request];
