@@ -99,7 +99,7 @@ if (initiatePost && mintVendorStandPaymentToken) {
       now: new Date(),
     }).token;
 
-    const res = await initiatePost({ json: async () => ({ token, boothSize: 1 }) });
+    const res = await initiatePost(new Request("http://localhost/api/vendors/stand-payment/initiate", { method: "POST", body: JSON.stringify(({ token, boothSize: 1 })) }));
     const body = await res.json();
 
     assert(

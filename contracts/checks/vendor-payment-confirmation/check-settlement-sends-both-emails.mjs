@@ -81,7 +81,7 @@ async function seedPendingOrder(vendorSubmissionId) {
   });
   setActiveGateway('payfast');
   const token = mintToken(vendorSubmissionId);
-  const result = await initiatePost({ json: async () => ({ token, boothSize: 1 }) });
+  const result = await initiatePost(new Request("http://localhost/api/vendors/stand-payment/initiate", { method: "POST", body: JSON.stringify(({ token, boothSize: 1 })) }));
   if (result.status !== 200) {
     throw new Error(`fixture setup failed: initiate returned ${result.status}`);
   }
@@ -93,7 +93,7 @@ async function seedPendingOrder(vendorSubmissionId) {
 }
 
 async function callItn(payload) {
-  const res = await payfastItnPost({ text: async () => JSON.stringify(payload), headers: new Headers() });
+  const res = await payfastItnPost(new Request("http://localhost/itn", { method: "POST", body: JSON.stringify(payload) }));
   return { status: res.status, body: await res.json() };
 }
 
@@ -221,7 +221,7 @@ vendorSubmissions.set('sub-stale-email', {
 });
 setActiveGateway('payfast');
 const staleToken = mintToken('sub-stale-email');
-const initiateResult = await initiatePost({ json: async () => ({ token: staleToken, boothSize: 1 }) });
+const initiateResult = await initiatePost(new Request("http://localhost/api/vendors/stand-payment/initiate", { method: "POST", body: JSON.stringify(({ token: staleToken, boothSize: 1 })) }));
 if (initiateResult.status !== 200) {
   throw new Error(`fixture setup error: initiate returned ${initiateResult.status}`);
 }

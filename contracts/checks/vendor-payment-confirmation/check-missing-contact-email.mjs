@@ -125,7 +125,7 @@ async function runScenario(vendorSubmissionId, contactEmailValue, label) {
   });
   setActiveGateway('payfast');
   const token = mintVendorStandPaymentToken({ vendorSubmissionId, secret: TEST_SECRET, now: new Date() }).token;
-  const initiateResult = await initiatePost({ json: async () => ({ token, boothSize: 1 }) });
+  const initiateResult = await initiatePost(new Request("http://localhost/api/vendors/stand-payment/initiate", { method: "POST", body: JSON.stringify(({ token, boothSize: 1 })) }));
   if (initiateResult.status !== 200) {
     throw new Error(`[${label}] fixture setup error: initiate returned ${initiateResult.status}`);
   }
@@ -149,15 +149,15 @@ async function runScenario(vendorSubmissionId, contactEmailValue, label) {
 
   let itnResult;
   try {
-    itnResult = await payfastItnPost({
-      text: async () => JSON.stringify({
+    itnResult = await payfastItnPost(new Request('http://localhost/itn', {
+      method: 'POST',
+      body: JSON.stringify({
         reference,
         rawStatus: 'paid',
         grossAmountCents: 145000,
         gatewayPaymentId: `pf-${vendorSubmissionId}`,
       }),
-      headers: new Headers(),
-    });
+    }));
   } finally {
     console.error = originalConsoleError;
   }

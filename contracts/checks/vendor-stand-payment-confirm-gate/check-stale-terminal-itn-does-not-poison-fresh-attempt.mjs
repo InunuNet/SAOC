@@ -85,12 +85,12 @@ function mintToken() {
 }
 
 async function callInitiate(token) {
-  const res = await initiatePost({ json: async () => ({ token, boothSize: 1 }) });
+  const res = await initiatePost(new Request("http://localhost/api/vendors/stand-payment/initiate", { method: "POST", body: JSON.stringify(({ token, boothSize: 1 })) }));
   return { status: res.status, body: await res.json() };
 }
 
 async function callItn(payload) {
-  const res = await payfastItnPost({ text: async () => JSON.stringify(payload), headers: new Headers() });
+  const res = await payfastItnPost(new Request("http://localhost/itn", { method: "POST", body: JSON.stringify(payload) }));
   return { status: res.status, body: await res.json() };
 }
 
