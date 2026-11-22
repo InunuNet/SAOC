@@ -23,7 +23,7 @@ const HEXTET_PATTERN = /^[0-9a-f]{1,4}$/i;
 const IPV4_PATTERN = /^\d{1,3}(\.\d{1,3}){3}$/;
 
 /** Dotted IPv4 to two hextets (high, low), or null when malformed or an octet is out of range. */
-function ipv4ToHextets(dotted: string): number[] | null {
+export function ipv4ToHextets(dotted: string): number[] | null {
   if (!IPV4_PATTERN.test(dotted)) return null;
   const octets = dotted.split('.').map(Number);
   if (octets.length !== IPV4_OCTETS || octets.some((o) => o > MAX_OCTET)) return null;
@@ -51,7 +51,7 @@ function parseHextets(part: string, allowV4Tail: boolean): number[] | null {
 }
 
 /** Eight 16-bit groups of an IPv6 literal (no brackets, zone or port), or null if invalid. */
-function parseIpv6(text: string): number[] | null {
+export function parseIpv6(text: string): number[] | null {
   const halves = text.split('::');
   if (halves.length > 2) return null;
   const head = parseHextets(halves[0] ?? '', halves.length === 1);
