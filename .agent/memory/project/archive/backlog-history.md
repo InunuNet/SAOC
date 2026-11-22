@@ -3328,3 +3328,4 @@ Clean on 15 routes: status, unique titles/descriptions, single h1, no skipped he
 - [x] **N10 Weekend Pass: no early bird** (retire the R360 SKU). — closed 2026-11-22: PR #221 merged 2026-11-19 (Weekend Pass no early bird)
 - [x] **N11 Speakers Partner ticket** — R950, one ticket per order, covers WOSA Confer… → [details](data/n11-speakers-partner-ticket-r950-one-tic.md) — closed 2026-11-22: PR #221 merged 2026-11-19; #222 merged binds SPEAKERS_PARTNER_PASSWORD secret (Brad sets the value)
 - [x] **N12 Workshop tickets** — "Coming soon", not buyable at the 1 Dec launch. — closed 2026-11-22: PR #221 merged 2026-11-19 (workshops coming soon)
+- [x] **[P1, security, SAOC lane, after F3 green, 2026-11-02] Content-Length-only body… → [details](data/p1-security-saoc-lane-after-f3-green-202.md) — closed 2026-11-22: PR #232 merged (d493daaa), Codex + Gemini PASS round 4

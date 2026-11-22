@@ -74,7 +74,6 @@ _Last compacted: 2026-11-22 by backlog_trim.py. Full history: git log on this fi
 - [ ] **[P2, from QA on #168 2026-11-01] Residue-guard quota skip has no escalation:**… → [details](data/p2-from-qa-on-168-2026-11-01-residue-gua.md)
 - [ ] **APPROVED by Brad 2026-11-01 — model conservation for the week of 2 Nov 2026 (standing rules, not a to-do):** — 2026-11-22 triage: believed done, not confirmed (expired standing note (week of 2 Nov), no code to verify)
 - [ ] **[P2, NOS, from F5 PR #176 2026-11-01] 29 gate-standard failures left open, del… → [details](data/p2-nos-from-f5-pr-176-2026-11-01-29-gate.md)
-- [ ] **[P1, security, SAOC lane, after F3 green, 2026-11-02] Content-Length-only body… → [details](data/p1-security-saoc-lane-after-f3-green-202.md)
 - [ ] **[awaiting Brad go, 2026-11-02] Local branch for sequencing: design/nos-tech-au… → [details](data/awaiting-brad-go-2026-11-02-local-branch.md)
 - [ ] **[standing, Brad 2026-11-02] No merge to main while Lee-Ann is confirming conte… → [details](data/standing-brad-2026-11-02-no-merge-to-mai.md)
 - [ ] **[awaiting Brad go, 2026-11-02] F3 fix/sec-abuse-controls local head 676f60c8: … → [details](data/awaiting-brad-go-2026-11-02-f3-fix-sec-a.md)
@@ -161,3 +160,4 @@ Source: .agent/memory/scratch/2026-11-19-leeann-meeting-notes.md (Brad's notes v
 - [ ] [P3] (2026-11-22) PR #229's description still mentions a receiptEmail.status composite index and an automatic receipt retry; both were dropped before merge (no query on main uses that field). Correct the PR description.
 - [ ] [BRAD] (2026-11-22, carried from closed N3) Ticket PDF footer still prints "Show office 073 428 4398" while the NOS contact page dropped the phone (#219). Brad to rule: keep or remove.
 - [ ] [BRAD] (2026-11-22, carried from closed N11) Confirm the Speakers Partner password value is set in the secret bundle; the binding merged in #222, the value is Brad's to set.
+- [ ] [P3] (2026-11-22, from PR #232 review) lib/admin-session-body.ts readBodyCapped awaits reader.cancel() on overflow; a source that never settles the cancel hangs the admin session route. Same one-line fix as lib/request-guards.ts (fire and forget).
