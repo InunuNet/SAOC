@@ -93,6 +93,22 @@ test('an oversize chunked body is cut off while streaming', async () => {
   assert.ok(pulled() < 10, `stopped reading after ${pulled()} chunks`);
 });
 
+test('an oversize body is too-large even when cancelling the stream rejects', async () => {
+  const stream = new ReadableStream(
+    {
+      pull(controller) {
+        controller.enqueue(encoder.encode('x'.repeat(MAX + 1)));
+      },
+      cancel() {
+        return Promise.reject(new Error('cancel failed'));
+      },
+    },
+    { highWaterMark: 0 },
+  );
+  const request = new Request('http://localhost/api/x', { method: 'POST', body: stream, duplex: 'half' });
+  assert.deepEqual(await readJsonBodyWithinLimit(request, MAX), { ok: false, reason: 'too-large' });
+});
+
 test('invalid JSON and an empty body are reported as invalid-json', async () => {
   for (const body of ['not json', '{"a":', '']) {
     assert.deepEqual(
@@ -146,5 +162,9 @@ for (const route of ROUTES) {
 
 test('checkout keeps the rate limiter ahead of the body read', () => {
   const source = readFileSync(new URL('../../../app/api/tickets/checkout/route.ts', import.meta.url), 'utf8');
-  assert.ok(source.indexOf('consumeRateLimit(') < source.indexOf('readJsonBodyWithinLimit(request'));
+  const limiterAt = source.indexOf('consumeRateLimit(');
+  const readAt = source.indexOf('readJsonBodyWithinLimit(request');
+  assert.ok(limiterAt >= 0, 'consumeRateLimit( not found');
+  assert.ok(readAt >= 0, 'readJsonBodyWithinLimit(request not found');
+  assert.ok(limiterAt < readAt);
 });

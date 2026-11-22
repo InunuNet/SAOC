@@ -42,6 +42,18 @@ function isOneClick(request: NextRequest): boolean {
   return (request.headers.get('content-type') ?? '').toLowerCase().startsWith(ONE_CLICK_CONTENT_TYPE);
 }
 
+type FormRead = { text: string | null; tooLarge: boolean };
+
+/** The one-click form body. A stream error reads as no form (null), as it always did. */
+async function readFormWithinLimit(request: NextRequest): Promise<FormRead> {
+  try {
+    const text = await readBodyTextWithinLimit(request, MAX_BODY_BYTES);
+    return { text, tooLarge: text === null };
+  } catch {
+    return { text: null, tooLarge: false };
+  }
+}
+
 // Cap on the request body: a declared Content-Length over it is refused up front, and the
 // bytes actually read are counted as they stream in.
 const MAX_BODY_BYTES = 4096;
@@ -49,9 +61,10 @@ const MAX_BODY_BYTES = 4096;
 export async function POST(request: NextRequest) {
   const oneClick = isOneClick(request);
   // The one-click form is read as text, the link form as JSON; both under the streamed cap.
-  const form = oneClick ? await readBodyTextWithinLimit(request, MAX_BODY_BYTES) : null;
+  const oneClickRead = oneClick ? await readFormWithinLimit(request) : null;
+  const form = oneClickRead?.text ?? null;
   const parsed = oneClick ? null : await readJsonBodyWithinLimit(request, MAX_BODY_BYTES);
-  if ((oneClick && form === null) || (parsed && !parsed.ok && parsed.reason === 'too-large')) {
+  if (oneClickRead?.tooLarge || (parsed && !parsed.ok && parsed.reason === 'too-large')) {
     return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
   }
   const body: unknown = parsed?.ok ? parsed.value : null;

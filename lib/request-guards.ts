@@ -60,12 +60,18 @@ export async function readBodyTextWithinLimit(
     if (done) break;
     received += value.byteLength;
     if (received > maxBytes) {
-      await reader.cancel();
+      // A source whose cancel() rejects must not turn an oversize body into a read failure.
+      await reader.cancel().catch(() => undefined);
       return null;
     }
     text += decoder.decode(value, { stream: true });
   }
   return text + decoder.decode();
+}
+
+/** True for a parsed JSON object: not null, not an array, not a scalar. */
+export function isJsonObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 export type JsonBodyResult =

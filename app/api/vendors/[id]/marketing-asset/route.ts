@@ -5,7 +5,7 @@ import { getStorage } from 'firebase-admin/storage';
 import { clientIpFromForwardedFor } from '@/lib/client-ip';
 import { getStorageBucketName, initAdmin } from '@/lib/firebase-admin';
 import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
-import { base64BodyLimitBytes, isFirestoreAutoId, readJsonBodyWithinLimit } from '@/lib/request-guards';
+import { base64BodyLimitBytes, isFirestoreAutoId, isJsonObject, readJsonBodyWithinLimit } from '@/lib/request-guards';
 import { MARKETING_ASSET_MAX_BYTES } from '@/lib/vendor-marketing-upload';
 import {
   handleMarketingAssetUpload,
@@ -97,10 +97,11 @@ export async function POST(
   // A base64 file is ~4/3 of its decoded size, so the body cap is derived from the file cap. The
   // body is counted as it streams in, whatever Content-Length claims.
   const parsed = await readJsonBodyWithinLimit(request, MAX_BODY_BYTES);
-  if (!parsed.ok) {
-    return parsed.reason === 'too-large'
-      ? NextResponse.json({ error: 'Request body too large.' }, { status: 413 })
-      : NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
+  if (!parsed.ok && parsed.reason === 'too-large') {
+    return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
+  }
+  if (!parsed.ok || !isJsonObject(parsed.value)) {
+    return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
   }
   // Untrusted JSON: the handler reads each field with a typeof check before use.
   const body = parsed.value as MarketingAssetRequestBody;

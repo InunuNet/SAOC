@@ -1,6 +1,6 @@
 import { getSecret, secretsEnv } from '@/lib/secrets';
 import { NextRequest, NextResponse } from 'next/server';
-import { readJsonBodyWithinLimit } from '@/lib/request-guards';
+import { isDeclaredLengthWithinLimit, isJsonObject, readJsonBodyWithinLimit } from '@/lib/request-guards';
 import { clientIpFromForwardedFor } from '@/lib/client-ip';
 import { consumeRateLimit } from '@/lib/newsletter-rate-limit';
 import { createAttemptStore, scopeAttemptsToRequest } from '@/lib/newsletter-rate-store';
@@ -503,8 +503,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const parsed = await readJsonBodyWithinLimit(request, MAX_BODY_BYTES);
-  if (!parsed.ok && parsed.reason === 'too-large') {
+  if (!isDeclaredLengthWithinLimit(request.headers.get('content-length'), MAX_BODY_BYTES)) {
     return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
   }
   // Before anything is read or written: without a well-formed key, duplicate protection
@@ -520,12 +519,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  if (!parsed.ok) {
-    console.error('[tickets/checkout] Failed to parse request body:', parsed.reason);
+  const parsed = await readJsonBodyWithinLimit(request, MAX_BODY_BYTES);
+  if (!parsed.ok && parsed.reason === 'too-large') {
+    return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
+  }
+  if (!parsed.ok || !isJsonObject(parsed.value)) {
+    console.error(
+      '[tickets/checkout] Failed to parse request body:',
+      parsed.ok ? 'not-an-object' : parsed.reason,
+    );
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
   }
   // Untrusted JSON: every field is validated below before use, as before.
-  const body = parsed.value as CheckoutRequestBody;
+  const body = parsed.value as unknown as CheckoutRequestBody; // an object here; fields checked below
 
   if (!isValidShowId(body.showId)) {
     return NextResponse.json(
