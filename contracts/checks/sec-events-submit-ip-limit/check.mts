@@ -8,13 +8,16 @@ import { mock } from 'node:test';
 import { NextRequest } from 'next/server';
 
 delete process.env.SANITY_API_TOKEN;
+// The route now sits behind the shared admin gate (admin claim, verified, allowlisted email).
+const ADMIN_EMAIL = 'admin@example.test';
+process.env.ADMIN_EMAIL_ALLOWLIST = ADMIN_EMAIL;
 
 mock.module('firebase-admin/auth', {
   exports: {
     getAuth: () => ({
       verifyIdToken: async (token: string) => {
         if (!token.startsWith('uid-')) throw new Error('bad token');
-        return { uid: token, email_verified: true };
+        return { uid: token, email: ADMIN_EMAIL, admin: true, email_verified: true };
       },
     }),
   },
@@ -31,7 +34,7 @@ const { PUBLIC_FORM_RATE_LIMIT_MAX_ATTEMPTS: MAX } = await import(
 const HTTP_BAD_REQUEST = 400;
 const HTTP_COUNTED = 500; // valid body, stopped by the missing CMS token
 const WINDOW_SECONDS = 3600;
-const FUTURE_DATE = '2999-01-01T10:00:00Z';
+const FUTURE_DATE = '2999-01-01';
 const VALID_BODY = JSON.stringify({
   title: 'Spring show',
   kind: 'show',
