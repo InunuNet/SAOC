@@ -237,6 +237,22 @@ export interface Order {
    *  PendingInvestigation. Informational: the order stays 'reserved' and only a hash-verified,
    *  confirmed Complete ever makes it paid. */
   gatewayPending?: { rawStatus: string; at: Timestamp } | null;
+  /** Written only by markOrderAndPositionPaidByPaymentId, and only when the payment settled after
+   *  the reservation hold had expired. `overCapacity` is true when the live sold count then
+   *  exceeded capacity with this order counted, false when capacity was fine, null when capacity
+   *  could not be checked. Absent on every on-time order. */
+  settlement?: {
+    lateAfterHoldExpiry: true;
+    overCapacity: boolean | null;
+    detectedAt: Timestamp;
+  };
+  /** Delivery record of the buyer's receipt email, written after settlement
+   *  (lib/receipt-record.ts). Absent on orders that predate it. */
+  receiptEmail?: {
+    status: 'sent' | 'failed';
+    lastAttemptAt: Timestamp;
+    lastErrorType: string | null;
+  };
 }
 
 // ---------------------------------------------------------------------------

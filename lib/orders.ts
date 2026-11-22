@@ -227,7 +227,15 @@ export interface OrdersFirestoreRwLike {
 export type FindReservedOrderResult =
   | { status: 'not-found' }
   | { status: 'already-settled'; orderStatus: OrderStatus }
-  | { status: 'reserved'; amount: number; orderId: string; expectedGatewayAmount: number | null };
+  | {
+      status: 'reserved';
+      amount: number;
+      orderId: string;
+      expectedGatewayAmount: number | null;
+      /** The hold's expiry as this (already-made) read saw it; the notification handler uses it
+       *  after the commit to tell whether the payment landed late. */
+      expiresAt: Timestamp | null;
+    };
 
 /**
  * Read-only, NOT transactional — an optimisation and amount-check path only, mirroring the
@@ -266,6 +274,7 @@ export async function findReservedOrderByPaymentId(
     amount: Number(order?.amount),
     orderId: orderDoc.id,
     expectedGatewayAmount: order?.expectedGatewayAmount ?? null,
+    expiresAt: order?.expiresAt instanceof Timestamp ? order.expiresAt : null,
   };
 }
 

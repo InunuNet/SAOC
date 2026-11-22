@@ -303,6 +303,26 @@ threw," both rendered as a success-shaped body. Fixed by `reconcile-response-acc
 - `firestore.indexes.json` — composite index on `orders(status, expiresAt)`
 - `firebase.json` — added the `firestore` key pointing at `firestore.indexes.json`
 
+## Late settlements and failed receipts
+
+- **Late payment.** A payment that arrives after the 30-minute hold lapsed still settles (the
+  buyer has paid, so the ticket is always issued), and the paid transaction is unchanged. After
+  the commit, the receipt and the admin notice, the handler flags the order
+  (`lib/late-settlement-flag.ts`, best effort, 2 s cap, never changes the response):
+  `orders/{id}.settlement = { lateAfterHoldExpiry: true, overCapacity: true | false | null,
+  detectedAt }`, written once with set-merge; `null` means capacity could not be checked in time.
+  On-time orders and replayed notifications cost no extra reads. One `console.warn` (reference and
+  ticket types only) is logged. These
+  orders are not in the reconcile alert email: its wording says "still reserved", which would be
+  wrong for a paid order, so query `settlement.overCapacity == true` in the console instead.
+- **Receipt email.** After the one receipt send, the handler makes one best-effort write
+  (`lib/receipt-record.ts`, capped at 2 s, never throws, only from the call that settled the
+  order): `orders/{id}.receiptEmail = { status: 'sent' | 'failed', lastAttemptAt, lastErrorType }`
+  (error type name only). A failed receipt is therefore visible as `receiptEmail.status ==
+  'failed'`; for now it is resent manually. An automatic retry and an admin resend are future
+  work (a retry was built and withdrawn before launch as too much concurrent state on the payment
+  path).
+
 ## Sources
 
 - `.agent/memory/project/specs/order-reconciliation/contract-f1.yaml` — the scored contract,

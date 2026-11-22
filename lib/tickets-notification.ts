@@ -8,6 +8,9 @@ import {
   markOrderPaymentPendingByPaymentId,
 } from '@/lib/orders';
 import { deliverConfirmationEmailAfterCommit, sendConfirmationEmail } from '@/lib/confirmation-email';
+import { loadLateSettlementCapacity } from '@/lib/late-settlement-capacity';
+import { flagLateSettlement } from '@/lib/late-settlement-flag';
+import { recordReceiptOutcome } from '@/lib/receipt-record';
 import { safeErrorType } from '@/lib/safe-log';
 import { saocUrl } from '@/lib/site-hosts';
 import { loadChosenDays } from '@/lib/ticket-pdf-data';
@@ -282,10 +285,11 @@ export async function POST(
   // key markOrderAndPositionPaidByPaymentId queries on the same payment reference. Renaming it
   // is a data migration, not a refactor, and is deliberately out of this feature's scope — see
   // the golden README "The one identifier the ban cannot remove yet".
+  const settledAt = Timestamp.now();
   const outcome = await markOrderAndPositionPaidByPaymentId({
     m_payment_id: reference,
     gatewayPaymentId: notification.gatewayPaymentId,
-    now: Timestamp.now(),
+    now: settledAt,
     // F2 (payment-provider-seam, orders-query-race-spec §3 "C") — step 5's lookup already
     // located this order by the same payment reference; pass its id through so the write path
     // resolves by ref instead of re-reading the orders index a second time.
@@ -326,6 +330,8 @@ export async function POST(
   // 11. Post-commit confirmation email hookup. deliverConfirmationEmailAfterCommit isolates any
   // failure from this response: the payment is already committed above and must never be rolled
   // back, retried, or hidden behind a 5xx because a delivery receipt failed to send.
+  let receiptFailed = false;
+  let receiptError: unknown;
   await deliverConfirmationEmailAfterCommit(
     async () => {
       // Per-ticket-type email facts (used only once TICKET_TYPE_EMAILS_LIVE is on): the stored
@@ -343,6 +349,8 @@ export async function POST(
       });
     },
     (error) => {
+      receiptFailed = true;
+      receiptError = error;
       console.error('[tickets/itn] Confirmation email failed — payment already committed, not rolled back', {
         provider: paymentProvider.id,
         reference,
@@ -351,6 +359,16 @@ export async function POST(
       });
     }
   );
+
+  // The receipt outcome is recorded on the order (best effort, capped at 2 s, never throws) so a
+  // failed receipt is visible; see lib/receipt-record.ts. It sits after the send and before the
+  // admin notice, and only this call, the one that settled the order, reaches it.
+  await recordReceiptOutcome({
+    orderId: outcome.orderId,
+    now: Timestamp.now(),
+    failed: receiptFailed,
+    error: receiptError,
+  });
 
   // 12. Admin ticket-sale notice, once per order. Reached only when THIS call's transaction moved
   // the order from 'reserved' to 'paid' (the `!outcome.committed` return above), so a re-sent
@@ -375,6 +393,24 @@ export async function POST(
         error: error instanceof Error ? error.name : 'unknown error',
       });
     }
+  );
+
+  // 13. Late-payment flag, strictly after the commit, the receipt and the admin notice, so it can
+  // delay neither of them. Only this call, the one that moved the order to paid, gets here (a
+  // duplicate returned at `!outcome.committed` above). Best effort and time-capped; it never
+  // throws and never changes the response. See lib/late-settlement-flag.ts.
+  await flagLateSettlement(
+    {
+      orderId: outcome.orderId,
+      reference,
+      positions: outcome.positions.map((position) => ({
+        ticketType: position.ticketType,
+        chosenDay: position.chosenDay,
+      })),
+      expiresAt: lookup.expiresAt,
+      settledAt,
+    },
+    { loadCapacity: loadLateSettlementCapacity }
   );
 
   return acknowledge();
