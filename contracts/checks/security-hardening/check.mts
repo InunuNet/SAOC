@@ -58,14 +58,14 @@ const modes: Record<string, () => Promise<void> | void> = {
     ];
     for (const route of routes) {
       const source = code(route);
-      mustMatch(`${route} uses helper`, source, /clientIpFromForwardedFor\(/);
+      mustMatch(`${route} uses helper`, source, /(?:clientIpFromForwardedFor|rateLimitKeyFromForwardedFor)\(/);
       mustNotMatch(`${route} first-hop read`, source, /split\(','\)\[0\]/);
     }
     const listing = execFileSync('grep', ['-rniI', '--include=*.ts', '--include=*.tsx', 'x-forwarded-for', `${ROOT}app`], { encoding: 'utf8' }).split('\n');
     for (const line of listing.filter(Boolean)) {
       const text = line.slice(line.indexOf(':', line.indexOf(':') + 1) + 1);
       if (/^\s*(\*|\/\/|\/\*)/.test(text)) continue;
-      if (!text.includes('clientIpFromForwardedFor')) fail(`direct x-forwarded-for read: ${line.trim()}`);
+      if (!/(?:clientIpFromForwardedFor|rateLimitKeyFromForwardedFor)/.test(text)) fail(`direct x-forwarded-for read: ${line.trim()}`);
     }
   },
   // M1/M3: shared limiter constants and behaviour
@@ -241,7 +241,7 @@ const modes: Record<string, () => Promise<void> | void> = {
   formwiring() {
     for (const [route, key] of [['app/api/contact/route.ts', 'contact:'], ['app/api/vendors/apply/route.ts', 'vendor-apply:']] as const) {
       const source = code(route);
-      mustMatch(`${route} ip helper`, source, /clientIpFromForwardedFor\(/);
+      mustMatch(`${route} ip helper`, source, /(?:clientIpFromForwardedFor|rateLimitKeyFromForwardedFor)\(/);
       mustMatch(`${route} store`, source, /createAttemptStore\(/);
       mustMatch(`${route} per-request scope`, source, /scopeAttemptsToRequest\(/);
       mustMatch(`${route} limiter`, source, /consumeRateLimit\(/);

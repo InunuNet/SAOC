@@ -3,7 +3,7 @@ import { readBodyTextWithinLimit, readJsonBodyWithinLimit } from '@/lib/request-
 import { getFirestore } from 'firebase-admin/firestore';
 
 import { NEWSLETTER_COPY } from '@/components/chrome/newsletter-copy';
-import { clientIpFromForwardedFor } from '@/lib/client-ip';
+import { rateLimitKeyFromForwardedFor } from '@/lib/client-ip';
 import { initAdmin } from '@/lib/firebase-admin';
 import {
   handleNewsletterOneClick,
@@ -34,7 +34,7 @@ function logError(message: string, context: Record<string, string>): void {
 }
 
 function rateLimitKeyFor(request: NextRequest): string {
-  const ip = clientIpFromForwardedFor(request.headers.get('x-forwarded-for'));
+  const ip = rateLimitKeyFromForwardedFor(request.headers.get('x-forwarded-for'));
   return `newsletter-unsubscribe:${ip ?? 'unknown'}`;
 }
 

@@ -1,6 +1,6 @@
 import type { NextRequest } from 'next/server';
 
-import { clientIpFromForwardedFor } from './client-ip';
+import { rateLimitKeyFromForwardedFor } from './client-ip';
 import { NEWSLETTER_RATE_LIMIT_WINDOW_MS } from './newsletter-handler';
 import { type AttemptStore, createAttemptStore } from './newsletter-rate-store';
 
@@ -18,6 +18,6 @@ export function sharedNewsletterAttempts(): AttemptStore {
 }
 
 export function sharedNewsletterRateLimitKey(request: NextRequest): string {
-  const ip = clientIpFromForwardedFor(request.headers.get('x-forwarded-for'));
+  const ip = rateLimitKeyFromForwardedFor(request.headers.get('x-forwarded-for'));
   return `newsletter-public-form:${ip ?? 'unknown'}`;
 }

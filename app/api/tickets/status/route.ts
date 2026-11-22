@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { clientIpFromForwardedFor } from '@/lib/client-ip';
+import { rateLimitKeyFromForwardedFor } from '@/lib/client-ip';
 import { consumeRateLimit } from '@/lib/newsletter-rate-limit';
 import { createAttemptStore, scopeAttemptsToRequest } from '@/lib/newsletter-rate-store';
 import { getTicketStatus } from '@/lib/ticket-status';
@@ -27,7 +27,7 @@ const attempts = createAttemptStore(
 // only" stays the load-bearing mitigation and must not be widened. Per-IP rate
 // limiting is per server instance (see lib/public-form-rate-limit.ts).
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  const ip = clientIpFromForwardedFor(request.headers.get('x-forwarded-for'));
+  const ip = rateLimitKeyFromForwardedFor(request.headers.get('x-forwarded-for'));
   const limit = consumeRateLimit(
     { now: new Date(), ...scopeAttemptsToRequest(attempts) },
     `ticket-status:${ip ?? 'unknown'}`,

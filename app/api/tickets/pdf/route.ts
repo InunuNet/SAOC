@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { clientIpFromForwardedFor } from '@/lib/client-ip';
+import { rateLimitKeyFromForwardedFor } from '@/lib/client-ip';
 import { consumeRateLimit } from '@/lib/newsletter-rate-limit';
 import { createAttemptStore, scopeAttemptsToRequest } from '@/lib/newsletter-rate-store';
 import { getConfirmedOrderForDisplay } from '@/lib/orders';
@@ -41,7 +41,7 @@ function notFound(): NextResponse {
  * reference is required, and `position` can only select one of that order's own positions.
  */
 export async function GET(request: Request): Promise<NextResponse> {
-  const ip = clientIpFromForwardedFor(request.headers.get('x-forwarded-for'));
+  const ip = rateLimitKeyFromForwardedFor(request.headers.get('x-forwarded-for'));
   const limit = consumeRateLimit(
     { now: new Date(), ...scopeAttemptsToRequest(attempts) },
     `ticket-pdf:${ip ?? 'unknown'}`,
