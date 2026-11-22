@@ -20,29 +20,6 @@ export const VENDOR_REGISTER_CODE_VERIFY_RATE_LIMIT_MAX_ATTEMPTS = 10;
 
 export const VENDOR_REGISTER_CODE_VERIFY_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 
-/** Failed guesses one client IP may make against one vendor (name slug) per window. */
-export const VENDOR_REGISTER_CODE_FAILURE_RATE_LIMIT_MAX_FAILURES = 5;
-
-export const VENDOR_REGISTER_CODE_FAILURE_RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
-
-export function vendorCodeFailureRateLimitKey(nameSlug: string, clientIp: string): string {
-  return `vendor-register-code-failure:${nameSlug}:${clientIp}`;
-}
-
-export function decideVendorRegistrationCodeFailureRateLimit(
-  key: string,
-  now: Date,
-  priorFailures: VendorRegistrationCodeVerifyAttemptRecord[],
-): RateLimitDecision {
-  return decideRateLimit({
-    key,
-    now,
-    priorAttempts: priorFailures,
-    maxAttempts: VENDOR_REGISTER_CODE_FAILURE_RATE_LIMIT_MAX_FAILURES,
-    windowMs: VENDOR_REGISTER_CODE_FAILURE_RATE_LIMIT_WINDOW_MS,
-  });
-}
-
 export interface VendorRegistrationCodeVerifyAttemptRecord {
   key: string;
   at: Date;

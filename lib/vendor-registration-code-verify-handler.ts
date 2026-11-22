@@ -14,11 +14,7 @@
 
 import { normalizeVendorCodeName, verifyVendorRegistrationCode } from './vendor-registration-code';
 import type { VendorRegistrationCodeCandidate } from './vendor-registration-code';
-import {
-  decideVendorRegistrationCodeFailureRateLimit,
-  decideVendorRegistrationCodeVerifyRateLimit,
-  vendorCodeFailureRateLimitKey,
-} from './vendor-registration-code-verify-rate-limit';
+import { decideVendorRegistrationCodeVerifyRateLimit } from './vendor-registration-code-verify-rate-limit';
 
 /** Deliberately generic: no such name slug, wrong 4 digits, locked, consumed, expired, or
  *  not-approved all funnel into this ONE message, at the same 403 status -- see the golden
@@ -52,10 +48,6 @@ export interface MintedVendorRegistrationSession {
 export interface VendorRegistrationCodeVerificationDeps {
   now: Date;
   rateLimitKey: string;
-  /** Caller IP. When set, failed guesses are also counted per (name slug, IP) and an IP that has
-   *  failed too often against one vendor is refused before any lookup or lockout write, so one
-   *  client cannot drive a vendor's lockout counter on its own (audit F7). */
-  clientIp?: string;
   getPriorAttempts: (key: string) => { key: string; at: Date }[];
   recordAttempt: (key: string, at: Date) => void;
   /** Runs the ONE Firestore query by registrationCodeNameSlug + status=='approved', ALWAYS
@@ -92,21 +84,9 @@ export async function handleVendorRegistrationCodeVerification(
   if (!rateLimitDecision.allowed) {
     return { status: 429, body: { error: RATE_LIMITED_MESSAGE } };
   }
-  const typedNameSlug = normalizeVendorCodeName(input.businessName);
-  const failureKey =
-    deps.clientIp === undefined ? null : vendorCodeFailureRateLimitKey(typedNameSlug, deps.clientIp);
-  if (failureKey !== null) {
-    const failureDecision = decideVendorRegistrationCodeFailureRateLimit(
-      failureKey,
-      deps.now,
-      deps.getPriorAttempts(failureKey).map((attempt) => ({ key: failureKey, at: attempt.at })),
-    );
-    if (!failureDecision.allowed) {
-      return { status: 429, body: { error: RATE_LIMITED_MESSAGE } };
-    }
-  }
   deps.recordAttempt(deps.rateLimitKey, deps.now);
 
+  const typedNameSlug = normalizeVendorCodeName(input.businessName);
   const typedCodeId = input.codeId;
 
   const candidates = await deps.findCandidates(typedNameSlug);
@@ -117,7 +97,6 @@ export async function handleVendorRegistrationCodeVerification(
   );
 
   if (!verification.ok) {
-    if (failureKey !== null) deps.recordAttempt(failureKey, deps.now);
     // A failed guess records against every candidate this slug matched -- so the
     // per-application lockout counter actually advances, even if the vendor typed the wrong
     // 4 digits against a real business name.
