@@ -25,7 +25,7 @@ The caps stop log, database and email-payload bloat while leaving real input unt
 
 ### M2 Client IP
 
-Every limiter key now uses `clientIpFromForwardedFor` (the second-to-last hop, appended by Google's front end) instead of the first hop, which a caller can spoof. Routes: `vendors/register`, `vendors/register/verify-code`, `vendors/[id]/proof-of-payment`, `vendors/[id]/marketing-asset`. Nothing under `app/` reads `x-forwarded-for` without the helper.
+Every limiter key now uses `rateLimitKeyFromHeaders` (`x-fah-client-ip`, else the third-to-last X-Forwarded-For hop; the platform appends client, proxy, proxy, observed 2026-11-22) instead of the first hop, which a caller can spoof. Routes: `vendors/register`, `vendors/register/verify-code`, `vendors/[id]/proof-of-payment`, `vendors/[id]/marketing-asset`. Nothing under `app/` reads `x-forwarded-for` without the helper.
 
 ### M3 Event submission
 
@@ -75,4 +75,3 @@ Every limiter key now uses `clientIpFromForwardedFor` (the second-to-last hop, a
 - Checkout stock-holding (L5)
 - boothSize vs allocation (L6)
 - L4 capability checks
-- Deduplicating the PayFast and Ozow client-IP helpers onto `clientIpFromForwardedFor`

@@ -5,7 +5,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { createClient } from '@sanity/client';
 
 import { classifyRefusal, isAdminToken } from '@/lib/admin-auth';
-import { rateLimitKeyFromForwardedFor } from '@/lib/client-ip';
+import { rateLimitKeyFromHeaders } from '@/lib/client-ip';
 import { initAdmin } from '@/lib/firebase-admin';
 import {
   buildEventSlug,
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // bound a caller who registers new accounts. Only a verified submitter with a valid body
   // counts, so unauthenticated or malformed requests cannot use up the allowance of real users
   // behind a shared address.
-  const ip = rateLimitKeyFromForwardedFor(req.headers.get('x-forwarded-for'));
+  const ip = rateLimitKeyFromHeaders(req.headers);
   const ipLimit = consumeRateLimit(
     { now: new Date(), ...scopeAttemptsToRequest(attempts) },
     `event-submit-ip:${ip ?? 'unknown'}`,

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
-import { rateLimitKeyFromForwardedFor } from '@/lib/client-ip';
+import { rateLimitKeyFromHeaders } from '@/lib/client-ip';
 import { validateContactInput } from '@/lib/contact-input';
 import { initAdmin } from '@/lib/firebase-admin';
 import { consumeRateLimit } from '@/lib/newsletter-rate-limit';
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
   if (!isDeclaredLengthWithinLimit(request.headers.get('content-length'), MAX_BODY_BYTES)) {
     return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
   }
-  const ip = rateLimitKeyFromForwardedFor(request.headers.get('x-forwarded-for'));
+  const ip = rateLimitKeyFromHeaders(request.headers);
   const limit = consumeRateLimit(
     { now: new Date(), ...scopeAttemptsToRequest(attempts) },
     `contact:${ip ?? 'unknown'}`,

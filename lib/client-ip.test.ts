@@ -1,7 +1,18 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { rateLimitKeyForIp, rateLimitKeyFromForwardedFor } from './client-ip';
+import { clientIpFromHeaders, rateLimitKeyForIp, rateLimitKeyFromHeaders } from './client-ip';
+
+function headersOf(values: Record<string, string>) {
+  return { get: (name: string): string | null => values[name.toLowerCase()] ?? null };
+}
+
+function resolve(xff?: string, fah?: string): string | null {
+  const values: Record<string, string> = {};
+  if (xff !== undefined) values['x-forwarded-for'] = xff;
+  if (fah !== undefined) values['x-fah-client-ip'] = fah;
+  return clientIpFromHeaders(headersOf(values));
+}
 
 test('IPv4 is returned unchanged (trimmed)', () => {
   assert.equal(rateLimitKeyForIp('203.0.113.7'), '203.0.113.7');
@@ -55,8 +66,43 @@ test('null and empty give null', () => {
   assert.equal(rateLimitKeyForIp('   '), null);
 });
 
-test('forwarded-for helper keeps the second-to-last hop and groups IPv6', () => {
-  assert.equal(rateLimitKeyFromForwardedFor('6.6.6.6, 2001:db8:0:1::7, 35.1.1.1'), '2001:db8:0:1::/64');
-  assert.equal(rateLimitKeyFromForwardedFor('198.51.100.4'), '198.51.100.4');
-  assert.equal(rateLimitKeyFromForwardedFor(null), null);
+test('x-fah-client-ip wins when it is a valid literal', () => {
+  assert.equal(resolve('6.6.6.6, 9.9.9.9, 10.0.0.1, 10.0.0.2', '9.9.9.9'), '9.9.9.9');
+  assert.equal(resolve(undefined, '2001:db8::1'), '2001:db8::1');
+  assert.equal(resolve('1.1.1.1', ' 203.0.113.5 '), '203.0.113.5');
+});
+
+test('garbage x-fah-client-ip falls back to the chain', () => {
+  for (const fah of ['not-an-ip', '999.999.999.999', '203.0.113.5:8080', '[2001:db8::1]', ':', '']) {
+    assert.equal(resolve('6.6.6.6, 9.9.9.9, 10.0.0.1, 10.0.0.2', fah), '9.9.9.9', fah);
+  }
+});
+
+test('three or more chain entries give the third from the end', () => {
+  assert.equal(resolve('9.9.9.9, 10.0.0.1, 10.0.0.2'), '9.9.9.9');
+  assert.equal(resolve('6.6.6.6, 9.9.9.9, 10.0.0.1, 10.0.0.2'), '9.9.9.9');
+  assert.equal(resolve('1.1.1.1, 2.2.2.2, 3.3.3.3, 9.9.9.9, 10.0.0.1, 10.0.0.2'), '9.9.9.9');
+  assert.equal(resolve(' 6.6.6.6 ,, 9.9.9.9 , 10.0.0.1 , 10.0.0.2 '), '9.9.9.9');
+});
+
+test('one or two chain entries give the last entry (off-platform only)', () => {
+  assert.equal(resolve('198.51.100.4'), '198.51.100.4');
+  assert.equal(resolve('9.9.9.9, 10.0.0.1'), '10.0.0.1');
+});
+
+test('no usable chain and no fah gives null', () => {
+  assert.equal(resolve(), null);
+  assert.equal(resolve(''), null);
+  assert.equal(resolve(' , ,'), null);
+});
+
+test('key helper uses the same resolution and groups IPv6 to /64', () => {
+  const chain = '6.6.6.6, 2001:db8:0:1::7, 35.1.1.1, 35.1.1.2';
+  assert.equal(rateLimitKeyFromHeaders(headersOf({ 'x-forwarded-for': chain })), '2001:db8:0:1::/64');
+  assert.equal(
+    rateLimitKeyFromHeaders(headersOf({ 'x-fah-client-ip': '2001:db8:0:1:aaaa::9' })),
+    '2001:db8:0:1::/64',
+  );
+  assert.equal(rateLimitKeyFromHeaders(headersOf({ 'x-forwarded-for': '198.51.100.4' })), '198.51.100.4');
+  assert.equal(rateLimitKeyFromHeaders(headersOf({})), null);
 });

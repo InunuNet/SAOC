@@ -82,7 +82,7 @@ const validBody = JSON.stringify({
 
 function post(ip, key, body, extraHeaders = {}) {
   const headers = {
-    'x-forwarded-for': `${ip}, 10.0.0.1`,
+    'x-forwarded-for': `${ip}, 10.0.0.1, 10.0.0.2`,
     'content-type': 'application/json',
     'content-length': String(Buffer.byteLength(body)),
     ...extraHeaders,

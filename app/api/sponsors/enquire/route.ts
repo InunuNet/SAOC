@@ -3,7 +3,7 @@ import { readJsonBodyWithinLimit } from '@/lib/request-guards';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
 import { deliverConfirmationEmailAfterCommit } from '@/lib/confirmation-email';
-import { rateLimitKeyFromForwardedFor } from '@/lib/client-ip';
+import { rateLimitKeyFromHeaders } from '@/lib/client-ip';
 import { initAdmin } from '@/lib/firebase-admin';
 import { createAttemptStore, scopeAttemptsToRequest } from '@/lib/newsletter-rate-store';
 import { siteForHost } from '@/lib/site-hosts';
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
   }
   const body: unknown = parsed.ok ? parsed.value : null;
   const malformed = !parsed.ok;
-  const ip = rateLimitKeyFromForwardedFor(request.headers.get('x-forwarded-for'));
+  const ip = rateLimitKeyFromHeaders(request.headers);
   const requestAttempts = scopeAttemptsToRequest(attempts);
   // The site comes from the Host, never from the body: a spoofed host is not the NOS site.
   const site = siteForHost(request.headers.get('x-forwarded-host') ?? request.headers.get('host'));

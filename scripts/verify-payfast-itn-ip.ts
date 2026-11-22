@@ -1,17 +1,13 @@
 import { getClientIp } from '../lib/payfast';
 
 /**
- * Correctness gate for lib/payfast.ts `getClientIp()`. Firebase App Hosting sits behind a
- * full external Google Cloud Load Balancer (GCLB) + Cloud CDN in front of Cloud Run — see
- * https://firebase.google.com/docs/app-hosting/about-app-hosting. Per
- * https://cloud.google.com/load-balancing/docs/https, GCLB APPENDS exactly two entries to
- * X-Forwarded-For: the client IP, then the load balancer's own forwarding-rule IP. So the
- * header Cloud Run receives is `<attacker-controlled-prefix>,<real-client-ip>,<lb-ip>` —
- * the real client IP is always the SECOND-TO-LAST hop, never the last (that's the LB) and
- * never the first (that's spoofable by the caller).
+ * Correctness gate for lib/payfast.ts `getClientIp()`, which delegates to lib/client-ip.ts
+ * `clientIpFromHeaders()`. Observed on the deployed Firebase App Hosting server (2026-11-22):
+ * the platform appends THREE entries to X-Forwarded-For (`<client-supplied...>, CLIENT, PROXY,
+ * PROXY`) and writes `x-fah-client-ip`, so the real client is the THIRD-TO-LAST hop.
  *
- * This exercises getClientIp() against a synthetic three-hop header and asserts it
- * extracts the real client IP specifically — not a string/grep match against source code.
+ * This exercises getClientIp() against synthetic headers and asserts it extracts the real
+ * client IP specifically, not a string/grep match against source code.
  *
  * Run with: pnpm exec tsx scripts/verify-payfast-itn-ip.ts
  */
@@ -35,37 +31,44 @@ function makeRequest(headers: Record<string, string>): { headers: { get(name: st
 
 const CASES: IpTestCase[] = [
   {
-    // The canonical GCLB shape: attacker-supplied prefix, then real client IP, then LB IP.
-    name: 'three_hop_gclb_shape_extracts_second_to_last',
-    headers: { 'x-forwarded-for': 'spoofedIp, realClientIp, loadBalancerIp' },
-    expected: 'realClientIp',
-  },
-  {
-    // Minimal GCLB shape with no attacker-supplied prefix: client IP, then LB IP.
-    name: 'two_hop_extracts_client_ip_not_lb_ip',
-    headers: { 'x-forwarded-for': '203.0.113.7, 130.211.4.9' },
+    name: 'platform_shape_extracts_third_to_last',
+    headers: { 'x-forwarded-for': '203.0.113.9, 203.0.113.7, 66.249.1.1, 74.125.1.1' },
     expected: '203.0.113.7',
   },
   {
-    // Multiple spoofed hops prepended before the two GCLB-appended entries.
-    name: 'many_spoofed_hops_still_extracts_second_to_last',
-    headers: { 'x-forwarded-for': '1.1.1.1, 2.2.2.2, 3.3.3.3, realClientIp, loadBalancerIp' },
-    expected: 'realClientIp',
+    name: 'exactly_three_hops_extracts_first',
+    headers: { 'x-forwarded-for': '203.0.113.7, 66.249.1.1, 74.125.1.1' },
+    expected: '203.0.113.7',
   },
   {
-    // Single hop (no LB entry present) — nothing trustworthy to extract as "second-to-last".
-    name: 'single_hop_has_no_second_to_last',
-    headers: { 'x-forwarded-for': 'onlyOneIp' },
-    expected: null,
+    name: 'many_spoofed_hops_still_extracts_third_to_last',
+    headers: { 'x-forwarded-for': '1.1.1.1, 2.2.2.2, 3.3.3.3, 203.0.113.7, 66.249.1.1, 74.125.1.1' },
+    expected: '203.0.113.7',
   },
   {
-    // No X-Forwarded-For at all — falls back to X-Real-IP.
+    name: 'valid_fah_header_wins',
+    headers: {
+      'x-forwarded-for': '1.1.1.1, 2.2.2.2, 66.249.1.1, 74.125.1.1',
+      'x-fah-client-ip': '203.0.113.7',
+    },
+    expected: '203.0.113.7',
+  },
+  {
+    name: 'two_hops_off_platform_uses_last',
+    headers: { 'x-forwarded-for': '203.0.113.7, 130.211.4.9' },
+    expected: '130.211.4.9',
+  },
+  {
+    name: 'single_hop_is_used_as_is',
+    headers: { 'x-forwarded-for': '203.0.113.7' },
+    expected: '203.0.113.7',
+  },
+  {
     name: 'falls_back_to_x_real_ip_when_no_xff',
     headers: { 'x-real-ip': 'fallbackIp' },
     expected: 'fallbackIp',
   },
   {
-    // Neither header present.
     name: 'no_headers_returns_null',
     headers: {},
     expected: null,
@@ -93,7 +96,7 @@ function main(): void {
     process.exit(1);
   }
 
-  process.stderr.write('\nAll getClientIp() cases correctly extracted the second-to-last hop.\n');
+  process.stderr.write('\nAll getClientIp() cases correctly extracted the client hop.\n');
 }
 
 main();

@@ -104,11 +104,13 @@ and preferences 10 per hour per IP, using the shared sliding-window
 `decideRateLimit`. The counter is in memory per server instance (the same known limitation as the
 vendor routes). The numbers are placeholders, not committee-approved values.
 
-- Key: `clientIpFromForwardedFor` (`lib/client-ip.ts`). Google's front end appends the client IP, so
-  the header is `<client-supplied...>, <client-ip>, <lb-ip>`: one entry is used as-is, two or more
-  yield the second-to-last. Never the first (spoofable) nor the last (the shared load-balancer
-  address, which would let one attacker exhaust the quota for everyone). A missing header falls
-  back to one shared `unknown` key. To verify on beta, compare against Cloud Run's logged remoteIp.
+- Key: `rateLimitKeyFromHeaders` (`lib/client-ip.ts`). The platform sets `x-fah-client-ip`, used when
+  it is a valid IP; otherwise X-Forwarded-For, which App Hosting writes as
+  `<client-supplied...>, <client-ip>, <proxy>, <proxy>` (observed 2026-11-22), so three or more
+  entries yield the third-to-last and one or two yield the last (off-platform only). Never the
+  first (spoofable) nor the last on the platform (a shared Google proxy, which would let one
+  attacker exhaust the quota for everyone). A missing header falls back to one shared `unknown`
+  key. Cloud Run's logged remoteIp cannot verify this: it is a Google proxy, not the client.
 - Once per request: each route wraps the store per request, so a Firestore transaction retry cannot
   count one request twice.
 - `lib/newsletter-rate-limit.ts` holds the shared check (`consumeRateLimit`) and imports

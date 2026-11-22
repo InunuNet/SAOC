@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 
-import { rateLimitKeyFromForwardedFor } from '@/lib/client-ip';
+import { rateLimitKeyFromHeaders } from '@/lib/client-ip';
 import { getStorageBucketName, initAdmin } from '@/lib/firebase-admin';
 import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
 import { base64BodyLimitBytes, isFirestoreAutoId, readJsonBodyWithinLimit } from '@/lib/request-guards';
@@ -39,7 +39,7 @@ const rateLimitStore = createInMemoryMarketingAssetRateLimitStore();
 
 /** Mirrors app/api/vendors/[id]/proof-of-payment/route.ts's deriveRateLimitKey() exactly. */
 function deriveRateLimitKey(request: NextRequest): string {
-  const ip = rateLimitKeyFromForwardedFor(request.headers.get('x-forwarded-for'));
+  const ip = rateLimitKeyFromHeaders(request.headers);
   return `vendor-marketing-ip:${ip ?? 'unknown'}`;
 }
 

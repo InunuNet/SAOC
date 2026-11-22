@@ -22,7 +22,7 @@ type Handler = (request: NextRequest) => Promise<Response>;
 
 function request(path: string, realIp: string, spoofedFirstHop = '198.51.100.1'): NextRequest {
   return new NextRequest(`http://localhost${path}`, {
-    headers: { 'x-forwarded-for': `${spoofedFirstHop}, ${realIp}, 10.0.0.1` },
+    headers: { 'x-forwarded-for': `${spoofedFirstHop}, ${realIp}, 10.0.0.1, 10.0.0.2` },
   });
 }
 

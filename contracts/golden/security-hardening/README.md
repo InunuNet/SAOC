@@ -8,7 +8,7 @@ The pattern already used by `app/api/sponsors/enquire/route.ts` and the newslett
 
 New `lib/public-form-rate-limit.ts` exports `PUBLIC_FORM_RATE_LIMIT_MAX_ATTEMPTS = 5` and `PUBLIC_FORM_RATE_LIMIT_WINDOW_MS = 3_600_000`, used by contact, vendor apply and event submit. The 6th attempt inside the window is denied, the 5th is allowed, and a second key is unaffected.
 
-Keys: `contact:${ip}`, `vendor-apply:${ip}`, `event-submit:${uid}`; `ip` is `clientIpFromForwardedFor(request.headers.get('x-forwarded-for')) ?? 'unknown'`. The limit is consumed BEFORE `request.json()`, so a limited caller's body is never parsed.
+Keys: `contact:${ip}`, `vendor-apply:${ip}`, `event-submit:${uid}`; `ip` is `rateLimitKeyFromHeaders(request.headers) ?? 'unknown'`. The limit is consumed BEFORE `request.json()`, so a limited caller's body is never parsed.
 
 Known limit (same as sponsors/newsletter): the store is per server instance and cleared on restart. Cloud Armor is the follow-up.
 
@@ -22,7 +22,7 @@ Known limit (same as sponsors/newsletter): the store is per server instance and 
 
 ## M2 client IP
 
-Every route that keys a limiter on the client address uses `clientIpFromForwardedFor` (second-to-last hop). Routes: vendors/register, vendors/register/verify-code, vendors/[id]/proof-of-payment, vendors/[id]/marketing-asset. Fixture `xff-cases.json` includes spoofed first hops. Within `app/`, no line mentioning `x-forwarded-for` may lack `clientIpFromForwardedFor` (the `x-forwarded-host` reads are untouched). `lib/payfast.ts getClientIp` and `lib/payments/ozow.ts getOzowClientIp` already take the second-to-last hop for the ITN allow-list and are out of scope here; deduplicating them onto the helper is a follow-up.
+Every route that keys a limiter on the client address uses `rateLimitKeyFromHeaders` (`x-fah-client-ip`, else the third-to-last hop; observed 2026-11-22). Routes: vendors/register, vendors/register/verify-code, vendors/[id]/proof-of-payment, vendors/[id]/marketing-asset. Fixture `xff-cases.json` includes spoofed first hops. Within `app/`, no line mentioning `x-forwarded-for` may lack `clientIpFromHeaders`/`rateLimitKeyFromHeaders` (the `x-forwarded-host` reads are untouched). `lib/payfast.ts getClientIp` and `lib/payments/ozow.ts getOzowClientIp` delegate to the same resolver. Fixture `xff-cases.json` now holds `{xff, fah?, expected}` cases.
 
 ## M3 events/submit
 

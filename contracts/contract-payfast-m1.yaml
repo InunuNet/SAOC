@@ -167,10 +167,10 @@ assertions:
       command: 'if grep -Eq "from ''@/lib/firebase''|from ''firebase/app''" app/api/tickets/itn/route.ts; then exit 1; fi'
     - id: A28
       description: >-
-        F3 - client IP trust takes the SECOND-TO-LAST X-Forwarded-For hop (the real client
-        IP; GCLB appends client-ip then load-balancer-ip, so the last hop is the LB itself
-        and only the second-to-last is trustworthy), not the first (spoofable) or the last
-      command: 'grep -q "hops\[hops.length - 2\]" lib/payfast.ts'
+        F3 - client IP trust delegates to the shared resolver (lib/client-ip.ts: the platform
+        appends client, proxy, proxy to X-Forwarded-For, observed 2026-11-22, so the real
+        client is the THIRD-TO-LAST hop), not the first (spoofable) or the last (a proxy)
+      command: 'grep -q "clientIpFromHeaders" lib/payfast.ts'
     - id: A29
       description: F3 - client IP extraction never trusts the first XFF hop as the source of truth
       command: 'if grep -Eq "forwardedFor\.split\(.,.\)\[0\]" lib/payfast.ts app/api/tickets/itn/route.ts; then exit 1; fi'
@@ -199,8 +199,8 @@ assertions:
       command: 'pnpm build'
     - id: A33
       description: >-
-        F3 - getClientIp() unit test runs against a synthetic 3-hop X-Forwarded-For
-        ("spoofedIp, realClientIp, loadBalancerIp") and asserts it extracts "realClientIp"
+        F3 - getClientIp() unit test runs against synthetic X-Forwarded-For shapes (4 hops,
+        "spoofedIp, realClientIp, proxy, proxy") and asserts it extracts "realClientIp"
         specifically (real behaviour gate, not a string match)
       command: 'pnpm exec tsx scripts/verify-payfast-itn-ip.ts'
     - id: A34

@@ -88,7 +88,7 @@ function upload(profile, id, bytes = profile.good) {
   const request = new NextRequest(`http://localhost/api/vendors/${id}/x`, {
     method: 'POST',
     headers: {
-      'x-forwarded-for': `198.51.100.${++ipCounter}, 10.0.0.1`,
+      'x-forwarded-for': `198.51.100.${++ipCounter}, 10.0.0.1, 10.0.0.2`,
       'content-type': 'application/json',
       'content-length': String(Buffer.byteLength(body)),
     },

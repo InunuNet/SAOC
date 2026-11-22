@@ -68,7 +68,7 @@ function body(fields, signature) {
   return parts.join('&');
 }
 
-const req = (raw, xff = '197.97.145.144,10.0.0.1') => ({
+const req = (raw, xff = '197.97.145.144,10.0.0.1,10.0.0.2') => ({
   rawBody: raw,
   headers: { get: (n) => (n.toLowerCase() === 'x-forwarded-for' ? xff : null) },
 });
@@ -168,10 +168,10 @@ const untrusted = await createPayfastProvider({
   env: { PAYFAST_SANDBOX_MERCHANT_ID: '10000100', PAYFAST_SANDBOX_MERCHANT_KEY: 'k', PAYFAST_SANDBOX_PASSPHRASE: PASS },
   resolveTrustedIps: async () => new Set(['1.2.3.4']),
   fetch: async () => { throw new Error('no HTTP in verifyNotification'); },
-}).verifyNotification(req(genuine, '35.219.200.118,10.0.0.1'));
+}).verifyNotification(req(genuine, '35.219.200.118,10.0.0.1,10.0.0.2'));
 r.ok('case 10: untrusted source IP still verifies', untrusted.verified === true, JSON.stringify(untrusted));
 if (untrusted.verified) {
-  r.eq('case 10: sourceIp is the second-to-last XFF hop', untrusted.notification.sourceIp, '35.219.200.118');
+  r.eq('case 10: sourceIp is the third-to-last XFF hop', untrusted.notification.sourceIp, '35.219.200.118');
   r.eq('case 10: sourceIpTrusted reports false', untrusted.notification.sourceIpTrusted, false);
 }
 
