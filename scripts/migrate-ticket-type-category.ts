@@ -32,7 +32,7 @@
  *     setIfMissing, not set(), is used throughout.
  *   - No delete(), no createOrReplace().
  *
- * Supports --dry-run: prints exactly which documents would be patched and with what
+ * Dry run is the default (--dry-run is accepted as a no-op): prints exactly which documents would be patched and with what
  * category, without writing anything.
  *
  * Required env (read directly from .env.local, matching scripts/seed-ticketing.ts):
@@ -40,7 +40,7 @@
  *   NEXT_PUBLIC_SANITY_DATASET
  *   SANITY_API_TOKEN — write-enabled Editor token
  *
- * Run with: node --import tsx/esm scripts/migrate-ticket-type-category.ts [--dry-run]
+ * Run with: node --import tsx/esm scripts/migrate-ticket-type-category.ts [--apply]  (bare run = dry run, nothing written)
  */
 
 import { readFileSync } from 'node:fs';
@@ -99,7 +99,8 @@ const client: SanityClient = createClient({
   useCdn: false,
 });
 
-const DRY_RUN = process.argv.includes('--dry-run');
+// Safe by default: writes need an explicit --apply; --dry-run is accepted and always wins.
+const DRY_RUN = !process.argv.includes('--apply') || process.argv.includes('--dry-run');
 
 // Same `ticketType-${slug}` _id convention seed-ticketing.ts uses.
 const ALL_PRODUCTS = [...ADMISSION_PRODUCTS, ...CONFERENCE_PRODUCTS, ...WORKSHOP_FIELD_TRIP_PRODUCTS];

@@ -23,7 +23,7 @@
  *   NEXT_PUBLIC_SANITY_DATASET
  *   SANITY_API_TOKEN — write-enabled Editor token
  *
- * Run with: node --import tsx/esm scripts/fix-visitor-info-dates-confirmed.ts [--dry-run]
+ * Run with: node --import tsx/esm scripts/fix-visitor-info-dates-confirmed.ts [--apply]  (bare run = dry run, nothing written)
  * Verify with: node --import tsx/esm scripts/fix-visitor-info-dates-confirmed.ts --verify
  */
 
@@ -73,7 +73,8 @@ const client: SanityClient = createClient({
   useCdn: false,
 });
 
-const DRY_RUN = process.argv.includes('--dry-run');
+// Safe by default: writes need an explicit --apply; --dry-run is accepted and always wins.
+const DRY_RUN = !process.argv.includes('--apply') || process.argv.includes('--dry-run');
 const VERIFY = process.argv.includes('--verify');
 
 const VISITOR_INFO_ID = 'showVisitorInfo';

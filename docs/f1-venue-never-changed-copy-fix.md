@@ -40,7 +40,7 @@ The live Sanity document (`_id: "showVisitorInfo"`, project `26yfbug4`, dataset 
 | `accommodationIntro` | "Accommodation guidance for the Stellenbosch area is still being put together. The previous list was written for a Cape Town city-centre venue and has been removed rather than left to mislead." | "Accommodation guidance for the Stellenbosch area is still being put together." |
 | `accessibility` | "Accessibility details have not been confirmed for the new venue." | "Accessibility details have not been confirmed." |
 
-**How it was applied:** A one-off idempotent patch script, `scripts/fix-venue-never-changed-copy.ts`, modelled exactly on `scripts/fix-visitor-info-dates-confirmed.ts`, was written and executed by the orchestrator. It applies `.patch(VISITOR_INFO_ID).set()` calls for these six fields only, never using `.setIfMissing()` (which would silently no-op if already set). The script includes `--dry-run` and `--verify` flags for safe re-checking.
+**How it was applied:** A one-off idempotent patch script, `scripts/fix-venue-never-changed-copy.ts`, modelled exactly on `scripts/fix-visitor-info-dates-confirmed.ts`, was written and executed by the orchestrator. It applies `.patch(VISITOR_INFO_ID).set()` calls for these six fields only, never using `.setIfMissing()` (which would silently no-op if already set). The script is a dry run unless `--apply` is passed, and has a `--verify` flag for safe re-checking.
 
 ### 2. Seed Script Updated: `scripts/seed-show-visitor-info.ts`
 
@@ -125,11 +125,11 @@ Outputs a structured result showing each of the six fields, whether it contains 
 
 ### Re-Apply the Patch
 ```bash
-# Dry-run first (reads-only, no writes):
-npx ts-node scripts/fix-venue-never-changed-copy.ts --dry-run
-
-# Apply the patch:
+# Dry run (the default; reads only, no writes):
 npx ts-node scripts/fix-venue-never-changed-copy.ts
+
+# Apply the patch (writes to the live dataset):
+npx ts-node scripts/fix-venue-never-changed-copy.ts --apply
 
 # Verify it took:
 npx ts-node scripts/fix-venue-never-changed-copy.ts --verify

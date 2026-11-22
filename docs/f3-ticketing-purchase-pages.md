@@ -321,7 +321,7 @@ Now importing the module for testing never triggers a live seed as a side effect
 Backfills the `category` field onto pre-existing `ticketType` documents in the target Sanity dataset:
 
 ```bash
-node --import tsx/esm scripts/migrate-ticket-type-category.ts [--dry-run]
+node --import tsx/esm scripts/migrate-ticket-type-category.ts [--apply]
 ```
 
 **Follows the established pattern** (`scripts/migrate-show-sales-fields.ts`):

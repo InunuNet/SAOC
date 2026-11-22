@@ -1534,12 +1534,13 @@ This script patches `show-19-2027` with sales data copied from the `nationalShow
 
 - Uses `setIfMissing` on every patch, so editor changes and re-runs never conflict
 - Reads live values from `nationalShow` (`edition`, `showDate`, `showEndDate`, `venue`) instead of inventing placeholders
-- Supports `--dry-run` for inspection before writing
+- Dry run by default (`--dry-run` is accepted as a no-op); writes only with `--apply`
 
 **To run:**
 
 ```bash
-node --import tsx/esm scripts/migrate-show-sales-fields.ts
+node --import tsx/esm scripts/migrate-show-sales-fields.ts          # dry run
+node --import tsx/esm scripts/migrate-show-sales-fields.ts --apply  # writes
 ```
 
 It reads `.env.local` for `NEXT_PUBLIC_SANITY_PROJECT_ID`, `NEXT_PUBLIC_SANITY_DATASET`, and `SANITY_API_TOKEN` (write-enabled Editor token).

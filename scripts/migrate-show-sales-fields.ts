@@ -22,7 +22,7 @@
  * already describes this same 2027 show. This keeps show-19-2027 consistent with the
  * data editors already see in Studio instead of introducing a second, drifting copy.
  *
- * Supports --dry-run: prints exactly which documents would be patched and with what
+ * Dry run is the default (--dry-run is accepted as a no-op): prints exactly which documents would be patched and with what
  * values, without writing anything.
  *
  * Required env (read directly from .env.local, matching scripts/seed-ticketing.ts):
@@ -30,7 +30,7 @@
  *   NEXT_PUBLIC_SANITY_DATASET
  *   SANITY_API_TOKEN — write-enabled Editor token
  *
- * Run with: node --import tsx/esm scripts/migrate-show-sales-fields.ts [--dry-run]
+ * Run with: node --import tsx/esm scripts/migrate-show-sales-fields.ts [--apply]  (bare run = dry run, nothing written)
  */
 
 import { readFileSync } from 'node:fs';
@@ -83,7 +83,8 @@ const client: SanityClient = createClient({
   useCdn: false,
 });
 
-const DRY_RUN = process.argv.includes('--dry-run');
+// Safe by default: writes need an explicit --apply; --dry-run is accepted and always wins.
+const DRY_RUN = !process.argv.includes('--apply') || process.argv.includes('--dry-run');
 
 const ACTIVE_SHOW_ID = 'show-19-2027';
 const NATIONAL_SHOW_SINGLETON_ID = 'nationalShow';
