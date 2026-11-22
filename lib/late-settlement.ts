@@ -157,18 +157,19 @@ export function subtractCounts(
   return remaining;
 }
 
-/**
- * The per-day sold-count key to take this order's own position OUT of before planning, or null
- * when it must stay in.
- *
- * A day-shaped position with no chosenDay is filed under its plain slug by
- * getSoldCountsByTicketTypeAndDay, and the planner (like checkout's) counts every such plain-slug
- * sale as a legacy undated head against EVERY per-day pool. The planner never re-adds an undated
- * position as a requested quantity, so subtracting it would drop it from that legacy count and
- * under-count. Leaving it in counts it exactly once, the way checkout counts any earlier undated
- * sale: that is the symmetric treatment, so it returns null for it.
- */
-export function dayCountKey(position: LatePosition): string | null {
-  if (!DAY_VISITOR_SHAPED_SLUGS.includes(position.ticketType)) return position.ticketType;
-  return position.chosenDay ? `${position.ticketType}::${position.chosenDay}` : null;
+/** True when a day-shaped position has no chosenDay: a legacy record. The planner counts OTHER
+ *  orders' such sales as legacy heads against every day, but cannot place the flagged order's own
+ *  undated position on a day, so the caller records the flag as unverified for such an order. */
+export function hasUndatedDayShapedPosition(positions: LatePosition[]): boolean {
+  return positions.some(
+    (position) => DAY_VISITOR_SHAPED_SLUGS.includes(position.ticketType) && !position.chosenDay
+  );
+}
+
+/** The key getSoldCountsByTicketTypeAndDay files a position under. Only called for orders with no
+ *  undated day-shaped position (see hasUndatedDayShapedPosition). */
+export function dayCountKey(position: LatePosition): string {
+  return DAY_VISITOR_SHAPED_SLUGS.includes(position.ticketType) && position.chosenDay
+    ? `${position.ticketType}::${position.chosenDay}`
+    : position.ticketType;
 }

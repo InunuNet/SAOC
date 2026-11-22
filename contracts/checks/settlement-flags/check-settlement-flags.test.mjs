@@ -460,69 +460,103 @@ test('a duplicate notification writes no receipt record', async () => {
   assert.equal(mail.sends.length, 1);
 });
 
-// Codex repro: a late multi-line order with an UNDATED day-shaped position plus a dated day ticket.
-// The undated position is a legacy head against every per-day pool and must stay counted once.
+// Codex repros: an order carrying an UNDATED (legacy) day-shaped position cannot be placed on a
+// day, so its flag is `overCapacity: null` (unknown), never a possibly wrong false. Only when
+// every day-shaped position of the order is dated is the count exact. OTHER orders' undated sales
+// stay in the counts as legacy heads against every day.
 const { flagLateSettlement } = await import('../../../lib/late-settlement-flag.ts');
 const { DAY_VISITOR_SHAPED_SLUGS } = await import('../../../lib/provisional-figures.ts');
 
-function legacyScenario(otherDatedSales) {
-  const day = '2027-09-24';
-  const shaped = DAY_VISITOR_SHAPED_SLUGS.find((slug) => slug !== 'day-visitor');
+const DAY = '2027-09-24';
+const SHAPED = DAY_VISITOR_SHAPED_SLUGS.find((slug) => slug !== 'day-visitor');
+
+/** Seeds a paid late order with `ownPositions`, the other orders' paid `others`, and a day cap of
+ *  3, then flags it and returns the recorded flag. */
+async function flagScenario(ownPositions, others) {
   store.orders.set('late-1', { status: 'paid', showId: SHOW_ID, m_payment_id: 'REF-late-1' });
-  const own = (id, ticketType, chosenDay) =>
+  const seed = (id, orderId, { ticketType, chosenDay }) =>
     store.tickets.set(id, {
-      orderId: 'late-1',
+      orderId,
       showId: SHOW_ID,
       status: 'paid',
       ticketType,
       ...(chosenDay ? { chosenDay } : {}),
     });
-  own('own-undated', shaped, null);
-  own('own-dated', 'day-visitor', day);
-  for (let i = 0; i < otherDatedSales; i += 1) {
-    store.tickets.set(`other-${i}`, {
-      orderId: `o-${i}`,
-      showId: SHOW_ID,
-      status: 'paid',
-      ticketType: 'day-visitor',
-      chosenDay: day,
-    });
-  }
+  ownPositions.forEach((position, i) => seed(`own-${i}`, 'late-1', position));
+  others.forEach((position, i) => seed(`other-${i}`, `o-${i}`, position));
+  const dated = ownPositions.filter((position) => position.chosenDay);
   const capacity = {
-    capacityByType: { [shaped]: 100 },
-    poolConfigByType: { [shaped]: { pool: null, headcountPerUnit: 1 } },
-    dayCapRequestedQtyByType: { [`day-visitor::${day}`]: 1 },
-    dayCapCapacityByType: { [`day-visitor::${day}`]: 3 },
+    capacityByType: { [SHAPED]: 100, 'day-visitor': 100 },
+    poolConfigByType: {
+      [SHAPED]: { pool: null, headcountPerUnit: 1 },
+    },
+    dayCapRequestedQtyByType: Object.fromEntries(
+      dated.map((position) => [`${position.ticketType}::${DAY}`, 1])
+    ),
+    dayCapCapacityByType: { [`day-visitor::${DAY}`]: 3 },
     dayCapPoolConfigByType: Object.fromEntries(
       DAY_VISITOR_SHAPED_SLUGS.map((slug) => [
-        `${slug}::${day}`,
-        { pool: `day-visitor::${day}`, headcountPerUnit: 1 },
+        `${slug}::${DAY}`,
+        { pool: `day-visitor::${DAY}`, headcountPerUnit: 1 },
       ])
     ),
   };
-  return {
-    input: {
+  await flagLateSettlement(
+    {
       orderId: 'late-1',
       reference: 'REF-late-1',
-      positions: [
-        { ticketType: shaped, chosenDay: null },
-        { ticketType: 'day-visitor', chosenDay: day },
-      ],
+      positions: ownPositions,
       expiresAt: Timestamp.fromMillis(NOW_MS - HOUR_MS),
       settledAt: Timestamp.fromMillis(NOW_MS),
     },
-    deps: { loadCapacity: async () => capacity },
-  };
+    { loadCapacity: async () => capacity }
+  );
+  return store.orders.get('late-1').settlement;
 }
 
-test('legacy count: an undated day-shaped position of the order itself is counted once, not dropped', async () => {
-  const { input, deps } = legacyScenario(2); // 2 dated + 1 legacy undated + this dated = 4 > 3
-  await flagLateSettlement(input, deps);
-  assert.equal(store.orders.get('late-1').settlement.overCapacity, true);
+const datedSale = { ticketType: 'day-visitor', chosenDay: DAY };
+
+test('legacy count: an order holding ONLY an undated day-shaped ticket is flagged unknown (Codex repro)', async () => {
+  const flag = await flagScenario(
+    [{ ticketType: SHAPED, chosenDay: null }],
+    [datedSale, datedSale, datedSale] // the day is already full from other orders
+  );
+  assert.equal(flag.lateAfterHoldExpiry, true);
+  assert.equal(flag.overCapacity, null);
 });
 
-test('legacy count, control: one fewer dated sale is exactly at the cap, not over', async () => {
-  const { input, deps } = legacyScenario(1); // 1 dated + 1 legacy + this dated = 3 <= 3
-  await flagLateSettlement(input, deps);
-  assert.equal(store.orders.get('late-1').settlement.overCapacity, false);
+test('legacy count: a mixed undated + dated order is flagged unknown, whatever the totals', async () => {
+  const own = [
+    { ticketType: SHAPED, chosenDay: null },
+    { ticketType: 'day-visitor', chosenDay: DAY },
+  ];
+  assert.equal((await flagScenario(own, [datedSale, datedSale])).overCapacity, null);
+  store.orders.clear();
+  store.tickets.clear();
+  assert.equal((await flagScenario(own, [datedSale])).overCapacity, null);
+});
+
+test('fully dated multi-line order: the count is exact, true over the cap and false at it', async () => {
+  const own = [
+    { ticketType: 'day-visitor', chosenDay: DAY },
+    { ticketType: SHAPED, chosenDay: DAY },
+  ];
+  // 2 other dated + these 2 = 4 > 3
+  assert.equal((await flagScenario(own, [datedSale, datedSale])).overCapacity, true);
+  store.orders.clear();
+  store.tickets.clear();
+  // 1 other dated + these 2 = 3 <= 3
+  assert.equal((await flagScenario(own, [datedSale])).overCapacity, false);
+});
+
+test("another order's undated sale still counts as a legacy head against the day", async () => {
+  const own = [{ ticketType: 'day-visitor', chosenDay: DAY }];
+  // 1 other dated + 1 other legacy undated + this dated = 3 <= 3
+  const atCap = await flagScenario(own, [datedSale, { ticketType: SHAPED, chosenDay: null }]);
+  assert.equal(atCap.overCapacity, false);
+  store.orders.clear();
+  store.tickets.clear();
+  // 2 other dated + 1 other legacy undated + this dated = 4 > 3
+  const over = await flagScenario(own, [datedSale, datedSale, { ticketType: SHAPED, chosenDay: null }]);
+  assert.equal(over.overCapacity, true);
 });

@@ -5,6 +5,7 @@ import { initAdmin } from '@/lib/firebase-admin';
 import {
   hasDayCapPositions,
   dayCountKey,
+  hasUndatedDayShapedPosition,
   isOverCapacityAfterLateSettlement,
   subtractCounts,
   type LatePosition,
@@ -94,6 +95,10 @@ async function assessCapacity(
   const showId = order?.['showId'];
   if (typeof showId !== 'string') return { kind: 'assessed', overCapacity: null };
 
+  // A legacy undated day-shaped position of this very order cannot be placed on a day, so the
+  // per-day count cannot be exact: record it as unverified rather than risk a wrong false.
+  if (hasUndatedDayShapedPosition(input.positions)) return { kind: 'assessed', overCapacity: null };
+
   const capacity = await deps.loadCapacity({ showId, positions: input.positions, signal });
   if (!capacity) return { kind: 'assessed', overCapacity: null };
   // The order itself is already paid, so its positions are inside these live counts; they are
@@ -105,7 +110,7 @@ async function assessCapacity(
   const soldCountsByDay = hasDayCapPositions(capacity)
     ? subtractCounts(
         await getSoldCountsByTicketTypeAndDay(showId, new Set(DAY_VISITOR_SHAPED_SLUGS)),
-        input.positions.flatMap((position) => dayCountKey(position) ?? [])
+        input.positions.map(dayCountKey)
       )
     : null;
   return {
