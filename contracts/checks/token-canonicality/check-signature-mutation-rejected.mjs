@@ -98,6 +98,12 @@ const MODULE_ADAPTERS = {
     mintInput: () => ({ applicationId: 'app-canonicality-check', secret: SECRET, now: NOW, generation: 1 }),
     verifyInput: (token) => ({ token, secret: SECRET, now: NOW }),
   },
+  'vendor-photo-resume-token.ts': {
+    mintFn: 'mintVendorPhotoResumeToken',
+    verifyFn: 'verifyVendorPhotoResumeToken',
+    mintInput: () => ({ vendorSubmissionId: 'vs-canonicality-check', secret: SECRET, now: NOW }),
+    verifyInput: (token) => ({ token, secret: SECRET, now: NOW }),
+  },
   'vendor-stand-payment-token.ts': {
     mintFn: 'mintVendorStandPaymentToken',
     verifyFn: 'verifyVendorStandPaymentToken',

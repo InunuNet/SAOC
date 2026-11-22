@@ -37,11 +37,14 @@ const SHOW_ID = 'fixture-show';
 // SLUG, never pre-merged by pool (Codex found, 2026-10-07, verified by team-lead: the
 // previous version of this fixture stubbed `{'admission-early-bird': 495}`, a key that
 // never exists in the real sold-counts map, so it passed without ever exercising the
-// membership-summing logic it claimed to prove). early-bird (200 sold) and
-// weekend-pass-early-bird (150 sold) both declare capacityPool: 'admission-early-bird'
-// (lib/provisional-figures.ts) — 350/500 sold, 150 remaining. 60 vs 150 are deliberately
-// DIFFERENT numbers so a bug that collapses the two calls into one would be caught —
-// returning either 60 for both or 150 for both would both be wrong.
+// membership-summing logic it claimed to prove). Since 19 Nov (commit 76c52d56, Brad: the
+// Weekend Pass has no early-bird price, weekend-pass-early-bird retired) early-bird is the
+// ONLY product whose capacityPool is 'admission-early-bird' (lib/provisional-figures.ts):
+// 200/500 sold, 300 remaining. 60 vs 300 are deliberately DIFFERENT numbers so a bug that
+// collapses the two calls into one would be caught — returning either 60 for both or 300
+// for both would both be wrong. The multi-member summing this fixture used to carry through
+// weekend-pass-early-bird is now proven on the real two-member 'sunset-cocktails' pool
+// (single x1 + couple x2) further down.
 const dayQualifiedRemaining = await getPoolRemaining(
   { poolKeyBase: 'day-visitor', chosenDay: FRIDAY, requiresDaySelection: true, capacity: 1000, showId: SHOW_ID },
   {
@@ -53,21 +56,21 @@ const unqualifiedRemaining = await getPoolRemaining(
   { poolKeyBase: 'admission-early-bird', chosenDay: FRIDAY, requiresDaySelection: false, capacity: 500, showId: SHOW_ID },
   {
     getSoldCountsByTicketTypeAndDay: async () => ({}),
-    getSoldCountsByTicketType: async () => ({ 'early-bird': 200, 'weekend-pass-early-bird': 150 }),
+    getSoldCountsByTicketType: async () => ({ 'early-bird': 200 }),
   },
 );
 
 if (dayQualifiedRemaining !== 60) {
   failures.push(`day-qualified call (Friday, 940/1000 sold) returned ${JSON.stringify(dayQualifiedRemaining)}, expected 60`);
 }
-if (unqualifiedRemaining !== 150) {
+if (unqualifiedRemaining !== 300) {
   failures.push(
-    `unqualified call (early-bird 200 + weekend-pass-early-bird 150 = 350/500 sold on the shared admission-early-bird pool, keyed by REAL slug as getSoldCountsByTicketType() actually returns) returned ${JSON.stringify(unqualifiedRemaining)}, expected 150 — getPoolRemaining's unqualified branch must sum every slug whose capacityPool resolves to poolKeyBase, not look up poolKeyBase itself as a sold-counts key`,
+    `unqualified call (early-bird 200/500 sold on the shared admission-early-bird pool, keyed by REAL slug as getSoldCountsByTicketType() actually returns) returned ${JSON.stringify(unqualifiedRemaining)}, expected 300 — getPoolRemaining's unqualified branch must sum every slug whose capacityPool resolves to poolKeyBase, not look up poolKeyBase itself as a sold-counts key`,
   );
 }
 if (dayQualifiedRemaining === unqualifiedRemaining) {
   failures.push(
-    `both calls returned the SAME value (${JSON.stringify(dayQualifiedRemaining)}) — the two ceilings were deliberately set to different remaining counts (60 vs 150) to catch exactly this collapse`,
+    `both calls returned the SAME value (${JSON.stringify(dayQualifiedRemaining)}) — the two ceilings were deliberately set to different remaining counts (60 vs 300) to catch exactly this collapse`,
   );
 }
 
@@ -94,8 +97,25 @@ if (dualSlugRemaining !== 60) {
   );
 }
 
+// Multi-member, headcount-weighted unqualified pool on REAL catalogue slugs: both
+// sunset-cocktails products declare capacityPool 'sunset-cocktails' (single x1, couple x2).
+// 3 singles + 2 couples = 3 + 4 = 7 heads of 100 -> 93 remaining. Looking the pool key up
+// directly, or ignoring headcountPerUnit, would not give 93.
+const sunsetRemaining = await getPoolRemaining(
+  { poolKeyBase: 'sunset-cocktails', chosenDay: FRIDAY, requiresDaySelection: false, capacity: 100, showId: SHOW_ID },
+  {
+    getSoldCountsByTicketTypeAndDay: async () => ({}),
+    getSoldCountsByTicketType: async () => ({ 'sunset-cocktails-single': 3, 'sunset-cocktails-couple': 2 }),
+  },
+);
+if (sunsetRemaining !== 93) {
+  failures.push(
+    `multi-member pool call (sunset-cocktails: 3 singles x1 + 2 couples x2 = 7 heads of 100) returned ${JSON.stringify(sunsetRemaining)}, expected 93 — the unqualified branch must sum every member slug weighted by headcountPerUnit`,
+  );
+}
+
 finish(
   'check-get-pool-remaining-early-bird-dual-ceiling.mjs',
   failures,
-  'day-qualified (60 left) and unqualified (150 left, summed from realistically-keyed per-slug stubs) calls against early-bird resolve independently.',
+  'day-qualified (60 left) and unqualified (300 left, realistically-keyed per-slug stub; multi-member weighted summing proven on sunset-cocktails) calls against early-bird resolve independently.',
 );

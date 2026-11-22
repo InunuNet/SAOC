@@ -41,11 +41,13 @@ const INITIATE = '../../../app/api/vendors/stand-payment/initiate/route.ts';
 const PAYFAST_ITN = '../../../app/api/vendors/stand-payment/payfast-itn/route.ts';
 const OZOW_ITN = '../../../app/api/vendors/stand-payment/ozow-itn/route.ts';
 const TOKEN = '../../../lib/vendor-stand-payment-token.ts';
+const ORDERS = '../../../lib/vendor-stand-orders.ts';
 
 const { POST: initiatePost } = await import(INITIATE);
 const { POST: payfastItnPost } = await import(PAYFAST_ITN);
 const { POST: ozowItnPost } = await import(OZOW_ITN);
 const { mintVendorStandPaymentToken } = await import(TOKEN);
+const { buildVendorStandOrderReference } = await import(ORDERS);
 
 const TEST_SECRET = 'test-stand-payment-secret-not-real';
 process.env.VENDOR_STAND_PAYMENT_TOKEN_SECRET = TEST_SECRET;
@@ -72,6 +74,11 @@ async function seedPendingOrder(vendorSubmissionId, gateway) {
   const token = mintToken(vendorSubmissionId);
   const result = await initiatePost(new Request("http://localhost/api/vendors/stand-payment/initiate", { method: "POST", body: JSON.stringify(({ token, boothSize: 1 })) }));
   if (result.status !== 200) throw new Error(`fixture setup failed: initiate returned ${result.status}`);
+  // Initiate mints a per-attempt id (commit dde56d6a); settlement only accepts a notification whose
+  // reference echoes it back (`VSO-<id>::<attemptId>`), exactly as a real gateway does.
+  const attemptId = vendorStandOrders.get(vendorSubmissionId)?.attemptId;
+  if (!attemptId) throw new Error('fixture setup failed: initiate stored no attemptId on the order');
+  return buildVendorStandOrderReference(vendorSubmissionId, attemptId);
 }
 
 async function callItn(post, payload) {
@@ -84,12 +91,12 @@ async function callItn(post, payload) {
 // =============================================================================================
 resetAllCollections();
 resetPaymentsFixture();
-await seedPendingOrder('sub-dup', 'payfast');
+const dupReference = await seedPendingOrder('sub-dup', 'payfast');
 // Reset the spy AFTER setup -- initiate's own createdAt: Timestamp.now() call must not be
 // counted against the settlement-specific assertion below.
 timestampNowCallCount = 0;
 
-const paidNotification = { reference: 'VSO-sub-dup', rawStatus: 'paid', grossAmountCents: 145000, gatewayPaymentId: 'pf-1' };
+const paidNotification = { reference: dupReference, rawStatus: 'paid', grossAmountCents: 145000, gatewayPaymentId: 'pf-1' };
 const settle1 = await callItn(payfastItnPost, paidNotification);
 assert(settle1.status === 200, `expected first settlement to be acknowledged 200, got ${settle1.status}`);
 assert(vendorStandOrders.get('sub-dup')?.status === 'paid', 'order should flip to paid on first settlement.');
@@ -123,9 +130,9 @@ assert(
 // =============================================================================================
 resetAllCollections();
 resetPaymentsFixture();
-await seedPendingOrder('sub-tamper', 'payfast');
+const tamperReference = await seedPendingOrder('sub-tamper', 'payfast');
 
-const tampered = { reference: 'VSO-sub-tamper', rawStatus: 'paid', grossAmountCents: 1, gatewayPaymentId: 'pf-2' };
+const tampered = { reference: tamperReference, rawStatus: 'paid', grossAmountCents: 1, gatewayPaymentId: 'pf-2' };
 await callItn(payfastItnPost, tampered);
 assert(vendorStandOrders.get('sub-tamper')?.status === 'pending', 'a tampered-amount notification must NOT settle the order.');
 assert(!vendorSubmissions.get('sub-tamper')?.paymentReceived, 'paymentReceived must stay unset on a tampered-amount notification.');
@@ -135,14 +142,14 @@ assert(!vendorSubmissions.get('sub-tamper')?.paymentReceived, 'paymentReceived m
 // =============================================================================================
 resetAllCollections();
 resetPaymentsFixture();
-await seedPendingOrder('sub-cross-1', 'payfast');
-await callItn(ozowItnPost, { reference: 'VSO-sub-cross-1', rawStatus: 'paid', grossAmountCents: 145000, gatewayPaymentId: 'oz-1' });
+const cross1Reference = await seedPendingOrder('sub-cross-1', 'payfast');
+await callItn(ozowItnPost, { reference: cross1Reference, rawStatus: 'paid', grossAmountCents: 145000, gatewayPaymentId: 'oz-1' });
 assert(vendorStandOrders.get('sub-cross-1')?.status === 'pending', 'an Ozow notification must not be able to settle a PayFast-created order.');
 
 resetAllCollections();
 resetPaymentsFixture();
-await seedPendingOrder('sub-cross-2', 'ozow');
-await callItn(payfastItnPost, { reference: 'VSO-sub-cross-2', rawStatus: 'paid', grossAmountCents: 145000, gatewayPaymentId: 'pf-3' });
+const cross2Reference = await seedPendingOrder('sub-cross-2', 'ozow');
+await callItn(payfastItnPost, { reference: cross2Reference, rawStatus: 'paid', grossAmountCents: 145000, gatewayPaymentId: 'pf-3' });
 assert(vendorStandOrders.get('sub-cross-2')?.status === 'pending', 'a PayFast notification must not be able to settle an Ozow-created order.');
 
 // =============================================================================================
@@ -150,8 +157,8 @@ assert(vendorStandOrders.get('sub-cross-2')?.status === 'pending', 'a PayFast no
 // =============================================================================================
 resetAllCollections();
 resetPaymentsFixture();
-await seedPendingOrder('sub-atomic', 'payfast');
-await callItn(payfastItnPost, { reference: 'VSO-sub-atomic', rawStatus: 'paid', grossAmountCents: 145000, gatewayPaymentId: 'pf-4' });
+const atomicReference = await seedPendingOrder('sub-atomic', 'payfast');
+await callItn(payfastItnPost, { reference: atomicReference, rawStatus: 'paid', grossAmountCents: 145000, gatewayPaymentId: 'pf-4' });
 const orderPaid = vendorStandOrders.get('sub-atomic')?.status === 'paid';
 const submissionPaid = vendorSubmissions.get('sub-atomic')?.paymentReceived === true;
 assert(
