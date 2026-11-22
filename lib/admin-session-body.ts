@@ -25,8 +25,9 @@ export async function readBodyCapped(
       if (done) break;
       total += value.length;
       if (total > maxBytes) {
-        // A failing cancel must never turn the 413 into a 500.
-        await reader.cancel().catch(() => undefined);
+        // Fire and forget: the caller must get too-large whether or not the source ever
+        // acknowledges the cancel (it may reject, or never settle).
+        void reader.cancel().catch(() => undefined);
         return { ok: false, reason: 'too-large' };
       }
       chunks.push(value);

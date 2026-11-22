@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
 import { initAdmin } from '@/lib/firebase-admin';
+import { readBodyTextWithinLimit } from '@/lib/request-guards';
 import type { PaymentProvider } from '@/lib/payments';
 import {
   VENDOR_STAND_ORDERS_COLLECTION,
@@ -28,6 +29,10 @@ import { saocUrl } from '@/lib/site-hosts';
  * return HTTP 200 so the gateway stops retrying, but a 200 response here never implies the
  * payment was accepted.
  */
+
+/** A real gateway notification is a ~20 field form (well under 2 KB); this leaves wide headroom.
+ *  Same cap as the ticket notification routes. */
+const MAX_NOTIFICATION_BODY_BYTES = 16 * 1024;
 
 /** Always 200 -- the gateway must stop retrying regardless of validation outcome. */
 function acknowledge(): NextResponse {
@@ -95,7 +100,11 @@ export async function POST(
   request: NextRequest,
   deps: VendorStandPaymentNotificationDeps = {},
 ): Promise<NextResponse> {
-  const rawBody = await request.text();
+  // An oversize body is acknowledged without being verified, so the sender stops retrying and
+  // none of the per-rejection logging below runs -- the same response the ticket routes give.
+  // This is the only read of the body: both per-gateway routes pass the request straight in.
+  const rawBody = await readBodyTextWithinLimit(request, MAX_NOTIFICATION_BODY_BYTES);
+  if (rawBody === null) return acknowledge();
 
   // 1. Verification -- the provider parses the posted body, fails closed if its own
   // credentials are unset, and authenticates the body against the shared secret.
