@@ -40,13 +40,26 @@ if (!/data-nos-content-gap/.test(prose)) problems.push('ShowPageProse.tsx does n
 // and the page ends with NosShowIndex, which also lists both pages.
 if (!/data-programme-board/.test(programme)) problems.push('programme/page.tsx does not render the PG-G1 timetable board (data-programme-board)');
 if (!/data-programme-body/.test(programme)) problems.push('programme/page.tsx lacks the PG-G1 full-width body (data-programme-body)');
+const SYMPOSIUM_HREF = '/symposium';
+const WORKSHOPS_PATH = '/workshops';
 const detailHrefs = presentation.match(/export const TICKET_DETAIL_HREFS[\s\S]*?\n};/)?.[0] ?? '';
-if (!/symposium:\s*'\/[^']+'/.test(detailHrefs)) problems.push('lib/data/ticket-presentation.ts TICKET_DETAIL_HREFS has no symposium href');
+if (detailHrefs.match(/symposium:\s*'([^']*)'/)?.[1] !== SYMPOSIUM_HREF) problems.push(`lib/data/ticket-presentation.ts TICKET_DETAIL_HREFS.symposium is not exactly '${SYMPOSIUM_HREF}'`);
 if (!/TICKET_DETAIL_HREFS\[id\]/.test(programme)) problems.push('programme/page.tsx does not take session tile hrefs from TICKET_DETAIL_HREFS');
 if (!/<Link[^>]*href=\{session\.href\}[^>]*className="nos-pg-session"/.test(programme)) problems.push('programme/page.tsx does not render the session tile as a link (nos-pg-session with session.href)');
+// A tile or a row renders only if its product is listed AND dated (or undated) the right way, so those source conditions are asserted too.
 const programmeProducts = presentation.match(/export const PROGRAMME_PRODUCTS[\s\S]*?\];/)?.[0] ?? '';
 if (!/'symposium'/.test(programmeProducts)) problems.push('PROGRAMME_PRODUCTS does not include the symposium, so no Symposium tile is placed on the board');
-if (!/const WORKSHOPS_HREF = '\/[^']+'/.test(programme)) problems.push('programme/page.tsx does not define WORKSHOPS_HREF');
+if (!/'workshops'/.test(programmeProducts)) problems.push('PROGRAMME_PRODUCTS does not include workshops, so undatedProducts() yields no Workshops row');
+const showDays = [...programme.matchAll(/weekday:\s*'(\w+)',\s*day:\s*'(\d+)'/g)].map((m) => `${m[1]} ${m[2]} `);
+if (showDays.length !== 4) problems.push(`programme/page.tsx SHOW_DAYS parsed ${showDays.length} day(s), expected 4`);
+const whenOf = (id) => presentation.match(new RegExp(`\\n  ${id}: \\{[\\s\\S]*?\\n    when: '([^']*)'`))?.[1];
+const symposiumWhen = whenOf('symposium');
+if (symposiumWhen === undefined || !showDays.some((d) => symposiumWhen.startsWith(d))) problems.push(`TICKET_PRODUCTS.symposium.when ("${symposiumWhen}") does not name a show day, so sessionsOn() places no Symposium tile`);
+const workshopsWhen = whenOf('workshops');
+if (workshopsWhen === undefined) problems.push('TICKET_PRODUCTS.workshops.when not found');
+else if (showDays.some((d) => workshopsWhen.startsWith(d))) problems.push(`TICKET_PRODUCTS.workshops.when ("${workshopsWhen}") names a show day, so undatedProducts() drops the Workshops row`);
+if (!/undatedProducts\(\)\.map\(/.test(programme)) problems.push('programme/page.tsx does not render the undated products (the Workshops row) from undatedProducts()');
+if (programme.match(/const WORKSHOPS_HREF = '([^']*)'/)?.[1] !== WORKSHOPS_PATH) problems.push(`programme/page.tsx WORKSHOPS_HREF is not exactly '${WORKSHOPS_PATH}'`);
 if (!/<Link[^>]*href=\{WORKSHOPS_HREF\}[^>]*className="nos-pg-later"/.test(programme)) problems.push('programme/page.tsx lacks the ruled Workshops row (nos-pg-later linking WORKSHOPS_HREF)');
 if (!/<NosShowIndex current="\/national-show\/programme"/.test(programme)) problems.push('programme/page.tsx does not render NosShowIndex');
 for (const href of ['/national-show/symposium', '/national-show/workshops']) {

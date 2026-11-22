@@ -100,7 +100,7 @@ fi
 echo "ok   control: unmutated tree is green"
 
 # Symposium link removed, four ways.
-mutate S1 "$PRES" "  symposium: '/symposium'," "" "TICKET_DETAIL_HREFS has no symposium href"
+mutate S1 "$PRES" "  symposium: '/symposium'," "" "TICKET_DETAIL_HREFS.symposium is not exactly '/symposium'"
 mutate S2 "$PRES" "['symposium', 'wosa', 'workshops']" "['wosa', 'workshops']" "PROGRAMME_PRODUCTS does not include the symposium"
 mutate S3 "$PAGE" '<Link key={session.id} href={session.href} className="nos-pg-session">' \
   '<span key={session.id} className="nos-pg-session">' "does not render the session tile as a link"
@@ -110,8 +110,17 @@ mutate S4 "$INDEX" "      '/national-show/symposium'," "" "NosShowIndex.tsx does
 mutate W1 "$PAGE" 'href={WORKSHOPS_HREF} className="nos-pg-later"' 'href="#" className="nos-pg-later"' \
   "lacks the ruled Workshops row"
 mutate W2 "$PAGE" "const WORKSHOPS_HREF = '/workshops';" "const WORKSHOPS_UNUSED = '/workshops';" \
-  "does not define WORKSHOPS_HREF"
+  "WORKSHOPS_HREF is not exactly '/workshops'"
 mutate W3 "$INDEX" "      '/national-show/workshops'," "" "NosShowIndex.tsx does not list /national-show/workshops"
+
+# QA round 1: right shape, wrong destination or a product that can no longer render its tile or row.
+mutate S5 "$PRES" "  symposium: '/symposium'," "  symposium: '/wosa-conference'," "TICKET_DETAIL_HREFS.symposium is not exactly '/symposium'"
+mutate S6 "$PRES" "  symposium: '/symposium'," "  symposium: '/tickets'," "TICKET_DETAIL_HREFS.symposium is not exactly '/symposium'"
+mutate S7 "$PRES" "    when: 'Friday 24 September'," "    when: 'Schedule to follow'," "does not name a show day, so sessionsOn() places no Symposium tile"
+mutate W4 "$PAGE" "const WORKSHOPS_HREF = '/workshops';" "const WORKSHOPS_HREF = '/conferences';" "WORKSHOPS_HREF is not exactly '/workshops'"
+mutate W5 "$PRES" "['symposium', 'wosa', 'workshops']" "['symposium', 'wosa']" "PROGRAMME_PRODUCTS does not include workshops"
+mutate W6 "$PRES" "    when: 'Schedule to follow'," "    when: 'Saturday 25 September'," "names a show day, so undatedProducts() drops the Workshops row"
+mutate W7 "$PAGE" "{undatedProducts().map(" "{[].map(" "does not render the undated products"
 
 # Board and index removed.
 mutate B1 "$PAGE" 'data-programme-board=""' "" "does not render the PG-G1 timetable board"
