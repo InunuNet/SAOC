@@ -23,10 +23,15 @@
 //   (A) ENVIRONMENT PRECONDITIONS -- every secret/env read in the redemption route, in either
 //       shape (`process.env.NAME`, `process.env['NAME']`, or `getSecret('NAME')` from
 //       lib/secrets.ts, which reads the secret bundles and falls back to process.env), that is
-//       guarded by an `if (!ident) { ... return ... }` refusal. For each NAME found there, the
-//       approval route's 'approve' branch must ALSO REFUSE on that same name -- an
-//       `if (!getSecret('NAME')) { ... return` (or the process.env equivalent) before its
-//       ref.update() call; a bare mention of the name does not count.
+//       refused with a `return` INSIDE the guard's own block (`const X = ...; if (!X) { ...
+//       return` or inline `if (!getSecret('NAME')) { ... return`). For each such NAME the
+//       approval route's 'approve' block must contain a matching refusal that reads the secret
+//       the SAME way (a bundle value wins over process.env in getSecret, so the two accessors
+//       can disagree), before its ref.update() call. Comments and string literals are masked
+//       first, and the approve block is bounded by its matching closing brace. A mention of
+//       the name, or a log-only guard, does not count. Control flow proper (`if (false)
+//       return`) is out of reach of a regex; check-approval-redemption-behavioural.mjs proves
+//       it by running the real routes.
 //   (B) MATCH-KEY PRECONDITIONS -- every Firestore `.where('field', '==', expr)` in the
 //       redemption route's candidate lookup where `expr` is a VARIABLE (vendor-input-derived),
 //       not a quoted string literal (a constant like `.where('status', '==', 'approved')` is
@@ -50,25 +55,68 @@ const REDEMPTION_ROUTE = 'app/api/vendors/register/verify-code/route.ts';
 const APPROVAL_ROUTE = 'app/api/admin/vendors/applications/[id]/review/route.ts';
 const failures = [];
 
-function readSource(path) {
+// Comments are blanked (same length, newlines kept) and string/template literal CONTENTS are
+// masked to `_` in a second view, so structure (braces, `return`) is matched on code only: a
+// `return` or `}` inside a string or comment can never count. Both views keep identical
+// offsets, so a name matched as `_____` in the masked view is read back from the clean view.
+function loadSource(path) {
   const raw = readFileSync(new URL(`../../../${path}`, import.meta.url), 'utf8');
-  // Strip comments -- this mission's own check/route headers narrate these exact identifiers
-  // in prose (see this file's own header above), which would make a naive grep pass or fail
-  // for the wrong reason.
-  return raw
-    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
-    .replace(/\/\/[^\n]*/g, (m) => ' '.repeat(m.length));
+  const clean = [];
+  const masked = [];
+  let i = 0;
+  const blank = (ch) => (ch === '\n' ? '\n' : ' ');
+  while (i < raw.length) {
+    const ch = raw[i];
+    const next = raw[i + 1];
+    if (ch === '/' && next === '*') {
+      const end = raw.indexOf('*/', i + 2);
+      const stop = end === -1 ? raw.length : end + 2;
+      for (; i < stop; i++) {
+        clean.push(blank(raw[i]));
+        masked.push(blank(raw[i]));
+      }
+    } else if (ch === '/' && next === '/') {
+      for (; i < raw.length && raw[i] !== '\n'; i++) {
+        clean.push(' ');
+        masked.push(' ');
+      }
+    } else if (ch === "'" || ch === '"' || ch === '`') {
+      clean.push(ch);
+      masked.push(ch);
+      i++;
+      for (; i < raw.length && raw[i] !== ch; i++) {
+        if (raw[i] === '\\' && i + 1 < raw.length) {
+          clean.push(raw[i], raw[i + 1]);
+          masked.push('_', '_');
+          i++;
+        } else {
+          clean.push(raw[i]);
+          masked.push(raw[i] === '\n' ? '\n' : '_');
+        }
+      }
+      if (i < raw.length) {
+        clean.push(ch);
+        masked.push(ch);
+        i++;
+      }
+    } else {
+      clean.push(ch);
+      masked.push(ch);
+      i++;
+    }
+  }
+  return { clean: clean.join(''), masked: masked.join('') };
 }
 
-let redemptionSource;
-let approvalSource;
+let redemption;
+let approval;
 try {
-  redemptionSource = readSource(REDEMPTION_ROUTE);
+  redemption = loadSource(REDEMPTION_ROUTE);
 } catch {
   failures.push(`${REDEMPTION_ROUTE} does not exist.`);
 }
 try {
-  approvalSource = readSource(APPROVAL_ROUTE);
+  approval = loadSource(APPROVAL_ROUTE);
 } catch {
   failures.push(`${APPROVAL_ROUTE} does not exist.`);
 }
@@ -78,61 +126,116 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-// The approval route's 'approve' branch, and specifically the portion of it BEFORE the single
-// commit -- everything this check requires must be checked strictly before that point. Scoped
-// the same way A50's ordering check scopes it: from the start of the `if (body.action ===
-// 'approve')` block to the first `ref.update(`.
-const approveBlockAt = approvalSource.indexOf("if (body.action === 'approve')");
-const firstUpdateAt = approvalSource.indexOf('ref.update(');
-if (approveBlockAt === -1) {
-  failures.push(`${APPROVAL_ROUTE}: could not locate the 'approve' action branch (if (body.action === 'approve') not found) -- extraction below cannot run.`);
-}
-if (firstUpdateAt === -1) {
-  failures.push(`${APPROVAL_ROUTE}: no ref.update(...) call found -- cannot bound "before the commit".`);
-}
-const preCommitApproval =
-  approveBlockAt !== -1 && firstUpdateAt !== -1 ? approvalSource.slice(approveBlockAt, firstUpdateAt) : '';
+const redemptionSource = redemption.clean;
+const approvalSource = approval.clean;
 
-// -------------------------------------------------------------------------------------------
-// (A) Environment preconditions: `process.env.NAME`, `process.env['NAME']` or
-// `getSecret('NAME')` assigned to an identifier that is then guarded by `if (!ident) { ... return`.
-// -------------------------------------------------------------------------------------------
-const envGuardPattern =
-  /const\s+(\w+)\s*=\s*(?:process\.env(?:\.(\w+)|\[['"](\w+)['"]\])|getSecret\(\s*['"](\w+)['"]\s*\))\s*;[\s\S]{0,300}?if\s*\(\s*!\s*\1\s*\)\s*\{[\s\S]{0,300}?return/g;
-
-// The approval-side counterpart: an actual refusal on NAME (`if (!getSecret('NAME')) { ... return`
-// or `if (!process.env.NAME) { ... return`) -- not merely a mention of the name.
-function approvalRefusesOn(name) {
-  const read = `(?:getSecret\\(\\s*['"]${name}['"]\\s*\\)|process\\.env(?:\\.${name}\\b|\\[['"]${name}['"]\\]))`;
-  return new RegExp(`if\\s*\\(\\s*!\\s*${read}\\s*\\)\\s*\\{[\\s\\S]{0,400}?return`).test(preCommitApproval);
+// Index of the `}` matching the `{` at `open`, on the literal-masked source; -1 if unbalanced.
+function matchingBrace(masked, open) {
+  let depth = 0;
+  for (let i = open; i < masked.length; i++) {
+    if (masked[i] === '{') depth++;
+    else if (masked[i] === '}' && --depth === 0) return i;
+  }
+  return -1;
 }
 
-const envPreconditions = new Set();
-for (const match of redemptionSource.matchAll(envGuardPattern)) {
-  const name = match[2] || match[3] || match[4];
-  if (name) envPreconditions.add(name);
+// The approval route's 'approve' branch, bounded to the block itself (matching closing brace)
+// and to the first ref.update() after it opens: everything this check requires must sit inside
+// the approve block, strictly before the single commit.
+const approveHeadPattern = /if\s*\(\s*body\.action\s*===\s*'approve'\s*\)\s*\{/g;
+let approveOpenAt = -1;
+for (const m of approvalSource.matchAll(approveHeadPattern)) {
+  if (approval.masked.startsWith('if', m.index)) {
+    approveOpenAt = m.index + m[0].length - 1;
+    break;
+  }
 }
-
-if (envPreconditions.size === 0) {
-  failures.push(
-    `${REDEMPTION_ROUTE}: found ZERO env-var refusal guards -- either this route no longer has ` +
-      'one (fine, update this check\'s expectation), or the extraction pattern above no longer ' +
-      'matches its current shape (a silent false negative, which this check must not report as ' +
-      'green). Given the redemption route is known to read VENDOR_REGISTRATION_TOKEN_SECRET as ' +
-      'of this check\'s authoring, treat an empty result as a FAIL until confirmed otherwise.',
-  );
+let approveRange = null;
+if (approveOpenAt === -1) {
+  failures.push(`${APPROVAL_ROUTE}: could not locate the 'approve' action branch (if (body.action === 'approve') { not found) -- extraction below cannot run.`);
 } else {
-  for (const name of envPreconditions) {
-    if (!approvalRefusesOn(name)) {
+  const closeAt = matchingBrace(approval.masked, approveOpenAt);
+  const updateAt = approval.masked.indexOf('ref.update(', approveOpenAt);
+  if (closeAt === -1) {
+    failures.push(`${APPROVAL_ROUTE}: the 'approve' block has no matching closing brace.`);
+  } else if (updateAt === -1) {
+    failures.push(`${APPROVAL_ROUTE}: no ref.update(...) call found after the 'approve' branch -- cannot bound "before the commit".`);
+  } else {
+    approveRange = [approveOpenAt, Math.min(closeAt, updateAt)];
+  }
+}
+const preCommitApproval = approveRange ? approval.masked.slice(...approveRange) : '';
+
+// -------------------------------------------------------------------------------------------
+// (A) Environment preconditions. A guard is a refusal on a secret/env read, in either shape:
+//   const X = ACCESSOR('NAME'); ... if (!X) { <no braces> return ...
+//   if (!ACCESSOR('NAME')) { <no braces> return ...
+// where ACCESSOR is process.env.NAME, process.env['NAME'] or getSecret('NAME'). The `return`
+// must be inside the guard's own block (no `{` or `}` between the opening brace and it), so a
+// log-only guard followed by an unrelated later `return` does not count. Each guard is recorded
+// as "accessor:NAME": both routes must read a secret the SAME way, because getSecret() lets a
+// bundle value win over process.env, so a process.env guard and a getSecret guard can disagree.
+// A control-flow proof (`if (false) return`) is beyond a regex; the behavioural check
+// check-approval-redemption-behavioural.mjs is the real proof.
+// -------------------------------------------------------------------------------------------
+const ACCESSOR =
+  /(?:process\.env\.(\w+)|process\.env\[\s*['"](_+)['"]\s*\]|getSecret\(\s*['"](_+)['"]\s*\))/
+    .source;
+const guardAfterConst = new RegExp(
+  `const\\s+(\\w+)\\s*=\\s*${ACCESSOR}\\s*;[\\s\\S]{0,300}?if\\s*\\(\\s*!\\s*\\1\\s*\\)\\s*\\{[^{}]*?\\breturn\\b`,
+  'dg',
+);
+const guardInline = new RegExp(
+  `if\\s*\\(\\s*!\\s*${ACCESSOR}\\s*\\)\\s*\\{[^{}]*?\\breturn\\b`,
+  'dg',
+);
+
+// Reads "accessor:NAME" out of a match whose accessor groups start at `first` (1-based).
+function guardKey(match, clean, first) {
+  if (match[first]) return `process.env:${match[first]}`;
+  const dotted = match.indices[first + 1];
+  if (dotted) return `process.env:${clean.slice(dotted[0], dotted[1])}`;
+  const bundled = match.indices[first + 2];
+  return `getSecret:${clean.slice(bundled[0], bundled[1])}`;
+}
+
+function findGuards(source, from, to) {
+  const masked = source.masked.slice(from, to);
+  const clean = source.clean.slice(from, to);
+  const keys = new Set();
+  for (const m of masked.matchAll(guardAfterConst)) keys.add(guardKey(m, clean, 2));
+  for (const m of masked.matchAll(guardInline)) keys.add(guardKey(m, clean, 1));
+  return keys;
+}
+
+const redemptionGuards = findGuards(redemption, 0, redemption.masked.length);
+const approvalGuards = approveRange ? findGuards(approval, ...approveRange) : new Set();
+
+if (redemptionGuards.size === 0) {
+  failures.push(
+    `${REDEMPTION_ROUTE}: found ZERO env-var/secret refusal guards -- either this route no ` +
+      'longer has one (fine, update this check\'s expectation), or the extraction pattern above ' +
+      'no longer matches its current shape (a silent false negative, which this check must not ' +
+      'report as green), or its guard no longer returns inside its own block. Given the ' +
+      'redemption route is known to read VENDOR_REGISTRATION_TOKEN_SECRET as of this check\'s ' +
+      'authoring, treat an empty result as a FAIL until confirmed otherwise.',
+  );
+} else if (approveRange) {
+  for (const key of redemptionGuards) {
+    if (!approvalGuards.has(key)) {
+      const [accessor, name] = key.split(':');
       failures.push(
-        `Environment precondition "${name}" is checked (with a refusal) by the redemption route ` +
-          `(${REDEMPTION_ROUTE}) but the approval route's 'approve' branch has no matching ` +
-          `refusal (if (!getSecret('${name}')) { ... return }) before its commit (${APPROVAL_ROUTE}) -- an approval can commit while this ` +
-          'precondition is unmet, leaving the vendor permanently unable to redeem the credential.',
+        `Environment precondition "${name}" is refused (read via ${accessor}) by the redemption ` +
+          `route (${REDEMPTION_ROUTE}) but the approval route's 'approve' block has no matching ` +
+          `refusal -- an \`if (!${accessor === 'getSecret' ? `getSecret('${name}')` : `process.env.${name}`}) ` +
+          `{ ... return }\` using the SAME accessor, inside the approve block, before its commit ` +
+          `(${APPROVAL_ROUTE}) -- so an approval can commit while this precondition is unmet, ` +
+          'leaving the vendor permanently unable to redeem the credential.',
       );
     }
   }
 }
+const envPreconditions = new Set([...redemptionGuards].map((k) => k.split(':')[1]));
 
 // -------------------------------------------------------------------------------------------
 // (B) Match-key preconditions: `.where('field', '==', expr)` where `expr` is NOT a quoted

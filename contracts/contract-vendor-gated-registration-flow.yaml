@@ -1440,7 +1440,10 @@ assertions:
         in the chain, not retired: it is strictly narrower than the harness script for THIS
         mission's two known defects, but it is a static, always-on structural guard with no
         dependency on the harness's fixture surface staying in sync with the real routes --
-        genuine defense in depth, not redundant coverage.
+        genuine defense in depth, not redundant coverage. Being static it cannot prove control
+        flow; the behavioural script is the real proof: secret unset (bundles cleared too) makes
+        the approve action return 503 with the application record unchanged, and makes
+        verify-code return the generic 403 with no cookie and zero Firestore store calls.
         FAILS ON: the retired mintVendorRegistrationToken still being called, more than one
         ref.update() call site, the code generated after ref.update(), the code fields written
         in a separate call than the decision patch, a generation failure not refusing the whole
