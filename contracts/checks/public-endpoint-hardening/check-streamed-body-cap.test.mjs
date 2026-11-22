@@ -109,6 +109,30 @@ test('an oversize body is too-large even when cancelling the stream rejects', as
   assert.deepEqual(await readJsonBodyWithinLimit(request, MAX), { ok: false, reason: 'too-large' });
 });
 
+test('an oversize body is too-large even when cancelling the stream never settles', async () => {
+  const stream = new ReadableStream(
+    {
+      pull(controller) {
+        controller.enqueue(encoder.encode('x'.repeat(MAX + 1)));
+      },
+      cancel() {
+        return new Promise(() => {});
+      },
+    },
+    { highWaterMark: 0 },
+  );
+  const request = new Request('http://localhost/api/x', { method: 'POST', body: stream, duplex: 'half' });
+  const HANG = Symbol('hang');
+  let timer;
+  const timeout = new Promise((resolve) => {
+    timer = setTimeout(() => resolve(HANG), 1000);
+  });
+  const result = await Promise.race([readJsonBodyWithinLimit(request, MAX), timeout]);
+  clearTimeout(timer);
+  assert.notEqual(result, HANG, 'the helper hung waiting for cancel()');
+  assert.deepEqual(result, { ok: false, reason: 'too-large' });
+});
+
 test('invalid JSON and an empty body are reported as invalid-json', async () => {
   for (const body of ['not json', '{"a":', '']) {
     assert.deepEqual(

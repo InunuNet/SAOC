@@ -60,8 +60,9 @@ export async function readBodyTextWithinLimit(
     if (done) break;
     received += value.byteLength;
     if (received > maxBytes) {
-      // A source whose cancel() rejects must not turn an oversize body into a read failure.
-      await reader.cancel().catch(() => undefined);
+      // Fire and forget: the caller must get too-large whether or not the source ever
+      // acknowledges the cancel (it may reject, or never settle).
+      void reader.cancel().catch(() => undefined);
       return null;
     }
     text += decoder.decode(value, { stream: true });
