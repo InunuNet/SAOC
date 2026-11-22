@@ -23,13 +23,18 @@ const SELFTEST_FAIL_EXIT = 4;
 const MALFORMED_EXIT = 5;
 const INCONCLUSIVE_EXIT = 77;
 const FETCH_TIMEOUT_MS = 20000;
-const TICKET_PATH = /^\/tickets\/([^/]+)$/;
+const TICKET_SLUG = /^[a-z0-9][a-z0-9-]*$/;
+const SCRIPT_TAG = /<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi;
+const LD_JSON_TYPE = /\btype\s*=\s*(?:"application\/ld\+json"|'application\/ld\+json'|application\/ld\+json(?=[\s/]|$))/i;
 const PLAIN_DECIMAL = /^\d+(\.\d+)?$/;
 
 // A finite non-negative number, or a string that is a plain decimal after trimming; anything else is null.
 const parsePrice = (v) => {
   if (typeof v === 'number') return Number.isFinite(v) && v >= 0 ? v : null;
-  if (typeof v === 'string' && PLAIN_DECIMAL.test(v.trim())) return Number(v.trim());
+  if (typeof v === 'string' && PLAIN_DECIMAL.test(v.trim())) {
+    const n = Number(v.trim());
+    return Number.isFinite(n) ? n : null;
+  }
   return null;
 };
 
@@ -63,21 +68,23 @@ const compareOffers = (expected, got) => {
 };
 
 const isEventNode = (n) => n !== null && typeof n === 'object' && (n['@type'] === 'Event' || (Array.isArray(n['@type']) && n['@type'].includes('Event')));
-// Every node reachable through arrays and @graph.
-const flattenNodes = (v) => {
-  if (Array.isArray(v)) return v.flatMap(flattenNodes);
+// Every Event node anywhere in a JSON value (any key, any depth). An Event's own offers are not searched for Events.
+const findEvents = (v) => {
+  if (Array.isArray(v)) return v.flatMap(findEvents);
   if (v === null || typeof v !== 'object') return [];
-  return [v, ...flattenNodes(v['@graph'] ?? [])];
+  const inner = Object.entries(v).filter(([k]) => !(isEventNode(v) && k === 'offers')).flatMap(([, child]) => findEvents(child));
+  return isEventNode(v) ? [v, ...inner] : inner;
 };
 
 // All offers of every Event node in every ld+json script, plus structural problems (unparseable script, odd offer).
 const extractOffers = (html) => {
   const problems = [];
   const offers = [];
-  for (const m of html.matchAll(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)) {
+  for (const m of html.matchAll(SCRIPT_TAG)) {
+    if (!LD_JSON_TYPE.test(m[1])) continue;
     let parsedJson;
-    try { parsedJson = JSON.parse(m[1]); } catch { problems.push('an ld+json script is not valid JSON'); continue; }
-    for (const node of flattenNodes(parsedJson).filter(isEventNode)) {
+    try { parsedJson = JSON.parse(m[2]); } catch { problems.push('an ld+json script is not valid JSON'); continue; }
+    for (const node of findEvents(parsedJson)) {
       for (const o of [].concat(node.offers ?? [])) {
         if (o === null || typeof o !== 'object' || Array.isArray(o)) problems.push('an Event offer is not an object');
         else offers.push(o);
@@ -87,14 +94,13 @@ const extractOffers = (html) => {
   return { offers, problems };
 };
 
-// The slug of an offer url `<origin>/tickets/<slug>`, or null when the origin, path shape or url itself differs.
+// The slug of an offer url, which must equal `<origin>/tickets/<slug>` as a raw string (no parsing: a userinfo or
+// look-alike host must not pass); null otherwise.
 const offerSlug = (url, origin) => {
-  if (typeof url !== 'string') return null;
-  let u;
-  try { u = new URL(url); } catch { return null; }
-  if (u.origin !== new URL(origin).origin || u.search !== '' || u.hash !== '') return null;
-  const m = TICKET_PATH.exec(u.pathname);
-  return m ? decodeURIComponent(m[1]) : null;
+  const prefix = `${origin.replace(/\/+$/, '')}/tickets/`;
+  if (typeof url !== 'string' || !url.startsWith(prefix)) return null;
+  const slug = url.slice(prefix.length);
+  return TICKET_SLUG.test(slug) ? slug : null;
 };
 
 // The whole verdict on a page: failure strings plus the deployed slug -> price map. Shared by the real run and --self-test.
@@ -151,6 +157,13 @@ if (process.argv.includes('--self-test')) {
     ['other-show path fails', ld(event([offer('general-admission', 100), offer('vip', 300, `${ORIGIN_T}/other-show/vip`)])), 1],
     ['missing url fails', ld(event([offer('general-admission', 100), { '@type': 'Offer', price: 300 }])), 1],
     ['duplicate deployed slug fails', ld(event([...base, offer('vip', 300)])), 1],
+    ['single-quoted type attribute is found (extra offer fails)', `<script type='application/ld+json'>${JSON.stringify(event([...base, offer('extra', 50)]))}</script>`, 1],
+    ['unquoted, upper-case, reordered type attribute is found', `<SCRIPT id=x TYPE=application/ld+json>${JSON.stringify(event([...base, offer('extra', 50)]))}</SCRIPT>`, 1],
+    ['Event nested under mainEntity is found (extra offer fails)', ld({ '@type': 'WebPage', mainEntity: event([...base, offer('extra', 50)]) }), 1],
+    ['Event nested under mainEntity passes when exact', ld({ '@type': 'WebPage', mainEntity: event(base) }), 0],
+    ['userinfo origin url fails', ld(event([offer('general-admission', 100), offer('vip', 300, 'https://other.example@nos.example/tickets/vip')])), 1],
+    ['query-string url fails', ld(event([offer('general-admission', 100), offer('vip', 300, `${ORIGIN_T}/tickets/vip?x=1`)])), 1],
+    ['400-digit price string fails', withGa(offer('general-admission', '9'.repeat(400))), 1],
     ['no Event offers fails', ld({ '@type': 'Thing' }), 1],
   ];
   for (const [name, html, wantFailing, useCtx = ctx] of pageCases) {
@@ -163,7 +176,7 @@ if (process.argv.includes('--self-test')) {
     console.log(`selftest unset ${JSON.stringify(raw ?? null)} -> ${r.unset ? 'inconclusive (77)' : 'parsed'}`);
     if (!r.unset) problems.push(`EXPECT_OFFERS ${JSON.stringify(raw)} should be unset/inconclusive`);
   }
-  for (const raw of ['a', 'a:', ':5', 'a:x', 'a:1,a:2', 'a:1,', 'a:1:2', 'a:-5', 'a:1e3', 'a:0x10']) {
+  for (const raw of ['a', 'a:', ':5', 'a:x', 'a:1,a:2', 'a:1,', 'a:1:2', 'a:-5', 'a:1e3', 'a:0x10', `a:${'9'.repeat(400)}`]) {
     const r = parseExpectOffers(raw);
     console.log(`selftest malformed ${JSON.stringify(raw)} -> ${r.error ?? 'ACCEPTED'}`);
     if (!r.error) problems.push(`EXPECT_OFFERS ${JSON.stringify(raw)} should be malformed`);
