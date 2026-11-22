@@ -129,6 +129,27 @@ export function verifyVendorRegistrationCode(
   return { ok: false };
 }
 
+/** The counter patch one failed guess produces: increments the count and, on reaching
+ *  VENDOR_REGISTRATION_CODE_LOCK_THRESHOLD, stamps the lock. Shared by the standalone counter and
+ *  the atomic verification so the two can never disagree about the threshold. */
+function failedAttemptPatch(
+  data: Record<string, unknown>,
+  attemptedAt: unknown,
+): { patch: Record<string, unknown>; locked: boolean } {
+  const currentAttempts =
+    typeof data['registrationCodeFailedAttempts'] === 'number'
+      ? (data['registrationCodeFailedAttempts'] as number)
+      : 0;
+  const nextAttempts = currentAttempts + 1;
+  const locked = nextAttempts >= VENDOR_REGISTRATION_CODE_LOCK_THRESHOLD;
+
+  const patch: Record<string, unknown> = { registrationCodeFailedAttempts: nextAttempts };
+  if (locked) {
+    patch['registrationCodeLockedAt'] = attemptedAt;
+  }
+  return { patch, locked };
+}
+
 export interface RecordFailedVendorRegistrationCodeAttemptOptions {
   /** Timestamp value written to `registrationCodeLockedAt` when this attempt crosses the
    *  threshold. The caller converts its own `now` into whatever Firestore representation it
@@ -161,17 +182,7 @@ export async function recordFailedVendorRegistrationCodeAttempt(
       const snapshot = await transaction.get(applicationRef);
       const data = snapshot.data() ?? {};
 
-      const currentAttempts =
-        typeof data['registrationCodeFailedAttempts'] === 'number'
-          ? (data['registrationCodeFailedAttempts'] as number)
-          : 0;
-      const nextAttempts = currentAttempts + 1;
-      const locked = nextAttempts >= VENDOR_REGISTRATION_CODE_LOCK_THRESHOLD;
-
-      const patch: Record<string, unknown> = { registrationCodeFailedAttempts: nextAttempts };
-      if (locked) {
-        patch['registrationCodeLockedAt'] = options.attemptedAt;
-      }
+      const { patch, locked } = failedAttemptPatch(data, options.attemptedAt);
 
       transaction.update(applicationRef, patch);
       return { locked };
@@ -179,5 +190,65 @@ export async function recordFailedVendorRegistrationCodeAttempt(
   } catch (error) {
     options.onError?.(error);
     return { locked: false };
+  }
+}
+
+export interface VendorRegistrationCodeApplicationRef {
+  id: string;
+  ref: unknown;
+}
+
+export interface VerifyVendorRegistrationCodeAtomicallyOptions {
+  /** Builds a candidate from the document's data as read INSIDE the transaction. */
+  toCandidate: (id: string, data: Record<string, unknown>) => VendorRegistrationCodeCandidate;
+  /** Same meaning as RecordFailedVendorRegistrationCodeAttemptOptions.attemptedAt. */
+  attemptedAt: unknown;
+  onError?: (error: unknown) => void;
+}
+
+/**
+ * The lock check, the code comparison and the failed-attempt count in ONE transaction over the
+ * candidate applications. verifyVendorRegistrationCode() on a snapshot read before the
+ * transaction let every concurrent guess see the same unlocked, under-the-cap state and be
+ * compared against the code, so parallel guesses defeated the attempt cap. Here each candidate
+ * is read fresh, eligibility (including the lock) and the constant-time comparison run on that
+ * fresh data, and a miss increments every candidate's counter in the same transaction; Firestore
+ * retries the loser of any contention, so once the count reaches the limit the next guess reads
+ * the lock and is never compared. A match writes nothing, exactly as before. A transaction
+ * failure is reported through `onError` and treated as a miss that records nothing: fail
+ * closed, never a verification.
+ */
+export async function verifyVendorRegistrationCodeAtomically(
+  db: ClaimRunnerLike,
+  applications: VendorRegistrationCodeApplicationRef[],
+  input: VerifyVendorRegistrationCodeInput,
+  now: Date,
+  options: VerifyVendorRegistrationCodeAtomicallyOptions,
+): Promise<VerifyVendorRegistrationCodeResult> {
+  try {
+    return await db.runTransaction(async (transaction) => {
+      const fresh: { candidate: VendorRegistrationCodeCandidate; ref: unknown; data: Record<string, unknown> }[] = [];
+      for (const application of applications) {
+        const snapshot = await transaction.get(application.ref);
+        const data = snapshot.data();
+        if (!snapshot.exists || !data) continue;
+        fresh.push({ candidate: options.toCandidate(application.id, data), ref: application.ref, data });
+      }
+
+      const verification = verifyVendorRegistrationCode(
+        input,
+        fresh.map((entry) => entry.candidate),
+        now,
+      );
+      if (verification.ok) return verification;
+
+      for (const entry of fresh) {
+        transaction.update(entry.ref, failedAttemptPatch(entry.data, options.attemptedAt).patch);
+      }
+      return verification;
+    });
+  } catch (error) {
+    options.onError?.(error);
+    return { ok: false };
   }
 }

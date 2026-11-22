@@ -1,0 +1,1 @@
+check-routes-untouched.sh (A10) is retired: it only pinned the sha256 of files that F2 legitimately rewired afterwards, so it protected no behaviour; the checks in this folder and the checkout wiring checks protect the real properties.

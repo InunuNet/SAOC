@@ -1,7 +1,8 @@
+import { SINGLE_EMAIL_PATTERN } from '@/lib/single-email-address';
 import { humaniseFieldError } from '@/lib/vendor-register-response';
 
 const STRICT_INTEGER_PATTERN = /^\d+$/;
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_PATTERN = SINGLE_EMAIL_PATTERN;
 const PHONE_PATTERN = /^(?=.*[0-9])[0-9+\-() ]{7,20}$/;
 
 // Mirrors FIELD_MAX_LENGTHS in lib/vendor-applications.ts (the server is the authority).

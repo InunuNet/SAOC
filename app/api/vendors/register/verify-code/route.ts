@@ -8,7 +8,7 @@ import { clientIpFromForwardedFor } from '@/lib/client-ip';
 import { initAdmin } from '@/lib/firebase-admin';
 import { VENDOR_APPLICATIONS_COLLECTION } from '@/lib/vendor-applications';
 import {
-  recordFailedVendorRegistrationCodeAttempt,
+  verifyVendorRegistrationCodeAtomically,
   type VendorRegistrationCodeCandidate,
 } from '@/lib/vendor-registration-code';
 import {
@@ -67,10 +67,9 @@ function deriveRateLimitKey(request: NextRequest): string {
  * first. The candidate INTERFACE keeps its existing key name -- renaming it is a mechanical
  * change across lib/vendor-registration-code.ts and its contract checks, not part of this fix.
  */
-function toCandidate(doc: FirebaseFirestore.QueryDocumentSnapshot): VendorRegistrationCodeCandidate {
-  const data = doc.data();
+function candidateFromData(id: string, data: FirebaseFirestore.DocumentData): VendorRegistrationCodeCandidate {
   return {
-    id: doc.id,
+    id,
     status: typeof data.status === 'string' ? data.status : '',
     registrationCodeId: typeof data.registrationCodeId === 'string' ? data.registrationCodeId : null,
     registrationCodeNameSlug:
@@ -80,6 +79,10 @@ function toCandidate(doc: FirebaseFirestore.QueryDocumentSnapshot): VendorRegist
       data.registrationTokenConsumedAt?.toDate?.() ?? data.registrationCodeConsumedAt?.toDate?.() ?? null,
     registrationCodeLockedAt: data.registrationCodeLockedAt?.toDate?.() ?? null,
   };
+}
+
+function toCandidate(doc: FirebaseFirestore.QueryDocumentSnapshot): VendorRegistrationCodeCandidate {
+  return candidateFromData(doc.id, doc.data());
 }
 
 /** Mirrors lib/vendor-registration-token-claim.ts's own readGeneration(): absent/non-numeric
@@ -153,18 +156,29 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         }
         return snapshot.docs.map(toCandidate);
       },
-      recordFailedAttempt: async (applicationId) => {
-        const ref = db.collection(VENDOR_APPLICATIONS_COLLECTION).doc(applicationId);
-        await recordFailedVendorRegistrationCodeAttempt(db, ref, {
-          attemptedAt: Timestamp.fromDate(now),
-          onError: (error) => {
-            console.error(
-              '[vendors/register/verify-code] Failed to record a failed code attempt:',
-              error instanceof Error ? error.message : 'unknown error',
-            );
+      // Lock check, code comparison and failed-attempt count all run inside one transaction on
+      // the candidates' own documents, so parallel guesses cannot all be compared against the
+      // code before the attempt cap is recorded.
+      verifyAtomically: (candidateIds, typedNameSlug, typedCodeId) =>
+        verifyVendorRegistrationCodeAtomically(
+          db,
+          candidateIds.map((id) => ({
+            id,
+            ref: db.collection(VENDOR_APPLICATIONS_COLLECTION).doc(id),
+          })),
+          { typedNameSlug, typedCodeId },
+          now,
+          {
+            toCandidate: candidateFromData,
+            attemptedAt: Timestamp.fromDate(now),
+            onError: (error) => {
+              console.error(
+                '[vendors/register/verify-code] Atomic code verification failed:',
+                error instanceof Error ? error.message : 'unknown error',
+              );
+            },
           },
-        });
-      },
+        ),
       mintSession: (applicationId) =>
         mintVendorRegistrationToken({
           applicationId,
