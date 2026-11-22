@@ -63,6 +63,29 @@ else
   status=1
 fi
 
+# EVERY mutation goes through mutant_ok. The harness runs without -e, so a builder whose
+# `assert real in text` fails exits 1 WITHOUT writing the mutant; the check then fails merely because
+# the override file does not exist, and the mutation used to be reported "detected". A mutation that
+# was never applied proves nothing, so: builder exit non-zero, missing/empty output, or an output
+# byte-identical to its source (a no-op mutant) is "MUTATION NOT APPLIED" and fails the harness.
+#   usage: <builder> ; mutant_ok ID SOURCE_FILE MUTANT_FILE $?   (call it directly after the builder)
+mutant_ok() {
+  local id="$1" src="$2" dst="$3" rc="$4"
+  if [ "$rc" -ne 0 ]; then
+    echo "FAIL A10: MUTATION NOT APPLIED: $id (builder exited $rc; its target text no longer matches $src)"
+    status=1; return 1
+  fi
+  if [ ! -s "$dst" ]; then
+    echo "FAIL A10: MUTATION NOT APPLIED: $id (no mutant written to $dst)"
+    status=1; return 1
+  fi
+  if cmp -s "$src" "$dst"; then
+    echo "FAIL A10: MUTATION NOT APPLIED: $id (mutant is byte-identical to $src, a no-op)"
+    status=1; return 1
+  fi
+  return 0
+}
+
 expect_red() {  # $1 = label, $2 = file
   if run_a4 "$2"; then
     echo "FAIL A10: mutation $1 left A4 GREEN — the ordering claim does not hold."
@@ -91,7 +114,8 @@ assert real in text, "recovery-secret read not found; mutation would be vacuous"
 text = text.replace(real, "  const decoy = 0; // RECOVERY_TOKEN_SECRET must be set")
 open(dst, "w").write(text)
 PY
-expect_red "P1 (guard deleted, trailing comment left)" "$WORK/P1.ts"
+mutant_ok P1 "$CHECKOUT" "$WORK/P1.ts" $? \
+  && expect_red "P1 (guard deleted, trailing comment left)" "$WORK/P1.ts"
 
 # --- P3: the real read moved to the END of the file, after the write; comment left behind.
 python3 - "$CHECKOUT" "$WORK/P3.ts" <<'PY'
@@ -104,7 +128,8 @@ text = text.replace(real, "  const recoveryTokenSecret = ''; // getSecret('RECOV
 text += "\nconst movedLate = getSecret('RECOVERY_TOKEN_SECRET');\n"
 open(dst, "w").write(text)
 PY
-expect_red "P3 (read moved after the write, comment left in place)" "$WORK/P3.ts"
+mutant_ok P3 "$CHECKOUT" "$WORK/P3.ts" $? \
+  && expect_red "P3 (read moved after the write, comment left in place)" "$WORK/P3.ts"
 
 # --- P4: the read stays first, but the refusal on an unset value is removed (fails open).
 python3 - "$CHECKOUT" "$WORK/P4.ts" <<'PY'
@@ -116,7 +141,8 @@ assert real in text, "recovery-secret refusal not found; mutation would be vacuo
 text = text.replace(real, "if (false) { // " + real, 1)
 open(dst, "w").write(text)
 PY
-expect_red "P4 (read kept, refusal on unset value disabled)" "$WORK/P4.ts"
+mutant_ok P4 "$CHECKOUT" "$WORK/P4.ts" $? \
+  && expect_red "P4 (read kept, refusal on unset value disabled)" "$WORK/P4.ts"
 
 # --- P5: the bundled secret read through process.env instead of getSecret (invisible in production).
 python3 - "$CHECKOUT" "$WORK/P5.ts" <<'PY'
@@ -127,7 +153,8 @@ real = "getSecret('RECOVERY_TOKEN_SECRET')"
 assert real in text, "recovery-secret read not found; mutation would be vacuous"
 open(dst, "w").write(text.replace(real, "process.env.RECOVERY_TOKEN_SECRET", 1))
 PY
-expect_red "P5 (bundled secret read via process.env, not getSecret)" "$WORK/P5.ts"
+mutant_ok P5 "$CHECKOUT" "$WORK/P5.ts" $? \
+  && expect_red "P5 (bundled secret read via process.env, not getSecret)" "$WORK/P5.ts"
 
 # --- P6: the real call replaced by a string literal that merely contains the call text.
 python3 - "$CHECKOUT" "$WORK/P6.ts" <<'PY'
@@ -138,7 +165,8 @@ real = "getSecret('RECOVERY_TOKEN_SECRET')"
 assert real in text, "recovery-secret read not found; mutation would be vacuous"
 open(dst, "w").write(text.replace(real, "console.error(\"getSecret('RECOVERY_TOKEN_SECRET')\")", 1))
 PY
-expect_red "P6 (call replaced by a string literal naming it)" "$WORK/P6.ts"
+mutant_ok P6 "$CHECKOUT" "$WORK/P6.ts" $? \
+  && expect_red "P6 (call replaced by a string literal naming it)" "$WORK/P6.ts"
 
 # --- P7: the refusal block stops returning (`return` -> `void`): an unset secret falls through.
 python3 - "$CHECKOUT" "$WORK/P7.ts" <<'PY'
@@ -150,7 +178,8 @@ real = ("    console.error('[tickets/checkout] Missing RECOVERY_TOKEN_SECRET env
 assert real in text, "recovery-secret refusal return not found; mutation would be vacuous"
 open(dst, "w").write(text.replace(real, real.replace("return NextResponse.json(", "void NextResponse.json("), 1))
 PY
-expect_red "P7 (recovery refusal no longer returns: return -> void)" "$WORK/P7.ts"
+mutant_ok P7 "$CHECKOUT" "$WORK/P7.ts" $? \
+  && expect_red "P7 (recovery refusal no longer returns: return -> void)" "$WORK/P7.ts"
 
 # --- Q1: the amount comparison replaced by a constant, name kept in a trailing comment.
 #     The logic now lives in the shared handler, so it is driven through the ITN override.
@@ -163,12 +192,14 @@ assert real in text, "amount-match call not found; mutation would be vacuous"
 text = text.replace(real, "false // notificationAmountMatches(lookup comparison removed", 1)
 open(dst, "w").write(text)
 PY
-if ITN_PATH_OVERRIDE="$WORK/Q1-itn.ts" bash "$A4" >/dev/null 2>&1; then
-  echo "FAIL A10: mutation Q1 left A4 GREEN — the amount-comparison landmark is not asserted."
-  status=1
-else
-  echo "  Q1 (amount comparison replaced, name kept in a comment): detected (A4 red)"
-fi
+mutant_ok Q1 lib/tickets-notification.ts "$WORK/Q1-itn.ts" $? && {
+  if ITN_PATH_OVERRIDE="$WORK/Q1-itn.ts" bash "$A4" >/dev/null 2>&1; then
+    echo "FAIL A10: mutation Q1 left A4 GREEN — the amount-comparison landmark is not asserted."
+    status=1
+  else
+    echo "  Q1 (amount comparison replaced, name kept in a comment): detected (A4 red)"
+  fi
+}
 
 # --- Q2: the thin ITN route stops delegating (handler call replaced, name left in a comment).
 python3 - app/api/tickets/itn/route.ts "$WORK/Q2-route.ts" <<'PY'
@@ -180,12 +211,14 @@ assert real in text, "delegating return not found; mutation would be vacuous"
 text = text.replace(real, "return NextResponse.json({ received: true }) // handleNotification(payfastProvider", 1)
 open(dst, "w").write(text)
 PY
-if ITN_ROUTE_PATH_OVERRIDE="$WORK/Q2-route.ts" bash "$A4" >/dev/null 2>&1; then
-  echo "FAIL A10: mutation Q2 left A4 GREEN — the route's delegation is not asserted."
-  status=1
-else
-  echo "  Q2 (ITN route no longer delegates to the shared handler): detected (A4 red)"
-fi
+mutant_ok Q2 app/api/tickets/itn/route.ts "$WORK/Q2-route.ts" $? && {
+  if ITN_ROUTE_PATH_OVERRIDE="$WORK/Q2-route.ts" bash "$A4" >/dev/null 2>&1; then
+    echo "FAIL A10: mutation Q2 left A4 GREEN — the route's delegation is not asserted."
+    status=1
+  else
+    echo "  Q2 (ITN route no longer delegates to the shared handler): detected (A4 red)"
+  fi
+}
 
 # --- A9's mutations. A9's first form asserted the source POSITION of a readiness() CALL and nothing
 #     more, so R1 and R2 both left it GREEN against copies of the real route. They are the reason A9
@@ -210,7 +243,7 @@ fi
 #           500` was satisfied by a NEIGHBOUR's refusal while this branch did nothing. A9 now scopes
 #           the refusal to the branch body by brace count.
 
-if python3 - "$CHECKOUT" "$WORK" <<'MUTPY'
+python3 - "$CHECKOUT" "$WORK" <<'MUTPY'
 import sys
 src_path, work = sys.argv[1], sys.argv[2]
 text = open(src_path).read()
@@ -250,17 +283,19 @@ open(f"{work}/R7.ts", "w").write(
     text.replace(probe, probe.replace("'initiate'", "'verify-notification'"))
 )
 MUTPY
-then
-  expect_red_a9 "R1 (fabricated verdict, real probe moved after the write)" "$WORK/R1.ts"
-  expect_red_a9 "R2 (verdict discarded — call present, answer thrown away)" "$WORK/R2.ts"
-  expect_red_a9 "R3 (refusal condition neutered to if (false))" "$WORK/R3.ts"
-  expect_red_a9 "R5 (verdict overwritten with a fabricated ready: true)" "$WORK/R5.ts"
-  expect_red_a9 "R6 (refusal branch emptied; a neighbouring guard's 500 remains)" "$WORK/R6.ts"
-  expect_red_a9 "R7 (probes the wrong operation: verify-notification, not initiate)" "$WORK/R7.ts"
-else
-  echo "FAIL A10: the A9 mutations could not be built, so no verdict on A9 is possible."
-  status=1
-fi
+a9_builder_rc=$?
+mutant_ok R1 "$CHECKOUT" "$WORK/R1.ts" "$a9_builder_rc" \
+  && expect_red_a9 "R1 (fabricated verdict, real probe moved after the write)" "$WORK/R1.ts"
+mutant_ok R2 "$CHECKOUT" "$WORK/R2.ts" "$a9_builder_rc" \
+  && expect_red_a9 "R2 (verdict discarded — call present, answer thrown away)" "$WORK/R2.ts"
+mutant_ok R3 "$CHECKOUT" "$WORK/R3.ts" "$a9_builder_rc" \
+  && expect_red_a9 "R3 (refusal condition neutered to if (false))" "$WORK/R3.ts"
+mutant_ok R5 "$CHECKOUT" "$WORK/R5.ts" "$a9_builder_rc" \
+  && expect_red_a9 "R5 (verdict overwritten with a fabricated ready: true)" "$WORK/R5.ts"
+mutant_ok R6 "$CHECKOUT" "$WORK/R6.ts" "$a9_builder_rc" \
+  && expect_red_a9 "R6 (refusal branch emptied; a neighbouring guard's 500 remains)" "$WORK/R6.ts"
+mutant_ok R7 "$CHECKOUT" "$WORK/R7.ts" "$a9_builder_rc" \
+  && expect_red_a9 "R7 (probes the wrong operation: verify-notification, not initiate)" "$WORK/R7.ts"
 
 # --- The stripper's own self-test. If code_lines.py stops discriminating, every result above is
 #     unreliable even when the numbers look right.
