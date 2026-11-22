@@ -31,7 +31,7 @@ export function warnMissingCategoryFallback(
       console.warn(
         `ticketType "${product.slug}" is missing its category field and is being shown on ` +
           `/tickets via the admission-only null-category fallback — run ` +
-          `scripts/migrate-ticket-type-category.ts to backfill it permanently.`,
+          `scripts/migrate-ticket-type-category.ts with --apply to backfill it permanently.`,
       );
     }
   }

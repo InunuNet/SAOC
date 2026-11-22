@@ -146,6 +146,8 @@ unsafe pattern (`DRY_RUN = process.argv.includes('--dry-run')` — default is MU
 - `fix-show-dates-2027.ts:80`
 - `fix-visitor-info-dates-confirmed.ts:76`
 
+> 2026-11-22: flipped in PR #233; a bare run is now a dry run, `--apply` writes.
+
 All six write against the single shared `production` dataset. Three other scripts already in
 the repo (`seed-fictional-test-show.ts`, `seed-demo-ticket-type.ts`, `swap-active-show.ts`)
 already use the correct `--apply`-gated polarity that `migrate-f2-ticket-taxonomy.ts`

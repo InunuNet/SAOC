@@ -403,6 +403,8 @@ pattern this mission's own migration script uses. Listed as one decision for you
 overnight fix: several may already have been run against live data, so flipping their
 default behaviour unreviewed carries its own risk.
 
+> 2026-11-22: flipped in PR #233; a bare run is now a dry run, `--apply` writes.
+
 ### 8. Membership — direct, via an affiliated society, or both?
 
 Unanswerable from any source currently held — the SAOC constitution has never been supplied
