@@ -63,6 +63,11 @@ WINDOW_FLOOR = 200000
 NOW_MIN_TOKENS = 60000
 NOW_WINDOW_FRACTION = 0.6
 DEFAULT_DELAY_TOKENS = 150000
+# A harness session restarts from compaction at roughly 100k (system prompt, tools, boot,
+# summary), so a 100k trigger fired again right after every compaction: the fleet thrashed
+# (Brad 2026-11-22). Self-compaction is due only well above that floor.
+DUE_TOKENS = 200000
+DUE_WINDOW_FRACTION = 0.75
 
 
 def find_root() -> Path:
@@ -145,6 +150,18 @@ def cmd_trigger(_args) -> int:
     return 0
 
 
+def due_threshold(reading) -> int:
+    """Tokens at which self-compaction is due: DUE_TOKENS, or 75% of a smaller model window."""
+    return min(DUE_TOKENS, int(int(reading["window_size"]) * DUE_WINDOW_FRACTION))
+
+
+def due_line(reading) -> str:
+    tokens, due = int(reading["tokens"]), due_threshold(reading)
+    if tokens >= due:
+        return f"compact: DUE ({tokens} >= {due}); wrap up, then `compact.py now`"
+    return f"compact: not due ({tokens} < {due}); keep working"
+
+
 def cmd_status(_args, _decider, reading) -> int:
     if reading is None:
         print("compact: no context reading yet (the statusline writes one each render)")
@@ -155,6 +172,7 @@ def cmd_status(_args, _decider, reading) -> int:
           f"({reading.get('used_pct')}%), reading {age}s old; "
           f"autoCompactWindow in settings.local.json: {current_override()}")
     print(trigger_line())
+    print(due_line(reading))
     return 0
 
 
@@ -327,8 +345,14 @@ def inject_ghostty(decider, claude_pid) -> str:
     return "injected /compact into this session's terminal; it runs at the next turn boundary"
 
 
-def cmd_now(_args, decider, reading, claude_pid) -> int:
+def cmd_now(args, decider, reading, claude_pid) -> int:
     tokens = int(reading["tokens"])
+    due = due_threshold(reading)
+    if tokens < due and not args.force:
+        print(f"compact: refused, {tokens} tokens is under the {due} due point; compacting "
+              "now would land back near the post-compaction floor and fire again (thrash). "
+              "`now --force` only when the operator asks.", file=sys.stderr)
+        return 1
     if tokens < NOW_MIN_TOKENS:
         print(f"compact: refused, only {tokens} tokens in context "
               f"(under {NOW_MIN_TOKENS}, nothing worth compacting)", file=sys.stderr)
@@ -376,7 +400,9 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description="Schedule this session's auto-compaction.")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("status")
-    sub.add_parser("now")
+    now = sub.add_parser("now")
+    now.add_argument("--force", action="store_true",
+                     help="compact below the due point (operator request only)")
     delay = sub.add_parser("delay")
     delay.add_argument("--by", type=int, default=DEFAULT_DELAY_TOKENS,
                        help="tokens of headroom above current context")
