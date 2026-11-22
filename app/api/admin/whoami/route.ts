@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { getAdminSession } from '@/lib/admin-auth';
+import { describeForwardedForShape } from '@/lib/forwarded-for-shape';
 
 // Tells the admin pill (components/admin/AdminPill.tsx) whether the visitor is a signed-in
 // admin. Session-gated by the same helper as every other admin surface; the answer is a
@@ -9,7 +10,15 @@ export const dynamic = 'force-dynamic';
 
 const NO_STORE = { 'Cache-Control': 'no-store' };
 
-export async function GET() {
+// Temporary observation of the X-Forwarded-For chain on App Hosting (see
+// lib/forwarded-for-shape.ts). Logs address-free counts only, and only for a request that
+// carries the probe header; the response is identical either way. Remove once the hop is known.
+const HOP_PROBE_HEADER = 'x-saoc-hop-probe';
+
+export async function GET(request: Request) {
+  if (request.headers.get(HOP_PROBE_HEADER) === '1') {
+    console.info('[xff-shape]', JSON.stringify(describeForwardedForShape(request.headers)));
+  }
   const session = await getAdminSession();
   if (!session.ok) {
     return NextResponse.json({ admin: false }, { status: 200, headers: NO_STORE });
