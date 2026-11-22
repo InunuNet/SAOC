@@ -133,11 +133,19 @@ test('over-long x-fah-client-ip is treated as absent and flagged oversize', () =
 });
 
 test('a value of exactly the limit is still parsed', () => {
-  const chain = `${'1,'.repeat(MAX_HEADER_CHARS / 2 - 1)}1`;
-  assert.ok(chain.length <= MAX_HEADER_CHARS);
-  const shape = describeForwardedForShape(headersOf({ 'x-forwarded-for': chain }));
+  const value = `${'1,'.repeat(MAX_HEADER_CHARS / 2 - 1)}1 `;
+  assert.equal(value.length, MAX_HEADER_CHARS);
+  const shape = describeForwardedForShape(headersOf({ 'x-forwarded-for': value }));
   assert.equal(shape.oversize, false);
   assert.equal(shape.hopCount, MAX_HEADER_CHARS / 2);
+});
+
+test('a value one character over the limit is oversize and not parsed', () => {
+  const value = `${'1,'.repeat(MAX_HEADER_CHARS / 2 - 1)}1  `;
+  assert.equal(value.length, MAX_HEADER_CHARS + 1);
+  const shape = describeForwardedForShape(headersOf({ 'x-forwarded-for': value }));
+  assert.equal(shape.oversize, true);
+  assert.equal(shape.hopCount, 0);
 });
 
 test('hopFamilies keeps only the last 8 hops while hopCount stays exact', () => {
