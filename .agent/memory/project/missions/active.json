@@ -1,5 +1,16 @@
 {
-  "mission": null,
-  "checkpoint": null,
-  "note": "mission complete"
+  "mission": ".agent/memory/project/missions/2026-11-21-backend-hardening-audit.md",
+  "checkpoint": {
+    "milestone": null,
+    "feature": null
+  },
+  "activated_at": "2026-11-21T20:54:55.730155+00:00",
+  "autonomy": {
+    "level": "high",
+    "normalized": "autonomous",
+    "permission_tier": "high",
+    "updated_at": "2026-11-21T20:54:55.730620+00:00",
+    "decided_at": "2026-11-21T20:54:55.730620+00:00",
+    "decided_by": "workspace default (profile.json)"
+  }
 }
