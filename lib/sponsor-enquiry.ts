@@ -4,6 +4,8 @@
  * The levels are Lee-Ann's Website Development Specification V3, line 484; the level is optional.
  */
 
+import { SINGLE_EMAIL_PATTERN } from './single-email-address.ts';
+
 export const SPONSOR_LEVELS = [
   { value: 'gold', label: 'Gold' },
   { value: 'silver', label: 'Silver' },
@@ -27,7 +29,7 @@ export const MESSAGE_MIN_LENGTH = 10;
 export const MESSAGE_MAX_LENGTH = 5000;
 
 // The contact API's own email test (app/api/contact/route.ts).
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_PATTERN = SINGLE_EMAIL_PATTERN;
 const PHONE_PATTERN = /^[0-9+()\-. ]+$/;
 const WEB_PROTOCOLS = new Set(['http:', 'https:']);
 

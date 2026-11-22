@@ -14,6 +14,7 @@
  */
 
 import { stripUndefinedProperties } from './firestore-write-safety.ts';
+import { SINGLE_EMAIL_PATTERN } from './single-email-address.ts';
 import type {
   VendorBoothType,
   VendorBusinessEntityType,
@@ -145,7 +146,7 @@ const BIO_MAX_WORDS = 200;
 // vendor-gated-registration-flow F1) can reuse the exact same patterns for its own
 // contactEmail/contactCellPhone validation, rather than redefining them -- see that module's
 // header comment.
-export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export const EMAIL_PATTERN = SINGLE_EMAIL_PATTERN;
 export const PHONE_PATTERN = /^(?=.*[0-9])[0-9+\-() ]{7,20}$/;
 
 // Mirrors the golden's field -> maxLength table (contracts/golden/vendor-form-maxlength-and-

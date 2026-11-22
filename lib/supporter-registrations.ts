@@ -13,11 +13,13 @@
  * lib/admin-roles.ts here.
  */
 
+import { SINGLE_EMAIL_PATTERN } from './single-email-address';
+
 export const SUPPORTER_REGISTRATIONS_COLLECTION = 'supporterRegistrations';
 
 export type SupporterRegistrationStatus = 'pending' | 'confirmed' | 'unsubscribed';
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_PATTERN = SINGLE_EMAIL_PATTERN;
 
 const EMAIL_MAX_LENGTH = 254;
 const FIRST_NAME_MAX_LENGTH = 60;

@@ -27,3 +27,42 @@ export function isBodyWithinLimit(contentLength: string | null, maxBytes: number
   if (contentLength === null || !DECIMAL_INTEGER.test(contentLength)) return false;
   return Number(contentLength) <= maxBytes;
 }
+
+const FIRESTORE_AUTO_ID = /^[A-Za-z0-9]{20}$/;
+
+/** True for the 20-character shape Firestore gives an auto-generated document id. */
+export function isFirestoreAutoId(id: string): boolean {
+  return FIRESTORE_AUTO_ID.test(id);
+}
+
+/**
+ * Reads a request body as text, refusing (null) as soon as it passes `maxBytes`. Unlike
+ * isBodyWithinLimit this accepts a missing Content-Length (a chunked body), counting the bytes
+ * as they stream in, so a genuine sender that does not announce its length is still served.
+ */
+export async function readBodyTextWithinLimit(
+  request: Request,
+  maxBytes: number,
+): Promise<string | null> {
+  const declared = request.headers.get('content-length');
+  if (declared !== null && (!DECIMAL_INTEGER.test(declared) || Number(declared) > maxBytes)) {
+    return null;
+  }
+  if (request.body === null) return '';
+
+  const reader = request.body.getReader();
+  const decoder = new TextDecoder();
+  let received = 0;
+  let text = '';
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    received += value.byteLength;
+    if (received > maxBytes) {
+      await reader.cancel();
+      return null;
+    }
+    text += decoder.decode(value, { stream: true });
+  }
+  return text + decoder.decode();
+}
