@@ -144,21 +144,20 @@ per-branch coverage. F5 chooses the cheaper, more precise proof.
   legitimate user who mistypes a required field twice, without giving a script room to flood
   `vendorSubmissions` with dozens of drafts per hour from one address. Placeholder, not a
   Council-approved value — flag if Lee-Ann/Brad want it tuned.
-- **Rate-limit key is IP-derived from `x-forwarded-for`, not authenticated in any way**: this
+- **Rate-limit key is IP-derived, not authenticated in any way**: this
   route has zero auth by design (public, unauthenticated submission), so there is no stable
-  per-caller identity to key on besides network origin. `x-forwarded-for`'s first hop is
-  client-supplied and therefore **spoofable by a direct caller who sets the header itself** —
-  unlike `lib/payfast.ts`'s `getClientIp()` (which trusts PayFast's own known, fixed proxy
-  topology and reads the *second-to-last* hop for that reason), there is no such fixed,
-  known-trustworthy proxy chain documented for Firebase App Hosting in this repo, so this
-  contract does **not** reuse `getClientIp()` here — doing so would silently borrow a trust
-  assumption that doesn't hold for this route's actual deployment topology. Explicitly scoped
+  per-caller identity to key on besides network origin. The key comes from
+  `rateLimitKeyFromHeaders()` in `lib/client-ip.ts`, which resolves the client address with
+  `clientIpFromHeaders()`: a valid `x-fah-client-ip` (written by the platform) first; otherwise
+  `x-forwarded-for`, where three or more entries give the **third from the end** (the platform
+  appends `CLIENT, PROXY, PROXY`; earlier entries are client-supplied and spoofable), one or two
+  entries give the last, and none gives null. This was observed on Firebase App Hosting on
+  2026-11-22, and routes must not read these headers directly (the security-hardening contract
+  check enforces that). Explicitly scoped
   as an **abuse deterrent, not a security boundary**: the zero-authorization posture below means
   a rate-limit bypass can only produce submission spam (more `vendorSubmissions` documents,
   more emails), never a privilege escalation, a data leak, or unauthorized access to another
-  vendor's submission. If Brad/Lee-Ann later confirm Firebase App Hosting's real proxy header
-  contract, tightening this key is a one-line change inside `route.ts` only — `handleVendorRegistration`
-  itself is agnostic to how the key string was derived.
+  vendor's submission. `handleVendorRegistration` itself is agnostic to how the key string was derived.
 - **In-memory rate-limit store, not Firestore-backed**: a Firestore-backed attempt counter would
   survive cold starts and multiple instances, but adds a second Firestore write per request (one
   for the attempt counter, one for the submission) and a new failure mode (counter write fails,

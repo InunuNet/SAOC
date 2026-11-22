@@ -67,10 +67,12 @@ async function reissue(id) {
 }
 
 async function verify(businessName, codeId, forwardedFor) {
-  const res = await verifyPost({
-    json: async () => ({ businessName, codeId }),
-    headers: new Headers({ 'x-forwarded-for': forwardedFor }),
-  });
+  // A real Request: the route reads the body as a stream (readJsonBodyWithinLimit), not json().
+  const res = await verifyPost(new Request('http://localhost/api/vendors/register/verify-code', {
+    method: 'POST',
+    headers: { 'x-forwarded-for': forwardedFor, 'content-type': 'application/json' },
+    body: JSON.stringify({ businessName, codeId }),
+  }));
   return { status: res.status, body: await res.json() };
 }
 

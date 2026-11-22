@@ -40,6 +40,18 @@ const mustNotMatch = (label: string, source: string, pattern: RegExp): void => {
 };
 const code = (path: string): string => strip(read(path));
 
+/** Grep hits for any client-address header named under app/ (routes must use lib/client-ip.ts). */
+function clientHeaderLines(): string[] {
+  const args = ['-rniI', '--include=*.ts', '--include=*.tsx', '-e', 'x-forwarded-for', '-e', 'x-fah-client-ip', '-e', 'x-real-ip', `${ROOT}app`];
+  try {
+    return execFileSync('grep', args, { encoding: 'utf8' }).split('\n').filter(Boolean);
+  } catch (error) {
+    // grep exits 1 when nothing matches, which is the clean outcome
+    if ((error as { status?: number }).status === 1) return [];
+    throw error;
+  }
+}
+
 const modes: Record<string, () => Promise<void> | void> = {
   // M2: helper with spoofed first hop
   async xff() {
@@ -66,11 +78,11 @@ const modes: Record<string, () => Promise<void> | void> = {
       mustMatch(`${route} uses helper`, source, /(?:clientIpFromHeaders|rateLimitKeyFromHeaders)\(/);
       mustNotMatch(`${route} first-hop read`, source, /split\(','\)\[0\]/);
     }
-    const listing = execFileSync('grep', ['-rniI', '--include=*.ts', '--include=*.tsx', 'x-forwarded-for', `${ROOT}app`], { encoding: 'utf8' }).split('\n');
-    for (const line of listing.filter(Boolean)) {
+    const listing = clientHeaderLines();
+    for (const line of listing) {
       const text = line.slice(line.indexOf(':', line.indexOf(':') + 1) + 1);
       if (/^\s*(\*|\/\/|\/\*)/.test(text)) continue;
-      if (!/(?:clientIpFromHeaders|rateLimitKeyFromHeaders)/.test(text)) fail(`direct x-forwarded-for read: ${line.trim()}`);
+      if (!/(?:clientIpFromHeaders|rateLimitKeyFromHeaders)/.test(text)) fail(`direct client-address header read: ${line.trim()}`);
     }
   },
   // M1/M3: shared limiter constants and behaviour
