@@ -1,7 +1,7 @@
 import { getSecret, secretsEnv } from '@/lib/secrets';
 import { NextRequest, NextResponse } from 'next/server';
 import { isDeclaredLengthWithinLimit, readJsonBodyWithinLimit } from '@/lib/request-guards';
-import { rateLimitKeyFromForwardedFor } from '@/lib/client-ip';
+import { rateLimitKeyFromHeaders } from '@/lib/client-ip';
 import { consumeRateLimit } from '@/lib/newsletter-rate-limit';
 import { createAttemptStore, scopeAttemptsToRequest } from '@/lib/newsletter-rate-store';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
@@ -489,7 +489,7 @@ const CHECKOUT_RATE_LIMIT_WINDOW_MS = 10 * 60_000;
 const checkoutAttempts = createAttemptStore(CHECKOUT_RATE_LIMIT_WINDOW_MS);
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const ip = rateLimitKeyFromForwardedFor(request.headers.get('x-forwarded-for'));
+  const ip = rateLimitKeyFromHeaders(request.headers);
   const limit = consumeRateLimit(
     { now: new Date(), ...scopeAttemptsToRequest(checkoutAttempts) },
     `ticket-checkout:${ip ?? 'unknown'}`,

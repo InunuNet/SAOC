@@ -8,6 +8,7 @@ import {
   OZOW_TRANSACTION_STATUS_URL,
 } from '@/lib/ozow';
 import { BOOKING_REF_PREFIX } from '@/lib/booking-ref';
+import { clientIpFromHeaders } from '@/lib/client-ip';
 import { OZOW_SANDBOX_MODE } from '@/lib/payments/sandbox-mode';
 import { constantTimeStringEqual } from '@/lib/recovery-token';
 import { OZOW_FIELD_MAX_LENGTH, findFieldLengthViolations } from './gateway-field-limits';
@@ -147,20 +148,13 @@ export interface OzowProviderDeps {
 }
 
 /**
- * Resolve the real-world client IP from Firebase App Hosting's GCLB-fronted request. GCLB appends
- * two entries to X-Forwarded-For: the client's IP, then the load balancer's own IP — the real
- * client IP is the second-to-last hop, never the last.
+ * Resolve the real-world client IP of an App Hosting request. The platform appends three entries
+ * to X-Forwarded-For (client, proxy, proxy) and sets `x-fah-client-ip` (observed 2026-11-22); the
+ * rule lives in lib/client-ip.ts (clientIpFromHeaders). Only the `x-real-ip` fallback stays here.
  */
 function getOzowClientIp(request: NotificationRequestLike): string | null {
-  const forwardedFor = request.headers.get('x-forwarded-for');
-  if (forwardedFor) {
-    const hops = forwardedFor
-      .split(',')
-      .map((hop) => hop.trim())
-      .filter(Boolean);
-    const clientHop = hops[hops.length - 2];
-    if (clientHop) return clientHop;
-  }
+  const resolved = clientIpFromHeaders(request.headers);
+  if (resolved) return resolved;
   const realIp = request.headers.get('x-real-ip');
   return realIp?.trim() ?? null;
 }

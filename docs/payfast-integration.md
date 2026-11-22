@@ -139,35 +139,34 @@ Any single failure logs which check failed (`console.error` with `m_payment_id` 
 context, no secrets) and leaves the ticket untouched in `reserved`. The ticket is only flipped
 to `paid` if all four checks pass **and** `payment_status === 'COMPLETE'`.
 
-### GCLB two-hop client-IP extraction
+### Client-IP extraction on App Hosting
 
-Firebase App Hosting is not bare Cloud Run — it sits behind a full external Google Cloud Load
-Balancer (GCLB) with Cloud CDN. Per Google's own docs, GCLB **appends exactly two entries** to
-`X-Forwarded-For`: the real client IP, then the load balancer's own forwarding-rule IP. So the
-header Cloud Run actually receives looks like:
+Firebase App Hosting is not bare Cloud Run: it sits behind Google's front end. Observed on the
+deployed server (2026-11-22, one-off probe), the platform appends **three** entries to
+`X-Forwarded-For` and writes the `x-fah-client-ip` header itself (a client-sent value does not
+survive):
 
 ```
-<attacker-controlled-prefix>, <real-client-ip>, <load-balancer-ip>
+<attacker-controlled-prefix>, <real-client-ip>, <google-proxy>, <google-proxy>
 ```
 
-The real client IP is therefore always the **second-to-last** hop — never the last (that's
-always the load balancer, and taking it means every legitimate ITN gets rejected because the
-LB's IP never matches a PayFast-resolved host) and never the first (that's spoofable by
-whoever sends the request, making the IP allowlist check a no-op).
+The real client IP is therefore the **third-to-last** hop, never the last (a Google proxy, which
+never matches a PayFast-resolved host) and never the first (spoofable by whoever sends the
+request, making the IP allowlist check a no-op). The rule lives in one place,
+`clientIpFromHeaders()` in `lib/client-ip.ts`: a valid `x-fah-client-ip` first, else the
+third-to-last hop (one or two entries, off-platform only, give the last). `getClientIp()` in
+`lib/payfast.ts` delegates to it and keeps an `X-Real-IP` fallback. The result feeds a logged-only
+comparison, not enforcement.
 
-`getClientIp()` in `lib/payfast.ts` implements this as `hops[hops.length - 2]`. It's covered by
-a dedicated regression test, `scripts/verify-payfast-itn-ip.ts`, which exercises six synthetic
-`X-Forwarded-For` shapes (including the canonical 3-hop GCLB case, a minimal 2-hop case, many
-spoofed prefixes, single-hop, and no-header fallback to `X-Real-IP`) and asserts the extracted
-IP specifically — not a source-code string match. Run it with:
+`scripts/verify-payfast-itn-ip.ts` exercises synthetic header shapes (platform shape, exactly
+three hops, many spoofed prefixes, a valid fah header, two hops, single hop, `X-Real-IP` fallback,
+no headers) and asserts the extracted IP specifically, not a source-code string match:
 
 ```bash
 pnpm exec tsx scripts/verify-payfast-itn-ip.ts
 ```
 
-If this file is ever touched again, re-run that script before assuming the change is safe —
-this exact bug (taking the last hop instead of the second-to-last) shipped once during this
-milestone's QA rounds and silently broke every ITN.
+Re-run it whenever `lib/client-ip.ts` changes.
 
 ### 3. Atomic Firestore transaction for idempotency, guarded positively
 

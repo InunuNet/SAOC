@@ -4,7 +4,7 @@ import { readJsonBodyWithinLimit } from '@/lib/request-guards';
 import { cookies } from 'next/headers';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
-import { rateLimitKeyFromForwardedFor } from '@/lib/client-ip';
+import { rateLimitKeyFromHeaders } from '@/lib/client-ip';
 import { initAdmin } from '@/lib/firebase-admin';
 import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
 import { VENDOR_APPLICATIONS_COLLECTION } from '@/lib/vendor-applications';
@@ -82,10 +82,10 @@ const GENERIC_INVALID_TOKEN_MESSAGE = 'This registration link is no longer valid
  * best-effort abuse deterrent, not a security boundary. This route has zero auth by design, so
  * there is no stable per-caller identity besides network origin. The leading hops of
  * `x-forwarded-for` are client-supplied and spoofable, so the address comes from
- * rateLimitKeyFromForwardedFor() (lib/client-ip.ts), which reads the hop Google's front end appended.
+ * rateLimitKeyFromHeaders() (lib/client-ip.ts), which reads the hop Google's front end appended.
  */
 function deriveRateLimitKey(request: NextRequest): string {
-  const ip = rateLimitKeyFromForwardedFor(request.headers.get('x-forwarded-for'));
+  const ip = rateLimitKeyFromHeaders(request.headers);
   return `vendor-register-ip:${ip ?? 'unknown'}`;
 }
 

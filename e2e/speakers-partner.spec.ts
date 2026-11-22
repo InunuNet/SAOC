@@ -89,7 +89,7 @@ test.describe('speakers partner ticket', () => {
 
   test('a wrong password is refused with 403 and sets no cookie', async ({ request }) => {
     const response = await request.post(AUTH, {
-      headers: { 'x-forwarded-for': '198.51.100.10, 10.0.0.1' },
+      headers: { 'x-forwarded-for': '198.51.100.10, 10.0.0.1, 10.0.0.2' },
       data: { password: 'definitely-wrong' },
     });
     expect(response.status()).toBe(403);
@@ -98,7 +98,7 @@ test.describe('speakers partner ticket', () => {
 
   test('the right password sets an httpOnly access cookie', async ({ request }) => {
     const response = await request.post(AUTH, {
-      headers: { 'x-forwarded-for': '198.51.100.11, 10.0.0.1' },
+      headers: { 'x-forwarded-for': '198.51.100.11, 10.0.0.1, 10.0.0.2' },
       data: { password: E2E_SPEAKERS_PARTNER_PASSWORD },
     });
     expect(response.status()).toBe(200);
@@ -110,11 +110,11 @@ test.describe('speakers partner ticket', () => {
   test('a spoofed leading X-Forwarded-For entry does not dodge the rate limit', async ({
     request,
   }) => {
-    // Google's front end appends the real client IP, so only the trailing hops are trusted.
+    // The platform appends client, proxy, proxy, so only the trailing hops are trusted.
     const statuses: number[] = [];
     for (let attempt = 0; attempt <= RATE_LIMIT_MAX_ATTEMPTS; attempt += 1) {
       const response = await request.post(AUTH, {
-        headers: { 'x-forwarded-for': `203.0.113.${attempt}, 198.51.100.77, 10.0.0.1` },
+        headers: { 'x-forwarded-for': `203.0.113.${attempt}, 198.51.100.77, 10.0.0.1, 10.0.0.2` },
         data: { password: 'wrong' },
       });
       statuses.push(response.status());

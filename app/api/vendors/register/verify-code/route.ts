@@ -4,7 +4,7 @@ import { readJsonBodyWithinLimit } from '@/lib/request-guards';
 import { cookies } from 'next/headers';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
-import { rateLimitKeyFromForwardedFor } from '@/lib/client-ip';
+import { rateLimitKeyFromHeaders } from '@/lib/client-ip';
 import { initAdmin } from '@/lib/firebase-admin';
 import { VENDOR_APPLICATIONS_COLLECTION } from '@/lib/vendor-applications';
 import {
@@ -47,7 +47,7 @@ const rateLimitStore = createInMemoryVendorRegistrationCodeVerifyRateLimitStore(
  * (`vendor-register-ip:*`).
  */
 function deriveRateLimitKey(request: NextRequest): string {
-  const ip = rateLimitKeyFromForwardedFor(request.headers.get('x-forwarded-for'));
+  const ip = rateLimitKeyFromHeaders(request.headers);
   return `vendor-register-code-verify-ip:${ip ?? 'unknown'}`;
 }
 

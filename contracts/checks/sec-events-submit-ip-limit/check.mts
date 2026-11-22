@@ -43,14 +43,14 @@ const VALID_BODY = JSON.stringify({
 const HTTP_UNAUTHORIZED = 401;
 const HTTP_TOO_MANY_REQUESTS = 429;
 
-// x-forwarded-for on App Hosting reads "<client-supplied...>, <client ip>, <lb ip>".
+// x-forwarded-for on App Hosting reads "<client-supplied...>, <client ip>, <proxy>, <proxy>".
 function post(
   realIp: string,
   token: string | null,
   spoofedFirstHop = '198.51.100.1',
   body = VALID_BODY,
 ): Promise<Response> {
-  const headers: Record<string, string> = { 'x-forwarded-for': `${spoofedFirstHop}, ${realIp}, 10.0.0.1` };
+  const headers: Record<string, string> = { 'x-forwarded-for': `${spoofedFirstHop}, ${realIp}, 10.0.0.1, 10.0.0.2` };
   if (token) headers.authorization = `Bearer ${token}`;
   return POST(new NextRequest('http://localhost/api/events/submit', { method: 'POST', headers, body }));
 }

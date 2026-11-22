@@ -18,8 +18,8 @@
 //   - Source IP (step 2): resolvePayfastIps() does a REAL dns.lookup() against PayFast's
 //     real hostnames — we let it. We ALSO do a real DNS lookup of sandbox.payfast.co.za
 //     ourselves and place that genuinely-resolved IP in the X-Forwarded-For header at the
-//     second-to-last hop (see lib/payfast.ts getClientIp — GCLB appends
-//     "<client>,<lb>", so the real client IP is always the second-to-last hop). No
+//     third-to-last hop (see lib/client-ip.ts — the platform appends
+//     "<client>,<proxy>,<proxy>", so the real client IP is the third-to-last hop). No
 //     mocking, no IP allowlist stub — a route that stopped resolving DNS for real would
 //     fail this exactly as it would fail in production.
 //   - Server confirmation (step 4): `fetch` in route.ts is the bare global, not an
@@ -120,11 +120,11 @@ export async function realPayfastIp(): Promise<string> {
   return results[0].address;
 }
 
-/** Build an X-Forwarded-For value with `sourceIp` at the second-to-last hop, matching
- * GCLB's "<client-supplied>,<client-ip>,<lb-ip>" shape that lib/payfast.ts getClientIp()
- * trusts. */
+/** Build an X-Forwarded-For value with `sourceIp` at the third-to-last hop, matching
+ * the platform's "<client-supplied>,<client-ip>,<proxy>,<proxy>" shape that
+ * lib/client-ip.ts clientIpFromHeaders() trusts. */
 export function buildXff(sourceIp: string): string {
-  return `198.51.100.7, ${sourceIp}, 10.0.0.1`;
+  return `198.51.100.7, ${sourceIp}, 10.0.0.1, 10.0.0.2`;
 }
 
 /** A minimal Request-shaped object satisfying everything route.ts actually calls:

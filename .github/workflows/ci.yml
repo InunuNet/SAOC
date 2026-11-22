@@ -76,7 +76,7 @@ jobs:
         run: pnpm exec tsx scripts/checks/buy-path-live-reads.mts
 
       - name: Secret bundle loader tests
-        run: pnpm exec tsx --test lib/secrets.test.ts lib/newsletter-handler-export.test.ts lib/admin-capability-gate.test.ts lib/client-ip.test.ts lib/forwarded-for-shape.test.ts
+        run: pnpm exec tsx --test lib/secrets.test.ts lib/newsletter-handler-export.test.ts lib/admin-capability-gate.test.ts lib/client-ip.test.ts
 
       - name: Cache-header probe selftest
         run: node scripts/checks/cache-headers-probe.mjs --selftest

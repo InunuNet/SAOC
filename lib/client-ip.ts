@@ -1,17 +1,43 @@
+const FAH_CLIENT_IP_HEADER = 'x-fah-client-ip';
+/** Entries the platform appends to X-Forwarded-For: client, proxy, proxy. */
+const PLATFORM_HOPS = 3;
+
+interface HeaderReader {
+  get(name: string): string | null;
+}
+
 /**
- * Client address from an X-Forwarded-For header on Firebase App Hosting. Google's front end
- * appends the client IP, so the header reads `<client-supplied...>, <client-ip>, <lb-ip>`:
- * the first entries are attacker-controlled and the last is the shared load-balancer address.
- * One entry is used as-is; two or more yield the second-to-last. Null when absent or empty.
+ * Client address from a request's headers on Firebase App Hosting.
+ *
+ * Observed on the deployed server (2026-11-22, revision build-2026-11-22-014, via a one-off
+ * probe): the platform appends THREE entries to X-Forwarded-For, `<client-supplied...>, CLIENT,
+ * PROXY, PROXY`, so the real client is third from the end, and it sets `x-fah-client-ip` to that
+ * same address (a client-sent value does not survive). `x-real-ip` is absent. The public can only
+ * reach the app through Google's front end; direct run.app calls are IAM-gated (403 without an
+ * identity token), so the platform-written parts of both headers can be trusted.
+ *
+ * Resolution order:
+ * 1. `x-fah-client-ip` when it is a valid IPv4 or IPv6 literal.
+ * 2. Otherwise X-Forwarded-For: three or more entries give the third from the end; one or two
+ *    entries give the last (off-platform only: local dev, tests, or an authenticated direct
+ *    Cloud Run call, where the nearest proxy appended the last entry); none gives null.
  */
-export function clientIpFromForwardedFor(header: string | null | undefined): string | null {
-  const hops = (header ?? '')
+export function clientIpFromHeaders(headers: HeaderReader): string | null {
+  const fah = (headers.get(FAH_CLIENT_IP_HEADER) ?? '').trim();
+  if (isIpLiteral(fah)) return fah;
+  const hops = (headers.get('x-forwarded-for') ?? '')
     .split(',')
     .map((hop) => hop.trim())
     .filter((hop) => hop !== '');
   if (hops.length === 0) return null;
-  if (hops.length === 1) return hops[0] ?? null;
-  return hops[hops.length - 2] ?? null;
+  const index = hops.length >= PLATFORM_HOPS ? hops.length - PLATFORM_HOPS : hops.length - 1;
+  return hops[index] ?? null;
+}
+
+/** True for a bare dotted IPv4 (octets 0-255) or IPv6 literal; no brackets, port or zone. */
+function isIpLiteral(value: string): boolean {
+  if (value === '') return false;
+  return ipv4ToHextets(value) !== null || (value.includes(':') && parseIpv6(value) !== null);
 }
 
 const IPV6_GROUPS = 8;
@@ -23,7 +49,7 @@ const HEXTET_PATTERN = /^[0-9a-f]{1,4}$/i;
 const IPV4_PATTERN = /^\d{1,3}(\.\d{1,3}){3}$/;
 
 /** Dotted IPv4 to two hextets (high, low), or null when malformed or an octet is out of range. */
-export function ipv4ToHextets(dotted: string): number[] | null {
+function ipv4ToHextets(dotted: string): number[] | null {
   if (!IPV4_PATTERN.test(dotted)) return null;
   const octets = dotted.split('.').map(Number);
   if (octets.length !== IPV4_OCTETS || octets.some((o) => o > MAX_OCTET)) return null;
@@ -51,7 +77,7 @@ function parseHextets(part: string, allowV4Tail: boolean): number[] | null {
 }
 
 /** Eight 16-bit groups of an IPv6 literal (no brackets, zone or port), or null if invalid. */
-export function parseIpv6(text: string): number[] | null {
+function parseIpv6(text: string): number[] | null {
   const halves = text.split('::');
   if (halves.length > 2) return null;
   const head = parseHextets(halves[0] ?? '', halves.length === 1);
@@ -98,7 +124,7 @@ export function rateLimitKeyForIp(ip: string | null | undefined): string | null 
   return `${prefix.join(':')}::/64`;
 }
 
-/** Limiter key for the request's X-Forwarded-For header; same hop choice as the helper above. */
-export function rateLimitKeyFromForwardedFor(header: string | null | undefined): string | null {
-  return rateLimitKeyForIp(clientIpFromForwardedFor(header));
+/** Limiter key for the request's headers; same resolution as clientIpFromHeaders. */
+export function rateLimitKeyFromHeaders(headers: HeaderReader): string | null {
+  return rateLimitKeyForIp(clientIpFromHeaders(headers));
 }

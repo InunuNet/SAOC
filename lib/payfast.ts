@@ -1,5 +1,7 @@
 import { createHash } from 'node:crypto';
 
+import { clientIpFromHeaders } from './client-ip';
+
 /**
  * PayFast Sandbox integration constants and signature helper.
  *
@@ -143,28 +145,16 @@ export function generateNotifySignature(
  * Trust boundary: Firebase App Hosting is NOT bare Cloud Run. Per
  * https://firebase.google.com/docs/app-hosting/about-app-hosting, "the request is served
  * by Google Cloud Load Balancer with Cloud CDN enabled. Uncached requests are sent to your
- * Cloud Run service" — there is a full external Google Cloud Load Balancer (GCLB) in front
- * of Cloud Run. Per https://cloud.google.com/load-balancing/docs/https, GCLB APPENDS TWO
- * entries to X-Forwarded-For, in this order: "The IP address of the client that connects
- * to the load balancer[;] The IP address of the load balancer's forwarding rule". So the
- * header GCLB forwards to Cloud Run is `<client-supplied-value>,<client-ip>,<load-balancer-ip>`
- * — every entry the caller supplied (including a spoofed one) still lands before those two,
- * and the LAST entry is always the load balancer's own IP, never the client's. The real,
- * infrastructure-verified client IP is therefore the SECOND-TO-LAST hop, not the last one.
- * Taking the last hop (an earlier version of this function) always resolves to the load
- * balancer's own IP, which never matches a PayFast-resolved host IP — every legitimate ITN
- * would be rejected. Taking the first hop is a spoofable IP-allowlist bypass.
+ * Cloud Run service" — there is a full external Google front end in front of Cloud Run.
+ * Observed on the deployed server (2026-11-22): the platform appends THREE entries to
+ * X-Forwarded-For (`<client-supplied...>, CLIENT, PROXY, PROXY`) and writes `x-fah-client-ip`
+ * itself, so the real client is the third-to-last hop; the last hop is a Google proxy and the
+ * first hops are spoofable. The rule lives in lib/client-ip.ts (clientIpFromHeaders); this
+ * wrapper only keeps the old `x-real-ip` fallback. The result feeds a logged-only comparison.
  */
 export function getClientIp(request: { headers: { get(name: string): string | null } }): string | null {
-  const forwardedFor = request.headers.get('x-forwarded-for');
-  if (forwardedFor) {
-    const hops = forwardedFor
-      .split(',')
-      .map((hop) => hop.trim())
-      .filter(Boolean);
-    const clientHop = hops[hops.length - 2];
-    if (clientHop) return clientHop;
-  }
+  const resolved = clientIpFromHeaders(request.headers);
+  if (resolved) return resolved;
   const realIp = request.headers.get('x-real-ip');
   return realIp?.trim() ?? null;
 }

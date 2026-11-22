@@ -3,7 +3,7 @@ import { randomBytes } from 'node:crypto';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { readJsonBodyWithinLimit } from '@/lib/request-guards';
-import { rateLimitKeyFromForwardedFor } from '@/lib/client-ip';
+import { rateLimitKeyFromHeaders } from '@/lib/client-ip';
 import { consumeRateLimit } from '@/lib/newsletter-rate-limit';
 import { createAttemptStore, scopeAttemptsToRequest } from '@/lib/newsletter-rate-store';
 import { isIssuanceTestMode } from '@/lib/ticket-issuance-mode';
@@ -84,7 +84,7 @@ const INITIATE_RATE_LIMIT_WINDOW_MS = 10 * 60_000;
 const initiateAttempts = createAttemptStore(INITIATE_RATE_LIMIT_WINDOW_MS);
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const ip = rateLimitKeyFromForwardedFor(request.headers.get('x-forwarded-for'));
+  const ip = rateLimitKeyFromHeaders(request.headers);
   const limit = consumeRateLimit(
     { now: new Date(), ...scopeAttemptsToRequest(initiateAttempts) },
     `vendor-stand-initiate:${ip ?? 'unknown'}`,

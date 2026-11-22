@@ -18,7 +18,7 @@ There is no admin listing page for `sponsorEnquiries`: enquiries are read in the
 
 ## Spam and POPIA
 
-`/api/contact` has neither consent nor a server-side spam control, so mirroring it would break spec 2.9. This form uses the newsletter pattern instead: a hidden `_hp` honeypot that the client sends and the server answers with a silent 201 and no write, and a per-IP rate limit of 5 attempts per hour (the sixth is a 429 with `Retry-After`, consumed before the honeypot and validation; the IP is the second-to-last `X-Forwarded-For` hop). A required consent checkbox must be the literal `true`, beside a link to `/privacy`. CAPTCHA is not added (open decision D1).
+`/api/contact` has neither consent nor a server-side spam control, so mirroring it would break spec 2.9. This form uses the newsletter pattern instead: a hidden `_hp` honeypot that the client sends and the server answers with a silent 201 and no write, and a per-IP rate limit of 5 attempts per hour (the sixth is a 429 with `Retry-After`, consumed before the honeypot and validation; the IP is `x-fah-client-ip`, else the third-to-last `X-Forwarded-For` hop). A required consent checkbox must be the literal `true`, beside a link to `/privacy`. CAPTCHA is not added (open decision D1).
 
 ## Emails
 
