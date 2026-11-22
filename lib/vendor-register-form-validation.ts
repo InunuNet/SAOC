@@ -1,7 +1,8 @@
 import type { VendorRegisterFormState } from '@/lib/vendor-register-form-payload';
+import { SINGLE_EMAIL_PATTERN } from '@/lib/single-email-address';
 
 const STRICT_INTEGER_PATTERN = /^\d+$/;
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_PATTERN = SINGLE_EMAIL_PATTERN;
 const PHONE_PATTERN = /^(?=.*[0-9])[0-9+\-() ]{7,20}$/;
 
 /**

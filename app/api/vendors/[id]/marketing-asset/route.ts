@@ -5,7 +5,7 @@ import { getStorage } from 'firebase-admin/storage';
 import { clientIpFromForwardedFor } from '@/lib/client-ip';
 import { getStorageBucketName, initAdmin } from '@/lib/firebase-admin';
 import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
-import { base64BodyLimitBytes, isBodyWithinLimit } from '@/lib/request-guards';
+import { base64BodyLimitBytes, isBodyWithinLimit, isFirestoreAutoId } from '@/lib/request-guards';
 import { MARKETING_ASSET_MAX_BYTES } from '@/lib/vendor-marketing-upload';
 import {
   handleMarketingAssetUpload,
@@ -132,6 +132,9 @@ export async function POST(
       getPriorAttempts: () => [],
       recordAttempt: () => {},
       submissionExists: async (submissionId) => {
+        // Submission ids are Firestore auto-ids: any other shape cannot exist, so skip the read
+        // (the handler's response is identical whether or not the submission exists).
+        if (!isFirestoreAutoId(submissionId)) return false;
         const snapshot = await db.collection(VENDOR_SUBMISSIONS_COLLECTION).doc(submissionId).get();
         return snapshot.exists;
       },
