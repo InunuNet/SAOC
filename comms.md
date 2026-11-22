@@ -3441,3 +3441,11 @@ Claude needs your permission. Waiting: AskUserQuestion {"questions": [{"question
 ## [SAOC -> OPERATOR] 2026-11-19 17:50 — session waiting on a permission prompt
 
 Claude needs your permission. Waiting: AskUserQuestion {"questions": [{"question": "NOS Contact page: the cell number is gone, but no email shows there because the show mailbox was never confirmed. Which email should the page show?", "header": "Contact email", "options": [{"label": "SAOC general email", "description": "Show the SAOC address that ticket  Nothing proceeds until someone answers it in the terminal. (permission_gate.sh; one notice per 30 min)
+
+## [SAOC -> OPERATOR] 2026-11-21 11:50 — session waiting on a permission prompt
+
+Claude needs your permission. Waiting: AskUserQuestion {"questions": [{"question": "In October I made the beta wall password myself: a random one, sent straight into Google's vault and never shown. For Speakers Partner you already picked a password, and it's in .env.local, a file my safety guard won't let me read. Should I do it the October way with a n Nothing proceeds until someone answers it in the terminal. (permission_gate.sh; one notice per 30 min)
+
+## [SAOC -> OPERATOR] 2026-11-21 13:26 — session waiting on a permission prompt
+
+Claude needs your permission. Waiting: AskUserQuestion {"questions": [{"question": "[escalation 26e0296f] Grant command escalation?\nScope: gcloud\nReason: secrets-zero-cost step 5 (list secret versions metadata, delete the 19 old secrets after beta verification, destroy leftover versions; never versions access)\nDuration: 2h", "header": "Vault perms",  Nothing proceeds until someone answers it in the terminal. (permission_gate.sh; one notice per 30 min)
