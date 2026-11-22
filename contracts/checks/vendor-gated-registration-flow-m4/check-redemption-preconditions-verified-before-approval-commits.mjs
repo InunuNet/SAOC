@@ -20,10 +20,13 @@
 // Two classes of precondition are extracted, by STATIC ANALYSIS of the real redemption route,
 // not hardcoded by name:
 //
-//   (A) ENVIRONMENT PRECONDITIONS -- every `process.env.NAME` read in the redemption route that
-//       is guarded by an `if (!ident) { ... return ... }` refusal. For each NAME found there,
-//       the approval route's 'approve' branch must ALSO reference that same env var name,
-//       somewhere before its ref.update() call.
+//   (A) ENVIRONMENT PRECONDITIONS -- every secret/env read in the redemption route, in either
+//       shape (`process.env.NAME`, `process.env['NAME']`, or `getSecret('NAME')` from
+//       lib/secrets.ts, which reads the secret bundles and falls back to process.env), that is
+//       guarded by an `if (!ident) { ... return ... }` refusal. For each NAME found there, the
+//       approval route's 'approve' branch must ALSO REFUSE on that same name -- an
+//       `if (!getSecret('NAME')) { ... return` (or the process.env equivalent) before its
+//       ref.update() call; a bare mention of the name does not count.
 //   (B) MATCH-KEY PRECONDITIONS -- every Firestore `.where('field', '==', expr)` in the
 //       redemption route's candidate lookup where `expr` is a VARIABLE (vendor-input-derived),
 //       not a quoted string literal (a constant like `.where('status', '==', 'approved')` is
@@ -91,15 +94,22 @@ const preCommitApproval =
   approveBlockAt !== -1 && firstUpdateAt !== -1 ? approvalSource.slice(approveBlockAt, firstUpdateAt) : '';
 
 // -------------------------------------------------------------------------------------------
-// (A) Environment preconditions: `process.env.NAME` (or `process.env['NAME']`) assigned to an
-// identifier that is then guarded by `if (!ident) { ... return`.
+// (A) Environment preconditions: `process.env.NAME`, `process.env['NAME']` or
+// `getSecret('NAME')` assigned to an identifier that is then guarded by `if (!ident) { ... return`.
 // -------------------------------------------------------------------------------------------
 const envGuardPattern =
-  /const\s+(\w+)\s*=\s*process\.env(?:\.(\w+)|\[['"](\w+)['"]\])\s*;[\s\S]{0,300}?if\s*\(\s*!\s*\1\s*\)\s*\{[\s\S]{0,300}?return/g;
+  /const\s+(\w+)\s*=\s*(?:process\.env(?:\.(\w+)|\[['"](\w+)['"]\])|getSecret\(\s*['"](\w+)['"]\s*\))\s*;[\s\S]{0,300}?if\s*\(\s*!\s*\1\s*\)\s*\{[\s\S]{0,300}?return/g;
+
+// The approval-side counterpart: an actual refusal on NAME (`if (!getSecret('NAME')) { ... return`
+// or `if (!process.env.NAME) { ... return`) -- not merely a mention of the name.
+function approvalRefusesOn(name) {
+  const read = `(?:getSecret\\(\\s*['"]${name}['"]\\s*\\)|process\\.env(?:\\.${name}\\b|\\[['"]${name}['"]\\]))`;
+  return new RegExp(`if\\s*\\(\\s*!\\s*${read}\\s*\\)\\s*\\{[\\s\\S]{0,400}?return`).test(preCommitApproval);
+}
 
 const envPreconditions = new Set();
 for (const match of redemptionSource.matchAll(envGuardPattern)) {
-  const name = match[2] || match[3];
+  const name = match[2] || match[3] || match[4];
   if (name) envPreconditions.add(name);
 }
 
@@ -113,11 +123,11 @@ if (envPreconditions.size === 0) {
   );
 } else {
   for (const name of envPreconditions) {
-    if (!preCommitApproval.includes(name)) {
+    if (!approvalRefusesOn(name)) {
       failures.push(
         `Environment precondition "${name}" is checked (with a refusal) by the redemption route ` +
-          `(${REDEMPTION_ROUTE}) but is NOT referenced anywhere in the approval route's 'approve' ` +
-          `branch before its commit (${APPROVAL_ROUTE}) -- an approval can commit while this ` +
+          `(${REDEMPTION_ROUTE}) but the approval route's 'approve' branch has no matching ` +
+          `refusal (if (!getSecret('${name}')) { ... return }) before its commit (${APPROVAL_ROUTE}) -- an approval can commit while this ` +
           'precondition is unmet, leaving the vendor permanently unable to redeem the credential.',
       );
     }
