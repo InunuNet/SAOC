@@ -3,7 +3,7 @@
 Open items only. Everything else, including older open items and closed work: `archive/backlog-history.md`. Grep it, do not read whole.
 
 - [ ] **P0 TOP — Re-quote SAOC/Lee-Ann for the website work (Brad 2026-11-09, keep at … → [details](data/p0-top-re-quote-saoc-lee-ann-for-the-web.md)
-_Last compacted: 2026-11-21 by backlog_trim.py. Full history: git log on this file._
+_Last compacted: 2026-11-22 by backlog_trim.py. Full history: git log on this file._
 - [ ] P0 Reconcile cron engineering half: secret in apphosting.yaml + scheduler job (enablement is Brad's; /spec first) -> lines 3083, 2951
 - [ ] P1 Runtime dependency security patches (2026-11-07, Brad AFK, local only): chore… → [details](data/p1-runtime-dependency-security-patches-2.md)
 - [ ] P1 SAOC client-JS weight blocks mobile LCP (own feature) -> line 3018
