@@ -153,11 +153,11 @@ const UNTOUCHED = [
   'lib/vendor-registration-token.ts',
   'lib/vendor-registration-token-claim.ts',
 ];
-// These four were legitimately edited AFTER BASE by unrelated work, none of it photo-resume:
-// the NOS site split moved the register page to app/(nos)/ (774029a3); the security hardening
-// passes added the streamed body cap, IPv6 rate-limit key, upload content sniffing and the
-// auto-id guard (b8a29185, d493daaa, 1c6b9cb8). They are pinned to the last such commit
-// (1c6b9cb8) so any LATER edit, in particular by this feature, still fails the check.
+// These four were edited AFTER BASE by later, non-photo-resume work (14 commits between BASE and
+// 1c6b9cb8, e.g. the NOS site split 774029a3 that moved the register page to app/(nos)/, and the
+// security hardening 4b4ad5d9, 247e9f1e, b8a29185, d493daaa, 1c6b9cb8; the list is not complete:
+// see `git log 77e50788..1c6b9cb8 -- <files>`). They are re-pinned to 1c6b9cb8, the last commit
+// to touch them, so any LATER edit, in particular by this feature, still fails the check.
 const HARDENED_BASE = '1c6b9cb8';
 const UNTOUCHED_SINCE_HARDENING = [
   'app/api/vendors/[id]/marketing-asset/route.ts',
