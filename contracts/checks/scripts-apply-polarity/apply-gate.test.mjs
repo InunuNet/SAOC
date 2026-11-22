@@ -4,6 +4,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
+// This is a source-pattern tripwire, not a data-flow proof: it cannot show that a write
+// is unreachable without --apply. Review of a new script's write path is still required.
+//
 // Source-level guard: every script under scripts/ that calls a Sanity write must derive its
 // dry-run flag from an explicit --apply flag (safe by default). It reads source text only;
 // nothing runs.
@@ -23,7 +26,12 @@ const SANITY_CLIENT = /@sanity\/client|from\s+['"][^'"]*sanity[^'"]*['"]/;
 // string or error message does not match.
 const APPLY_GATE =
   /argv[\w.]*\.includes\(\s*(?:['"]--apply['"]|APPLY_FLAG)\s*\)|\bapply:\s*\{\s*type:\s*['"]boolean['"]/;
-const OLD_POLARITY = /DRY_RUN\s*=\s*[\w.]*argv[\w.]*\.includes\(\s*['"]--dry-run['"]\s*\)/;
+// Name-agnostic old polarity: any declaration assigning from includes('--dry-run') whose
+// own statement does not also reference --apply.
+const DRY_RUN_DECL = /\b(?:const|let|var)\s+\w+[^=;]*=[^;]*includes\(\s*['"]--dry-run['"]\s*\)[^;]*;?/g;
+function hasOldPolarity(code) {
+  return (code.match(DRY_RUN_DECL) ?? []).some((stmt) => !stmt.includes('--apply'));
+}
 
 // Known gaps, left unchanged on purpose and reported in the PR. An entry that starts
 // passing must be removed from this list (asserted below), so the list only shrinks.
@@ -42,6 +50,15 @@ const KNOWN_UNGATED = new Set([
   'scripts/update-about-judging-copy.ts',
 ]);
 
+// Reviewed by hand and safe, though they trip the rule: both declare
+// `const dry = argv.includes('--dry-run')` in a statement of its own, but parseMode()
+// returns null when neither or both of --dry-run/--apply are given (usage error, exit),
+// and writes only run in 'apply' mode. Entries must still exist and still trip the rule.
+const REVIEWED_SAFE = new Set([
+  'scripts/unpublish-invented-events.ts',
+  'scripts/unpublish-invented-shows.ts',
+]);
+
 // Remove block comments, full-line comments and trailing // comments (not inside a URL).
 function stripComments(source) {
   return source
@@ -51,7 +68,7 @@ function stripComments(source) {
 }
 
 function isGated(code) {
-  return APPLY_GATE.test(code) && !OLD_POLARITY.test(code);
+  return APPLY_GATE.test(code) && !hasOldPolarity(code);
 }
 
 function listScripts(dir) {
@@ -74,7 +91,9 @@ test('scripts directory has write-capable scripts to check', () => {
 
 test('every Sanity-writing script defines its dry-run flag from --apply', () => {
   const ungated = writers
-    .filter(({ rel, code }) => !isGated(code) && !KNOWN_UNGATED.has(rel))
+    .filter(
+      ({ rel, code }) => !isGated(code) && !KNOWN_UNGATED.has(rel) && !REVIEWED_SAFE.has(rel),
+    )
     .map(({ rel }) => rel);
   assert.deepEqual(ungated, [], `Writes not gated on --apply: ${ungated.join(', ')}`);
 });
@@ -85,6 +104,14 @@ test('KNOWN_UNGATED entries are still ungated (remove them once fixed)', () => {
     return !hit || isGated(hit.code);
   });
   assert.deepEqual(gated, []);
+});
+
+test('REVIEWED_SAFE entries still exist and still trip the rule (remove if not)', () => {
+  const stale = [...REVIEWED_SAFE].filter((rel) => {
+    const hit = writers.find((s) => s.rel === rel);
+    return !hit || isGated(hit.code);
+  });
+  assert.deepEqual(stale, []);
 });
 
 test('self-test: old polarity fails', () => {
@@ -101,6 +128,17 @@ test('self-test: --apply only in a log string or comment fails', () => {
   );
   assert.equal(isGated(code), false);
   assert.equal(isGated(stripComments("console.log('use --apply');")), false);
+});
+
+test('self-test: dry-run flag under another name, with --apply unused, fails', () => {
+  const code = stripComments(
+    [
+      "const APPLY = process.argv.includes('--apply');",
+      "const dryRun = process.argv.includes('--dry-run');",
+      'if (!dryRun) await client.create(doc);',
+    ].join('\n'),
+  );
+  assert.equal(isGated(code), false);
 });
 
 test('self-test: the correct forms pass', () => {
