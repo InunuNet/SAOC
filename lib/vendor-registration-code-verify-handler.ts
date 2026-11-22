@@ -13,7 +13,10 @@
  */
 
 import { normalizeVendorCodeName, verifyVendorRegistrationCode } from './vendor-registration-code';
-import type { VendorRegistrationCodeCandidate } from './vendor-registration-code';
+import type {
+  VendorRegistrationCodeCandidate,
+  VerifyVendorRegistrationCodeResult,
+} from './vendor-registration-code';
 import { decideVendorRegistrationCodeVerifyRateLimit } from './vendor-registration-code-verify-rate-limit';
 
 /** Deliberately generic: no such name slug, wrong 4 digits, locked, consumed, expired, or
@@ -54,9 +57,26 @@ export interface VendorRegistrationCodeVerificationDeps {
    *  executed regardless of outcome -- no query-skipping branch for a not-obviously-real name
    *  (see the golden README's "Enumeration blindness"). */
   findCandidates: (normalizedNameSlug: string) => Promise<VendorRegistrationCodeCandidate[]>;
-  recordFailedAttempt: (applicationId: string) => Promise<void>;
   mintSession: (applicationId: string) => MintedVendorRegistrationSession;
 }
+
+/** The two ways a deployment can judge the typed code. Production uses `verifyAtomically` (lock
+ *  check, comparison and failure count in one transaction, safe under parallel requests); the
+ *  pure-verify-then-record pair is kept for the contract checks that drive this handler with
+ *  in-memory fakes. */
+export type VendorRegistrationCodeVerifyStrategy =
+  | {
+      verifyAtomically: (
+        candidateIds: string[],
+        typedNameSlug: string,
+        typedCodeId: string,
+      ) => Promise<VerifyVendorRegistrationCodeResult>;
+      recordFailedAttempt?: undefined;
+    }
+  | {
+      verifyAtomically?: undefined;
+      recordFailedAttempt: (applicationId: string) => Promise<void>;
+    };
 
 export type VendorRegistrationCodeVerificationResult =
   | { status: 429; body: { error: string } }
@@ -65,7 +85,7 @@ export type VendorRegistrationCodeVerificationResult =
 
 export async function handleVendorRegistrationCodeVerification(
   input: VendorRegistrationCodeVerificationInput,
-  deps: VendorRegistrationCodeVerificationDeps,
+  deps: VendorRegistrationCodeVerificationDeps & VendorRegistrationCodeVerifyStrategy,
 ): Promise<VendorRegistrationCodeVerificationResult> {
   // Rate limiting FIRST, before any Firestore lookup -- shields the write/read path exactly
   // like lib/vendor-registration-handler.ts's own rate-limit-shields-write rule.
@@ -90,17 +110,23 @@ export async function handleVendorRegistrationCodeVerification(
   const typedCodeId = input.codeId;
 
   const candidates = await deps.findCandidates(typedNameSlug);
-  const verification = verifyVendorRegistrationCode(
-    { typedNameSlug, typedCodeId },
-    candidates,
-    deps.now,
-  );
+  const verification = deps.verifyAtomically
+    ? await deps.verifyAtomically(
+        candidates.map((candidate) => candidate.id),
+        typedNameSlug,
+        typedCodeId,
+      )
+    : verifyVendorRegistrationCode({ typedNameSlug, typedCodeId }, candidates, deps.now);
 
   if (!verification.ok) {
     // A failed guess records against every candidate this slug matched -- so the
     // per-application lockout counter actually advances, even if the vendor typed the wrong
-    // 4 digits against a real business name.
-    await Promise.all(candidates.map((candidate) => deps.recordFailedAttempt(candidate.id)));
+    // 4 digits against a real business name. (The atomic strategy already recorded it inside
+    // the verifying transaction.)
+    if (deps.recordFailedAttempt) {
+      const record = deps.recordFailedAttempt;
+      await Promise.all(candidates.map((candidate) => record(candidate.id)));
+    }
     return { status: 403, body: { error: GENERIC_CODE_VERIFICATION_ERROR_MESSAGE } };
   }
 
