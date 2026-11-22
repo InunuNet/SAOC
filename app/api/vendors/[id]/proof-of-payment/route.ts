@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 
-import { clientIpFromForwardedFor } from '@/lib/client-ip';
+import { rateLimitKeyFromForwardedFor } from '@/lib/client-ip';
 import { getStorageBucketName, initAdmin } from '@/lib/firebase-admin';
 import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
 import { base64BodyLimitBytes, isFirestoreAutoId, readJsonBodyWithinLimit } from '@/lib/request-guards';
@@ -49,7 +49,7 @@ const rateLimitStore = createInMemoryProofOfPaymentRateLimitStore();
  *  not a security boundary. Mirrors F5's deriveRateLimitKey() exactly; see that route's own
  *  golden README for why lib/payfast.ts's getClientIp() is not reused here. */
 function deriveRateLimitKey(request: NextRequest): string {
-  const ip = clientIpFromForwardedFor(request.headers.get('x-forwarded-for'));
+  const ip = rateLimitKeyFromForwardedFor(request.headers.get('x-forwarded-for'));
   return `vendor-proof-of-payment-ip:${ip ?? 'unknown'}`;
 }
 

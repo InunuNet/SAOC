@@ -1,7 +1,7 @@
 import { secretsEnv } from '@/lib/secrets';
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { clientIpFromForwardedFor } from '@/lib/client-ip';
+import { rateLimitKeyFromForwardedFor } from '@/lib/client-ip';
 import { readJsonBodyWithinLimit } from '@/lib/request-guards';
 import { decideRateLimit, type RateLimitAttempt } from '@/lib/resend-rate-limit';
 import {
@@ -53,7 +53,7 @@ async function readPassword(request: NextRequest): Promise<string | null> {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const now = new Date();
-  const ip = clientIpFromForwardedFor(request.headers.get('x-forwarded-for')) ?? 'unknown';
+  const ip = rateLimitKeyFromForwardedFor(request.headers.get('x-forwarded-for')) ?? 'unknown';
   const key = `speakers-partner:${ip}`;
   const decision = decideRateLimit({
     key,
