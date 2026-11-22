@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { isOzowSandboxTestModeEnabled } from '@/lib/ozow-sandbox-test-mode';
+import { getCachedOzowSandboxTestModeForDisplay } from '@/lib/ozow-sandbox-test-mode';
 
 /**
  * GET /api/tickets/ozow-sandbox-test-mode -- PUBLIC, unauthenticated status endpoint the
@@ -8,9 +8,10 @@ import { isOzowSandboxTestModeEnabled } from '@/lib/ozow-sandbox-test-mode';
  * ozow-sandbox-toggle F1). Deliberately not admin-gated: the flag's state is not a secret, only
  * the ability to change it is privileged. Always resolves 200; a Firestore read failure inside
  * isOzowSandboxTestModeEnabled() already fails closed to `false`, so this route never surfaces
- * an error to a buyer mid-checkout. See contracts/golden/ozow-sandbox-toggle-f1/README.md §4.
+ * an error to a buyer mid-checkout. DISPLAY ONLY, so it reads through a 60 s tagged cache that the
+ * admin toggle route invalidates; payment decisions never use it. See contracts/golden/ozow-sandbox-toggle-f1/README.md §4.
  */
 export async function GET(): Promise<NextResponse> {
-  const enabled = await isOzowSandboxTestModeEnabled();
+  const enabled = await getCachedOzowSandboxTestModeForDisplay();
   return NextResponse.json({ enabled });
 }
