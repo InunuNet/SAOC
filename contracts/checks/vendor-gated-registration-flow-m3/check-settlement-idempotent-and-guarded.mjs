@@ -70,12 +70,12 @@ async function seedPendingOrder(vendorSubmissionId, gateway) {
   vendorSubmissions.set(vendorSubmissionId, { status: 'approved', businessName: 'Fynbos Pottery', contactEmail: 'jane@example.com' });
   setActiveGateway(gateway);
   const token = mintToken(vendorSubmissionId);
-  const result = await initiatePost({ json: async () => ({ token, boothSize: 1 }) });
+  const result = await initiatePost(new Request("http://localhost/api/vendors/stand-payment/initiate", { method: "POST", body: JSON.stringify(({ token, boothSize: 1 })) }));
   if (result.status !== 200) throw new Error(`fixture setup failed: initiate returned ${result.status}`);
 }
 
 async function callItn(post, payload) {
-  const res = await post({ text: async () => JSON.stringify(payload), headers: new Headers() });
+  const res = await post(new Request("http://localhost/itn", { method: "POST", body: JSON.stringify(payload) }));
   return { status: res.status, body: await res.json() };
 }
 

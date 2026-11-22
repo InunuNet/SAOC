@@ -42,16 +42,16 @@ export function seedSubmission(id) {
   store.vendorSubmissions.set(id, { status: 'approved', businessName: 'Fynbos Pottery', contactPersonName: 'Jane Vendor', contactEmail: 'jane@fynbospottery.example' });
 }
 
-export async function initiate(id, gateway) {
+export async function initiate(id, gateway, headers = {}) {
   setActiveGateway(gateway);
   const token = mintVendorStandPaymentToken({ vendorSubmissionId: id, secret: SECRET, now: new Date() }).token;
-  const res = await initiatePost({ json: async () => ({ token, boothSize: 1 }) });
+  const res = await initiatePost(new Request("http://localhost/api/vendors/stand-payment/initiate", { method: "POST", headers, body: JSON.stringify(({ token, boothSize: 1 })) }));
   const body = await res.json();
   return { status: res.status, body, call: payments.initiateCalls.at(-1), order: store.vendorStandOrders.get(id) };
 }
 
 export async function notify(gateway, payload) {
   const post = gateway === 'ozow' ? ozowItnPost : payfastItnPost;
-  const res = await post({ text: async () => JSON.stringify(payload), headers: new Headers() });
+  const res = await post(new Request("http://localhost/itn", { method: "POST", body: JSON.stringify(payload) }));
   return res.status;
 }

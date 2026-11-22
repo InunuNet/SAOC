@@ -104,7 +104,7 @@ function mintToken() {
 }
 
 async function callItn(payload) {
-  const res = await payfastItnPost({ text: async () => JSON.stringify(payload), headers: new Headers() });
+  const res = await payfastItnPost(new Request("http://localhost/itn", { method: "POST", body: JSON.stringify(payload) }));
   return { status: res.status, body: await res.json() };
 }
 
@@ -125,7 +125,7 @@ vendorSubmissions.set(VENDOR_SUBMISSION_ID, {
 // 1. Vendor initiates -- order becomes 'pending'.
 // =============================================================================================
 const token = mintToken();
-const initiateResult = await initiatePost({ json: async () => ({ token, boothSize: 1 }) });
+const initiateResult = await initiatePost(new Request("http://localhost/api/vendors/stand-payment/initiate", { method: "POST", body: JSON.stringify(({ token, boothSize: 1 })) }));
 if (initiateResult.status !== 200) {
   throw new Error(`test setup error: initiate returned ${initiateResult.status}: ${JSON.stringify(await initiateResult.json())}`);
 }

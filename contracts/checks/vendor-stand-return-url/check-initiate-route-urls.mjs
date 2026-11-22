@@ -52,7 +52,7 @@ for (const gateway of ['payfast', 'ozow']) {
   setActiveGateway(gateway);
   vendorSubmissions.set(SUBMISSION_ID, { status: 'approved', businessName: BUSINESS_NAME, contactPersonName: 'Jane Vendor', contactEmail: EMAIL });
 
-  const res = await initiatePost({ json: async () => ({ token, boothSize: 1 }) });
+  const res = await initiatePost(new Request("http://localhost/api/vendors/stand-payment/initiate", { method: "POST", body: JSON.stringify(({ token, boothSize: 1 })) }));
   if (res.status !== 200) {
     failures.push(`[${gateway}] test setup: initiate returned ${res.status}: ${JSON.stringify(await res.json())}`);
     continue;

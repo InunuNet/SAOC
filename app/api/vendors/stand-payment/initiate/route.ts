@@ -3,6 +3,10 @@ import { randomBytes } from 'node:crypto';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { readJsonBodyWithinLimit } from '@/lib/request-guards';
+import { rateLimitKeyFromForwardedFor } from '@/lib/client-ip';
+import { consumeRateLimit } from '@/lib/newsletter-rate-limit';
+import { createAttemptStore, scopeAttemptsToRequest } from '@/lib/newsletter-rate-store';
+import { isIssuanceTestMode } from '@/lib/ticket-issuance-mode';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
 import { initAdmin } from '@/lib/firebase-admin';
@@ -70,7 +74,30 @@ function isValidBoothSizeInput(value: unknown): value is 1 | 2 | 3 {
 // Cap on the request body, counted as it streams in (the Content-Length header is not trusted).
 const MAX_BODY_BYTES = 4096;
 
+// SEC-22 (part): per-client limiter, matched to the ticket checkout route (10 attempts per 10
+// minutes per key, same in-memory store, same key helper, same 429 body). Like checkout it runs
+// first, before the body is read: an over-limit request does no body read, no token check and no
+// Firestore read. The 429 message is reused verbatim from app/api/tickets/checkout/route.ts.
+const INITIATE_RATE_LIMIT_MAX_ATTEMPTS = 10;
+const INITIATE_RATE_LIMIT_WINDOW_MS = 10 * 60_000;
+
+const initiateAttempts = createAttemptStore(INITIATE_RATE_LIMIT_WINDOW_MS);
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const ip = rateLimitKeyFromForwardedFor(request.headers.get('x-forwarded-for'));
+  const limit = consumeRateLimit(
+    { now: new Date(), ...scopeAttemptsToRequest(initiateAttempts) },
+    `vendor-stand-initiate:${ip ?? 'unknown'}`,
+    INITIATE_RATE_LIMIT_MAX_ATTEMPTS,
+    INITIATE_RATE_LIMIT_WINDOW_MS,
+  );
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: 'Too many attempts. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } },
+    );
+  }
+
   const parsed = await readJsonBodyWithinLimit(request, MAX_BODY_BYTES);
   if (!parsed.ok) {
     return parsed.reason === 'too-large'
@@ -221,6 +248,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     activeGateway,
     ozowSandboxTestModeEnabled,
   );
+  // SEC-06 -- record-only stamp, derived exactly as tickets derive it from the SAME flag value
+  // read once above. Written by the .set() below (create-or-overwrite), so a re-initiate
+  // re-derives it: the stamp always describes the CURRENT attempt (the one whose attemptId is
+  // live), the only attempt settlement accepts, even if the mode changed since an earlier one.
+  // Always a boolean, never undefined. Settlement only .update()s other fields, so it persists.
+  const issuedInTestMode = isIssuanceTestMode({ ozowSandboxTestMode: ozowSandboxTestModeEnabled });
 
   // ONE Firestore transaction: re-read (a document that reached 'paid' between the earlier
   // read above and here must still be refused), then .set() -- create-or-overwrite -- never
@@ -247,6 +280,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       boothSize,
       amount,
       expectedGatewayAmount,
+      issuedInTestMode,
       tier,
       status: 'pending',
       gateway: activeGateway,

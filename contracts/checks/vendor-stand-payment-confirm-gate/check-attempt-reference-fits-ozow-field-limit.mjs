@@ -121,7 +121,7 @@ vendorSubmissions.set(VENDOR_SUBMISSION_ID, {
 });
 
 const token = mintToken();
-const initiateResult = await initiatePost({ json: async () => ({ token, boothSize: 1 }) });
+const initiateResult = await initiatePost(new Request("http://localhost/api/vendors/stand-payment/initiate", { method: "POST", body: JSON.stringify(({ token, boothSize: 1 })) }));
 if (initiateResult.status !== 200) {
   throw new Error(`test setup error: initiate returned ${initiateResult.status}: ${JSON.stringify(await initiateResult.json())}`);
 }

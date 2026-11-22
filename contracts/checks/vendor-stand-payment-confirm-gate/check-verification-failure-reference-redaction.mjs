@@ -82,7 +82,7 @@ console.error = (...args) => {
 };
 let res;
 try {
-  res = await payfastItnPost({ text: async () => JSON.stringify(payload), headers: new Headers() });
+  res = await payfastItnPost(new Request("http://localhost/itn", { method: "POST", body: JSON.stringify(payload) }));
 } finally {
   console.error = originalConsoleError;
 }
