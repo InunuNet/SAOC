@@ -86,8 +86,9 @@ python3 - "$CHECKOUT" "$WORK/P1.ts" <<'PY'
 import sys
 src, dst = sys.argv[1], sys.argv[2]
 text = open(src).read()
-text = text.replace("  const recoveryTokenSecret = process.env.RECOVERY_TOKEN_SECRET;",
-                    "  const decoy = 0; // RECOVERY_TOKEN_SECRET must be set")
+real = "  const recoveryTokenSecret = getSecret('RECOVERY_TOKEN_SECRET');"
+assert real in text, "recovery-secret read not found; mutation would be vacuous"
+text = text.replace(real, "  const decoy = 0; // RECOVERY_TOKEN_SECRET must be set")
 open(dst, "w").write(text)
 PY
 expect_red "P1 (guard deleted, trailing comment left)" "$WORK/P1.ts"
@@ -97,22 +98,35 @@ python3 - "$CHECKOUT" "$WORK/P3.ts" <<'PY'
 import sys
 src, dst = sys.argv[1], sys.argv[2]
 text = open(src).read()
-real = "  const recoveryTokenSecret = process.env.RECOVERY_TOKEN_SECRET;"
-text = text.replace(real, "  const recoveryTokenSecret = ''; // process.env.RECOVERY_TOKEN_SECRET")
-text += "\nconst movedLate = process.env.RECOVERY_TOKEN_SECRET;\n"
+real = "  const recoveryTokenSecret = getSecret('RECOVERY_TOKEN_SECRET');"
+assert real in text, "recovery-secret read not found; mutation would be vacuous"
+text = text.replace(real, "  const recoveryTokenSecret = ''; // getSecret('RECOVERY_TOKEN_SECRET')")
+text += "\nconst movedLate = getSecret('RECOVERY_TOKEN_SECRET');\n"
 open(dst, "w").write(text)
 PY
 expect_red "P3 (read moved after the write, comment left in place)" "$WORK/P3.ts"
 
-# --- Q1: the amount comparison replaced by a constant, name kept in a trailing comment.
-#     Applies to the ITN route, so it is driven through the ITN override.
-python3 - app/api/tickets/itn/route.ts "$WORK/Q1-itn.ts" <<'PY'
-import sys, re
+# --- P4: the read stays first, but the refusal on an unset value is removed (fails open).
+python3 - "$CHECKOUT" "$WORK/P4.ts" <<'PY'
+import sys
 src, dst = sys.argv[1], sys.argv[2]
 text = open(src).read()
-text = re.sub(r">=\s*AMOUNT_MATCH_TOLERANCE",
-              "> 1e12 // >= AMOUNT_MATCH_TOLERANCE comparison removed",
-              text, count=1)
+real = "if (!recoveryTokenSecret) {"
+assert real in text, "recovery-secret refusal not found; mutation would be vacuous"
+text = text.replace(real, "if (false) { // " + real, 1)
+open(dst, "w").write(text)
+PY
+expect_red "P4 (read kept, refusal on unset value disabled)" "$WORK/P4.ts"
+
+# --- Q1: the amount comparison replaced by a constant, name kept in a trailing comment.
+#     The logic now lives in the shared handler, so it is driven through the ITN override.
+python3 - lib/tickets-notification.ts "$WORK/Q1-itn.ts" <<'PY'
+import sys
+src, dst = sys.argv[1], sys.argv[2]
+text = open(src).read()
+real = "!notificationAmountMatches(lookup"
+assert real in text, "amount-match call not found; mutation would be vacuous"
+text = text.replace(real, "false // notificationAmountMatches(lookup comparison removed", 1)
 open(dst, "w").write(text)
 PY
 if ITN_PATH_OVERRIDE="$WORK/Q1-itn.ts" bash "$A4" >/dev/null 2>&1; then
@@ -120,6 +134,23 @@ if ITN_PATH_OVERRIDE="$WORK/Q1-itn.ts" bash "$A4" >/dev/null 2>&1; then
   status=1
 else
   echo "  Q1 (amount comparison replaced, name kept in a comment): detected (A4 red)"
+fi
+
+# --- Q2: the thin ITN route stops delegating (handler call replaced, name left in a comment).
+python3 - app/api/tickets/itn/route.ts "$WORK/Q2-route.ts" <<'PY'
+import sys
+src, dst = sys.argv[1], sys.argv[2]
+text = open(src).read()
+real = "return handleNotification(payfastProvider"
+assert real in text, "delegating return not found; mutation would be vacuous"
+text = text.replace(real, "return NextResponse.json({ received: true }) // handleNotification(payfastProvider", 1)
+open(dst, "w").write(text)
+PY
+if ITN_ROUTE_PATH_OVERRIDE="$WORK/Q2-route.ts" bash "$A4" >/dev/null 2>&1; then
+  echo "FAIL A10: mutation Q2 left A4 GREEN — the route's delegation is not asserted."
+  status=1
+else
+  echo "  Q2 (ITN route no longer delegates to the shared handler): detected (A4 red)"
 fi
 
 # --- A9's mutations. A9's first form asserted the source POSITION of a readiness() CALL and nothing
@@ -206,5 +237,5 @@ else
   status=1
 fi
 
-[ "$status" -eq 0 ] && echo "PASS A10: A4 and A9 are both green on real source and red on all nine recorded mutations."
+[ "$status" -eq 0 ] && echo "PASS A10: A4 and A9 are both green on real source and red on all eleven recorded mutations."
 exit "$status"

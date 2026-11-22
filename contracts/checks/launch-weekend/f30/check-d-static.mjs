@@ -44,7 +44,9 @@ for (const [f, body] of [[LIB, lib], [ADAPTER, adapter], [ROUTE, route]]) {
 must('lib uses createIfNotExists', lib.includes('createIfNotExists'));
 
 // Secrets
-must('adapter reads SANITY_API_TOKEN from env', adapter.includes('process.env.SANITY_API_TOKEN'));
+// Secrets are read through getSecret('NAME') since PR #225 (bundles, then process.env fallback);
+// either accessor is accepted. `adapter` is comment-stripped, so a comment cannot satisfy this.
+must('adapter reads SANITY_API_TOKEN from the server secret store', /\bgetSecret\(\s*['"]SANITY_API_TOKEN['"]\s*\)|process\.env\.SANITY_API_TOKEN/.test(adapter));
 must('no NEXT_PUBLIC token', !/NEXT_PUBLIC_[A-Z_]*TOKEN/.test(adapter + route + lib));
 must('adapter is not a client module', !/['"]use client['"]/.test(adapter));
 

@@ -39,6 +39,26 @@ const ALL_NEW_MODULES = [
 
 const failures = [];
 
+// Secrets are read through getSecret('NAME') since PR #225 (lib/secrets.ts: JSON bundles, then
+// process.env fallback). Both accessors are accepted; both are inspected for a second roster name.
+const ALLOWLIST_NAME = 'ADMIN_EMAIL_ALLOWLIST';
+const ENV_ACCESS = /process\.env\.(\w+)/g;
+const SECRET_ACCESS = /\bgetSecret\(\s*['"`]([^'"`]+)['"`]\s*\)/g;
+
+// Strip comments so a doc comment naming the allowlist cannot satisfy a presence check.
+function stripComments(source) {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:'"`])\/\/.*$/gm, '$1');
+}
+
+function secretNamesRead(source) {
+  return [
+    ...[...source.matchAll(ENV_ACCESS)].map((m) => ({ accessor: `process.env.${m[1]}`, name: m[1] })),
+    ...[...source.matchAll(SECRET_ACCESS)].map((m) => ({ accessor: `getSecret('${m[1]}')`, name: m[1] })),
+  ];
+}
+
 for (const rel of ADMIN_NOTICE_MODULES) {
   const target = path.join(REPO_ROOT, rel);
   if (!existsSync(target)) {
@@ -98,10 +118,9 @@ for (const rel of ADMIN_NOTICE_MODULES) {
   // No second admin-roster env var: the ONLY process.env reference in an admin-notice module,
   // if any (there should be none — recipient resolution is delegated to the resolver), must not
   // name a second allowlist-shaped variable.
-  const envMatches = [...source.matchAll(/process\.env\.(\w+)/g)];
-  for (const m of envMatches) {
-    if (m[1] !== 'ADMIN_EMAIL_ALLOWLIST') {
-      failures.push(`${rel}: references process.env.${m[1]} directly — recipient env access must live only in lib/vendor-admin-notify-recipients.ts`);
+  for (const read of secretNamesRead(stripComments(source))) {
+    if (read.name !== ALLOWLIST_NAME) {
+      failures.push(`${rel}: references ${read.accessor} directly — recipient secret access must live only in lib/vendor-admin-notify-recipients.ts`);
     }
   }
 }
@@ -113,13 +132,13 @@ for (const rel of ADMIN_NOTICE_MODULES) {
     failures.push(`${RESOLVER_MODULE}: does not exist`);
   } else {
     const source = readFileSync(target, 'utf8');
-    if (!/process\.env\.ADMIN_EMAIL_ALLOWLIST/.test(source)) {
-      failures.push(`${RESOLVER_MODULE}: does not read process.env.ADMIN_EMAIL_ALLOWLIST`);
+    const reads = secretNamesRead(stripComments(source));
+    if (!reads.some((r) => r.name === ALLOWLIST_NAME)) {
+      failures.push(`${RESOLVER_MODULE}: does not read ${ALLOWLIST_NAME} (via getSecret('${ALLOWLIST_NAME}') or process.env.${ALLOWLIST_NAME})`);
     }
-    const envMatches = [...source.matchAll(/process\.env\.(\w+)/g)];
-    for (const m of envMatches) {
-      if (m[1] !== 'ADMIN_EMAIL_ALLOWLIST') {
-        failures.push(`${RESOLVER_MODULE}: references a second env var process.env.${m[1]} — only ADMIN_EMAIL_ALLOWLIST is permitted`);
+    for (const read of reads) {
+      if (read.name !== ALLOWLIST_NAME) {
+        failures.push(`${RESOLVER_MODULE}: reads a second secret via ${read.accessor} — only ${ALLOWLIST_NAME} is permitted`);
       }
     }
     if (/lib\/admin-auth|lib\/admin-roles/.test(source)) {

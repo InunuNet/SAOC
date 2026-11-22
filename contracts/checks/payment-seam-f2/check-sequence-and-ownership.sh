@@ -39,7 +39,11 @@ CODE_LINES=contracts/checks/payment-seam-f2/code_lines.py
 # Path overrides exist ONLY so check-ordering-mutations.sh can run this logic against deliberately
 # broken copies. Every committed invocation leaves them unset and reads the real routes.
 CHECKOUT="${CHECKOUT_PATH_OVERRIDE:-app/api/tickets/checkout/route.ts}"
-ITN="${ITN_PATH_OVERRIDE:-app/api/tickets/itn/route.ts}"
+# The eleven-step logic lives in the shared handler (lib/tickets-notification.ts) since the F2
+# extraction; app/api/tickets/itn/route.ts is a thin pass-through that must still delegate to it.
+# ITN is the file holding the LOGIC; ITN_ROUTE is the route that must call it.
+ITN="${ITN_PATH_OVERRIDE:-lib/tickets-notification.ts}"
+ITN_ROUTE="${ITN_ROUTE_PATH_OVERRIDE:-app/api/tickets/itn/route.ts}"
 status=0
 
 # First CODE line (strictly after $3) containing the LITERAL substring $2.
@@ -91,9 +95,18 @@ first_code() {  # sets FIRST_CODE; aborts the whole check if the instrument itse
 fail() { echo "FAIL A4: $*"; status=1; }
 
 # --- Part 1: positive control. Both routes exist and go through the seam. ----------------------
-for f in "$CHECKOUT" "$ITN"; do
+for f in "$CHECKOUT" "$ITN" "$ITN_ROUTE"; do
   [ -f "$f" ] || { echo "FAIL A4: $f does not exist."; exit 1; }
 done
+# The route must delegate end to end: it imports the shared handler under the name
+# handleNotification and RETURNS a call to it with the PayFast provider. Matched on comment-stripped
+# code lines, so a doc comment naming handleNotification cannot satisfy it.
+first_code "$ITN_ROUTE" "POST as handleNotification"
+[ -n "$FIRST_CODE" ] || fail "$ITN_ROUTE no longer imports the shared handler (POST as handleNotification from lib/tickets-notification)."
+first_code "$ITN_ROUTE" "from '@/lib/tickets-notification'"
+[ -n "$FIRST_CODE" ] || fail "$ITN_ROUTE no longer imports from '@/lib/tickets-notification', where the eleven steps live."
+first_code "$ITN_ROUTE" "return handleNotification(payfastProvider"
+[ -n "$FIRST_CODE" ] || fail "$ITN_ROUTE does not return handleNotification(payfastProvider, ...) — the notification route no longer delegates to the shared handler."
 grep -q 'paymentProvider' "$ITN"      || fail "$ITN never references paymentProvider."
 grep -q 'paymentProvider' "$CHECKOUT" || fail "$CHECKOUT never references paymentProvider."
 
@@ -142,7 +155,7 @@ done
 # --- Part 3: FINDING 1 — the asymmetry. ---------------------------------------------------------
 # Neither route may read a gateway credential from the environment any more; that is the provider's
 # job, and a route that still reads one has not actually been rewired.
-for f in "$CHECKOUT" "$ITN"; do
+for f in "$CHECKOUT" "$ITN" "$ITN_ROUTE"; do
   envhits=$(grep -nE "process\.env\.[A-Z_]*(MERCHANT|PASSPHRASE|GATEWAY|PAYMENT)" "$f" || true)
   [ -n "$envhits" ] && fail "$f still reads a gateway credential from the environment:
 $envhits"
@@ -159,14 +172,26 @@ grep -qE "status: 500" "$ITN" \
   && fail "$ITN returns a 500. Every ITN outcome is HTTP 200 so the gateway stops retrying; a 5xx here re-opens the retry storm."
 
 # --- Part 4: FINDING 3 — the recovery-secret guard, by POSITION. --------------------------------
-first_code "$CHECKOUT" "process.env.RECOVERY_TOKEN_SECRET"; secret_guard="$FIRST_CODE"
+# Application code reads secrets through getSecret('NAME') (lib/secrets.ts, PR #225); the legacy
+# process.env accessor is still accepted. Either way the read is a CODE construct, not a bare name.
+first_code "$CHECKOUT" "getSecret('RECOVERY_TOKEN_SECRET')"; secret_guard="$FIRST_CODE"
+if [ -z "$secret_guard" ]; then
+  first_code "$CHECKOUT" "process.env.RECOVERY_TOKEN_SECRET"; secret_guard="$FIRST_CODE"
+fi
 first_code "$CHECKOUT" "reserveTicket("; reserve_call="$FIRST_CODE"
 if [ -z "$secret_guard" ]; then
-  fail "$CHECKOUT no longer reads RECOVERY_TOKEN_SECRET — the fail-closed recovery guard is gone."
+  fail "$CHECKOUT no longer reads RECOVERY_TOKEN_SECRET (getSecret or process.env) — the fail-closed recovery guard is gone."
 elif [ -z "$reserve_call" ]; then
   fail "$CHECKOUT no longer calls reserveTicket() — cannot verify the guard's position."
 elif [ "$secret_guard" -ge "$reserve_call" ]; then
   fail "the RECOVERY_TOKEN_SECRET guard (line $secret_guard) no longer precedes the reservation write (line $reserve_call). An unset secret must refuse BEFORE any Firestore write, never mint a never-verifiable-again recovery token."
+else
+  # The read alone is not a guard: the value must be negatively tested and refused, between the
+  # read and the reservation write.
+  first_code "$CHECKOUT" "if (!recoveryTokenSecret)" "$secret_guard"; refusal="$FIRST_CODE"
+  if [ -z "$refusal" ] || [ "$refusal" -ge "$reserve_call" ]; then
+    fail "$CHECKOUT reads RECOVERY_TOKEN_SECRET (line $secret_guard) but never refuses on it (if (!recoveryTokenSecret)) before the reservation write (line $reserve_call) — the guard fails open."
+  fi
 fi
 
 # --- Part 5: the checkout export four other contracts import must survive. ----------------------
