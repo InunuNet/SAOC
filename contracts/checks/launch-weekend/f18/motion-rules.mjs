@@ -2,7 +2,7 @@
 // Exempt paths (design-cb final ruling): components/tickets/keepsake/ and the F18-KEEPSAKE block of nos-structure.css. There, @keyframes / animation are allowed ONLY inside
 // @media (prefers-reduced-motion: no-preference) (or a motion-safe: class) and durations only from the allowlist; everywhere else no animation and only the 150ms duration.
 export const KEEPSAKE_DIR = 'components/tickets/keepsake/';
-export const STRUCTURE_CSS = 'app/(marketing)/national-show/nos-structure.css';
+export const STRUCTURE_CSS = 'app/(nos)/national-show/nos-structure.css';
 export const BLOCK_START = 'F18-KEEPSAKE-START';
 export const BLOCK_END = 'F18-KEEPSAKE-END';
 export const ALLOWED_MS = new Set([120, 150, 200, 300, 360, 1100]);

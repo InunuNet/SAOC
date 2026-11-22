@@ -1,21 +1,21 @@
 #!/usr/bin/env node
 // F18-A10: scope and no-invention hygiene on the diff against scopeBase() (merge-base(HEAD, main), never older than F18_BASE_REF; F19 and other main files merged in are not F18 scope), plus the static archive and sponsors rules.
-//  - allowlist: the route pages named in goldens/f18/tokens.json, the keepsake ticket hub (app/(marketing)/national-show/tickets/), components/show/, components/nos/, components/tickets/ (incl. keepsake/), components/home/ShowBand.tsx (link repoint), lib/data/ (show-pages, show-page-presentation, ticket-card-view-models, admission-availability),
-//    app/(marketing)/national-show/nos-structure.css (pure addition under an F18 comment, or the marked nos-ticket-row block), content copy swaps listed nowhere (NO copy file changes: a changed
+//  - allowlist: the route pages named in goldens/f18/tokens.json, the keepsake ticket hub (app/(nos)/national-show/tickets/), components/show/, components/nos/, components/tickets/ (incl. keepsake/), components/home/ShowBand.tsx (link repoint), lib/data/ (show-pages, show-page-presentation, ticket-card-view-models, admission-availability),
+//    app/(nos)/national-show/nos-structure.css (pure addition under an F18 comment, or the marked nos-ticket-row block), content copy swaps listed nowhere (NO copy file changes: a changed
 //    content/ or sanity/ file fails), contracts/checks, specs, docs, e2e/. The header axis, nav-config, footer-data, the vendor legal components, SEO JSON-LD, the F16 rows' price maths stay untouched.
 //  - no invention in added lines of code: no hex (except the seven v13 stub field colours), rgb (except v13 drop-shadow / --t-rule / --t-edge), new font family, animation (except the R84 hero fan-out, guarded per A32), duration other than 150ms (except R84 360ms / 1.1s), box-shadow, emoji; no NEW string literal in a .tsx outside strings-allowed.json / base text.
 //  - F18b: NO new binary image asset (png, jpg, jpeg, webp, avif, gif, svg, ico): the keepsake stubs reuse the five production photos (goldens/f18b/v13-photo-map.json).
-//  - archive: the beta TBC card spans the column (no max-w-* on the card or its wrapper) in app/(marketing)/national-show/archive/page.tsx.
+//  - archive: the beta TBC card spans the column (no max-w-* on the card or its wrapper) in app/(nos)/national-show/archive/page.tsx.
 // Usage: F18_BASE_REF=<sha> node --import tsx/esm contracts/checks/launch-weekend/f18/check-j-archive-scope.mjs   (cwd = implementation worktree)
 import { existsSync, readFileSync } from 'node:fs';
 import { extname } from 'node:path';
 import { STRUCTURE_CSS, guardedLines, isExemptPath, judgeMotion, keepsakeBlock, probeMotionRules } from './motion-rules.mjs';
-import { T, scopeBase, git, gitLines, readGolden, readText } from './_lib.mjs';
+import { T, scopeBase, git, gitLines, readGolden, readText } from './_static.mjs';
 
 const BASE = scopeBase();
 const problems = [];
-const ROUTE_PAGES = ['', 'about', 'what-to-expect', 'vendors', 'sa-exhibitors', 'programme', 'international-guests', 'wosa-conference', 'faq', 'archive', 'conferences', 'workshops', 'exhibitors', 'sponsors', 'symposium'].map((s) => `app/(marketing)/national-show/${s ? `${s}/` : ''}page.tsx`);
-const ALLOWED = [...ROUTE_PAGES, 'app/(marketing)/tickets/', 'app/(marketing)/layout.tsx', 'app/(marketing)/national-show/layout.tsx', 'app/(marketing)/national-show/not-found.tsx', 'app/(marketing)/national-show/[', 'app/(marketing)/national-show/tickets/', 'components/home/ShowBand.tsx', 'components/nos-chrome/ChromeFrame.tsx', 'app/(marketing)/national-show/nos-structure.css', 'app/(marketing)/national-show/nos-theme.css'];
+const ROUTE_PAGES = ['', 'about', 'what-to-expect', 'vendors', 'sa-exhibitors', 'programme', 'international-guests', 'wosa-conference', 'faq', 'archive', 'conferences', 'workshops', 'exhibitors', 'sponsors', 'symposium'].map((s) => `app/(nos)/national-show/${s ? `${s}/` : ''}page.tsx`);
+const ALLOWED = [...ROUTE_PAGES, 'app/(nos)/tickets/', 'app/(nos)/layout.tsx', 'app/(nos)/national-show/layout.tsx', 'app/(nos)/national-show/not-found.tsx', 'app/(nos)/national-show/[', 'app/(nos)/national-show/tickets/', 'components/home/ShowBand.tsx', 'components/nos-chrome/ChromeFrame.tsx', 'app/(nos)/national-show/nos-structure.css', 'app/(nos)/national-show/nos-theme.css'];
 const PREFIX = ['components/show/', 'components/nos/', 'components/tickets/', 'lib/data/', 'lib/', 'contracts/checks/', 'e2e/', 'docs/', 'README.md', '.agent/memory/project/specs/', '.tmp/'];
 // UtilityBar (NOS variant) and the NOS header components (components/nos-chrome/NosHeader.tsx, covered by the nos-chrome prefix) belong to the site-77 session (R74 #7): never edited here.
 // Payment, checkout and the ITN stay behaviourally identical (F18b): no API route, gateway or order library may change. The SAOC not-found stays as is.
@@ -86,7 +86,7 @@ for (const { f, l } of added.filter((a) => a.f.endsWith('.tsx'))) {
     if (isNewSentence(s, baseBlob, allowedStrings)) problems.push(`new user-visible sentence in ${f}: "${s.slice(0, 80)}" (reuse copy from the base tree or strings-allowed.json; invented copy is forbidden)`);
   }
 }
-const arch = readText('app/(marketing)/national-show/archive/page.tsx') ?? '';
+const arch = readText('app/(nos)/national-show/archive/page.tsx') ?? '';
 if (!arch) problems.push('archive page missing');
 else {
   const near = arch.split('\n').filter((l) => /max-w-/.test(l));

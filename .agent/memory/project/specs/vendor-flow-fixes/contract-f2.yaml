@@ -43,8 +43,11 @@ assertions:
         sends no email and writes nothing; admin button gated on !uploadsComplete; handler
         passes writeResult.id; confirmation sender mints the link, keeps its no-logging
         guarantee; email prop optional; route registries updated (listed:false,
-        indexable:false); no new secret; single-use gate and upload API byte-identical to base
-        77e50788. Gate must run on the fix branch (based on 77e50788), not on a diverged branch.
+        indexable:false); no new secret.
+      # RETIRED 2026-11-22 (lead ruling), part of A3: the "single-use gate and upload API
+      # byte-identical to base 77e50788 / 1c6b9cb8" git-diff guard (section 7 of the check) and
+      # its "run on the fix branch" rule. It was point-in-time: after the feature merged it only
+      # failed on unrelated later edits to those files. The wiring assertions above remain.
       command: node contracts/checks/vendor-photo-resume/check-static-wiring.mjs
     - id: A4
       description: Every new user-facing string in copy-strings.json is present verbatim in its

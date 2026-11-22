@@ -20,10 +20,10 @@ assertions:
   phase: 4
   checks:
     - id: F8-A1
-      description: Static - withholdPlaceholderProse and applyContentGaps exist and are called from hydratePage and buildAbsentShowPage, gap text reuses ABSENT_SHOW_PAGE_FIXED_SENTENCE and the existing pending label, only SHOW_PLACEHOLDER_PREVIEW and SITE_PUBLIC_LAUNCH are read from env, ShowPageProse emits data-nos-content-gap, programme links Symposium and Workshops in data-nos-programme-links, refresh-llms never queries showPage, showPage seo fields stay unconsumed, no new multi-word copy added
+      description: Static - withholdPlaceholderProse and applyContentGaps exist and are called from hydratePage and buildAbsentShowPage, gap text reuses ABSENT_SHOW_PAGE_FIXED_SENTENCE and the existing pending label, only SHOW_PLACEHOLDER_PREVIEW and SITE_PUBLIC_LAUNCH are read from env, ShowPageProse emits data-nos-content-gap, the programme page (NOS Design PG-G1 board, PR #106, app/(nos)) renders its timetable board and links Symposium (session tile) and Workshops (ruled row) and ends with NosShowIndex listing both, refresh-llms never queries showPage, showPage seo fields stay unconsumed, no new multi-word copy added
       command: node contracts/checks/launch-weekend/f8/check-a-static.mjs
     - id: F8-A2
-      description: Runtime on all 17 /national-show routes - no AI-generated, Placeholder copy or placeholder-ai text in the page or main, withheld section prose and h2s gone, preserved council sections intact, exactly one data-nos-content-gap with the pending chip and gap sentence on each route that had placeholders, no empty h2 or echoed h1, /programme has one h1 Programme and the two links, meta and OG clean, llms.txt, llms-full.txt and sitemap.xml clean
+      description: Runtime on all 17 /national-show routes - no AI-generated, Placeholder copy or placeholder-ai text in the page or main, withheld section prose and h2s gone, preserved council sections intact, exactly one data-nos-content-gap with the pending chip and gap sentence on each route that had placeholders, no empty h2 or echoed h1, /programme has one h1 Programme, the four-day board, the Symposium tile and Workshops row links and the Explore index links, and no data-nos-content-gap (the board has no holding statement), meta and OG clean, llms.txt, llms-full.txt and sitemap.xml clean
       command: node contracts/checks/launch-weekend/f8/check-b-runtime.mjs
     - id: F8-A3
       description: Switch and collapse logic on the real module - exact-match fail-closed preview that never applies when SITE_PUBLIC_LAUNCH is true, warning-toned sections collapse to one muted gap section at the first position, other sections untouched, withhold false and no-warning inputs are identity
@@ -40,3 +40,11 @@ assertions:
     - id: F8-A7
       description: Production build passes
       command: pnpm build
+    # F8-A1/A2 supersession note (2026-11-22): the old data-nos-programme-links container was removed on purpose when PR #106
+    # implemented the NOS Design programme board (PG-G1, nos-content-standard goldens/spec.md). goldens/f8/f8-spec.md is left as
+    # written (it records the original F8 design); the assertions above follow the current page. The intent, a visitor reaches
+    # Symposium and Workshops from /programme, is unchanged. gate-standard.mjs (nos-content-standard) measures the board's
+    # layout; F8 only asserts the links and the absence of a gap state, so the two do not duplicate each other.
+    - id: F8-A8
+      description: Mutation proof for F8-A1's programme assertions - on a throwaway tree, removing the Symposium link (href map, programme products, tile link, index entry) or the Workshops link (row href, WORKSHOPS_HREF, index entry), the board, or NosShowIndex each turns check-a-static.mjs red for the stated reason; a mutation that does not apply aborts loudly
+      command: bash contracts/checks/launch-weekend/f8/check-a-programme-mutations.sh

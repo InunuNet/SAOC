@@ -2,14 +2,17 @@
 // Static wiring proofs for the vendor photo-resume feature (no network, no Firestore, no live
 // data). The behavioural proofs live in check-token-and-link.mjs / check-resume-gate.mjs; this
 // file proves the pieces are actually CONNECTED and that the properties the unit checks cannot
-// see (auth ordering, registry entries, untouched single-use gate) hold in the source.
+// see (auth ordering, registry entries) hold in the source.
+//
+// RETIRED 2026-11-22 (lead ruling): section 7, the `git diff` guards that pinned the single-use gate and
+// upload API to bases 77e50788 and 1c6b9cb8. They were point-in-time: once the feature merged they only
+// reported unrelated later edits (any commit after 1c6b9cb8 touching those files failed A3) and said nothing
+// about the photo-resume wiring. See contract-f2.yaml.
 //
 // Run as: node contracts/checks/vendor-photo-resume/check-static-wiring.mjs
 
-import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 
-const BASE = '77e50788';
 const failures = [];
 const expect = (cond, msg) => { if (!cond) failures.push(msg); };
 const strip = (s) => s.replace(/\/\*[\s\S]*?\*\/|(^|[^:])\/\/.*$/gm, '$1');
@@ -145,36 +148,8 @@ for (const f of ['apphosting.yaml', '.env.local.example']) {
   if (s) expect(!/PHOTO/i.test(s), `${f} must not gain a photo-resume secret (shared VENDOR_STAND_PAYMENT_TOKEN_SECRET is reused).`);
 }
 
-// --- 7. Untouched: the single-use gate and the upload API --------------------------------------
-// The token / claim modules were never edited after BASE and stay pinned to it.
-const UNTOUCHED = [
-  'lib/vendor-marketing-upload.ts',
-  'lib/vendor-stand-payment-token.ts',
-  'lib/vendor-registration-token.ts',
-  'lib/vendor-registration-token-claim.ts',
-];
-// These four were edited AFTER BASE by later, non-photo-resume work (14 commits between BASE and
-// 1c6b9cb8, e.g. the NOS site split 774029a3 that moved the register page to app/(nos)/, and the
-// security hardening 4b4ad5d9, 247e9f1e, b8a29185, d493daaa, 1c6b9cb8; the list is not complete:
-// see `git log 77e50788..1c6b9cb8 -- <files>`). They are re-pinned to 1c6b9cb8, the last commit
-// to touch them, so any LATER edit, in particular by this feature, still fails the check.
-const HARDENED_BASE = '1c6b9cb8';
-const UNTOUCHED_SINCE_HARDENING = [
-  'app/api/vendors/[id]/marketing-asset/route.ts',
-  'lib/vendor-marketing-upload-handler.ts',
-  'app/api/vendors/register/route.ts',
-  'app/(nos)/national-show/vendors/register/page.tsx',
-];
-for (const [base, files] of [[BASE, UNTOUCHED], [HARDENED_BASE, UNTOUCHED_SINCE_HARDENING]]) {
-  try {
-    execFileSync('git', ['diff', '--quiet', base, '--', ...files], { stdio: 'pipe' });
-  } catch (err) {
-    failures.push(`one of the single-use-gate / upload-API files differs from base ${base} (exit ${err.status}); this feature must not change: ${files.join(', ')}`);
-  }
-}
-
 if (failures.length > 0) {
   failures.forEach((f) => console.error(`FAIL: ${f}`));
   process.exit(1);
 }
-console.log('PASS: photo-resume feature is wired as specified and the single-use gate is untouched.');
+console.log('PASS: photo-resume feature is wired as specified.');
