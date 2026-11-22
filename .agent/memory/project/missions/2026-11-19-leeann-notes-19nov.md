@@ -56,6 +56,7 @@ milestones:
   - F4
   name: Merge to preview/local, regenerate samples, hand to the studio mission
   status: done
+force_orphaned_at: '2026-11-21T11:07:39.988974+00:00'
 ---
 
 # Mission: Lee-Ann 19 Nov meeting items N1-N14 (backlog section NEXT MISSION) built, QA'd and previewed on dev.saoc.co.za for Brad's approval; nothing to beta until he approves
