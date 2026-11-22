@@ -253,7 +253,7 @@ Content-Type: application/json
 **`app/api/vendors/register/route.ts`** — Thin Next.js wrapper:
 
 - Reads raw JSON body (400 on malformed JSON).
-- Derives rate-limit key from `x-forwarded-for` header's first hop (documented best-effort abuse deterrent, **not a security boundary**; header is client-supplied and spoofable).
+- Derives the rate-limit key with `rateLimitKeyFromHeaders()` (`lib/client-ip.ts`): a valid `x-fah-client-ip` first; otherwise from `x-forwarded-for` the third entry from the end when there are three or more entries, the last entry when there are one or two, and none when the header is empty. This is a documented best-effort abuse deterrent, **not a security boundary**; entries before the platform-appended ones are client-supplied and spoofable.
 - Wires real Admin SDK write, real confirmation email, and in-memory rate-limit store into `handleVendorRegistration`'s dependencies.
 - Translates `VendorRegistrationHandlerResult` to `NextResponse`; adds `Retry-After` header (seconds) on 429.
 

@@ -14,6 +14,12 @@ block in the contract, which contract.py never loads into a phase (execution/con
 normalize_contract reads only assertions/phases); each entry needs id, command and an inline
 reason of at least MIN_REASON characters.
 
+A registry entry marked `"route_runner": true` is FAKE only because contracts/harness/route-runner/
+preload.cjs stubs Firebase while the check runs. It is a violation unless every contract command that
+runs the file loads that preload (`--require <path>/preload.cjs`, usually via NODE_OPTIONS), the marker
+is present on every FAKE file that imports the route-runner harness (and only on such files), and at
+least one command runs the file (an unreferenced entry cannot be proven preloaded, so it fails).
+
 A script with write signals that is not in the registry at all is also a violation ("unclassified"),
 so a new writer cannot slip in unclassified.
 
@@ -36,6 +42,10 @@ MIN_REASON = 40
 REAL_CLASSES = {"REAL_SANITY", "REAL_FIRESTORE", "REAL_AUTH", "REAL_DEPLOYED"}
 SAFE_CLASSES = {"SANDBOX_SCRUBBED", "FAKE", "STATIC_FP", "READONLY_PROBE", "MODAL"}
 
+ROUTE_RUNNER_NO_PRELOAD = (
+    "route-runner FAKE check run without NODE_OPTIONS=\"--require $PWD/contracts/harness/route-runner/"
+    "preload.cjs\"; without it Firebase is not stubbed"
+)
 SCRIPT_PATH = (
     r"((?:scripts|contracts/checks|contracts/golden|execution|\.agent/memory/project/specs|tests|e2e)"
     r"/[A-Za-z0-9_./\-]*?[A-Za-z0-9_\-]+\.(?:ts|mts|mjs|js|py|sh|cjs))"
@@ -69,6 +79,8 @@ INLINE_WRITE = re.compile(
 )
 LOCAL_ONLY = re.compile(r"(127\.0\.0\.1|localhost)")
 FIXTURE_ENV = "SAOC_FIXTURE_REPLAY"
+ROUTE_RUNNER_IMPORT = re.compile(r"""(?:from|require\(|import\()\s*['"][^'"]*harness/route-runner/""")
+PRELOAD_FLAG = re.compile(r"(?:--require|-r)[ =]['\"]?\S*harness/route-runner/preload\.cjs")
 # A safe-class evidence regex that matches any of these proves nothing about the script it names.
 TRIVIAL_SAMPLES = ("", "x", "console.log(1)\n", "#!/usr/bin/env bash\necho ok\n")
 
@@ -126,6 +138,7 @@ def own_signals(path):
 
 
 def scan(root, registry):
+    route_runner_seen = set()
     violations, stats = [], {"contracts": 0, "assertions": 0, "executing": 0, "safe": 0, "manual_only": 0}
     for f in contract_files(root):
         try:
@@ -198,9 +211,31 @@ def scan(root, registry):
                         violations.append((rel, cid, s, f"{cls} evidence /{rx}/ no longer matches the script"))
                     else:
                         stats["safe"] += 1
+                        if entry.get("route_runner") is True:
+                            route_runner_seen.add(s)
+                            if not PRELOAD_FLAG.search(cmd):
+                                violations.append((rel, cid, s, ROUTE_RUNNER_NO_PRELOAD))
                 else:
                     violations.append((rel, cid, s, f"registry class {cls!r} unknown"))
+    violations += route_runner_violations(root, registry, route_runner_seen)
     return violations, stats
+
+
+def route_runner_violations(root, registry, seen):
+    out = []
+    for s, entry in sorted(registry.items()):
+        sp = os.path.join(root, s)
+        if not os.path.isfile(sp):
+            continue
+        marked = entry.get("route_runner") is True
+        imports = bool(ROUTE_RUNNER_IMPORT.search(open(sp, errors="ignore").read()))
+        if entry.get("class") == "FAKE" and imports and not marked:
+            out.append(("registry", "-", s, 'imports the route-runner harness; add "route_runner": true'))
+        elif marked and not (entry.get("class") == "FAKE" and imports):
+            out.append(("registry", "-", s, "route_runner marker on a script that is not a FAKE route-runner check"))
+        elif marked and s not in seen:
+            out.append(("registry", "-", s, "route_runner check is run by no contract command; the preload cannot be verified"))
+    return out
 
 
 def main():

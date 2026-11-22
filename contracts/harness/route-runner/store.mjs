@@ -3,6 +3,13 @@
 // the same harness can exercise vendorApplications, vendorSubmissions and vendorStandOrders
 // documents inside ONE transaction, the way the real settlement handler
 // (lib/vendor-stand-payment-notification.ts) does.
+if (process.env.SAOC_ROUTE_RUNNER_PRELOAD !== '1') {
+  throw new Error(
+    'route-runner: preload.cjs is not loaded. Run with NODE_OPTIONS="--require ' +
+      '$PWD/contracts/harness/route-runner/preload.cjs"; without it Firebase is not stubbed.',
+  );
+}
+
 const collections = new Map();
 
 export function getCollectionMap(name) {
