@@ -24,8 +24,10 @@ const resolveGoldenFile = (file) => (file.startsWith(GOLDEN_PAGE_PREFIX) ? MOVED
 // the exact text now in the page, with the commit that changed it. Any golden string not listed
 // here is still required verbatim.
 const REWORDED_SINCE_GOLDEN = new Map([
-  // 9d16cf96 (page titles follow their h1) and 29c50aad (sentence case): the page title is now
-  // 'Vendor stand payment', matching the hero title; the " — National Show" suffix is gone.
+  // The golden string was the page title / share-image text 'Vendor Stand Payment Status'.
+  // 9d16cf96 (page titles follow their h1) dropped " Status" from the metadata title; 29c50aad
+  // (sentence case) then made it 'Vendor stand payment', matching the hero title. The metadata
+  // title string itself only exists in its current form since 29c50aad.
   ['Vendor Stand Payment Status — National Show', "title: 'Vendor stand payment',"],
   // 091b8ce5 (F17 naming sweep): "SAOC National Show" became "National Orchid Show".
   ['Payment status for your 2027 SAOC National Show vendor stand.', 'Payment status for your 2027 National Orchid Show vendor stand.'],
