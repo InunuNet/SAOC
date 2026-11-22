@@ -7,7 +7,6 @@ _Last compacted: 2026-11-22 by backlog_trim.py. Full history: git log on this fi
 - [ ] P1 SAOC client-JS weight blocks mobile LCP (own feature) -> line 3018
 - [ ] **[P1] (filed upstream 2026-10-29 as Athanor#1473; waiting on fix) Harness friction: `execution/gate_sweep.py --sandbox-dir` is jointly unsa… → [details](data/p1-harness-friction-execution-gate-sweep.md)
 - [ ] **[P0] No enforcement for the "never cd" rule — agents keep prompting the operat… → [details](data/p0-no-enforcement-for-the-never-cd-rule.md)
-- [ ] **[P1] Migration script write-polarity — decision needed, not fixed overnight** … → [details](data/p1-migration-script-write-polarity-decis.md)
 - [ ] **[P0] Triad-coverage classifier is dodgeable by URL-shaped assertions** (missio… → [details](data/p0-triad-coverage-classifier-is-dodgeabl.md)
 - [ ] **[P1] Upstream PR to InunuNet/Athanor: `template/execution/contract.py` does no… → [details](data/p1-upstream-pr-to-inununet-athanor-templ.md)
 - [ ] **P0 — Working-process review (INTERACTIVE — Brad at the keyboard, not agent wor… → [details](data/p0-working-process-review-interactive-br.md)
@@ -161,3 +160,4 @@ Source: .agent/memory/scratch/2026-11-19-leeann-meeting-notes.md (Brad's notes v
 - [ ] [BRAD] (2026-11-22, carried from closed N3) Ticket PDF footer still prints "Show office 073 428 4398" while the NOS contact page dropped the phone (#219). Brad to rule: keep or remove.
 - [ ] [BRAD] (2026-11-22, carried from closed N11) Confirm the Speakers Partner password value is set in the secret bundle; the binding merged in #222, the value is Brad's to set.
 - [ ] [P3] (2026-11-22, from PR #232 review) lib/admin-session-body.ts readBodyCapped awaits reader.cancel() on overflow; a source that never settles the cancel hangs the admin session route. Same one-line fix as lib/request-guards.ts (fire and forget).
+- [ ] [P2] (2026-11-22, from PR #233) Twelve scripts still write to live Sanity on a bare run and sit on the KNOWN_UNGATED allowlist in contracts/checks/scripts-apply-polarity/apply-gate.test.mjs: _tmp_empty_array_test, backfill-award-fields, patch-tickets-terms-note, seed-event-slugs, seed-page-singletons, seed-province-order, seed-qa-fixture-ticket-type, seed-sanity, seed-show-exhibitor-info, seed-show-visitor-info, seed-ticketing, update-about-judging-copy. Flip to --apply (check setup docs that call the seed scripts) or delete the spent ones (deletion is Brad's).
