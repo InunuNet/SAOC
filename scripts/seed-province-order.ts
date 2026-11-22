@@ -113,7 +113,7 @@ async function main(): Promise<void> {
     '*[_type == "province"]{ _id, code, name, order }',
   );
   if (docs.length === 0) {
-    throw new Error('No `province` documents found — run `pnpm seed` first.');
+    throw new Error('No `province` documents found — run `pnpm seed --apply` first.');
   }
 
   console.log(`Seeding chip order onto ${docs.length} province document(s):`);

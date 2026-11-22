@@ -49,7 +49,7 @@ await runCheck('check-pages-render', async (r) => {
     if (!info) {
       r.fail(
         'showVisitorInfo singleton exists in the dataset',
-        'nothing at _id "showVisitorInfo" — run scripts/seed-show-visitor-info.ts',
+        'nothing at _id "showVisitorInfo" — run scripts/seed-show-visitor-info.ts --apply',
       );
       return;
     }

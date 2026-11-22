@@ -38,7 +38,7 @@ const REV_QUERY =
   '*[_id == "showVisitorInfo" || _id == "nationalShow" || _type == "showFaq"]{ _id, _rev } | order(_id asc)';
 
 function runSeed() {
-  return execFileSync('node', ['--import', 'tsx/esm', SEED], {
+  return execFileSync('node', ['--import', 'tsx/esm', SEED, '--apply'], {
     encoding: 'utf8',
     stdio: 'pipe',
   });
