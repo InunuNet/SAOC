@@ -47,6 +47,10 @@ NO_PID = "nopid"
 NO_INJECT_ENV = "ATHANOR_COMPACT_NO_INJECT"
 WINDOW_ENV = "CLAUDE_CODE_AUTO_COMPACT_WINDOW"
 USER_SETTINGS_LABEL = "~/.claude/settings.json"
+# Claude Code also honours this percentage of the window as the auto-compact point. A low value
+# on a 1M window compacts at a few percent and thrashes (2026-09-01 root cause, recurred on the
+# VMs 2026-11-22), so status names it wherever it is set.
+PCT_ENV = "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE"
 DECIDER = Path(__file__).resolve().parent / "hooks" / "lib" / "autocompact_decider.py"
 HERDR_TIMEOUT_SECONDS = 5
 # /compact typed mid-turn is queued and never runs, so a detached waiter sends it
@@ -119,10 +123,7 @@ def effective_trigger_source() -> tuple[int | None, str]:
     raw = os.environ.get(WINDOW_ENV)
     if raw is not None:
         return (int(raw) if raw.strip().isdigit() else None), WINDOW_ENV
-    candidates = [(Path(".claude", name), f".claude/{name}")
-                  for name in ("settings.local.json", "settings.json")]
-    candidates.append((Path.home() / ".claude" / "settings.json", USER_SETTINGS_LABEL))
-    for path, label in candidates:
+    for path, label in _settings_files():
         try:
             data = json.loads(path.read_text())
         except (OSError, ValueError):
@@ -137,11 +138,38 @@ def effective_trigger() -> int | None:
     return effective_trigger_source()[0]
 
 
+def _settings_files() -> list[tuple[Path, str]]:
+    return [(Path(".claude", name), f".claude/{name}")
+            for name in ("settings.local.json", "settings.json")] + \
+           [(Path.home() / ".claude" / "settings.json", USER_SETTINGS_LABEL)]
+
+
+def pct_override_sources() -> list[tuple[str, str]]:
+    """Every place CLAUDE_AUTOCOMPACT_PCT_OVERRIDE is set: the live env, then settings env blocks."""
+    found = []
+    if os.environ.get(PCT_ENV) is not None:
+        found.append((os.environ[PCT_ENV], "this process env"))
+    for path, label in _settings_files():
+        try:
+            data = json.loads(path.read_text())
+        except (OSError, ValueError):
+            continue
+        env = data.get("env") if isinstance(data, dict) else None
+        if isinstance(env, dict) and PCT_ENV in env:
+            found.append((str(env[PCT_ENV]), f'"env" in {label}'))
+    return found
+
+
 def trigger_line() -> str:
     value, source = effective_trigger_source()
     shown = f"{value} ({source})" if value is not None else "auto (Claude Code picks)"
-    return (f"effective autoCompactWindow: {shown}; a running session keeps "
+    line = (f"effective autoCompactWindow: {shown}; a running session keeps "
             "the value it read at start, so restart it after a change")
+    for pct, where in pct_override_sources():
+        line += (f"\nTHRASH RISK: {PCT_ENV}={pct} ({where}) makes Claude Code auto-compact at "
+                 f"{pct}% of the window; remove it and restart the session, "
+                 "the harness compacts itself at DUE")
+    return line
 
 
 def cmd_trigger(_args) -> int:

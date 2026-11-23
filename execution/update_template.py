@@ -720,12 +720,19 @@ def _sync_file_with_guard(
             # skip this mission already closed).
             diverged = current_hash is not None
             no_record = True
+
+        if baseline_key != VERSION_FILE_KEY:
             # ...unless the local bytes are a blob the harness itself shipped
             # under this path: that is proof the file was never edited, so
             # there is nothing to protect and the update is delivered. Without
             # this, a workspace whose recorded release postdates its files
             # (SAOC, 2026-10-25: 12 provably-unedited files) is withheld on
             # every run, because only the bootstrap reconcile read the ledger.
+            # It applies to a STALE baseline too, not only a missing one: a
+            # file updated by a git pull instead of the updater keeps the old
+            # baseline, and was withheld on every run (Alembic Win and the
+            # Omarchy VM, 2026-11-22: six unedited files, cleared only by
+            # --force-path).
             if diverged and _INCOMING_SHIPPED_LEDGER:
                 try:
                     blob_id = _git_blob_id(dst_file)
@@ -1413,6 +1420,20 @@ def restore_line_union_readme(source: Path, current_backup: Path | None = None) 
     _write_text_nofollow(dst, "\n".join(lines[:split]) + "\n", f"{dst} (restore)")
     return (f"  RESTORED  {dst}: undid {len(lines) - split} line(s) an older updater "
             "appended (proved from the payload README; project-owned)")
+
+
+def classify_merge_result(msg: str) -> str:
+    """Classify a MERGE strategy's result line as changed, skipped or failed.
+
+    merge-source-missing-silent (#1526): a merge that wrote nothing is not a
+    change, and a missing source or unknown strategy is a delivery failure,
+    never an ordinary skip a run can report success over.
+    """
+    if msg.startswith("  merge "):
+        return "changed"
+    if "(source missing:" in msg or "unknown merge strategy" in msg:
+        return "failed"
+    return "skipped"
 
 
 def merge_line_union(src: Path, dst: Path, backup_dir: Path) -> str:
@@ -5884,7 +5905,15 @@ def main():
                         else:
                             msg = f"  WARN  unknown merge strategy {strategy!r} for {path}"
                         print(msg)
-                        paths_changed.append(path)
+                        outcome = classify_merge_result(msg)
+                        if outcome == "changed":
+                            paths_changed.append(path)
+                        else:
+                            paths_skipped.append(path)
+                        if outcome == "failed":
+                            print(f"  WARN  merge entry {path!r} not delivered: {msg.strip()}",
+                                  file=sys.stderr)
+                            paths_failed.append(f"{path}: {msg.strip()}")
 
                 else:
                     print(f"  WARN: unknown category {category!r} for {path}", file=sys.stderr)
