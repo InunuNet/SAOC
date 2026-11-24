@@ -31,7 +31,11 @@ const REPO_ROOT = path.resolve(__dirname, '../../..');
 // siteUrl variable is ALSO present, since a fixed literal existing alongside a real variable is
 // exactly how the 2026-09-01 hosted.app incident's sibling defects have looked in this project
 // before (see docs/vendor-flow-notifications.md and the golden README's "hosted.app" note).
-const HARDCODED_DOMAIN_PATTERN = /https?:\/\/([a-z0-9-]+\.)*(saoc\.co\.za|web\.app|firebaseapp\.com|run\.app)\b/i;
+// The scheme is optional so protocol-relative literals ('//saoc.co.za/x') are caught; the leading
+// '//' is still required, so an email address (x@saoc.co.za) or a bare prose mention never matches.
+// No exemption for a resolver fallback literal: the resolver (nosUrl / resolveSiteUrl) lives in
+// lib/, not in the two files inspected here, so neither file may contain a domain literal at all.
+const HARDCODED_DOMAIN_PATTERN = /(?:https?:)?\/\/([a-z0-9-]+\.)*(saoc\.co\.za|web\.app|firebaseapp\.com|run\.app)\b/i;
 
 const KNOWN_BAD_FIXTURE_HARDCODED_SENDER = `
 export async function sendVendorPaymentConfirmationEmail(input, deps = {}) {
@@ -45,8 +49,21 @@ export async function sendVendorPaymentConfirmationEmail(input, deps = {}) {
 }
 `;
 
-// Apex host (no subdomain): the pattern once required a subdomain label and missed this.
-const KNOWN_BAD_FIXTURE_APEX = `const url = 'https://saoc.co.za/national-show';`;
+// Otherwise-clean senders (siteUrl resolved via deps.siteUrl) whose ONLY defect is one literal, so
+// only the hardcoded-domain rule can reject them. Apex and protocol-relative forms were once missed.
+const cleanSenderWith = (literal) => `
+export async function send(input, deps = {}) {
+  const siteUrl = deps.siteUrl ?? resolveSiteUrl();
+  return { siteUrl, fallback: '${literal}' };
+}
+`;
+const KNOWN_BAD_LITERALS = [
+  'https://saoc.co.za/national-show',
+  '//saoc.co.za/national-show',
+  '//beta.saoc.co.za/national-show',
+];
+// An email address and a bare prose mention are not links.
+const KNOWN_GOOD_FIXTURE_EMAIL = cleanSenderWith('contact x@saoc.co.za or see saoc.co.za for details');
 
 const KNOWN_GOOD_FIXTURE_SENDER = `
 function resolveSiteUrl() {
@@ -91,8 +108,16 @@ if (badSelfTest.clean) {
   console.error('FAIL (self-test): discriminator accepted a KNOWN-BAD hardcoded-domain fixture -- the discriminator itself is broken.');
   process.exit(1);
 }
-if (checkSenderModule(KNOWN_BAD_FIXTURE_APEX).clean) {
-  console.error('FAIL (self-test): discriminator accepted a KNOWN-BAD apex-domain fixture (https://saoc.co.za) -- the discriminator itself is broken.');
+for (const literal of KNOWN_BAD_LITERALS) {
+  const result = checkSenderModule(cleanSenderWith(literal));
+  const hardcodedOnly = !result.clean && result.failures.length === 1 && /hardcoded domain literal/.test(result.failures[0]);
+  if (!hardcodedOnly) {
+    console.error(`FAIL (self-test): an otherwise-clean sender containing ${literal} must fail ONLY on the hardcoded-domain rule. Failures: ${JSON.stringify(result.failures)}`);
+    process.exit(1);
+  }
+}
+if (!checkSenderModule(KNOWN_GOOD_FIXTURE_EMAIL).clean) {
+  console.error('FAIL (self-test): an email address / bare domain mention was rejected -- false positive.');
   process.exit(1);
 }
 const goodSelfTest = checkSenderModule(KNOWN_GOOD_FIXTURE_SENDER);

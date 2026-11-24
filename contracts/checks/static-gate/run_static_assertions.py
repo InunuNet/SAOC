@@ -32,6 +32,7 @@ ALLOWLIST_SCHEMA = "saoc.static-gate-allowlist/v1"
 DEFAULT_ALLOWLIST = Path(__file__).resolve().parent / "allowlist.json"
 DEFAULT_JOBS = 4
 TIMEOUT_SECONDS = 60
+REAP_SECONDS = 3
 EVIDENCE_CHARS = 400
 KEPT_ENV = ("PATH", "HOME", "LANG", "LC_ALL")
 
@@ -94,6 +95,21 @@ def find_command(root, contract, assertion_id, cache):
     return command, None
 
 
+def kill_group(proc):
+    """Kill the assertion's process group and always reap bash; never raise (a timeout stays a timeout)."""
+    try:
+        os.killpg(proc.pid, signal.SIGKILL)
+    except (ProcessLookupError, PermissionError):
+        proc.kill()  # group already gone or not ours to signal: make sure bash itself is dead
+    try:
+        proc.communicate(timeout=REAP_SECONDS)
+    except subprocess.TimeoutExpired:
+        # A grandchild escaped the group (setsid, double fork) and still holds the pipes.
+        proc.stdout.close()
+        proc.stderr.close()
+        proc.wait()
+
+
 def run_command(root, command):
     env = {k: os.environ[k] for k in KEPT_ENV if k in os.environ}
     # Own session so a timeout can kill bash and every grandchild it spawned (POSIX: Linux, macOS).
@@ -102,8 +118,7 @@ def run_command(root, command):
     try:
         stdout, stderr = proc.communicate(timeout=TIMEOUT_SECONDS)
     except subprocess.TimeoutExpired:
-        os.killpg(proc.pid, signal.SIGKILL)
-        proc.communicate()
+        kill_group(proc)
         return "timeout", f"timed out after {TIMEOUT_SECONDS}s"
     evidence = (stdout + stderr).strip()
     return proc.returncode, evidence[-EVIDENCE_CHARS:]
