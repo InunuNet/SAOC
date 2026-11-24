@@ -855,7 +855,7 @@ function runDriveRecoveryChecks(): void {
     /* handled by d1 */
   }
   const d5ok =
-    recoveryTreeText.includes('Stellenbosch Aerodrome') &&
+    recoveryTreeText.includes('Stellenbosch Flying Club') &&
     recoveryTreeText.includes('From Wild Origins to Cultivated Excellence');
   check('D5', d5ok, 'both fixed facts present', d5ok ? 'both present' : 'one or both missing');
 
@@ -863,8 +863,10 @@ function runDriveRecoveryChecks(): void {
   // the exact string, and any seed section that quotes the venue by name must reproduce
   // the whole sentence character-for-character rather than paraphrase around it (the
   // defect this check exists to catch directly, per verifier-contract.golden.md).
+  // The recovery tree is a verbatim snapshot of Lee-Ann's .docx and keeps the old venue name.
+  const RECOVERY_VENUE_SENTENCE = 'Stellenbosch Flying Club, R44 northbound to Stellenbosch.';
   const VENUE_SENTENCE = 'Stellenbosch Aerodrome, R44 northbound to Stellenbosch.';
-  const recoveryHasVenueSentence = recoveryTreeText.includes(VENUE_SENTENCE);
+  const recoveryHasVenueSentence = recoveryTreeText.includes(RECOVERY_VENUE_SENTENCE);
 
   let seedVenueOk = true;
   const seedVenueFailures: string[] = [];
