@@ -136,6 +136,15 @@
           "editedWhere": null,
           "sameRow": true,
           "legacyPara": 15
+        },
+        {
+          "role": "Link",
+          "style": "link",
+          "text": "What to expect →",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 16,
+          "legacyPrefix": "Link: "
         }
       ]
     },
@@ -202,6 +211,15 @@
           "editedWhere": null,
           "legacyPara": 24,
           "legacyPrefix": "Body: "
+        },
+        {
+          "role": "Link",
+          "style": "link",
+          "text": "About the show →",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 25,
+          "legacyPrefix": "Link: "
         }
       ]
     },
@@ -552,6 +570,24 @@
           "editable": true,
           "editedWhere": null,
           "legacyPara": 65
+        },
+        {
+          "role": "Link",
+          "style": "link",
+          "text": "Plant Entry →",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 66,
+          "legacyPrefix": "Link: "
+        },
+        {
+          "role": "Link",
+          "style": "link",
+          "text": "Vendors →",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 67,
+          "legacyPrefix": "Link: "
         }
       ]
     },

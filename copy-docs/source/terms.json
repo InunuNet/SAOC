@@ -1,0 +1,1204 @@
+{
+  "title": "Website Terms and Conditions",
+  "titleFrom": "driveName",
+  "source": {
+    "driveFileId": "1HbhVuS71TSxlWdVrdSsdLSzxTHwH43sw",
+    "driveName": "Website Terms and Conditions.docx",
+    "route": "/terms",
+    "parsedFromMd5": "096fcdddb666050aae2354efb2f2f494",
+    "parsedOn": "2026-11-25"
+  },
+  "sections": [
+    {
+      "name": "Opening",
+      "where": "The page banner (title) and the date line that opens the terms.",
+      "elements": [
+        {
+          "role": "Page title",
+          "style": "heading",
+          "text": "Website Terms and Conditions",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 0,
+          "runs": [
+            {
+              "text": "Website Terms and Conditions",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Last updated: 24/10/2026",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 1,
+          "runs": [
+            {
+              "text": "Last updated:",
+              "b": true
+            },
+            {
+              "text": " 24/10/2026"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Clause 1",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "1. About these Terms and Conditions",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 2,
+          "runs": [
+            {
+              "text": "1. About these Terms and Conditions",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "This website is operated by the South African Orchid Council (SAOC), a non-profit company registered in South Africa under registration number 1978/004040/08.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 3,
+          "runs": [
+            {
+              "text": "This website is operated by the South African Orchid Council (SAOC), a non-profit company registered in South Africa under registration number "
+            },
+            {
+              "text": "1978/004040/08",
+              "b": true
+            },
+            {
+              "text": "."
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "These Terms and Conditions govern your use of this website and apply to purchases and bookings made through it, including tickets for SAOC events and the National Orchid Show, unless additional terms are specified for a particular event or activity.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 4
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "By accessing or using this website, you agree to these Terms and Conditions. If you do not agree, please do not use the website.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 5
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Nothing in these Terms and Conditions is intended to exclude or limit any rights that you may have under applicable South African law.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 6
+        }
+      ]
+    },
+    {
+      "name": "Clause 2",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "2. Use of this website",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 7,
+          "runs": [
+            {
+              "text": "2. Use of this website",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "You agree to use this website only for lawful purposes. You must not:",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 8
+        },
+        {
+          "role": "List",
+          "style": "body",
+          "text": "Use the website in any way that violates applicable law or the rights of others.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 9,
+          "list": {
+            "num": "2",
+            "level": 0
+          }
+        },
+        {
+          "role": "List",
+          "style": "body",
+          "text": "Attempt to gain unauthorised access to the website, its systems or its data.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 10,
+          "sameRow": true,
+          "list": {
+            "num": "2",
+            "level": 0
+          }
+        },
+        {
+          "role": "List",
+          "style": "body",
+          "text": "Introduce malicious software, interfere with the website's operation or disrupt its security.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 11,
+          "sameRow": true,
+          "list": {
+            "num": "2",
+            "level": 0
+          }
+        },
+        {
+          "role": "List",
+          "style": "body",
+          "text": "Submit false, misleading or fraudulent information when making a booking, purchase or application.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 12,
+          "sameRow": true,
+          "list": {
+            "num": "2",
+            "level": 0
+          }
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "SAOC may restrict or suspend access where reasonably necessary to protect the website, its users or its systems, subject to applicable law.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 13
+        }
+      ]
+    },
+    {
+      "name": "Clause 3",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "3. Website content and intellectual property",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 14,
+          "runs": [
+            {
+              "text": "3. Website content and intellectual property",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Unless otherwise indicated, the text, photographs, graphics, logos and other content on this website belong to SAOC or are used with permission from their respective owners, including member societies and individual contributors.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 15
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "You may not reproduce, republish, distribute, modify or commercially use website content without prior written permission from the relevant rights holder, except where permitted by law.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 16
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "If you wish to use any content, please contact SAOC to obtain permission. Any material credited to a third party remains subject to that party's rights and conditions.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 17
+        }
+      ]
+    },
+    {
+      "name": "Clause 4",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "4. Information on the website",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 18,
+          "runs": [
+            {
+              "text": "4. Information on the website",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "SAOC endeavours to ensure that information published on this website is accurate and current. However, event details, speakers, exhibitors, workshops, schedules, prices and other information may change.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 19
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Website content is provided in good faith for general information. To the extent permitted by law, SAOC does not warrant that all information will always be complete, error-free or up to date.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 20
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Where a published price, event detail or booking condition is incorrect, SAOC will take reasonable steps to correct the information and communicate with affected customers where appropriate. Any resolution will be subject to applicable law and the circumstances of the transaction.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 21
+        }
+      ]
+    },
+    {
+      "name": "Clause 5",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "5. Tickets, bookings and admission",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 22,
+          "runs": [
+            {
+              "text": "5. Tickets, bookings and admission",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "These conditions apply to tickets and bookings purchased through this website for SAOC events, including the National Orchid Show, the Symposium, the WOSA Conference, workshops, field trips and related activities.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 23
+        },
+        {
+          "role": "Subheading",
+          "style": "cardTitle",
+          "text": "5.1 Contract of purchase",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 24,
+          "runs": [
+            {
+              "text": "5.1 "
+            },
+            {
+              "text": "Contract of purchase",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "A ticket purchase or booking constitutes an agreement between the purchaser and SAOC, subject to these Terms and Conditions, the applicable event listing, the Refund and Cancellation Policy and any additional conditions clearly presented before purchase.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 25
+        },
+        {
+          "role": "Subheading",
+          "style": "cardTitle",
+          "text": "5.2 Booking confirmation",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 26,
+          "runs": [
+            {
+              "text": "5.2 "
+            },
+            {
+              "text": "Booking confirmation",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "A booking is confirmed once the applicable payment has been successfully processed and a confirmation or ticket has been issued, unless the relevant listing expressly states another booking procedure.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 27
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "For activities with limited capacity, places are allocated according to the booking and payment procedure stated in the listing. SAOC will not treat a paid, confirmed booking as unconfirmed merely because an activity later becomes oversubscribed.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 28
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "If SAOC cannot provide a confirmed booking, it will contact the affected customer and offer an appropriate resolution, which may include a refund or an alternative arrangement, subject to the customer's rights under applicable law.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 29
+        },
+        {
+          "role": "Subheading",
+          "style": "cardTitle",
+          "text": "5.3 Ticket details and admission",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 30,
+          "runs": [
+            {
+              "text": "5.3 "
+            },
+            {
+              "text": "Ticket details and admission",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Purchasers must provide accurate information when booking. Tickets may be checked at the entrance, and reasonable verification of ticket validity or eligibility may be required.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 31
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Where a ticket is issued to a named individual, any transfer or change of attendee is subject to the conditions stated in the relevant event listing or ticket policy.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 32
+        },
+        {
+          "role": "Subheading",
+          "style": "cardTitle",
+          "text": "5.4 Age-restricted events",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 33,
+          "runs": [
+            {
+              "text": "5.4 "
+            },
+            {
+              "text": "Age-restricted events",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Sunset Cocktails is restricted to persons aged 18 and older. Proof of age may be requested at admission. Entry may be refused where the age requirement is not met or cannot reasonably be verified.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 34
+        },
+        {
+          "role": "Subheading",
+          "style": "cardTitle",
+          "text": "5.5 Ticket use",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 35,
+          "runs": [
+            {
+              "text": "5.5 "
+            },
+            {
+              "text": "Ticket use",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Tickets may only be used for the event, date, session and admission category for which they were issued. Tickets must not be resold or used for fraudulent or unauthorised commercial purposes.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 36
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Any restrictions on transfers, resale or ticket use will be applied subject to applicable law and the conditions disclosed at purchase.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 37
+        }
+      ]
+    },
+    {
+      "name": "Clause 6",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "6. Prices and payments",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 38,
+          "runs": [
+            {
+              "text": "6. Prices and payments",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Ticket prices, booking fees, applicable taxes and any additional charges will be displayed during the purchase process, where applicable.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 39
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Payment must be made using the methods offered at checkout. A booking is not confirmed until the required payment has been successfully processed, unless the listing expressly provides otherwise.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 40
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "If a payment appears to have failed or a duplicate payment has been made, please contact SAOC with the relevant booking and payment details so that the matter can be investigated.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 41
+        }
+      ]
+    },
+    {
+      "name": "Clause 7",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "7. Cancellations, refunds and event changes",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 42,
+          "runs": [
+            {
+              "text": "7. Cancellations, refunds and event changes",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Refunds, cancellations, ticket transfers and related matters are governed by the Refund and Cancellation Policy, together with any event-specific conditions disclosed before purchase.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 43,
+          "runs": [
+            {
+              "text": "Refunds, cancellations, ticket transfers and related matters are governed by the "
+            },
+            {
+              "text": "Refund and Cancellation Policy",
+              "b": true
+            },
+            {
+              "text": ", together with any event-specific conditions disclosed before purchase."
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "The policy is available at:",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 44
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "https://no.saoc.co.za/refunds",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 45,
+          "runs": [
+            {
+              "text": "https://no.saoc.co.za/refunds",
+              "link": "https://no.saoc.co.za/refunds"
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Customers should review that policy before completing a purchase.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 46
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "SAOC may need to change event schedules, speakers, activities, venues or other arrangements due to operational requirements or circumstances beyond its reasonable control. Where a material change affects a booking, SAOC will take reasonable steps to inform affected customers and explain any applicable options.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 47
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "If an event or activity is cancelled, postponed or materially changed, any refund, credit or alternative arrangement will be dealt with in accordance with the applicable policy and South African law.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 48
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Nothing in these Terms and Conditions removes any cancellation, refund or other remedy to which a customer is legally entitled. Any cancellation charges will be subject to applicable law.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 49
+        }
+      ]
+    },
+    {
+      "name": "Clause 8",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "8. Workshops, field trips and other activities",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 50,
+          "runs": [
+            {
+              "text": "8. Workshops, field trips and other activities",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Workshops, field trips and other special activities may have limited places, separate fees, specific requirements or additional safety instructions.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 51
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "The relevant activity listing will state the booking requirements, price, capacity and any material conditions that apply.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 52
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Participants are responsible for checking the activity description and ensuring that they can meet its stated requirements. Where an activity involves travel, outdoor conditions, physical exertion or specialist equipment, participants should take reasonable steps to prepare accordingly.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 53
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "If SAOC cancels an activity or cannot provide a confirmed place, the applicable Refund and Cancellation Policy and South African law will apply.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 54
+        }
+      ]
+    },
+    {
+      "name": "Clause 9",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "9. Event changes, postponement and circumstances beyond our control",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 55,
+          "runs": [
+            {
+              "text": "9. Event changes, postponement and circumstances beyond our control",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "SAOC will make reasonable efforts to deliver events substantially as advertised. However, circumstances such as severe weather, safety concerns, venue restrictions, transport disruptions, public emergencies, government directions or other events beyond SAOC's reasonable control may require changes, postponement or cancellation.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 56
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Where reasonably practicable, SAOC will communicate material changes to affected ticket holders and provide information about the arrangements available under the applicable refund policy and law.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 57
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "This clause does not automatically exclude SAOC's responsibility or remove any statutory rights that may apply.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 58
+        }
+      ]
+    },
+    {
+      "name": "Clause 10",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "10. Visitor conduct, safety and security",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 59,
+          "runs": [
+            {
+              "text": "10. Visitor conduct, safety and security",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "All visitors must follow reasonable instructions from SAOC representatives, event staff, venue personnel and security officers.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 60
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Visitors must not engage in threatening, abusive, disruptive, unlawful or unsafe behaviour, or interfere with exhibitors, plants, displays, equipment or other attendees.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 61
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "For safety, security or legal reasons, a person may be asked to stop an activity or leave an event where there are reasonable grounds to do so. Any refusal of admission or removal will be handled in accordance with applicable law and the circumstances.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 62
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Venue-specific safety rules, airfield security requirements and restrictions on access to particular areas must be observed.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 63
+        }
+      ]
+    },
+    {
+      "name": "Clause 11",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "11. Accessibility and venue facilities",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 64,
+          "runs": [
+            {
+              "text": "11. Accessibility and venue facilities",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "SAOC aims to provide visitors with clear information about venue access and facilities.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 65
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "For the National Orchid Show, the Hangar's ground floor is accessible to visitors with mobility challenges. Some activities may take place on the mezzanine level, which is reached by stairs and is not wheelchair accessible.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 66
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Visitors who require assistance or wish to confirm access arrangements are encouraged to contact SAOC before attending. SAOC will provide information about available facilities and consider reasonable arrangements where practicable.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 67
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Specific facilities, including accessible toilets, parking, seating and assistance services, should not be assumed to be available unless confirmed in the event information.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 68
+        }
+      ]
+    },
+    {
+      "name": "Clause 12",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "12. Photography, filming and recording",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 69,
+          "runs": [
+            {
+              "text": "12. Photography, filming and recording",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Photography and filming may take place at SAOC events for reporting, educational, promotional or archival purposes.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 70
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Where SAOC intends to use identifiable images or recordings of individuals for promotional purposes, it will handle personal information in accordance with applicable privacy law and its Privacy Policy. Where required, appropriate notice or consent will be obtained.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 71
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Visitors should respect the privacy of other attendees and must not photograph, record or publish images of others in circumstances where doing so would be unlawful or unreasonably intrusive.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 72
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Any restrictions on photography or recording in judging areas, workshops, talks or other activities will be communicated where applicable.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 73
+        }
+      ]
+    },
+    {
+      "name": "Clause 13",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "13. Orchid and other product sales",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 74,
+          "runs": [
+            {
+              "text": "13. Orchid and other product sales",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Plants, orchids, merchandise and other products offered by vendors at SAOC events may be sold by independent exhibitors or vendors.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 75
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Unless the sale is expressly made by SAOC, the relevant vendor is responsible for the product description, price, payment arrangements, availability, delivery or collection, and applicable after-sales obligations.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 76
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Customers should confirm the vendor's identity and purchase conditions before buying. SAOC does not automatically guarantee products sold by independent vendors, but this clause does not exclude any responsibility or consumer rights that apply to SAOC or the vendor under South African law.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 77
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "The movement, importation or exportation of plants and plant material may be subject to permits, phytosanitary requirements and other legal restrictions. Buyers and sellers are responsible for complying with the requirements applicable to their transactions.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 78
+        }
+      ]
+    },
+    {
+      "name": "Clause 14",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "14. Third-party websites and services",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 79,
+          "runs": [
+            {
+              "text": "14. Third-party websites and services",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "This website may contain links to third-party websites, booking platforms, payment providers or other services.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 80
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "These services may be governed by their own terms and privacy policies. SAOC does not control all third-party websites and is not responsible for their content or operation, except to the extent that applicable law provides otherwise.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 81
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "The inclusion of a link does not necessarily imply endorsement by SAOC.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 82
+        }
+      ]
+    },
+    {
+      "name": "Clause 15",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "15. Privacy and personal information",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 83,
+          "runs": [
+            {
+              "text": "15. Privacy and personal information",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "SAOC may collect and process personal information when you use the website, contact SAOC, make a purchase, register for an event or submit an application.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 84
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Personal information will be handled in accordance with applicable South African data-protection law, including the Protection of Personal Information Act 4 of 2013 (POPIA), and SAOC's Privacy Policy.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 85
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Please consult the Privacy Policy for information about the personal information collected, the purposes for which it is used, relevant service providers, retention, security and your rights.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 86
+        }
+      ]
+    },
+    {
+      "name": "Clause 16",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "16. Liability",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 87,
+          "runs": [
+            {
+              "text": "16. Liability",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "SAOC will exercise reasonable care in operating its website and organising its events. However, to the extent permitted by law, SAOC is not responsible for loss or damage arising solely from circumstances beyond its reasonable control, or from the use of third-party websites and services outside its control.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 88
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Visitors are responsible for their personal belongings and for taking reasonable care of their own safety and the safety of those accompanying them.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 89
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Nothing in these Terms and Conditions excludes or limits liability where such exclusion or limitation is prohibited by law, including any applicable rights or remedies under South African consumer-protection legislation.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 90
+        }
+      ]
+    },
+    {
+      "name": "Clause 17",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "17. Changes to these Terms and Conditions",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 91,
+          "runs": [
+            {
+              "text": "17. Changes to these Terms and Conditions",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "SAOC may update these Terms and Conditions from time to time. The latest version will be published on this website with an updated revision date.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 92
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Changes will generally apply from the date of publication. For a purchase or booking already made, any change will be subject to applicable law and will not retrospectively remove rights that have already accrued to the customer.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 93
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Where additional or different conditions apply to a particular event or transaction, those conditions will be made available before the relevant purchase or booking is completed.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 94
+        }
+      ]
+    },
+    {
+      "name": "Clause 18",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "18. Applicable law",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 95,
+          "runs": [
+            {
+              "text": "18. Applicable law",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "These Terms and Conditions are governed by the laws of the Republic of South Africa.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 96
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Any dispute will be dealt with in accordance with applicable South African law, without limiting any rights a consumer may have to approach a competent court, regulator or other dispute-resolution body.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 97
+        }
+      ]
+    },
+    {
+      "name": "Clause 19",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "19. Contact SAOC",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 98,
+          "runs": [
+            {
+              "text": "19. Contact SAOC",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "For questions about these Terms and Conditions, website use, tickets or bookings, please contact SAOC through the website:",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 99
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "https://no.saoc.co.za/contact",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 100,
+          "runs": [
+            {
+              "text": "https://no.saoc.co.za/contact",
+              "link": "https://no.saoc.co.za/contact"
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "For refund or cancellation enquiries, please also consult the Refund and Cancellation Policy:",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 101
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "https://no.saoc.co.za/refunds",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 102,
+          "runs": [
+            {
+              "text": "https://no.saoc.co.za/refunds",
+              "link": "https://no.saoc.co.za/refunds"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "lists": {
+    "2": {
+      "levels": {
+        "0": {
+          "format": "bullet",
+          "text": "",
+          "start": 1,
+          "font": "Symbol"
+        }
+      }
+    }
+  }
+}

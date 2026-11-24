@@ -1,0 +1,995 @@
+{
+  "title": "Privacy and Personal Information Policy",
+  "titleFrom": "driveName",
+  "source": {
+    "driveFileId": "1Cp4-1JFp5_XsUVvw2dTLzYkYUR5GghO5",
+    "driveName": "Privacy and Personal Information Policy.docx",
+    "route": "/privacy",
+    "parsedFromMd5": "663c107f5b40eb33ecc32312db530c3c",
+    "parsedOn": "2026-11-25"
+  },
+  "sections": [
+    {
+      "name": "Opening",
+      "where": "The page banner (title and subtitle) and the paragraphs that open the policy.",
+      "elements": [
+        {
+          "role": "Page title",
+          "style": "heading",
+          "text": "Privacy and Personal Information Policy",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 0,
+          "runs": [
+            {
+              "text": "Privacy and Personal Information Policy",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Subtitle",
+          "style": "lead",
+          "text": "South African National Orchid Show — Western Cape 2027",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 1,
+          "runs": [
+            {
+              "text": "South African National Orchid Show — Western Cape 2027",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "The South African Orchid Council (SAOC) respects your privacy and is committed to protecting personal information in accordance with the Protection of Personal Information Act 4 of 2013 (POPIA).",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 2
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "This policy explains what personal information we collect through the National Orchid Show website, why we collect it, how we use and protect it, when we share it, and how you can exercise your rights.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 3
+        }
+      ]
+    },
+    {
+      "name": "Clause 1",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "1. Who is responsible for your personal information?",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 4,
+          "runs": [
+            {
+              "text": "1. Who is responsible for your personal information?",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "The South African Orchid Council (SAOC) is responsible for the personal information collected and processed through the National Orchid Show website, subject to confirmation of the relevant arrangements with any independent service providers.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 5
+        },
+        {
+          "role": "Details (each line is its own row on the page)",
+          "style": "body",
+          "text": "Responsible party: South African Orchid Council (SAOC)\nWebsite: https://saoc.co.za/\nAddress: 2285 Willow Road, Betty’s Bay, Western Cape, 7141\nInformation Officer: Lee-Ann McCleland\nEmail: secretary@saoc.co.za",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 6,
+          "runs": [
+            {
+              "text": "Responsible party:",
+              "b": true
+            },
+            {
+              "text": " South African Orchid Council (SAOC)\n"
+            },
+            {
+              "text": "Website:",
+              "b": true
+            },
+            {
+              "text": " "
+            },
+            {
+              "text": "https://saoc.co.za/",
+              "link": "https://saoc.co.za/"
+            },
+            {
+              "text": "\n"
+            },
+            {
+              "text": "Address:",
+              "b": true
+            },
+            {
+              "text": " 2285 Willow Road, Betty’s Bay, Western Cape, 7141\n"
+            },
+            {
+              "text": "Information Officer:",
+              "b": true
+            },
+            {
+              "text": " Lee-Ann McCleland\n"
+            },
+            {
+              "text": "Email:",
+              "b": true
+            },
+            {
+              "text": " "
+            },
+            {
+              "text": "secretary@saoc.co.za",
+              "link": "mailto:secretary@saoc.co.za"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Clause 2",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "2. Personal information we collect",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 7,
+          "runs": [
+            {
+              "text": "2. Personal information we collect",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "We collect personal information directly from you when you use our website, purchase tickets, contact us or apply to participate in the Show.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 8
+        },
+        {
+          "role": "Subheading",
+          "style": "cardTitle",
+          "text": "Contact forms",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 9,
+          "runs": [
+            {
+              "text": "Contact forms",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "When you submit a contact form, we may collect your name, email address and the contents of your message. We use this information to respond to your enquiry and deal with any follow-up matters.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 10
+        },
+        {
+          "role": "Subheading",
+          "style": "cardTitle",
+          "text": "Ticket purchases",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 11,
+          "runs": [
+            {
+              "text": "Ticket purchases",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "When you purchase tickets, we may collect your name, email address, telephone number and, where required, your country, province or town.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 12
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "We use this information to process and administer ticket bookings, issue tickets, communicate essential event information and manage entry to the Show and any activities included in your booking.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 13
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Payment information is processed through the applicable payment service provider. SAOC should not collect or retain full payment-card details unless this is specifically required and appropriately secured.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 14
+        },
+        {
+          "role": "Subheading",
+          "style": "cardTitle",
+          "text": "Vendor and exhibitor applications",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 15,
+          "runs": [
+            {
+              "text": "Vendor and exhibitor applications",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "We may collect business names, contact-person details, telephone numbers, email addresses and information required to assess and administer vendor or exhibitor applications.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 16
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Where relevant, we may also collect regulatory and business information, such as CIPC registration details, VAT numbers, applicable permits and supporting documentation. Documents submitted as proof of payment may contain additional financial or identifying information.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 17
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "We use this information to assess applications, manage participation, administer payments and contractual arrangements, verify relevant requirements and communicate with vendors and exhibitors.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 18
+        },
+        {
+          "role": "Subheading",
+          "style": "cardTitle",
+          "text": "Information you choose to provide",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 19,
+          "runs": [
+            {
+              "text": "Information you choose to provide",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Please do not submit unnecessary personal information or sensitive information through general contact forms or uploaded documents.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 20
+        }
+      ]
+    },
+    {
+      "name": "Clause 3",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "3. Why we process personal information",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 21,
+          "runs": [
+            {
+              "text": "3. Why we process personal information",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "We process personal information for specific, legitimate purposes connected with organising and administering the National Orchid Show, including:",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 22
+        },
+        {
+          "role": "List",
+          "style": "body",
+          "text": "Responding to enquiries and requests.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 23,
+          "list": {
+            "num": "3",
+            "level": 0
+          }
+        },
+        {
+          "role": "List",
+          "style": "body",
+          "text": "Processing ticket purchases and managing event access.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 24,
+          "sameRow": true,
+          "list": {
+            "num": "3",
+            "level": 0
+          }
+        },
+        {
+          "role": "List",
+          "style": "body",
+          "text": "Assessing and administering vendor and exhibitor applications.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 25,
+          "sameRow": true,
+          "list": {
+            "num": "3",
+            "level": 0
+          }
+        },
+        {
+          "role": "List",
+          "style": "body",
+          "text": "Managing payments, invoices and financial records.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 26,
+          "sameRow": true,
+          "list": {
+            "num": "3",
+            "level": 0
+          }
+        },
+        {
+          "role": "List",
+          "style": "body",
+          "text": "Communicating essential event information.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 27,
+          "sameRow": true,
+          "list": {
+            "num": "3",
+            "level": 0
+          }
+        },
+        {
+          "role": "List",
+          "style": "body",
+          "text": "Meeting applicable legal, regulatory and accounting obligations.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 28,
+          "sameRow": true,
+          "list": {
+            "num": "3",
+            "level": 0
+          }
+        },
+        {
+          "role": "List",
+          "style": "body",
+          "text": "Protecting the security and proper operation of the website and event.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 29,
+          "sameRow": true,
+          "list": {
+            "num": "3",
+            "level": 0
+          }
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "We process personal information only where there is a lawful basis for doing so under POPIA. Depending on the circumstances, this may include taking steps at your request, performing a contract, complying with a legal obligation, or another lawful basis permitted by POPIA.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 30
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Providing requested information may be necessary to complete a ticket purchase, respond to an enquiry or assess a vendor application. If required information is not supplied, we may be unable to complete the relevant transaction or process the application.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 31
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "We will not use your information for unrelated purposes unless permitted by law and, where required, after providing further notice or obtaining your consent.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 32
+        }
+      ]
+    },
+    {
+      "name": "Clause 4",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "4. Who we share personal information with",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 33,
+          "runs": [
+            {
+              "text": "4. Who we share personal information with",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "We do not sell personal information.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 34
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "We may share relevant information with service providers who help us operate the website and administer the Show. These providers may process personal information on our behalf and must be subject to appropriate confidentiality and security requirements.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 35
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Our currently identified service providers include:",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 36
+        },
+        {
+          "role": "List",
+          "style": "body",
+          "text": "Payment gateway: OWZO, or the payment provider in use at the time of the transaction, to process ticket payments.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 37,
+          "runs": [
+            {
+              "text": "Payment gateway:",
+              "b": true
+            },
+            {
+              "text": " OWZO, or the payment provider in use at the time of the transaction, to process ticket payments."
+            }
+          ],
+          "list": {
+            "num": "4",
+            "level": 0
+          }
+        },
+        {
+          "role": "List",
+          "style": "body",
+          "text": "Resend: To send transactional emails, such as order confirmations and contact-form acknowledgements.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 38,
+          "sameRow": true,
+          "runs": [
+            {
+              "text": "Resend:",
+              "b": true
+            },
+            {
+              "text": " To send transactional emails, such as order confirmations and contact-form acknowledgements."
+            }
+          ],
+          "list": {
+            "num": "4",
+            "level": 0
+          }
+        },
+        {
+          "role": "List",
+          "style": "body",
+          "text": "Firebase and Google Cloud: To store contact submissions, ticket orders and vendor applications; secure the SAOC administration area; and store documents uploaded by vendors, including proof of payment.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 39,
+          "sameRow": true,
+          "runs": [
+            {
+              "text": "Firebase and Google Cloud:",
+              "b": true
+            },
+            {
+              "text": " To store contact submissions, ticket orders and vendor applications; secure the SAOC administration area; and store documents uploaded by vendors, including proof of payment."
+            }
+          ],
+          "list": {
+            "num": "4",
+            "level": 0
+          }
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "We limit the information shared to what is reasonably necessary for the relevant purpose. We may also disclose information where required or authorised by law.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 40
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "We will verify the applicable service-provider arrangements, data-processing terms and security safeguards. Some providers may process or store information outside South Africa. Where this occurs, SAOC will ensure that any transfer complies with the applicable requirements of POPIA, including section 72.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 41
+        }
+      ]
+    },
+    {
+      "name": "Clause 5",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "5. How we protect personal information",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 42,
+          "runs": [
+            {
+              "text": "5. How we protect personal information",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "We take reasonable technical and organisational measures to protect personal information against loss, unauthorised access, disclosure, alteration or destruction.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 43
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "These measures may include access controls, authentication, restricted administrative permissions and appropriate security arrangements with service providers.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 44
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Access to personal information should be limited to authorised persons who need it to perform their duties.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 45
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "No electronic system or method of transmission can be guaranteed to be completely secure. We will respond to suspected security compromises in accordance with applicable legal requirements.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 46
+        }
+      ]
+    },
+    {
+      "name": "Clause 6",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "6. How long we retain personal information",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 47,
+          "runs": [
+            {
+              "text": "6. How long we retain personal information",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "We retain personal information only for as long as reasonably necessary for the purpose for which it was collected, subject to applicable legal, accounting, contractual and record-keeping requirements.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 48
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Different categories of information may require different retention periods. For example, contact enquiries may be retained for a different period from ticket transaction records, vendor agreements or financial documents.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 49
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "When personal information is no longer required, we will take reasonable steps to delete, destroy or de-identify it securely, where appropriate and legally permitted.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 50
+        }
+      ]
+    },
+    {
+      "name": "Clause 7",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "7. Cookies and analytics",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 51,
+          "runs": [
+            {
+              "text": "7. Cookies and analytics",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "At the time this policy is published, the website does not intentionally use tracking cookies or third-party analytics, subject to verification of the website's actual configuration and any embedded services.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 52
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Essential technologies may be used to operate the website, secure administrative access or support requested functionality.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 53
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "If the website introduces analytics, advertising technologies or other tracking tools, this policy will be updated to explain their use and any applicable choices available to visitors.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 54
+        }
+      ]
+    },
+    {
+      "name": "Clause 8",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "8. Your rights under POPIA",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 55,
+          "runs": [
+            {
+              "text": "8. Your rights under POPIA",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Subject to applicable legal requirements and limitations, you may:",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 56
+        },
+        {
+          "role": "List",
+          "style": "body",
+          "text": "Request confirmation of whether we hold personal information about you.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 57,
+          "list": {
+            "num": "5",
+            "level": 0
+          }
+        },
+        {
+          "role": "List",
+          "style": "body",
+          "text": "Request access to personal information we hold about you.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 58,
+          "sameRow": true,
+          "list": {
+            "num": "5",
+            "level": 0
+          }
+        },
+        {
+          "role": "List",
+          "style": "body",
+          "text": "Request correction or updating of inaccurate, incomplete or outdated information.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 59,
+          "sameRow": true,
+          "list": {
+            "num": "5",
+            "level": 0
+          }
+        },
+        {
+          "role": "List",
+          "style": "body",
+          "text": "Request deletion or destruction of personal information where the law permits.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 60,
+          "sameRow": true,
+          "list": {
+            "num": "5",
+            "level": 0
+          }
+        },
+        {
+          "role": "List",
+          "style": "body",
+          "text": "Object to certain processing of your personal information where POPIA provides this right.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 61,
+          "sameRow": true,
+          "list": {
+            "num": "5",
+            "level": 0
+          }
+        },
+        {
+          "role": "List",
+          "style": "body",
+          "text": "Lodge a complaint with the Information Regulator if you believe your personal information has been handled unlawfully.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 62,
+          "sameRow": true,
+          "list": {
+            "num": "5",
+            "level": 0
+          }
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Requests may be submitted to the Information Officer at secretary@saoc.co.za.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 63,
+          "runs": [
+            {
+              "text": "Requests may be submitted to the Information Officer at "
+            },
+            {
+              "text": "secretary@saoc.co.za",
+              "link": "mailto:secretary@saoc.co.za"
+            },
+            {
+              "text": "."
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "We may need to verify your identity before processing a request. We may also be required or permitted by law to retain certain information, even where deletion has been requested.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 64
+        }
+      ]
+    },
+    {
+      "name": "Clause 9",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "9. Personal information security compromises",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 65,
+          "runs": [
+            {
+              "text": "9. Personal information security compromises",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "If a security compromise involving personal information occurs, SAOC will take appropriate steps to investigate and address it and will notify affected individuals and the Information Regulator where required by POPIA.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 66
+        }
+      ]
+    },
+    {
+      "name": "Clause 10",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "10. Complaints",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 67,
+          "runs": [
+            {
+              "text": "10. Complaints",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "If you have concerns about how your personal information has been handled, please contact the SAOC Information Officer first so that your concern can be considered.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 68
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "You may also lodge a complaint directly with the Information Regulator of South Africa using its official website:",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 69
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "https://inforegulator.org.za/complaints/",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 70,
+          "runs": [
+            {
+              "text": "https://inforegulator.org.za/complaints/",
+              "link": "https://inforegulator.org.za/complaints/"
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "The Information Regulator's contact details and complaint procedures are available at:",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 71
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "https://inforegulator.org.za/contact-us/",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 72,
+          "runs": [
+            {
+              "text": "https://inforegulator.org.za/contact-us/",
+              "link": "https://inforegulator.org.za/contact-us/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Clause 11",
+      "where": "The main column; the heading is also listed in the index beside it.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "11. Changes to this policy",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 73,
+          "runs": [
+            {
+              "text": "11. Changes to this policy",
+              "b": true
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "We may update this policy when our website, services, data-processing practices or legal obligations change. The latest version will be published on the National Orchid Show website, with the effective or updated date stated below.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 74
+        }
+      ]
+    }
+  ],
+  "lists": {
+    "3": {
+      "levels": {
+        "0": {
+          "format": "bullet",
+          "text": "",
+          "start": 1,
+          "font": "Symbol"
+        }
+      }
+    },
+    "4": {
+      "levels": {
+        "0": {
+          "format": "bullet",
+          "text": "",
+          "start": 1,
+          "font": "Symbol"
+        }
+      }
+    },
+    "5": {
+      "levels": {
+        "0": {
+          "format": "bullet",
+          "text": "",
+          "start": 1,
+          "font": "Symbol"
+        }
+      }
+    }
+  }
+}
