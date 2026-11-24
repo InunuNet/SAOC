@@ -12,7 +12,7 @@ Base `origin/main` 8e686f06. No invention (docs/rules/no-invention.md): every st
 - P3 preview  FAQ marker out of `<summary>`: one page-level R11 line (ShowStatusLine) before the list, and the existing marker, sentence case, inside each answer panel.
 
 ## Findings the spec rests on (Sanity READ only, published perspective, 2026-10-22)
-- Venue is committee-confirmed: `showVisitorInfo.confirmations.venue = "confirmed"`; `nationalShow.venue.name = "The Hangar, Stellenbosch Flying Club"` (== `location`).
+- Venue is committee-confirmed: `showVisitorInfo.confirmations.venue = "confirmed"`; `nationalShow.venue.name = "Stellenbosch Aerodrome"` (== `location`).
   Not provisional, so it is wired, not an owner question. `venue.directionsNote` says the exact entrance is still to come: that is why only the name is wired.
 - what-to-expect has no venue line of its own in code. The page already draws Venue in the long-form aside via `buildShowFacts(show)` (same source as the fact strip).
   The sentence Codi saw ("will be published once the committee confirms the venue") is inside the Sanity `food` prose: an owner flag, not a wiring task.

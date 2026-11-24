@@ -42,7 +42,7 @@ Where a page genuinely needs one of these, **the sentence says it is not yet con
 "Doors open at 09:00" is a defect. Assertions C2, C3.
 
 **Two facts may be stated**, because the council supplied them and they are held verbatim in
-`content/drive-recovered/`: the venue (*Stellenbosch Flying Club, R44 northbound to
+`content/drive-recovered/`: the venue (*Stellenbosch Aerodrome, R44 northbound to
 Stellenbosch*) and the theme (*From Wild Origins to Cultivated Excellence: The Future of
 Orchids*). Reproduce them **exactly** — assertion D6 pins the venue sentence, and a
 paraphrase has already damaged it once.

@@ -147,7 +147,7 @@ Measured on the production build of the worktree at 390x844 with a Playwright pr
 | `/sa-exhibitors`, `/international-guests` | "No South African nurseries…", "No international guests…" | components/show/nos/RealEmptyListing.tsx:36 (shared) | 15 | 17 |
 | `/exhibitors` | key-dates cells "Staging start not set…", "When you can start delivering…" | components/show/ExhibitorKeyDates.tsx:96,105 (shared) | 15 | 17 |
 | `/exhibitors` | question answers "Lead times across the shows…" | components/show/ExhibitorQuestions.tsx:49 (shared) | 15 | 17 |
-| `/faq` | answers "The show is at Stellenbosch Flying Club…" | components/show/ShowFaqList.tsx:99 (shared) | 15 | 17 |
+| `/faq` | answers "The show is at Stellenbosch Aerodrome…" | components/show/ShowFaqList.tsx:99 (shared) | 15 | 17 |
 
 "exhibitor staging text (12px)" in the lead's note is the `/exhibitors` key-dates cells and the 12px step-timing lines. The cells (15px prose) are fixed above.
 The step-timing lines ("By the published entry deadline", ExhibitorSteps.tsx:59) are 12px with `tracking-[0.16em]`: tracked labels -> meta, they stay.
@@ -156,7 +156,7 @@ The step-timing lines ("By the published entry deadline", ExhibitorSteps.tsx:59)
 | element | file:line | size | reason |
 |---|---|---|---|
 | hero eyebrow "SINCE 1968 · BLOEMFONTEIN" | components/home/Hero.tsx | 11 | uppercase tracked label (SAOC home hero, not changed) |
-| key-fact values "The Hangar, Stellenbosch Flying Club" (dd 15, EventsStrip p 14) | home/ShowBand.tsx:128, home/EventsStrip.tsx | 15 / 14 | short fact value paired with a dt label; no sentence |
+| key-fact values "Stellenbosch Aerodrome" (dd 15, EventsStrip p 14) | home/ShowBand.tsx:128, home/EventsStrip.tsx | 15 / 14 | short fact value paired with a dt label; no sentence |
 | archive note "Reduced format — pandemic protocols" | components/nos/PastEditionCard.tsx:83 | 14 | caption (--body-sm "captions-adjacent"), not a sentence |
 | emergency dt labels "Ambulance and fire…", all `dt`/eyebrows/chips | plan-your-visit/page.tsx:150 etc. | 12 | uppercase tracked labels |
 | StatusMarker chips "To be confirmed by the show committee" | components/show/_shared/StatusMarker.tsx | 12 | R11 chip, uppercase tracked |

@@ -863,8 +863,10 @@ function runDriveRecoveryChecks(): void {
   // the exact string, and any seed section that quotes the venue by name must reproduce
   // the whole sentence character-for-character rather than paraphrase around it (the
   // defect this check exists to catch directly, per verifier-contract.golden.md).
+  // The recovery tree is a verbatim snapshot of Lee-Ann's .docx and keeps the old venue name.
+  const RECOVERY_VENUE_SENTENCE = 'Stellenbosch Flying Club, R44 northbound to Stellenbosch.';
   const VENUE_SENTENCE = 'Stellenbosch Aerodrome, R44 northbound to Stellenbosch.';
-  const recoveryHasVenueSentence = recoveryTreeText.includes(VENUE_SENTENCE);
+  const recoveryHasVenueSentence = recoveryTreeText.includes(RECOVERY_VENUE_SENTENCE);
 
   let seedVenueOk = true;
   const seedVenueFailures: string[] = [];
@@ -875,7 +877,7 @@ function runDriveRecoveryChecks(): void {
     for (const file of seedFiles) {
       const doc = JSON.parse(readFileSync(path.join(SHOW_PAGES_DIR, file), 'utf8'));
       const bodyText = JSON.stringify(doc);
-      if (bodyText.includes('Stellenbosch Flying Club') && !bodyText.includes(VENUE_SENTENCE)) {
+      if (bodyText.includes('Stellenbosch Aerodrome') && !bodyText.includes(VENUE_SENTENCE)) {
         seedVenueOk = false;
         seedVenueFailures.push(file);
       }

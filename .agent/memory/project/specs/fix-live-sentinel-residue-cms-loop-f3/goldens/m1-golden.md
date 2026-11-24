@@ -65,7 +65,7 @@ would have wiped `edition`/`hostRegion`/`salesOpen`/`showDate`/`showEndDate`/`ve
 
 ```
 title:    "The South African National Orchid Show"
-location: "The Hangar, Stellenbosch Flying Club"
+location: "Stellenbosch Aerodrome"
 ```
 
 Sourced from `scripts/seed-page-singletons.ts:212,214` and cross-checked against the

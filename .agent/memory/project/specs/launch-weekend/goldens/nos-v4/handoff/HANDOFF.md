@@ -127,7 +127,7 @@ SAOC's top level, verbatim from `components/chrome/Header.tsx`, in this order, w
 - **Content:** verbatim from SAOC's National Show menu (labels and descriptions). No item is invented or renamed.
   1. **Lead column:**
      - The "19th SAOC National Orchid Show" link (Fraunces 1.35rem, green-1 underline) goes to the hub.
-     - Meta: "The Hangar, Stellenbosch Flying Club · 23–26 September 2027".
+     - Meta: "Stellenbosch Aerodrome · 23–26 September 2027".
      - Then the **The Show** group: Tickets / Show Sponsors / Past Shows.
      - **No logo in the lead.** It would be a second logo.
   2. **Visit:** About the Show / What to Expect / Plan Your Visit / FAQ.

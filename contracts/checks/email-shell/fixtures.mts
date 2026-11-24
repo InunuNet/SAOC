@@ -39,7 +39,7 @@ export const FIXTURES: Fixture[] = [
       // confirmed visit values: same data the ticket PDF page 1 prints (ticket-pdf/goldens/fixture-order.json)
       visit: {
         pendingLabel: null,
-        venueName: 'The Hangar, Stellenbosch Flying Club',
+        venueName: 'Stellenbosch Aerodrome',
         venueAddress: 'Stellenbosch Aerodrome, R44, Stellenbosch, 7600, Western Cape',
         showDates: 'Thursday 23 to Sunday 26 September 2027',
         parking: null,

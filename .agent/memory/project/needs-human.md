@@ -592,7 +592,7 @@ grants resolve properly.
 6. **Swap back — do not skip this:**
    `npx tsx scripts/swap-active-show.ts show-19-2027 --apply`
    Forgetting this leaves the real show inactive and the public site unable to sell.
-7. Observe and record venue door connectivity at The Hangar, Stellenbosch Flying Club.
+7. Observe and record venue door connectivity at Stellenbosch Aerodrome.
    This is the one step with no software substitute.
 8. Report artefacts afterwards: `npx tsx scripts/report-fictional-test-show-artifacts.ts`
    (read-only; it enumerates test data, it cannot delete). Deletion is Brad's call alone.

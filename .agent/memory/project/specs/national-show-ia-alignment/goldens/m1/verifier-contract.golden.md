@@ -83,8 +83,8 @@ Each G row corresponds to rows of the fail-loud table in `provenance-gate.golden
 | D1 | all four `content.md` files and their four `recovery.json` siblings exist at the exact paths in `drive-recovery.golden.md` |
 | D2 | every `recovery.json` parses and carries `specPage` (integer 1..18), `sourceDrivePath` (non-empty), `sourceMd5` (32 lowercase hex), `method` (one of the three enumerated values), `recoveredAt` (ISO date), `recoveredBy`, and a `supersededBy` key present even when null |
 | D3 | for every recovery entry, if a `content/drive-source/` manifest exists for the same Drive file, report whether its md5 still equals `sourceMd5` — a mismatch means the salvage has been superseded and is reported, not silently kept |
-| D5 | the string `Stellenbosch Flying Club` and the string `From Wild Origins to Cultivated Excellence` each appear in the recovery tree |
-| D6 | the council's venue sentence survives **verbatim** wherever it is reused — the exact string `Stellenbosch Flying Club, R44 northbound to Stellenbosch` appears in the recovery tree, and any seed section quoting the venue reproduces it character-for-character. This is the check that would have caught the R44 paraphrase directly, rather than leaving it to a reviewer. |
+| D5 | the string `Stellenbosch Aerodrome` and the string `From Wild Origins to Cultivated Excellence` each appear in the recovery tree |
+| D6 | the council's venue sentence survives **verbatim** wherever it is reused — the exact string `Stellenbosch Aerodrome, R44 northbound to Stellenbosch` appears in the recovery tree, and any seed section quoting the venue reproduces it character-for-character. This is the check that would have caught the R44 paraphrase directly, rather than leaving it to a reviewer. |
 
 ### P — the seed corpus, read with no Sanity token and no network
 
@@ -119,7 +119,7 @@ self-test is missing has no more standing than no check at all.
 
 The first P6 matched `/\bR\s?\d{2,4}\b/` across every seed body. That regex matches **`R44`** —
 the national road the venue sits on. The council's only written statement of the venue is
-*"Stellenbosch Flying Club, R44 northbound to Stellenbosch"*, and the assertion made that
+*"Stellenbosch Aerodrome, R44 northbound to Stellenbosch"*, and the assertion made that
 sentence unpublishable. @dev paraphrased around the road number to get the gate green, which
 degraded a confirmed fact a visitor actually needs in order to arrive.
 
