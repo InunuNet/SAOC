@@ -855,7 +855,7 @@ function runDriveRecoveryChecks(): void {
     /* handled by d1 */
   }
   const d5ok =
-    recoveryTreeText.includes('Stellenbosch Flying Club') &&
+    recoveryTreeText.includes('Stellenbosch Aerodrome') &&
     recoveryTreeText.includes('From Wild Origins to Cultivated Excellence');
   check('D5', d5ok, 'both fixed facts present', d5ok ? 'both present' : 'one or both missing');
 
@@ -875,7 +875,7 @@ function runDriveRecoveryChecks(): void {
     for (const file of seedFiles) {
       const doc = JSON.parse(readFileSync(path.join(SHOW_PAGES_DIR, file), 'utf8'));
       const bodyText = JSON.stringify(doc);
-      if (bodyText.includes('Stellenbosch Flying Club') && !bodyText.includes(VENUE_SENTENCE)) {
+      if (bodyText.includes('Stellenbosch Aerodrome') && !bodyText.includes(VENUE_SENTENCE)) {
         seedVenueOk = false;
         seedVenueFailures.push(file);
       }

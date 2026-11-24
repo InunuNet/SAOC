@@ -4,7 +4,7 @@ goal: >-
   Fix the repo's SEED SOURCES, not the dataset — the live Sanity dataset was already
   corrected (427fbaf + a follow-up flipping showVisitorInfo.confirmations.venue to
   confirmed) after the client confirmed on 2026-08-12 that the National Show 2027
-  venue is The Hangar, Stellenbosch Flying Club (Stellenbosch Airfield, R44,
+  venue is Stellenbosch Aerodrome (since renamed 2026-11-19; R44,
   Stellenbosch 7600, Western Cape, approx -33.9794/18.8196), replacing an invented
   "Cape Town International Convention Centre" (CTICC) working-venue placeholder.
   Every seed write in this project is createIfNotExists/setIfMissing, so the stale
