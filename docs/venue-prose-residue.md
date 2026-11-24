@@ -1,3 +1,5 @@
+> Historical record (mission of August 2026). The venue name is now Stellenbosch Aerodrome (2026-11-19); older names below are history, not current truth.
+
 # Venue Prose Residue — Fixing Stale Characteristic-Describing Copy
 
 Mission: `venue-prose-residue`, F1. Follows `venue-seed-truth` (gate 16/16 green, committed 2026-08-12), which fixed every venue-name reference across the codebase and live Sanity dataset. A second adversarial QA pass found this contract's namesake defect class: prose describing the venue's *physical characteristics* had survived the name-anchored sweep because it never named the venue at all — it described features ("parking garages," "convention centre," "MyCiTi bus service") true of the old CTICC venue and false or unverified for the new real venue (The Hangar, Stellenbosch Flying Club).

@@ -35,7 +35,7 @@ contain.
 |---|---|---|
 | C1 | No section named in the M3 plan carries `council-supplied`. If we wrote it, they did not. | — |
 | C2 | **No facts of record** in a generated section: no time-of-day, no calendar date, no email address, no phone number, no "over/about/nearly N" count. | **17/17 both directions.** Catches `09:00`, `9am to 5pm`, `24 September`, `Sept 25`, `enquiries@saoc.co.za`, `+27 21 555 0199`, `over 200 growers`, `Dr Naledi Mokoena`. Does not catch `The 2027 National Show`, `R44 northbound`, `Opening times will be confirmed closer to the show.`, `Ticket prices are being finalised`. |
-| C3 | **Proper-noun allowlist.** A capitalised multi-word name in a generated section must appear in `content/show-pages/_name-allowlist.json` (SAOC, WOSA, National Orchid Show, Stellenbosch Flying Club, Western Cape, South African Orchid Council, …). | see limits below |
+| C3 | **Proper-noun allowlist.** A capitalised multi-word name in a generated section must appear in `content/show-pages/_name-allowlist.json` (SAOC, WOSA, National Orchid Show, Stellenbosch Aerodrome, Western Cape, South African Orchid Council, …). | see limits below |
 | C4 | **Credential scan** over `content/show-pages/**` and `content/drive-recovered/**`. | **12/12 both directions.** Catches `Email password: …`, `password = …`, `App Password: …`, `api_key: …`, `Access Token = …`, `pwd: …`. Does not catch `Members will need a password to access the journal`, `password-protected`, `Registration tokens are single-use`. |
 | C5 | All 15 pages have at least one generated section with a non-empty body. No page ships blank. |  |
 | C6 | Spec entry 14 still has no seed source and no `14-` pageKey — regression guard on M1's decision. |  |

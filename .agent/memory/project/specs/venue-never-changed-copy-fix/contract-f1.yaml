@@ -62,7 +62,7 @@ features:
       Remove the "venue changed" narrative framing from scripts/seed-show-visitor-info.ts, its
       golden copy-source JSON, the live Sanity showVisitorInfo document (via a one-off patch
       script), and the one dev-facing doc quoting it verbatim — the venue reads as simply always
-      having been The Hangar, Stellenbosch Flying Club. Full spec:
+      having been Stellenbosch Aerodrome. Full spec:
       contracts/golden/venue-never-changed-copy-fix-f1/README.md.
 
 goldens:

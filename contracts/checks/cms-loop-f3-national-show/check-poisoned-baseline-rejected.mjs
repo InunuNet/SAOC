@@ -70,7 +70,7 @@ expectRejected('countdownDate', '2099-01-01T00:00:00.000Z', 'rejects the far-fut
 
 // --- positive control: real content must NOT be rejected, or the guard is useless --------------
 expectAccepted('title', 'The South African National Orchid Show', 'accepts real, clean title content');
-expectAccepted('location', 'The Hangar, Stellenbosch Flying Club', 'accepts real, clean location content');
+expectAccepted('location', 'Stellenbosch Aerodrome', 'accepts real, clean location content');
 expectAccepted('countdownDate', '2027-09-18T09:00:00.000Z', 'accepts a real, near-future countdownDate', { isDate: true });
 
 if (failures === 0) {

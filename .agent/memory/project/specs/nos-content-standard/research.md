@@ -1,3 +1,5 @@
+> Note 2026-11-25: the venue owner item below is resolved. The venue name is Stellenbosch Aerodrome (2026-11-19); the other names quoted here are stale history.
+
 # nos-content-standard: research, decisions, blockers
 
 ## 1. Brad's words (verbatim)

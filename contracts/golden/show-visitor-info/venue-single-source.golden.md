@@ -1,6 +1,6 @@
 > **SUPERSEDED — historical research record, not current content.**
 > This file documented: The venue-change mechanical rule (single-source venue object), illustrated against CTICC as the then-current venue.
-> The venue changed to **The Hangar, Stellenbosch Flying Club** on 2026-08-12.
+> The venue was corrected on 2026-08-12 and is now named **Stellenbosch Aerodrome** (2026-11-19).
 > Correction commits: `427fbaf` (corrected live content) and `32e01cf` (purged CTICC residue
 > from seed sources, goldens, and docs).
 > See `docs/venue-prose-residue.md` for the current state and the reasoning for keeping this

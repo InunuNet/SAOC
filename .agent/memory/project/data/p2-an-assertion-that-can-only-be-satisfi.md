@@ -4,7 +4,7 @@
   a defect class, not a one-off.** On 2026-09-09 assertion P6 (`national-show-ia-alignment` M1)
   matched `/\bR\s?\d{2,4}\b/` to catch unconfirmed ticket prices. It also matches **`R44`** — the
   national road the venue sits on. The council's only written statement of the venue is
-  *"Stellenbosch Flying Club, R44 northbound to Stellenbosch"*, so the check made a confirmed fact
+  *"Stellenbosch Aerodrome, R44 northbound to Stellenbosch"*, so the check made a confirmed fact
   a visitor needs unpublishable, and @dev paraphrased around the road number to get the gate green.
   Fixed by scoping P6 to sections whose provenance is `placeholder-ai` or `research` — **we police
   our own words, not the client's** — plus a price-vs-route discriminator, dry-run 19/19 in both

@@ -234,7 +234,7 @@ const STOPWORDS = new Set([
 ]);
 // Deliberately narrow: only true noun-phrase connectors chain two capitalised words into one
 // candidate. Verbs like "is"/"will"/"are" are excluded on purpose — including them let a
-// candidate swallow an entire sentence ("National Show is Stellenbosch Flying Club").
+// candidate swallow an entire sentence ("National Show is Stellenbosch Aerodrome").
 const CONNECTOR_ALT = 'of|the|and|for|to|at|in|on|from';
 
 // Matches a run of 2+ Title Case words, optionally joined by a single connector word from
@@ -421,7 +421,7 @@ function runC8(corpus: Array<{ file: string; doc: SeedPageDoc }>): void {
   const failures: string[] = [];
   for (const { file, doc } of corpus) {
     const bodyText = JSON.stringify(doc);
-    if (bodyText.includes('Stellenbosch Flying Club') && !bodyText.includes(VENUE_SENTENCE)) {
+    if (bodyText.includes('Stellenbosch Aerodrome') && !bodyText.includes(VENUE_SENTENCE)) {
       ok = false;
       failures.push(`${file}: venue paraphrased`);
     }

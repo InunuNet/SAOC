@@ -6,7 +6,7 @@ Source: Lee-Ann's Questions doc (B6-B10, B14, B18). Nothing here goes beyond her
 - F1: contact page surname is now Caral-Anne van der Westhuizen.
 - F2: "19th National Orchid Show" / "19th National Show" became
   "National Orchid Show - Western Cape 2027" (nav lead label, landing sentence, seeds, llms-full.txt).
-- F3: venue is Hangar 25, Orca Aero Solutions, Stellenbosch Airfield (seeds, show-pages JSON).
+- F3: venue was Hangar 25, Orca Aero Solutions, Stellenbosch Airfield (superseded 2026-11-19: the venue is now Stellenbosch Aerodrome).
 - F4: NOS nav has Plant Entry under Programme, a one-link Vendors group, and no International guests.
   Route manifest, ShowSectionNav, ShowBand and page titles follow.
 - Redirects: /national-show/international-guests -> /national-show/vendors (308), in
@@ -22,7 +22,7 @@ Source: Lee-Ann's Questions doc (B6-B10, B14, B18). Nothing here goes beyond her
 - "R44 northbound to Stellenbosch" is her wording, kept.
 
 ## Open questions
-- Plan Your Visit doc still says Flying Club (modified 2026-10-24): update, and is the R44 approach right?
+- Plan Your Visit doc still names the old venue (modified 2026-10-24); the name is now Stellenbosch Aerodrome. Update it, and is the R44 approach right?
 - What should the ticket stub show in place of the XIX numeral?
 - Replace "19th" in the hero CTA, show band and countdown (touches closed contracts)?
 - Reword FAQ answers that mention international guests (showFaq-q8, q32)?

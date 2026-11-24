@@ -649,7 +649,7 @@ file.
 invented values spreading unflagged:
 
 - **The CTICC venue** — a placeholder that reached six-plus fields before anyone checked it. The
-  real venue is The Hangar, Stellenbosch Flying Club (confirmed 2026-08-12). See
+  real venue is Stellenbosch Aerodrome (name set 2026-11-19). See
   [docs/venue-prose-residue.md](venue-prose-residue.md).
 - **The 18–21 September 2027 show dates** — never council-confirmed, yet written into Sanity by
   `scripts/seed-page-singletons.ts`, present in `lib/data/events.ts`, driving the live home-page

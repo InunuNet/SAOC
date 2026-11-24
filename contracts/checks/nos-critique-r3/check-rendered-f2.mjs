@@ -55,13 +55,13 @@ const NAMED = [
   ['/national-show/exhibitors', 'Staging start not set', 15, 17, 17, 'components/show/ExhibitorKeyDates.tsx:96'],
   ['/national-show/exhibitors', 'When you can start delivering', 15, 17, 17, 'components/show/ExhibitorKeyDates.tsx:105'],
   ['/national-show/exhibitors', 'Lead times across the shows', 15, 17, 17, 'components/show/ExhibitorQuestions.tsx:49'],
-  ['/national-show/faq', 'The show is at Stellenbosch Flying Club', 15, 17, 17, 'components/show/ShowFaqList.tsx:99'],
+  ['/national-show/faq', 'The show is at Stellenbosch Aerodrome', 15, 17, 17, 'components/show/ShowFaqList.tsx:99'],
   ['/national-show/faq', 'Parking arrangements', 15, 17, 17, 'components/show/ShowFaqList.tsx:99'],
 ];
 // Meta that must keep its exact BEFORE size(s): [route, prefix, [sizes]]
 const META = [
   ['/', 'SINCE 1968', [11]],
-  ['/', 'The Hangar, Stellenbosch Flying Club', [15, 14]],
+  ['/', 'Stellenbosch Aerodrome', [15, 14]],
   ['/national-show/plan-your-visit', 'Ambulance and fire', [12]],
   ['/national-show/tickets', 'Provisional pricing', [12]],
   ['/national-show/tickets', 'You must choose a day', [13]],

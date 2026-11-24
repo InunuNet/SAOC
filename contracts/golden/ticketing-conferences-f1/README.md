@@ -115,7 +115,7 @@ not just as a documented intention — a defect that priced Joint above the sum 
 below either single track, would fail A1.
 
 **Capacity — OUR ESTIMATE, no client source, same caveat as admission products':** The venue is
-The Hangar (Stellenbosch Flying Club) — same physical constraint noted in
+Stellenbosch Aerodrome — same physical constraint noted in
 `provisional-figures.md`. Symposium/Conference are parallel breakout tracks sharing the hangar
 floor with the exhibition and vendor stands, so 150 each (matching the admission Early-Bird
 Weekend Pass's rough order of magnitude) is a conservative seated-lecture estimate, not a
