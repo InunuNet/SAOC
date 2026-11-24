@@ -42,6 +42,39 @@ An assertion belongs here only when all of these hold:
 To add an entry: put `{contract, id}` in `allowlist.json`, run the runner, and keep it only if it is
 green. To retire one, remove it here in the same change that retires or rewrites the assertion.
 
+## Widening, 24 Nov 2026 (285 entries added, 362 in all)
+
+A read-only triage of 741 passing assertions was filtered one by one against the rules above. 285
+were admitted; the rest were left out, first matching reason shown:
+
+| Reason | Count |
+|---|---|
+| Prose in `docs/*.md` or spec `.md` files (editors rewrite these; low value) | 60 |
+| Command or the script it runs mentions pnpm, tsc, eslint, tsx, npx, node_modules or playwright | 54 |
+| Copy, price, venue, colour, photo, email or other pinned literal (rule 6) | 54 |
+| A path the command names is absent from the checkout | 49 |
+| Check script imports a package that needs `node_modules` | 44 |
+| Hard-coded `/Users/...` path (reads the developer's main checkout) | 43 |
+| Reads a contract yaml or `.claude/settings.json` (spec metadata, harness config) | 26 |
+| Identical command already admitted under another id | 20 |
+| Reads a notes file that changes routinely (`.tmp/`, backlog, needs-human, memory) | 16 |
+| Clock or file timestamps in the command or its script | 15 |
+| Git state in the command or its script | 15 |
+| Reads `.env*` or `process.env` | 11 |
+| Binary artefacts (screenshots, images) | 11 |
+| Script or its imports can spawn a process or server | 10 |
+| Dates or price text in the command | 8 |
+| Calls `execution/contract.py` or `brain.py` | 6 |
+| Trivial `true` | 4 |
+| Writes files (including `py_compile`, which writes `__pycache__`, and baseline json that changes when assertions are fixed) | 6 |
+| Network, image generation, non-stdlib Python import | 4 |
+
+Added on top of the existing rules: every executed script and its relative imports is read for
+`next dev|start|build`, `spawn`, `fork`, `exec*`, `listen(`, `child_process`, `subprocess`, `fetch(`,
+server helpers and playwright (unsure means out); every path a command names must be tracked by
+git, not just present on disk (gitignored files do not exist in CI). The 15 mutation proofs run
+for the change (a source edit turns the assertion red, then reverted) are in the pull request.
+
 ## Not allowlisted
 
 Red on current main (static, not fixed here): `contracts/contract-payment-seam-f1.yaml` A8,

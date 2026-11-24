@@ -308,6 +308,1146 @@
   {
    "contract": ".agent/memory/project/specs/national-show-ticket-router/contract-f1.yaml",
    "id": "A9"
+  },
+  {
+   "contract": ".agent/memory/project/specs/admin-nav-menu/contract-f1.yaml",
+   "id": "A10"
+  },
+  {
+   "contract": ".agent/memory/project/specs/admin-nav-menu/contract-f1.yaml",
+   "id": "A9s"
+  },
+  {
+   "contract": ".agent/memory/project/specs/admin-signout-revocation/contract-f1.yaml",
+   "id": "A4"
+  },
+  {
+   "contract": ".agent/memory/project/specs/backlog-sweep-2-dead-links-and-a11y/contract-m1.yaml",
+   "id": "A15"
+  },
+  {
+   "contract": ".agent/memory/project/specs/backlog-sweep-2-dead-links-and-a11y/contract-m1.yaml",
+   "id": "A16"
+  },
+  {
+   "contract": ".agent/memory/project/specs/backlog-sweep-2-dead-links-and-a11y/contract-m1.yaml",
+   "id": "A17"
+  },
+  {
+   "contract": ".agent/memory/project/specs/backlog-sweep-2-dead-links-and-a11y/contract-m1.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": ".agent/memory/project/specs/backlog-sweep-2-dead-links-and-a11y/contract-m1.yaml",
+   "id": "A4"
+  },
+  {
+   "contract": ".agent/memory/project/specs/backlog-sweep-2-dead-links-and-a11y/contract-m1.yaml",
+   "id": "A6"
+  },
+  {
+   "contract": ".agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/contract.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": ".agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/contract.yaml",
+   "id": "A7"
+  },
+  {
+   "contract": ".agent/memory/project/specs/backlog-wave-1028/m3-f3-sanity-volume/contract.yaml",
+   "id": "A8"
+  },
+  {
+   "contract": ".agent/memory/project/specs/backlog-wave-1028/m3-f4-gate-hardening/contract.yaml",
+   "id": "A13"
+  },
+  {
+   "contract": ".agent/memory/project/specs/backlog-wave-1028/m3-f4-gate-hardening/contract.yaml",
+   "id": "A16"
+  },
+  {
+   "contract": ".agent/memory/project/specs/backlog-wave-1028/m3-f4-gate-hardening/contract.yaml",
+   "id": "A17"
+  },
+  {
+   "contract": ".agent/memory/project/specs/backlog-wave-1028/onsale-followups/contract.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": ".agent/memory/project/specs/backlog-wave-1028/onsale-followups/contract.yaml",
+   "id": "A4"
+  },
+  {
+   "contract": ".agent/memory/project/specs/backlog-wave-1028/onsale-followups/contract.yaml",
+   "id": "A5"
+  },
+  {
+   "contract": ".agent/memory/project/specs/beta-password-wall/contract-f1.yaml",
+   "id": "A2b"
+  },
+  {
+   "contract": ".agent/memory/project/specs/beta-password-wall/contract-f2.yaml",
+   "id": "A4"
+  },
+  {
+   "contract": ".agent/memory/project/specs/beta-password-wall/contract-f2.yaml",
+   "id": "A5"
+  },
+  {
+   "contract": ".agent/memory/project/specs/checkin-attempts-write-verification/contract-f1.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": ".agent/memory/project/specs/checkin-attempts-write-verification/contract-f1.yaml",
+   "id": "A4"
+  },
+  {
+   "contract": ".agent/memory/project/specs/conference-workshop-tickets/contract-f3.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": ".agent/memory/project/specs/conference-workshop-tickets/contract-f3.yaml",
+   "id": "A21"
+  },
+  {
+   "contract": ".agent/memory/project/specs/conference-workshop-tickets/contract-f3.yaml",
+   "id": "A4"
+  },
+  {
+   "contract": ".agent/memory/project/specs/conference-workshop-tickets/contract-f3.yaml",
+   "id": "A5"
+  },
+  {
+   "contract": ".agent/memory/project/specs/conference-workshop-tickets/contract-f3.yaml",
+   "id": "A6"
+  },
+  {
+   "contract": ".agent/memory/project/specs/conference-workshop-tickets/contract-f3.yaml",
+   "id": "A7"
+  },
+  {
+   "contract": ".agent/memory/project/specs/conference-workshop-tickets/contract-f3.yaml",
+   "id": "A8"
+  },
+  {
+   "contract": ".agent/memory/project/specs/conference-workshop-tickets/contract-f3.yaml",
+   "id": "A9"
+  },
+  {
+   "contract": ".agent/memory/project/specs/conference-workshop-tickets/contract-f4.yaml",
+   "id": "A9"
+  },
+  {
+   "contract": ".agent/memory/project/specs/confirmation-page-qr-and-download/contract-f1.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": ".agent/memory/project/specs/contract-live-write-audit/contract.yaml",
+   "id": "A8"
+  },
+  {
+   "contract": ".agent/memory/project/specs/drive-docx-version-export/contract-f1.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": ".agent/memory/project/specs/email-shell/contract-f1.yaml",
+   "id": "A15"
+  },
+  {
+   "contract": ".agent/memory/project/specs/email-shell/contract-f2.yaml",
+   "id": "A14"
+  },
+  {
+   "contract": ".agent/memory/project/specs/fix-live-sentinel-residue-cms-loop-f3/contract-m1.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": ".agent/memory/project/specs/fix-live-sentinel-residue-cms-loop-f3/contract-m1.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": ".agent/memory/project/specs/fix-live-sentinel-residue-cms-loop-f3/contract-m1.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": ".agent/memory/project/specs/fix-live-sentinel-residue-cms-loop-f3/contract-m1.yaml",
+   "id": "A5"
+  },
+  {
+   "contract": ".agent/memory/project/specs/fix-live-sentinel-residue-cms-loop-f3/contract-m1.yaml",
+   "id": "A6"
+  },
+  {
+   "contract": ".agent/memory/project/specs/fix-live-sentinel-residue-cms-loop-f3/contract-m1.yaml",
+   "id": "A7"
+  },
+  {
+   "contract": ".agent/memory/project/specs/gateway-picker-admin-only/contract-f1.yaml",
+   "id": "A10"
+  },
+  {
+   "contract": ".agent/memory/project/specs/gateway-picker-admin-only/contract-f1.yaml",
+   "id": "A7"
+  },
+  {
+   "contract": ".agent/memory/project/specs/gateway-picker-admin-only/contract-f1.yaml",
+   "id": "A8"
+  },
+  {
+   "contract": ".agent/memory/project/specs/gateway-picker-admin-only/contract-f1.yaml",
+   "id": "A9"
+  },
+  {
+   "contract": ".agent/memory/project/specs/go-live-prep/f1-purge/contract.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": ".agent/memory/project/specs/go-live-prep/f1-purge/contract.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": ".agent/memory/project/specs/go-live-prep/f1-purge/contract.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": ".agent/memory/project/specs/go-live-prep/f2-ozow-residue/contract-f2.yaml",
+   "id": "A10"
+  },
+  {
+   "contract": ".agent/memory/project/specs/go-live-prep/f2-ozow-residue/contract-f2.yaml",
+   "id": "A9"
+  },
+  {
+   "contract": ".agent/memory/project/specs/go-live-prep/f6-hardening/contract.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": ".agent/memory/project/specs/go-live-probe-pack/contract.yaml",
+   "id": "A5"
+  },
+  {
+   "contract": ".agent/memory/project/specs/home-hero-hover-detail/contract-f1.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": ".agent/memory/project/specs/home-hero-hover-detail/contract-f1.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": ".agent/memory/project/specs/launch-weekend/contract-f4.yaml",
+   "id": "F4-A10"
+  },
+  {
+   "contract": ".agent/memory/project/specs/media-kit-complete/contract-f1.yaml",
+   "id": "A8"
+  },
+  {
+   "contract": ".agent/memory/project/specs/menu-system-layout4/contract-f1.yaml",
+   "id": "A6"
+  },
+  {
+   "contract": ".agent/memory/project/specs/menu-system-layout4/contract-f11.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": ".agent/memory/project/specs/menu-system-layout4/contract-f11.yaml",
+   "id": "A2b"
+  },
+  {
+   "contract": ".agent/memory/project/specs/menu-system-layout4/contract-f11.yaml",
+   "id": "A2c"
+  },
+  {
+   "contract": ".agent/memory/project/specs/menu-system-layout4/contract-f11.yaml",
+   "id": "A4"
+  },
+  {
+   "contract": ".agent/memory/project/specs/menu-system-layout4/contract-f11.yaml",
+   "id": "A5"
+  },
+  {
+   "contract": ".agent/memory/project/specs/menu-system-layout4/contract-f11.yaml",
+   "id": "A8"
+  },
+  {
+   "contract": ".agent/memory/project/specs/national-show-ia-alignment/contract-f10.yaml",
+   "id": "B0_SCRIPT_EXISTS"
+  },
+  {
+   "contract": ".agent/memory/project/specs/national-show-ia-alignment/contract-f12.yaml",
+   "id": "D41"
+  },
+  {
+   "contract": ".agent/memory/project/specs/national-show-ia-alignment/contract-f24.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": ".agent/memory/project/specs/national-show-ia-alignment/contract-f24.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": ".agent/memory/project/specs/national-show-ia-alignment/contract-f24.yaml",
+   "id": "A4"
+  },
+  {
+   "contract": ".agent/memory/project/specs/national-show-ia-alignment/contract-f24.yaml",
+   "id": "A5"
+  },
+  {
+   "contract": ".agent/memory/project/specs/national-show-ia-alignment/contract-f24.yaml",
+   "id": "A8b"
+  },
+  {
+   "contract": ".agent/memory/project/specs/national-show-ia-alignment/contract-m1.yaml",
+   "id": "A0_SCRIPT_EXISTS"
+  },
+  {
+   "contract": ".agent/memory/project/specs/national-show-ia-alignment/contract-m1.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": ".agent/memory/project/specs/national-show-ia-alignment/contract-m1.yaml",
+   "id": "A35"
+  },
+  {
+   "contract": ".agent/memory/project/specs/national-show-ticket-router/contract-f1.yaml",
+   "id": "A14"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nav-focus-underline/contract-f1.yaml",
+   "id": "A16"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nav-focus-underline/contract-f2.yaml",
+   "id": "B9"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nos-design-system/contract-m6.yaml",
+   "id": "B5"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nos-design-system/contract-m7.yaml",
+   "id": "A0_SCRIPT_EXISTS"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nos-design-system/contract-m7.yaml",
+   "id": "A12"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nos-design-system/contract-m7.yaml",
+   "id": "A46"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nos-design-system/contract-m7.yaml",
+   "id": "A47"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nos-design-system/contract-m7.yaml",
+   "id": "A48"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nos-design-system/contract-m8.yaml",
+   "id": "A22"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nos-design-system/contract-m8.yaml",
+   "id": "A44"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nos-lane-c/contract.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nos-security-tiered-access/sec-03/contract.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nos-security-tiered-access/sec-03/contract.yaml",
+   "id": "A11"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nos-security-tiered-access/sec-03/contract.yaml",
+   "id": "A12"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nos-security-tiered-access/sec-03/contract.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nos-security-tiered-access/sec-03/contract.yaml",
+   "id": "A6"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nos-site-split/contract.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nos-site-split/contract.yaml",
+   "id": "A11"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nos-site-split/contract.yaml",
+   "id": "A12"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nos-site-split/contract.yaml",
+   "id": "A13"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nos-site-split/contract.yaml",
+   "id": "A14"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nos-site-split/contract.yaml",
+   "id": "A18"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nos-site-split/contract.yaml",
+   "id": "A19"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nos-site-split/contract.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nos-site-split/contract.yaml",
+   "id": "A21"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nos-site-split/contract.yaml",
+   "id": "A27"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nos-site-split/contract.yaml",
+   "id": "A4"
+  },
+  {
+   "contract": ".agent/memory/project/specs/orchid-photo-refresh/contract-f1.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ozow-sandbox-toggle/contract-m1-f1.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": ".agent/memory/project/specs/photo-credits/contract-f1.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": ".agent/memory/project/specs/prove-ticket-purchase-works-end-to-end-b/contract-f1.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": ".agent/memory/project/specs/prove-ticket-purchase-works-end-to-end-b/contract-f1.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": ".agent/memory/project/specs/prove-ticket-purchase-works-end-to-end-b/contract-f1.yaml",
+   "id": "A8"
+  },
+  {
+   "contract": ".agent/memory/project/specs/registration-forms/contract.yaml",
+   "id": "A10"
+  },
+  {
+   "contract": ".agent/memory/project/specs/reply-to-header-fix/contract-f1.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": ".agent/memory/project/specs/reply-to-header-fix/contract-f1.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": ".agent/memory/project/specs/reply-to-header-fix/contract-f1.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": ".agent/memory/project/specs/reply-to-header-fix/contract-f1.yaml",
+   "id": "A7"
+  },
+  {
+   "contract": ".agent/memory/project/specs/reply-to-header-fix/contract-f1.yaml",
+   "id": "A9"
+  },
+  {
+   "contract": ".agent/memory/project/specs/saoc-emblem-lockup/contract-f1.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": ".agent/memory/project/specs/saoc-functionality-fixes/event-submit-validation/contract.yaml",
+   "id": "A4"
+  },
+  {
+   "contract": ".agent/memory/project/specs/site-content-alignment/contract-f2.yaml",
+   "id": "A14"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticket-email-samples/contract.yaml",
+   "id": "A14"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticket-email-samples/contract.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticket-onsale-predicate/contract-f1.yaml",
+   "id": "A13"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticket-pdf/contract-f1.yaml",
+   "id": "A16"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticketing-complete/contract-f2.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticketing-complete/contract-f2.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticketing-complete/contract-f2.yaml",
+   "id": "A6"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticketing-complete/contract-f6.yaml",
+   "id": "A13"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticketing-complete/contract-f6.yaml",
+   "id": "A15"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticketing-complete/contract-f6.yaml",
+   "id": "A16"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticketing-complete/contract-f6.yaml",
+   "id": "A7"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticketing-complete/contract-f7.yaml",
+   "id": "A10"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticketing-complete/contract-f7.yaml",
+   "id": "A11"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticketing-complete/contract-f7.yaml",
+   "id": "A13"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticketing-complete/contract-f7.yaml",
+   "id": "A16"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticketing-complete/contract-f7.yaml",
+   "id": "A22"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticketing-complete/contract-f7.yaml",
+   "id": "A6"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticketing-complete/contract-f7.yaml",
+   "id": "A7"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticketing-conferences-and-events/contract-f1.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticketing-conferences-and-events/contract-f3-purchase-pages.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticketing-conferences-and-events/contract-f3-purchase-pages.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticketing-conferences-and-events/contract-f4-nav-wiring.yaml",
+   "id": "A7"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticketing-conferences-and-events/contract-f5-checkout.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticketing-conferences-and-events/contract-f5-checkout.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticketing-conferences-and-events/contract-f5-checkout.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticketing-conferences-and-events/contract-f5-checkout.yaml",
+   "id": "A4"
+  },
+  {
+   "contract": ".agent/memory/project/specs/vendor-form-copy-20261007/contract-f2.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": ".agent/memory/project/specs/vendor-form-copy-20261007/contract-f2.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": ".agent/memory/project/specs/vendor-form-copy-20261007/contract-f2.yaml",
+   "id": "A6"
+  },
+  {
+   "contract": ".agent/memory/project/specs/vendor-form-maxlength-and-phone-pattern/contract-f1.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": ".agent/memory/project/specs/vendor-page-fixes/contract-f1.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": ".agent/memory/project/specs/vendor-page-fixes/contract-f1.yaml",
+   "id": "A10"
+  },
+  {
+   "contract": ".agent/memory/project/specs/vendor-page-fixes/contract-f1.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": ".agent/memory/project/specs/vendor-page-fixes/contract-f1.yaml",
+   "id": "A9"
+  },
+  {
+   "contract": ".agent/memory/project/specs/verification-triad-gate/contract-f1.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": ".agent/memory/project/specs/verification-triad-gate/contract-f1.yaml",
+   "id": "A4"
+  },
+  {
+   "contract": ".agent/memory/project/specs/verify-reservation-release-path/contract-f2.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": "contract-a6-wiring.yaml",
+   "id": "A6a"
+  },
+  {
+   "contract": "contract-a6-wiring.yaml",
+   "id": "A6b"
+  },
+  {
+   "contract": "contract-a6-wiring.yaml",
+   "id": "A6c1"
+  },
+  {
+   "contract": "contract-a6-wiring.yaml",
+   "id": "A6c2"
+  },
+  {
+   "contract": "contract-a6-wiring.yaml",
+   "id": "A6c3"
+  },
+  {
+   "contract": "contract-a6-wiring.yaml",
+   "id": "A6c4"
+  },
+  {
+   "contract": "contract-a6-wiring.yaml",
+   "id": "A6c5"
+  },
+  {
+   "contract": "contract-a6-wiring.yaml",
+   "id": "A6d"
+  },
+  {
+   "contract": "contract-a6-wiring.yaml",
+   "id": "A6e"
+  },
+  {
+   "contract": "contract-a6-wiring.yaml",
+   "id": "A6f"
+  },
+  {
+   "contract": "contract-a7-firebase.yaml",
+   "id": "A7a"
+  },
+  {
+   "contract": "contract-a7-firebase.yaml",
+   "id": "A7b"
+  },
+  {
+   "contract": "contract-a7-firebase.yaml",
+   "id": "A7d"
+  },
+  {
+   "contract": "contracts/contract-admin-vendor-listing-serialization.yaml",
+   "id": "A10"
+  },
+  {
+   "contract": "contracts/contract-admin-vendor-listing-serialization.yaml",
+   "id": "A11"
+  },
+  {
+   "contract": "contracts/contract-build-without-secrets.yaml",
+   "id": "A8"
+  },
+  {
+   "contract": "contracts/contract-dataset-residue-guard.yaml",
+   "id": "A10"
+  },
+  {
+   "contract": "contracts/contract-dataset-residue-guard.yaml",
+   "id": "A5"
+  },
+  {
+   "contract": "contracts/contract-dataset-residue-guard.yaml",
+   "id": "A6"
+  },
+  {
+   "contract": "contracts/contract-door-test-qr-seeder.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": "contracts/contract-dotenv-supply-chain-f1.yaml",
+   "id": "A4"
+  },
+  {
+   "contract": "contracts/contract-f1-hero-keys.yaml",
+   "id": "A4"
+  },
+  {
+   "contract": "contracts/contract-fictional-test-show.yaml",
+   "id": "A10"
+  },
+  {
+   "contract": "contracts/contract-firestore-residue-guard.yaml",
+   "id": "A5"
+  },
+  {
+   "contract": "contracts/contract-firestore-residue-guard.yaml",
+   "id": "A6"
+  },
+  {
+   "contract": "contracts/contract-firestore-residue-guard.yaml",
+   "id": "A8"
+  },
+  {
+   "contract": "contracts/contract-payfast-m1-lock-cleanup-fix.yaml",
+   "id": "A1-CONSTANTS-EXPORTED"
+  },
+  {
+   "contract": "contracts/contract-payfast-m1-lock-cleanup-fix.yaml",
+   "id": "A11-SENTINEL-MODULE-EXISTS"
+  },
+  {
+   "contract": "contracts/contract-payfast-m1-lock-cleanup-fix.yaml",
+   "id": "A12-BOTH-SUITES-IMPORT"
+  },
+  {
+   "contract": "contracts/contract-payfast-m1-lock-cleanup-fix.yaml",
+   "id": "A13-SCANNER-DERIVES-PATTERNS"
+  },
+  {
+   "contract": "contracts/contract-payfast-m1-lock-cleanup-fix.yaml",
+   "id": "A16-COMPARATOR-REPLACED"
+  },
+  {
+   "contract": "contracts/contract-payfast-m1-lock-cleanup-fix.yaml",
+   "id": "A18-A34-IMPOSES-OWN-TIMEOUT"
+  },
+  {
+   "contract": "contracts/contract-payfast-m1-lock-cleanup-fix.yaml",
+   "id": "A5-MANIFEST-EXPORTS"
+  },
+  {
+   "contract": "contracts/contract-payfast-m1-lock-cleanup-fix.yaml",
+   "id": "A7-PREFLIGHT-BEFORE-LOCK"
+  },
+  {
+   "contract": "contracts/contract-payfast-m1-lock-cleanup-fix.yaml",
+   "id": "A8-CLEAR-AFTER-RESIDUE-CHECK"
+  },
+  {
+   "contract": "contracts/contract-payfast-m1-lock-cleanup-fix.yaml",
+   "id": "A9-DECOY-FIXTURE-EXISTS"
+  },
+  {
+   "contract": "contracts/contract-payfast-m1-residue-cleanup.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": "contracts/contract-payfast-m1-residue-cleanup.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": "contracts/contract-payfast-m1.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": "contracts/contract-payfast-m1.yaml",
+   "id": "A10"
+  },
+  {
+   "contract": "contracts/contract-payfast-m1.yaml",
+   "id": "A11"
+  },
+  {
+   "contract": "contracts/contract-payfast-m1.yaml",
+   "id": "A12"
+  },
+  {
+   "contract": "contracts/contract-payfast-m1.yaml",
+   "id": "A13"
+  },
+  {
+   "contract": "contracts/contract-payfast-m1.yaml",
+   "id": "A16"
+  },
+  {
+   "contract": "contracts/contract-payfast-m1.yaml",
+   "id": "A17"
+  },
+  {
+   "contract": "contracts/contract-payfast-m1.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": "contracts/contract-payfast-m1.yaml",
+   "id": "A28"
+  },
+  {
+   "contract": "contracts/contract-payfast-m1.yaml",
+   "id": "A29"
+  },
+  {
+   "contract": "contracts/contract-payfast-m1.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": "contracts/contract-payfast-m1.yaml",
+   "id": "A4"
+  },
+  {
+   "contract": "contracts/contract-payfast-m1.yaml",
+   "id": "A7"
+  },
+  {
+   "contract": "contracts/contract-payfast-m1.yaml",
+   "id": "A8"
+  },
+  {
+   "contract": "contracts/contract-payfast-m1.yaml",
+   "id": "A9"
+  },
+  {
+   "contract": "contracts/contract-production-blockers-f3-studio-active-show-guard.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": "contracts/contract-production-blockers-f4-itn-check-repoint.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": "contracts/contract-production-blockers-f4-itn-check-repoint.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": "contracts/contract-production-blockers-f4-itn-check-repoint.yaml",
+   "id": "A4"
+  },
+  {
+   "contract": "contracts/contract-production-blockers-f4-itn-check-repoint.yaml",
+   "id": "A5"
+  },
+  {
+   "contract": "contracts/contract-production-blockers-f4-itn-check-repoint.yaml",
+   "id": "A6"
+  },
+  {
+   "contract": "contracts/contract-show-exhibitor-info.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": "contracts/contract-show-exhibitor-info.yaml",
+   "id": "A10"
+  },
+  {
+   "contract": "contracts/contract-show-exhibitor-info.yaml",
+   "id": "A11"
+  },
+  {
+   "contract": "contracts/contract-show-exhibitor-info.yaml",
+   "id": "A13"
+  },
+  {
+   "contract": "contracts/contract-show-exhibitor-info.yaml",
+   "id": "A14"
+  },
+  {
+   "contract": "contracts/contract-show-exhibitor-info.yaml",
+   "id": "A15"
+  },
+  {
+   "contract": "contracts/contract-show-exhibitor-info.yaml",
+   "id": "A18"
+  },
+  {
+   "contract": "contracts/contract-show-exhibitor-info.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": "contracts/contract-show-exhibitor-info.yaml",
+   "id": "A21"
+  },
+  {
+   "contract": "contracts/contract-show-exhibitor-info.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": "contracts/contract-show-exhibitor-info.yaml",
+   "id": "A4"
+  },
+  {
+   "contract": "contracts/contract-show-exhibitor-info.yaml",
+   "id": "A45"
+  },
+  {
+   "contract": "contracts/contract-show-exhibitor-info.yaml",
+   "id": "A5"
+  },
+  {
+   "contract": "contracts/contract-show-exhibitor-info.yaml",
+   "id": "A7"
+  },
+  {
+   "contract": "contracts/contract-show-exhibitor-info.yaml",
+   "id": "A8"
+  },
+  {
+   "contract": "contracts/contract-show-exhibitor-info.yaml",
+   "id": "A9"
+  },
+  {
+   "contract": "contracts/contract-show-visitor-info.yaml",
+   "id": "A10"
+  },
+  {
+   "contract": "contracts/contract-show-visitor-info.yaml",
+   "id": "A12"
+  },
+  {
+   "contract": "contracts/contract-show-visitor-info.yaml",
+   "id": "A15"
+  },
+  {
+   "contract": "contracts/contract-show-visitor-info.yaml",
+   "id": "A17"
+  },
+  {
+   "contract": "contracts/contract-show-visitor-info.yaml",
+   "id": "A18"
+  },
+  {
+   "contract": "contracts/contract-show-visitor-info.yaml",
+   "id": "A5"
+  },
+  {
+   "contract": "contracts/contract-show-visitor-info.yaml",
+   "id": "A51"
+  },
+  {
+   "contract": "contracts/contract-show-visitor-info.yaml",
+   "id": "A52"
+  },
+  {
+   "contract": "contracts/contract-show-visitor-info.yaml",
+   "id": "A6"
+  },
+  {
+   "contract": "contracts/contract-show-visitor-info.yaml",
+   "id": "A62"
+  },
+  {
+   "contract": "contracts/contract-show-visitor-info.yaml",
+   "id": "A7"
+  },
+  {
+   "contract": "contracts/contract-show-visitor-info.yaml",
+   "id": "A70"
+  },
+  {
+   "contract": "contracts/contract-show-visitor-info.yaml",
+   "id": "A71"
+  },
+  {
+   "contract": "contracts/contract-show-visitor-info.yaml",
+   "id": "A72"
+  },
+  {
+   "contract": "contracts/contract-show-visitor-info.yaml",
+   "id": "A73"
+  },
+  {
+   "contract": "contracts/contract-show-visitor-info.yaml",
+   "id": "A75"
+  },
+  {
+   "contract": "contracts/contract-show-visitor-info.yaml",
+   "id": "A9"
+  },
+  {
+   "contract": "contracts/contract-ticketing-hardening.yaml",
+   "id": "A30"
+  },
+  {
+   "contract": "contracts/contract-ticketing-hardening.yaml",
+   "id": "A35"
+  },
+  {
+   "contract": "contracts/contract-ticketing-hardening.yaml",
+   "id": "A36"
+  },
+  {
+   "contract": "contracts/contract-ticketing-m1-m2.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": "contracts/contract-ticketing-m1-m2.yaml",
+   "id": "A11"
+  },
+  {
+   "contract": "contracts/contract-ticketing-m1-m2.yaml",
+   "id": "A12"
+  },
+  {
+   "contract": "contracts/contract-ticketing-m1-m2.yaml",
+   "id": "A13"
+  },
+  {
+   "contract": "contracts/contract-ticketing-m1-m2.yaml",
+   "id": "A17"
+  },
+  {
+   "contract": "contracts/contract-ticketing-m1-m2.yaml",
+   "id": "A18"
+  },
+  {
+   "contract": "contracts/contract-ticketing-m1-m2.yaml",
+   "id": "A20"
+  },
+  {
+   "contract": "contracts/contract-ticketing-m1-m2.yaml",
+   "id": "A22"
+  },
+  {
+   "contract": "contracts/contract-ticketing-m1-m2.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": "contracts/contract-ticketing-m1-m2.yaml",
+   "id": "A38"
+  },
+  {
+   "contract": "contracts/contract-ticketing-m1-m2.yaml",
+   "id": "A39"
+  },
+  {
+   "contract": "contracts/contract-ticketing-m1-m2.yaml",
+   "id": "A4"
+  },
+  {
+   "contract": "contracts/contract-ticketing-m1-m2.yaml",
+   "id": "A40"
+  },
+  {
+   "contract": "contracts/contract-ticketing-m1-m2.yaml",
+   "id": "A41"
+  },
+  {
+   "contract": "contracts/contract-ticketing-m1-m2.yaml",
+   "id": "A5"
+  },
+  {
+   "contract": "contracts/contract-ticketing-m1-m2.yaml",
+   "id": "A6"
+  },
+  {
+   "contract": "contracts/contract-ticketing-m1-m2.yaml",
+   "id": "A7"
+  },
+  {
+   "contract": "contracts/contract-ticketing-m1-m2.yaml",
+   "id": "A8"
+  },
+  {
+   "contract": "contracts/contract-ticketing-m1-m2.yaml",
+   "id": "A9"
+  },
+  {
+   "contract": "contracts/contract-vendor-f6-review-workflow.yaml",
+   "id": "A10"
+  },
+  {
+   "contract": "contracts/contract-vendor-f7-payment-path.yaml",
+   "id": "A11"
+  },
+  {
+   "contract": "contracts/contract-vendor-f7-payment-path.yaml",
+   "id": "A4"
+  },
+  {
+   "contract": "contracts/contract-vendor-f8-approval-email.yaml",
+   "id": "A7"
+  },
+  {
+   "contract": "contracts/contract-vendor-flow-notifications.yaml",
+   "id": "A8"
+  },
+  {
+   "contract": "contracts/contract-vendor-gated-registration-flow.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": "contracts/contract-vendor-gated-registration-flow.yaml",
+   "id": "A11"
+  },
+  {
+   "contract": "contracts/contract-vendor-gated-registration-flow.yaml",
+   "id": "A12"
+  },
+  {
+   "contract": "contracts/contract-vendor-gated-registration-flow.yaml",
+   "id": "A13"
+  },
+  {
+   "contract": "contracts/contract-vendor-gated-registration-flow.yaml",
+   "id": "A23"
+  },
+  {
+   "contract": "contracts/contract-vendor-gated-registration-flow.yaml",
+   "id": "A28"
+  },
+  {
+   "contract": "contracts/contract-vendor-gated-registration-flow.yaml",
+   "id": "A33"
+  },
+  {
+   "contract": "contracts/contract-vendor-gated-registration-flow.yaml",
+   "id": "A34"
+  },
+  {
+   "contract": "contracts/contract-vendor-gated-registration-flow.yaml",
+   "id": "A42"
+  },
+  {
+   "contract": "contracts/contract-vendor-gated-registration-flow.yaml",
+   "id": "A9"
+  },
+  {
+   "contract": "contracts/contract-vendor-stand-payment-confirm-gate.yaml",
+   "id": "A2"
   }
  ]
 }
