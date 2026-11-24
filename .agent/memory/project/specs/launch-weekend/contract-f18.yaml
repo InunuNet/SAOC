@@ -14,7 +14,7 @@ features:
   name: 'Workshop sessions after the F18b audit passes - brochure tiles, presenters, #sessions and session cards, /national-show/workshops on them (A33, A34)'
   status: pending
 # SPEC: goldens/f18/f18-spec.md (read it first; sections 3 and 4 are the contract of hooks and props the checks drive).
-# GATE: cwd = the implementation worktree (branch from main bcf8684b (NOS batch 2 merged; was 63f3e74d) with spec/lw-f18 merged in, so goldens/f18 and contracts/checks/launch-weekend/f18 exist). Export F18_BASE_REF=bcf8684b (A10 and A11 refuse to run without it). A10 itself diffs against merge-base(HEAD, main) (F18_MAIN_REF overrides main), so main files merged in, such as F19, are not scope.
+# GATE: cwd = the implementation worktree (branch from main bcf8684b (NOS batch 2 merged; was 63f3e74d) with spec/lw-f18 merged in, so goldens/f18 and contracts/checks/launch-weekend/f18 exist). Export F18_BASE_REF=bcf8684b (A11 refuses to run without it; A10 no longer needs it, its diff guards were retired 2026-11-22).
 # BASE_URL = a PUBLIC production build of that worktree on port 3672: `SITE_PUBLIC_LAUNCH=true pnpm run build && SITE_PUBLIC_LAUNCH=true pnpm exec next start -p 3672` (never raw next build: the image variants must exist; a fresh worktree can fail once on a Google Fonts flake, re-run). Stop by exact PID (lsof -ti tcp:3672 -sTCP:LISTEN). Do not rebuild while it runs. Ports 3670-3679 only.
 # Runtime checks read the CMS READ-ONLY. Live content decides which routes hold, so A4, A5, A24, A27 and A28 (render level) are the deterministic proof; A1-A3, A6, A7, A29 prove the build.
 # The spec branch already amends check-f3-imagery, F17 check-h and F17 check-f-sponsors and rebases check-labels-static (goldens/f18/supersession.json). The dev must not edit any check or golden.
@@ -67,8 +67,12 @@ assertions:
     description: No builder-brief lede (the nine dropped summaries) appears anywhere in the public server HTML of any NOS route (hero, meta, og, JSON-LD)
     command: NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f18/check-g-ledes.mjs
   - id: F18-A10
-    description: 'Scope - only allowlisted files change (no nav-config, footer-data, UtilityBar (site-77), NOS header components, vendor components, content/ or sanity/, no app/api, gateway or order library), no new binary image asset, no hex in components or CSS (the seven stub colours live in a lib/data constant), rgba only on drop-shadow / --t-rule / --t-edge inside the keepsake paths, no box-shadow, R84 motion only inside components/tickets/keepsake/ and the F18-KEEPSAKE block of nos-structure.css (keyframes only inside prefers-reduced-motion: no-preference, durations only 120/150/200/300/360/1100ms) with negative probes, no new user-visible sentence outside the base tree, strings-allowed.json and v13-copy.json, the archive TBC card has no width cap'
-    command: node --import tsx/esm contracts/checks/launch-weekend/f18/check-j-archive-scope.mjs
+    description: The archive TBC card has no width cap (no max-w-* on the card or its wrapper in app/(nos)/national-show/archive/page.tsx)
+    # RETIRED 2026-11-22 (lead ruling), the point-in-time part of A10: the scope and no-invention diff guards against
+    # merge-base(HEAD, main) / F18_BASE_REF (file allowlist and forbidden paths, no new binary image asset, no hex / rgb / font
+    # family / box-shadow / emoji or motion in added lines, no new user-visible sentence outside the base tree). They only
+    # described the F18 branch while it was open; on main they failed on unrelated later edits. The archive rule remains.
+    command: node contracts/checks/launch-weekend/f18/check-j-archive-scope.mjs
   - id: F18-A11
     description: 'Critique evidence - fresh PNGs of the page routes at 390 and 1280 and of the keepsake ticket routes at 390, 701, 960, 1280 and 1920, newer than the last source edit, f18-critique-log.md with >=2 impeccable passes (390, 1280) each critiqued against v13-tickets.html, a final pass P0 0, P1 0, P2 0, Score >= 36/40 (gate floor; aim 39, iterate uncapped) and a "design-cb audit: PASS" line against F18B-AUDIT-CHECKLIST.md'
     command: node --import tsx/esm contracts/checks/launch-weekend/f18/check-k-critique-artefacts.mjs

@@ -1,0 +1,317 @@
+{
+ "schema": "saoc.static-gate-allowlist/v1",
+ "assertions": [
+  {
+   "contract": "contracts/contract-vendor-flow-notifications.yaml",
+   "id": "A5"
+  },
+  {
+   "contract": "contracts/contract-vendor-flow-notifications.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": "contracts/contract-vendor-flow-notifications.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": "contracts/contract-payment-seam-f2.yaml",
+   "id": "A4"
+  },
+  {
+   "contract": "contracts/contract-payment-seam-f2.yaml",
+   "id": "A10"
+  },
+  {
+   "contract": "contracts/contract-payment-seam-f2.yaml",
+   "id": "A9"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ozow-payment-provider/contract-m1-f2.yaml",
+   "id": "A4b"
+  },
+  {
+   "contract": "contracts/f2-deploy-next16.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": "contracts/f2-deploy-next16.yaml",
+   "id": "A4"
+  },
+  {
+   "contract": ".agent/memory/project/specs/beta-password-wall/contract-f2.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": ".agent/memory/project/specs/beta-password-wall/contract-f2.yaml",
+   "id": "A2b"
+  },
+  {
+   "contract": "contracts/contract-ticketing-f4-admission-products.yaml",
+   "id": "A6"
+  },
+  {
+   "contract": "contracts/contract-ticketing-f5-day-attendees.yaml",
+   "id": "A6"
+  },
+  {
+   "contract": "contracts/contract-ticketing-f5-day-attendees.yaml",
+   "id": "A11"
+  },
+  {
+   "contract": "contracts/contract-ticketing-f5-day-attendees.yaml",
+   "id": "A14"
+  },
+  {
+   "contract": ".agent/memory/project/specs/polish-wave-2-2026-10-25/contract-f8.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": ".agent/memory/project/specs/vendor-flow-fixes/contract-f2.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": ".agent/memory/project/specs/vendor-flow-fixes/contract-f2.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": ".agent/memory/project/specs/launch-weekend/contract-f8.yaml",
+   "id": "F8-A8"
+  },
+  {
+   "contract": ".agent/memory/project/specs/launch-weekend/contract-f18.yaml",
+   "id": "F18-A10"
+  },
+  {
+   "contract": ".agent/memory/project/specs/audit-fixes-2026-10-25/contract-f1.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": ".agent/memory/project/specs/audit-fixes-2026-10-25/contract-f1.yaml",
+   "id": "A9"
+  },
+  {
+   "contract": ".agent/memory/project/specs/admin-signout-revocation/contract-f1.yaml",
+   "id": "A5"
+  },
+  {
+   "contract": ".agent/memory/project/specs/conference-workshop-tickets/contract-f3.yaml",
+   "id": "A22"
+  },
+  {
+   "contract": ".agent/memory/project/specs/conference-workshop-tickets/contract-f4.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": ".agent/memory/project/specs/conference-workshop-tickets/contract-f4.yaml",
+   "id": "A5"
+  },
+  {
+   "contract": ".agent/memory/project/specs/conference-workshop-tickets/contract-f4.yaml",
+   "id": "A13"
+  },
+  {
+   "contract": ".agent/memory/project/specs/conference-workshop-tickets/contract-f4.yaml",
+   "id": "A23"
+  },
+  {
+   "contract": ".agent/memory/project/specs/conference-workshop-tickets/contract-f4.yaml",
+   "id": "A24"
+  },
+  {
+   "contract": ".agent/memory/project/specs/gateway-picker-admin-only/contract-f1.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": ".agent/memory/project/specs/gateway-picker-admin-only/contract-f1.yaml",
+   "id": "A4"
+  },
+  {
+   "contract": ".agent/memory/project/specs/gateway-picker-admin-only/contract-f1.yaml",
+   "id": "A5"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ozow-sandbox-toggle/contract-m1-f1.yaml",
+   "id": "A4"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ozow-sandbox-toggle/contract-m1-f1.yaml",
+   "id": "A5"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ozow-sandbox-toggle/contract-m1-f1.yaml",
+   "id": "A6"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ozow-sandbox-toggle/contract-m1-f1.yaml",
+   "id": "A10"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ozow-sandbox-toggle/contract-m1-f1.yaml",
+   "id": "A11"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ozow-sandbox-toggle/contract-m1-f1.yaml",
+   "id": "A12"
+  },
+  {
+   "contract": ".agent/memory/project/specs/go-live-prep/f2-ozow-residue/contract-f2.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": ".agent/memory/project/specs/vendor-flow-fixes/contract-f4.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": ".agent/memory/project/specs/vendor-flow-fixes/contract-f4.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": ".agent/memory/project/specs/vendor-flow-fixes/contract-f4.yaml",
+   "id": "A6"
+  },
+  {
+   "contract": ".agent/memory/project/specs/vendor-form-client-validation-gate/contract-f1.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": ".agent/memory/project/specs/vendor-form-client-validation-gate/contract-f1.yaml",
+   "id": "A5"
+  },
+  {
+   "contract": ".agent/memory/project/specs/vendorcategory-aria-required-enforcement/contract-f1.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": ".agent/memory/project/specs/vendorcategory-aria-required-enforcement/contract-f1.yaml",
+   "id": "A4"
+  },
+  {
+   "contract": ".agent/memory/project/specs/polish-wave-2026-10-25/contract-f1.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": ".agent/memory/project/specs/polish-wave-2026-10-25/contract-f3.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": ".agent/memory/project/specs/polish-wave-2026-10-25/contract-f6.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": ".agent/memory/project/specs/polish-wave-2026-10-25/contract-f7.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": ".agent/memory/project/specs/polish-wave-2026-10-25/contract-f8.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": ".agent/memory/project/specs/polish-wave-2-2026-10-25/contract-f4.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": ".agent/memory/project/specs/polish-wave-2-2026-10-25/contract-f7.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticketing-flow-redesign/contract-f1.yaml",
+   "id": "A8"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticketing-conferences-and-events/contract-f5-checkout.yaml",
+   "id": "A11"
+  },
+  {
+   "contract": "contracts/contract-vendor-f9-permit-posture.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": "contracts/contract-vendor-f9-permit-posture.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": "contracts/contract-vendor-payment-confirmation.yaml",
+   "id": "A5"
+  },
+  {
+   "contract": "contracts/contract-vendor-payment-confirmation.yaml",
+   "id": "A6"
+  },
+  {
+   "contract": "contracts/contract-payment-seam-f1.yaml",
+   "id": "A9"
+  },
+  {
+   "contract": "contracts/contract-ticketing-checkout-orders.yaml",
+   "id": "A4"
+  },
+  {
+   "contract": "contracts/contract-ticketing-checkout-orders.yaml",
+   "id": "A6"
+  },
+  {
+   "contract": "contracts/contract-production-blockers-f5-self-signup-guard.yaml",
+   "id": "A-STRUCT-01"
+  },
+  {
+   "contract": "contracts/contract-production-blockers-f5-self-signup-guard.yaml",
+   "id": "A-STRUCT-03"
+  },
+  {
+   "contract": "contracts/contract-admin-auth-f3-provisioning.yaml",
+   "id": "A-STRUCT-01"
+  },
+  {
+   "contract": "contracts/contract-ticketing-f3-admin-roles.yaml",
+   "id": "A8"
+  },
+  {
+   "contract": "contracts/contract-build-without-secrets.yaml",
+   "id": "A5"
+  },
+  {
+   "contract": "contracts/contract-dataset-residue-guard.yaml",
+   "id": "A15"
+  },
+  {
+   "contract": "contracts/contract-firestore-residue-guard.yaml",
+   "id": "A14"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nos-site-split/contract.yaml",
+   "id": "A3"
+  },
+  {
+   "contract": ".agent/memory/project/specs/nos-site-split/contract.yaml",
+   "id": "A15"
+  },
+  {
+   "contract": ".agent/memory/project/specs/confirmation-page-qr-and-download/contract-f1.yaml",
+   "id": "A4"
+  },
+  {
+   "contract": ".agent/memory/project/specs/ticket-pdf/contract-f1.yaml",
+   "id": "A14"
+  },
+  {
+   "contract": "contracts/contract-admin-vendor-listing-serialization.yaml",
+   "id": "A12"
+  },
+  {
+   "contract": "contracts/contract-admin-vendor-listing-serialization.yaml",
+   "id": "A13"
+  },
+  {
+   "contract": ".agent/memory/project/specs/reply-to-header-fix/contract-f1.yaml",
+   "id": "A5"
+  },
+  {
+   "contract": ".agent/memory/project/specs/reply-to-header-fix/contract-f1.yaml",
+   "id": "A6"
+  },
+  {
+   "contract": ".agent/memory/project/specs/national-show-ticket-router/contract-f1.yaml",
+   "id": "A9"
+  }
+ ]
+}
