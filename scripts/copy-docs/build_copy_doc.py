@@ -20,16 +20,23 @@ never alters it; `check` proves the built docx carries exactly the copy strings 
 Usage (needs python-docx: `python3 -m venv .venv && .venv/bin/pip install python-docx`):
   build_copy_doc.py build copy-docs/source/nos-landing.json copy-docs/nos-landing.docx
   build_copy_doc.py extract copy-docs/nos-landing.docx          # print copy strings, one per line
-  build_copy_doc.py check copy-docs/nos-landing.docx --legacy old-flat.docx
+  build_copy_doc.py check copy-docs/nos-landing.docx --legacy old-flat.docx --source copy-docs/source/nos-landing.json
   build_copy_doc.py check copy-docs/nos-landing.docx --json copy-docs/source/nos-landing.json
+  build_copy_doc.py same a.docx b.docx                          # every zip part byte-identical
+
+Pages live in copy-docs/pages.json (page -> Drive fileId -> source JSON). A page's JSON is filled
+from its legacy Drive doc by scripts/copy-docs/import_legacy.py, using the role map in the JSON.
 
 Source JSON shape:
   {"title": str, "key": [str, ...]?, "sections": [
      {"name": str, "where": str?, "elements": [
         {"role": str, "text": str, "editable": bool, "editedWhere": str|null,
          "style": "heading"|"lead"|"body"|"button"|"link"|"label"|"cardTitle"|"theme",
-         "sameRow": bool?}]}]}
+         "sameRow": bool?, "legacyPara": int?, "legacyPrefix": str?}]}],
+   "legacyCopyHeadings": [str, ...]?}
   `sameRow: true` groups the element under the previous element's role label (a card's title + text).
+  `legacyPara` / `legacyPrefix` are the role map import_legacy.py fills `text` from; the build ignores them.
+  `legacyCopyHeadings`: Heading-styled lines of the legacy doc that are also page copy (not labels).
 
 All formatting lives in the paragraph styles (not on individual runs), so Enter carries it on in
 Word and in Google Docs' Office-compat editor. Only what Google Docs keeps is used: Google Fonts (Fraunces, Karla), bold,
@@ -38,8 +45,10 @@ italic, underline, colour, paragraph shading, paragraph borders, indents. A4 por
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import sys
+import zipfile
 from pathlib import Path
 from typing import TypedDict
 
@@ -62,6 +71,8 @@ class Element(TypedDict, total=False):
     editedWhere: str | None
     style: str
     sameRow: bool
+    legacyPara: int        # role map: index of the legacy doc paragraph this copy is sliced from
+    legacyPrefix: str      # role map: the "Role: " prefix the legacy doc wrote before the copy
 
 
 class Section(TypedDict, total=False):
@@ -348,8 +359,34 @@ def build(src: Path, out: Path) -> None:
     if d.tables:
         raise SystemExit("copy docs must not contain tables")
     out.parent.mkdir(parents=True, exist_ok=True)
-    d.save(str(out))
+    buf = io.BytesIO()
+    d.save(buf)
+    write_reproducible(buf.getvalue(), out)
     print(f"wrote {out}")
+
+
+def write_reproducible(docx_bytes: bytes, out: Path) -> None:
+    """Rewrite the zip with fixed entry timestamps so the same JSON always builds the same bytes."""
+    src = zipfile.ZipFile(io.BytesIO(docx_bytes))
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as dst:
+        for name in src.namelist():
+            info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
+            info.compress_type = zipfile.ZIP_DEFLATED
+            dst.writestr(info, src.read(name))
+
+
+def same_parts(a: Path, b: Path) -> int:
+    """0 when both docx files hold the same parts, in the same order, byte for byte."""
+    za, zb = zipfile.ZipFile(a), zipfile.ZipFile(b)
+    if za.namelist() != zb.namelist():
+        print(f"DIFFERENT part lists: {za.namelist()} vs {zb.namelist()}")
+        return 1
+    bad = [n for n in za.namelist() if za.read(n) != zb.read(n)]
+    for n in bad:
+        print(f"DIFFERENT part: {n}")
+    if not bad:
+        print(f"SAME: {len(za.namelist())} parts byte-identical ({a.name} vs {b.name})")
+    return 1 if bad else 0
 
 
 # ---- extraction and identity check --------------------------------------------------------------
@@ -369,11 +406,14 @@ LEGACY_PREFIXES = (
     "Dates (from show settings): ", "Venue (from show settings): ", "Countdown label: ",
     "Heading: ", "Lede: ", "Lead: ", "Body: ", "Button: ", "Link: ", "Label: ", "Dates: ", "Theme: ",
 )
-# Legacy section headings that are also the section's on-page heading (page copy, not a label).
-LEGACY_COPY_HEADINGS = {"Thirteen judging groups", "Plant Entry for SAOC Members"}
+def legacy_copy_headings(src_json: Path | None) -> set[str]:
+    """Heading-styled legacy lines that are also on-page headings (page copy, not labels); per page."""
+    if src_json is None:
+        return set()
+    return set(json.loads(src_json.read_text(encoding="utf-8")).get("legacyCopyHeadings", []))
 
 
-def extract_legacy(path: Path) -> list[str]:
+def extract_legacy(path: Path, copy_headings: set[str]) -> list[str]:
     d = docx.Document(str(path))
     found: list[str] = []
     for p in d.paragraphs[1:]:      # [0] is the document title
@@ -381,7 +421,7 @@ def extract_legacy(path: Path) -> list[str]:
         if not text:
             continue
         if p.style.name.startswith("Heading"):
-            if text in LEGACY_COPY_HEADINGS:
+            if text in copy_headings:
                 found.append(text)
             continue
         for prefix in LEGACY_PREFIXES:
@@ -397,11 +437,11 @@ def extract_json(path: Path) -> list[str]:
     return [e["text"] for s in data["sections"] for e in s["elements"]]
 
 
-def check(built: Path, legacy: Path | None, src_json: Path | None) -> int:
+def check(built: Path, legacy: Path | None, src_json: Path | None, source: Path | None = None) -> int:
     got = extract_copy(built)
     ref = legacy if legacy is not None else src_json
     assert ref is not None  # argparse makes one of --legacy / --json required
-    want = extract_legacy(ref) if legacy is not None else extract_json(ref)
+    want = extract_legacy(ref, legacy_copy_headings(source)) if legacy is not None else extract_json(ref)
     if got == want:
         print(f"OK: {len(got)} copy strings identical, same order ({built.name} vs {ref.name})")
         return 0
@@ -425,15 +465,23 @@ def main() -> int:
     g = c.add_mutually_exclusive_group(required=True)
     g.add_argument("--legacy", type=Path, help="old flat 'Role: copy' doc")
     g.add_argument("--json", type=Path, help="source JSON")
+    c.add_argument("--source", type=Path, help="with --legacy: the page's source JSON (legacyCopyHeadings)")
+    s = sub.add_parser("same")
+    s.add_argument("a", type=Path)
+    s.add_argument("b", type=Path)
     a = ap.parse_args()
     if a.cmd == "build":
         build(a.source, a.out)
         return 0
     if a.cmd == "extract":
-        for s in extract_copy(a.docx):
-            print(s)
+        for line in extract_copy(a.docx):
+            print(line)
         return 0
-    return check(a.docx, a.legacy, a.json)
+    if a.cmd == "same":
+        return same_parts(a.a, a.b)
+    if a.legacy is not None and a.source is None:
+        print("note: no --source given, so no legacy Heading lines count as copy")
+    return check(a.docx, a.legacy, a.json, a.source)
 
 
 if __name__ == "__main__":

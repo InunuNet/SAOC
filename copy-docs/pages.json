@@ -1,0 +1,10 @@
+{
+  "nos-landing": {
+    "site": "nos",
+    "route": "/national-show",
+    "driveFileId": "1VIHf90ozX20PleXvzpxl6ztbWPZ4r7A3",
+    "driveName": "National Orchid Show Website-Landing Page.docx",
+    "source": "copy-docs/source/nos-landing.json",
+    "built": "copy-docs/nos-landing.docx"
+  }
+}
