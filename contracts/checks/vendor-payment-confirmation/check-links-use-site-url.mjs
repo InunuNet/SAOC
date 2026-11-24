@@ -31,7 +31,7 @@ const REPO_ROOT = path.resolve(__dirname, '../../..');
 // siteUrl variable is ALSO present, since a fixed literal existing alongside a real variable is
 // exactly how the 2026-09-01 hosted.app incident's sibling defects have looked in this project
 // before (see docs/vendor-flow-notifications.md and the golden README's "hosted.app" note).
-const HARDCODED_DOMAIN_PATTERN = /https?:\/\/[a-z0-9.-]+\.(saoc\.co\.za|web\.app|firebaseapp\.com|run\.app)/i;
+const HARDCODED_DOMAIN_PATTERN = /https?:\/\/([a-z0-9-]+\.)*(saoc\.co\.za|web\.app|firebaseapp\.com|run\.app)\b/i;
 
 const KNOWN_BAD_FIXTURE_HARDCODED_SENDER = `
 export async function sendVendorPaymentConfirmationEmail(input, deps = {}) {
@@ -45,10 +45,12 @@ export async function sendVendorPaymentConfirmationEmail(input, deps = {}) {
 }
 `;
 
+// Apex host (no subdomain): the pattern once required a subdomain label and missed this.
+const KNOWN_BAD_FIXTURE_APEX = `const url = 'https://saoc.co.za/national-show';`;
+
 const KNOWN_GOOD_FIXTURE_SENDER = `
-const DEFAULT_SITE_URL = 'https://saoc.co.za';
 function resolveSiteUrl() {
-  return process.env.SITE_URL ?? DEFAULT_SITE_URL;
+  return process.env.SITE_URL ?? '';
 }
 export async function sendVendorPaymentConfirmationEmail(input, deps = {}) {
   const siteUrl = deps.siteUrl ?? resolveSiteUrl();
@@ -87,6 +89,10 @@ function checkEmailTemplate(source) {
 const badSelfTest = checkSenderModule(KNOWN_BAD_FIXTURE_HARDCODED_SENDER);
 if (badSelfTest.clean) {
   console.error('FAIL (self-test): discriminator accepted a KNOWN-BAD hardcoded-domain fixture -- the discriminator itself is broken.');
+  process.exit(1);
+}
+if (checkSenderModule(KNOWN_BAD_FIXTURE_APEX).clean) {
+  console.error('FAIL (self-test): discriminator accepted a KNOWN-BAD apex-domain fixture (https://saoc.co.za) -- the discriminator itself is broken.');
   process.exit(1);
 }
 const goodSelfTest = checkSenderModule(KNOWN_GOOD_FIXTURE_SENDER);
