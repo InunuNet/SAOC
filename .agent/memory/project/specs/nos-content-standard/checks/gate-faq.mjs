@@ -40,10 +40,10 @@ await withServer(3, 'faq', async (server, c) => {
         const hdr = document.querySelector('header'); const hdrSticky = hdr && ['sticky', 'fixed'].includes(getComputedStyle(hdr).position);
         return {
           fq: (() => { const h1 = document.querySelector('h1'); const hero = document.querySelector('section[data-nos-hero]'); const copy = h1?.closest('.nos-hero-copy, [data-nos-hero-copy]') ?? h1?.parentElement;
-            const first = document.querySelector('[data-doc-main] details'); const cat10 = document.getElementById('faq-10'); const l10 = cat10?.querySelector('a[href$="/plan-your-visit"]');
+            const first = document.querySelector('[data-doc-main] details:not([data-faq-jump])'); const cat10 = document.getElementById('faq-10'); const l10 = cat10?.querySelector('a[href$="/plan-your-visit"]');
             const act = document.querySelector('nav[data-doc-index] a[aria-current]'); const a0 = document.querySelector('nav[data-doc-index] a'); const sec = document.querySelector('[data-doc-aside]');
             const h2num = [...document.querySelectorAll('main section[aria-labelledby^="faq-"] > h2, main section[aria-labelledby^="faq-"] h2')].every((h) => /^\d+\.$/.test(h.firstElementChild?.textContent.trim() ?? ''));
-            const qnum = [...document.querySelectorAll('main details > summary')].every((x) => /^\d+\.$/.test(x.firstElementChild?.textContent.trim() ?? ''));
+            const qnum = [...document.querySelectorAll('main details:not([data-faq-jump]) > summary')].every((x) => /^\d+\.$/.test(x.firstElementChild?.textContent.trim() ?? ''));
             const h1s = h1 ? getComputedStyle(h1) : null;
             return { h1: h1?.textContent.trim().replace(/\s+/g, ' '), lede: Boolean(hero?.querySelector('[data-nos-hero-lede]')), crumb: Boolean(copy?.querySelector('nav[aria-label="Breadcrumb"]') || document.querySelector('nav[aria-label="Breadcrumb"]')), facts: Boolean(hero?.querySelector('[data-hero-facts]')),
               firstOpen: Boolean(first?.open), cat10Link: l10 ? l10.textContent.trim() : null, cat10Details: cat10 ? cat10.querySelectorAll('details').length : null, h2num, qnum,
@@ -58,14 +58,14 @@ await withServer(3, 'faq', async (server, c) => {
           links: links.map((a) => ({ href: a.getAttribute('href'), text: a.textContent.trim().replace(/\s+/g, ' ') })),
           inAside: Boolean(aside && aside.querySelector(nav)), navCount: document.querySelectorAll(nav).length,
           cardsPerSection: [...document.querySelectorAll('main section[aria-labelledby^="faq-"]')].map((sec) => sec.querySelectorAll('[data-faq-card]').length),
-          detailsOutsideCard: [...document.querySelectorAll('main details')].filter((d) => !d.closest('[data-faq-card]')).length,
+          detailsOutsideCard: [...document.querySelectorAll('main details:not([data-faq-jump])')].filter((d) => !d.closest('[data-faq-card]')).length,
           cardNested: cards.filter((cd) => cd.querySelector('[data-faq-card]')).length,
           dividers: cards.every((cd) => [...cd.querySelectorAll(':scope li')].slice(1).every((x) => parseFloat(getComputedStyle(x).borderTopWidth) >= 1 || parseFloat(getComputedStyle(x.previousElementSibling).borderBottomWidth) >= 1)),
           legend, summaryPx: sum ? parseFloat(getComputedStyle(sum.querySelector('[data-faq-question]') ?? sum).fontSize) : null,
           summaryH: sum ? r(sum).h : null, rowFill: sum && li ? Math.abs(r(sum).w - r(li).w) <= 2 : null, iconPx: icon ? r(icon).w : null,
           navOx: document.querySelector(`${nav} ul`) ? getComputedStyle(document.querySelector(`${nav} ul`)).overflowX : null,
           navPos: document.querySelector(nav) ? getComputedStyle(document.querySelector(nav).closest('[data-doc-aside]') ?? document.querySelector(nav)).position : null,
-          nativeDetails: document.querySelectorAll('main details > summary').length, sw: document.documentElement.scrollWidth, iw: innerWidth,
+          nativeDetails: document.querySelectorAll('main details:not([data-faq-jump]) > summary').length, sw: document.documentElement.scrollWidth, iw: innerWidth,
         };
       }, NAV);
       c.check(`${tag} exactly one ${NAV}`, s.navCount === 1);

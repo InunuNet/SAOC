@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { JsonLd, faqPageJsonLd, portableTextToPlainText } from '@/components/seo/JsonLd';
+import { FaqJumpCard } from '@/components/show/FaqJumpCard';
 import { ShowFaqList, faqIndexEntries, faqGroups, hasFaqAnswer } from '@/components/show/ShowFaqList';
 import { HoldingState } from '@/components/show/nos/HoldingState';
 import { heroFactsFromShow, NosHero } from '@/components/nos/NosHero';
@@ -89,6 +90,7 @@ export default async function ShowFaqPage() {
         <HoldingState facts={facts} contentState="published" />
       ) : (
         <DocumentLayout index={index}>
+          <FaqJumpCard entries={index} />
           <ShowFaqList
             faqs={visibleFaqs}
             pendingLabel={info?.pendingLabel}
