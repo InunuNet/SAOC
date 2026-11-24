@@ -13,7 +13,11 @@ loads each yaml, takes the assertion's `command`, and runs it with `bash -c` fro
 only `PATH`, `HOME`, `LANG` and `LC_ALL` in the environment (no secret can reach a check). It exits 1
 when an assertion fails or times out (60 s), and also when an allowlisted contract or id no longer
 exists, is not a shell check, or is duplicated: a deleted or renamed assertion cannot silently drop
-out of the gate. Exit 2 means the allowlist itself is unreadable.
+out of the gate. Exit 2 means a config error: the allowlist is unreadable or the wrong shape (not an
+object, wrong schema, `assertions` not a non-empty list, an entry that is not an object with string
+`contract` and `id`, or a duplicate). Each command runs in its own session; on timeout the runner
+kills the whole process group, so no grandchild survives. `python3
+contracts/checks/static-gate/test_run_static_assertions.py` tests both behaviours (CI runs it).
 
 ## Admission rules for an allowlist entry
 
@@ -45,6 +49,10 @@ Red on current main (static, not fixed here): `contracts/contract-payment-seam-f
 (goldens differ from live files), `ticketing-f4-admission-products` A3 (price literals),
 `launch-weekend/contract-f18.yaml` A27 (check q, stale pricing golden), A36 (check z, naming decision) and A30 (check u, broken
 `nos f3lib`, also needs a server).
+
+`beta-password-wall/contract-f2.yaml` A2 was allowlisted at first and removed: it greps
+`.agent/memory/project/backlog.md` (a working notes file), so an ordinary notes edit could turn CI red
+without any code change (admission rule 4: no mutable external file). Its sibling A2b stays.
 
 Green but left out because they are not provably stable or need install: `launch-weekend/contract-f8`
 F8-A1 and `contract-f30` F30-A4 (diff against `origin/main`: PR-scope guards), `contract-f18` A21

@@ -140,7 +140,7 @@ The partner wording ("Shared with the Day Pass") and "The Weekend Pass is now R3
 | A5 | check-e-faq.mts | 3.4 | public build + tsx |
 | A6 | check-f-exhibitors.mts | 3.5 | public build + tsx |
 | A7 | check-g-ledes.mjs | 3.3 live | public build |
-| A10 | check-j-archive-scope.mjs | allowlist, no invention, no new binary image, archive card; R84 motion, hex and shadow rules with negative probes (motion-rules.mjs) | `F18_BASE_REF` |
+| A10 | check-j-archive-scope.mjs | the archive TBC card has no width cap (no `max-w-*` on the card or its wrapper in `app/(nos)/national-show/archive/page.tsx`); the scope and no-invention diff guards were retired 2026-11-22 (PR #250), motion rules live in A32 (`check-w-motion.mjs`) | none |
 | A11 | check-k-critique-artefacts.mjs | impeccable evidence (score >= 36/40 gate floor, aim 39; design-cb audit PASS line): page routes at 390 and 1280, ticket routes at 390, 701, 960, 1280, 1920 | `capture-shots.mjs` |
 | A12 | regression chain | surviving F17, F12, F3 checks | public build |
 | A13 | check-l-supersession.mjs | hygiene recorded and applied | none |

@@ -20,6 +20,7 @@ Exit 0 all passed, 1 any failure or stale entry, 2 usage / parse error.
 import argparse
 import json
 import os
+import signal
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
@@ -31,6 +32,7 @@ ALLOWLIST_SCHEMA = "saoc.static-gate-allowlist/v1"
 DEFAULT_ALLOWLIST = Path(__file__).resolve().parent / "allowlist.json"
 DEFAULT_JOBS = 4
 TIMEOUT_SECONDS = 60
+REAP_SECONDS = 3
 EVIDENCE_CHARS = 400
 KEPT_ENV = ("PATH", "HOME", "LANG", "LC_ALL")
 
@@ -44,6 +46,8 @@ def load_allowlist(path):
         data = json.loads(Path(path).read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
         raise UsageError(f"cannot read allowlist {path}: {type(exc).__name__}: {exc}")
+    if not isinstance(data, dict):
+        raise UsageError(f"allowlist must be a JSON object, got {type(data).__name__}")
     if data.get("schema") != ALLOWLIST_SCHEMA:
         raise UsageError(f"allowlist schema must be {ALLOWLIST_SCHEMA!r}")
     entries = data.get("assertions")
@@ -51,6 +55,8 @@ def load_allowlist(path):
         raise UsageError("allowlist.assertions must be a non-empty list")
     seen = set()
     for entry in entries:
+        if not isinstance(entry, dict):
+            raise UsageError(f"allowlist entry must be an object, got {type(entry).__name__}")
         key = (entry.get("contract"), entry.get("id"))
         if not all(isinstance(part, str) and part for part in key):
             raise UsageError(f"allowlist entry needs string contract and id: {entry!r}")
@@ -89,14 +95,32 @@ def find_command(root, contract, assertion_id, cache):
     return command, None
 
 
+def kill_group(proc):
+    """Kill the assertion's process group and always reap bash; never raise (a timeout stays a timeout)."""
+    try:
+        os.killpg(proc.pid, signal.SIGKILL)
+    except (ProcessLookupError, PermissionError):
+        proc.kill()  # group already gone or not ours to signal: make sure bash itself is dead
+    try:
+        proc.communicate(timeout=REAP_SECONDS)
+    except subprocess.TimeoutExpired:
+        # A grandchild escaped the group (setsid, double fork) and still holds the pipes.
+        proc.stdout.close()
+        proc.stderr.close()
+        proc.wait()
+
+
 def run_command(root, command):
     env = {k: os.environ[k] for k in KEPT_ENV if k in os.environ}
+    # Own session so a timeout can kill bash and every grandchild it spawned (POSIX: Linux, macOS).
+    proc = subprocess.Popen(["bash", "-c", command], cwd=root, env=env, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, text=True, start_new_session=True)
     try:
-        proc = subprocess.run(["bash", "-c", command], cwd=root, env=env, capture_output=True,
-                              text=True, timeout=TIMEOUT_SECONDS)
+        stdout, stderr = proc.communicate(timeout=TIMEOUT_SECONDS)
     except subprocess.TimeoutExpired:
+        kill_group(proc)
         return "timeout", f"timed out after {TIMEOUT_SECONDS}s"
-    evidence = (proc.stdout + proc.stderr).strip()
+    evidence = (stdout + stderr).strip()
     return proc.returncode, evidence[-EVIDENCE_CHARS:]
 
 
