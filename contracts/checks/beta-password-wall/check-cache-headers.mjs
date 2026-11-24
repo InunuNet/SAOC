@@ -41,6 +41,9 @@ import path from 'node:path';
 
 const WALL_CACHE_CONTROL = 'private, no-store, max-age=0';
 const WALL_MARKER_COOKIE_NAME = 'saoc_beta_wall';
+// Authenticated static assets get a private browser cache (perf/wall-asset-browser-cache): the
+// exact value from proxy.ts, never public, never s-maxage, so Cloud CDN still stores nothing.
+const STATIC_BROWSER_CACHE = 'private, max-age=3600';
 const READY_TIMEOUT_MS = 60_000;
 const READY_POLL_MS = 500;
 
@@ -58,7 +61,8 @@ const CACHE_CONTROL_SURVIVES = [
   { kind: 'API route', path: '/api/events.ics' },
   { kind: 'public file', path: '/images/orchid-pink.jpg' },
   { kind: 'favicon', path: '/favicon.ico' },
-  { kind: 'build asset', path: '__STATIC_CHUNK__' },
+  { kind: 'build asset', path: '__STATIC_CHUNK__', browserCache: STATIC_BROWSER_CACHE },
+  { kind: 'image variant', path: '__IMAGE_VARIANT__', browserCache: STATIC_BROWSER_CACHE },
 ];
 
 // Paths where Next overwrites Cache-Control after proxy — protected by the
@@ -175,9 +179,11 @@ async function discoverPaths(baseUrl, authorization) {
   const home = await probe(baseUrl, { path: '/' }, authorization);
   const chunk = home.body.match(/\/_next\/static\/[^"'\s]+\.js/);
   if (!chunk) throw new Error('could not find a /_next/static/*.js reference in the homepage');
+  const variant = home.body.match(/\/images\/_opt\/[^"'\s,]+\.webp/);
+  if (!variant) throw new Error('could not find an /images/_opt/*.webp reference in the homepage');
   const image = home.body.match(/\/_next\/image\?url=https%3A%2F%2Fcdn\.sanity\.io[^"'\s,]+/);
   if (!image) throw new Error('could not find a remote /_next/image reference in the homepage');
-  return { chunk: chunk[0], remoteImage: image[0].replaceAll('&amp;', '&') };
+  return { chunk: chunk[0], variant: variant[0], remoteImage: image[0].replaceAll('&amp;', '&') };
 }
 
 async function checkWalled(appDir, credentials) {
@@ -190,7 +196,7 @@ async function checkWalled(appDir, credentials) {
   });
   try {
     const discovered = await discoverPaths(server.baseUrl, authorization);
-    const placeholders = { __STATIC_CHUNK__: discovered.chunk, __REMOTE_IMAGE__: discovered.remoteImage };
+    const placeholders = { __STATIC_CHUNK__: discovered.chunk, __IMAGE_VARIANT__: discovered.variant, __REMOTE_IMAGE__: discovered.remoteImage };
     const targets = [
       ...CACHE_CONTROL_SURVIVES.map((t) => ({ ...t, survives: true })),
       ...CACHE_CONTROL_OVERWRITTEN.map((t) => ({ ...t, survives: false })),
@@ -203,7 +209,11 @@ async function checkWalled(appDir, credentials) {
       if (authed.challenge) problems.push('challenged despite valid credentials');
       if (!hasMarkerCookie(authed)) problems.push('missing Set-Cookie marker');
       if (!/noindex/i.test(authed.robots)) problems.push('missing X-Robots-Tag noindex');
-      if (target.survives && !isUnstorable(authed.cacheControl)) {
+      if (target.browserCache) {
+        if (authed.cacheControl !== target.browserCache) {
+          problems.push(`Cache-Control "${authed.cacheControl}", expected "${target.browserCache}"`);
+        }
+      } else if (target.survives && !isUnstorable(authed.cacheControl)) {
         problems.push(`Cache-Control is shared-cacheable: "${authed.cacheControl}"`);
       }
       const line = `${problems.length ? 'FAIL' : 'ok  '} authed ${target.kind} ${target.path}`

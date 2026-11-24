@@ -63,8 +63,10 @@ export function isExemptPath(pathname: string): boolean {
 //      and API routes.
 //   2. A Set-Cookie marker. Some paths overwrite Cache-Control after proxy runs —
 //      the image optimizer always sets `public, max-age=...`
-//      (server/image-optimizer.js:1180) and a route handler's own headers win (the
-//      ImageResponse at app/og). Cloud CDN never caches a response carrying
+//      (server/image-optimizer.js:1180), and the ImageResponse at app/og sets its own. A
+//      route handler's headers do NOT beat the proxy's: Next appends them only when the
+//      header is not already on the response (server/send-response.js:60-66), so the /og
+//      case is covered by this cookie alone. Cloud CDN never caches a response carrying
 //      Set-Cookie, whatever its Cache-Control says. The value carries no data.
 // `Vary: Authorization` is deliberately NOT used: Next replaces Vary on every page
 // (build/templates/app-page.js:446) and image response, so it would be absent
@@ -73,9 +75,33 @@ export function isExemptPath(pathname: string): boolean {
 export const WALL_CACHE_CONTROL = 'private, no-store, max-age=0';
 export const WALL_MARKER_COOKIE = 'saoc_beta_wall=1; Path=/; HttpOnly; Secure; SameSite=Lax';
 
-function applyWallHeaders(response: Response): Response {
+// Static assets that passed the wall may be cached by the visitor's own browser. Still `private`
+// (never `public`, no s-maxage) and still carrying the Set-Cookie marker, so Cloud CDN stores
+// nothing. Unauthenticated requests never reach this: the 401 keeps WALL_CACHE_CONTROL.
+// One hour, no `immutable`, on purpose: a missing asset (a new-revision page asking an old Cloud
+// Run instance for a chunk during a rollout) renders a 404 that keeps this header, and a route
+// handler cannot override it (see the comment above). One hour bounds how long a browser can
+// hold such a miss. Fonts are served from /_next/static/media; there is no /fonts tree.
+export const WALL_STATIC_CACHE_CONTROL = 'private, max-age=3600';
+const NEXT_STATIC_PREFIX = '/_next/static';
+// Only a real image file directly under /images/_opt: a file extension makes the path host-neutral
+// (isHostNeutralPath), so it is always a pass-through to the static file, never the NOS rewrite
+// to a page render that could 404 and be browser-cached.
+const IMAGE_VARIANT_FILE = /^\/images\/_opt\/[^/]+\.(webp|avif|jpe?g|png)$/;
+
+// `next dev` chunks are not content-hashed (the same name is rewritten) and Next's own dev
+// no-cache header must win, so browser caching applies to production builds only.
+export function wallCacheControlFor(pathname: string, allowed: boolean, isProduction: boolean): string {
+  if (!allowed || !isProduction) return WALL_CACHE_CONTROL;
+  if (isUnder(pathname, NEXT_STATIC_PREFIX) || IMAGE_VARIANT_FILE.test(pathname)) {
+    return WALL_STATIC_CACHE_CONTROL;
+  }
+  return WALL_CACHE_CONTROL;
+}
+
+function applyWallHeaders(response: Response, cacheControl: string): Response {
   response.headers.set('X-Robots-Tag', 'noindex, nofollow');
-  response.headers.set('Cache-Control', WALL_CACHE_CONTROL);
+  response.headers.set('Cache-Control', cacheControl);
   response.headers.append('Set-Cookie', WALL_MARKER_COOKIE);
   return response;
 }
@@ -317,11 +343,13 @@ export async function proxy(request: NextRequest): Promise<Response> {
         'Content-Type': 'text/plain; charset=utf-8',
       },
     });
-    return wallUp ? applyWallHeaders(response) : response;
+    return wallUp ? applyWallHeaders(response, WALL_CACHE_CONTROL) : response;
   }
 
   const site = siteOfRequest(request);
   const response = routeByHost(request, site);
   response.headers.set(SITE_HEADER, site);
-  return wallUp ? applyWallHeaders(response) : response;
+  return wallUp
+    ? applyWallHeaders(response, wallCacheControlFor(request.nextUrl.pathname, true, process.env.NODE_ENV === 'production'))
+    : response;
 }
