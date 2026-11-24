@@ -44,7 +44,7 @@ const H4_GROUP_END: Readonly<Record<string, string>> = {
 // Not rendered: "Stay informed" (she marks it "Remove this section"), the map and the first-aid
 // line (both "To be provided"), and her trailing "Explore the show" list (NosShowIndex carries it).
 const DESIGNATED_PARKING =
-  'Designated Parking for the National Orchid Show will be provided at the Stellenbosch flying club. Please follow the signage from the R44 on arrival instructions will be provided by the Parking Attendants on where to park. Parking is free.';
+  'Designated Parking for the National Orchid Show will be provided at the Stellenbosch Aerodrome. Please follow the signage from the R44 on arrival instructions will be provided by the Parking Attendants on where to park. Parking is free.';
 const E_HAILING =
   'If you plan to use e-hailing services to get to the National Orchid Show please note that they will have a designated drop off and pick up point. This will be provided by the Parking attendants at the venue.';
 const VENUE_SENTENCE =
