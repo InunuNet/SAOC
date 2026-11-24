@@ -6,12 +6,12 @@ the words directly in Google Drive. It uses NO TABLES (Brad, 2026-11-25: tables 
 edit): every line is a plain paragraph in a named paragraph style, so the editor can press Enter
 anywhere to add a line and the new line keeps the formatting.
 
-  - Section start: a dark, numbered Heading 2 bar, then a small grey "where it sits" line.
-  - Role label:    a small bold grey capitals line (HEADING, LEAD, BUTTON ...) above its copy.
+  - Section start: a royal, numbered Heading 2 bar, then a small grey "where it sits" line.
+  - Role label:    a small bold muted capitals line (HEADING, LEAD, BUTTON ...) above its copy.
   - Copy:          styled like the page (headings large and bold, leads larger than body, links
-                   underlined), set in from the margin behind a thin grey rule so the copy reads as
+                   underlined), set in from the margin behind a thin olive rule so the copy reads as
                    one column, separate from the labels.
-  - Not edited here: text fed from elsewhere (show dates, venue) is grey-shaded, with a note saying
+  - Not edited here: text fed from elsewhere (show dates, venue) sits on a pale gold tint, with a note saying
                    where it is changed.
 
 Page copy in the source JSON is verbatim committee copy (docs/rules/no-invention.md). This script
@@ -32,7 +32,7 @@ Source JSON shape:
   `sameRow: true` groups the element under the previous element's role label (a card's title + text).
 
 All formatting lives in the paragraph styles (not on individual runs), so Enter carries it on in
-Word and in Google Docs' Office-compat editor. Only what Google Docs keeps is used: Arial, bold,
+Word and in Google Docs' Office-compat editor. Only what Google Docs keeps is used: Google Fonts (Fraunces, Karla), bold,
 italic, underline, colour, paragraph shading, paragraph borders, indents. A4 portrait, 2 cm margins.
 """
 from __future__ import annotations
@@ -70,32 +70,45 @@ class Section(TypedDict, total=False):
     elements: list[Element]
 
 
-# ---- Layout tokens (neutral working-document palette; no SAOC brand fonts or colours) ----------
-FONT = "Arial"
+# ---- Layout tokens: the NOS site palette and type (Brad 2026-11-25 lifted the neutral rule) -------
+# Brad 2026-11-25: "add some of the site's styling". Every value below comes from the NOS site's
+# own tokens and type roles: app/(nos)/national-show/nos-theme.css (palette, eyebrow/label role,
+# Light display headings, olive-deep left rule of the hero facts) and nos-structure.css (.nos-hm-*
+# lead/body/card roles on the landing page). Logo fonts are logo-only and never used here.
+SERIF = "Fraunces"             # --font-nos-fraunces: headings, card titles (400)
+SERIF_LIGHT = "Fraunces Light"  # Fraunces 300, the site's display weight (Docs maps "<Family> Light")
+SANS = "Karla"                 # --font-nos-karla: body copy, labels, buttons
+FONT = SANS                    # document default
 PAGE_W, PAGE_H = 11906, 16838          # A4 in twips
 MARGIN = 1134                          # 2 cm
 COPY_INDENT = 397                      # 0.7 cm: copy column sits in from the labels
 
-INK = "202124"          # copy text: near-black, 16:1 on white
-ROLE_INK = "5F6368"     # role labels and notes: grey, 6.2:1 on white
-BAR_FILL = "3C4043"     # section bar: dark grey, white text 10:1
-LOCKED_FILL = "E8EAED"  # not-edited-here copy; LOCKED_INK on it is 5.2:1
-LOCKED_INK = "5F6368"
-LINK_INK = "1155CC"     # Google Docs' own link blue, 6.4:1 on white
-RULE = "C4C7C5"         # thin rule left of the copy column
-KEY_FILL = "F1F3F4"
+ROYAL = "211A57"        # --primary / --ink: headings; 15.6:1 on white
+INK = "3A3654"          # --ink-700: body copy (ruling Q5); 11.4:1 on white
+MUTED = "6A6780"        # --muted / --ink-500: labels, notes; 5.4:1 on white, 4.8:1 on BONE
+IVORY = "FBFAF0"        # --ivory / --parchment: text on royal; 14.8:1
+VIOLET = "7E3F97"       # --accent: the site's link underline / focus colour; 6.9:1 on white
+OLIVE_DEEP = "7F7D33"   # --olive-deep: the hero facts' 1.5px left rule (decorative, not text)
+BONE = "F3F2D6"         # --bone / --gold (pale gold): key box and not-edited-here tint
 
-# Copy styles mirror the page hierarchy:
-#   key: (style name, size pt, bold, italic, underline, colour, space before, space after, line, next)
-COPY_STYLES: dict[str, tuple[str, float, bool, bool, bool, str, float, float, float, str]] = {
-    "heading":   ("Copy Heading",    16,   True,  False, False, INK,      0, 2, 1.15, "body"),
-    "lead":      ("Copy Lead",       12.5, False, False, False, INK,      0, 4, 1.3,  "body"),
-    "body":      ("Copy Body",       11,   False, False, False, INK,      0, 4, 1.3,  "body"),
-    "cardTitle": ("Copy Card Title", 12,   True,  False, False, INK,      0, 1, 1.15, "body"),
-    "label":     ("Copy Label",      10,   True,  False, False, INK,      0, 2, 1.15, "label"),
-    "button":    ("Copy Button",     11,   True,  False, False, INK,      0, 2, 1.15, "button"),
-    "link":      ("Copy Link",       12,   True,  False, True,  LINK_INK, 0, 1, 1.15, "body"),
-    "theme":     ("Copy Theme",      11,   False, True,  False, INK,      0, 2, 1.3,  "theme"),
+ROLE_INK = MUTED
+BAR_FILL = ROYAL
+LOCKED_FILL = BONE
+LOCKED_INK = MUTED
+RULE = OLIVE_DEEP
+KEY_FILL = BONE
+
+# Copy styles mirror the site's type roles:
+#   key: (style name, font, size pt, bold, italic, underline, colour, before, after, line, next)
+COPY_STYLES: dict[str, tuple[str, str, float, bool, bool, bool, str, float, float, float, str]] = {
+    "heading":   ("Copy Heading",    SERIF_LIGHT, 18,   False, False, False, ROYAL,  0, 3, 1.15, "body"),
+    "lead":      ("Copy Lead",       SERIF_LIGHT, 13,   False, False, False, INK,    0, 4, 1.38, "body"),
+    "body":      ("Copy Body",       SANS,        11,   False, False, False, INK,    0, 4, 1.5,  "body"),
+    "cardTitle": ("Copy Card Title", SERIF,       13,   False, False, False, ROYAL,  0, 1, 1.25, "body"),
+    "label":     ("Copy Label",      SANS,        10.5, True,  False, False, INK,    0, 2, 1.3,  "label"),
+    "button":    ("Copy Button",     SANS,        11,   True,  False, False, ROYAL,  0, 2, 1.3,  "button"),
+    "link":      ("Copy Link",       SANS,        12,   True,  False, True,  VIOLET, 0, 1, 1.3,  "body"),
+    "theme":     ("Copy Theme",      SERIF_LIGHT, 12,   False, True,  False, ROYAL,  0, 2, 1.42, "theme"),
 }
 LOCKED_STYLE = "Copy Locked"   # page copy fed from elsewhere: counts as copy, but shaded grey
 NOTE_STYLE = "Copy Note"       # our note under locked copy: NOT page copy
@@ -104,13 +117,17 @@ ROLE_STYLE = "Role Label"
 WHERE_STYLE = "Section Where"
 KEY_STYLE = "Key"
 
-# Key lines: text before the first ": " is set bold as a lead-in.
+KEY_TITLE_STYLE = "Key Title"
+
+# Key: (title, text) pairs. Each is two paragraphs in their own styles, so nothing is run-formatted.
 DEFAULT_KEY = [
-    "How to use this document: each dark bar starts one part of the web page, in the order it "
-    "appears. The small grey capitals say what the text below them is (heading, lead, button and so "
-    "on). The text set in from the margin is the words on the website: edit them directly, and press "
-    "Enter at the end of a line to add another line in the same style.",
-    "Not edited here: grey-shaded text comes from elsewhere on the website; the note under it says where.",
+    ("How to use this document",
+     "Each dark blue bar starts one part of the web page, in the order it appears. The small grey "
+     "capitals say what the text below them is (heading, lead, button and so on). The text set in "
+     "from the margin, beside the thin line, is the words on the website: edit them directly, and "
+     "press Enter at the end of a line to add another line in the same style."),
+    ("Not edited here",
+     "Text on a pale gold background comes from elsewhere on the website; the note under it says where."),
 ]
 
 
@@ -167,7 +184,7 @@ def style_shade(style: ParagraphStyle, fill: str) -> None:
         _ppr_insert(ppr, shd)
 
 
-def force_font(rpr_parent) -> None:
+def force_font(rpr_parent, font: str = FONT) -> None:
     if hasattr(rpr_parent, "get_or_add_rPr"):
         rpr = rpr_parent.get_or_add_rPr()
     else:  # plain lxml element (docDefaults/rPrDefault)
@@ -180,10 +197,10 @@ def force_font(rpr_parent) -> None:
         if rfonts.get(qn(f"w:{a}")) is not None:
             del rfonts.attrib[qn(f"w:{a}")]
     for a in ("ascii", "hAnsi", "cs", "eastAsia"):
-        rfonts.set(qn(f"w:{a}"), FONT)
+        rfonts.set(qn(f"w:{a}"), font)
 
 
-def define_style(d, name: str, *, size: float, bold=False, italic=False, underline=False,
+def define_style(d, name: str, *, font: str = SANS, size: float, bold=False, italic=False, underline=False,
                  colour=INK, before=0.0, after=0.0, line=1.15, left=0, keep_next=False,
                  caps=False, base: str = "Normal") -> ParagraphStyle:
     names = [s.name for s in d.styles]
@@ -191,8 +208,8 @@ def define_style(d, name: str, *, size: float, bold=False, italic=False, underli
     s.base_style = d.styles[base]
     s.quick_style = True
     f = s.font
-    f.name = FONT
-    force_font(s.element)
+    f.name = font
+    force_font(s.element, font)
     f.size = Pt(size)
     f.bold = bold
     f.italic = italic
@@ -215,54 +232,62 @@ def ensure_styles(d) -> None:
     normal.font.name = FONT
     normal.font.size = Pt(11)
     force_font(normal.element)
-    # docDefaults carry theme fonts in python-docx's template; pin them to Arial too.
+    # docDefaults carry theme fonts in python-docx's template; pin them to the body face too.
     defaults = d.styles.element.find(qn("w:docDefaults"))
     if defaults is not None:
         rpr_default = defaults.find(qn("w:rPrDefault"))
         if rpr_default is not None:
             force_font(rpr_default)
 
-    define_style(d, "Heading 1", size=20, bold=True, before=0, after=10, line=1.1, keep_next=True)
+    define_style(d, "Heading 1", font=SERIF_LIGHT, size=21, colour=ROYAL, before=0, after=12,
+                 line=1.15, keep_next=True)
 
-    # Section bar: dark shaded Heading 2 (Docs' outline lists every section). The same-colour
-    # border with space pads the text inside the bar.
-    h2 = define_style(d, "Heading 2", size=13, bold=True, colour="FFFFFF", before=22, after=0,
-                      line=1.15, left=0, keep_next=True)
+    # Section bar: royal Heading 2 with ivory Fraunces (Docs' outline lists every section). The
+    # same-colour border with space pads the text inside the bar.
+    h2 = define_style(d, "Heading 2", font=SERIF, size=14, colour=IVORY, before=24, after=0,
+                      line=1.2, left=0, keep_next=True)
     pad = (4, 4, BAR_FILL)
     style_border(h2, {"top": pad, "left": pad, "bottom": pad, "right": pad})
     style_shade(h2, BAR_FILL)
-    define_style(d, WHERE_STYLE, size=9.5, italic=True, colour=ROLE_INK, before=5, after=2,
+    define_style(d, WHERE_STYLE, font=SANS, size=9.5, italic=True, colour=ROLE_INK, before=5, after=2,
                  line=1.15, keep_next=True)
 
-    role = define_style(d, ROLE_STYLE, size=8, bold=True, colour=ROLE_INK, before=11, after=2,
+    # The site's label/eyebrow role: Karla, bold, small, uppercase (nos-theme.css .nos-label).
+    role = define_style(d, ROLE_STYLE, font=SANS, size=8.5, bold=True, colour=ROLE_INK, before=12, after=2,
                         line=1.0, keep_next=True, caps=True)
 
-    rule = (8, 9, RULE)   # 1 pt rule, 9 pt clear of the text
+    rule = (8, 9, RULE)    # 1 pt olive-deep rule (the hero facts' left rule), 9 pt clear of the text
     by_key: dict[str, ParagraphStyle] = {}
-    for key, (name, size, bold, italic, underline, colour, before, after, line, _nxt) in COPY_STYLES.items():
-        s = define_style(d, name, size=size, bold=bold, italic=italic, underline=underline,
+    for key, (name, font, size, bold, italic, underline, colour, before, after, line, _nxt) in COPY_STYLES.items():
+        s = define_style(d, name, font=font, size=size, bold=bold, italic=italic, underline=underline,
                          colour=colour, before=before, after=after, line=line, left=COPY_INDENT)
         style_border(s, {"left": rule})
+        s.paragraph_format.keep_together = True   # a copy paragraph never splits over a page
         by_key[key] = s
     for key, spec in COPY_STYLES.items():
-        by_key[key].next_paragraph_style = by_key[spec[9]]
+        by_key[key].next_paragraph_style = by_key[spec[10]]
     role.next_paragraph_style = by_key["body"]
 
-    locked = define_style(d, LOCKED_STYLE, size=11, colour=LOCKED_INK, before=0, after=0,
-                          line=1.3, left=COPY_INDENT)
+    locked = define_style(d, LOCKED_STYLE, font=SANS, size=11, colour=LOCKED_INK, before=0, after=0,
+                          line=1.5, left=COPY_INDENT)
     style_border(locked, {"left": rule})
     style_shade(locked, LOCKED_FILL)
-    note = define_style(d, NOTE_STYLE, size=9, italic=True, colour=LOCKED_INK, before=0, after=2,
+    note = define_style(d, NOTE_STYLE, font=SANS, size=9, italic=True, colour=LOCKED_INK, before=0, after=2,
                         line=1.2, left=COPY_INDENT)
     style_border(note, {"left": rule})
     style_shade(note, LOCKED_FILL)
     locked.next_paragraph_style = locked
     note.next_paragraph_style = by_key["body"]
 
-    key = define_style(d, KEY_STYLE, size=10, colour=INK, before=0, after=0, line=1.3)
     kpad = (4, 6, KEY_FILL)
-    style_border(key, {"top": kpad, "left": kpad, "bottom": kpad, "right": kpad})
-    style_shade(key, KEY_FILL)
+    key_title = define_style(d, KEY_TITLE_STYLE, font=SANS, size=10, bold=True, colour=ROYAL,
+                             before=0, after=0, line=1.3, keep_next=True)
+    key = define_style(d, KEY_STYLE, font=SANS, size=10, colour=INK, before=0, after=3, line=1.35)
+    for k in (key_title, key):
+        style_border(k, {"top": kpad, "left": kpad, "bottom": kpad, "right": kpad})
+        style_shade(k, KEY_FILL)
+    key_title.next_paragraph_style = key
+    key.next_paragraph_style = key
 
 
 # ---- building blocks --------------------------------------------------------------------------
@@ -273,15 +298,10 @@ def para(d, style: str, text: str = "") -> Paragraph:
     return p
 
 
-def add_key(d, lines: list[str]) -> None:
-    for line in lines:
-        p = para(d, KEY_STYLE)
-        lead, sep, rest = line.partition(": ")
-        if sep:
-            p.add_run(lead + ":").bold = True
-            p.add_run(" " + rest)
-        else:
-            p.add_run(line)
+def add_key(d, pairs: list[tuple[str, str]] | list[list[str]]) -> None:
+    for title, text in pairs:
+        para(d, KEY_TITLE_STYLE, title)
+        para(d, KEY_STYLE, text)
 
 
 def add_section(d, number: int, section: Section) -> None:
@@ -310,9 +330,7 @@ def add_section(d, number: int, section: Section) -> None:
                     p.paragraph_format.keep_with_next = True   # keep a card together
         notes = [e["editedWhere"] for e in group if not e.get("editable", True) and e.get("editedWhere")]
         if notes:
-            n = para(d, NOTE_STYLE)
-            n.add_run("Not edited here. ").bold = True
-            n.add_run(str(notes[0]))
+            para(d, NOTE_STYLE, f"Not edited here. {notes[0]}")
 
 
 def build(src: Path, out: Path) -> None:
