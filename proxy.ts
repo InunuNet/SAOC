@@ -73,9 +73,27 @@ export function isExemptPath(pathname: string): boolean {
 export const WALL_CACHE_CONTROL = 'private, no-store, max-age=0';
 export const WALL_MARKER_COOKIE = 'saoc_beta_wall=1; Path=/; HttpOnly; Secure; SameSite=Lax';
 
-function applyWallHeaders(response: Response): Response {
+// Static assets that passed the wall may be cached by the visitor's own browser. Still `private`
+// (never `public`, no s-maxage) and still carrying the Set-Cookie marker, so Cloud CDN stores
+// nothing. Unauthenticated requests never reach this: the 401 keeps WALL_CACHE_CONTROL.
+//   - /_next/static is content-hashed, so a URL never changes meaning: immutable for a year.
+//   - /images/_opt (build-generated image variants) is not hashed: one day, no immutable.
+// Fonts are served from /_next/static/media; there is no separate /fonts tree.
+export const WALL_STATIC_HASHED_CACHE_CONTROL = 'private, max-age=31536000, immutable';
+export const WALL_STATIC_UNHASHED_CACHE_CONTROL = 'private, max-age=86400';
+const HASHED_STATIC_PREFIX = '/_next/static';
+const UNHASHED_STATIC_PREFIX = '/images/_opt';
+
+export function wallCacheControlFor(pathname: string, allowed: boolean): string {
+  if (!allowed) return WALL_CACHE_CONTROL;
+  if (isUnder(pathname, HASHED_STATIC_PREFIX)) return WALL_STATIC_HASHED_CACHE_CONTROL;
+  if (isUnder(pathname, UNHASHED_STATIC_PREFIX)) return WALL_STATIC_UNHASHED_CACHE_CONTROL;
+  return WALL_CACHE_CONTROL;
+}
+
+function applyWallHeaders(response: Response, cacheControl: string): Response {
   response.headers.set('X-Robots-Tag', 'noindex, nofollow');
-  response.headers.set('Cache-Control', WALL_CACHE_CONTROL);
+  response.headers.set('Cache-Control', cacheControl);
   response.headers.append('Set-Cookie', WALL_MARKER_COOKIE);
   return response;
 }
@@ -317,11 +335,13 @@ export async function proxy(request: NextRequest): Promise<Response> {
         'Content-Type': 'text/plain; charset=utf-8',
       },
     });
-    return wallUp ? applyWallHeaders(response) : response;
+    return wallUp ? applyWallHeaders(response, WALL_CACHE_CONTROL) : response;
   }
 
   const site = siteOfRequest(request);
   const response = routeByHost(request, site);
   response.headers.set(SITE_HEADER, site);
-  return wallUp ? applyWallHeaders(response) : response;
+  return wallUp
+    ? applyWallHeaders(response, wallCacheControlFor(request.nextUrl.pathname, true))
+    : response;
 }

@@ -24,6 +24,8 @@ import { isPasswordWallOff, isPubliclyLaunched } from '../lib/beta-public-launch
 import {
   WALL_CACHE_CONTROL,
   WALL_MARKER_COOKIE,
+  WALL_STATIC_HASHED_CACHE_CONTROL,
+  WALL_STATIC_UNHASHED_CACHE_CONTROL,
   constantTimeEqual,
   decideBasicAuth,
   isExemptPath,
@@ -268,6 +270,84 @@ test.describe('proxy() end-to-end response shape', () => {
     expect(directives).not.toContain('public');
     expect(directives.some((d) => d.startsWith('s-maxage'))).toBe(false);
     expect(WALL_MARKER_COOKIE.startsWith('saoc_beta_wall=')).toBe(true);
+  });
+
+  test('authed /_next/static asset: long private browser cache, marker cookie kept', async () => {
+    delete process.env.SITE_PUBLIC_LAUNCH;
+    setNodeEnv('production');
+    process.env.BETA_BASIC_AUTH_USER = 'councilbeta';
+    process.env.BETA_BASIC_AUTH_PASSWORD = 's3cr3t-value';
+
+    const response = await proxy(
+      requestFor(
+        'https://nos.saoc.co.za/_next/static/chunks/abc123.js',
+        basicAuthHeader('councilbeta', 's3cr3t-value'),
+      ),
+    );
+
+    expect(response.headers.get('Cache-Control')).toBe(WALL_STATIC_HASHED_CACHE_CONTROL);
+    expect(WALL_STATIC_HASHED_CACHE_CONTROL).toBe('private, max-age=31536000, immutable');
+    expect(response.headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
+    expect(response.headers.getSetCookie()).toContain(WALL_MARKER_COOKIE);
+  });
+
+  test('authed /images/_opt asset: one-day private cache, not immutable, marker cookie kept', async () => {
+    delete process.env.SITE_PUBLIC_LAUNCH;
+    setNodeEnv('production');
+    process.env.BETA_BASIC_AUTH_USER = 'councilbeta';
+    process.env.BETA_BASIC_AUTH_PASSWORD = 's3cr3t-value';
+
+    const response = await proxy(
+      requestFor(
+        'https://nos.saoc.co.za/images/_opt/hero-1280.webp',
+        basicAuthHeader('councilbeta', 's3cr3t-value'),
+      ),
+    );
+
+    expect(response.headers.get('Cache-Control')).toBe(WALL_STATIC_UNHASHED_CACHE_CONTROL);
+    expect(WALL_STATIC_UNHASHED_CACHE_CONTROL).toBe('private, max-age=86400');
+    expect(response.headers.get('Cache-Control')).not.toContain('immutable');
+    expect(response.headers.getSetCookie()).toContain(WALL_MARKER_COOKIE);
+  });
+
+  test('authed page and API route stay no-store; lookalike static prefix does not match', async () => {
+    delete process.env.SITE_PUBLIC_LAUNCH;
+    setNodeEnv('production');
+    process.env.BETA_BASIC_AUTH_USER = 'councilbeta';
+    process.env.BETA_BASIC_AUTH_PASSWORD = 's3cr3t-value';
+    const auth = basicAuthHeader('councilbeta', 's3cr3t-value');
+
+    for (const path of ['/', '/privacy', '/api/events.ics', '/_next/staticfoo', '/images/_optional/a.webp']) {
+      const response = await proxy(requestFor(`https://beta.saoc.co.za${path}`, auth));
+      expect(response.headers.get('Cache-Control'), path).toBe(WALL_CACHE_CONTROL);
+      expect(response.headers.getSetCookie(), path).toContain(WALL_MARKER_COOKIE);
+    }
+  });
+
+  test('unauthenticated asset request: still 401, no-store, marker cookie', async () => {
+    delete process.env.SITE_PUBLIC_LAUNCH;
+    setNodeEnv('production');
+    process.env.BETA_BASIC_AUTH_USER = 'councilbeta';
+    process.env.BETA_BASIC_AUTH_PASSWORD = 's3cr3t-value';
+
+    for (const path of ['/_next/static/chunks/abc123.js', '/images/_opt/hero-1280.webp']) {
+      const response = await proxy(requestFor(`https://nos.saoc.co.za${path}`));
+      expect(response.status, path).toBe(401);
+      expect(response.headers.get('Cache-Control'), path).toBe(WALL_CACHE_CONTROL);
+      expect(response.headers.getSetCookie(), path).toContain(WALL_MARKER_COOKIE);
+    }
+  });
+
+  test('after launch: static assets get no proxy Cache-Control at all (Next owns it)', async () => {
+    process.env.SITE_PUBLIC_LAUNCH = 'true';
+    setNodeEnv('production');
+    process.env.BETA_BASIC_AUTH_USER = 'councilbeta';
+    process.env.BETA_BASIC_AUTH_PASSWORD = 's3cr3t-value';
+
+    const response = await proxy(requestFor('https://saoc.co.za/_next/static/chunks/abc123.js'));
+
+    expect(response.headers.get('Cache-Control')).toBeNull();
+    expect(response.headers.getSetCookie()).toEqual([]);
   });
 
   test('exempt webhook path while walled: passes through, still uncacheable', async () => {

@@ -40,7 +40,12 @@ Four protections are wired together and can only ever lift as one:
 4. **CDN-unstorable responses.** While the wall is up, every response
    `proxy.ts` returns carries `Cache-Control: private, no-store, max-age=0`
    plus a marker cookie, `Set-Cookie: saoc_beta_wall=1` (`WALL_CACHE_CONTROL`
-   / `WALL_MARKER_COOKIE` in `proxy.ts`). Two independent mechanisms, both
+   / `WALL_MARKER_COOKIE` in `proxy.ts`). The one exception is a request that
+   passed the wall for `/_next/static/*` (`private, max-age=31536000, immutable`)
+   or `/images/_opt/*` (`private, max-age=86400`): those stay `private` with the
+   marker cookie, so the CDN stores nothing, but the visitor's own browser may
+   cache them. Unauthenticated requests, pages and API routes keep no-store.
+   Two independent mechanisms, both
    from Cloud CDN's documented never-cache list
    (https://firebase.google.com/docs/app-hosting/optimize-cache), because
    either one alone has a gap:
