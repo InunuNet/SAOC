@@ -60,9 +60,18 @@ step that proves it.
    once, re-reads it and compares a sha256 per key, then destroys the previous version so one
    enabled version remains. It never destroys without a passed verification.
 
-   If it is interrupted or fails after the set, it prints which versions to look at and the
-   exact `gcloud secrets versions list` and `destroy` commands. Do not re-run it until you have
-   listed versions; it refuses to start with two enabled versions.
+   If it is interrupted or fails after the set, it prints what is known, what is unknown, and the
+   read-only `gcloud secrets versions list` command to check state, plus the `destroy` command
+   if one is needed. Do not re-run it until you have listed versions; it refuses to start with
+   two enabled versions.
+
+   Where secrets can touch disk: the firebase CLI logs the decoded bundle to `firebase-debug.log`
+   in its working directory. The script therefore runs every `firebase` and `gcloud` call from a
+   private temp directory with `DEBUG` removed, overwrites and deletes that directory on every
+   exit path, and warns (path only) if a `firebase-debug*.log` appears in the directory you ran
+   it from. gcloud runs with file logging off; it only lists and destroys versions and never
+   handles a secret payload. A killed shell (SIGKILL) cannot clean up; check for leftover
+   `tmp.*` directories in that case.
 
 4. **Redeploy.** App Hosting resolves secrets when a revision is created, so the running backend
    keeps the old values until a new rollout. The script prints the command; confirm the backend

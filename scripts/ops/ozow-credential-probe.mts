@@ -87,10 +87,13 @@ function say(line: string): void {
   process.stdout.write(`${safe}\n`);
 }
 
+/**
+ * Error NAME and a fixed description only. error.message from fetch or the adapter can carry a
+ * URL, a request body or a hash, so it is never printed (redaction in say() is a second layer).
+ */
 function describeError(error: unknown): string {
   const name = error instanceof Error ? error.name : 'NonError';
-  const message = error instanceof Error ? error.message : String(error);
-  return `${name}: ${message}`;
+  return `${name} (message withheld: it may contain request details)`;
 }
 
 const VALUE_PATTERN = /^[A-Za-z0-9-]+$/;
@@ -186,7 +189,12 @@ async function stepApiKey(env: Record<string, string | undefined>): Promise<Outc
 function readNosOrigin(): string {
   const yaml = fs.readFileSync(APPHOSTING_PATH, 'utf8');
   const match = new RegExp(`variable: ${NOS_URL_VARIABLE}\\s+value: "([^"]+)"`).exec(yaml);
-  if (!match) throw new Error(`${NOS_URL_VARIABLE} not found in apphosting.yaml`);
+  if (!match) {
+    // describeError prints only the name, so the name carries the diagnosis.
+    const missing = new Error(`${NOS_URL_VARIABLE} not found in apphosting.yaml`);
+    missing.name = 'NosOriginMissingInApphostingYaml';
+    throw missing;
+  }
   return match[1].replace(/\/+$/, '');
 }
 
