@@ -93,16 +93,23 @@ function describeError(error: unknown): string {
   return `${name}: ${message}`;
 }
 
-/** Character CLASSES only, never the character. Quotes are caught by the charset rule. */
+const VALUE_PATTERN = /^[A-Za-z0-9-]+$/;
+
+/**
+ * Acceptance is ONE positive test; the class list is only for the message (character CLASSES,
+ * never the character), so a classification gap can never become an acceptance gap.
+ */
 function shapeProblems(value: string | undefined): string[] {
   if (value === undefined) return ['missing'];
+  if (VALUE_PATTERN.test(value)) return [];
   const problems: string[] = [];
   if (value.length === 0) problems.push('empty');
-  if (/[\r\n]/.test(value)) problems.push('CR/LF');
-  if (/[ \t\f\v]/.test(value)) problems.push('whitespace');
+  if (/[\r\n\u2028\u2029]/.test(value)) problems.push('line break');
+  if (/\s/.test(value)) problems.push('whitespace');
   if (/["'`]/.test(value)) problems.push('quote');
   if (/#/.test(value)) problems.push('hash');
-  if (/[^A-Za-z0-9\-\s"'`#]/.test(value)) problems.push('other');
+  if (/[^\x00-\x7F]/.test(value)) problems.push('non-ASCII');
+  if (problems.length === 0) problems.push('other');
   return problems;
 }
 

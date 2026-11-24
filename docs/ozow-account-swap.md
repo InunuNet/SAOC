@@ -12,7 +12,9 @@ step that proves it.
 ## Steps
 
 1. **Local env.** Put the three values in an env file as exactly one `NAME=value` line each, LF
-   line endings, no `export`, no quotes, no spaces, no `#`, and only the characters `A-Z a-z 0-9 -`
+   line endings, no UTF-8 BOM at the start of the file, no `export`, no quotes, no spaces, no `#`,
+   and only the ASCII characters `A-Z a-z 0-9 -` (invisible or non-ASCII characters such as a
+   non-breaking space are refused)
    (Ozow documents no issued character set; the SAOC values are 11, 32 and 32 characters, so this
    is the conservative choice). The push script refuses anything else and names the key and the
    character class, never the value. Locally `lib/secrets.ts` reads the same names from

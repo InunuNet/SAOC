@@ -124,20 +124,26 @@ function parseBundle(raw, label) {
   return parsed;
 }
 
-// Character CLASSES only; never the character itself.
+// Acceptance is ONE positive test. The class list below is only for the message (character
+// CLASSES, never the character itself), so a classification gap can never become an acceptance
+// gap: a value that fails the test but matches no named class is reported as "other".
+const VALUE_PATTERN = /^[A-Za-z0-9-]+$/;
 function valueProblems(value) {
+  if (VALUE_PATTERN.test(value)) return [];
   const problems = [];
   if (value.length === 0) problems.push('empty');
-  if (/\r|\n/.test(value)) problems.push('CR/LF');
-  if (/[ \t\f\v]/.test(value)) problems.push('whitespace');
+  if (/[\r\n\u2028\u2029]/.test(value)) problems.push('line break');
+  if (/\s/.test(value)) problems.push('whitespace');
   if (/["'`]/.test(value)) problems.push('quote');
   if (/#/.test(value)) problems.push('hash');
-  if (/[^A-Za-z0-9\-\s"'`#]/.test(value)) problems.push('other');
+  if (/[^\x00-\x7F]/.test(value)) problems.push('non-ASCII');
+  if (problems.length === 0) problems.push('other');
   return problems;
 }
 
 function parseEnvFile(file) {
   const raw = fs.readFileSync(file, 'utf8');
+  if (raw.charCodeAt(0) === 0xFEFF) fail('env file starts with a UTF-8 BOM; re-save it without a BOM and retry', 3);
   if (raw.includes('\r')) fail('env file contains CR (CRLF line endings); convert it to LF and retry', 3);
   const lines = raw.split('\n');
   const values = [];
@@ -146,7 +152,7 @@ function parseEnvFile(file) {
     const hits = lines.filter((line) => assign.test(line));
     if (hits.length === 0) fail(`${name} not found in the env file`, 3);
     if (hits.length > 1) fail(`${name} appears ${hits.length} times in the env file; keep exactly one`, 3);
-    const exact = new RegExp(`^${name}=(.*)$`).exec(hits[0]);
+    const exact = new RegExp(`^${name}=([\\s\\S]*)$`).exec(hits[0]);
     if (!exact) fail(`${name} line has an export prefix, indentation or spaces around "="; use exactly ${name}=value`, 3);
     const problems = valueProblems(exact[1]);
     if (problems.length) fail(`${name} value refused (${problems.join(', ')}); allowed characters are A-Z a-z 0-9 and "-"`, 3);
