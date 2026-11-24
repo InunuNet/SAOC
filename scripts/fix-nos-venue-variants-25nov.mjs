@@ -9,36 +9,59 @@
  *
  * Run:    node scripts/fix-nos-venue-variants-25nov.mjs [--apply]  (bare run = dry run)
  * Verify: node scripts/fix-nos-venue-variants-25nov.mjs --verify
+ * Test:   node scripts/fix-nos-venue-variants-25nov.mjs --self-test  (no network, no .env.local)
  */
 
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-
-import { createClient } from '@sanity/client';
 
 const NEW_VENUE = 'Stellenbosch Aerodrome';
 const SKIPPED_FIELDS = new Set(['_id', '_rev', '_type', '_createdAt', '_updatedAt', '_key']);
 
 // Ordered: the longest phrasings first, so the bare-name rules only see what is left.
 const RULES = [
-  [/Hangar 25, Orca Aero Solutions, Stellenbosch Airfield/gi, NEW_VENUE],
-  [/Hangar 25, Orca Aero Solutions/gi, NEW_VENUE],
-  [/The Hangar, Stellenbosch Flying Club, Stellenbosch Airfield/gi, NEW_VENUE],
-  [/The Hangar, Stellenbosch Flying Club/gi, NEW_VENUE],
-  [/the hangar at Stellenbosch Flying Club, Stellenbosch Airfield/gi, NEW_VENUE],
-  [/the hangar at Stellenbosch Flying Club/gi, NEW_VENUE],
-  [/(Stellenbosch Aerodrome|Flying Club),? on the R44 at Stellenbosch Airfield/gi, '$1, on the R44'],
-  [/Stellenbosch Flying Club, Stellenbosch Airfield/gi, NEW_VENUE],
-  [/Stellenbosch Flying Club/gi, NEW_VENUE],
-  [/, Stellenbosch Airfield/gi, ''],
-  [/ at Stellenbosch Airfield/gi, ''],
-  [/ to Stellenbosch Airfield/gi, ' to the venue'],
-  [/Stellenbosch Airfield, /gi, ''],
-  [/Stellenbosch Airfield/gi, NEW_VENUE],
-  [/Orca Aero( Solutions)?/gi, NEW_VENUE],
-  [/Hangar 25/gi, NEW_VENUE],
+  [/\bHangar 25, Orca Aero Solutions, Stellenbosch Airfield\b/gi, NEW_VENUE],
+  [/\bHangar 25, Orca Aero Solutions\b/gi, NEW_VENUE],
+  [/\bThe Hangar, Stellenbosch Flying Club, Stellenbosch Airfield\b/gi, NEW_VENUE],
+  [/\bThe Hangar, Stellenbosch Flying Club\b/gi, NEW_VENUE],
+  [/\bthe hangar at Stellenbosch Flying Club, Stellenbosch Airfield\b/gi, NEW_VENUE],
+  [/\bthe hangar at Stellenbosch Flying Club\b/gi, NEW_VENUE],
+  [/\b(Stellenbosch Aerodrome|Flying Club),? on the R44 at Stellenbosch Airfield\b/gi, '$1, on the R44'],
+  [/\bStellenbosch Flying Club, Stellenbosch Airfield\b/gi, NEW_VENUE],
+  [/\bStellenbosch Flying Club\b/gi, NEW_VENUE],
+  [/, Stellenbosch Airfield\b/gi, ''],
+  [/ at Stellenbosch Airfield\b/gi, ''],
+  [/ to Stellenbosch Airfield\b/gi, ' to the venue'],
+  [/\bStellenbosch Airfield, /gi, ''],
+  [/\bStellenbosch Airfield\b/gi, NEW_VENUE],
+  [/\bOrca Aero( Solutions)?\b/gi, NEW_VENUE],
+  [/\bHangar 25\b/gi, NEW_VENUE],
 ];
-const STALE = /Hangar 25|Orca Aero|Stellenbosch Airfield|Stellenbosch Flying Club/i;
+const STALE = /\bHangar 25\b|\bOrca Aero\b|\bStellenbosch Airfield\b|\bStellenbosch Flying Club\b/i;
+
+function rewrite(value) {
+  return RULES.reduce((text, [pattern, replacement]) => text.replace(pattern, replacement), value);
+}
+
+// Network-free check of the rules above: no .env.local read, no Sanity client.
+const SELF_TEST_CASES = [
+  ['Orca Aerospace', 'Orca Aerospace'],
+  ['Hangar 250', 'Hangar 250'],
+  ['Hangar 25', NEW_VENUE],
+  ['Orca Aero Solutions', NEW_VENUE],
+  ['Stellenbosch Flying Club', NEW_VENUE],
+];
+if (process.argv.includes('--self-test')) {
+  let failed = 0;
+  for (const [input, expected] of SELF_TEST_CASES) {
+    const actual = rewrite(input);
+    const ok = actual === expected;
+    if (!ok) failed += 1;
+    console.log(`${ok ? 'ok  ' : 'FAIL'} ${JSON.stringify(input)} -> ${JSON.stringify(actual)}`);
+  }
+  console.log(failed === 0 ? 'self-test ok' : `self-test FAILED (${failed})`);
+  process.exit(failed === 0 ? 0 : 1);
+}
 
 function readEnvLocal() {
   const raw = readFileSync(path.resolve(process.cwd(), '.env.local'), 'utf8');
@@ -53,6 +76,7 @@ function readEnvLocal() {
   return out;
 }
 
+const { createClient } = await import('@sanity/client');
 const env = readEnvLocal();
 if (!env.NEXT_PUBLIC_SANITY_PROJECT_ID || !env.NEXT_PUBLIC_SANITY_DATASET || !env.SANITY_API_TOKEN) {
   throw new Error('Missing NEXT_PUBLIC_SANITY_PROJECT_ID, NEXT_PUBLIC_SANITY_DATASET or SANITY_API_TOKEN in .env.local');
@@ -86,10 +110,6 @@ function collectStrings(node, pathSoFar, id, out) {
       collectStrings(value, pathSoFar ? `${pathSoFar}.${field}` : field, id, out);
     }
   }
-}
-
-function rewrite(value) {
-  return RULES.reduce((text, [pattern, replacement]) => text.replace(pattern, replacement), value);
 }
 
 async function plan() {
