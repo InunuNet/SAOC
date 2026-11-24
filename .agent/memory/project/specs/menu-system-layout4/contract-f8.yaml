@@ -218,7 +218,7 @@ assertions:
         assertion runs UNCONDITIONALLY -- no `if (count > 0)` guard. Per
         MegaMenu.tsx:89 (`venueName = show?.venue?.name ?? null`) and project
         memory project_national_show_venue (venue confirmed: "The Hangar,
-        Stellenbosch Flying Club"), the current dataset has a real, non-null
+        Stellenbosch Aerodrome"), the current dataset has a real, non-null
         venue name, so `leadMeta` is genuinely non-null and renders today --
         an empty/missing leadMeta under this dataset would be a real
         regression, not an expected absence, and must FAIL the test, not be

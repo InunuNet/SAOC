@@ -79,7 +79,7 @@ Example: `nationalShow (nationalShow) . countdownDate = 2098-12-31T22:00:00.000Z
 
 For `nationalShow`, the authoritative baseline is in `scripts/seed-page-singletons.ts` (lines 211–216):
 ```typescript
-location: 'The Hangar, Stellenbosch Flying Club',
+location: 'Stellenbosch Aerodrome',
 countdownDate: '2027-09-23T09:00:00+02:00',
 ```
 

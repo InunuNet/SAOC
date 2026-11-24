@@ -378,7 +378,7 @@ assertions:
 
     - id: A44
       description: >-
-        The council's venue sentence survives verbatim - "Stellenbosch Flying Club, R44
+        The council's venue sentence survives verbatim - "Stellenbosch Aerodrome, R44
         northbound to Stellenbosch". It is the only written statement of the venue we hold, a
         visitor needs it to arrive, and it has already been paraphrased once to satisfy a broken
         price check. This asserts the fact directly instead of trusting a reviewer to notice.

@@ -141,7 +141,7 @@ NOS components share one copy. Do not edit MegaMenu/MobileMenu to use it (condit
 |---|---|
 | Top-level nav (≥1260): About, Societies, Judging & Awards, Events, Members, **National Show** (button), Sponsors | `getNosMenu().top` |
 | Mega lead link "19th SAOC National Orchid Show" → /national-show | `.lead` |
-| Mega meta "The Hangar, Stellenbosch Flying Club · 23–26 September 2027" | `showMenuMeta(show).lead` (Sanity; omit the span when null) |
+| Mega meta "Stellenbosch Aerodrome · 23–26 September 2027" | `showMenuMeta(show).lead` (Sanity; omit the span when null) |
 | The Show / Visit / Programme / Exhibit & Trade, labels + descriptions | `.groups` ("Exhibitors and Vendors" comes through as-is) |
 | Rail meta, h4 "Tickets", Day Visitor, Weekend Pass | `showMenuMeta(show).rail` (omit when null), `.rail` |
 | Menu panel: NAV order, National Show accordion, then Sponsors, then Contact | `.top` + `.contact` |

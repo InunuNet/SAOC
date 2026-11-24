@@ -1,3 +1,5 @@
+> Historical record (mission of August 2026). The venue name is now Stellenbosch Aerodrome (2026-11-19); older names below are history, not current truth.
+
 # F1: Venue — "Never Changed" Narrative Removal & Live Verification
 
 **Feature:** F1 of mission `venue-never-changed-copy-fix` (milestone M1). Removes framing that suggests the show's venue changed from a previous venue to The Hangar, Stellenbosch Flying Club. The venue was never changed — CTICC was an incorrect early placeholder, never actually committed to — and the site must read as if the venue was simply always The Hangar.

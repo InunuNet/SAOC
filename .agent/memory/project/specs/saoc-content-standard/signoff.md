@@ -10,7 +10,7 @@ Source: Sanity `societyEvent` doc `societyEvent-15-19th-south-african-national-o
 | dd (verbatim from record) | dt | source |
 |---|---|---|
 | 23–26 September 2027 | Dates | `societyEvent-15-...`.`date` = 2027-09-23, `.endDate` = 2027-09-26, formatted by the existing `formatShowDateRange()` (lib/show-identity.ts:22), the same helper Home/ShowBand use |
-| The Hangar, Stellenbosch Flying Club | Venue | `societyEvent-15-...`.`venue` (identical to `nationalShow.venue.name`) |
+| Stellenbosch Aerodrome | Venue | `societyEvent-15-...`.`venue` (identical to `nationalShow.venue.name`) |
 | Western Cape | Host region | `nationalShow`.`hostRegion` (show kind only; same field ShowBand's "Host Region" reads) |
 Other event records: Dates + `venue`; plus `hostSociety.name` if set. Absent fields drop the item; no "To be confirmed" filler in the facts row.
 Not used: "4 days" (ShowBand `formatDuration`) is derived, not stored; left out.

@@ -1,3 +1,5 @@
+> Historical record (mission of August 2026). The venue name is now Stellenbosch Aerodrome (2026-11-19); older names below are history, not current truth.
+
 # venue-never-changed-copy-fix — what this contract is and is not
 
 ## The defect
