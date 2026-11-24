@@ -74,11 +74,20 @@ async function discoverTargets(origin, authorization) {
   return [
     { kind: 'ISR page', path: '/', proxyCacheControl: true, expectAuthedOk: true },
     { kind: 'static page', path: '/privacy', proxyCacheControl: true, expectAuthedOk: true },
-    { kind: 'build chunk', path: chunk[0], proxyCacheControl: true, expectAuthedOk: true },
+    { kind: 'build chunk', path: chunk[0], proxyCacheControl: true, expectAuthedOk: true, browserCacheable: true },
     { kind: 'public file', path: LOCAL_IMAGE_SRC, proxyCacheControl: true, expectAuthedOk: true },
     { kind: 'optimizer (remote src)', path: optimizerPath(REMOTE_IMAGE_SRC), proxyCacheControl: false, expectAuthedOk: false },
     { kind: 'optimizer (local src)', path: optimizerPath(LOCAL_IMAGE_SRC), proxyCacheControl: false, expectAuthedOk: false },
   ];
+}
+
+// Authenticated static assets carry a private browser cache (proxy.ts): private, never public or
+// s-maxage, so the CDN still cannot store them. The marker cookie is asserted separately.
+function isPrivateBrowserCacheable(cacheControl) {
+  const directives = cacheControl.toLowerCase().split(',').map((d) => d.trim());
+  return directives.includes('private')
+    && !directives.includes('public')
+    && !directives.some((d) => d.startsWith('s-maxage'));
 }
 
 function checkPair(target, authed, anon) {
@@ -86,7 +95,8 @@ function checkPair(target, authed, anon) {
   if (target.expectAuthedOk && authed.status !== 200) problems.push(`authed status ${authed.status}`);
   if (authed.status === 401) problems.push('authed request was challenged');
   if (!authed.markerCookie) problems.push('authed response missing Set-Cookie marker');
-  if (target.proxyCacheControl && !isUnstorable(authed.cacheControl)) {
+  const cacheable = target.browserCacheable ? isPrivateBrowserCacheable : isUnstorable;
+  if (target.proxyCacheControl && !cacheable(authed.cacheControl)) {
     problems.push(`authed Cache-Control shared-cacheable: "${authed.cacheControl}"`);
   }
   if (authed.cdnCacheStatus === 'hit') problems.push('authed response served from CDN cache');
