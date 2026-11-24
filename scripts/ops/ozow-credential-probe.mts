@@ -12,19 +12,29 @@
  * prints lengths, booleans, HTTP statuses and Ozow's response text with every secret value
  * redacted first. All output goes through say(), which redacts.
  *
- * Steps (each PASS / FAIL / INCONCLUSIVE):
- *   1. Shape: present, non-empty, no surrounding whitespace or quotes, no CR/LF.
+ * Where the values come from: process.env, and nothing else. `tsx --env-file` does NOT override a
+ * variable already exported in your shell, and Node's env-file parser trims quotes and treats an
+ * unquoted `#` as a comment before this script sees the value, so a standalone run can silently
+ * test different values from the file. scripts/ops/push-ozow-keys-to-bundle.sh avoids both: it
+ * parses the file strictly and runs this probe with exactly those three values in the child's
+ * environment, overriding the parent shell. Use that script (--dry-run) when the file matters.
+ *
+ * Steps (each PASS / FAIL / INCONCLUSIVE). Observed Ozow behaviour (real run, 2026-11-24):
+ * status endpoint answers 404 "No transactions found" for a valid key and unknown reference and
+ * 401 "API key is invalid." for a bad key; the hosted page lands on /<guid>/secure/ for a correct
+ * hash and /request-error for a wrong hash.
+ *   1. Shape: present, non-empty, only [A-Za-z0-9-] (Ozow documents no issued character set;
+ *      real values are 11, 32 and 32 characters). Reports the character CLASS, never a value.
  *   2. API key + site code: the adapter's own confirmNotification() (so the URL and ApiKey header
  *      are byte-for-byte what production sends) for a reference that does not exist, compared to
- *      a control call with a deliberately invalid API key. PASS only when the real key is
- *      accepted (not 401/403) AND Ozow answers the control differently. Identical answers mean
- *      the endpoint does not tell the two apart: INCONCLUSIVE.
+ *      a control call with a deliberately invalid API key. PASS only when the real call is HTTP
+ *      404 (or 200) AND the control is HTTP 401. Real 401/403 is FAIL. Anything else is
+ *      INCONCLUSIVE, with both statuses printed.
  *   3. Private key: the adapter's own initiate() builds the signed IsTest=true minimum-amount form
  *      and it is POSTed as a browser would, never paid. A control with a wrong HashCheck is posted
- *      too. Per contracts/golden/ozow-m1-f1/README.md section 2, a raw non-browser POST to
- *      pay.ozow.com returned a byte-identical request-error for good and bad hashes, so
- *      identical outcomes are INCONCLUSIVE, not PASS. A probe transaction may appear as
- *      abandoned in the Ozow merchant admin; it is never completed.
+ *      too. PASS only when the correct hash does NOT land on /request-error and the wrong hash
+ *      DOES. A probe transaction may appear as abandoned in the Ozow merchant admin; it is never
+ *      completed.
  *
  * Exit codes: 0 all PASS, 1 any FAIL, 3 any INCONCLUSIVE (and no FAIL).
  */
@@ -53,7 +63,8 @@ const REQUEST_TIMEOUT_MS = 15_000;
 const BODY_PREVIEW_MAX = 200;
 const HTTP_UNAUTHORIZED = 401;
 const HTTP_FORBIDDEN = 403;
-const HTTP_SERVER_ERROR_MIN = 500;
+const HTTP_OK = 200;
+const HTTP_NOT_FOUND = 404;
 const REQUEST_ERROR_PATH = '/request-error';
 const APPHOSTING_PATH = path.resolve(import.meta.dirname, '../../apphosting.yaml');
 const NOS_URL_VARIABLE = 'NEXT_PUBLIC_NOS_SITE_URL';
@@ -82,13 +93,16 @@ function describeError(error: unknown): string {
   return `${name}: ${message}`;
 }
 
+/** Character CLASSES only, never the character. Quotes are caught by the charset rule. */
 function shapeProblems(value: string | undefined): string[] {
   if (value === undefined) return ['missing'];
   const problems: string[] = [];
   if (value.length === 0) problems.push('empty');
-  if (value !== value.trim()) problems.push('leading or trailing whitespace');
-  if (/^["'`]|["'`]$/.test(value)) problems.push('surrounding quotes');
-  if (/[\r\n]/.test(value)) problems.push('contains CR or LF');
+  if (/[\r\n]/.test(value)) problems.push('CR/LF');
+  if (/[ \t\f\v]/.test(value)) problems.push('whitespace');
+  if (/["'`]/.test(value)) problems.push('quote');
+  if (/#/.test(value)) problems.push('hash');
+  if (/[^A-Za-z0-9\-\s"'`#]/.test(value)) problems.push('other');
   return problems;
 }
 
@@ -151,18 +165,14 @@ async function stepApiKey(env: Record<string, string | undefined>): Promise<Outc
   if (real.status === HTTP_UNAUTHORIZED || real.status === HTTP_FORBIDDEN) {
     return { verdict: 'FAIL', detail: `Ozow rejected the API key or site code (${real.status})` };
   }
-  if (real.status >= HTTP_SERVER_ERROR_MIN) {
-    return { verdict: 'INCONCLUSIVE', detail: `Ozow server error ${real.status}` };
-  }
-  if (real.status !== control.status || real.text !== control.text) {
-    return {
-      verdict: 'PASS',
-      detail: 'real key accepted; an invalid key gets a different answer from Ozow',
-    };
+  const statuses = `real ${real.status}, invalid-key control ${control.status}`;
+  const realAccepted = real.status === HTTP_NOT_FOUND || real.status === HTTP_OK;
+  if (realAccepted && control.status === HTTP_UNAUTHORIZED) {
+    return { verdict: 'PASS', detail: `real key accepted, invalid key refused (${statuses})` };
   }
   return {
     verdict: 'INCONCLUSIVE',
-    detail: 'real and invalid keys got the same answer, so this endpoint cannot tell them apart',
+    detail: `not the observed 404-or-200 versus 401 pattern (${statuses})`,
   };
 }
 
@@ -211,21 +221,19 @@ async function stepPrivateKey(env: Record<string, string | undefined>): Promise<
 
   const goodErrored = good.finalPath === REQUEST_ERROR_PATH;
   const badErrored = bad.finalPath === REQUEST_ERROR_PATH;
-  if (good.finalPath === bad.finalPath && good.status === bad.status) {
+  if (good.status !== HTTP_OK || bad.status !== HTTP_OK) {
+    return { verdict: 'INCONCLUSIVE', detail: 'a hosted-page response was not HTTP 200' };
+  }
+  if (goodErrored) {
+    return { verdict: 'FAIL', detail: 'the correctly signed request landed on /request-error' };
+  }
+  if (!badErrored) {
     return {
       verdict: 'INCONCLUSIVE',
-      detail:
-        'correct and wrong hashes got the same outcome from a non-browser POST ' +
-        '(matches contracts/golden/ozow-m1-f1/README.md section 2)',
+      detail: 'the wrong hash was not rejected, so accepting the correct hash proves nothing',
     };
   }
-  if (!goodErrored && badErrored) {
-    return { verdict: 'PASS', detail: 'correct hash accepted; wrong hash rejected' };
-  }
-  if (goodErrored && !badErrored) {
-    return { verdict: 'FAIL', detail: 'correct hash rejected while the wrong hash was not' };
-  }
-  return { verdict: 'INCONCLUSIVE', detail: 'outcomes differ but do not show a hash decision' };
+  return { verdict: 'PASS', detail: 'correct hash accepted; wrong hash landed on /request-error' };
 }
 
 async function runStep(name: string, step: () => Promise<Outcome>): Promise<Outcome> {

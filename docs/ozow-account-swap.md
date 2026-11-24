@@ -11,42 +11,56 @@ step that proves it.
 
 ## Steps
 
-1. **Local env.** Put the three values in `.env.local` (or a separate env file) as plain
-   `NAME=value` lines, no quotes, no trailing spaces. Locally `lib/secrets.ts` reads them from
+1. **Local env.** Put the three values in an env file as exactly one `NAME=value` line each, LF
+   line endings, no `export`, no quotes, no spaces, no `#`, and only the characters `A-Z a-z 0-9 -`
+   (Ozow documents no issued character set; the SAOC values are 11, 32 and 32 characters, so this
+   is the conservative choice). The push script refuses anything else and names the key and the
+   character class, never the value. Locally `lib/secrets.ts` reads the same names from
    `process.env`.
 
-2. **Probe.** From the repo root:
+2. **Probe (standalone, optional).** From the repo root:
 
    ```bash
    pnpm exec tsx --env-file=.env.local scripts/ops/ozow-credential-probe.mts
    ```
 
-   It checks the shape of each value, then proves the API key and site code against Ozow's
+   Caution: `--env-file` does not override a variable already exported in your shell, and Node's
+   parser trims quotes and treats an unquoted `#` as a comment, so a standalone run can test
+   different values from the file. Step 3's `--dry-run` runs the probe on exactly the values the
+   push would write, so prefer that.
+
+   The probe checks the shape of each value, proves the API key and site code against Ozow's
    transaction-status endpoint, then proves the private key by posting a signed minimum-amount
    `IsTest=true` request that is never paid. It prints lengths, HTTP statuses and Ozow's response
-   text, never a value. Exit codes: 0 all pass, 1 any fail, 3 inconclusive.
+   text, never a value. Exit codes: 0 all pass, 1 any fail, 3 inconclusive. Observed Ozow behaviour:
 
-   - Step 2 passes only when Ozow answers the real key differently from a deliberately invalid
-     key. If both get the same answer the probe reports INCONCLUSIVE.
-   - Step 3 is expected to report INCONCLUSIVE. A raw (non-browser) POST to `pay.ozow.com`
-     returned the same error page for a correct and a wrong hash when last tested
-     (`contracts/golden/ozow-m1-f1/README.md` section 2). The private key is then proven by the
-     test-mode checkout in step 5.
+   - Status endpoint: HTTP 404 "No transactions found" for a valid key and unknown reference;
+     HTTP 401 "API key is invalid." for a bad key. PASS needs 404 (or 200) for the real key and
+     401 for the control. A real 401/403 is FAIL. Any other status pair is INCONCLUSIVE.
+   - Hosted page: a correct hash lands on `/<guid>/secure/`, a wrong hash on `/request-error`.
+     PASS needs the correct hash not on `/request-error` and the wrong hash on it.
    - The probe may leave an abandoned test transaction in the Ozow merchant admin. Ignore it.
 
 3. **Bundle push.** Deployed, the three values live inside the `SAOC_PAYMENT_SECRETS` JSON secret
    (`docs/secret-bundles.md`). Run this yourself in a terminal logged in to `firebase` and
-   `gcloud` for project `saoc-webapp`:
+   `gcloud` for project `saoc-webapp` (needs `pnpm install` for tsx):
 
    ```bash
-   scripts/ops/push-ozow-keys-to-bundle.sh --dry-run .env.local   # reads only, shows names and lengths
+   scripts/ops/push-ozow-keys-to-bundle.sh --dry-run .env.local   # probe + read-only merge summary
    scripts/ops/push-ozow-keys-to-bundle.sh .env.local             # asks you to type a phrase
    ```
 
-   The script re-checks the shape, replaces only the three keys (the PayFast keys are left
-   untouched), sets the bundle exactly once, re-reads it and compares a sha256 per key, then
-   destroys the previous version so one enabled version remains. It stops without destroying
-   anything if verification fails.
+   The script parses the file strictly, then runs the probe against exactly those three values
+   (passed to the probe's environment, overriding anything exported in your shell) and stops
+   unless the probe exits 0, before touching Secret Manager. `--dry-run` also runs the probe (real
+   calls to Ozow, possibly one abandoned test transaction) and then stops before any write. A
+   real run replaces only the three keys (the PayFast keys are untouched), sets the bundle exactly
+   once, re-reads it and compares a sha256 per key, then destroys the previous version so one
+   enabled version remains. It never destroys without a passed verification.
+
+   If it is interrupted or fails after the set, it prints which versions to look at and the
+   exact `gcloud secrets versions list` and `destroy` commands. Do not re-run it until you have
+   listed versions; it refuses to start with two enabled versions.
 
 4. **Redeploy.** App Hosting resolves secrets when a revision is created, so the running backend
    keeps the old values until a new rollout. The script prints the command; confirm the backend

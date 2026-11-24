@@ -6,14 +6,28 @@
 #   billed version), verify by re-reading, destroy the previous version, then roll out.
 #
 # Usage:   scripts/ops/push-ozow-keys-to-bundle.sh [--dry-run] <env-file>
-# Needs:   firebase CLI and gcloud (both logged in to project saoc-webapp), node >= 20.12.
-# Dry run: does every read and the full merge and summary, then stops before any write/destroy.
+# Needs:   firebase CLI and gcloud (both logged in to project saoc-webapp), node, and
+#          node_modules (pnpm install) for tsx.
+# Dry run: does everything except secrets:set and the destroy. It still runs the probe, which
+#          makes real calls to Ozow and may leave one abandoned test transaction in the merchant admin.
 #
-# Secret handling: values live only in shell variables and pipes. No value is printed, written
-# to disk, put in argv, or exported to a child environment. All output is key NAMES, lengths,
-# version numbers and match/mismatch. No `set -x`. The only temp item is an empty directory
-# (cwd for the firebase call, which docs/secret-bundles.md wants outside the repo); a trap
-# removes it on every exit path.
+# The env file is parsed by a STRICT parser of our own, not by Node's dotenv parser (which treats
+# an unquoted `#` as a comment and trims quotes). For each of the three keys the file must hold
+# exactly one `NAME=value` line, no `export`, no indentation, no spaces around `=`, LF endings,
+# and a value of only [A-Za-z0-9-]. Ozow's documentation does not state the issued character set
+# (the operator's values are 11, 32 and 32 characters), so this is the conservative choice; a
+# refusal names the key and the character CLASS only. Those exact three values are then (1) proven
+# by the probe, scripts/ops/ozow-credential-probe.mts, passed to the child ONLY through its
+# environment, overriding any OZOW_SANDBOX_* already exported in the parent shell, and (2) merged
+# into the bundle. The probe must exit 0 before anything is read from Secret Manager or written.
+#
+# Secret handling: values live only in shell variables, pipes and the probe child's environment.
+# Nothing is printed, written to disk, put in argv, exported, or placed in a here-string or heredoc
+# (the only heredocs carry code and text). Process substitution and pipes are used for data. A
+# same-user `ps eww` could show the probe child's environment, which is unavoidable for the
+# environment-only hand-off. All output is key NAMES, lengths, version numbers and match/mismatch.
+# No `set -x`. The only temp item is an empty directory (cwd for the firebase call, which
+# docs/secret-bundles.md wants outside the repo); the EXIT trap removes it.
 
 set -euo pipefail
 umask 077
@@ -22,12 +36,46 @@ readonly PROJECT="saoc-webapp"
 readonly BUNDLE="SAOC_PAYMENT_SECRETS"
 readonly BACKEND="saoc-prod"
 readonly CONFIRM_PHRASE="push ${BUNDLE}"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+readonly ROOT
+readonly PROBE="scripts/ops/ozow-credential-probe.mts"
 
 TMPD=""
-cleanup() {
+STAGE="pre"
+OLD_VERSION=""
+NEW_VERSION=""
+
+on_exit() {
+  local code=$?
   if [ -n "$TMPD" ]; then rm -rf "$TMPD"; fi
+  if [ "$code" -ne 0 ]; then
+    case "$STAGE" in
+      set_started)
+        cat >&2 <<EOF
+
+STOPPED between the set and a passed verification. A new version may or may not exist.
+Version $OLD_VERSION was NOT destroyed and is still enabled. Run:
+  gcloud secrets versions list $BUNDLE --project $PROJECT
+If a second enabled version exists, it is the new one: compare it by hand or destroy it
+(gcloud secrets versions destroy <N> --secret $BUNDLE --project $PROJECT). Do not re-run this
+script until you have listed versions; it refuses to run with two enabled versions.
+EOF
+        ;;
+      verified)
+        cat >&2 <<EOF
+
+STOPPED after a PASSED verification but before the destroy finished. New version ${NEW_VERSION:-unknown}
+holds the verified values. Old version $OLD_VERSION may still be enabled and billed. Run:
+  gcloud secrets versions list $BUNDLE --project $PROJECT
+then, if $OLD_VERSION is still enabled:
+  gcloud secrets versions destroy $OLD_VERSION --secret $BUNDLE --project $PROJECT
+Then do the rollout described in docs/ozow-account-swap.md.
+EOF
+        ;;
+    esac
+  fi
 }
-trap cleanup EXIT
+trap on_exit EXIT
 trap 'exit 130' INT TERM
 
 die() {
@@ -49,12 +97,16 @@ done
 for tool in firebase gcloud node; do
   command -v "$tool" >/dev/null 2>&1 || die "$tool not found on PATH" 2
 done
+[ -x "$ROOT/node_modules/.bin/tsx" ] || die "tsx not installed; run pnpm install in $ROOT" 2
+if [ "$DRY_RUN" = 0 ]; then
+  [ -t 0 ] || die "confirmation needs an interactive terminal (stdin is not a tty); nothing done" 2
+fi
 
-# Node helper, passed with -e so it never touches disk. Data arrives on stdin or /dev/fd paths.
+# Node helper, passed with -e so it never touches disk. It holds code only; data arrives on stdin
+# or through /dev/fd paths.
 read -r -d '' NODE_HELPER <<'JS' || true
 const fs = require('fs');
 const crypto = require('crypto');
-const util = require('util');
 const NAMES = ['OZOW_SANDBOX_SITE_CODE', 'OZOW_SANDBOX_PRIVATE_KEY', 'OZOW_SANDBOX_API_KEY'];
 const fail = (message, code = 1) => { process.stderr.write(`ERROR: ${message}\n`); process.exit(code); };
 const sha = (value) => crypto.createHash('sha256').update(value).digest('hex');
@@ -72,25 +124,47 @@ function parseBundle(raw, label) {
   return parsed;
 }
 
-function shapeProblems(value) {
-  if (value === undefined) return ['missing'];
+// Character CLASSES only; never the character itself.
+function valueProblems(value) {
   const problems = [];
   if (value.length === 0) problems.push('empty');
-  if (value !== value.trim()) problems.push('leading or trailing whitespace');
-  if (/^["'`]|["'`]$/.test(value)) problems.push('surrounding quotes');
-  if (/[\r\n]/.test(value)) problems.push('contains CR or LF');
+  if (/\r|\n/.test(value)) problems.push('CR/LF');
+  if (/[ \t\f\v]/.test(value)) problems.push('whitespace');
+  if (/["'`]/.test(value)) problems.push('quote');
+  if (/#/.test(value)) problems.push('hash');
+  if (/[^A-Za-z0-9\-\s"'`#]/.test(value)) problems.push('other');
   return problems;
 }
 
-function merge(envFile) {
-  const bundle = parseBundle(fs.readFileSync(0, 'utf8'), 'current bundle');
-  const env = util.parseEnv(fs.readFileSync(envFile, 'utf8'));
-  const bad = NAMES.filter((name) => shapeProblems(env[name]).length > 0);
+function parseEnvFile(file) {
+  const raw = fs.readFileSync(file, 'utf8');
+  if (raw.includes('\r')) fail('env file contains CR (CRLF line endings); convert it to LF and retry', 3);
+  const lines = raw.split('\n');
+  const values = [];
   for (const name of NAMES) {
-    process.stderr.write(`  ${name}: new length ${(env[name] ?? '').length}` +
-      `${shapeProblems(env[name]).length ? ` SHAPE PROBLEM: ${shapeProblems(env[name]).join(', ')}` : ''}\n`);
+    const assign = new RegExp(`^\\s*(?:export\\s+)?${name}\\s*=`);
+    const hits = lines.filter((line) => assign.test(line));
+    if (hits.length === 0) fail(`${name} not found in the env file`, 3);
+    if (hits.length > 1) fail(`${name} appears ${hits.length} times in the env file; keep exactly one`, 3);
+    const exact = new RegExp(`^${name}=(.*)$`).exec(hits[0]);
+    if (!exact) fail(`${name} line has an export prefix, indentation or spaces around "="; use exactly ${name}=value`, 3);
+    const problems = valueProblems(exact[1]);
+    if (problems.length) fail(`${name} value refused (${problems.join(', ')}); allowed characters are A-Z a-z 0-9 and "-"`, 3);
+    values.push(exact[1]);
   }
-  if (bad.length) fail(`shape check failed for ${bad.join(', ')}`, 3);
+  process.stdout.write(`${values.join('\n')}\n`);
+}
+
+function merge(valuesPath) {
+  const bundle = parseBundle(fs.readFileSync(0, 'utf8'), 'current bundle');
+  const lines = fs.readFileSync(valuesPath, 'utf8').split('\n');
+  const env = {};
+  NAMES.forEach((name, index) => { env[name] = lines[index] ?? ''; });
+  for (const name of NAMES) {
+    const problems = valueProblems(env[name]);
+    process.stderr.write(`  ${name}: new length ${env[name].length}${problems.length ? ` REFUSED (${problems.join(', ')})` : ''}\n`);
+    if (problems.length) fail(`value check failed for ${name}`, 3);
+  }
   const next = { ...bundle };
   let changed = 0;
   for (const name of NAMES) {
@@ -121,7 +195,8 @@ function verify(expectedPath) {
 }
 
 const [mode, arg] = process.argv.slice(1);
-if (mode === 'merge') merge(arg);
+if (mode === 'parse') parseEnvFile(arg);
+else if (mode === 'merge') merge(arg);
 else if (mode === 'verify') verify(arg);
 else fail(`unknown helper mode ${mode}`, 2);
 JS
@@ -134,38 +209,62 @@ enabled_versions() {
 
 printf 'Bundle %s in project %s%s\n' "$BUNDLE" "$PROJECT" "$([ "$DRY_RUN" = 1 ] && echo ' (DRY RUN)')"
 
-echo "Step 1: enabled versions before the change"
+echo "Step 1: strict-parse the env file (exactly one NAME=value per key, [A-Za-z0-9-] only)"
+PARSED="$(node -e "$NODE_HELPER" parse "$ENV_FILE")" || die "env file refused (see message above); nothing done" 3
+{
+  IFS= read -r SITE_CODE
+  IFS= read -r PRIVATE_KEY
+  IFS= read -r API_KEY
+} < <(printf '%s\n' "$PARSED")
+unset PARSED
+echo "  parsed 3 values (lengths ${#SITE_CODE}, ${#PRIVATE_KEY}, ${#API_KEY})"
+
+echo "Step 2: run the probe against exactly these three values; it must exit 0"
+if [ "$DRY_RUN" = 1 ]; then
+  echo "  (the probe makes real calls to Ozow and may leave one abandoned test transaction in the merchant admin)"
+fi
+# Environment-only hand-off. The assignments override any OZOW_SANDBOX_* exported in this shell.
+PROBE_EXIT=0
+(
+  cd "$ROOT"
+  OZOW_SANDBOX_SITE_CODE="$SITE_CODE" OZOW_SANDBOX_PRIVATE_KEY="$PRIVATE_KEY" \
+    OZOW_SANDBOX_API_KEY="$API_KEY" node_modules/.bin/tsx "$PROBE"
+) || PROBE_EXIT=$?
+[ "$PROBE_EXIT" = 0 ] || die "probe exited $PROBE_EXIT (1 = FAIL, 3 = INCONCLUSIVE); nothing was read from or written to Secret Manager" 3
+
+echo "Step 3: enabled versions before the change"
 BEFORE="$(enabled_versions)" || die "could not list secret versions"
 [ -n "$BEFORE" ] && [ "$(printf '%s\n' "$BEFORE" | wc -l | tr -d ' ')" = 1 ] \
   || die "expected exactly ONE enabled version of $BUNDLE; found: $(printf '%s' "$BEFORE" | tr '\n' ' ')"
 OLD_VERSION="$BEFORE"
 echo "  enabled version: $OLD_VERSION"
 
-echo "Step 2: read current bundle and merge the three keys in memory"
+echo "Step 4: read current bundle and merge the three keys in memory"
 CURRENT="$(firebase apphosting:secrets:access "$BUNDLE" --project "$PROJECT" 2>/dev/null)" \
   || die "could not read the current bundle (firebase apphosting:secrets:access failed)"
-NEW_BUNDLE="$(printf '%s' "$CURRENT" | node -e "$NODE_HELPER" merge "$ENV_FILE")" \
+NEW_BUNDLE="$(printf '%s' "$CURRENT" \
+  | node -e "$NODE_HELPER" merge <(printf '%s\n%s\n%s\n' "$SITE_CODE" "$PRIVATE_KEY" "$API_KEY"))" \
   || die "merge refused (see messages above)" 3
-unset CURRENT
+unset CURRENT SITE_CODE PRIVATE_KEY API_KEY
 
 if [ "$DRY_RUN" = 1 ]; then
-  echo "DRY RUN complete: no secret was set and no version was destroyed."
+  echo "DRY RUN complete: probe passed, nothing was set and no version was destroyed."
   exit 0
 fi
 
-[ -t 0 ] || die "confirmation needs an interactive terminal" 2
-printf 'Step 3: type exactly "%s" to set the new bundle (anything else aborts): ' "$CONFIRM_PHRASE"
+printf 'Step 5: type exactly "%s" to set the new bundle (anything else aborts): ' "$CONFIRM_PHRASE"
 read -r ANSWER
 [ "$ANSWER" = "$CONFIRM_PHRASE" ] || die "confirmation not given; nothing written" 2
 
-echo "Step 4: set the new bundle exactly once"
+echo "Step 6: set the new bundle exactly once"
 TMPD="$(mktemp -d)"
+STAGE="set_started"
 printf '%s' "$NEW_BUNDLE" | (
   cd "$TMPD" \
     && firebase apphosting:secrets:set "$BUNDLE" --data-file=- --project "$PROJECT" --force
 ) >/dev/null 2>&1 || die "secrets:set failed; check 'gcloud secrets versions list $BUNDLE --project $PROJECT' before retrying (a retry adds another billed version)"
 
-echo "Step 5: verify by re-reading (per-key sha256 compare, names only)"
+echo "Step 7: verify by re-reading (per-key sha256 compare, names only)"
 AFTER="$(enabled_versions)" || die "could not list versions after set; old version $OLD_VERSION NOT destroyed"
 NEW_VERSION="$(printf '%s\n' "$AFTER" | grep -vx "$OLD_VERSION" || true)"
 [ -n "$NEW_VERSION" ] && [ "$(printf '%s\n' "$NEW_VERSION" | wc -l | tr -d ' ')" = 1 ] \
@@ -174,12 +273,14 @@ echo "  new version: $NEW_VERSION"
 firebase apphosting:secrets:access "$BUNDLE" --project "$PROJECT" 2>/dev/null \
   | node -e "$NODE_HELPER" verify <(printf '%s' "$NEW_BUNDLE") \
   || die "verification FAILED; old version $OLD_VERSION NOT destroyed; new version $NEW_VERSION exists (destroy it by hand if abandoning)"
+STAGE="verified"
 
-echo "Step 6: destroy the previous version $OLD_VERSION"
+echo "Step 8: destroy the previous version $OLD_VERSION"
 gcloud secrets versions destroy "$OLD_VERSION" --secret "$BUNDLE" --project "$PROJECT" --quiet \
   >/dev/null || die "destroy of version $OLD_VERSION failed; destroy it by hand (it is billed while it exists)"
 LEFT="$(enabled_versions)" || die "could not list versions after destroy"
 [ "$LEFT" = "$NEW_VERSION" ] || die "expected only version $NEW_VERSION enabled; found: $LEFT"
+STAGE="done"
 
 cat <<EOF
 Done. $BUNDLE now has one enabled version ($NEW_VERSION).
