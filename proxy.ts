@@ -63,8 +63,10 @@ export function isExemptPath(pathname: string): boolean {
 //      and API routes.
 //   2. A Set-Cookie marker. Some paths overwrite Cache-Control after proxy runs —
 //      the image optimizer always sets `public, max-age=...`
-//      (server/image-optimizer.js:1180) and a route handler's own headers win (the
-//      ImageResponse at app/og). Cloud CDN never caches a response carrying
+//      (server/image-optimizer.js:1180), and the ImageResponse at app/og sets its own. A
+//      route handler's headers do NOT beat the proxy's: Next appends them only when the
+//      header is not already on the response (server/send-response.js:60-66), so the /og
+//      case is covered by this cookie alone. Cloud CDN never caches a response carrying
 //      Set-Cookie, whatever its Cache-Control says. The value carries no data.
 // `Vary: Authorization` is deliberately NOT used: Next replaces Vary on every page
 // (build/templates/app-page.js:446) and image response, so it would be absent
@@ -76,23 +78,24 @@ export const WALL_MARKER_COOKIE = 'saoc_beta_wall=1; Path=/; HttpOnly; Secure; S
 // Static assets that passed the wall may be cached by the visitor's own browser. Still `private`
 // (never `public`, no s-maxage) and still carrying the Set-Cookie marker, so Cloud CDN stores
 // nothing. Unauthenticated requests never reach this: the 401 keeps WALL_CACHE_CONTROL.
-//   - /_next/static is content-hashed, so a URL never changes meaning: immutable for a year.
-//   - /images/_opt (build-generated image variants) is not hashed: one day, no immutable.
-// Fonts are served from /_next/static/media; there is no separate /fonts tree.
-export const WALL_STATIC_HASHED_CACHE_CONTROL = 'private, max-age=31536000, immutable';
-export const WALL_STATIC_UNHASHED_CACHE_CONTROL = 'private, max-age=86400';
-const HASHED_STATIC_PREFIX = '/_next/static';
+// One hour, no `immutable`, on purpose: a missing asset (a new-revision page asking an old Cloud
+// Run instance for a chunk during a rollout) renders a 404 that keeps this header, and a route
+// handler cannot override it (see the comment above). One hour bounds how long a browser can
+// hold such a miss. Fonts are served from /_next/static/media; there is no /fonts tree.
+export const WALL_STATIC_CACHE_CONTROL = 'private, max-age=3600';
+const NEXT_STATIC_PREFIX = '/_next/static';
 // Only a real image file directly under /images/_opt: a file extension makes the path host-neutral
 // (isHostNeutralPath), so it is always a pass-through to the static file, never the NOS rewrite
 // to a page render that could 404 and be browser-cached.
-const UNHASHED_STATIC_FILE = /^\/images\/_opt\/[^/]+\.(webp|avif|jpe?g|png)$/;
+const IMAGE_VARIANT_FILE = /^\/images\/_opt\/[^/]+\.(webp|avif|jpe?g|png)$/;
 
 // `next dev` chunks are not content-hashed (the same name is rewritten) and Next's own dev
 // no-cache header must win, so browser caching applies to production builds only.
 export function wallCacheControlFor(pathname: string, allowed: boolean, isProduction: boolean): string {
   if (!allowed || !isProduction) return WALL_CACHE_CONTROL;
-  if (isUnder(pathname, HASHED_STATIC_PREFIX)) return WALL_STATIC_HASHED_CACHE_CONTROL;
-  if (UNHASHED_STATIC_FILE.test(pathname)) return WALL_STATIC_UNHASHED_CACHE_CONTROL;
+  if (isUnder(pathname, NEXT_STATIC_PREFIX) || IMAGE_VARIANT_FILE.test(pathname)) {
+    return WALL_STATIC_CACHE_CONTROL;
+  }
   return WALL_CACHE_CONTROL;
 }
 

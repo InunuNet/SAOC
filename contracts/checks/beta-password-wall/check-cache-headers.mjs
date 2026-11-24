@@ -43,8 +43,7 @@ const WALL_CACHE_CONTROL = 'private, no-store, max-age=0';
 const WALL_MARKER_COOKIE_NAME = 'saoc_beta_wall';
 // Authenticated static assets get a private browser cache (perf/wall-asset-browser-cache): the
 // exact value from proxy.ts, never public, never s-maxage, so Cloud CDN still stores nothing.
-const HASHED_BROWSER_CACHE = 'private, max-age=31536000, immutable';
-const UNHASHED_BROWSER_CACHE = 'private, max-age=86400';
+const STATIC_BROWSER_CACHE = 'private, max-age=3600';
 const READY_TIMEOUT_MS = 60_000;
 const READY_POLL_MS = 500;
 
@@ -62,8 +61,8 @@ const CACHE_CONTROL_SURVIVES = [
   { kind: 'API route', path: '/api/events.ics' },
   { kind: 'public file', path: '/images/orchid-pink.jpg' },
   { kind: 'favicon', path: '/favicon.ico' },
-  { kind: 'build asset', path: '__STATIC_CHUNK__', browserCache: HASHED_BROWSER_CACHE },
-  { kind: 'image variant', path: '__IMAGE_VARIANT__', browserCache: UNHASHED_BROWSER_CACHE },
+  { kind: 'build asset', path: '__STATIC_CHUNK__', browserCache: STATIC_BROWSER_CACHE },
+  { kind: 'image variant', path: '__IMAGE_VARIANT__', browserCache: STATIC_BROWSER_CACHE },
 ];
 
 // Paths where Next overwrites Cache-Control after proxy — protected by the

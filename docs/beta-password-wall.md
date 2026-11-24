@@ -41,8 +41,9 @@ Four protections are wired together and can only ever lift as one:
    `proxy.ts` returns carries `Cache-Control: private, no-store, max-age=0`
    plus a marker cookie, `Set-Cookie: saoc_beta_wall=1` (`WALL_CACHE_CONTROL`
    / `WALL_MARKER_COOKIE` in `proxy.ts`). The one exception is a request that
-   passed the wall for `/_next/static/*` (`private, max-age=31536000, immutable`)
-   or `/images/_opt/*` (`private, max-age=86400`): those stay `private` with the
+   passed the wall for `/_next/static/*` or an `/images/_opt/<file>` image
+   (`private, max-age=3600`, production only; one hour so a rollout-time 404 cannot be
+   browser-cached for long): those stay `private` with the
    marker cookie, so the CDN stores nothing, but the visitor's own browser may
    cache them. Unauthenticated requests, pages and API routes keep no-store.
    Two independent mechanisms, both
@@ -56,8 +57,9 @@ Four protections are wired together and can only ever lift as one:
    - The marker cookie exists because two paths overwrite `Cache-Control`
      *after* `proxy()` runs and would otherwise escape the first mechanism:
      the image optimizer always sets `public, max-age=...`
-     (`image-optimizer.js:1180`), and a route handler's own headers win (the
-     `ImageResponse` at `app/og`). Firebase App Hosting's Cloud CDN never
+     (`image-optimizer.js:1180`), and the `ImageResponse` at `app/og` sets its
+     own (a route handler's headers never beat the proxy's, `send-response.js:60-66`,
+     so `/og` rests on the cookie alone). Firebase App Hosting's Cloud CDN never
      caches a response carrying `Set-Cookie`, whatever its `Cache-Control`
      says — so the cookie protects exactly the cases the header can't. The
      cookie's value carries no data.

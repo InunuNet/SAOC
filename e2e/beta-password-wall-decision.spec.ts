@@ -24,8 +24,7 @@ import { isPasswordWallOff, isPubliclyLaunched } from '../lib/beta-public-launch
 import {
   WALL_CACHE_CONTROL,
   WALL_MARKER_COOKIE,
-  WALL_STATIC_HASHED_CACHE_CONTROL,
-  WALL_STATIC_UNHASHED_CACHE_CONTROL,
+  WALL_STATIC_CACHE_CONTROL,
   constantTimeEqual,
   decideBasicAuth,
   isExemptPath,
@@ -272,7 +271,7 @@ test.describe('proxy() end-to-end response shape', () => {
     expect(WALL_MARKER_COOKIE.startsWith('saoc_beta_wall=')).toBe(true);
   });
 
-  test('authed /_next/static asset: long private browser cache, marker cookie kept', async () => {
+  test('authed /_next/static asset: one-hour private browser cache, marker cookie kept', async () => {
     delete process.env.SITE_PUBLIC_LAUNCH;
     setNodeEnv('production');
     process.env.BETA_BASIC_AUTH_USER = 'councilbeta';
@@ -285,13 +284,14 @@ test.describe('proxy() end-to-end response shape', () => {
       ),
     );
 
-    expect(response.headers.get('Cache-Control')).toBe(WALL_STATIC_HASHED_CACHE_CONTROL);
-    expect(WALL_STATIC_HASHED_CACHE_CONTROL).toBe('private, max-age=31536000, immutable');
+    expect(response.headers.get('Cache-Control')).toBe(WALL_STATIC_CACHE_CONTROL);
+    expect(WALL_STATIC_CACHE_CONTROL).toBe('private, max-age=3600');
+    expect(WALL_STATIC_CACHE_CONTROL).not.toContain('immutable');
     expect(response.headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
     expect(response.headers.getSetCookie()).toContain(WALL_MARKER_COOKIE);
   });
 
-  test('authed /images/_opt asset: one-day private cache, not immutable, marker cookie kept', async () => {
+  test('authed /images/_opt asset: one-hour private cache, marker cookie kept', async () => {
     delete process.env.SITE_PUBLIC_LAUNCH;
     setNodeEnv('production');
     process.env.BETA_BASIC_AUTH_USER = 'councilbeta';
@@ -304,9 +304,7 @@ test.describe('proxy() end-to-end response shape', () => {
       ),
     );
 
-    expect(response.headers.get('Cache-Control')).toBe(WALL_STATIC_UNHASHED_CACHE_CONTROL);
-    expect(WALL_STATIC_UNHASHED_CACHE_CONTROL).toBe('private, max-age=86400');
-    expect(response.headers.get('Cache-Control')).not.toContain('immutable');
+    expect(response.headers.get('Cache-Control')).toBe(WALL_STATIC_CACHE_CONTROL);
     expect(response.headers.getSetCookie()).toContain(WALL_MARKER_COOKIE);
   });
 
@@ -324,7 +322,7 @@ test.describe('proxy() end-to-end response shape', () => {
     }
   });
 
-  test('NOS host: /images/_opt image file gets the day cache; no file or non-image does not', async () => {
+  test('NOS host: /images/_opt image file gets the hour cache; no file or non-image does not', async () => {
     delete process.env.SITE_PUBLIC_LAUNCH;
     setNodeEnv('production');
     process.env.BETA_BASIC_AUTH_USER = 'councilbeta';
@@ -334,7 +332,7 @@ test.describe('proxy() end-to-end response shape', () => {
     const auth = basicAuthHeader('councilbeta', 's3cr3t-value');
 
     const image = await proxy(requestFor('https://nos.saoc.co.za/images/_opt/x.webp', auth));
-    expect(image.headers.get('Cache-Control')).toBe(WALL_STATIC_UNHASHED_CACHE_CONTROL);
+    expect(image.headers.get('Cache-Control')).toBe(WALL_STATIC_CACHE_CONTROL);
 
     for (const path of ['/images/_opt', '/images/_opt/', '/images/_opt/x.txt', '/images/_opt/a/b.webp']) {
       const response = await proxy(requestFor(`https://nos.saoc.co.za${path}`, auth));
