@@ -310,6 +310,38 @@ test.describe('proxy() end-to-end response shape', () => {
     expect(response.headers.getSetCookie()).toContain(WALL_MARKER_COOKIE);
   });
 
+  test('development server: static assets stay no-store so Next dev headers and fresh chunks win', async () => {
+    delete process.env.SITE_PUBLIC_LAUNCH;
+    setNodeEnv('development');
+    process.env.BETA_BASIC_AUTH_USER = 'councilbeta';
+    process.env.BETA_BASIC_AUTH_PASSWORD = 's3cr3t-value';
+
+    for (const path of ['/_next/static/chunks/abc123.js', '/images/_opt/hero-1280.webp']) {
+      const response = await proxy(
+        requestFor(`https://beta.saoc.co.za${path}`, basicAuthHeader('councilbeta', 's3cr3t-value')),
+      );
+      expect(response.headers.get('Cache-Control'), path).toBe(WALL_CACHE_CONTROL);
+    }
+  });
+
+  test('NOS host: /images/_opt image file gets the day cache; no file or non-image does not', async () => {
+    delete process.env.SITE_PUBLIC_LAUNCH;
+    setNodeEnv('production');
+    process.env.BETA_BASIC_AUTH_USER = 'councilbeta';
+    process.env.BETA_BASIC_AUTH_PASSWORD = 's3cr3t-value';
+    process.env.NEXT_PUBLIC_NOS_SITE_URL = 'https://nos.saoc.co.za';
+    process.env.NEXT_PUBLIC_SAOC_SITE_URL = 'https://saoc.co.za';
+    const auth = basicAuthHeader('councilbeta', 's3cr3t-value');
+
+    const image = await proxy(requestFor('https://nos.saoc.co.za/images/_opt/x.webp', auth));
+    expect(image.headers.get('Cache-Control')).toBe(WALL_STATIC_UNHASHED_CACHE_CONTROL);
+
+    for (const path of ['/images/_opt', '/images/_opt/', '/images/_opt/x.txt', '/images/_opt/a/b.webp']) {
+      const response = await proxy(requestFor(`https://nos.saoc.co.za${path}`, auth));
+      expect(response.headers.get('Cache-Control'), path).toBe(WALL_CACHE_CONTROL);
+    }
+  });
+
   test('authed page and API route stay no-store; lookalike static prefix does not match', async () => {
     delete process.env.SITE_PUBLIC_LAUNCH;
     setNodeEnv('production');

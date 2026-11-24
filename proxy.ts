@@ -82,12 +82,17 @@ export const WALL_MARKER_COOKIE = 'saoc_beta_wall=1; Path=/; HttpOnly; Secure; S
 export const WALL_STATIC_HASHED_CACHE_CONTROL = 'private, max-age=31536000, immutable';
 export const WALL_STATIC_UNHASHED_CACHE_CONTROL = 'private, max-age=86400';
 const HASHED_STATIC_PREFIX = '/_next/static';
-const UNHASHED_STATIC_PREFIX = '/images/_opt';
+// Only a real image file directly under /images/_opt: a file extension makes the path host-neutral
+// (isHostNeutralPath), so it is always a pass-through to the static file, never the NOS rewrite
+// to a page render that could 404 and be browser-cached.
+const UNHASHED_STATIC_FILE = /^\/images\/_opt\/[^/]+\.(webp|avif|jpe?g|png)$/;
 
-export function wallCacheControlFor(pathname: string, allowed: boolean): string {
-  if (!allowed) return WALL_CACHE_CONTROL;
+// `next dev` chunks are not content-hashed (the same name is rewritten) and Next's own dev
+// no-cache header must win, so browser caching applies to production builds only.
+export function wallCacheControlFor(pathname: string, allowed: boolean, isProduction: boolean): string {
+  if (!allowed || !isProduction) return WALL_CACHE_CONTROL;
   if (isUnder(pathname, HASHED_STATIC_PREFIX)) return WALL_STATIC_HASHED_CACHE_CONTROL;
-  if (isUnder(pathname, UNHASHED_STATIC_PREFIX)) return WALL_STATIC_UNHASHED_CACHE_CONTROL;
+  if (UNHASHED_STATIC_FILE.test(pathname)) return WALL_STATIC_UNHASHED_CACHE_CONTROL;
   return WALL_CACHE_CONTROL;
 }
 
@@ -342,6 +347,6 @@ export async function proxy(request: NextRequest): Promise<Response> {
   const response = routeByHost(request, site);
   response.headers.set(SITE_HEADER, site);
   return wallUp
-    ? applyWallHeaders(response, wallCacheControlFor(request.nextUrl.pathname, true))
+    ? applyWallHeaders(response, wallCacheControlFor(request.nextUrl.pathname, true, process.env.NODE_ENV === 'production'))
     : response;
 }
