@@ -2136,6 +2136,12 @@ def cmd_skip(args):
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 def main():
+    # Every path here is relative to the project root; run from a subdirectory
+    # (an accidental cd into .tmp/sandbox/...) it reported "no active mission"
+    # (SAOC NOS Design 2026-10-29). Move to the nearest ancestor holding .agent/.
+    root = _project_root()
+    if root != Path.cwd().resolve():
+        os.chdir(root)
     parser = argparse.ArgumentParser(description="Athanor Mission Orchestrator")
     sub = parser.add_subparsers(dest="cmd")
 

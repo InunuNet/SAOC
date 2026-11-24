@@ -5,22 +5,22 @@ alembic_version: 1.68.0
 
 # /alembic
 
-Fetch and distill web content through the Alembic proxy at `localhost:7077`. Returns clean Markdown with ~84-98% token reduction. Also does PDF extraction, docs-platform adapters, hydration-state extraction, a Camoufox stealth escalation path, confidence signalling, and batch fetching — see below. No alembic installation required in your workspace.
+Fetch and distill web content through the Alembic proxy at `$ALEMBIC_URL` (default `http://localhost:7077`). Returns clean Markdown with ~84-98% token reduction. Also does PDF extraction, docs-platform adapters, hydration-state extraction, a Camoufox stealth escalation path, confidence signalling, and batch fetching — see below. No alembic installation required in your workspace.
 
 ## Quickstart
 
 ```bash
-curl -s http://localhost:7077/<url>                                    # Markdown
-curl -s -H "Accept: application/json" http://localhost:7077/<url>      # JSON + metadata
-curl -s "http://localhost:7077/<url>?js=true"                          # force JS render
-curl -s "http://localhost:7077/<url>?no_cache=true"                    # bypass cache
+curl -s ${ALEMBIC_URL:-http://localhost:7077}/<url>                                    # Markdown
+curl -s -H "Accept: application/json" ${ALEMBIC_URL:-http://localhost:7077}/<url>      # JSON + metadata
+curl -s "${ALEMBIC_URL:-http://localhost:7077}/<url>?js=true"                          # force JS render
+curl -s "${ALEMBIC_URL:-http://localhost:7077}/<url>?no_cache=true"                    # bypass cache
 ```
 
 Use Alembic for all URL retrieval instead of WebFetch. WebSearch (discovery) is exempt.
 
 ## Endpoints
 
-- `GET /<url>` — catch-all distill, e.g. `http://localhost:7077/https://example.com`.
+- `GET /<url>` — catch-all distill, e.g. `$ALEMBIC_URL/https://example.com`.
 - `GET /?q=<query>` — search mode.
 - `GET /` with `Accept: application/json` — health/status JSON (version, config, cascade order, stats).
 - `GET /metrics` — Prometheus metrics.
@@ -87,11 +87,11 @@ Levels: `high` (nothing fired), `medium` (a soft reason fired), `low` (a hard re
 Alembic runs as an always-on launchd service — you should not need to start it manually. Confirm it's alive with a health check:
 
 ```bash
-curl -s http://localhost:7077/
+curl -s ${ALEMBIC_URL:-http://localhost:7077}/
 # Should return a banner: "Alembic Proxy vX.Y.Z" with a short usage summary
 ```
 
-If `localhost:7077` stops answering, restart the launchd-managed daemon (no chat session required):
+If `$ALEMBIC_URL` (default `http://localhost:7077`) stops answering, restart the launchd-managed daemon (no chat session required):
 
 ```bash
 launchctl kickstart -k "gui/$(id -u)/net.inunu.alembic-proxy"

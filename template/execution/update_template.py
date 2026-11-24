@@ -1436,6 +1436,24 @@ def classify_merge_result(msg: str) -> str:
     return "skipped"
 
 
+def merge_entry_message(strategy: str, src_path: Path, dst_path: Path,
+                        backup_dir: Path, path: str,
+                        source_is_authoritative: bool) -> str:
+    """Run one MERGE entry and return its result line.
+
+    GH #1481: the local template/ fallback ships no payload for repo-root merge
+    entries such as .gitignore. With a non-authoritative source that is a kept
+    local file, not a delivery failure; an authoritative source still fails.
+    """
+    if strategy in ("line_union", "json_deep_merge"):
+        if not src_path.exists() and not source_is_authoritative:
+            return f"  SKIP  (no local-template payload for {path}; local kept)"
+        if strategy == "line_union":
+            return merge_line_union(src_path, dst_path, backup_dir)
+        return merge_json_deep(src_path, dst_path, backup_dir)
+    return f"  WARN  unknown merge strategy {strategy!r} for {path}"
+
+
 def merge_line_union(src: Path, dst: Path, backup_dir: Path) -> str:
     """Merge strategy: union of lines (src lines added if not already in dst)."""
     if not src.exists():
@@ -3032,6 +3050,7 @@ def fetch_latest_from_github(tmpdir: Path) -> bool:
             stderr=subprocess.PIPE,
         )
         p1.stdout.close()  # allow p1 to receive SIGPIPE if p2 exits early
+        p1.stdout = None  # Windows communicate() reads any non-None stdout, closed or not (#win-update-closed-file)
         _, tar_err = p2.communicate(timeout=120)
         _, gh_err = p1.communicate(timeout=120)
 
@@ -4105,6 +4124,7 @@ def _fetch_historical_tree(sha: str, tmpdir: Path, repo: str = ATHANOR_REPO) -> 
             stdin=p1.stdout, stderr=subprocess.PIPE,
         )
         p1.stdout.close()
+        p1.stdout = None  # see fetch_latest_from_github
         _, tar_err = p2.communicate(timeout=120)
         _, gh_err = p1.communicate(timeout=120)
         if p1.returncode != 0:
@@ -4207,6 +4227,7 @@ def _export_local_checkout_tree(checkout: Path, sha: str, tmpdir: Path) -> bool:
             stdin=p1.stdout, stderr=subprocess.PIPE,
         )
         p1.stdout.close()
+        p1.stdout = None  # see fetch_latest_from_github
         _, tar_err = p2.communicate(timeout=60)
         _, git_err = p1.communicate(timeout=60)
         if p1.returncode != 0:
@@ -5898,12 +5919,8 @@ def main():
                     else:
                         src_path = source / path
                         dst_path = Path(path)
-                        if strategy == "line_union":
-                            msg = merge_line_union(src_path, dst_path, backup_dir)
-                        elif strategy == "json_deep_merge":
-                            msg = merge_json_deep(src_path, dst_path, backup_dir)
-                        else:
-                            msg = f"  WARN  unknown merge strategy {strategy!r} for {path}"
+                        msg = merge_entry_message(strategy, src_path, dst_path, backup_dir,
+                                                  path, source_is_authoritative)
                         print(msg)
                         outcome = classify_merge_result(msg)
                         if outcome == "changed":

@@ -21,4 +21,4 @@ paths that match the failure: `no_cache=true`, `js=true`, `x-alembic-wait-for`,
 or configured stealth after its documented trigger. A failed Alembic recovery
 is an evidence gap; it is never permission to use another web tool.
 
-Route: `curl -s http://localhost:7077/<url>` | Search: `curl "http://localhost:7077/?q=query"` | Full docs: load skill `alembic`.
+Route: `curl -s ${ALEMBIC_URL:-http://localhost:7077}/<url>` | Search: `curl "${ALEMBIC_URL:-http://localhost:7077}/?q=query"` | Full docs: load skill `alembic`.
