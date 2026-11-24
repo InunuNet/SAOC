@@ -38,9 +38,22 @@ Source JSON shape:
   `legacyPara` / `legacyPrefix` are the role map import_legacy.py fills `text` from; the build ignores them.
   `legacyCopyHeadings`: Heading-styled lines of the legacy doc that are also page copy (not labels).
 
-All formatting lives in the paragraph styles (not on individual runs), so Enter carries it on in
+All layout formatting lives in the paragraph styles (not on individual runs), so Enter carries it on in
 Word and in Google Docs' Office-compat editor. Only what Google Docs keeps is used: Google Fonts (Fraunces, Karla), bold,
 italic, underline, colour, paragraph shading, paragraph borders, indents. A4 portrait, 2 cm margins.
+
+v3.1 (Brad 2026-11-25): the AUTHOR'S OWN inline formatting is carried too, exactly as the legacy doc
+had it. It is the only run-level formatting in a copy doc:
+  - `runs` on an element (or `titleRuns` for the title): the copy cut into runs with the legacy run's
+    direct bold, italic, underline, strike, caps, superscript/subscript, size, colour, highlight, and
+    hyperlink URL. The runs' text joins to exactly `text`. Elements without `runs` are one plain run,
+    so a page with no author formatting builds byte-identically to v3.
+  - `list` on an element ({"num", "level"}) plus the JSON's `lists` table: real Word numbering, one
+    Word list per legacy list, with the legacy number format, level text, start and bullet font.
+  - Links get the "Hyperlink" character style (violet, underlined); it and the numbering are only
+    added to a doc that has links or lists.
+`check --legacy` is the v3.1 gate: per paragraph, the text, the formatted runs, the link targets and
+the list level/format/grouping must equal the legacy doc's. Any loss fails it (see docfmt.py).
 """
 from __future__ import annotations
 
@@ -50,18 +63,23 @@ import json
 import sys
 import zipfile
 from pathlib import Path
-from typing import TypedDict
+from typing import Any, TypedDict
 
 try:
     import docx
     from docx.enum.style import WD_STYLE_TYPE
+    from docx.opc.constants import RELATIONSHIP_TYPE as RT
     from docx.oxml import OxmlElement
     from docx.oxml.ns import qn
     from docx.shared import Pt, RGBColor, Twips
     from docx.styles.style import ParagraphStyle
     from docx.text.paragraph import Paragraph
+    from docx.text.run import Run
 except ImportError:  # fail loudly with the fix, not a bare traceback
     sys.exit("python-docx is required: python3 -m venv .venv && .venv/bin/pip install python-docx")
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import docfmt  # noqa: E402  (sibling module; path set just above)
 
 
 class Element(TypedDict, total=False):
@@ -73,6 +91,8 @@ class Element(TypedDict, total=False):
     sameRow: bool
     legacyPara: int        # role map: index of the legacy doc paragraph this copy is sliced from
     legacyPrefix: str      # role map: the "Role: " prefix the legacy doc wrote before the copy
+    runs: list[dict[str, Any]]   # v3.1: the author's inline formatting (docfmt canonical runs)
+    list: dict[str, Any]         # v3.1: {"num": legacy list id, "level": int}
 
 
 class Section(TypedDict, total=False):
@@ -129,6 +149,8 @@ WHERE_STYLE = "Section Where"
 KEY_STYLE = "Key"
 
 KEY_TITLE_STYLE = "Key Title"
+LINK_CHAR_STYLE = "Hyperlink"   # character style of the author's links (only in docs with links)
+LIST_STEP = 360                 # a list level's indent step and hanging indent, in twips
 
 # Key: (title, text) pairs. Each is two paragraphs in their own styles, so nothing is run-formatted.
 DEFAULT_KEY = [
@@ -238,7 +260,7 @@ def define_style(d, name: str, *, font: str = SANS, size: float, bold=False, ita
 
 
 # ---- styles -----------------------------------------------------------------------------------
-def ensure_styles(d) -> None:
+def ensure_styles(d, links: bool = False) -> None:
     normal = d.styles["Normal"]
     normal.font.name = FONT
     normal.font.size = Pt(11)
@@ -300,13 +322,150 @@ def ensure_styles(d) -> None:
     key_title.next_paragraph_style = key
     key.next_paragraph_style = key
 
+    if links:   # only a doc with links gets the style, so a doc without them builds as in v3
+        link = d.styles.add_style(LINK_CHAR_STYLE, WD_STYLE_TYPE.CHARACTER)
+        link.base_style = d.styles["Default Paragraph Font"]
+        link.font.underline = True
+        link.font.color.rgb = RGBColor.from_string(VIOLET)
+
 
 # ---- building blocks --------------------------------------------------------------------------
-def para(d, style: str, text: str = "") -> Paragraph:
+def para(d, style: str, text: str = "", runs: list[dict[str, Any]] | None = None) -> Paragraph:
     p = d.add_paragraph(style=d.styles[style])
-    if text:
+    if runs:
+        if "".join(r["text"] for r in runs) != text:
+            raise SystemExit(f"runs do not join to the element text: {text[:60]!r}")
+        add_runs(p, runs)
+    elif text:
         p.add_run(text)
     return p
+
+
+# The author's run properties, written in the schema order of w:rPr (CT_RPr's EG_RPrBase).
+RPR_ORDER = ("rStyle", "b", "i", "caps", "smallCaps", "strike", "dstrike", "color", "sz", "highlight",
+             "u", "vertAlign")
+
+
+def _rpr(run_el, attrs: dict[str, Any], link: bool) -> None:
+    props = dict(attrs)
+    if link:
+        props["rStyle"] = LINK_CHAR_STYLE
+    rpr = None
+    for name in RPR_ORDER:
+        if name not in props:
+            continue
+        if rpr is None:
+            rpr = OxmlElement("w:rPr")
+            run_el.insert(0, rpr)
+        el = OxmlElement(f"w:{name}")
+        value = props[name]
+        if name in docfmt.BOOL_PROPS:
+            if value is False:
+                el.set(qn("w:val"), "0")
+        else:
+            el.set(qn("w:val"), str(value))
+        rpr.append(el)
+
+
+def add_runs(p: Paragraph, runs: list[dict[str, Any]]) -> None:
+    """Append the author's runs; consecutive runs with the same link share one w:hyperlink."""
+    unknown = {k for r in runs for k in r} - {"text", "link", *docfmt.CARRIED}
+    if unknown:
+        raise SystemExit(f"unknown run attributes {sorted(unknown)}")
+    holder = None
+    holder_url = None
+    for r in runs:
+        url = r.get("link")
+        attrs = {k: v for k, v in r.items() if k not in ("text", "link")}
+        if url is None:
+            holder, holder_url = None, None
+            parent = p._p
+        else:
+            if holder is None or holder_url != url:
+                holder = OxmlElement("w:hyperlink")
+                if url.startswith("#"):
+                    holder.set(qn("w:anchor"), url[1:])
+                else:
+                    holder.set(qn("r:id"), p.part.relate_to(url, RT.HYPERLINK, is_external=True))
+                p._p.append(holder)
+                holder_url = url
+            parent = holder
+        run_el = OxmlElement("w:r")
+        parent.append(run_el)
+        Run(run_el, p).text = r["text"]     # "\n" becomes <w:br/>, "\t" <w:tab/>
+        _rpr(run_el, attrs, url is not None)
+
+
+def add_numbering(d, lists: dict[str, Any]) -> dict[str, str]:
+    """One Word list per legacy list: legacy list id -> new numId. Indents keep the copy column."""
+    numbering = d.part.numbering_part.element
+    abs_ids = [int(a.get(qn("w:abstractNumId"))) for a in numbering.findall(qn("w:abstractNum"))]
+    num_ids = [int(n.get(qn("w:numId"))) for n in numbering.findall(qn("w:num"))]
+    next_abs, next_num = max(abs_ids, default=-1) + 1, max(num_ids, default=0) + 1
+    first_num = numbering.find(qn("w:num"))
+    mapping: dict[str, str] = {}
+    for legacy_id, spec in lists.items():
+        absn = OxmlElement("w:abstractNum")
+        absn.set(qn("w:abstractNumId"), str(next_abs))
+        mlt = OxmlElement("w:multiLevelType")
+        mlt.set(qn("w:val"), "hybridMultilevel")
+        absn.append(mlt)
+        for level in sorted(spec["levels"], key=int):
+            lv = spec["levels"][level]
+            lvl = OxmlElement("w:lvl")
+            lvl.set(qn("w:ilvl"), str(level))
+            for tag, val in (("w:start", lv["start"]), ("w:numFmt", lv["format"]),
+                             ("w:lvlText", lv["text"]), ("w:lvlJc", "left")):
+                if val is None:
+                    continue
+                el = OxmlElement(tag)
+                el.set(qn("w:val"), str(val))
+                lvl.append(el)
+            ppr = OxmlElement("w:pPr")
+            ind = OxmlElement("w:ind")
+            ind.set(qn("w:left"), str(COPY_INDENT + LIST_STEP * (int(level) + 1)))
+            ind.set(qn("w:hanging"), str(LIST_STEP))
+            ppr.append(ind)
+            lvl.append(ppr)
+            if lv.get("font"):
+                rpr = OxmlElement("w:rPr")
+                fonts = OxmlElement("w:rFonts")
+                for a in ("ascii", "hAnsi"):
+                    fonts.set(qn(f"w:{a}"), lv["font"])
+                fonts.set(qn("w:hint"), "default")
+                rpr.append(fonts)
+                lvl.append(rpr)
+            absn.append(lvl)
+        if first_num is not None:
+            first_num.addprevious(absn)   # every abstractNum precedes every num in the schema
+        else:
+            numbering.append(absn)
+        num = OxmlElement("w:num")
+        num.set(qn("w:numId"), str(next_num))
+        ref = OxmlElement("w:abstractNumId")
+        ref.set(qn("w:val"), str(next_abs))
+        num.append(ref)
+        numbering.append(num)
+        mapping[legacy_id] = str(next_num)
+        next_abs += 1
+        next_num += 1
+    return mapping
+
+
+def set_list(p: Paragraph, num_id: str, level: int) -> None:
+    ppr = p._p.get_or_add_pPr()
+    numpr = OxmlElement("w:numPr")
+    ilvl = OxmlElement("w:ilvl")
+    ilvl.set(qn("w:val"), str(level))
+    nid = OxmlElement("w:numId")
+    nid.set(qn("w:val"), num_id)
+    numpr.append(ilvl)
+    numpr.append(nid)
+    pstyle = ppr.find(qn("w:pStyle"))
+    if pstyle is not None:
+        pstyle.addnext(numpr)
+    else:
+        ppr.insert(0, numpr)
 
 
 def add_key(d, pairs: list[tuple[str, str]] | list[list[str]]) -> None:
@@ -315,7 +474,7 @@ def add_key(d, pairs: list[tuple[str, str]] | list[list[str]]) -> None:
         para(d, KEY_STYLE, text)
 
 
-def add_section(d, number: int, section: Section) -> None:
+def add_section(d, number: int, section: Section, list_ids: dict[str, str] | None = None) -> None:
     para(d, "Heading 2", f"{number}.  {section['name']}")
     if section.get("where"):
         para(d, WHERE_STYLE, section["where"])
@@ -334,11 +493,15 @@ def add_section(d, number: int, section: Section) -> None:
             if style not in COPY_STYLES:
                 raise SystemExit(f"unknown style {style!r} in section {section['name']!r}")
             if not e.get("editable", True):
-                para(d, LOCKED_STYLE, e["text"])
+                p = para(d, LOCKED_STYLE, e["text"], e.get("runs"))
             else:
-                p = para(d, COPY_STYLES[style][0], e["text"])
+                p = para(d, COPY_STYLES[style][0], e["text"], e.get("runs"))
                 if i + 1 < len(group):
                     p.paragraph_format.keep_with_next = True   # keep a card together
+            if e.get("list"):
+                if not list_ids or e["list"]["num"] not in list_ids:
+                    raise SystemExit(f"list {e['list']['num']!r} is not in the JSON's `lists` table")
+                set_list(p, list_ids[e["list"]["num"]], int(e["list"]["level"]))
         notes = [e["editedWhere"] for e in group if not e.get("editable", True) and e.get("editedWhere")]
         if notes:
             para(d, NOTE_STYLE, f"Not edited here. {notes[0]}")
@@ -351,11 +514,15 @@ def build(src: Path, out: Path) -> None:
     sec.page_width, sec.page_height = Twips(PAGE_W), Twips(PAGE_H)
     for side in ("left_margin", "right_margin", "top_margin", "bottom_margin"):
         setattr(sec, side, Twips(MARGIN))
-    ensure_styles(d)
-    para(d, "Heading 1", data["title"])
+    elements = [e for s in data["sections"] for e in s["elements"]]
+    has_links = any("link" in r for e in elements for r in e.get("runs", [])) or \
+        any("link" in r for r in data.get("titleRuns", []))
+    ensure_styles(d, links=has_links)
+    list_ids = add_numbering(d, data["lists"]) if data.get("lists") else None
+    para(d, "Heading 1", data["title"], data.get("titleRuns"))
     add_key(d, data.get("key") or DEFAULT_KEY)
     for n, section in enumerate(data["sections"], start=1):
-        add_section(d, n, section)
+        add_section(d, n, section, list_ids)
     if d.tables:
         raise SystemExit("copy docs must not contain tables")
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -401,35 +568,109 @@ def extract_copy(path: Path) -> list[str]:
     ]
 
 
-# The legacy flat doc wrote "Role: copy". These prefixes are role labels, not copy.
-LEGACY_PREFIXES = (
-    "Dates (from show settings): ", "Venue (from show settings): ", "Countdown label: ",
-    "Heading: ", "Lede: ", "Lead: ", "Body: ", "Button: ", "Link: ", "Label: ", "Dates: ", "Theme: ",
-)
-def legacy_copy_headings(src_json: Path | None) -> set[str]:
-    """Heading-styled legacy lines that are also on-page headings (page copy, not labels); per page."""
-    if src_json is None:
-        return set()
-    return set(json.loads(src_json.read_text(encoding="utf-8")).get("legacyCopyHeadings", []))
+def _cut(runs: list[dict[str, Any]], end: int) -> list[dict[str, Any]]:
+    """The canonical runs of the first `end` characters."""
+    out: list[tuple[str, dict[str, Any]]] = []
+    pos = 0
+    for r in runs:
+        if pos >= end:
+            break
+        out.append((r["text"][: end - pos], {k: v for k, v in r.items() if k != "text"}))
+        pos += len(r["text"])
+    return docfmt.merge(out)
 
 
-def extract_legacy(path: Path, copy_headings: set[str]) -> list[str]:
-    d = docx.Document(str(path))
-    found: list[str] = []
-    for p in d.paragraphs[1:]:      # [0] is the document title
-        text = p.text
-        if not text:
+LIST_KEYS = ("level", "format", "text", "start", "font")
+
+
+def gate(built: Path, legacy: Path, source: Path) -> int:
+    """v3.1 gate: every legacy line is carried, and per paragraph the text, the author's formatted
+    runs, the link targets and the list level/format/grouping are identical. Any loss fails."""
+    data = json.loads(source.read_text(encoding="utf-8"))
+    ld, bd = docx.Document(str(legacy)), docx.Document(str(built))
+    lparas, lprob = docfmt.read_document(ld)
+    bparas, bprob = docfmt.read_document(bd)
+    fails = [f"legacy: {x}" for x in lprob] + [f"built: {x}" for x in bprob]
+    if bd.tables:
+        fails.append("built doc contains tables")
+
+    elements = [(s["name"], e) for s in data["sections"] for e in s["elements"]]
+    mapped = {e["legacyPara"]: e for _, e in elements if isinstance(e.get("legacyPara"), int)}
+    if len(mapped) != len(elements):
+        fails.append("an element has no legacyPara, or two share one")
+    title_is_copy = 0 in mapped
+    copy_headings = set(data.get("legacyCopyHeadings", []))
+
+    # Legacy side: what must be carried, in order. Every non-empty line is copy, the title, or a
+    # Heading-styled section label of the old layout (which must hold no formatting of its own).
+    expected: list[tuple[str, int, str]] = []
+    if not title_is_copy:
+        expected.append(("title", 0, ""))
+    expected += [(f"{name} / {e.get('role')}", e["legacyPara"], e.get("legacyPrefix", "")) for name, e in elements]
+    for i, lp in enumerate(lparas):
+        if not lp["text"]:
+            if lp["list"]:
+                fails.append(f"legacy paragraph {i} is an empty list item")
             continue
-        if p.style.name.startswith("Heading"):
-            if text in copy_headings:
-                found.append(text)
+        if i in mapped or (i == 0 and not title_is_copy):
             continue
-        for prefix in LEGACY_PREFIXES:
-            if text.startswith(prefix):
-                text = text[len(prefix):]
-                break
-        found.append(text)
-    return found
+        if (lp["style"] or "").startswith("Heading") and lp["text"] not in copy_headings:
+            if docfmt.formatted(lp["runs"]) or lp["list"] or lp["problems"]:
+                fails.append(f"legacy label paragraph {i} {lp['text'][:40]!r} has formatting a label drops")
+            continue
+        fails.append(f"legacy paragraph {i} {lp['text'][:60]!r} is not carried")
+
+    # Built side: the title, then every paragraph in a Copy style except our notes.
+    if not bparas or bparas[0]["style"] != "Heading 1":
+        fails.append("built doc does not open with its Heading 1 title")
+    got = ([bparas[0]] if not title_is_copy else []) + [
+        bp for bp in bparas if (bp["style"] or "").startswith(COPY_STYLE_PREFIX) and bp["style"] != NOTE_STYLE]
+    if len(got) != len(expected):
+        fails.append(f"built has {len(got)} copy paragraphs, legacy has {len(expected)}")
+
+    list_map: dict[str, str] = {}
+    n_fmt = n_link = n_list = n_face = 0
+    for (where, i, prefix), bp in zip(expected, got):
+        lp = lparas[i]
+        tag = f"[legacy {i}] {where}"
+        fails += [f"{tag}: legacy {x}" for x in lp["problems"]] + [f"{tag}: built {x}" for x in bp["problems"]]
+        if not lp["text"].startswith(prefix):
+            fails.append(f"{tag}: legacy line does not start with its prefix {prefix!r}")
+            continue
+        if docfmt.formatted(_cut(lp["runs"], len(prefix))):
+            fails.append(f"{tag}: the dropped prefix {prefix!r} carries formatting")
+        want_text = lp["text"][len(prefix):]
+        if bp["text"] != want_text:
+            fails.append(f"{tag}: TEXT differs\n    legacy {want_text!r}\n    built  {bp['text']!r}")
+            continue
+        want_runs = docfmt.slice_runs(lp["runs"], len(prefix))
+        if want_runs != bp["runs"]:
+            fails.append(f"{tag}: FORMATTING differs\n    legacy {want_runs}\n    built  {bp['runs']}")
+        n_fmt += docfmt.formatted(want_runs)
+        n_face += lp["typefaces"]
+        n_link += sum(1 for r in want_runs if "link" in r)
+        ll, bl = lp["list"], bp["list"]
+        if (ll is None) != (bl is None):
+            fails.append(f"{tag}: LIST differs: legacy {ll}, built {bl}")
+        elif ll is not None and bl is not None:
+            n_list += 1
+            if any(ll.get(k) != bl.get(k) for k in LIST_KEYS):
+                fails.append(f"{tag}: LIST differs: legacy {ll}, built {bl}")
+            if list_map.setdefault(ll["num"], bl["num"]) != bl["num"]:
+                fails.append(f"{tag}: legacy list {ll['num']} is split across built lists")
+    if len(set(list_map.values())) != len(list_map):
+        fails.append("two legacy lists were merged into one built list")
+
+    if fails:
+        print(f"GATE FAIL: {len(fails)} problem(s) ({built.name} vs {legacy.name})")
+        for f in fails:
+            print(f"  - {f}")
+        return 1
+    print(f"GATE OK: {len(got)} paragraphs carried ({built.name} vs {legacy.name}): text identical, "
+          f"{n_fmt} with author formatting identical, {n_link} link runs identical, "
+          f"{n_list} list paragraphs in {len(list_map)} lists identical; "
+          f"{n_face} run typeface override(s) replaced by the copy styles")
+    return 0
 
 
 def extract_json(path: Path) -> list[str]:
@@ -438,12 +679,14 @@ def extract_json(path: Path) -> list[str]:
 
 
 def check(built: Path, legacy: Path | None, src_json: Path | None, source: Path | None = None) -> int:
-    got = extract_copy(built)
-    ref = legacy if legacy is not None else src_json
-    assert ref is not None  # argparse makes one of --legacy / --json required
-    want = extract_legacy(ref, legacy_copy_headings(source)) if legacy is not None else extract_json(ref)
+    if legacy is not None:
+        if source is None:
+            raise SystemExit("check --legacy needs --source (the page JSON holding the role map)")
+        return gate(built, legacy, source)
+    assert src_json is not None  # argparse makes one of --legacy / --json required
+    got, want = extract_copy(built), extract_json(src_json)
     if got == want:
-        print(f"OK: {len(got)} copy strings identical, same order ({built.name} vs {ref.name})")
+        print(f"OK: {len(got)} copy strings identical, same order ({built.name} vs {src_json.name})")
         return 0
     print(f"MISMATCH: built has {len(got)}, reference has {len(want)}")
     import difflib
@@ -463,9 +706,9 @@ def main() -> int:
     c = sub.add_parser("check")
     c.add_argument("docx", type=Path)
     g = c.add_mutually_exclusive_group(required=True)
-    g.add_argument("--legacy", type=Path, help="old flat 'Role: copy' doc")
+    g.add_argument("--legacy", type=Path, help="the legacy Drive doc: runs the full v3.1 gate")
     g.add_argument("--json", type=Path, help="source JSON")
-    c.add_argument("--source", type=Path, help="with --legacy: the page's source JSON (legacyCopyHeadings)")
+    c.add_argument("--source", type=Path, help="with --legacy (required): the page's source JSON (role map)")
     s = sub.add_parser("same")
     s.add_argument("a", type=Path)
     s.add_argument("b", type=Path)
@@ -479,8 +722,6 @@ def main() -> int:
         return 0
     if a.cmd == "same":
         return same_parts(a.a, a.b)
-    if a.legacy is not None and a.source is None:
-        print("note: no --source given, so no legacy Heading lines count as copy")
     return check(a.docx, a.legacy, a.json, a.source)
 
 
