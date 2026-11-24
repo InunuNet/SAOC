@@ -150,10 +150,6 @@
    "id": "A12"
   },
   {
-   "contract": ".agent/memory/project/specs/go-live-prep/f2-ozow-residue/contract-f2.yaml",
-   "id": "A2"
-  },
-  {
    "contract": ".agent/memory/project/specs/vendor-flow-fixes/contract-f4.yaml",
    "id": "A1"
   },

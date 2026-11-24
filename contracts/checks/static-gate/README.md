@@ -42,7 +42,7 @@ An assertion belongs here only when all of these hold:
 To add an entry: put `{contract, id}` in `allowlist.json`, run the runner, and keep it only if it is
 green. To retire one, remove it here in the same change that retires or rewrites the assertion.
 
-## Widening, 24 Nov 2026 (285 entries added, 362 in all)
+## Widening, 24 Nov 2026 (285 entries added, 1 duplicate removed, 361 in all)
 
 A read-only triage of 741 passing assertions was filtered one by one against the rules above. 285
 were admitted; the rest were left out, first matching reason shown:
@@ -56,7 +56,7 @@ were admitted; the rest were left out, first matching reason shown:
 | Check script imports a package that needs `node_modules` | 44 |
 | Hard-coded `/Users/...` path (reads the developer's main checkout) | 43 |
 | Reads a contract yaml or `.claude/settings.json` (spec metadata, harness config) | 26 |
-| Identical command already admitted under another id | 20 |
+| Identical command already admitted under another id | 21 (20 at triage, plus `go-live-prep/f2-ozow-residue/contract-f2.yaml` A2, an older entry removed after review: it ran the same script as `ozow-sandbox-toggle/contract-m1-f1.yaml` A3, the check's owner, which stays) |
 | Reads a notes file that changes routinely (`.tmp/`, backlog, needs-human, memory) | 16 |
 | Clock or file timestamps in the command or its script | 15 |
 | Git state in the command or its script | 15 |
