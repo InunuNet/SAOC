@@ -29,6 +29,12 @@
 # show the probe child's environment, which is unavoidable for the environment-only hand-off. All
 # output is key NAMES, lengths, version numbers and match/mismatch.
 #
+# Tool output: the output (stdout and stderr) of every firebase call that carries or returns the
+# bundle (secrets:access, secrets:set) is NEVER shown: stdout of an access call goes into a variable
+# that is never printed, everything else goes to /dev/null. A blocklist redactor cannot be made safe (escaping, encodings,
+# line splits), so on failure only the step, the tool's numeric exit code and script-authored
+# guidance are printed. gcloud list/destroy output may be shown; those calls never see a payload.
+#
 # Disk: firebase-tools writes everything it logs, including the decoded value printed by
 # `apphosting:secrets:access`, to ./firebase-debug.log in its cwd, and deletes that file only on a
 # clean exit with DEBUG unset. So EVERY firebase and gcloud call runs with cwd in a private (0700)
@@ -97,6 +103,18 @@ Read-only check: $VERSION_LIST_CMD
 If a second enabled version exists it is the new one: inspect it or destroy it by hand
 (gcloud secrets versions destroy <N> --secret $BUNDLE --project $PROJECT). Do not re-run this script
 until you have listed versions; it refuses to start with two enabled versions.
+EOF
+      ;;
+    set_confirmed)
+      cat >&2 <<EOF
+
+STOPPED after the new version was confirmed to exist and before verification passed.
+Known: new version ${NEW_VERSION:-unknown} exists; old version $OLD_VERSION was NOT destroyed. Unknown: whether the
+new version holds the intended values (verification did not pass).
+Read-only check: $VERSION_LIST_CMD
+Compare the new version by hand, or destroy it if abandoning
+(gcloud secrets versions destroy ${NEW_VERSION:-<N>} --secret $BUNDLE --project $PROJECT). Do not re-run this
+script until only one version is enabled.
 EOF
       ;;
     verified)
@@ -277,20 +295,10 @@ function verify(expectedPath) {
   process.exit(ok ? 0 : 1);
 }
 
-function redact(bundlePath) {
-  const bundle = parseBundle(fs.readFileSync(bundlePath, 'utf8'), 'bundle');
-  let text = fs.readFileSync(0, 'utf8');
-  for (const value of Object.values(bundle)) {
-    if (value.length >= 4) text = text.split(value).join('[redacted]');
-  }
-  process.stdout.write(`${text.split('\n').slice(0, 20).join('\n')}\n`);
-}
-
 const [mode, arg] = process.argv.slice(1);
 if (mode === 'parse') parseEnvFile(arg);
 else if (mode === 'merge') merge(arg);
 else if (mode === 'verify') verify(arg);
-else if (mode === 'redact') redact(arg);
 else fail(`unknown helper mode ${mode}`, 2);
 JS
 
@@ -333,8 +341,12 @@ OLD_VERSION="$BEFORE"
 echo "  enabled version: $OLD_VERSION"
 
 echo "Step 4: read current bundle and merge the three keys in memory"
-_ozsw_current="$(fb apphosting:secrets:access "$BUNDLE" --project "$PROJECT" 2>/dev/null)" \
-  || die "could not read the current bundle (firebase apphosting:secrets:access failed); nothing was written"
+# Output of payload-carrying firebase calls (access, set) is NEVER shown: stdout is captured into a
+# variable that is never printed, stderr goes to /dev/null. Only the step and the exit code are reported.
+TOOL_RC=0
+_ozsw_current="$(fb apphosting:secrets:access "$BUNDLE" --project "$PROJECT" 2>/dev/null)" || TOOL_RC=$?
+[ "$TOOL_RC" = 0 ] \
+  || die "step 4: firebase apphosting:secrets:access exited $TOOL_RC (its output is not shown); nothing was written"
 _ozsw_bundle="$(printf '%s' "$_ozsw_current" \
   | node -e "$NODE_HELPER" merge <(printf '%s\n%s\n%s\n' "$_ozsw_site" "$_ozsw_priv" "$_ozsw_api"))" \
   || die "merge refused (see messages above)" 3
@@ -354,13 +366,9 @@ STAGE="set_started"
 SET_RC=0
 printf '%s' "$_ozsw_bundle" \
   | fb apphosting:secrets:set "$BUNDLE" --data-file=- --project "$PROJECT" --force \
-    > "$TMPD/set.out" 2>&1 || SET_RC=$?
-if [ "$SET_RC" != 0 ]; then
-  printf 'firebase output (known values redacted, first 20 lines):\n' >&2
-  node -e "$NODE_HELPER" redact <(printf '%s' "$_ozsw_bundle") < "$TMPD/set.out" >&2 \
-    || printf '(output could not be redacted, so it is not shown)\n' >&2
-  die "secrets:set exited $SET_RC; whether a new version was created is UNKNOWN. Read-only check: $VERSION_LIST_CMD (a retry adds another billed version)"
-fi
+    > /dev/null 2>&1 || SET_RC=$?
+[ "$SET_RC" = 0 ] \
+  || die "step 6: firebase apphosting:secrets:set exited $SET_RC (its output is not shown); whether a new version was created is UNKNOWN. Read-only check: $VERSION_LIST_CMD (a retry adds another billed version)"
 
 echo "Step 7: verify by re-reading (per-key sha256 compare, names only)"
 AFTER="$(enabled_versions)" || die "could not list versions after set; old version $OLD_VERSION NOT destroyed. Read-only check: $VERSION_LIST_CMD"
@@ -368,17 +376,20 @@ NEW_VERSION="$(printf '%s\n' "$AFTER" | grep -vx "$OLD_VERSION" || true)"
 [[ "$NEW_VERSION" =~ ^[0-9]+$ ]] \
   || die "could not identify the single new version; old version $OLD_VERSION NOT destroyed. Read-only check: $VERSION_LIST_CMD"
 echo "  new version: $NEW_VERSION"
-_ozsw_readback="$(fb apphosting:secrets:access "$BUNDLE" --project "$PROJECT" 2>/dev/null)" \
-  || die "the re-read of the bundle FAILED, so verification was NOT performed; old version $OLD_VERSION NOT destroyed; new version $NEW_VERSION exists. Read-only check: $VERSION_LIST_CMD"
+STAGE="set_confirmed"
+TOOL_RC=0
+_ozsw_readback="$(fb apphosting:secrets:access "$BUNDLE" --project "$PROJECT" 2>/dev/null)" || TOOL_RC=$?
+[ "$TOOL_RC" = 0 ] \
+  || die "step 7: firebase apphosting:secrets:access (re-read) exited $TOOL_RC (its output is not shown); verification was NOT performed. Old version $OLD_VERSION was not destroyed; new version $NEW_VERSION exists"
 printf '%s' "$_ozsw_readback" | node -e "$NODE_HELPER" verify <(printf '%s' "$_ozsw_bundle") \
-  || die "verification FAILED (re-read bundle differs from what was set); old version $OLD_VERSION NOT destroyed; new version $NEW_VERSION exists (destroy it by hand if abandoning)"
+  || die "step 7: verification FAILED (the re-read bundle differs from what was set). Old version $OLD_VERSION was not destroyed; new version $NEW_VERSION exists"
 unset _ozsw_readback _ozsw_bundle
 STAGE="verified"
 
 echo "Step 8: destroy the previous version $OLD_VERSION"
 STAGE="destroy_started"
 gc secrets versions destroy "$OLD_VERSION" --secret "$BUNDLE" --project "$PROJECT" --quiet \
-  > /dev/null || die "the destroy of version $OLD_VERSION FAILED; it is still enabled and billed. Destroy it by hand: gcloud secrets versions destroy $OLD_VERSION --secret $BUNDLE --project $PROJECT"
+  > /dev/null || die "step 8: gcloud secrets versions destroy $OLD_VERSION failed; whether the destroy completed is UNKNOWN. Read-only check: $VERSION_LIST_CMD"
 STAGE="destroyed"
 LEFT="$(enabled_versions)" || die "the destroy of version $OLD_VERSION SUCCEEDED, but listing versions afterwards FAILED, so the final state is unconfirmed. Read-only check (expect one enabled version, $NEW_VERSION): $VERSION_LIST_CMD"
 [ "$LEFT" = "$NEW_VERSION" ] || die "the destroy of version $OLD_VERSION SUCCEEDED, but the enabled versions are not just $NEW_VERSION (found: $(printf '%s' "$LEFT" | tr '\n' ' ')). Read-only check: $VERSION_LIST_CMD"

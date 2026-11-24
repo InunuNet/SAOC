@@ -65,6 +65,10 @@ step that proves it.
    if one is needed. Do not re-run it until you have listed versions; it refuses to start with
    two enabled versions.
 
+   The script never prints the output of the firebase calls that carry or return the bundle
+   (`secrets:access`, `secrets:set`). On a failure of one of them it prints the step and the
+   tool's exit code only. To see why, run the read-only checks it names yourself.
+
    Where secrets can touch disk: the firebase CLI logs the decoded bundle to `firebase-debug.log`
    in its working directory. The script therefore runs every `firebase` and `gcloud` call from a
    private temp directory with `DEBUG` removed, overwrites and deletes that directory on every
