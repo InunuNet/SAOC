@@ -63,6 +63,7 @@ def fill(data: dict, legacy: Path, parsed_on: str) -> list[str]:
 
     elements = [(section["name"], e) for section in data["sections"] for e in section["elements"]]
     title_is_copy = any(e.get("legacyPara") == 0 for _, e in elements)
+    elements = [(n, e) for n, e in elements if "acceptedAddition" not in e]   # additions have no legacy line
     if title_is_copy:
         drive_name = data.get("source", {}).get("driveName", "")
         if data.get("titleFrom") != "driveName" or data.get("title") != drive_name.rsplit(".docx", 1)[0]:
