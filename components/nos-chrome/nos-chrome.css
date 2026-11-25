@@ -14,6 +14,8 @@
   --nc-gutter: clamp(16px, 2.5vw, 32px);
   --nc-wide: 1320px;
   --nc-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --nos-header-h: 97px; /* rendered height of the pinned NOS header from 768 (measured 96.9px); probe-chrome fails on drift */
+  --nos-landing-air: 24px; /* clear space between pinned chrome and a landed hash target */
 }
 .nc-chev { width: 14px; height: 14px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; transition: transform 200ms var(--nc-ease); }
 .nh-sentinel { position: absolute; top: 4px; left: 0; width: 1px; height: 1px; pointer-events: none; }

@@ -154,6 +154,7 @@ body {
 /* WCAG 2.4.11: the sticky header (97px, HD-1) must not cover a focused element. */
 html {
   --scroll-padding-top: 6.5rem;
+  --doc-index-bar-h: 48px;
   scroll-padding-top: var(--scroll-padding-top);
   scrollbar-gutter: stable;
 }
@@ -866,7 +867,7 @@ h3.font-serif {
     position: sticky;
     top: var(--doc-index-top, 97px);
     z-index: 20;
-    height: 48px;
+    height: var(--doc-index-bar-h, 48px);
     padding: 0;
     border-radius: 0;
     box-shadow: none;
