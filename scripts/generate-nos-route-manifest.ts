@@ -237,7 +237,7 @@ const ROUTE_TABLE: RouteRow[] = [
     diskPath: 'international-guests',
   },
   {
-    slug: '/national-show/award-entries',
+    slug: '/national-show/plant-entry',
     label: 'Plant Entry',
     group: 'programme',
     parent: '/national-show',

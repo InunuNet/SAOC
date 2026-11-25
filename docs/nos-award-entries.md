@@ -11,6 +11,8 @@ On the NOS host, people who submit plants for judging are **Award Entries**, not
 - The page title, h1, breadcrumb, header menu, footer, show index and home band CTA read "Award Entries".
 - Below the shared Q&A the page has two sequential sections, "National Show Awards" then "SAOC Awards". Each shows only its heading, the bare definition sentence from Brad's thread, and the existing awaiting-committee-copy marker.
 
+**Renamed again, 25 Nov 2026 (Brad):** the label is now "Plant Entry" and the page lives at `/plant-entry` (internal `/national-show/plant-entry`). `proxy.ts` 308s the retired `/award-entries` and `/national-show/award-entries` URLs, with any sub-path and the query string, to `/plant-entry` on both hosts. Check: `contracts/plant-entry-rename.yaml`.
+
 ## Terminology
 
 | Class | Meaning | Wording |
