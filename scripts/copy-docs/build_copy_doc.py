@@ -627,7 +627,8 @@ def gate(built: Path, legacy: Path, source: Path) -> int:
     additions = [(n, e) for n, e in all_elements if "acceptedAddition" in e]
     for n, e in additions:
         acc = e["acceptedAddition"]
-        if not (acc.get("approvedBy") and acc.get("reason")) or "legacyPara" in e or not e.get("text"):
+        filled = all(isinstance(acc.get(k), str) and acc[k].strip() for k in ("approvedBy", "reason"))
+        if not filled or "legacyPara" in e or not e.get("text"):
             fails.append(f"{n} / {e.get('role')}: acceptedAddition needs approvedBy and reason, "
                          f"text, and no legacyPara")
     mapped = {e["legacyPara"]: e for _, e in elements if isinstance(e.get("legacyPara"), int)}

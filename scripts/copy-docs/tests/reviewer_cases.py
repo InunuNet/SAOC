@@ -150,6 +150,21 @@ def _no_colon(d):
     e["legacyPrefix"] = "Link"
 json_case("J-landing-prefix-without-colon", "nos-landing", _no_colon)
 
+
+# acceptedAddition: blank or whitespace-only approvedBy / reason must FAIL; a real value must pass.
+def _addition(d):
+    return next(e for s in d["sections"] for e in s["elements"] if "acceptedAddition" in e)
+for field in ("approvedBy", "reason"):
+    for label, value in (("space", " "), ("tabs-newline", "\t\n"), ("empty", "")):
+        json_case(f"J-landing-addition-{field}-{label}", "nos-landing",
+                  lambda d, f=field, v=value: _addition(d)["acceptedAddition"].__setitem__(f, v))
+_d = json.loads(Path(source_path("nos-landing")).read_text())
+_addition(_d)["acceptedAddition"]["approvedBy"] = "  Lee-Ann answer 2026-11-25, relayed by Brad  "
+_src = OUT / "J-landing-addition-padded-value.json"
+_src.write_text(json.dumps(_d, ensure_ascii=False))
+_rc, _out = gate("nos-landing", legacy_path("nos-landing"), built_path("nos-landing"), str(_src))
+record("J-landing-addition-padded-value-control", _rc, _out, expect="OK")
+
 bad = 0
 for name, expect, got, why in RESULTS:
     ok = expect == got
