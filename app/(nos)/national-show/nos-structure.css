@@ -3500,12 +3500,11 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 /* From 1024 the photograph's box runs from 38% to the right edge (Brad 18 Nov: capped at 1150px so a
    2200-3000px source is never upscaled). The scrim is PageHero's, mirrored for a left copy column: full
    strength (0.8) over the copy column, eased to clear over the next 18% of the width, so the bloom side is
-   the bare photograph. The scrim colour is the hero ground (#0b0a14), so it is drawn as the photograph's
+   the bare photograph. The scrim colour is the hero ground (var(--black)), so it is drawn as the photograph's
    mask (visibility = 1 - scrim alpha), intersected with the box's own 22% edge fade into the ground. The
    copy column is 48% of the width (PageHero's column), at least 640px of text so three facts sit on one row. */
 @media (min-width: 1024px) {
   .nos-theme .nos-hero-inner {
-    --hero-gap: 12px;
     --hero-copy-end: max(
       48cqw,
       calc(max(0px, (100cqw - var(--nos-axis-max)) / 2) + var(--nos-axis-pad) + 640px)
@@ -3514,6 +3513,11 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     min-height: max(420px, 29.3vw);
     padding-block: clamp(32px, 2.5vw, 48px);
   }
+  .nos-theme .nos-hero-inner .nos-hero-copy,
+  .nos-theme .nos-hero-inner .nos-hero-head,
+  .nos-theme .nos-hero-inner .nos-hero-detail {
+    gap: 12px;
+  }
   .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-copy {
     width: var(--hero-copy-end);
   }
@@ -3521,7 +3525,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     inset: 0 0 0 auto;
     width: min(62%, 1150px);
     -webkit-mask-image:
-      linear-gradient(90deg, transparent 0, #000 22%),
+      linear-gradient(90deg, transparent 0, rgb(0 0 0) 22%),
       linear-gradient(
         90deg,
         rgb(0 0 0 / 0.2) var(--scrim-at),
@@ -3530,11 +3534,11 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
         rgb(0 0 0 / 0.68) calc(var(--scrim-at) + 7cqw),
         rgb(0 0 0 / 0.84) calc(var(--scrim-at) + 10cqw),
         rgb(0 0 0 / 0.94) calc(var(--scrim-at) + 14cqw),
-        #000 calc(var(--scrim-at) + 18cqw)
+        rgb(0 0 0) calc(var(--scrim-at) + 18cqw)
       );
     -webkit-mask-composite: source-in;
     mask-image:
-      linear-gradient(90deg, transparent 0, #000 22%),
+      linear-gradient(90deg, transparent 0, rgb(0 0 0) 22%),
       linear-gradient(
         90deg,
         rgb(0 0 0 / 0.2) var(--scrim-at),
@@ -3543,7 +3547,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
         rgb(0 0 0 / 0.68) calc(var(--scrim-at) + 7cqw),
         rgb(0 0 0 / 0.84) calc(var(--scrim-at) + 10cqw),
         rgb(0 0 0 / 0.94) calc(var(--scrim-at) + 14cqw),
-        #000 calc(var(--scrim-at) + 18cqw)
+        rgb(0 0 0) calc(var(--scrim-at) + 18cqw)
       );
     mask-composite: intersect;
   }
@@ -3553,7 +3557,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
    head and detail are the grid's own items. */
 @media (max-width: 1023px) {
   .nos-theme .nos-hero-inner {
-    --hero-gap: 16px;
     grid-template-columns: minmax(0, 1fr);
     min-height: 0;
     padding-block: 0;
@@ -3650,6 +3653,10 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   .nos-theme .nos-hero-inner .nos-hero-head {
     min-height: calc(124px + 2 * max(3rem, 1.8rem + 3.2vw));
   }
+  /* A typographic hero has no band, so its title block takes the band's height too: the same box. */
+  .nos-theme .nos-hero-inner:not(.nos-hero-photo) .nos-hero-head {
+    min-height: calc(50cqw + 124px + 2 * max(3rem, 1.8rem + 3.2vw));
+  }
   /* The trail stays one line (TL-2a) on the ticket steps too, so a long product name cannot add a line
      to the box: the h1 just below it carries the full name, which also stays in the crumb's DOM. */
   .nos-theme .nos-hero-inner .nk-buy-crumbs {
@@ -3686,8 +3693,11 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 }
 /* From 1024 the three facts share one row in the hero's copy column (Inner hero sizing). */
 @media (min-width: 1024px) {
+  /* Cells stretch to the row, so a one-line value's label still sits on the two-line values' label line
+     (the column-reverse cell packs from the bottom). */
   .nos-theme .hero-facts[data-fact-count="3"] {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
   }
   .nos-theme .hero-facts[data-fact-count="3"] > div:last-child {
     grid-column: auto;

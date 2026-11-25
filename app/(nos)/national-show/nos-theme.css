@@ -696,7 +696,7 @@
 .nos-theme .nos-hero-inner .nos-hero-detail {
   display: grid;
   align-content: start;
-  gap: var(--hero-gap, 16px);
+  gap: 16px;
 }
 /* The photo hero's copy column keeps its left edge on the shared axis. */
 .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-copy {

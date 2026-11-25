@@ -40,7 +40,7 @@ if (mode === 'nav') {
   if (!/min-height:\s*320px/.test(css)) fail(`${STRUCTURE}: from 768 to 1023 the inner hero box is 320px tall`);
   if (!/min-height:\s*calc\(124px \+ 2 \* max\(3rem, 1\.8rem \+ 3\.2vw\)\)/.test(css)) fail(`${STRUCTURE}: below 768 the title block holds the crumbs and a two-line h1`);
   if (/\.nos-hero-inner\.nos-hero-photo::before/.test(css)) fail(`${STRUCTURE}: the old dark ramp over the photo (::before) must be gone`);
-  for (const stop of ['0.2) var(--scrim-at)', '0.3) calc(var(--scrim-at) + 1.5cqw)', '0.48) calc(var(--scrim-at) + 4cqw)', '0.68) calc(var(--scrim-at) + 7cqw)', '0.84) calc(var(--scrim-at) + 10cqw)', '0.94) calc(var(--scrim-at) + 14cqw)', '#000 calc(var(--scrim-at) + 18cqw)']) {
+  for (const stop of ['0.2) var(--scrim-at)', '0.3) calc(var(--scrim-at) + 1.5cqw)', '0.48) calc(var(--scrim-at) + 4cqw)', '0.68) calc(var(--scrim-at) + 7cqw)', '0.84) calc(var(--scrim-at) + 10cqw)', '0.94) calc(var(--scrim-at) + 14cqw)', 'rgb(0 0 0) calc(var(--scrim-at) + 18cqw)']) {
     const count = css.split(stop).length - 1;
     if (count !== 2) fail(`${STRUCTURE}: mask stop "${stop}" appears ${count} times, want 2 (-webkit- and standard)`);
   }

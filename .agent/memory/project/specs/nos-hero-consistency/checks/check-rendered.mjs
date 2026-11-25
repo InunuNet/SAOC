@@ -13,7 +13,7 @@ import { chromium } from 'playwright';
 
 const ROUTES = [
   '/about', '/what-to-expect', '/plan-your-visit', '/faq', '/programme', '/workshops',
-  '/symposium', '/wosa-conference', '/conferences', '/award-entries', '/vendors',
+  '/symposium', '/wosa-conference', '/conferences', '/plant-entry', '/vendors',
   '/vendors/apply', '/sponsors', '/contact', '/photo-credits', '/tickets/early-bird', '/tickets/vip',
 ];
 const WIDTHS = [1440, 1024, 768, 390];
