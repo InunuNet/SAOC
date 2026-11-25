@@ -2,7 +2,7 @@
   "pageKey": "11-programme",
   "specNumber": 11,
   "title": "Programme",
-  "summary": "The master timetable across all National Show activities.",
+  "summary": "The master timetable across all National Orchid Show activities.",
   "sections": [
     {
       "sectionKey": "intro",
@@ -19,7 +19,7 @@
             {
               "_type": "span",
               "_key": "intro-b1-s1",
-              "text": "This page will bring together the master timetable for every National Show activity in one place, once the full programme is confirmed.",
+              "text": "This page will bring together the master timetable for every National Orchid Show activity in one place, once the full programme is confirmed.",
               "marks": []
             }
           ]

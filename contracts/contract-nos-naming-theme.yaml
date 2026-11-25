@@ -1,0 +1,21 @@
+schema: athanor.contract/v1
+slug: nos-naming-theme
+goal: >-
+  Brad's ruling of 25 Nov 2026: the event is always "National Orchid Show", never "National
+  Show", in public copy. Static, source-text only.
+created_at: '2026-11-25'
+autonomy: high
+
+features:
+  - id: F1
+    name: NOS naming
+    status: done
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        No "National Show" without "Orchid" in app/, components/, lib/, content/ or public/ copy sources
+        (comments, route paths and drive paths excluded), bar the reasoned allowlist.
+      command: python3 contracts/checks/nos-naming-theme/check_naming_theme.py

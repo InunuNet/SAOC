@@ -134,8 +134,18 @@ def paragraphs(path: Path) -> list[tuple[str, str, str]]:
 
 
 def check(legacy: Path, built: Path, prefixes: list[str], prefix_uses: int, section_labels: list[str],
-          title_from_drive_name: bool) -> tuple[bool, list[str]]:
+          title_from_drive_name: bool,
+          text_changes: dict[int, list[dict]] | None = None) -> tuple[bool, list[str]]:
+    """`text_changes` is the page JSON's acceptedTextChanges by legacy paragraph: each exact
+    substitution is applied to the legacy words before they are compared with the built doc's."""
     lp = paragraphs(legacy)
+    for i, changes in (text_changes or {}).items():
+        if isinstance(i, int) and 0 <= i < len(lp):
+            part, style, text = lp[i]
+            for c in changes:
+                if c.get("from") and c.get("to") is not None and text.count(c["from"]) == 1:
+                    text = text.replace(c["from"], c["to"], 1)
+            lp[i] = (part, style, text)
     bp = paragraphs(built)
     lmain, bmain = (lp[0][0] if lp else ""), (bp[0][0] if bp else "")
     bad = [f"{side}: {x}" for side, path in (("legacy", legacy), ("built", built)) for x in problems(path)]

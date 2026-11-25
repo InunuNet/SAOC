@@ -40,6 +40,9 @@ Source JSON shape:
   of the old layout (dropped; the section bars replace them). Any other legacy line is copy.
   `acceptedLayoutChanges` [{para, property, reason, approvedBy?}] and `acceptedStyleChanges`
   [{para, from, to, reason}]: what the gate may accept as not carried (see gate()).
+  `acceptedTextChanges` [{para, from, to, reason, approvedBy}]: an exact one-occurrence word change
+  the gate accepts, each needing a reason and who approved it; an unused entry fails the gate.
+  `copyNote` on an element: a "Copy note." paragraph under it for the editor; not copy.
 
 All layout formatting lives in the paragraph styles (not on individual runs), so Enter carries it on in
 Word and in Google Docs' Office-compat editor. Only what Google Docs keeps is used: Google Fonts (Fraunces, Karla), bold,
@@ -512,6 +515,9 @@ def add_section(d, number: int, section: Section, list_ids: dict[str, str] | Non
         notes = [e["editedWhere"] for e in group if not e.get("editable", True) and e.get("editedWhere")]
         if notes:
             para(d, NOTE_STYLE, f"Not edited here. {notes[0]}")
+        for e in group:
+            if e.get("copyNote"):
+                para(d, NOTE_STYLE, f"Copy note. {e['copyNote']}")
 
 
 def build(src: Path, out: Path) -> None:
@@ -666,6 +672,11 @@ def gate(built: Path, legacy: Path, source: Path) -> int:
             fails.append(f"acceptedLayoutChanges entry {a} has no reason")
         acc_layout[(a.get("para"), a.get("property"))] = a
     acc_style = {a.get("para"): a for a in data.get("acceptedStyleChanges", [])}
+    # Word-level exceptions: exact substitutions, each with a reason and who approved it (docfmt).
+    acc_text: dict[int, list[dict[str, Any]]] = {}
+    for a in data.get("acceptedTextChanges", []):
+        acc_text.setdefault(a.get("para"), []).append(a)
+    used_text: set[tuple[int, Any]] = set()
     used_layout: set[tuple[int, str]] = set()
     used_style: set[int] = set()
     dropped_layout: list[str] = []
@@ -681,11 +692,14 @@ def gate(built: Path, legacy: Path, source: Path) -> int:
             continue
         if docfmt.formatted(_cut(lp["runs"], len(prefix))):
             fails.append(f"{tag}: the dropped prefix {prefix!r} carries formatting")
-        want_text = lp["text"][len(prefix):]
+        want_runs, change_problems = docfmt.apply_text_changes(
+            docfmt.slice_runs(lp["runs"], len(prefix)), acc_text.get(i, []), tag)
+        fails += change_problems
+        used_text.update((i, c.get("from")) for c in acc_text.get(i, []))
+        want_text = "".join(r["text"] for r in want_runs)
         if bp["text"] != want_text:
             fails.append(f"{tag}: TEXT differs\n    legacy {want_text!r}\n    built  {bp['text']!r}")
             continue
-        want_runs = docfmt.slice_runs(lp["runs"], len(prefix))
         if want_runs != bp["runs"]:
             fails.append(f"{tag}: FORMATTING differs\n    legacy {want_runs}\n    built  {bp['runs']}")
         n_fmt += docfmt.formatted(want_runs)
@@ -731,6 +745,11 @@ def gate(built: Path, legacy: Path, source: Path) -> int:
                 fails.append(f"{tag}: legacy list {ll['num']} is split across built lists")
     if len(set(list_map.values())) != len(list_map):
         fails.append("two legacy lists were merged into one built list")
+    for para, changes in acc_text.items():
+        for a in changes:
+            if (para, a.get("from")) not in used_text:
+                fails.append(f"acceptedTextChanges lists paragraph {para}, which is not a carried copy line: remove it")
+    n_text = sum(len(v) for v in acc_text.values())
     for key in acc_layout.keys() - used_layout:
         fails.append(f"acceptedLayoutChanges lists {key}, which is not a dropped property: remove it")
     for para in acc_style.keys() - used_style:
@@ -743,7 +762,8 @@ def gate(built: Path, legacy: Path, source: Path) -> int:
     # Independent second reader: raw w:t text from the XML of every text part, in order.
     prefixes = sorted({e.get("legacyPrefix", "") for _, e in elements} - {""})
     prefix_uses = sum(1 for _, e in elements if e.get("legacyPrefix"))
-    raw_ok, raw_report = rawtext.check(legacy, built, prefixes, prefix_uses, section_labels, title_is_copy)
+    raw_ok, raw_report = rawtext.check(legacy, built, prefixes, prefix_uses, section_labels, title_is_copy,
+                                       acc_text)
     for line in raw_report:
         print(line)
     if not raw_ok:
@@ -768,7 +788,8 @@ def gate(built: Path, legacy: Path, source: Path) -> int:
         for f in fails:
             print(f"  - {f}")
         return 1
-    print(f"GATE OK: {len(got)} paragraphs carried ({built.name} vs {legacy.name}): text identical, "
+    print(f"GATE OK: {len(got)} paragraphs carried ({built.name} vs {legacy.name}): text identical "
+          f"bar {n_text} accepted word change(s), "
           f"{n_fmt} with author formatting identical, {n_link} link runs identical, "
           f"{n_list} list paragraphs in {len(list_map)} lists identical; "
           f"{n_face} run typeface override(s) replaced by the copy styles; {len(used_style)} accepted "

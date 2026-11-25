@@ -2,7 +2,7 @@
   "pageKey": "16-plan-your-visit",
   "specNumber": 16,
   "title": "Plan Your Visit",
-  "summary": "Travel, accommodation and itinerary guidance for visitors to the 2027 National Show.",
+  "summary": "Travel, accommodation and itinerary guidance for visitors to the 2027 National Orchid Show.",
   "sections": [
     {
       "sectionKey": "intro",
@@ -19,7 +19,7 @@
             {
               "_type": "span",
               "_key": "intro-b1-s1",
-              "text": "This page will help visitors plan their trip to the 2027 National Show, covering travel, parking, accommodation and things to do nearby.",
+              "text": "This page will help visitors plan their trip to the 2027 National Orchid Show, covering travel, parking, accommodation and things to do nearby.",
               "marks": []
             }
           ]
@@ -56,7 +56,7 @@
             {
               "_type": "span",
               "_key": "getting-here-b1-s1",
-              "text": "The venue for the 2027 National Show is Stellenbosch Aerodrome, R44 northbound to Stellenbosch.",
+              "text": "The venue for the 2027 National Orchid Show is Stellenbosch Aerodrome, R44 northbound to Stellenbosch.",
               "marks": []
             }
           ]
