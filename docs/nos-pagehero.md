@@ -29,6 +29,8 @@ Brad's ruling replaces the content-driven height and the 46% panel above. Spec a
 - The scrim is the SAOC `PageHero` ramp mirrored and drawn as the photo's mask: visibility 0.2 at the copy edge,
   easing to 1 over 18cqw (0.3 / 0.48 / 0.68 / 0.84 / 0.94 / 1). The old dark 90deg ramp over the photo is gone,
   so the bloom keeps full strength. Each route keeps its photo; only `--nos-hero-pos` (the crop focus) varies.
+- Scope: photo heroes only. A typographic hero (404, `/tickets/recover`) keeps its content-fit height, and
+  `/tickets` keeps its fan masthead, like the hub (lead rulings, 25 Nov 2026).
 - The Contact hero has the shared facts strip: Dates and Venue from the show facts, and Email (a mailto link).
 - `NosHeader`: a nav group with exactly one link (Vendors today) renders as a plain link to that page, labelled
   with the group heading, in the top row and the menu panel.

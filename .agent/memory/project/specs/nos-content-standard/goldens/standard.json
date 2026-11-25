@@ -110,7 +110,7 @@
    "withFacts2056": 440
   },
   "pg1": {
-   "note": "Superseded 25 Nov 2026 by nos-hero-consistency (Brad: one hero height per breakpoint, whatever the content). From 1024 the inner hero is the SAOC PageHero height max(420px, 29.3vw), padding-block clamp(32px, 2.5vw, 48px); 768-1023 the title block is 320px at 40px padding; below 768 a 2:1 photo band, then the title block at 32px padding. Lede, facts and actions sit below the hero box under 1024. The heightCap, longTitleCap and route heroCap values no longer apply to inner heroes.",
+   "note": "Superseded 25 Nov 2026 by nos-hero-consistency (Brad: one hero height per breakpoint, whatever the content). From 1024 the inner hero is the SAOC PageHero height max(420px, 29.3vw), padding-block clamp(32px, 2.5vw, 48px); 768-1023 the title block is 320px at 40px padding; below 768 a 2:1 photo band, then the title block at 32px padding. Lede, facts and actions sit below the hero box under 1024. The heightCap, longTitleCap and route heroCap values no longer apply to inner heroes. Scope (lead ruling, 25 Nov 2026): photo heroes only; a typographic hero keeps its content-fit height (floor clamp(320px, 22vw, 380px) from 1024, none below) and /tickets keeps its fan masthead.",
    "desktopFloor": 420,
    "desktopVw": 0.293,
    "padMin": 32,

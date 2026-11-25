@@ -3491,7 +3491,10 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
      768-1023 320px (the PG-1 floor): the crumbs and h1 beside the 42% photo panel.
      < 768    the 2:1 photo band plus a title block that holds a two-line h1.
    Below 1024 the lede, facts and actions (.nos-hero-detail) follow the hero box on the page ground, so
-   a longer lede or a third fact never changes the hero's height. ---- */
+   a longer lede or a third fact never changes the hero's height.
+   Scope (lead ruling, 25 Nov 2026): photo heroes only. A typographic hero (404, /tickets/recover) has no
+   photograph to fill the box, so it keeps its content-fit height (the PG-1 floor from 1024, none below);
+   at 390 an equal-height version is mostly an empty near-black block. ---- */
 @media (min-width: 768px) {
   .nos-theme .nos-hero-inner .nk-crumbs a {
     margin-block: -11px;
@@ -3510,6 +3513,10 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
       calc(max(0px, (100cqw - var(--nos-axis-max)) / 2) + var(--nos-axis-pad) + 640px)
     );
     --scrim-at: calc(var(--hero-copy-end) - 100cqw + min(62cqw, 1150px));
+    min-height: clamp(320px, 22vw, 380px);
+    padding-block: clamp(48px, 4vw, 72px);
+  }
+  .nos-theme .nos-hero-inner.nos-hero-photo {
     min-height: max(420px, 29.3vw);
     padding-block: clamp(32px, 2.5vw, 48px);
   }
@@ -3628,10 +3635,10 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   .nos-theme .nos-hero-inner .nos-hero-head {
     grid-row: 1;
     grid-column: 1;
-    min-height: 320px;
     padding-block: 40px;
   }
   .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-head {
+    min-height: 320px;
     padding-right: 32px;
   }
   .nos-theme .nos-hero-inner .nos-hero-media {
@@ -3650,12 +3657,8 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     width: 100%;
     aspect-ratio: 2 / 1;
   }
-  .nos-theme .nos-hero-inner .nos-hero-head {
+  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-head {
     min-height: calc(124px + 2 * max(3rem, 1.8rem + 3.2vw));
-  }
-  /* A typographic hero has no band, so its title block takes the band's height too: the same box. */
-  .nos-theme .nos-hero-inner:not(.nos-hero-photo) .nos-hero-head {
-    min-height: calc(50cqw + 124px + 2 * max(3rem, 1.8rem + 3.2vw));
   }
   /* The trail stays one line (TL-2a) on the ticket steps too, so a long product name cannot add a line
      to the box: the h1 just below it carries the full name, which also stays in the crumb's DOM. */

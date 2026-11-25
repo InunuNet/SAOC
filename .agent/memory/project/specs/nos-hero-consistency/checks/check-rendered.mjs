@@ -16,6 +16,14 @@ const ROUTES = [
   '/symposium', '/wosa-conference', '/conferences', '/plant-entry', '/vendors',
   '/vendors/apply', '/sponsors', '/contact', '/photo-credits', '/tickets/early-bird', '/tickets/vip',
 ];
+// Outside the equal-height rule (lead rulings, 25 Nov 2026), so never listed in ROUTES:
+//   /                 the hub keeps its own full-bleed hero.
+//   /tickets          the tickets landing page keeps its approved fan masthead (TicketsMasthead), like the hub,
+//                     days before the 1 Dec go-live.
+//   typographic       a hero with no photograph (404, /tickets/recover, /archive) keeps its content-fit height:
+//                     an equal-height box would be mostly an empty near-black block at 390.
+//   /media-kit        follows the rule through NosHero, but is admin-gated, so this check cannot reach it.
+const EXEMPT = ['/', '/tickets', '/tickets/recover', '/archive', '/media-kit'];
 const WIDTHS = [1440, 1024, 768, 390];
 // Below 1024 the hero text sits on the solid ground, so contrast is measured where it sits over the photo.
 const CONTRAST_WIDTHS = [2056, 1440, 1024];
@@ -45,6 +53,7 @@ if (!['heights', 'contrast', 'nav'].includes(mode)) {
 
 const failures = [];
 const fail = (msg) => failures.push(msg);
+for (const route of ROUTES.filter((r) => EXEMPT.includes(r))) fail(`${route} is both exempt and listed for the equal-height rule`);
 
 function expectedHeight(width) {
   if (width >= DESKTOP_MIN) return Math.max(DESKTOP_FLOOR_PX, (DESKTOP_HEIGHT_VW / 100) * width);

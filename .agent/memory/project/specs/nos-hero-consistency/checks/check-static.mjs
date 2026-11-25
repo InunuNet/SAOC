@@ -39,6 +39,16 @@ if (mode === 'nav') {
   if (!/min-height:\s*max\(420px,\s*29\.3vw\)/.test(css)) fail(`${STRUCTURE}: from 1024 the inner hero is max(420px, 29.3vw) tall (PageHero)`);
   if (!/min-height:\s*320px/.test(css)) fail(`${STRUCTURE}: from 768 to 1023 the inner hero box is 320px tall`);
   if (!/min-height:\s*calc\(124px \+ 2 \* max\(3rem, 1\.8rem \+ 3\.2vw\)\)/.test(css)) fail(`${STRUCTURE}: below 768 the title block holds the crumbs and a two-line h1`);
+  // Scope (lead ruling, 25 Nov 2026): the fixed heights are photo-hero rules; a typographic hero stays content-fit.
+  if (!/\.nos-hero-inner\.nos-hero-photo \{\s*min-height:\s*max\(420px,\s*29\.3vw\)/.test(css)) fail(`${STRUCTURE}: the 1024+ height must be scoped to .nos-hero-photo`);
+  for (const h of ['320px', 'calc(124px + 2 * max(3rem, 1.8rem + 3.2vw))']) {
+    const decl = `min-height: ${h};`;
+    const selectors = [];
+    for (let at = css.indexOf(decl); at >= 0; at = css.indexOf(decl, at + 1)) selectors.push(css.slice(css.lastIndexOf('}', at), at));
+    const heads = selectors.filter((sel) => sel.includes('.nos-hero-head'));
+    if (!heads.length || !heads.every((sel) => sel.includes('.nos-hero-inner.nos-hero-photo .nos-hero-head'))) fail(`${STRUCTURE}: the title block's min-height ${h} must be scoped to .nos-hero-photo`);
+  }
+  if (/:not\(\.nos-hero-photo\) \.nos-hero-head/.test(css)) fail(`${STRUCTURE}: a typographic hero's title block must not be sized to the photo box`);
   if (/\.nos-hero-inner\.nos-hero-photo::before/.test(css)) fail(`${STRUCTURE}: the old dark ramp over the photo (::before) must be gone`);
   for (const stop of ['0.2) var(--scrim-at)', '0.3) calc(var(--scrim-at) + 1.5cqw)', '0.48) calc(var(--scrim-at) + 4cqw)', '0.68) calc(var(--scrim-at) + 7cqw)', '0.84) calc(var(--scrim-at) + 10cqw)', '0.94) calc(var(--scrim-at) + 14cqw)', 'rgb(0 0 0) calc(var(--scrim-at) + 18cqw)']) {
     const count = css.split(stop).length - 1;

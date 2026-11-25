@@ -12,12 +12,17 @@ One hero height per breakpoint on every NOS inner route, whatever the content. T
 
 Expected box heights: 1440 = 421.9, 1024 = 420, 768 = 320, 390 = 415.
 
-A typographic hero (no photo: 404, /tickets/recover, /archive) is the same box: below 768 its title block also
-takes the band's height (`50cqw` more), so it is 415 at 390 too.
+## Scope (lead rulings, 25 Nov 2026)
 
-Not on NosHero: the /tickets fan masthead (TicketsMasthead) is a distinct designed object (ticket fan, countdown,
-visit row on the violet ground) and is outside this rule pending a design decision. /media-kit already renders
-through NosHero (photo S2c) and follows the rule; it is admin-gated, so the rendered checks cannot reach it.
+- The equal-height rule applies to photo heroes. A typographic hero (no photograph: 404, /tickets/recover,
+  /archive) keeps its content-fit height: the PG-1 floor `clamp(320px, 22vw, 380px)` at padding
+  `clamp(48px, 4vw, 72px)` from 1024, no floor below. At 390 an equal-height version is mostly an empty
+  near-black block, the "too dark" look Brad objected to, with no photograph to fill it.
+- /tickets is exempt, like the hub: it is the tickets landing page with its own approved fan masthead
+  (TicketsMasthead: ticket fan, countdown, facts, visit row on the violet ground), and the 1 Dec go-live is days
+  away. It is unchanged.
+- /media-kit renders through NosHero (photo S2c) and follows the rule; it is admin-gated, so the rendered checks
+  cannot reach it.
 
 ## Overflow treatment
 
