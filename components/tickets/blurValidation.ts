@@ -25,6 +25,19 @@ export function withBlurEmailError(
   return next;
 }
 
+/** The whole blur transition: the next blur-only error map after attendee `index` loses focus.
+ *  Blurring an empty field clears that row's blur error; "required" stays the submit check's job. */
+export function nextBlurErrors(
+  prev: AttendeeFieldErrors,
+  rows: ReadonlyArray<{ attendeeEmail: string }>,
+  index: number,
+  rowKey: string
+): AttendeeFieldErrors {
+  const row = rows[index];
+  if (!row) return prev;
+  return withBlurEmailError(prev, rowKey, blurEmailError(row.attendeeEmail));
+}
+
 /** What the fields show: blur-only errors under the submit errors. The form-level summary reads the
  *  submit errors alone, so a blur never opens it. */
 export function visibleFieldErrors(

@@ -13,9 +13,8 @@ import {
 } from '@/lib/cart';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 import {
-  blurEmailError,
+  nextBlurErrors,
   visibleFieldErrors,
-  withBlurEmailError,
 } from '@/components/tickets/blurValidation';
 import { emptyAttendee, keepFlagged, validateAttendees } from '@/components/tickets/cartValidation';
 import {
@@ -106,13 +105,11 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
     }
   }
 
-  // Blur on an attendee email flags a filled-in invalid address at once; an empty field is left for
-  // the submit check, so tabbing through the form does not shout.
+  // Blur on an attendee email flags a filled-in invalid address at once; blurring an empty field
+  // clears that row's blur error, and "required" stays the submit check's job.
   function blurAttendeeEmail(_slug: string, index: number) {
-    const row = attendees[index];
-    if (!row) return;
     const key = attendeeRowKey(ticketType.slug, index);
-    setBlurErrors((prev) => withBlurEmailError(prev, key, blurEmailError(row.attendeeEmail)));
+    setBlurErrors((prev) => nextBlurErrors(prev, attendees, index, key));
   }
 
   function validateCurrent(rows: CartAttendee[]): AttendeeFieldErrors {
