@@ -1,0 +1,184 @@
+{
+  "title": "About",
+  "source": {
+    "driveFileId": "1nebF2XdJKdIPvS6V7Byp24CM7m3MmR_5",
+    "driveName": "2.1 About - 2027 National Show.docx",
+    "route": "/national-show/about",
+    "parsedFromMd5": "169251bceac7264b12977301aec2684f",
+    "parsedOn": "2026-11-25"
+  },
+  "sections": [
+    {
+      "name": "Heading line",
+      "where": "Lee-Ann's heading line for the page.",
+      "elements": [
+        {
+          "role": "Heading line",
+          "style": "body",
+          "text": "2027 South African National Orchid Show",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 2,
+          "copyNote": "The website uses the nav label \"About the show\" as this page's heading, so this line is not drawn on the page. It is kept here as Lee-Ann's line.",
+          "runs": [
+            {
+              "text": "2027 South African National Orchid Show",
+              "b": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Standfirst",
+      "where": "The opening paragraph of the page.",
+      "elements": [
+        {
+          "role": "Standfirst",
+          "style": "body",
+          "text": "The National Orchid Show - Western Cape 2027 is the South African Orchid Council's premier triennial event, bringing together orchid enthusiasts, growers, researchers, conservationists, judges, horticultural professionals and members of the public to celebrate one of the world's most remarkable plant families.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 4
+        }
+      ]
+    },
+    {
+      "name": "Body",
+      "where": "The main column, in the order shown.",
+      "elements": [
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Guided by the theme \"From Wild Origins to Cultivated Excellence: The Future of Orchids,\" the National Orchid Show explores the relationship between orchids in their natural habitats and the future of responsible cultivation. As pressures on natural ecosystems continue to increase, understanding how orchids grow, adapt and interact within their environments has never been more important. The knowledge gained through conservation and scientific research provides the foundation for sustainable cultivation, ethical breeding programmes and the long-term future of orchid growing worldwide.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 6
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "The National Orchid Show will showcase a spectacular display of all the orchids that are submitted for judging and display. There will be specialist plant sales by local and international vendors, educational exhibits, a comprehensive symposium and conference, practical workshops and opportunities to engage with local and international experts.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 8
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "An important feature of the 2027 programme will be the participation of Wild Orchids of Southern Africa (WOSA). They will hold their annual conference as part of the National Orchid Show. Their involvement reflects the National Orchid Show's commitment to connecting conservation science with horticultural excellence, demonstrating how knowledge gained from orchids in the wild continues to shape responsible cultivation and the future sustainability of the orchid community.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 10
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "The exhibition will also welcome leading national and international orchid vendors, giving visitors the opportunity to purchase exceptional plants, discover new hybrids and species, and engage directly with some of the world's most respected growers. ",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 12
+        }
+      ]
+    },
+    {
+      "name": "Closing",
+      "where": "The last two paragraphs of the page.",
+      "elements": [
+        {
+          "role": "Thanks",
+          "style": "body",
+          "text": "The South African Orchid Council is deeply grateful to its headline sponsors and donors, whose generous support has made it possible to present a National Orchid Show of this scale and significance.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 14
+        },
+        {
+          "role": "Closing line",
+          "style": "body",
+          "text": "Whether you are an experienced orchid grower, a passionate gardener, a researcher, or simply discovering orchids for the first time, the National Orchid Show - Western Cape 2027 offers an inspiring opportunity to experience the extraordinary beauty, diversity and future potential of orchids.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 16
+        }
+      ]
+    }
+  ],
+  "acceptedTextChanges": [
+    {
+      "para": 6,
+      "from": "the National Show explores",
+      "to": "the National Orchid Show explores",
+      "reason": "Brad's ruling 25 Nov 2026 (R1): the event is always 'National Orchid Show'; the site already says so",
+      "approvedBy": "Brad 2026-11-25"
+    },
+    {
+      "para": 14,
+      "from": "present a National Show of this",
+      "to": "present a National Orchid Show of this",
+      "reason": "Brad's ruling 25 Nov 2026 (R1): the event is always 'National Orchid Show'; the site already says so",
+      "approvedBy": "Brad 2026-11-25"
+    }
+  ],
+  "acceptedLayoutChanges": [
+    {
+      "para": 0,
+      "property": "spacing",
+      "reason": "direct spacing after=0 line=240 on a legacy paragraph; pure spacing, the copy doc's styles set its layout"
+    },
+    {
+      "para": 2,
+      "property": "spacing",
+      "reason": "direct spacing after=0 line=240 on a legacy paragraph; pure spacing, the copy doc's styles set its layout"
+    },
+    {
+      "para": 4,
+      "property": "spacing",
+      "reason": "direct spacing after=0 line=240 on a legacy paragraph; pure spacing, the copy doc's styles set its layout"
+    },
+    {
+      "para": 6,
+      "property": "spacing",
+      "reason": "direct spacing after=0 line=240 on a legacy paragraph; pure spacing, the copy doc's styles set its layout"
+    },
+    {
+      "para": 8,
+      "property": "spacing",
+      "reason": "direct spacing after=0 line=240 on a legacy paragraph; pure spacing, the copy doc's styles set its layout"
+    },
+    {
+      "para": 10,
+      "property": "spacing",
+      "reason": "direct spacing after=0 line=240 on a legacy paragraph; pure spacing, the copy doc's styles set its layout"
+    },
+    {
+      "para": 12,
+      "property": "spacing",
+      "reason": "direct spacing after=0 line=240 on a legacy paragraph; pure spacing, the copy doc's styles set its layout"
+    },
+    {
+      "para": 14,
+      "property": "spacing",
+      "reason": "direct spacing after=0 line=240 on a legacy paragraph; pure spacing, the copy doc's styles set its layout"
+    },
+    {
+      "para": 16,
+      "property": "spacing",
+      "reason": "direct spacing after=0 line=240 on a legacy paragraph; pure spacing, the copy doc's styles set its layout"
+    }
+  ],
+  "acceptedStyleChanges": [
+    {
+      "para": 0,
+      "from": "body",
+      "to": "heading",
+      "reason": "the legacy 'About' line is the doc's title label; the copy doc draws its title in the title style"
+    }
+  ],
+  "titleRuns": [
+    {
+      "text": "About",
+      "b": true
+    }
+  ]
+}

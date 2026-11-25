@@ -2,7 +2,7 @@
   "pageKey": "12-workshops",
   "specNumber": 12,
   "title": "Workshops",
-  "summary": "Detailed, bookable workshop listings for the 2027 National Show.",
+  "summary": "Detailed, bookable workshop listings for the 2027 National Orchid Show.",
   "sections": [
     {
       "sectionKey": "intro",
@@ -19,7 +19,7 @@
             {
               "_type": "span",
               "_key": "intro-b1-s1",
-              "text": "This page will list the bookable workshops on offer at the 2027 National Show.",
+              "text": "This page will list the bookable workshops on offer at the 2027 National Orchid Show.",
               "marks": []
             }
           ]

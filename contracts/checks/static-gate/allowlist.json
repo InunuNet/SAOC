@@ -1444,6 +1444,10 @@
   {
    "contract": "contracts/contract-vendor-stand-payment-confirm-gate.yaml",
    "id": "A2"
+  },
+  {
+   "contract": "contracts/contract-nos-naming-theme.yaml",
+   "id": "A1"
   }
  ]
 }
