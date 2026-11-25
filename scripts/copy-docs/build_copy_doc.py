@@ -35,6 +35,8 @@ Source JSON shape:
          "sameRow": bool?, "legacyPara": int?, "legacyPrefix": str?}]}],
    "legacySectionLabels": [str, ...]?, "acceptedLayoutChanges": [...]?, "acceptedStyleChanges": [...]?}
   `sameRow: true` groups the element under the previous element's role label (a card's title + text).
+  `acceptedAddition` {approvedBy, reason}: copy added after the legacy doc was written (an element with
+  this has no `legacyPara`). The gate accepts exactly that text, and only with both fields filled.
   `legacyPara` / `legacyPrefix` are the role map import_legacy.py fills `text` from; the build ignores them.
   `legacySectionLabels`: exact text of the legacy doc's Heading-styled section titles that are labels
   of the old layout (dropped; the section bars replace them). Any other legacy line is copy.
@@ -101,6 +103,7 @@ class Element(TypedDict, total=False):
     sameRow: bool
     legacyPara: int        # role map: index of the legacy doc paragraph this copy is sliced from
     legacyPrefix: str      # role map: the "Role: " prefix the legacy doc wrote before the copy
+    acceptedAddition: dict[str, str]   # {approvedBy, reason}: copy the legacy doc never had (no legacyPara)
     runs: list[dict[str, Any]]   # v3.1: the author's inline formatting (docfmt canonical runs)
     list: dict[str, Any]         # v3.1: {"num": legacy list id, "level": int}
 
@@ -625,7 +628,15 @@ def gate(built: Path, legacy: Path, source: Path) -> int:
     if bd.tables:
         fails.append("built doc contains tables")
 
-    elements = [(s["name"], e) for s in data["sections"] for e in s["elements"]]
+    all_elements = [(s["name"], e) for s in data["sections"] for e in s["elements"]]
+    elements = [(n, e) for n, e in all_elements if "acceptedAddition" not in e]
+    additions = [(n, e) for n, e in all_elements if "acceptedAddition" in e]
+    for n, e in additions:
+        acc = e["acceptedAddition"]
+        filled = all(isinstance(acc.get(k), str) and acc[k].strip() for k in ("approvedBy", "reason"))
+        if not filled or "legacyPara" in e or not e.get("text"):
+            fails.append(f"{n} / {e.get('role')}: acceptedAddition needs approvedBy and reason, "
+                         f"text, and no legacyPara")
     mapped = {e["legacyPara"]: e for _, e in elements if isinstance(e.get("legacyPara"), int)}
     if len(mapped) != len(elements):
         fails.append("an element has no legacyPara, or two share one")
@@ -660,8 +671,23 @@ def gate(built: Path, legacy: Path, source: Path) -> int:
     # Built side: the title, then every paragraph in a Copy style except our notes.
     if not bparas or bparas[0]["style"] != "Heading 1":
         fails.append("built doc does not open with its Heading 1 title")
-    got = ([bparas[0]] if not title_is_copy else []) + [
-        bp for bp in bparas if (bp["style"] or "").startswith(COPY_STYLE_PREFIX) and bp["style"] != NOTE_STYLE]
+    body = [bp for bp in bparas if (bp["style"] or "").startswith(COPY_STYLE_PREFIX) and bp["style"] != NOTE_STYLE]
+    if additions:
+        # The built copy paragraphs run in element order: each accepted addition must be exactly its text.
+        if len(body) != len(all_elements):
+            fails.append(f"built has {len(body)} copy paragraphs, the JSON has {len(all_elements)} elements")
+        else:
+            kept = []
+            for (_, e), bp in zip(all_elements, body):
+                if "acceptedAddition" not in e:
+                    kept.append(bp)
+                elif bp["text"] != e["text"]:
+                    fails.append(f"accepted addition TEXT differs: JSON {e['text']!r}, built {bp['text']!r}")
+            body = kept
+        print(f"accepted additions: {len(additions)}")
+        for n, e in additions:
+            print(f"  + {e['text'][:70]!r} (approved by {e['acceptedAddition'].get('approvedBy')})")
+    got = ([bparas[0]] if not title_is_copy else []) + body
     if len(got) != len(expected):
         fails.append(f"built has {len(got)} copy paragraphs, legacy has {len(expected)}")
 
@@ -763,7 +789,7 @@ def gate(built: Path, legacy: Path, source: Path) -> int:
     prefixes = sorted({e.get("legacyPrefix", "") for _, e in elements} - {""})
     prefix_uses = sum(1 for _, e in elements if e.get("legacyPrefix"))
     raw_ok, raw_report = rawtext.check(legacy, built, prefixes, prefix_uses, section_labels, title_is_copy,
-                                       acc_text)
+                                       acc_text, [e["text"] for _, e in additions])
     for line in raw_report:
         print(line)
     if not raw_ok:
