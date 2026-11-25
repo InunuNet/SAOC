@@ -1,0 +1,50 @@
+schema: athanor.contract/v1
+slug: unparseable-contracts
+goal: The gate-timeout-fix and mission-slug-collision-fix contracts parse as single YAML documents and validate, and their assertions have been run and reported.
+created_at: '2026-10-27'
+autonomy: high
+
+# P1. YAML-only repair of two historical contracts. Not a code change, so no tsc.
+# FAIL-BEFORE (run 2026-10-27 in .tmp/sandbox/contract-yaml at 9b8a1e63): A1 exits 1 ("mapping values are not allowed here", line 20 and line 51);
+# contract.py validate exits 1 on both (gate-timeout-fix: parse error line 20 col 32; mission-slug-collision-fix: "expected a single document", second doc at line 28).
+# DIFF SCOPE: these two files live under .agent/, which the other contracts exclude, so A4 uses --no-default-ignore and only exempts this spec directory.
+# Assertions that need harness edits or are floor-blocked are REPORTED in dev-report.md, never fixed (see goldens/dev-report-shape.md).
+# A3 AMENDMENT (2026-10-27): execution/contract.py:303 flags ANY multiline cmd containing "python3" and "-c"; the slug `test-collision`
+# contains "-c", so A1/A2 of mission-slug-collision-fix trip it although neither runs `python3 -c`. Filed upstream as InunuNet/Athanor#1471.
+# Rewording the commands to dodge the validator is routing around a harness bug (Codex FAILed that twice), so the command text must stay
+# byte-identical to origin/main after YAML parsing (only indentation that keeps the heredoc inside the block scalar may change).
+# A3 therefore asserts strict validation emits ONLY the two known #1471 errors and nothing else (checks/check_known_1471.py), and goes
+# back to a plain pass once #1471 lands (the check accepts zero errors too). gate-timeout-fix is unaffected and still passes plain strict (A2).
+
+features:
+  - id: F1
+    name: Repair the two unparseable contracts and report their assertion results
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/unparseable-contracts/goldens/dev-report-shape.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Both contracts load with yaml.safe_load as exactly one mapping document (fails on origin/main)
+      command: python3 .agent/memory/project/specs/unparseable-contracts/checks/check_single_doc.py .agent/memory/project/specs/gate-timeout-fix/contract-f1.yaml .agent/memory/project/specs/mission-slug-collision-fix/contract-f1.yaml
+    - id: A2
+      description: gate-timeout-fix contract passes contract.py validate --strict
+      command: python3 execution/contract.py validate --strict .agent/memory/project/specs/gate-timeout-fix/contract-f1.yaml
+    - id: A3
+      description: mission-slug-collision-fix strict validation yields only the known InunuNet/Athanor#1471 errors (A1/A2 multiline python3 -c) and no other error or assertion id
+      command: python3 .agent/memory/project/specs/unparseable-contracts/checks/check_known_1471.py .agent/memory/project/specs/mission-slug-collision-fix/contract-f1.yaml
+    - id: A4
+      description: Diff scope is exactly the two contracts plus the dev report (nothing else under .agent/ or elsewhere)
+      command: python3 .agent/memory/project/specs/unparseable-contracts/checks/diff_scope.py --no-default-ignore --ignore .agent/memory/project/specs/unparseable-contracts/contract.yaml --ignore .agent/memory/project/specs/unparseable-contracts/checks/ --ignore .agent/memory/project/specs/unparseable-contracts/goldens/ .agent/memory/project/specs/gate-timeout-fix/contract-f1.yaml .agent/memory/project/specs/mission-slug-collision-fix/contract-f1.yaml .agent/memory/project/specs/unparseable-contracts/dev-report.md
+    - id: A5
+      description: Dev report exists and has one section per contract
+      command: grep -q "## gate-timeout-fix" .agent/memory/project/specs/unparseable-contracts/dev-report.md && grep -q "## mission-slug-collision-fix" .agent/memory/project/specs/unparseable-contracts/dev-report.md
+    - id: A6
+      description: Codex cross-vendor adversarial review of the diff
+      type: codex_qa
+      target: .agent/memory/project/specs/unparseable-contracts/goldens/codex-qa-prompt.md
+      timeout_seconds: 1300
+      required: true
