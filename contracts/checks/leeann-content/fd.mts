@@ -6,10 +6,14 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import {
-  GOLDENS, NOS_HOST, anchorsOf, assertNoPhantoms, assertVerbatimInOrder, decodeEntities, fail, finish, get,
+  GOLDENS, NOS_HOST, SAOC_HOST, anchorsOf, assertNoPhantoms, assertVerbatimInOrder, decodeEntities, fail, finish, get,
   htmlToBlocks, mdToBlocks, readSource, readText, serve, stripWs,
 } from './lib.mts';
 import { deriveFaqFixture, type FaqFixture } from './gen-faq-fixture.mts';
+
+interface ShowVenueDoc {
+  venue?: { name?: string; addressLines?: string[]; city?: string; postalCode?: string; province?: string };
+}
 
 const cmd = process.argv[2];
 const golden = JSON.parse(readFileSync(`${GOLDENS}/faq/faq-docs.json`, 'utf8')) as FaqFixture;
@@ -26,10 +30,10 @@ function blockText(block: unknown): string {
   return children.map((c) => c.text ?? '').join('');
 }
 
-async function page(path: string): Promise<{ blocks: string[]; html: string }> {
+async function page(path: string, host = NOS_HOST): Promise<{ blocks: string[]; html: string }> {
   const served = await serve();
   try {
-    const reply = await get(served.port, NOS_HOST, path);
+    const reply = await get(served.port, host, path);
     if (reply.status !== 200) fail(`${NOS_HOST}${path}: HTTP ${reply.status}`);
     return { blocks: htmlToBlocks(reply.body), html: reply.body };
   } finally {
@@ -179,12 +183,23 @@ if (cmd === 'faq-fixture') {
   }
   finish('fd plan-guide');
 } else if (cmd === 'contact') {
-  const { blocks, html } = await page('/contact');
+  const { blocks, html } = await page('/contact', SAOC_HOST);
   const flatBlocks = blocks;
   const constants = (await import('../../../lib/show-contact.ts').catch(() => null)) as { SHOW_ADDRESS_LINES?: string[] } | null;
   const address = ['Stellenbosch Aerodrome', 'Stellenbosch, Western Cape.'];
   if (JSON.stringify(constants?.SHOW_ADDRESS_LINES) !== JSON.stringify(address)) fail('lib/show-contact.ts must export SHOW_ADDRESS_LINES = her two address lines verbatim');
-  assertVerbatimInOrder('/contact', [...address], flatBlocks);
+  // The venue moved to the National Orchid Show contact page (Brad, 25 Nov 2026): it renders the
+  // lines of nationalShow.venue (read-only fetch), in the order the component prints them.
+  const { getSanityClient } = (await import('../show-visitor-info/_shared.mjs')) as {
+    getSanityClient: () => { fetch: (q: string) => Promise<ShowVenueDoc | null> };
+  };
+  const show = await getSanityClient().fetch('*[_id == "nationalShow"][0]{ venue }');
+  const venue = show?.venue;
+  if (!venue?.name) fail('nationalShow.venue.name is not seeded');
+  const cityLine = [venue?.city, venue?.postalCode].filter(Boolean).join(', ');
+  const venueLines = [venue?.name ?? '', ...(venue?.addressLines ?? []), cityLine, venue?.province ?? ''].filter(Boolean);
+  const nos = await page('/contact');
+  assertVerbatimInOrder('NOS /contact (national-show contact page)', venueLines, nos.blocks);
   const hrefs = anchorsOf(html).map((a) => a.href);
   if (hrefs.some((h) => h.startsWith('tel:'))) fail('/contact must not link a telephone number (removed 19 Nov 2026)');
   const flat = stripWs(flatBlocks.join(''));

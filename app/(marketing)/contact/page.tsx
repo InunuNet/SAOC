@@ -36,7 +36,8 @@ interface ContactPageData {
   directContacts: DirectContact[] | null;
 }
 
-// Role labels the Council's Drive does not source (mirrors provenance.unsourced "contact-labels").
+// Role labels the Council's Drive does not source: withheld from the public build only. Brad
+// confirmed the Secretariat / info@saoc.co.za entry on 25 Nov 2026, so no preview marker.
 const UNSOURCED_LABEL = /SAOC Secretariat|General enquiries/;
 
 // Static fallback when Sanity returns null — SAOC secretariat.
@@ -77,13 +78,11 @@ export default async function ContactPage() {
             <h2 className="font-serif font-normal text-[22px] text-ink">Direct contacts</h2>
             <ul className="space-y-5">
               {contacts.map((c, i) => {
-                const marked = isLabelUnsourced(c.role) || isLabelUnsourced(c.name);
                 const role = withhold && isLabelUnsourced(c.role) ? null : c.role;
                 const name = withhold && isLabelUnsourced(c.name) ? null : c.name;
                 return (
                   <li
                     key={i}
-                    data-placeholder={marked && !withhold ? 'true' : undefined}
                     className="flex flex-col items-start gap-1 border-b border-rule pb-5 last:border-0"
                   >
                     {role ? (
