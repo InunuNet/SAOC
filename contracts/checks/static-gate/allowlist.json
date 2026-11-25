@@ -1446,6 +1446,18 @@
    "id": "A2"
   },
   {
+   "contract": "contracts/plant-entry-rename.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": "contracts/plant-entry-rename.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": "contracts/plant-entry-rename.yaml",
+   "id": "A3"
+  },
+  {
    "contract": "contracts/contract-nos-naming-theme.yaml",
    "id": "A1"
   }
