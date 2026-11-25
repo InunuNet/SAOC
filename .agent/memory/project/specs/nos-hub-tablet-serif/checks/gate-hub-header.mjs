@@ -7,7 +7,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { EVIDENCE_DIR, ROOT, VALUES, fixtureProof, launchChromium, newContext, startServer, waitReady, withServer } from './_lib.mjs';
 import { captureHeaderStrips } from './capture-header.mjs';
-import { oneRowVerdict, pixelDiff, twoRowVerdict, unchangedVerdict } from './header-verdict.mjs';
+import { capsVerdict, maskedPixelDiff, navVerdict, oneRowVerdict, twoRowVerdict, unchangedVerdict } from './header-verdict.mjs';
 
 const H = VALUES.hub.header;
 const U = VALUES.hub.unchanged;
@@ -36,6 +36,38 @@ async function measureHeader(page) {
   });
 }
 
+// NR-8: the Caps CTA and Menu at a two-row viewport, and (at the nav viewport) the Form-label nav link and the one-row nav geometry.
+async function nr8Caps(server, browser, vp) {
+  const context = await newContext(browser, vp);
+  const page = await context.newPage();
+  await page.goto(`${server.nos}${VALUES.hub.route}`, { waitUntil: 'load' });
+  await page.evaluate(() => document.fonts.ready);
+  const m = await page.evaluate(() => {
+    const st = (sel) => { const cs = getComputedStyle(document.querySelector(sel)); return { fontFamily: cs.fontFamily, fontWeight: cs.fontWeight, fontSize: cs.fontSize, letterSpacing: cs.letterSpacing, textTransform: cs.textTransform }; };
+    return { cta: st('#nh .nh-cta'), burgerLabel: st('#nh .nh-burger-label') };
+  });
+  await context.close();
+  return m;
+}
+
+async function nr8Nav(server, browser, vp) {
+  const context = await newContext(browser, vp);
+  const page = await context.newPage();
+  await page.goto(`${server.nos}${VALUES.hub.route}`, { waitUntil: 'load' });
+  await page.evaluate(() => document.fonts.ready);
+  const m = await page.evaluate(() => {
+    const r = (sel) => document.querySelector(sel).getBoundingClientRect();
+    const cs = getComputedStyle(document.querySelector('#nh .nh-link .nh-label, #nh .nh-trigger .nh-label'));
+    return {
+      vw: document.documentElement.clientWidth, brand: r('#nh .nh-brand'), nav: r('#nh .nh-nav'), cta: r('#nh .nh-cta'),
+      navLink: { fontFamily: cs.fontFamily, fontWeight: cs.fontWeight, fontSize: cs.fontSize, letterSpacing: cs.letterSpacing, textTransform: cs.textTransform },
+      navItemTops: [...document.querySelectorAll('#nh .nh-nav .nh-item')].map((e) => e.getBoundingClientRect().top),
+    };
+  });
+  await context.close();
+  return m;
+}
+
 async function atViewport(server, browser, vp) {
   const context = await newContext(browser, vp);
   const page = await context.newPage();
@@ -62,7 +94,9 @@ async function checkMode(server, mode, browser, c) {
   for (const vp of H.twoRowViewports) {
     const { m } = await atViewport(server, browser, vp);
     for (const f of twoRowVerdict(m)) c.check(`[${mode} ${vp.name}] header: ${f}`, false);
+    for (const f of capsVerdict(await nr8Caps(server, browser, vp))) c.check(`[${mode} ${vp.name}] NR-8: ${f}`, false);
   }
+  for (const f of navVerdict(await nr8Nav(server, browser, H.nr8.navViewport))) c.check(`[${mode} ${H.nr8.navViewport.name}] NR-8 nav: ${f}`, false);
 }
 
 function decode(file) { return PNG.sync.read(readFileSync(file)); }
@@ -78,10 +112,12 @@ await withServer(4, 'hub header', async (server, c) => {
       const name = f.split('/').pop();
       const base = `${baseDir}/${name}`;
       if (!existsSync(base)) { c.check(`[pixel ${name}] a main baseline exists (run capture-main-baseline.sh)`, false, base); continue; }
-      const d = pixelDiff(decode(base), decode(f));
-      c.check(`[pixel ${name}] header strip is pixel-identical to main`, d.ok, d.detail);
       const metaFile = f.replace('.png', '.json');
       const meta = existsSync(metaFile) ? JSON.parse(readFileSync(metaFile, 'utf8')) : null;
+      c.check(`[pixel ${name}] the branch capture records the Caps row top`, Boolean(meta?.capsRowTopCssPx), metaFile);
+      // Outside the NR-8 rows only: from the top of the Tickets/Menu row down is masked in both strips (those change to Caps 14 by ruling).
+      const d = maskedPixelDiff(decode(base), decode(f), (meta?.capsRowTopCssPx ?? 0) * (meta?.dsf ?? 1));
+      c.check(`[pixel ${name}] header strip above the Caps row is pixel-identical to main`, d.ok, d.detail);
       c.note(`note: [pixel ${name}] ${d.detail}${meta ? `; header bottom ${meta.headerBottomCssPx} css px, strip ${meta.stripHeightCssPx} css px (only rows inside the header element)` : ''}`);
       if (!d.ok && d.bbox) {
         // The strip is cropped to the header element's own box, so a difference left here is INSIDE the header: a real header change. Evidence only; nothing is loosened.

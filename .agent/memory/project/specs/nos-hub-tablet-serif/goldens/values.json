@@ -306,7 +306,37 @@
         "shotsDir": "evidence/header-baseline",
         "branchShotsDir": "evidence/header-branch",
         "_note": "The main baseline is built from a git archive of the base ref (no worktree, no stash) under .tmp/sandbox, with fixture replay only, and its header strips (the full-width strip from the top of the page to the bottom of #nh) are captured at 767x1024@2 and 390x844@3. The branch strips are captured by the same function and compared exactly (0 differing pixels).",
-        "_refNote": "Was pinned to origin/main e9edbe4af20cde369b6fb29b3360f0646b680ec5, which went stale when the branch merged main 48d74378. The baseline for A21 and A24 is now derived from the merge-base of HEAD and origin/main at run time and rebuilt when it changes (the stamp is the SHA plus the capture script hash). It is printed on every run. HUB_SERIF_BASE_REF overrides it."
+        "_refNote": "Was pinned to origin/main e9edbe4af20cde369b6fb29b3360f0646b680ec5, which went stale when the branch merged main 48d74378. The baseline for A21 and A24 is now derived from the merge-base of HEAD and origin/main at run time and rebuilt when it changes (the stamp is the SHA plus the capture script hash). It is printed on every run. HUB_SERIF_BASE_REF overrides it.",
+        "_nr8": "The strips are compared pixel-exact outside the NR-8 rows: the full-width band from the top of the Tickets/Menu row to the bottom of the header is masked in both images (those are the Caps CTA and Menu, intended to change); the lockup row above it must stay pixel-identical."
+      },
+      "nr8": {
+        "_note": "NR-8 values (NOS Design 2026-10-28): Caps are Karla 700 14px tracking 0.12em (1.68px) uppercase; the nav link uses the Form-label tuple (Karla 500 14px, no tracking, sentence case, ink).",
+        "caps": {
+          "family": "karla",
+          "weight": "700",
+          "sizePx": 14,
+          "trackingPx": 1.68,
+          "transform": "uppercase"
+        },
+        "navLink": {
+          "family": "karla",
+          "weight": "500",
+          "sizePx": 14,
+          "trackingPx": 0,
+          "transform": "none"
+        },
+        "navViewport": {
+          "name": "1440x900@1",
+          "width": 1440,
+          "height": 900,
+          "dsf": 1
+        },
+        "navGapsPx": {
+          "brandToNav": 24,
+          "navToCta": 12,
+          "rightPad": 32
+        },
+        "trackingTolPx": 0.05
       }
     },
     "unchanged": {
@@ -613,7 +643,20 @@
               }
             ]
           }
-        ]
+        ],
+        "nr8": {
+          "_note": "NR-8 (NOS Design 2026-10-28): countdown unit labels are Caps, Karla 700 14px, 0.12em, uppercase. Box shifts caused only by the label height delta are allowed (a box top or height may differ by 0 or by the label height delta; horizontal edges stay equal; a column may also grow by its label's width delta). Any other class of diff still fails. Corrected after the first run: the hero text above the countdown also moves to the body tokens (NR-6: lede, price at lh 1.6), shifting boxes below it by up to ~26px, not only the 3px label delta, so with nr8 the vertical position of outside boxes is bounded (60px) rather than compared; the countdown's own geometry is compared relative to its block.",
+          "family": "karla",
+          "weight": "700",
+          "sizePx": 14,
+          "trackingPx": 1.68,
+          "trackingTolPx": 0.05,
+          "transform": "uppercase",
+          "maxLabelWidthDeltaPx": 30,
+          "minLabelHeightDeltaPx": 0,
+          "maxLabelHeightDeltaPx": 6,
+          "maxOutsideVerticalShiftPx": 60
+        }
       },
       "_unitGap": "NOS Design countdown gap, REVISED (comms.md, supersedes the hub-scoped nos-theme.css override): component-level in components/show/ShowCountdown.tsx, on BOTH / and /tickets, the gap between the four units is 16 below 1024 and 24 at 1024 and up, by changing the units wrapper's Tailwind gap-6 to gap-4 lg:gap-6. lg is 1024 here: Tailwind v4.1 default --breakpoint-lg is 64rem, no stylesheet under app/ or components/ defines --breakpoint-* (A23 scans for it), and html sets no root font-size (default 16px); A24 additionally measures the computed gap at 390, 640, 767, 768, 820, 1023 (16) and 1024, 1280 (24) on both pages. The nos-theme.css override is dropped and A23 fails if it is present. Unchanged: figure size, CTA group, the 32px CTA column-gap at 768-1023 (nos-theme.css), the 8px slack rule, text-align center and the widest-digit ch floors at every width. The earlier 2x2-below-360 clause is struck: there is no 2x2 and no floor exception.",
       "overflow": {
@@ -740,7 +783,10 @@
       ],
       "forbiddenTextNote": "NOS Design TK-404: the SAOC root not-found (washed photo, 'Go home' / 'Find a society') must never render inside the NOS chrome. Read from document.body.innerText, never the raw HTML (the RSC payload carries the SAOC strings on every page).",
       "heroTitleSelector": ".nos-hero-title"
-    }
+    },
+    "bandMidMinPx": 20,
+    "belowBandWeight": "500",
+    "_nr1": "Re-pinned by nos-type-tokens (NOS Design NR-1, 2026-10-28): LT-1's 'serif under 32px stays 400' is superseded by Brad's band - 400 at 20-31.99px, 500 below 20px. The 300-at-32px side is unchanged."
   },
   "tl1": {
     "_ruling": "NOS Design TL-1 (P3): the /tickets/[slug] loading shell has no lede, so at 390@3 the hero grows 427 -> 457.84px (+31px) when the page settles. Loader for /tickets/[slug] only: two aria-hidden skeleton bars, no text (R7), each the lede's line-height tall and at the lede's margin, widths 100% and 70%, the amended bar treatment below, no new token. Not a taller min-height (it would shift the 1-line cases and change the hero rhythm).",

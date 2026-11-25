@@ -7,7 +7,8 @@ export function classify(h) {
   const v = VALUES.lt1;
   if (!h.serif) return h.weight === '300' ? 'sans-light-fail' : 'not-serif';
   if (h.size >= v.thresholdPx - v.epsilonPx) return h.weight === v.displayWeight ? 'display-ok' : 'display-fail';
-  return h.weight === v.smallWeight ? 'small-ok' : 'small-fail';
+  // NR-1 (nos-type-tokens) supersedes LT-1's flat 400: 400 at 20-31.99px, 500 below 20px.
+  return h.weight === (h.size >= v.bandMidMinPx ? v.smallWeight : v.belowBandWeight) ? 'small-ok' : 'small-fail';
 }
 
 export function selftest() {
@@ -21,6 +22,11 @@ export function selftest() {
   expect('44px/400 serif (the NOS 404 h1 on the #76 head, NOS Design reading)', classify({ serif: true, size: 44, weight: '400' }), 'display-fail');
   expect('44px/300 serif (the NOS 404 h1 once fixed)', classify({ serif: true, size: 44, weight: '300' }), 'display-ok');
   expect('22px/400 serif card title', classify({ serif: true, size: 22, weight: '400' }), 'small-ok');
+  expect('18px/500 serif h3 (NR-1: below 20px is 500)', classify({ serif: true, size: 18, weight: '500' }), 'small-ok');
+  expect('18px/400 serif h3 (the h3 back at 400 below 20px)', classify({ serif: true, size: 18, weight: '400' }), 'small-fail');
+  expect('19.99px/400 serif', classify({ serif: true, size: 19.99, weight: '400' }), 'small-fail');
+  expect('20px/400 serif', classify({ serif: true, size: 20, weight: '400' }), 'small-ok');
+  expect('20px/500 serif (500 is for below 20px only)', classify({ serif: true, size: 20, weight: '500' }), 'small-fail');
   expect('22px/300 serif (a light h3 would change a heading the ruling says stays 400)', classify({ serif: true, size: 22, weight: '300' }), 'small-fail');
   expect('48px/400 sans (a Karla label is not a display serif)', classify({ serif: false, size: 48, weight: '400' }), 'not-serif');
   expect('12px/600 sans eyebrow h2 is left alone', classify({ serif: false, size: 12, weight: '600' }), 'not-serif');

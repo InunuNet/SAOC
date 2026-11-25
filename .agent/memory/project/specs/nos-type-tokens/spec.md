@@ -92,6 +92,9 @@ Where #133's spec and contract live for this branch: an UNTRACKED copy at `.agen
 - A11 (LT-1 sweep) "serif headings under 32px weight 400": replaced by the R-W band (400 at 20-31.99, 500 below 20); "no Karla heading at 300" and "300 at 32px and up" stand. This one is still provisional: A11's own check script is not edited here, so the dev reports whether it fails when re-run.
 - A21 header strip parity at 390 and 767 stands, except `nh-label` (Form-label tuple, Karla 500 14).
 The hub contract's `checks.sha256` is regenerated in this copy so its A1 stays honest.
+- A24 parity re-pin (NR-6 consequence): the hero text above the countdown now sets in the body tokens (lede, `nos-hero-price` at lh 1.6), which moves every box below it vertically by up to about 26px (measured max, hub at 640x900). With NR-8 the vertical position of boxes outside the countdown is therefore bounded at 60px (`parity.nr8.maxOutsideVerticalShiftPx`) instead of compared; the 34px of slack covers the 3px label delta and later hero copy. Horizontal edges, the countdown's geometry relative to its block, the unit gap, label and column growth, the NR-8 Caps tuple of the unit labels and all non-label computed styles stay strict.
+- A21 re-pin: strips are pixel-identical to main above the Caps row (the Tickets/Menu row is masked); the Caps CTA and Menu and the Form-label nav link are asserted as their NR-8 values, with the 1-row nav geometry at 1440 (lockup + 24, nav + 12, 32px side padding).
+- A11 re-pin: the NR-1 band (400 at 20-31.99, 500 below 20).
 
 ## 11. Risks
 - Fraunces 300 to 400 at 20-31px widens text about 3 percent: hero facts, the lede and standfirst may wrap and move the hub fold. Re-run #133's geometry gates (A10, A24 in `nos-hub-tablet-serif/checks`) on the result; the 1100px cap is retired, the first-screen rule stands.

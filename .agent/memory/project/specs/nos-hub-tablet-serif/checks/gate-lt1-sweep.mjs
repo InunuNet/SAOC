@@ -54,7 +54,7 @@ async function discover(page, server, spec) {
 
 await withServer(2, 'lt1 sweep', async (server, c) => {
   const browser = await launchChromium();
-  const evidence = { ruling: 'any display-serif heading computed at >= 32px has weight 300; below 32px stays 400', routesSwept: {}, skipped: [], failures: [], displaySerifHeadings: [], smallSerifHeadings: [] };
+  const evidence = { ruling: 'any display-serif heading computed at >= 32px has weight 300; 20-31.99px is 400; below 20px is 500 (NR-1 band)', routesSwept: {}, skipped: [], failures: [], displaySerifHeadings: [], smallSerifHeadings: [] };
   try {
     // One context to discover the dynamic routes, then a fresh context per viewport.
     const scout = await newContext(browser, VALUES.hub.band.viewports[0]);
@@ -100,7 +100,7 @@ await withServer(2, 'lt1 sweep', async (server, c) => {
           if (verdict === 'small-ok' || verdict === 'small-fail') evidence.smallSerifHeadings.push(row);
           if (verdict === 'display-fail' || verdict === 'small-fail' || verdict === 'sans-light-fail') {
             evidence.failures.push({ verdict, ...row });
-            c.check(`${tag} ${h.tag} "${h.text}" ${h.size}px/${h.weight} ${verdict === 'display-fail' ? `should be weight ${LT1.displayWeight}` : verdict === 'small-fail' ? `should stay ${LT1.smallWeight}` : 'is a Karla label that must not be weight 300'}`, false, h.cls);
+            c.check(`${tag} ${h.tag} "${h.text}" ${h.size}px/${h.weight} ${verdict === 'display-fail' ? `should be weight ${LT1.displayWeight}` : verdict === 'small-fail' ? `should be ${h.size >= LT1.bandMidMinPx ? LT1.smallWeight : LT1.belowBandWeight} (NR-1 band)` : 'is a Karla label that must not be weight 300'}`, false, h.cls);
           }
         }
         if (path === LT1.witness.route) {

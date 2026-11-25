@@ -62,7 +62,7 @@ const PROBE = (arg) => {
     row: row ? { contentWidth: row.getBoundingClientRect().width - num(rcs.paddingLeft) - num(rcs.paddingRight) - num(rcs.borderLeftWidth) - num(rcs.borderRightWidth), columnGap: num(rcs.columnGap), rowGap: num(rcs.rowGap) } : null,
     cta: cta ? r(cta) : null, cd: r(block), block: r(block), columns: columns.map(r), figures: figures.map(r), labels: labels.map(textRect),
     figureInfo: figures.map((f, i) => { const cs = getComputedStyle(f); return { unit: arg.units[i], minWidthPx: num(cs.minWidth), fvn: cs.fontVariantNumeric, textAlign: cs.textAlign, text: f.textContent }; }),
-    centreOffsets, outside: outsideEls.map(r), outsideNames: outsideEls.map(name), styles, seconds: figures[3].textContent,
+    labelStyle: labels.map((l) => { const cs = getComputedStyle(l); return { fontFamily: cs.fontFamily, fontWeight: cs.fontWeight, fontSize: cs.fontSize, letterSpacing: cs.letterSpacing, textTransform: cs.textTransform }; }), centreOffsets, outside: outsideEls.map(r), outsideNames: outsideEls.map(name), styles, seconds: figures[3].textContent,
     factsBottom: factRows.length ? Math.max(...factRows.map(bottomOf)) : NaN, factsRows: factRows.length, factsLabels: factRows.map((x) => (x.querySelector('dt')?.textContent ?? '').trim()),
     ctaBottom: hero ? bottomOf(hero.querySelector(arg.facts.cta)) : NaN,
   };
@@ -245,7 +245,7 @@ async function runMode(mode, preview, browser, digits, c) {
         await o.context.close();
         if (!mb || !mm) { c.check(`${tag} the countdown is measurable on both builds`, false); continue; }
         if (vp.width < 768 && mm.cta && mb.cta) for (const [name, m] of [['main', mm], ['branch', mb]]) for (const f of stackedVerdict(m)) c.check(`${tag} ${name}: ${f} (parity below 768 is only meaningful where both builds stack)`, false);
-        for (const f of parityVerdict(mm, mb, CF.parity.tolerancePx)) c.check(`${tag} ${f}`, false);
+        for (const f of parityVerdict(mm, mb, CF.parity.tolerancePx, CF.parity.nr8)) c.check(`${tag} ${f}`, false);
         for (const f of minWidthVerdict(mb.figureInfo, digits.widestAdvancePx, digits.branch)) c.check(`${tag} ${f}`, false);
       }
     }

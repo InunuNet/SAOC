@@ -137,27 +137,55 @@ export function styleEntryEqual(a, b) {
     return [1, 2, 3].every((k) => Math.abs(Number(ma[k]) - Number(mb[k])) <= 1) && Math.abs(Number(ma[4] ?? 1) - Number(mb[4] ?? 1)) <= 0.01;
   });
 }
-export function parityVerdict(main, branch, tol = 0.5) {
+export function parityVerdict(main, branch, tol = 0.5, nr8 = null) {
   // The one other tolerated difference: the gap between the units (16 below 1024 on the branch, 24 on main). It moves the columns and shrinks the block by 3 x the delta.
   const dGap = (branch?.unitGap ?? 0) - (main?.unitGap ?? 0);
   const f = [];
-  const cmp = (a, b, keys, what) => { for (const k of keys) if (!near(a[k], b[k], tol)) f.push(`${what}: ${k} ${b[k].toFixed(2)} vs main ${a[k].toFixed(2)}`); };
   if (!main || !branch) return ['page not measurable on one side'];
+  // NR-8 / NR-6 (nos-type-tokens): the unit labels are Caps, asserted as their NR-8 values, and the hero text above the countdown now sets in the body tokens (lede, price, facts),
+  // which moves every box below it vertically. So with nr8 the vertical position of boxes OUTSIDE the countdown is not compared (it is bounded, and the first-screen fold is A10's job; the hero text
+  // values are asserted by nos-type-tokens A13). Everything else stays strict: horizontal edges everywhere, the countdown's own geometry measured relative to its block, the unit gap, the
+  // column and label growth, and every computed style. A label height delta is an intended difference only while the labels are the NR-8 Caps tuple.
+  let dL = 0;
+  if (nr8) {
+    const st = branch.labelStyle?.[0];
+    const ls = st ? (st.letterSpacing === 'normal' ? 0 : parseFloat(st.letterSpacing)) : NaN;
+    const caps = st && String(st.fontFamily).split(',')[0].toLowerCase().includes(nr8.family) && String(st.fontWeight) === nr8.weight && parseFloat(st.fontSize) === nr8.sizePx && near(ls, nr8.trackingPx, nr8.trackingTolPx) && st.textTransform === nr8.transform;
+    if (!caps) f.push(`unit labels are not the NR-8 Caps tuple (Karla ${nr8.weight} ${nr8.sizePx}px ${nr8.trackingPx}px ${nr8.transform}): ${JSON.stringify(st ?? null)}`);
+    else {
+      dL = branch.labels[0].height - main.labels[0].height;
+      if (dL < nr8.minLabelHeightDeltaPx - tol || dL > nr8.maxLabelHeightDeltaPx + tol) f.push(`label height changed ${dL.toFixed(2)}px, outside the NR-8 range ${nr8.minLabelHeightDeltaPx}..${nr8.maxLabelHeightDeltaPx}`);
+    }
+  }
+  const shiftOk = (d) => near(d, 0, tol) || (dL !== 0 && near(d, dL, tol));
+  const cmp = (a, b, keys, what, shiftKeys = []) => { for (const k of keys) { const d = b[k] - a[k]; if (shiftKeys.includes(k) ? !shiftOk(d) : !near(a[k], b[k], tol)) f.push(`${what}: ${k} ${b[k].toFixed(2)} vs main ${a[k].toFixed(2)}`); } };
   if (main.outside.length !== branch.outside.length) f.push(`box count outside the countdown differs: ${branch.outside.length} vs main ${main.outside.length}`);
-  else main.outside.forEach((r, i) => cmp(r, branch.outside[i], ['left', 'top', 'width', 'height'], `outside box ${i} (${main.outsideNames?.[i] ?? ''})`));
-  cmp(main.block, branch.block, ['top', 'height'], 'countdown block');
+  else main.outside.forEach((r, i) => {
+    const b = branch.outside[i];
+    const what = `outside box ${i} (${main.outsideNames?.[i] ?? ''})`;
+    if (nr8) {
+      cmp(r, b, ['left', 'width'], what);
+      for (const k of ['top', 'height']) if (Math.abs(b[k] - r[k]) > nr8.maxOutsideVerticalShiftPx) f.push(`${what}: ${k} moved ${(b[k] - r[k]).toFixed(2)}px, more than the ${nr8.maxOutsideVerticalShiftPx}px bound`);
+    } else cmp(r, b, ['left', 'top', 'width', 'height'], what);
+  });
+  if (nr8) cmp(main.block, branch.block, ['height'], 'countdown block', ['height']); else cmp(main.block, branch.block, ['top', 'height'], 'countdown block', ['top', 'height']);
   if (!near(main.block.left, branch.block.left, tol) && !near(main.block.right, branch.block.right, tol)) f.push(`countdown block moved at both edges: left ${branch.block.left.toFixed(2)} vs ${main.block.left.toFixed(2)}, right ${branch.block.right.toFixed(2)} vs ${main.block.right.toFixed(2)}`);
   if (main.figures.length !== branch.figures.length || main.columns.length !== branch.columns.length) { f.push('figure or column count differs'); return f; }
   let growth = 0;
   main.figures.forEach((r, i) => {
-    cmp(r, branch.figures[i], ['top', 'height'], `figure ${i}`);
+    if (nr8) { if (!near(branch.figures[i].top - branch.block.top, r.top - main.block.top, tol)) f.push(`figure ${i} moved inside the countdown block: ${(branch.figures[i].top - branch.block.top).toFixed(2)} vs main ${(r.top - main.block.top).toFixed(2)}`); cmp(r, branch.figures[i], ['height'], `figure ${i}`); } else cmp(r, branch.figures[i], ['top', 'height'], `figure ${i}`, ['top']);
     const dFig = branch.figures[i].width - r.width;
     if (dFig < -tol) f.push(`figure ${i} got narrower by ${(-dFig).toFixed(2)}px`);
     const dCol = branch.columns[i].width - main.columns[i].width;
-    cmp(main.columns[i], branch.columns[i], ['top', 'height'], `column ${i}`);
-    if (!(near(dCol, 0, tol) || near(dCol, dFig, tol))) f.push(`column ${i} grew ${dCol.toFixed(2)}px but its figure grew ${dFig.toFixed(2)}px`);
+    const dLabW = branch.labels[i].width - main.labels[i].width;
+    if (nr8) { if (!near(branch.columns[i].top - branch.block.top, main.columns[i].top - main.block.top, tol)) f.push(`column ${i} moved inside the countdown block`); cmp(main.columns[i], branch.columns[i], ['height'], `column ${i}`, ['height']); } else cmp(main.columns[i], branch.columns[i], ['top', 'height'], `column ${i}`, ['top', 'height']);
+    if (!(near(dCol, 0, tol) || near(dCol, dFig, tol) || (dL !== 0 && near(dCol, dLabW, tol)))) f.push(`column ${i} grew ${dCol.toFixed(2)}px but its figure grew ${dFig.toFixed(2)}px${dL !== 0 ? ` and its label ${dLabW.toFixed(2)}px` : ''}`);
     growth += dCol;
-    cmp(main.labels[i], branch.labels[i], ['top', 'height', 'width'], `label ${i} text`);
+    if (dL !== 0) {
+      if (!near(branch.labels[i].top - branch.block.top, main.labels[i].top - main.block.top, tol) && !near(branch.labels[i].top - branch.block.top, main.labels[i].top - main.block.top + dL, tol)) f.push(`label ${i} moved inside the countdown block`);
+      cmp(main.labels[i], branch.labels[i], ['height'], `label ${i} text`, ['height']);
+      if (Math.abs(dLabW) > nr8.maxLabelWidthDeltaPx) f.push(`label ${i} text width changed ${dLabW.toFixed(2)}px`);
+    } else cmp(main.labels[i], branch.labels[i], ['top', 'height', 'width'], `label ${i} text`);
     // NOS Design: label BOX growth is accepted; the label text stays centred on its column exactly as on main.
     const off = (m) => m.labels[i].left + m.labels[i].width / 2 - (m.columns[i].left + m.columns[i].width / 2);
     if (!near(off(main), off(branch), tol)) f.push(`label ${i} text centre moved ${(off(branch) - off(main)).toFixed(2)}px relative to its column`);
@@ -167,8 +195,11 @@ export function parityVerdict(main, branch, tol = 0.5) {
   const dSpan = span(branch) - span(main);
   const expectSpan = growth + (main.columns.length - 1) * dGap;
   if (!near(dSpan, expectSpan, tol)) f.push(`the unit columns' span changed ${dSpan.toFixed(2)}px but the columns grew ${growth.toFixed(2)}px and the unit gap changed ${dGap}px x ${main.columns.length - 1}`);
-  if (main.styles.length !== branch.styles.length) f.push('computed-style list length differs');
-  else main.styles.forEach((s, i) => { if (!styleEntryEqual(s, branch.styles[i])) f.push(`computed style differs at entry ${i}: ${branch.styles[i]} vs main ${s}`); });
+  // Computed styles: every entry identical, except the unit-label entries (the last entries, one per column), which are asserted above as their NR-8 tuple.
+  const keep = (m) => m.styles.slice(0, m.styles.length - (nr8 ? m.columns.length : 0));
+  const sm = keep(main), sb = keep(branch);
+  if (sm.length !== sb.length) f.push('computed-style list length differs');
+  else sm.forEach((s, i) => { if (!styleEntryEqual(s, sb[i])) f.push(`computed style differs at entry ${i}: ${sb[i]} vs main ${s}`); });
   return f;
 }
 
@@ -366,5 +397,30 @@ export function tsxSelftest() {
   expect('breakpoints: a plain css file passes', breakpointFailures([['a.css', '@theme { --color-x: red; }']]), true);
   expect('breakpoints: an lg override fails', breakpointFailures([['a.css', '@theme { --breakpoint-lg: 70rem; }']]), false);
   expect('breakpoints: a scale reset fails', breakpointFailures([['a.css', '@theme { --breakpoint-*: initial; }']]), false);
+  // NR-8 parity (nos-type-tokens): label height delta of 3 (14 -> 17) shifts everything below by 3; nothing else may differ.
+  {
+    const R = (l, t, w, h) => ({ left: l, top: t, right: l + w, bottom: t + h, width: w, height: h });
+    const labelCaps = { fontFamily: 'karla, sans', fontWeight: '700', fontSize: '14px', letterSpacing: '1.68px', textTransform: 'uppercase' };
+    const mk = (shift, lh) => ({
+      unitGap: 16, block: R(10, 100, 200, 60 + shift), outside: [R(0, 90, 400, 90 + shift), R(0, 90, 300, 40), R(0, 200 + shift, 400, 50)], outsideNames: ['row', 'cta', 'below'],
+      columns: [R(10, 100, 40, 60 + shift), R(60, 100, 40, 60 + shift)], figures: [R(10, 100, 40, 40), R(60, 100, 40, 40)], labels: [R(12, 140, 36 + shift * 2, 14 + shift), R(62, 140, 36 + shift * 2, 14 + shift)],
+      labelStyle: [labelCaps, labelCaps], styles: ['a|1', 'b|2', `l|${shift}`, `l|${shift}`],
+    });
+    const nr8 = { family: 'karla', weight: '700', sizePx: 14, trackingPx: 1.68, trackingTolPx: 0.05, transform: 'uppercase', maxLabelWidthDeltaPx: 30, minLabelHeightDeltaPx: 0, maxLabelHeightDeltaPx: 6, maxOutsideVerticalShiftPx: 60 };
+    const main = mk(0);
+    const ok = mk(3);
+    ok.columns = ok.columns.map((c, i) => R(c.left, c.top, c.width + 6, c.height)); ok.labels = ok.labels.map((l) => R(l.left - 0, l.top, l.width, l.height));
+    expect('NR-8 parity: a label 3px taller, boxes below shifted by 3 and a 6px wider column, passes', parityVerdict(main, mk(3), 0.5, nr8).filter((x) => !/column|span|centre/.test(x)), true);
+    expect('MUTATION: unit labels at 13px are not the NR-8 Caps tuple', parityVerdict(main, { ...mk(3), labelStyle: [{ ...labelCaps, fontSize: '13px', letterSpacing: '1.56px' }, labelCaps] }, 0.5, nr8).filter((x) => /NR-8/.test(x)), false);
+    const moved = mk(3); moved.outside[2] = R(0, 207, 400, 50);
+    expect('hero text above the countdown moving boxes below it by 7px is tolerated (NR-6 body deltas), within the bound', parityVerdict(main, moved, 0.5, nr8).filter((x) => /outside box 2/.test(x)), true);
+    const far = mk(3); far.outside[2] = R(0, 290, 400, 50);
+    expect('MUTATION: a box below moved 90px, past the bound, fails', parityVerdict(main, far, 0.5, nr8).filter((x) => /outside box 2/.test(x)), false);
+    const inner = mk(3); inner.figures[0] = R(10, 105, 40, 40);
+    expect('MUTATION: a figure moved 5px inside the countdown block fails', parityVerdict(main, inner, 0.5, nr8).filter((x) => /figure 0 moved/.test(x)), false);
+    const wider = mk(3); wider.outside[1] = R(0, 90, 330, 40);
+    expect('MUTATION: a CTA box 30px wider fails (horizontal edges stay equal)', parityVerdict(main, wider, 0.5, nr8).filter((x) => /outside box 1/.test(x)), false);
+    expect('without nr8 the old strict rule rejects any label height change', parityVerdict(main, mk(3), 0.5).filter((x) => /label 0 text/.test(x)), false);
+  }
   return bad;
 }

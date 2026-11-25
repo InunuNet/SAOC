@@ -51,6 +51,43 @@ export function pixelDiff(a, b) {
   return { ok: diff <= H.pixelTolerance, detail: `${diff} differing pixel(s) of ${total}${bbox ? `, bbox x${minX}-${maxX} y${minY}-${maxY}` : ''}`, diff, bbox };
 }
 
+// NR-8 (nos-type-tokens): the intended header changes are asserted as their NR-8 values, not re-baselined to whatever renders.
+const N8 = H.nr8;
+const firstFamily = (f) => String(f ?? '').split(',')[0].toLowerCase();
+export function tupleVerdict(label, got, want) {
+  const out = [];
+  if (!firstFamily(got.fontFamily).includes(want.family)) out.push(`${label}: family ${firstFamily(got.fontFamily)} is not ${want.family}`);
+  if (String(got.fontWeight) !== want.weight) out.push(`${label}: weight ${got.fontWeight}, expected ${want.weight}`);
+  if (parseFloat(got.fontSize) !== want.sizePx) out.push(`${label}: size ${got.fontSize}, expected ${want.sizePx}px`);
+  const ls = got.letterSpacing === 'normal' ? 0 : parseFloat(got.letterSpacing);
+  if (!near(ls, want.trackingPx, N8.trackingTolPx)) out.push(`${label}: tracking ${got.letterSpacing}, expected ${want.trackingPx}px`);
+  if (got.textTransform !== want.transform) out.push(`${label}: transform ${got.textTransform}, expected ${want.transform}`);
+  return out;
+}
+
+// m: { cta, burgerLabel } computed styles at a two-row viewport; the Caps CTA and Menu are Karla 700 14px 0.12em uppercase.
+export function capsVerdict(m) {
+  return [...tupleVerdict('Tickets CTA', m.cta, N8.caps), ...tupleVerdict('Menu label', m.burgerLabel, N8.caps)];
+}
+
+// At the nav viewport (1440): the nav link is the Form-label tuple, and the row fits: lockup.right + 24 <= nav.left, nav.right + 12 <= Tickets.left, Tickets.right <= vw - 32.
+export function navVerdict(m) {
+  const out = tupleVerdict('nav link', m.navLink, N8.navLink);
+  const g = N8.navGapsPx;
+  if (!(m.brand.right + g.brandToNav <= m.nav.left + 0.5)) out.push(`nav starts ${m.nav.left.toFixed(1)}, under the lockup right ${m.brand.right.toFixed(1)} + ${g.brandToNav}`);
+  if (!(m.nav.right + g.navToCta <= m.cta.left + 0.5)) out.push(`nav ends ${m.nav.right.toFixed(1)}, under Tickets left ${m.cta.left.toFixed(1)} - ${g.navToCta}`);
+  if (!(m.cta.right <= m.vw - g.rightPad + 0.5)) out.push(`Tickets right ${m.cta.right.toFixed(1)} passes the ${g.rightPad}px side padding of ${m.vw}`);
+  const tops = new Set(m.navItemTops.map((t) => Math.round(t)));
+  if (tops.size !== 1) out.push(`nav items sit on ${tops.size} rows (tops ${[...tops].join(', ')})`);
+  return out;
+}
+
+// Pixel parity with main outside the intended rows: from maskTopPx down (the Tickets/Menu row, which changes to Caps 14) both strips are blanked.
+export function maskedPixelDiff(a, b, maskTopPx) {
+  const blank = (img) => { const data = Buffer.from(img.data); for (let y = Math.max(0, Math.floor(maskTopPx)); y < img.height; y += 1) data.fill(0, y * img.width * 4, (y + 1) * img.width * 4); return { ...img, data }; };
+  return pixelDiff(blank(a), blank(b));
+}
+
 // P1: the label never shows without its value. states: every sampled state { label: bool (rendered, visible), value: bool (a visible, non-empty value in the same block) }.
 export function labelWithoutValue(states) {
   return states.filter((s) => s.label && !s.value);
@@ -81,5 +118,20 @@ export function selftest() {
   expect('a size change fails the diff', pixelDiff(img(5), { width: 3, height: 1, data: Buffer.alloc(12) }).ok, false);
   expect('a state with the label and no value is reported', labelWithoutValue([{ label: true, value: false }]).length === 0, false);
   expect('label with value, and neither label nor value, are accepted', labelWithoutValue([{ label: true, value: true }, { label: false, value: false }]).length === 0, true);
+  const caps = { fontFamily: 'karla, sans-serif', fontWeight: '700', fontSize: '14px', letterSpacing: '1.68px', textTransform: 'uppercase' };
+  expect('NR-8 Caps CTA and Menu (14px, 1.68px) are accepted', capsVerdict({ cta: caps, burgerLabel: caps }).length === 0, true);
+  expect('MUTATION: a 13px Caps Tickets CTA is rejected', capsVerdict({ cta: { ...caps, fontSize: '13px', letterSpacing: '1.56px' }, burgerLabel: caps }).length === 0, false);
+  expect('MUTATION: Menu at weight 600 is rejected', capsVerdict({ cta: caps, burgerLabel: { ...caps, fontWeight: '600' } }).length === 0, false);
+  const link = { fontFamily: 'karla', fontWeight: '500', fontSize: '14px', letterSpacing: 'normal', textTransform: 'none' };
+  const nav = { navLink: link, vw: 1440, brand: { right: 405 }, nav: { left: 460, right: 1090 }, cta: { left: 1110, right: 1250 }, navItemTops: [40, 40, 40] };
+  expect('the Form-label nav link in a fitting one-row header is accepted', navVerdict(nav).length === 0, true);
+  expect('MUTATION: a 14.5px nav link at weight 600 is rejected', navVerdict({ ...nav, navLink: { ...link, fontWeight: '600', fontSize: '14.5px' } }).length === 0, false);
+  expect('a nav that wraps to two rows is rejected', navVerdict({ ...nav, navItemTops: [40, 40, 80] }).length === 0, false);
+  expect('a nav crowding the Tickets button is rejected', navVerdict({ ...nav, nav: { left: 460, right: 1105 } }).length === 0, false);
+  expect('Tickets past the 32px padding is rejected', navVerdict({ ...nav, cta: { left: 1110, right: 1420 } }).length === 0, false);
+  const px = (a, b, c) => Buffer.from([a, 0, 0, 255, a, 0, 0, 255, b, 0, 0, 255, b, 0, 0, 255, c, 0, 0, 255, c, 0, 0, 255]);
+  const strip = (a, b, c) => ({ width: 2, height: 3, data: px(a, b, c) });
+  expect('a change inside the masked Caps rows is tolerated', maskedPixelDiff(strip(5, 5, 9), strip(5, 6, 7), 1).ok, true);
+  expect('MUTATION: a change in the lockup row above the mask still fails', maskedPixelDiff(strip(5, 5, 9), strip(6, 5, 9), 1).ok, false);
   return bad;
 }

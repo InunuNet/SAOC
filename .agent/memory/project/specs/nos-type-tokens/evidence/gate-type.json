@@ -1,0 +1,30 @@
+{
+ "stats": {
+  "pages": 120,
+  "frauncesNodes": 3638,
+  "wViolations": 0,
+  "perViewport": {
+   "390": 24,
+   "768": 24,
+   "1280": 24,
+   "1440": 24,
+   "2056": 24
+  },
+  "fontFiles": {
+   "/": {
+    "total": 7,
+    "karla": 1
+   },
+   "/about": {
+    "total": 8,
+    "karla": 1
+   },
+   "/faq": {
+    "total": 7,
+    "karla": 1
+   }
+  }
+ },
+ "failureGroups": [],
+ "failureCount": 0
+}

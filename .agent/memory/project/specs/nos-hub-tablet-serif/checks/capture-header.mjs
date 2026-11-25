@@ -14,10 +14,10 @@ export async function captureHeaderStrips(server, browser, outDir) {
     if (res?.status() !== 200) throw new Error(`hub answered ${res?.status()} at ${vp.name}`);
     await page.waitForFunction(() => { const i = document.querySelector('#nh .nh-brand img'); return i && i.complete && i.naturalWidth > 0; }, null, { timeout: 30000 });
     await page.evaluate(() => document.fonts.ready);
-    const box = await page.evaluate(() => { const b = document.querySelector('#nh').getBoundingClientRect(); return { width: document.documentElement.clientWidth, bottom: b.bottom + scrollY }; });
+    const box = await page.evaluate(() => { const b = document.querySelector('#nh').getBoundingClientRect(); const rows = [...document.querySelectorAll('#nh .nh-cta, #nh .nh-burger')].map((e) => e.getBoundingClientRect().top + scrollY); return { width: document.documentElement.clientWidth, bottom: b.bottom + scrollY, capsRowTop: Math.min(...rows) }; });
     const file = `${outDir}/header-${vp.name}.png`;
     await page.screenshot({ path: file, clip: { x: 0, y: 0, width: box.width, height: Math.floor(box.bottom) } });
-    writeFileSync(`${outDir}/header-${vp.name}.json`, JSON.stringify({ viewport: vp.name, headerBottomCssPx: box.bottom, stripHeightCssPx: Math.floor(box.bottom) }));
+    writeFileSync(`${outDir}/header-${vp.name}.json`, JSON.stringify({ viewport: vp.name, headerBottomCssPx: box.bottom, stripHeightCssPx: Math.floor(box.bottom), capsRowTopCssPx: box.capsRowTop, dsf: vp.dsf }));
     files.push(file);
     await context.close();
   }
