@@ -111,7 +111,7 @@ that the source is broken, and cleaning it would make a truncated file look whol
 Both come from these recovered files and must be preserved verbatim wherever they are
 reused:
 
-- **Venue:** Stellenbosch Flying Club, R44 northbound to Stellenbosch. (`17-faq`, Q2 — the
+- **Venue:** Stellenbosch Aerodrome, R44 northbound to Stellenbosch. (`17-faq`, Q2 — the
   only council-written statement of the venue we hold.)
 - **Theme:** "From Wild Origins to Cultivated Excellence: The Future of Orchids"
   (`06-saoc-symposium/theme`, and repeated in the page-2 About copy already in

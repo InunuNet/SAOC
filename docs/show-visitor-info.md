@@ -185,7 +185,7 @@ QA (`_rev`/`_updatedAt` diffed across two runs — no drift, no duplicates, no e
 by contract check A24. Runnable as `pnpm seed:visitor --apply` (a bare run is a dry run; added this round; previously only
 runnable via `npx tsx`).
 
-Seeded venue (client-confirmed 2026-08-12): **The Hangar, Stellenbosch Flying Club**,
+Seeded venue (name set 2026-11-19): **Stellenbosch Aerodrome**,
 Stellenbosch, Western Cape, edition 19, 23–26 September 2027, host region Western Cape. Every one
 of these values is a Studio-editable field, not a code literal — see the venue-change guarantee
 above. Travel/accommodation prose for this venue is deliberately unresearched (see

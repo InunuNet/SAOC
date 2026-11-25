@@ -49,9 +49,9 @@ const cases = {
     if (ics.escapeIcsText('a\rb') !== 'a\\nb') fail(`escapeIcsText('a\\rb') = ${JSON.stringify(ics.escapeIcsText('a\rb'))}`);
   },
   'guard-short-lines-unchanged'() {
-    const out = ics.buildVEvent(event({ description: 'Short; with, escapes', venue: 'The Hangar', location: 'Stellenbosch Flying Club' }));
+    const out = ics.buildVEvent(event({ description: 'Short; with, escapes', venue: 'The Hangar', location: 'Stellenbosch Aerodrome' }));
     if (/\r\n /.test(out)) fail('lines of <= 75 octets must not be folded');
-    for (const want of ['SUMMARY:Spring Show', 'DESCRIPTION:Short\\; with\\, escapes', 'LOCATION:The Hangar\\, Stellenbosch Flying Club']) {
+    for (const want of ['SUMMARY:Spring Show', 'DESCRIPTION:Short\\; with\\, escapes', 'LOCATION:The Hangar\\, Stellenbosch Aerodrome']) {
       if (!out.includes(want)) fail(`missing ${want}`);
     }
   },

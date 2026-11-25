@@ -1,3 +1,5 @@
+> Note 2026-11-25: the venue owner item below is resolved. The venue name is Stellenbosch Aerodrome (2026-11-19); the other names quoted here are stale history.
+
 # nos-content-standard: build sheet for @dev (revision 2, 2026-10-25)
 
 Authority, in order: NOS Design rulings (DS-1 r2, (a) type scale, (b) sub-nav cue, (c) photo width and rail retirement, PYV-1, FAQ-NAV, PG-1, D7), built FROM the Brad-approved v4 golden `.agent/memory/project/specs/launch-weekend/goldens/nos-v4/plan-your-visit.html`; then Brad's directives (research.md section 1); then this file. Copy: only Lee-Ann's Drive sources in `goldens/sources/` (sha256 in the route table), the published show data, and `docs/rules/no-invention.md`. NO INVENTION. A gap stays a listed gap.

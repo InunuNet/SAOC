@@ -11,7 +11,7 @@ Base: `origin/main`. Rule: docs/rules/no-invention.md. Precedent: F4 (goldens/f4
 - Unsourced: "Since 1974" (archive/page.tsx:81 lede). Only appears in the design mock timeline (pages-interior.jsx:152).
 - Sourced: "triennial" - Drive `National Show/2. About/2.1 About - 2027 National Show/v1.0/content.md:5`
   ("premier triennial event"). Use that word only; no "rotated across the provinces", no first-year claim.
-- Sourced: 2027 entry (`lib/data/shows.ts:6-14`: The Hangar, Stellenbosch Flying Club; September). It is `status: 'upcoming'`
+- Sourced: 2027 entry (`lib/data/shows.ts:6-14`: Stellenbosch Aerodrome; September). It is `status: 'upcoming'`
   and the only consumer of `staticShows` filters `status === 'past'` (national-show/page.tsx:420), mergePastShows filters past,
   so the upcoming entry is dead data. Its host "Western Cape" and days 4 are unverifiable here and unneeded; the show page
   reads the Sanity `nationalShow` singleton. Delete the file whole.

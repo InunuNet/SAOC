@@ -34,7 +34,7 @@ different ones would be strictly worse.
 
 ## Capacities — OUR ESTIMATE, no client source
 
-The venue is The Hangar, Stellenbosch Flying Club — an aircraft hangar on an airfield, confirmed
+The venue is Stellenbosch Aerodrome (an aircraft hangar on an airfield), confirmed
 2026-08-12. Estimates assume the floor is shared between orchid display staging, vendor stands and
 circulation, so visitor numbers are well below a bare-floor assembly figure.
 

@@ -54,7 +54,7 @@ inherit it.
 Both are council-supplied and held in `content/drive-recovered/`. Reproduce
 character-for-character; D6 pins the first, and it has already been paraphrased once.
 
-- **Venue:** `Stellenbosch Flying Club, R44 northbound to Stellenbosch`
+- **Venue:** `Stellenbosch Aerodrome, R44 northbound to Stellenbosch`
 - **Theme:** `From Wild Origins to Cultivated Excellence: The Future of Orchids`
 
 ## Section bodies: shape, not length
