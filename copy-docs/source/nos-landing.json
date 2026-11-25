@@ -6,10 +6,6 @@
     "parsedFromMd5": "0cdb37c0af13072aca46dbd9a1be1f8a",
     "parsedOn": "2026-11-25"
   },
-  "legacyCopyHeadings": [
-    "Thirteen judging groups",
-    "Plant Entry for SAOC Members"
-  ],
   "sections": [
     {
       "name": "Hero",
@@ -818,5 +814,13 @@
       "property": "ind",
       "reason": "first-line indent (firstLine=720) on the doc's own title line; pure indent, the copy doc's title style sets its layout"
     }
+  ],
+  "legacySectionLabels": [
+    "Hero",
+    "Show dates card",
+    "Intro",
+    "About",
+    "Programme",
+    "Closing"
   ]
 }

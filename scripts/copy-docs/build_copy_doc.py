@@ -33,10 +33,13 @@ Source JSON shape:
         {"role": str, "text": str, "editable": bool, "editedWhere": str|null,
          "style": "heading"|"lead"|"body"|"button"|"link"|"label"|"cardTitle"|"theme",
          "sameRow": bool?, "legacyPara": int?, "legacyPrefix": str?}]}],
-   "legacyCopyHeadings": [str, ...]?}
+   "legacySectionLabels": [str, ...]?, "acceptedLayoutChanges": [...]?, "acceptedStyleChanges": [...]?}
   `sameRow: true` groups the element under the previous element's role label (a card's title + text).
   `legacyPara` / `legacyPrefix` are the role map import_legacy.py fills `text` from; the build ignores them.
-  `legacyCopyHeadings`: Heading-styled lines of the legacy doc that are also page copy (not labels).
+  `legacySectionLabels`: exact text of the legacy doc's Heading-styled section titles that are labels
+  of the old layout (dropped; the section bars replace them). Any other legacy line is copy.
+  `acceptedLayoutChanges` [{para, property, reason, approvedBy?}] and `acceptedStyleChanges`
+  [{para, from, to, reason}]: what the gate may accept as not carried (see gate()).
 
 All layout formatting lives in the paragraph styles (not on individual runs), so Enter carries it on in
 Word and in Google Docs' Office-compat editor. Only what Google Docs keeps is used: Google Fonts (Fraunces, Karla), bold,
@@ -64,6 +67,7 @@ import json
 import sys
 import tempfile
 import zipfile
+from collections import Counter
 from pathlib import Path
 from typing import Any, TypedDict
 
@@ -620,7 +624,8 @@ def gate(built: Path, legacy: Path, source: Path) -> int:
     if len(mapped) != len(elements):
         fails.append("an element has no legacyPara, or two share one")
     title_is_copy = 0 in mapped
-    copy_headings = set(data.get("legacyCopyHeadings", []))
+    section_labels = list(data.get("legacySectionLabels", []))
+    labels_left = Counter(section_labels)   # each listed label covers exactly one legacy line
 
     # Legacy side: what must be carried, in order. Every non-empty line is copy, the title, or a
     # Heading-styled section label of the old layout (which must hold no formatting of its own).
@@ -635,11 +640,16 @@ def gate(built: Path, legacy: Path, source: Path) -> int:
             continue
         if i in mapped or (i == 0 and not title_is_copy):
             continue
-        if (lp["style"] or "").startswith("Heading") and lp["text"] not in copy_headings:
+        if (lp["style"] or "").startswith("Heading") and labels_left[lp["text"]] > 0:
+            labels_left[lp["text"]] -= 1
             if docfmt.formatted(lp["runs"]) or lp["list"] or lp["problems"]:
                 fails.append(f"legacy label paragraph {i} {lp['text'][:40]!r} has formatting a label drops")
             continue
-        fails.append(f"legacy paragraph {i} {lp['text'][:60]!r} is not carried")
+        why = " (a Heading line, but not (or no longer) listed in legacySectionLabels)" if (lp["style"] or "").startswith("Heading") else ""
+        fails.append(f"legacy paragraph {i} {lp['text'][:60]!r} is not carried{why}")
+    for i in mapped:
+        if 0 <= i < len(lparas) and lparas[i]["text"] in section_labels:
+            fails.append(f"legacy paragraph {i} is listed in legacySectionLabels but mapped as copy")
 
     # Built side: the title, then every paragraph in a Copy style except our notes.
     if not bparas or bparas[0]["style"] != "Heading 1":
@@ -732,7 +742,8 @@ def gate(built: Path, legacy: Path, source: Path) -> int:
 
     # Independent second reader: raw w:t text from the XML of every text part, in order.
     prefixes = sorted({e.get("legacyPrefix", "") for _, e in elements} - {""})
-    raw_ok, raw_report = rawtext.check(legacy, built, prefixes, title_is_copy, copy_headings)
+    prefix_uses = sum(1 for _, e in elements if e.get("legacyPrefix"))
+    raw_ok, raw_report = rawtext.check(legacy, built, prefixes, prefix_uses, section_labels, title_is_copy)
     for line in raw_report:
         print(line)
     if not raw_ok:

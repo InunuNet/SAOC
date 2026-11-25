@@ -20,9 +20,10 @@ once, labelled by its role.
 It refuses, and writes nothing, when:
   - an element has no `legacyPara`, or its paragraph does not start with its `legacyPrefix`;
   - the elements do not follow the legacy doc's order (the copy check compares in order);
-  - a non-empty legacy line is neither copy nor a Heading-styled label: every line must be mapped,
-    so nothing in the editor's doc is silently dropped;
-  - a Heading-styled legacy line is used as copy but is not listed in `legacyCopyHeadings`;
+  - a non-empty legacy line is neither copy nor a section label: every line must be mapped, so
+    nothing in the editor's doc is silently dropped. A section label is a Heading-styled line whose
+    exact text is listed in `legacySectionLabels`; an unlisted Heading line must be mapped as copy;
+  - a line listed in `legacySectionLabels` is also mapped as copy;
   - a line holds something the copy doc cannot carry (tracked changes, fields, images, a character
     style other than Hyperlink, or a run property docfmt.py does not carry);
   - a Heading-styled label line (dropped as a label) holds formatting, links or a list.
@@ -38,6 +39,7 @@ import hashlib
 import json
 import sys
 from datetime import date
+from collections import Counter
 from pathlib import Path
 
 try:
@@ -53,7 +55,8 @@ def fill(data: dict, legacy: Path, parsed_on: str) -> list[str]:
     """Fill `data` in place from the legacy doc; return a list of problems (empty means OK)."""
     paras, body_problems = docfmt.read_document(docx.Document(str(legacy)))
     problems: list[str] = list(body_problems)
-    copy_headings = set(data.get("legacyCopyHeadings", []))
+    section_labels = set(data.get("legacySectionLabels", []))
+    labels_left = Counter(data.get("legacySectionLabels", []))   # each entry covers one line
     used: dict[int, str] = {}
     last = -1
     lists: dict[str, dict] = {}
@@ -93,8 +96,8 @@ def fill(data: dict, legacy: Path, parsed_on: str) -> list[str]:
         if not p["text"].startswith(prefix):
             problems.append(f"{where}: paragraph {i} {p['text'][:60]!r} does not start with {prefix!r}")
             continue
-        if (p["style"] or "").startswith("Heading") and p["text"] not in copy_headings:
-            problems.append(f"{where}: paragraph {i} is a Heading line not listed in legacyCopyHeadings")
+        if p["text"] in section_labels:
+            problems.append(f"{where}: paragraph {i} is listed in legacySectionLabels but mapped as copy")
         problems += [f"{where}: paragraph {i}: {x}" for x in p["problems"]]
         e["text"] = p["text"][len(prefix):]
         runs = docfmt.slice_runs(p["runs"], len(prefix))
@@ -118,7 +121,8 @@ def fill(data: dict, legacy: Path, parsed_on: str) -> list[str]:
     for i, p in enumerate(paras):
         if not p["text"] or i in used or (i == 0 and not title_is_copy):
             continue
-        if (p["style"] or "").startswith("Heading") and p["text"] not in copy_headings:
+        if (p["style"] or "").startswith("Heading") and labels_left[p["text"]] > 0:
+            labels_left[p["text"]] -= 1
             if docfmt.formatted(p["runs"]) or p["list"] or p["problems"]:
                 problems.append(f"label paragraph {i} {p['text'][:40]!r} has formatting a label would drop")
             continue            # a section title of the legacy doc: a label, not page copy

@@ -4,7 +4,7 @@ Takes the Privacy page (legacy .docx, the built/live .docx, the page JSON), writ
 and runs the gate on each, serially; one line per case with the expected and actual verdict.
 Exit 0 only when every case behaves as expected.
 
-    python scripts/copy-docs/mutation_suite.py LEGACY.docx BUILT.docx copy-docs/source/privacy.json OUT_DIR
+    python scripts/copy-docs/tests/mutation_suite.py LEGACY.docx BUILT.docx copy-docs/source/privacy.json OUT_DIR
 """
 import json
 import re
@@ -15,7 +15,7 @@ from pathlib import Path
 
 if len(sys.argv) != 5:
     sys.exit(__doc__)
-WT = Path(__file__).resolve().parents[2]
+WT = Path(__file__).resolve().parents[3]
 PY = sys.executable
 GATE = str(WT / "scripts/copy-docs/build_copy_doc.py")
 LEG, BUILT, SRC, OUT = (Path(a).resolve() for a in sys.argv[1:5])
