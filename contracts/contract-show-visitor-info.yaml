@@ -279,11 +279,12 @@ assertions:
         if grep -rEiq "CTICC|Cape Town International Convention|Lower Long Street|Convention Square|Foreshore|Heerengracht|-33\.9|18\.42" "app/(marketing)/national-show/plan-your-visit" "app/(marketing)/national-show/what-to-expect" "app/(marketing)/national-show/faq" components/show 2>/dev/null; then echo "a venue literal is hardcoded in a new file"; exit 1; fi
     - id: A32
       description: >-
-        THE VENUE-CHANGE TEST (source half) - the venue block lives on /national-show/contact (moved
-        from the SAOC /contact on 25 Nov 2026) as the same VenueCard component reading the same Sanity
-        object, so it cannot drift from the show pages; the SAOC /contact page no longer renders it
+        THE VENUE-CHANGE TEST (source half) - the venue lines live on /national-show/contact (moved
+        from the SAOC /contact on 25 Nov 2026) reading the same nationalShow.venue Sanity object the
+        VenueCard prints, so they cannot drift from the show pages; the SAOC /contact page no longer
+        renders them
       command: >-
-        grep -q "VenueCard" "app/(nos)/national-show/contact/page.tsx" &&
+        grep -q "nationalShowVenueQuery" "app/(nos)/national-show/contact/page.tsx" &&
         if grep -q "VenueCard" "app/(marketing)/contact/page.tsx"; then exit 1; fi &&
         if grep -rEiq "CTICC|Cape Town International Convention|Lower Long Street" "app/(nos)/national-show/contact/page.tsx"; then exit 1; fi
     - id: A33

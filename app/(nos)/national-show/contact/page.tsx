@@ -7,13 +7,12 @@ import { NosHero } from '@/components/nos/NosHero';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
 import { SaocText } from '@/components/nos/SaocText';
 import { ShowContactDetails } from '@/components/nos/ShowContactDetails';
-import { VenueCard } from '@/components/show';
 import { sanityFetch } from '@/sanity/lib/fetch';
-import { nationalShowVenueQuery, showVisitorInfoQuery } from '@/sanity/queries';
+import { nationalShowVenueQuery } from '@/sanity/queries';
 import { buildPageMetadata } from '@/lib/seo';
 import { SHOW_TITLE } from '@/lib/show-title';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
-import type { ShowVenue, ShowVisitorInfo } from '@/types';
+import type { ShowVenue } from '@/types';
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'Contact',
@@ -48,12 +47,12 @@ interface ShowVenueData {
 }
 
 export default async function NosContactPage() {
-  // The venue block is the shared VenueCard reading nationalShow.venue, moved here from the SAOC
-  // /contact page (Brad, 25 Nov 2026), so it cannot drift from the show's other venue surfaces.
-  const [show, info] = await Promise.all([
-    sanityFetch<ShowVenueData>({ query: nationalShowVenueQuery, tags: ['nationalShow', 'sanity'] }),
-    sanityFetch<ShowVisitorInfo>({ query: showVisitorInfoQuery, tags: ['showVisitorInfo', 'sanity'] }),
-  ]);
+  // The venue lines read nationalShow.venue, the same object the shared VenueCard prints, moved
+  // here from the SAOC /contact page (Brad, 25 Nov 2026) so they cannot drift from other surfaces.
+  const show = await sanityFetch<ShowVenueData>({
+    query: nationalShowVenueQuery,
+    tags: ['nationalShow', 'sanity'],
+  });
   return (
     <>
       <NosHero
@@ -68,17 +67,7 @@ export default async function NosContactPage() {
           <ContactForm site="nos" />
         </div>
         <aside data-ct-card="" className="ds-card nos-ct-card">
-          <ShowContactDetails />
-          <div className="mb-12">
-            <VenueCard
-              venue={show?.venue}
-              heading="National Orchid Show venue"
-              status={info?.confirmations?.venue}
-              pendingLabel={info?.pendingLabel}
-              researchLabel={info?.researchLabel}
-              mapAction="button"
-            />
-          </div>
+          <ShowContactDetails venue={show?.venue} />
           <NosContactAside />
         </aside>
         <section className="nos-ct-team" aria-labelledby="ct-committee-h">
