@@ -1,0 +1,174 @@
+{
+  "title": "About page - South African Orchid Council",
+  "titleFrom": "driveName",
+  "source": {
+    "driveFileId": "1pNOqTdRbtSxZzClUPWX3TLae0zrU4cCI",
+    "driveName": "About page - South African Orchid Council.docx",
+    "route": "/about",
+    "parsedFromMd5": "c939ef9c921b701d80962cccfe691684",
+    "parsedOn": "2026-11-25"
+  },
+  "sections": [
+    {
+      "name": "Hero",
+      "where": "The page banner at the top of the page.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "About the South African Orchid Council",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 0,
+          "runs": [
+            {
+              "text": "About the South African Orchid Council",
+              "b": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Our heritage",
+      "where": "The main column, in the order shown; words in bold are bold on the page.",
+      "elements": [
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "The South African Orchid Council (SAOC) is the national coordinating body for orchid societies and orchid enthusiasts in South Africa. Established in 1968, the Council has played a central role for more than half a century in promoting the cultivation, hybridisation, conservation and appreciation of orchids, while fostering the exchange of knowledge and expertise within the South African orchid community.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 1,
+          "runs": [
+            {
+              "text": "The "
+            },
+            {
+              "text": "South African Orchid Council (SAOC)",
+              "b": true
+            },
+            {
+              "text": " is the national coordinating body for orchid societies and orchid enthusiasts in South Africa. Established in "
+            },
+            {
+              "text": "1968",
+              "b": true
+            },
+            {
+              "text": ", the Council has played a central role for more than half a century in promoting the cultivation, hybridisation, conservation and appreciation of orchids, while fostering the exchange of knowledge and expertise within the South African orchid community."
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "The origins of the SAOC can be traced to 28 July 1968, when representatives of the Cape Orchid Society, Natal Orchid Society, Transvaal Orchid Society and Orchid Society of the Northern Transvaal met in Bloemfontein. Recognising the need for cooperation and common standards, the societies agreed to establish a national council to promote and coordinate the activities and interests of orchid societies throughout South Africa.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 2,
+          "runs": [
+            {
+              "text": "The origins of the SAOC can be traced to "
+            },
+            {
+              "text": "28 July 1968",
+              "b": true
+            },
+            {
+              "text": ", when representatives of the "
+            },
+            {
+              "text": "Cape Orchid Society, Natal Orchid Society, Transvaal Orchid Society and Orchid Society of the Northern Transvaal",
+              "b": true
+            },
+            {
+              "text": " met in Bloemfontein. Recognising the need for cooperation and common standards, the societies agreed to establish a national council to promote and coordinate the activities and interests of orchid societies throughout South Africa."
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "From its earliest days, the SAOC placed particular emphasis on maintaining high standards in orchid judging and exhibition. In September 1968, the first SAOC Award Judging by-laws were drafted and 15 people were registered as Accredited SAOC Judges. A uniform national judging system was regarded as important from the outset, providing a consistent standard for the assessment and recognition of outstanding orchid plants.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 3,
+          "runs": [
+            {
+              "text": "From its earliest days, the SAOC placed particular emphasis on maintaining high standards in orchid judging and exhibition. In September 1968, the first SAOC Award Judging by-laws were drafted and "
+            },
+            {
+              "text": "15 people were registered as Accredited SAOC Judges",
+              "b": true
+            },
+            {
+              "text": ". A uniform national judging system was regarded as important from the outset, providing a consistent standard for the assessment and recognition of outstanding orchid plants."
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Over the decades, the Council has developed into a national network supporting orchid societies, growers, exhibitors, breeders, judges and conservationists. Its activities encompass education, judging, exhibitions, hybridisation, conservation and the dissemination of orchid knowledge. The SAOC also provides a national forum through which affiliated societies can collaborate and share expertise.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 4,
+          "runs": [
+            {
+              "text": "Over the decades, the Council has developed into a national network supporting orchid societies, growers, exhibitors, breeders, judges and conservationists. Its activities encompass "
+            },
+            {
+              "text": "education, judging, exhibitions, hybridisation, conservation and the dissemination of orchid knowledge",
+              "b": true
+            },
+            {
+              "text": ". The SAOC also provides a national forum through which affiliated societies can collaborate and share expertise."
+            }
+          ]
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "The Council's work is particularly significant in a country with an exceptionally diverse indigenous orchid flora. South Africa is home to a remarkable range of terrestrial and epiphytic orchids, many of which have specialised habitats and face increasing pressures from habitat loss and environmental change. The SAOC therefore recognises that the future of orchids depends not only on their successful cultivation, but also on understanding, protecting and conserving their natural heritage.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 5
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Through its affiliated societies, national shows, judging programmes, publications, educational initiatives and partnerships with orchid enthusiasts and conservation organisations, the SAOC continues to promote a deeper understanding and appreciation of orchids.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 6
+        },
+        {
+          "role": "Paragraph",
+          "style": "body",
+          "text": "Today, the South African Orchid Council remains committed to the principles upon which it was founded in 1968: bringing orchid enthusiasts together, sharing knowledge, encouraging excellence in cultivation and exhibition, and ensuring that South Africa's extraordinary orchid heritage is valued and conserved for future generations.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 7,
+          "runs": [
+            {
+              "text": "Today, the South African Orchid Council remains committed to the principles upon which it was founded in 1968: "
+            },
+            {
+              "text": "bringing orchid enthusiasts together, sharing knowledge, encouraging excellence in cultivation and exhibition, and ensuring that South Africa's extraordinary orchid heritage is valued and conserved for future generations.",
+              "b": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "acceptedStyleChanges": [
+    {
+      "para": 0,
+      "from": "body",
+      "to": "heading",
+      "reason": "the page's h1 (RouteHero heading on /about)"
+    }
+  ]
+}

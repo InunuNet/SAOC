@@ -1,0 +1,826 @@
+{
+  "title": "National Orchid Show Website - Landing Page",
+  "source": {
+    "driveFileId": "1VIHf90ozX20PleXvzpxl6ztbWPZ4r7A3",
+    "driveName": "National Orchid Show Website-Landing Page.docx",
+    "parsedFromMd5": "0cdb37c0af13072aca46dbd9a1be1f8a",
+    "parsedOn": "2026-11-25"
+  },
+  "sections": [
+    {
+      "name": "Hero",
+      "where": "The large banner at the top of the page.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "National Orchid Show - Western Cape 2027",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 2,
+          "legacyPrefix": "Heading: "
+        },
+        {
+          "role": "Lead",
+          "style": "lead",
+          "text": "South Africa’s triennial National Orchid Show, bringing together growers, judges and enthusiasts from all nine provinces.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 3,
+          "legacyPrefix": "Lede: "
+        },
+        {
+          "role": "Button",
+          "style": "button",
+          "text": "Tickets",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 4,
+          "legacyPrefix": "Button: "
+        },
+        {
+          "role": "Button",
+          "style": "button",
+          "text": "Plan your visit",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 5,
+          "legacyPrefix": "Button: "
+        },
+        {
+          "role": "Countdown label",
+          "style": "label",
+          "text": "Opens in",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 6,
+          "legacyPrefix": "Countdown label: "
+        },
+        {
+          "role": "Show dates",
+          "style": "body",
+          "text": "23–26 September 2027",
+          "editable": false,
+          "editedWhere": "Comes from the show details in the website's content system and is used across the show pages. Ask the web team to change it.",
+          "legacyPara": 7,
+          "legacyPrefix": "Dates (from show settings): "
+        },
+        {
+          "role": "Venue",
+          "style": "body",
+          "text": "Stellenbosch Aerodrome",
+          "editable": false,
+          "editedWhere": "Comes from the show details in the website's content system and is used across the show pages. Ask the web team to change it.",
+          "legacyPara": 8,
+          "legacyPrefix": "Venue (from show settings): "
+        },
+        {
+          "role": "Theme line",
+          "style": "theme",
+          "text": "“From Wild Origins to Cultivated Excellence: The Future of Orchids.”",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 9,
+          "legacyPrefix": "Theme: "
+        }
+      ]
+    },
+    {
+      "name": "Show dates card",
+      "where": "The dates box that sits beside the sections below the banner.",
+      "elements": [
+        {
+          "role": "Label",
+          "style": "label",
+          "text": "Show dates – for public entrance",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 11,
+          "legacyPrefix": "Label: "
+        },
+        {
+          "role": "Dates",
+          "style": "cardTitle",
+          "text": "Thursday 23 to Sunday 26 September 2027",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 12,
+          "legacyPrefix": "Dates: "
+        },
+        {
+          "role": "Opening hours",
+          "style": "body",
+          "text": "Thursday VIP Ticket Holders: 16.30 to 19.00",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 13
+        },
+        {
+          "role": "Opening hours",
+          "style": "body",
+          "text": "Friday & Saturday: 9.00 to 17.00",
+          "editable": true,
+          "editedWhere": null,
+          "sameRow": true,
+          "legacyPara": 14
+        },
+        {
+          "role": "Opening hours",
+          "style": "body",
+          "text": "Sunday: 9.00 to 16.00",
+          "editable": true,
+          "editedWhere": null,
+          "sameRow": true,
+          "legacyPara": 15
+        },
+        {
+          "role": "Link",
+          "style": "link",
+          "text": "What to expect →",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 16,
+          "legacyPrefix": "Link: "
+        }
+      ]
+    },
+    {
+      "name": "Intro",
+      "where": "The first section under the banner.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "Three years in the making, four days on the bench",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 18,
+          "legacyPrefix": "Heading: "
+        },
+        {
+          "role": "Lead",
+          "style": "lead",
+          "text": "The National Orchid Show is the country’s premier orchid event. Held every three years, it brings together growers, hybridisers, judges and collectors for four days of Orchid exhibits, sales, education, and community.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 19,
+          "legacyPrefix": "Lead: "
+        },
+        {
+          "role": "Body",
+          "style": "body",
+          "text": "Every plant submitted for judging is assessed by accredited SAOC judges and if requested can be judged for an SAOC Award. The Show Grand Champion is selected from the best on show and chosen by secret ballot by the accredited SAOC Judges.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 20,
+          "legacyPrefix": "Body: "
+        }
+      ]
+    },
+    {
+      "name": "About",
+      "where": "The section after the intro.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "2027 South African National Orchid Show",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 22,
+          "legacyPrefix": "Heading: "
+        },
+        {
+          "role": "Lead",
+          "style": "lead",
+          "text": "The National Orchid Show - Western Cape 2027 is the South African Orchid Council's premier triennial event, bringing together orchid enthusiasts, growers, researchers, conservationists, judges, horticultural professionals and members of the public to celebrate one of the world's most remarkable plant families.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 23,
+          "legacyPrefix": "Lead: "
+        },
+        {
+          "role": "Body",
+          "style": "body",
+          "text": "The National Orchid Show will showcase a spectacular display of all the orchids that are submitted for judging and display. There will be specialist plant sales by local and international vendors, educational exhibits, a comprehensive symposium and conference, practical workshops and opportunities to engage with local and international experts.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 24,
+          "legacyPrefix": "Body: "
+        },
+        {
+          "role": "Link",
+          "style": "link",
+          "text": "About the show →",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 25,
+          "legacyPrefix": "Link: "
+        }
+      ]
+    },
+    {
+      "name": "Judging groups",
+      "where": "The grid of judging group cards.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "Thirteen judging groups",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 26
+        },
+        {
+          "role": "Group card",
+          "style": "cardTitle",
+          "text": "Group 1: Laeliinae Species",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 27
+        },
+        {
+          "role": "Group card",
+          "style": "body",
+          "text": "Cattleya (large-flowered, cluster bifoliates, miniature, and rupiculous), Laelia, Myrmecophila, reed-stem Epidendrums, Oerstedella, Encyclia, Prosthechea, and Brassavola.",
+          "editable": true,
+          "editedWhere": null,
+          "sameRow": true,
+          "legacyPara": 28
+        },
+        {
+          "role": "Group card",
+          "style": "cardTitle",
+          "text": "Group 2: Cymbidiinae Species",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 29
+        },
+        {
+          "role": "Group card",
+          "style": "body",
+          "text": "Cymbidium (standards, intermediate, miniature, Chinese, and Australian) and closely related genera—strictly excluding African/Mascarene species.",
+          "editable": true,
+          "editedWhere": null,
+          "sameRow": true,
+          "legacyPara": 30
+        },
+        {
+          "role": "Group card",
+          "style": "cardTitle",
+          "text": "Group 3: Dendrobiinae Species",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 31
+        },
+        {
+          "role": "Group card",
+          "style": "body",
+          "text": "Dendrobium sections (including Callista, Formosae, Spatulata, Phalaenanthe, Latouria, Dendrocoryne, Pedilonum, Oxyglossum), and any other genus in the Dendrobiinae subtribe.",
+          "editable": true,
+          "editedWhere": null,
+          "sameRow": true,
+          "legacyPara": 32
+        },
+        {
+          "role": "Group card",
+          "style": "cardTitle",
+          "text": "Group 4: Oncidiinae Species",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 33
+        },
+        {
+          "role": "Group card",
+          "style": "body",
+          "text": "Brassia, Miltonia, Miltoniopsis, Rossioglossum, Gomesa, Oncidium, Trichocentrum, Tolumnia, Psychopsis, and Rhynchostele.",
+          "editable": true,
+          "editedWhere": null,
+          "sameRow": true,
+          "legacyPara": 34
+        },
+        {
+          "role": "Group card",
+          "style": "cardTitle",
+          "text": "Group 5: Cypripedioideae Species",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 35
+        },
+        {
+          "role": "Group card",
+          "style": "body",
+          "text": "Paphiopedilum (sections Barbata, Brachypetalum, Parvisepalum, Coryopedilum, Cochlopetalum, Pardalopetalum) and Phragmipedium (including Micropetalum types).",
+          "editable": true,
+          "editedWhere": null,
+          "sameRow": true,
+          "legacyPara": 36
+        },
+        {
+          "role": "Group card",
+          "style": "cardTitle",
+          "text": "Group 6: Phalaenopsis Species",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 37
+        },
+        {
+          "role": "Group card",
+          "style": "body",
+          "text": "Phalaenopsis (large-flowered, single-flowered/sequential types, and miniature species).",
+          "editable": true,
+          "editedWhere": null,
+          "sameRow": true,
+          "legacyPara": 38
+        },
+        {
+          "role": "Group card",
+          "style": "cardTitle",
+          "text": "Group 7: Vandeae Species",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 39
+        },
+        {
+          "role": "Group card",
+          "style": "body",
+          "text": "Vanda, Rhynchostylis, Renanthera, and Aerides.",
+          "editable": true,
+          "editedWhere": null,
+          "sameRow": true,
+          "legacyPara": 40
+        },
+        {
+          "role": "Group card",
+          "style": "cardTitle",
+          "text": "Group 8: Pleurothallidinae Species",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 41
+        },
+        {
+          "role": "Group card",
+          "style": "body",
+          "text": "Masdevallia (large and small-flowered) and related genera in the Pleurothallidinae subtribe.",
+          "editable": true,
+          "editedWhere": null,
+          "sameRow": true,
+          "legacyPara": 42
+        },
+        {
+          "role": "Group card",
+          "style": "cardTitle",
+          "text": "Group 9: Miscellaneous Exotic Species",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 43
+        },
+        {
+          "role": "Group card",
+          "style": "body",
+          "text": "Jewel Orchids (Anoectochilus, Ludisia, Macodes), Coelogyne, Dendrochilum, Pleione, Calanthe, Phaius, Spathoglottis, Stanhopea, Gongora, Coryanthes, Zygopetalum, Catasetum, Cycnoches, Mormodes, Lycaste, Maxillaria, and Bulbophyllum.",
+          "editable": true,
+          "editedWhere": null,
+          "sameRow": true,
+          "legacyPara": 44
+        },
+        {
+          "role": "Group card",
+          "style": "cardTitle",
+          "text": "Group 10: South African, African & Mascarene Species",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 45
+        },
+        {
+          "role": "Group card",
+          "style": "body",
+          "text": "Disa, Satyrium, Bonatea, Habenaria, Stenoglottis, Gastrorchis, Ansellia, Eulophia, Oeceoclades, Polystachya, Aerangis, and Angraecum.",
+          "editable": true,
+          "editedWhere": null,
+          "sameRow": true,
+          "legacyPara": 46
+        },
+        {
+          "role": "Group card",
+          "style": "cardTitle",
+          "text": "Group 11: SA Bred",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 47
+        },
+        {
+          "role": "Group card",
+          "style": "cardTitle",
+          "text": "Group 12: First Flowering",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 48
+        },
+        {
+          "role": "Group card",
+          "style": "cardTitle",
+          "text": "Group 13: Most Fragrant",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 49
+        }
+      ]
+    },
+    {
+      "name": "Plant entry",
+      "where": "The four steps for members entering plants, with the register line below them.",
+      "elements": [
+        {
+          "role": "Heading",
+          "style": "heading",
+          "text": "Plant Entry for SAOC Members",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 50
+        },
+        {
+          "role": "Step card",
+          "style": "label",
+          "text": "Stage 01",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 51
+        },
+        {
+          "role": "Step card",
+          "style": "cardTitle",
+          "text": "Register",
+          "editable": true,
+          "editedWhere": null,
+          "sameRow": true,
+          "legacyPara": 52
+        },
+        {
+          "role": "Step card",
+          "style": "body",
+          "text": "Submit your plants for judging and exhibition at the Western Cape 2027 Show in Stellenbosch.",
+          "editable": true,
+          "editedWhere": null,
+          "sameRow": true,
+          "legacyPara": 53
+        },
+        {
+          "role": "Step card",
+          "style": "label",
+          "text": "Stage 02",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 54
+        },
+        {
+          "role": "Step card",
+          "style": "cardTitle",
+          "text": "Confirm entry and classes",
+          "editable": true,
+          "editedWhere": null,
+          "sameRow": true,
+          "legacyPara": 55
+        },
+        {
+          "role": "Step card",
+          "style": "body",
+          "text": "Submit your entry form with plant list and class selections. Entries reviewed against current SAOC judging standards. All entries are accepted at the discretion of the Judges.",
+          "editable": true,
+          "editedWhere": null,
+          "sameRow": true,
+          "legacyPara": 56
+        },
+        {
+          "role": "Step card",
+          "style": "label",
+          "text": "Stage 03",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 57
+        },
+        {
+          "role": "Step card",
+          "style": "cardTitle",
+          "text": "Preparation and Drop Off",
+          "editable": true,
+          "editedWhere": null,
+          "sameRow": true,
+          "legacyPara": 58
+        },
+        {
+          "role": "Step card",
+          "style": "body",
+          "text": "Arrive at the venue for drop-off from early morning. All plants must be in place and labelled before the close of submissions. Judging begins on Wednesday at 12pm",
+          "editable": true,
+          "editedWhere": null,
+          "sameRow": true,
+          "legacyPara": 59
+        },
+        {
+          "role": "Step card",
+          "style": "label",
+          "text": "Stage 04",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 60
+        },
+        {
+          "role": "Step card",
+          "style": "cardTitle",
+          "text": "Judging and awards",
+          "editable": true,
+          "editedWhere": null,
+          "sameRow": true,
+          "legacyPara": 61
+        },
+        {
+          "role": "Step card",
+          "style": "body",
+          "text": "SAOC accredited judges assess each class, finalizing show award and choosing the Best Specimen Plant Overall, Grand Champion, 1st Reserve Champion, 2nd Reserve Champion. The National Orchid Show Committee will move plants to the exhibit, and the show will open to the public.",
+          "editable": true,
+          "editedWhere": null,
+          "sameRow": true,
+          "legacyPara": 62
+        },
+        {
+          "role": "Lead",
+          "style": "lead",
+          "text": "Start planning your entry now.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 63
+        },
+        {
+          "role": "Label",
+          "style": "label",
+          "text": "Register Here",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 64
+        },
+        {
+          "role": "Body",
+          "style": "body",
+          "text": "The National Orchid Show - Western Cape 2027 opens on 23rd September 2027 in Stellenbosch.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 65
+        },
+        {
+          "role": "Link",
+          "style": "link",
+          "text": "Plant Entry →",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 66,
+          "legacyPrefix": "Link: "
+        },
+        {
+          "role": "Link",
+          "style": "link",
+          "text": "Vendors →",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 67,
+          "legacyPrefix": "Link: "
+        }
+      ]
+    },
+    {
+      "name": "Programme",
+      "where": "Three linked rows, one per programme page.",
+      "elements": [
+        {
+          "role": "Link card",
+          "style": "link",
+          "text": "Symposium",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 69,
+          "legacyPrefix": "Link: "
+        },
+        {
+          "role": "Link card",
+          "style": "body",
+          "text": "The National Orchid Show Symposium will feature an outstanding programme of presentations by respected local and international speakers covering orchid cultivation, breeding, conservation, taxonomy, judging, sustainability and emerging scientific research.",
+          "editable": true,
+          "editedWhere": null,
+          "sameRow": true,
+          "legacyPara": 70
+        },
+        {
+          "role": "Link card",
+          "style": "link",
+          "text": "WOSA Conference",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 71,
+          "legacyPrefix": "Link: "
+        },
+        {
+          "role": "Link card",
+          "style": "body",
+          "text": "A Conference held by Wild Orchids Southern Africa (WOSA) will highlight the ecology and conservation of indigenous orchids, illustrating how research undertaken in natural habitats continues to influence cultivation practices, breeding programmes and the long-term future of orchids.",
+          "editable": true,
+          "editedWhere": null,
+          "sameRow": true,
+          "legacyPara": 72
+        },
+        {
+          "role": "Link card",
+          "style": "link",
+          "text": "Workshops",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 73,
+          "legacyPrefix": "Link: "
+        },
+        {
+          "role": "Link card",
+          "style": "body",
+          "text": "Workshops are planned as part of the wider event programme.",
+          "editable": true,
+          "editedWhere": null,
+          "sameRow": true,
+          "legacyPara": 74
+        }
+      ]
+    },
+    {
+      "name": "Closing",
+      "where": "The last section at the bottom of the page.",
+      "elements": [
+        {
+          "role": "Closing text",
+          "style": "lead",
+          "text": "Whether your passion lies in conservation, scientific discovery, judging, growing or simply enjoying the extraordinary beauty of orchids, the National Orchid Show – Western Cape 2027 offers an unforgettable experience that celebrates the complete journey of orchids and the people dedicated to their future.",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 76
+        },
+        {
+          "role": "Button",
+          "style": "button",
+          "text": "Tickets",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 77,
+          "legacyPrefix": "Button: "
+        },
+        {
+          "role": "Button",
+          "style": "button",
+          "text": "Plan your visit",
+          "editable": true,
+          "editedWhere": null,
+          "legacyPara": 78,
+          "legacyPrefix": "Button: "
+        }
+      ]
+    }
+  ],
+  "acceptedStyleChanges": [
+    {
+      "para": 2,
+      "from": "body",
+      "to": "heading",
+      "reason": "the legacy line was marked 'Heading:'; the page draws it as a section heading"
+    },
+    {
+      "para": 12,
+      "from": "body",
+      "to": "heading",
+      "reason": "the legacy line was marked 'Dates:'; the page draws it as the show-dates card's display line (nos-hm-card-dates)"
+    },
+    {
+      "para": 18,
+      "from": "body",
+      "to": "heading",
+      "reason": "the legacy line was marked 'Heading:'; the page draws it as a section heading"
+    },
+    {
+      "para": 22,
+      "from": "body",
+      "to": "heading",
+      "reason": "the legacy line was marked 'Heading:'; the page draws it as a section heading"
+    },
+    {
+      "para": 27,
+      "from": "body",
+      "to": "heading",
+      "reason": "judging group name: the page draws it as the card's h3 (JudgingGroupCard)"
+    },
+    {
+      "para": 29,
+      "from": "body",
+      "to": "heading",
+      "reason": "judging group name: the page draws it as the card's h3 (JudgingGroupCard)"
+    },
+    {
+      "para": 31,
+      "from": "body",
+      "to": "heading",
+      "reason": "judging group name: the page draws it as the card's h3 (JudgingGroupCard)"
+    },
+    {
+      "para": 33,
+      "from": "body",
+      "to": "heading",
+      "reason": "judging group name: the page draws it as the card's h3 (JudgingGroupCard)"
+    },
+    {
+      "para": 35,
+      "from": "body",
+      "to": "heading",
+      "reason": "judging group name: the page draws it as the card's h3 (JudgingGroupCard)"
+    },
+    {
+      "para": 37,
+      "from": "body",
+      "to": "heading",
+      "reason": "judging group name: the page draws it as the card's h3 (JudgingGroupCard)"
+    },
+    {
+      "para": 39,
+      "from": "body",
+      "to": "heading",
+      "reason": "judging group name: the page draws it as the card's h3 (JudgingGroupCard)"
+    },
+    {
+      "para": 41,
+      "from": "body",
+      "to": "heading",
+      "reason": "judging group name: the page draws it as the card's h3 (JudgingGroupCard)"
+    },
+    {
+      "para": 43,
+      "from": "body",
+      "to": "heading",
+      "reason": "judging group name: the page draws it as the card's h3 (JudgingGroupCard)"
+    },
+    {
+      "para": 45,
+      "from": "body",
+      "to": "heading",
+      "reason": "judging group name: the page draws it as the card's h3 (JudgingGroupCard)"
+    },
+    {
+      "para": 47,
+      "from": "body",
+      "to": "heading",
+      "reason": "judging group name: the page draws it as the card's h3 (JudgingGroupCard)"
+    },
+    {
+      "para": 48,
+      "from": "body",
+      "to": "heading",
+      "reason": "judging group name: the page draws it as the card's h3 (JudgingGroupCard)"
+    },
+    {
+      "para": 49,
+      "from": "body",
+      "to": "heading",
+      "reason": "judging group name: the page draws it as the card's h3 (JudgingGroupCard)"
+    },
+    {
+      "para": 52,
+      "from": "body",
+      "to": "heading",
+      "reason": "plant-entry stage title: the page draws it as the card's h3 (ExhibitorStageCard)"
+    },
+    {
+      "para": 55,
+      "from": "body",
+      "to": "heading",
+      "reason": "plant-entry stage title: the page draws it as the card's h3 (ExhibitorStageCard)"
+    },
+    {
+      "para": 58,
+      "from": "body",
+      "to": "heading",
+      "reason": "plant-entry stage title: the page draws it as the card's h3 (ExhibitorStageCard)"
+    },
+    {
+      "para": 61,
+      "from": "body",
+      "to": "heading",
+      "reason": "plant-entry stage title: the page draws it as the card's h3 (ExhibitorStageCard)"
+    }
+  ],
+  "acceptedLayoutChanges": [
+    {
+      "para": 0,
+      "property": "ind",
+      "reason": "first-line indent (firstLine=720) on the doc's own title line; pure indent, the copy doc's title style sets its layout"
+    }
+  ],
+  "legacySectionLabels": [
+    "Hero",
+    "Show dates card",
+    "Intro",
+    "About",
+    "Programme",
+    "Closing"
+  ]
+}

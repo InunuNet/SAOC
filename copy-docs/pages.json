@@ -1,0 +1,42 @@
+{
+  "nos-landing": {
+    "site": "nos",
+    "route": "/national-show",
+    "driveFileId": "1VIHf90ozX20PleXvzpxl6ztbWPZ4r7A3",
+    "driveName": "National Orchid Show Website-Landing Page.docx",
+    "source": "copy-docs/source/nos-landing.json",
+    "built": "copy-docs/nos-landing.docx"
+  },
+  "privacy": {
+    "site": "shared",
+    "route": "/privacy",
+    "driveFileId": "1Cp4-1JFp5_XsUVvw2dTLzYkYUR5GghO5",
+    "driveName": "Privacy and Personal Information Policy.docx",
+    "source": "copy-docs/source/privacy.json",
+    "built": "copy-docs/privacy.docx"
+  },
+  "terms": {
+    "site": "shared",
+    "route": "/terms",
+    "driveFileId": "1HbhVuS71TSxlWdVrdSsdLSzxTHwH43sw",
+    "driveName": "Website Terms and Conditions.docx",
+    "source": "copy-docs/source/terms.json",
+    "built": "copy-docs/terms.docx"
+  },
+  "saoc-about": {
+    "site": "saoc",
+    "route": "/about",
+    "driveFileId": "1pNOqTdRbtSxZzClUPWX3TLae0zrU4cCI",
+    "driveName": "About page - South African Orchid Council.docx",
+    "source": "copy-docs/source/saoc-about.json",
+    "built": "copy-docs/saoc-about.docx"
+  },
+  "saoc-foreword": {
+    "site": "saoc",
+    "route": "/ (home page foreword)",
+    "driveFileId": "1tF8g9yL1AIEqaf44ZAAJU0v4XMlJR5OL",
+    "driveName": "SAOC Forward   11OCT2026.docx",
+    "source": "copy-docs/source/saoc-foreword.json",
+    "built": "copy-docs/saoc-foreword.docx"
+  }
+}
