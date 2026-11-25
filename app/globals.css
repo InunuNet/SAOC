@@ -429,7 +429,7 @@ h3.font-serif {
 .home-hero [data-hero-eyebrow] {
   margin-bottom: max(16px, calc(var(--u) * 24));
   padding: max(4px, calc(var(--u) * 6)) max(12px, calc(var(--u) * 16));
-  font-size: max(11px, calc(var(--u) * 12));
+  font-size: max(12px, calc(var(--u) * 12));
 }
 .home-hero h1.h1 {
   font-size: max(36px, calc(var(--u) * 96));
@@ -451,7 +451,7 @@ h3.font-serif {
   font-size: max(14px, calc(var(--u) * 14));
 }
 .home-hero [data-hero-ctas] p.font-mono {
-  font-size: max(11px, calc(var(--u) * 12));
+  font-size: max(12px, calc(var(--u) * 12));
 }
 .home-hero [data-hero-controls] {
   margin-top: 32px;
@@ -546,7 +546,7 @@ h3.font-serif {
 }
 [data-page-hero] [data-page-hero-eyebrow] {
   padding: max(4px, calc(var(--u) * 6)) max(12px, calc(var(--u) * 14));
-  font-size: max(11px, calc(var(--u) * 12));
+  font-size: max(12px, calc(var(--u) * 12));
 }
 [data-page-hero] h1 {
   max-width: max(768px, calc(var(--u) * 768));

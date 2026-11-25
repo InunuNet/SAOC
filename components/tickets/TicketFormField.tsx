@@ -41,6 +41,7 @@ interface TicketFormFieldProps {
   type: 'text' | 'email' | 'tel' | 'password';
   value: string;
   onChange: (value: string) => void;
+  onBlur?: () => void;
   disabled: boolean;
   error?: string;
   autoComplete?: 'name' | 'email' | 'tel' | 'off' | 'current-password';
@@ -53,6 +54,7 @@ export function TicketFormField({
   type,
   value,
   onChange,
+  onBlur,
   disabled,
   error,
   autoComplete,
@@ -71,6 +73,7 @@ export function TicketFormField({
         maxLength={maxLength}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
         disabled={disabled}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}

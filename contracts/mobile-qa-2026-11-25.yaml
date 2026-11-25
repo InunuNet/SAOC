@@ -1,0 +1,25 @@
+schema: athanor.contract/v1
+slug: mobile-qa-2026-11-25
+goal: >-
+  Mobile QA 25 Nov fixes: footer newsletter input named, ticket attendee email inline error on
+  blur and submit, beta /faq and /plant-entry 308 to the NOS host, drawer tap target and contrast.
+created_at: '2026-11-25'
+autonomy: high
+
+features:
+  - id: F1
+    name: Mobile QA accessibility and redirect fixes.
+    status: pending
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Footer newsletter input has a label (sr-only) tied to its id.
+      command: node contracts/checks/mobile-qa-2026-11-25/check-footer-label.mjs
+    - id: A2
+      description: Ticket attendee email wires aria-invalid, aria-describedby and an onBlur validation.
+      command: node contracts/checks/mobile-qa-2026-11-25/check-email-aria.mjs
+    - id: A3
+      description: proxy.ts hands /faq and /plant-entry from the SAOC host to the NOS origin, query kept.
+      command: node contracts/checks/mobile-qa-2026-11-25/check-redirect.mjs

@@ -94,6 +94,24 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
     }
   }
 
+  // Blur on an attendee email flags a filled-in invalid address at once; an empty field is left for
+  // the submit check, so tabbing through the form does not shout.
+  function blurAttendeeEmail(_slug: string, index: number) {
+    const row = attendees[index];
+    if (!row || row.attendeeEmail.length === 0) return;
+    const key = attendeeRowKey(ticketType.slug, index);
+    const emailError = validateCurrent(attendees)[key]?.email;
+    setAttendeeErrors((prev) => {
+      const next = { ...prev };
+      const rowErrors = { ...next[key] };
+      if (emailError) rowErrors.email = emailError;
+      else delete rowErrors.email;
+      if (rowErrors.name || rowErrors.email) next[key] = rowErrors;
+      else delete next[key];
+      return next;
+    });
+  }
+
   function validateCurrent(rows: CartAttendee[]): AttendeeFieldErrors {
     return validateAttendees([ticketType], { [ticketType.slug]: quantity }, {
       [ticketType.slug]: rows,
@@ -188,6 +206,7 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
     setQuantity,
     setDay,
     updateAttendeeField,
+    blurAttendeeEmail,
     validate,
     submit,
   };

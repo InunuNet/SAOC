@@ -243,7 +243,8 @@ const NOS_TOP_LEVEL_PREFIXES = ['/vsp', '/tickets'];
 const NOS_TICKETS_ROOT = '/tickets';
 const NOS_TICKETS_BUY_PREFIX = '/tickets/buy';
 // What the SAOC host hands to the NOS origin.
-const SHOW_PREFIXES = [NOS_INTERNAL_PREFIX, '/tickets', '/vsp'];
+// /faq and /plant-entry are NOS-only pages that beta used to 404 on; they 308 like /tickets, query kept.
+const SHOW_PREFIXES = [NOS_INTERNAL_PREFIX, '/tickets', '/vsp', '/faq', PLANT_ENTRY_PATH];
 
 function isUnder(pathname: string, base: string): boolean {
   return pathname === base || pathname.startsWith(`${base}/`);

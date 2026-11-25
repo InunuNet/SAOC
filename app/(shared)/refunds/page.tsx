@@ -184,7 +184,7 @@ export default async function RefundsPage() {
           <p>
             Vendor stand bookings are a separate product with their own cancellation terms, set
             out in the vendor registration agreement, and are not covered by this policy. See{' '}
-            <Link href="/national-show/vendors/apply" className="text-ink underline underline-offset-2">
+            <Link href="/national-show/vendors/apply" prefetch={false} className="text-ink underline underline-offset-2">
               vendor registration
             </Link>{' '}
             for details.

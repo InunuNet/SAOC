@@ -367,6 +367,7 @@ export function TicketPurchaseForm({
           errors={cart.attendeeErrors}
           disabled={submitting}
           onAttendeeChange={cart.updateAttendeeField}
+          onAttendeeEmailBlur={cart.blurAttendeeEmail}
         />
       )}
 
