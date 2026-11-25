@@ -1,0 +1,22 @@
+schema: athanor.contract/v1
+slug: plant-entry-rename
+goal: >-
+  Brad 25 Nov: "Award Entries" became "Plant Entry" everywhere. The NOS route moves from
+  /award-entries to /plant-entry; old URLs 308 to the new one on both hosts.
+created_at: '2026-11-25'
+autonomy: high
+
+features:
+  - id: F1
+    name: Route rename, redirect and wording sweep.
+    status: pending
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: No award-entr wording in rendered sources (proxy.ts redirect is the only allowlisted file).
+      command: node contracts/checks/plant-entry-rename/check-no-award-entr.mjs
+    - id: A2
+      description: proxy.ts 308s both retired spellings to /plant-entry on both hosts; route dir moved.
+      command: node contracts/checks/plant-entry-rename/check-redirect-source.mjs
