@@ -12,6 +12,11 @@ import {
   type CartAttendee,
 } from '@/lib/cart';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
+import {
+  blurEmailError,
+  visibleFieldErrors,
+  withBlurEmailError,
+} from '@/components/tickets/blurValidation';
 import { emptyAttendee, keepFlagged, validateAttendees } from '@/components/tickets/cartValidation';
 import {
   attendeeRowKey,
@@ -105,15 +110,9 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
   // the submit check, so tabbing through the form does not shout.
   function blurAttendeeEmail(_slug: string, index: number) {
     const row = attendees[index];
-    if (!row || row.attendeeEmail.length === 0) return;
+    if (!row) return;
     const key = attendeeRowKey(ticketType.slug, index);
-    const emailError = validateCurrent(attendees)[key]?.email;
-    setBlurErrors((prev) => {
-      const next = { ...prev };
-      if (emailError) next[key] = { email: emailError };
-      else delete next[key];
-      return next;
-    });
+    setBlurErrors((prev) => withBlurEmailError(prev, key, blurEmailError(row.attendeeEmail)));
   }
 
   function validateCurrent(rows: CartAttendee[]): AttendeeFieldErrors {
@@ -204,7 +203,7 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
     attendees,
     attendeeErrors,
     // What the fields show: submit errors plus any blur-only email error.
-    fieldErrors: { ...blurErrors, ...attendeeErrors },
+    fieldErrors: visibleFieldErrors(blurErrors, attendeeErrors),
     status,
     errorMessage,
     errorStatus,

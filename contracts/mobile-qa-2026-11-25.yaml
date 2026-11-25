@@ -19,7 +19,7 @@ assertions:
       command: node contracts/checks/mobile-qa-2026-11-25/check-footer-label.mjs
     - id: A2
       description: Ticket attendee email wires aria-invalid, aria-describedby and an onBlur validation.
-      command: node contracts/checks/mobile-qa-2026-11-25/check-email-aria.mjs
+      command: node --experimental-strip-types --no-warnings contracts/checks/mobile-qa-2026-11-25/check-email-aria.mjs
     - id: A3
       description: proxy.ts hands /faq and /plant-entry from the SAOC host to the NOS origin, query kept.
       command: node contracts/checks/mobile-qa-2026-11-25/check-redirect.mjs
