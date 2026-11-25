@@ -683,5 +683,140 @@
         }
       ]
     }
+  ],
+  "acceptedStyleChanges": [
+    {
+      "para": 2,
+      "from": "body",
+      "to": "heading",
+      "reason": "the legacy line was marked 'Heading:'; the page draws it as a section heading"
+    },
+    {
+      "para": 12,
+      "from": "body",
+      "to": "heading",
+      "reason": "the legacy line was marked 'Dates:'; the page draws it as the show-dates card's display line (nos-hm-card-dates)"
+    },
+    {
+      "para": 18,
+      "from": "body",
+      "to": "heading",
+      "reason": "the legacy line was marked 'Heading:'; the page draws it as a section heading"
+    },
+    {
+      "para": 22,
+      "from": "body",
+      "to": "heading",
+      "reason": "the legacy line was marked 'Heading:'; the page draws it as a section heading"
+    },
+    {
+      "para": 27,
+      "from": "body",
+      "to": "heading",
+      "reason": "judging group name: the page draws it as the card's h3 (JudgingGroupCard)"
+    },
+    {
+      "para": 29,
+      "from": "body",
+      "to": "heading",
+      "reason": "judging group name: the page draws it as the card's h3 (JudgingGroupCard)"
+    },
+    {
+      "para": 31,
+      "from": "body",
+      "to": "heading",
+      "reason": "judging group name: the page draws it as the card's h3 (JudgingGroupCard)"
+    },
+    {
+      "para": 33,
+      "from": "body",
+      "to": "heading",
+      "reason": "judging group name: the page draws it as the card's h3 (JudgingGroupCard)"
+    },
+    {
+      "para": 35,
+      "from": "body",
+      "to": "heading",
+      "reason": "judging group name: the page draws it as the card's h3 (JudgingGroupCard)"
+    },
+    {
+      "para": 37,
+      "from": "body",
+      "to": "heading",
+      "reason": "judging group name: the page draws it as the card's h3 (JudgingGroupCard)"
+    },
+    {
+      "para": 39,
+      "from": "body",
+      "to": "heading",
+      "reason": "judging group name: the page draws it as the card's h3 (JudgingGroupCard)"
+    },
+    {
+      "para": 41,
+      "from": "body",
+      "to": "heading",
+      "reason": "judging group name: the page draws it as the card's h3 (JudgingGroupCard)"
+    },
+    {
+      "para": 43,
+      "from": "body",
+      "to": "heading",
+      "reason": "judging group name: the page draws it as the card's h3 (JudgingGroupCard)"
+    },
+    {
+      "para": 45,
+      "from": "body",
+      "to": "heading",
+      "reason": "judging group name: the page draws it as the card's h3 (JudgingGroupCard)"
+    },
+    {
+      "para": 47,
+      "from": "body",
+      "to": "heading",
+      "reason": "judging group name: the page draws it as the card's h3 (JudgingGroupCard)"
+    },
+    {
+      "para": 48,
+      "from": "body",
+      "to": "heading",
+      "reason": "judging group name: the page draws it as the card's h3 (JudgingGroupCard)"
+    },
+    {
+      "para": 49,
+      "from": "body",
+      "to": "heading",
+      "reason": "judging group name: the page draws it as the card's h3 (JudgingGroupCard)"
+    },
+    {
+      "para": 52,
+      "from": "body",
+      "to": "heading",
+      "reason": "plant-entry stage title: the page draws it as the card's h3 (ExhibitorStageCard)"
+    },
+    {
+      "para": 55,
+      "from": "body",
+      "to": "heading",
+      "reason": "plant-entry stage title: the page draws it as the card's h3 (ExhibitorStageCard)"
+    },
+    {
+      "para": 58,
+      "from": "body",
+      "to": "heading",
+      "reason": "plant-entry stage title: the page draws it as the card's h3 (ExhibitorStageCard)"
+    },
+    {
+      "para": 61,
+      "from": "body",
+      "to": "heading",
+      "reason": "plant-entry stage title: the page draws it as the card's h3 (ExhibitorStageCard)"
+    }
+  ],
+  "acceptedLayoutChanges": [
+    {
+      "para": 0,
+      "property": "ind",
+      "reason": "first-line indent (firstLine=720) on the doc's own title line; pure indent, the copy doc's title style sets its layout"
+    }
   ]
 }

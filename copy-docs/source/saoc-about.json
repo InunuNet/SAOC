@@ -162,5 +162,13 @@
         }
       ]
     }
+  ],
+  "acceptedStyleChanges": [
+    {
+      "para": 0,
+      "from": "body",
+      "to": "heading",
+      "reason": "the page's h1 (RouteHero heading on /about)"
+    }
   ]
 }

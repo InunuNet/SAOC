@@ -1200,5 +1200,157 @@
         }
       }
     }
-  }
+  },
+  "acceptedStyleChanges": [
+    {
+      "para": 0,
+      "from": "body",
+      "to": "heading",
+      "reason": "the terms' own title line: the page hero renders it as the page h1 (TitledLegalDocument.title)"
+    },
+    {
+      "para": 2,
+      "from": "body",
+      "to": "heading",
+      "reason": "numbered clause heading: the page renders it as a section heading (LegalBlock kind h2)"
+    },
+    {
+      "para": 7,
+      "from": "body",
+      "to": "heading",
+      "reason": "numbered clause heading: the page renders it as a section heading (LegalBlock kind h2)"
+    },
+    {
+      "para": 14,
+      "from": "body",
+      "to": "heading",
+      "reason": "numbered clause heading: the page renders it as a section heading (LegalBlock kind h2)"
+    },
+    {
+      "para": 18,
+      "from": "body",
+      "to": "heading",
+      "reason": "numbered clause heading: the page renders it as a section heading (LegalBlock kind h2)"
+    },
+    {
+      "para": 22,
+      "from": "body",
+      "to": "heading",
+      "reason": "numbered clause heading: the page renders it as a section heading (LegalBlock kind h2)"
+    },
+    {
+      "para": 24,
+      "from": "body",
+      "to": "heading",
+      "reason": "sub-heading inside a clause: the page renders it as LegalBlock kind h3"
+    },
+    {
+      "para": 26,
+      "from": "body",
+      "to": "heading",
+      "reason": "sub-heading inside a clause: the page renders it as LegalBlock kind h3"
+    },
+    {
+      "para": 30,
+      "from": "body",
+      "to": "heading",
+      "reason": "sub-heading inside a clause: the page renders it as LegalBlock kind h3"
+    },
+    {
+      "para": 33,
+      "from": "body",
+      "to": "heading",
+      "reason": "sub-heading inside a clause: the page renders it as LegalBlock kind h3"
+    },
+    {
+      "para": 35,
+      "from": "body",
+      "to": "heading",
+      "reason": "sub-heading inside a clause: the page renders it as LegalBlock kind h3"
+    },
+    {
+      "para": 38,
+      "from": "body",
+      "to": "heading",
+      "reason": "numbered clause heading: the page renders it as a section heading (LegalBlock kind h2)"
+    },
+    {
+      "para": 42,
+      "from": "body",
+      "to": "heading",
+      "reason": "numbered clause heading: the page renders it as a section heading (LegalBlock kind h2)"
+    },
+    {
+      "para": 50,
+      "from": "body",
+      "to": "heading",
+      "reason": "numbered clause heading: the page renders it as a section heading (LegalBlock kind h2)"
+    },
+    {
+      "para": 55,
+      "from": "body",
+      "to": "heading",
+      "reason": "numbered clause heading: the page renders it as a section heading (LegalBlock kind h2)"
+    },
+    {
+      "para": 59,
+      "from": "body",
+      "to": "heading",
+      "reason": "numbered clause heading: the page renders it as a section heading (LegalBlock kind h2)"
+    },
+    {
+      "para": 64,
+      "from": "body",
+      "to": "heading",
+      "reason": "numbered clause heading: the page renders it as a section heading (LegalBlock kind h2)"
+    },
+    {
+      "para": 69,
+      "from": "body",
+      "to": "heading",
+      "reason": "numbered clause heading: the page renders it as a section heading (LegalBlock kind h2)"
+    },
+    {
+      "para": 74,
+      "from": "body",
+      "to": "heading",
+      "reason": "numbered clause heading: the page renders it as a section heading (LegalBlock kind h2)"
+    },
+    {
+      "para": 79,
+      "from": "body",
+      "to": "heading",
+      "reason": "numbered clause heading: the page renders it as a section heading (LegalBlock kind h2)"
+    },
+    {
+      "para": 83,
+      "from": "body",
+      "to": "heading",
+      "reason": "numbered clause heading: the page renders it as a section heading (LegalBlock kind h2)"
+    },
+    {
+      "para": 87,
+      "from": "body",
+      "to": "heading",
+      "reason": "numbered clause heading: the page renders it as a section heading (LegalBlock kind h2)"
+    },
+    {
+      "para": 91,
+      "from": "body",
+      "to": "heading",
+      "reason": "numbered clause heading: the page renders it as a section heading (LegalBlock kind h2)"
+    },
+    {
+      "para": 95,
+      "from": "body",
+      "to": "heading",
+      "reason": "numbered clause heading: the page renders it as a section heading (LegalBlock kind h2)"
+    },
+    {
+      "para": 98,
+      "from": "body",
+      "to": "heading",
+      "reason": "numbered clause heading: the page renders it as a section heading (LegalBlock kind h2)"
+    }
+  ]
 }

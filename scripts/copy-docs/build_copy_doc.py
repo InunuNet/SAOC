@@ -58,9 +58,11 @@ the list level/format/grouping must equal the legacy doc's. Any loss fails it (s
 from __future__ import annotations
 
 import argparse
+import difflib
 import io
 import json
 import sys
+import tempfile
 import zipfile
 from pathlib import Path
 from typing import Any, TypedDict
@@ -582,11 +584,29 @@ def _cut(runs: list[dict[str, Any]], end: int) -> list[dict[str, Any]]:
 
 
 LIST_KEYS = ("level", "format", "text", "start", "font")
+# Pure spacing and indent may be accepted on a reason alone (the copy styles set them). Any other
+# dropped paragraph property (alignment, page break, keep-with-next, outline level, borders, shading,
+# section break, ...) can change how the page reads, so its acceptance must also name who approved it.
+PURE_LAYOUT = {"ind", "spacing"}
+
+
+def _own_paragraphs(path: Path) -> list[tuple[str, str]]:
+    """(style, text) of the paragraphs the builder writes itself: the opening title and every
+    paragraph in one of our non-copy styles."""
+    paras = rawtext.paragraphs(path)
+    own = [(style, text) for _, style, text in paras if style in rawtext.ADDED_STYLES]
+    title = [(paras[0][1], paras[0][2])] if paras else []
+    return title + own
 
 
 def gate(built: Path, legacy: Path, source: Path) -> int:
-    """v3.1 gate: every legacy line is carried, and per paragraph the text, the author's formatted
-    runs, the link targets and the list level/format/grouping are identical. Any loss fails."""
+    """v3.1.1 gate: every legacy line is carried, and per paragraph the text, the author's formatted
+    runs, the link targets and the list level/format/grouping are identical. Per paragraph, every
+    legacy paragraph property the built doc drops (alignment, indent, spacing, page break, keep, outline
+    level, ... including those set by its style) fails unless the page JSON's acceptedLayoutChanges
+    lists it with a reason, plus an approvedBy for anything other than ind or spacing; a heading/body
+    role change fails unless acceptedStyleChanges lists it. Our own paragraphs must equal a fresh build
+    from the JSON, and the raw-XML reader must find every story part's words. Any loss fails."""
     data = json.loads(source.read_text(encoding="utf-8"))
     ld, bd = docx.Document(str(legacy)), docx.Document(str(built))
     lparas, lprob = docfmt.read_document(ld)
@@ -629,6 +649,17 @@ def gate(built: Path, legacy: Path, source: Path) -> int:
     if len(got) != len(expected):
         fails.append(f"built has {len(got)} copy paragraphs, legacy has {len(expected)}")
 
+    # Explicit acceptances in the page JSON: layout the copy styles replace, and role-class changes.
+    acc_layout: dict[tuple[int, str], dict[str, Any]] = {}
+    for a in data.get("acceptedLayoutChanges", []):
+        if not a.get("reason"):
+            fails.append(f"acceptedLayoutChanges entry {a} has no reason")
+        acc_layout[(a.get("para"), a.get("property"))] = a
+    acc_style = {a.get("para"): a for a in data.get("acceptedStyleChanges", [])}
+    used_layout: set[tuple[int, str]] = set()
+    used_style: set[int] = set()
+    dropped_layout: list[str] = []
+
     list_map: dict[str, str] = {}
     n_fmt = n_link = n_list = n_face = 0
     for (where, i, prefix), bp in zip(expected, got):
@@ -650,6 +681,35 @@ def gate(built: Path, legacy: Path, source: Path) -> int:
         n_fmt += docfmt.formatted(want_runs)
         n_face += lp["typefaces"]
         n_link += sum(1 for r in want_runs if "link" in r)
+
+        # Paragraph-level layout: anything the legacy paragraph set that the built one does not.
+        built_layout = set(bp["layout"])
+        for prop, value in lp["layout"]:
+            if (prop, value) in built_layout:
+                continue
+            key = (i, prop)
+            line = f"[legacy {i}] {prop}: {value}"
+            acc = acc_layout.get(key)
+            if acc is None:
+                fails.append(f"{tag}: LAYOUT dropped and not accepted: {prop} = {value}")
+                dropped_layout.append(f"{line}  -> NOT ACCEPTED")
+            elif prop not in PURE_LAYOUT and not acc.get("approvedBy"):
+                fails.append(f"{tag}: LAYOUT {prop} = {value} needs an approvedBy in acceptedLayoutChanges")
+                dropped_layout.append(f"{line}  -> accepted without approvedBy: FAIL")
+            else:
+                used_layout.add(key)
+                dropped_layout.append(f"{line}  -> accepted: {acc['reason']}")
+
+        # Role class of the style: a heading must stay a heading, body copy must stay body copy.
+        lc, bc = lp["class"], bp["class"]
+        if lc != bc:
+            acc = acc_style.get(i)
+            if acc is None or acc.get("from") != lc or acc.get("to") != bc or not acc.get("reason"):
+                fails.append(f"{tag}: STYLE ROLE changed {lc} ({lp['style']}) -> {bc} ({bp['style']}) "
+                             f"without a matching acceptedStyleChanges entry")
+            else:
+                used_style.add(i)
+
         ll, bl = lp["list"], bp["list"]
         if (ll is None) != (bl is None):
             fails.append(f"{tag}: LIST differs: legacy {ll}, built {bl}")
@@ -661,6 +721,14 @@ def gate(built: Path, legacy: Path, source: Path) -> int:
                 fails.append(f"{tag}: legacy list {ll['num']} is split across built lists")
     if len(set(list_map.values())) != len(list_map):
         fails.append("two legacy lists were merged into one built list")
+    for key in acc_layout.keys() - used_layout:
+        fails.append(f"acceptedLayoutChanges lists {key}, which is not a dropped property: remove it")
+    for para in acc_style.keys() - used_style:
+        fails.append(f"acceptedStyleChanges lists paragraph {para}, which has no role change: remove it")
+    print(f"layout: {len(dropped_layout)} legacy paragraph propert{'y' if len(dropped_layout) == 1 else 'ies'} "
+          f"not carried by the built doc")
+    for line in dropped_layout:
+        print(f"  {line}")
 
     # Independent second reader: raw w:t text from the XML of every text part, in order.
     prefixes = sorted({e.get("legacyPrefix", "") for _, e in elements} - {""})
@@ -670,6 +738,20 @@ def gate(built: Path, legacy: Path, source: Path) -> int:
     if not raw_ok:
         fails.append("raw-XML text check failed (see the raw text lines above)")
 
+    # Our own paragraphs (title, key, section bars, where-lines, role labels, notes) are skipped by the
+    # text checks above, so they must be exactly what a fresh build from the page JSON writes: text
+    # cannot be slipped into the doc under one of our styles.
+    with tempfile.TemporaryDirectory() as tmp:
+        fresh = Path(tmp) / "fresh.docx"
+        build(source, fresh)
+        want_own, got_own = _own_paragraphs(fresh), _own_paragraphs(built)
+    if want_own != got_own:
+        sm = difflib.SequenceMatcher(None, want_own, got_own, autojunk=False)
+        for op, a1, a2, b1, b2 in sm.get_opcodes():
+            if op != "equal":
+                fails.append(f"OWN paragraphs differ from a fresh build: expected {want_own[a1:a2]}, "
+                             f"built has {got_own[b1:b2]}")
+
     if fails:
         print(f"GATE FAIL: {len(fails)} problem(s) ({built.name} vs {legacy.name})")
         for f in fails:
@@ -678,7 +760,8 @@ def gate(built: Path, legacy: Path, source: Path) -> int:
     print(f"GATE OK: {len(got)} paragraphs carried ({built.name} vs {legacy.name}): text identical, "
           f"{n_fmt} with author formatting identical, {n_link} link runs identical, "
           f"{n_list} list paragraphs in {len(list_map)} lists identical; "
-          f"{n_face} run typeface override(s) replaced by the copy styles")
+          f"{n_face} run typeface override(s) replaced by the copy styles; {len(used_style)} accepted "
+          f"role-class change(s), {len(used_layout)} accepted layout drop(s)")
     return 0
 
 

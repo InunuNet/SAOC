@@ -214,6 +214,62 @@ def list_info(paragraph, doc) -> dict[str, Any] | None:
     return info
 
 
+# ---- paragraph-level layout ----------------------------------------------------------------------
+# Paragraph properties handled elsewhere: the style (compared as a role class), the list (compared
+# in full) and the paragraph-mark run properties (they format only the pilcrow, never visible text).
+PPR_HANDLED = {"pStyle", "numPr", "rPr"}
+# Properties that change the reading of the page, looked up through the paragraph style too.
+STYLE_LAYOUT = ("jc", "pageBreakBefore", "outlineLvl")
+
+
+def _attrs(el) -> str:
+    parts = [f"{k.split('}', 1)[-1]}={v}" for k, v in sorted(el.attrib.items())]
+    for child in el:
+        parts.append(f"{_local(child)}({_attrs(child)})")
+    return " ".join(parts) or "on"
+
+
+def paragraph_layout(paragraph) -> list[tuple[str, str]]:
+    """The paragraph's own layout properties as (property, value), e.g. ("ind", "left=720"), plus
+    alignment, page break and outline level inherited from its style, as ("jc", "center (style Title)")."""
+    out: list[tuple[str, str]] = []
+    ppr = paragraph._p.pPr
+    direct = set()
+    if ppr is not None:
+        for child in ppr:
+            name = _local(child)
+            if name in PPR_HANDLED:
+                continue
+            direct.add(name)
+            out.append((name, _attrs(child)))
+    style = paragraph.style
+    while style is not None:
+        sppr = style.element.pPr
+        if sppr is not None:
+            for name in STYLE_LAYOUT:
+                el = sppr.find(qn(f"w:{name}"))
+                if el is not None and name not in direct:
+                    direct.add(name)
+                    val = _attrs(el)
+                    if not (name == "jc" and val in ("val=left", "val=start", "val=both")):
+                        out.append((name, f"{val} (style {style.name})"))
+        style = style.base_style
+    return out
+
+
+HEADING_STYLES = ("heading", "title", "subtitle")
+
+
+def style_class(style_name: str | None, layout: list[tuple[str, str]]) -> str:
+    """'heading' or 'body': the role class of a paragraph's style (an outline level counts as heading)."""
+    name = (style_name or "").lower()
+    if name.startswith(HEADING_STYLES) or name in ("copy heading", "copy card title"):
+        return "heading"
+    if any(prop == "outlineLvl" and not value.startswith("val=9") for prop, value in layout):
+        return "heading"
+    return "body"
+
+
 # ---- document ------------------------------------------------------------------------------------
 def read_paragraph(paragraph, doc) -> dict[str, Any]:
     problems: list[str] = []
@@ -221,6 +277,11 @@ def read_paragraph(paragraph, doc) -> dict[str, Any]:
     layout: list[str] = []
     _walk(paragraph._p, paragraph.part, None, segs, problems, layout)
     runs = merge(segs)
+    ppr = paragraph._p.pPr
+    if ppr is not None and ppr.find(qn("w:pPrChange")) is not None:
+        problems.append("tracked paragraph-property change is not carried")
+    layout_props = paragraph_layout(paragraph)
+    style_name = paragraph.style.name if paragraph.style is not None else None
     return {
         "text": "".join(r["text"] for r in runs),
         "runs": runs,
@@ -228,6 +289,8 @@ def read_paragraph(paragraph, doc) -> dict[str, Any]:
         "style": paragraph.style.name if paragraph.style is not None else None,
         "problems": problems,
         "typefaces": len(layout),
+        "layout": layout_props,
+        "class": style_class(style_name, layout_props),
     }
 
 
