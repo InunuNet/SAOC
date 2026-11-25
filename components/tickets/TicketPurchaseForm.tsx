@@ -364,7 +364,7 @@ export function TicketPurchaseForm({
           ticketTypes={ticketTypes}
           quantities={{ [ticketType.slug]: cart.quantity }}
           attendeesByType={{ [ticketType.slug]: cart.attendees }}
-          errors={cart.attendeeErrors}
+          errors={cart.fieldErrors}
           disabled={submitting}
           onAttendeeChange={cart.updateAttendeeField}
           onAttendeeEmailBlur={cart.blurAttendeeEmail}

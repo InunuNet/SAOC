@@ -61,7 +61,10 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
   const [quantity, setQuantityState] = useState(init.quantity);
   const [day, setDay] = useState<string | null>(init.day);
   const [attendees, setAttendees] = useState<CartAttendee[]>(() => resizeRows([], init.quantity));
+  // Submit errors: these feed the form-level summary. Blur errors are inline only (an email left
+  // invalid when the field loses focus) and never reach the summary.
   const [attendeeErrors, setAttendeeErrors] = useState<AttendeeFieldErrors>({});
+  const [blurErrors, setBlurErrors] = useState<AttendeeFieldErrors>({});
   const [status, setStatus] = useState<CheckoutStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   // The checkout reply's HTTP status when it refused the order; null for validation, network and success.
@@ -77,6 +80,7 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
     setAttendees((prev) => resizeRows(prev, clamped));
     // A removed attendee's errors go with it, so a row added back later starts clean.
     setAttendeeErrors((prev) => pruneRowErrors(prev, ticketType.slug, clamped));
+    setBlurErrors((prev) => pruneRowErrors(prev, ticketType.slug, clamped));
   }
 
   function updateAttendeeField(
@@ -92,6 +96,9 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
     if (Object.keys(attendeeErrors).length > 0) {
       setAttendeeErrors(keepFlagged(attendeeErrors, validateCurrent(next)));
     }
+    if (Object.keys(blurErrors).length > 0) {
+      setBlurErrors(keepFlagged(blurErrors, validateCurrent(next)));
+    }
   }
 
   // Blur on an attendee email flags a filled-in invalid address at once; an empty field is left for
@@ -101,12 +108,9 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
     if (!row || row.attendeeEmail.length === 0) return;
     const key = attendeeRowKey(ticketType.slug, index);
     const emailError = validateCurrent(attendees)[key]?.email;
-    setAttendeeErrors((prev) => {
+    setBlurErrors((prev) => {
       const next = { ...prev };
-      const rowErrors = { ...next[key] };
-      if (emailError) rowErrors.email = emailError;
-      else delete rowErrors.email;
-      if (rowErrors.name || rowErrors.email) next[key] = rowErrors;
+      if (emailError) next[key] = { email: emailError };
       else delete next[key];
       return next;
     });
@@ -122,6 +126,7 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
   function validate(): boolean {
     const rowErrors = validateCurrent(attendees);
     setAttendeeErrors(rowErrors);
+    setBlurErrors({});
     return Object.keys(rowErrors).length === 0;
   }
 
@@ -198,6 +203,8 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
     day,
     attendees,
     attendeeErrors,
+    // What the fields show: submit errors plus any blur-only email error.
+    fieldErrors: { ...blurErrors, ...attendeeErrors },
     status,
     errorMessage,
     errorStatus,
