@@ -80,6 +80,7 @@ except ImportError:  # fail loudly with the fix, not a bare traceback
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import docfmt  # noqa: E402  (sibling module; path set just above)
+import rawtext  # noqa: E402
 
 
 class Element(TypedDict, total=False):
@@ -660,6 +661,14 @@ def gate(built: Path, legacy: Path, source: Path) -> int:
                 fails.append(f"{tag}: legacy list {ll['num']} is split across built lists")
     if len(set(list_map.values())) != len(list_map):
         fails.append("two legacy lists were merged into one built list")
+
+    # Independent second reader: raw w:t text from the XML of every text part, in order.
+    prefixes = sorted({e.get("legacyPrefix", "") for _, e in elements} - {""})
+    raw_ok, raw_report = rawtext.check(legacy, built, prefixes, title_is_copy, copy_headings)
+    for line in raw_report:
+        print(line)
+    if not raw_ok:
+        fails.append("raw-XML text check failed (see the raw text lines above)")
 
     if fails:
         print(f"GATE FAIL: {len(fails)} problem(s) ({built.name} vs {legacy.name})")
