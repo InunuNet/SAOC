@@ -118,7 +118,7 @@ export const NOS_NAV: readonly NavItem[] = [
           {
             id: 'plant-entry',
             label: 'Plant Entry',
-            href: showPath('/award-entries'),
+            href: showPath('/plant-entry'),
           },
         ],
       },

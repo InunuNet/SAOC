@@ -76,7 +76,7 @@ export const metadata: Metadata = buildPageMetadata({
   title: PAGE_TITLE,
   image: nosOgImage(`${PAGE_TITLE} — National Orchid Show`),
   description: STANDFIRST[0],
-  path: '/national-show/award-entries',
+  path: '/national-show/plant-entry',
 });
 
 function collectLeaves(node: unknown, into: Map<string, NavLeaf>): void {
@@ -111,7 +111,7 @@ export default async function ExhibitorEntryGuidePage() {
   return (
     <>
       <NosHero
-        route="/national-show/award-entries"
+        route="/national-show/plant-entry"
         title={PAGE_TITLE}
         crumbLabel={PAGE_TITLE}
         facts={heroFactsFromShow(showFacts, FACTS_LABELS)}
@@ -160,7 +160,7 @@ export default async function ExhibitorEntryGuidePage() {
           </section>
         ))}
       </DocumentLayout>
-      <NosShowIndex current="/national-show/award-entries" />
+      <NosShowIndex current="/national-show/plant-entry" />
     </>
   );
 }

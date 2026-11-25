@@ -153,7 +153,7 @@ export const ticketType = defineType({
           // document using this value; the exhibitor purchase surface itself lives in
           // app/(nos)/national-show/**, out of scope for this mission. See
           // .agent/memory/project/specs/ticketing-complete/goldens/f2-README.md §10.
-          { title: 'Award Entry', value: 'exhibitor-entry' },
+          { title: 'Plant Entry', value: 'exhibitor-entry' },
           // Hidden: sold only through the password-protected committee link, never listed.
           { title: 'Speakers Partner (hidden)', value: 'speakers-partner' },
         ],
