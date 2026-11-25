@@ -7,9 +7,12 @@ import { NosHero } from '@/components/nos/NosHero';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
 import { SaocText } from '@/components/nos/SaocText';
 import { ShowContactDetails } from '@/components/nos/ShowContactDetails';
+import { sanityFetch } from '@/sanity/lib/fetch';
+import { nationalShowVenueQuery } from '@/sanity/queries';
 import { buildPageMetadata } from '@/lib/seo';
 import { SHOW_TITLE } from '@/lib/show-title';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
+import type { ShowVenue } from '@/types';
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'Contact',
@@ -36,7 +39,20 @@ const COMMITTEE: readonly { name: string; role: string }[] = [
   { name: 'Cara Holmes', role: 'Venue Layout' },
 ];
 
-export default function NosContactPage() {
+// Same bound as the SAOC pages: Sanity edits reach the page within the 60s CDN window.
+export const revalidate = 60;
+
+interface ShowVenueData {
+  venue: ShowVenue | null;
+}
+
+export default async function NosContactPage() {
+  // The venue lines read nationalShow.venue, the same object the shared VenueCard prints, moved
+  // here from the SAOC /contact page (Brad, 25 Nov 2026) so they cannot drift from other surfaces.
+  const show = await sanityFetch<ShowVenueData>({
+    query: nationalShowVenueQuery,
+    tags: ['nationalShow', 'sanity'],
+  });
   return (
     <>
       <NosHero
@@ -51,7 +67,7 @@ export default function NosContactPage() {
           <ContactForm site="nos" />
         </div>
         <aside data-ct-card="" className="ds-card nos-ct-card">
-          <ShowContactDetails />
+          <ShowContactDetails venue={show?.venue} />
           <NosContactAside />
         </aside>
         <section className="nos-ct-team" aria-labelledby="ct-committee-h">

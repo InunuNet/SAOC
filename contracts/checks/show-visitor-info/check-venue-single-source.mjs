@@ -17,7 +17,7 @@ import { withDatasetLock } from './_mutation-guard.mjs';
 
 // Pages that must show venue detail. /national-show/faq is excluded on purpose: it carries
 // no venue block, and requiring one there would push venue text into FAQ answers.
-const VENUE_PAGES = [PATHS.plan, PATHS.contact];
+const VENUE_PAGES = [PATHS.plan, PATHS.nosContact];
 
 await runCheck('check-venue-single-source', async (r) => {
   // READ LOCK. This check reads the dataset and asserts the page agrees with it, so it must not
