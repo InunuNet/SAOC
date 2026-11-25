@@ -148,6 +148,31 @@ def formatted(runs: list[dict[str, Any]]) -> bool:
     return any(len(r) > 1 for r in runs)
 
 
+def apply_text_changes(runs: list[dict[str, Any]], changes: list[dict[str, Any]],
+                       where: str) -> tuple[list[dict[str, Any]], list[str]]:
+    """The runs after the page JSON's acceptedTextChanges for one paragraph: the only way the copy
+    doc's words may differ from the legacy doc's. Each change is an exact, named substitution that
+    must carry a reason and who approved it, occur exactly once in the paragraph, and sit wholly
+    inside one run (so the author's formatting cannot shift). Returns (runs, problems)."""
+    problems: list[str] = []
+    out = [dict(r) for r in runs]
+    for change in changes:
+        old, new = change.get("from"), change.get("to")
+        if not change.get("reason") or not change.get("approvedBy"):
+            problems.append(f"{where}: acceptedTextChanges entry {change} needs a reason and an approvedBy")
+            continue
+        if not isinstance(old, str) or not old or not isinstance(new, str) or old == new:
+            problems.append(f"{where}: acceptedTextChanges entry {change} needs different `from` and `to` text")
+            continue
+        joined = "".join(r["text"] for r in out)
+        hits = [r for r in out if old in r["text"]]
+        if joined.count(old) != 1 or len(hits) != 1 or hits[0]["text"].count(old) != 1:
+            problems.append(f"{where}: acceptedTextChanges `from` {old!r} must occur exactly once, inside one run")
+            continue
+        hits[0]["text"] = hits[0]["text"].replace(old, new, 1)
+    return merge([(r["text"], {k: v for k, v in r.items() if k != "text"}) for r in out]), problems
+
+
 # ---- lists ---------------------------------------------------------------------------------------
 def _style_numpr(style):
     while style is not None:

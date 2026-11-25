@@ -100,8 +100,11 @@ def fill(data: dict, legacy: Path, parsed_on: str) -> list[str]:
         if p["text"] in section_labels:
             problems.append(f"{where}: paragraph {i} is listed in legacySectionLabels but mapped as copy")
         problems += [f"{where}: paragraph {i}: {x}" for x in p["problems"]]
-        e["text"] = p["text"][len(prefix):]
         runs = docfmt.slice_runs(p["runs"], len(prefix))
+        runs, change_problems = docfmt.apply_text_changes(
+            runs, [c for c in data.get("acceptedTextChanges", []) if c.get("para") == i], where)
+        problems += change_problems
+        e["text"] = "".join(r["text"] for r in runs)
         if docfmt.formatted(runs):
             e["runs"] = runs
         else:

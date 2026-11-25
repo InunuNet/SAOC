@@ -74,10 +74,10 @@ function measureGrid(gridSelector) {
 
 async function measureSaoc(browser, width) {
   const { ctx, page } = await openPage(browser, width, '/about');
-  await page.locator('header button[aria-haspopup="true"]', { hasText: 'National Show' }).click();
-  const menu = page.locator('[role="menu"][aria-label="National Show"]');
+  await page.locator('header button[aria-haspopup="true"]', { hasText: 'National Orchid Show' }).click();
+  const menu = page.locator('[role="menu"][aria-label="National Orchid Show"]');
   await menu.waitFor({ state: 'visible' });
-  const grid = '[role="menu"][aria-label="National Show"] .grid';
+  const grid = '[role="menu"][aria-label="National Orchid Show"] .grid';
   const m = await page.evaluate(measureGrid, grid);
   if (shotsDir && width === 1280) {
     mkdirSync(shotsDir, { recursive: true });
