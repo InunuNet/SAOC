@@ -181,6 +181,37 @@ export async function NosHero({
       ? 'nos-hero-title is-long'
       : 'nos-hero-title';
   const group = NO_SUBNAV_ROUTES.has(route) ? null : subNavGroupFor(route, await getVisibleNav());
+  const hasDetail = Boolean(lede || heroFacts || actions);
+  const head = (
+    <>
+      {eyebrow ? (
+        <p data-nos-hero-eyebrow="" className="nos-hero-eyebrow">
+          {eyebrow}
+        </p>
+      ) : null}
+      {crumbs ??
+        (crumbLabel ? (
+          <nav className="nk-crumbs" aria-label="Breadcrumb">
+            <Link href="/">National Orchid Show</Link>
+            <span className="nk-crumb">
+              <span className="nk-sep" aria-hidden="true">
+                <span className="sr-only">–</span>
+              </span>
+              <span aria-current="page">{crumbLabel}</span>
+            </span>
+          </nav>
+        ) : null)}
+      {titleAs === 'p' ? (
+        // Restates the heading rule in nos-theme.css (`.nos-theme :is(h1...)`), which a p misses,
+        // so the fallback is identical to the h1 it stands in for on the first frame.
+        <p className={titleClass} style={FALLBACK_TITLE_STYLE}>
+          {title}
+        </p>
+      ) : (
+        <h1 className={titleClass}>{title}</h1>
+      )}
+    </>
+  );
 
   return (
     <>
@@ -217,70 +248,54 @@ export async function NosHero({
         ) : null}
         {isHub && photo ? <div aria-hidden="true" className="nos-hero-scrim" /> : null}
         <div className="nos-hero-copy">
-          {eyebrow ? (
-            <p data-nos-hero-eyebrow="" className="nos-hero-eyebrow">
-              {eyebrow}
-            </p>
-          ) : null}
-          {crumbs ??
-            (crumbLabel ? (
-              <nav className="nk-crumbs" aria-label="Breadcrumb">
-                <Link href="/">National Orchid Show</Link>
-                <span className="nk-crumb">
-                  <span className="nk-sep" aria-hidden="true">
-                    <span className="sr-only">–</span>
-                  </span>
-                  <span aria-current="page">{crumbLabel}</span>
-                </span>
-              </nav>
-            ) : null)}
-          {titleAs === 'p' ? (
-            // Restates the heading rule in nos-theme.css (`.nos-theme :is(h1...)`), which a p misses,
-            // so the fallback is identical to the h1 it stands in for on the first frame.
-            <p className={titleClass} style={FALLBACK_TITLE_STYLE}>
-              {title}
-            </p>
-          ) : (
-            <h1 className={titleClass}>{title}</h1>
-          )}
           {isHub ? (
-            <div className="nos-hero-body">
-              {lede ? (
-                <p data-nos-hero-lede="" data-nos-hero-text="lede" className="nos-hero-lede">
-                  {lede}
-                </p>
-              ) : null}
-              {actions}
-            </div>
+            <>
+              {head}
+              <div className="nos-hero-body">
+                {lede ? (
+                  <p data-nos-hero-lede="" data-nos-hero-text="lede" className="nos-hero-lede">
+                    {lede}
+                  </p>
+                ) : null}
+                {actions}
+              </div>
+            </>
           ) : (
             <>
-              {lede ? (
-                <p
-                  data-nos-hero-lede=""
-                  data-nos-hero-text="lede"
-                  data-nos-lede={ledeKind}
-                  className="nos-hero-lede"
-                >
-                  {lede}
-                </p>
+              <div data-nos-hero-head="" className="nos-hero-head">
+                {head}
+              </div>
+              {hasDetail ? (
+                <div data-nos-hero-detail="" className="nos-hero-detail">
+                  {lede ? (
+                    <p
+                      data-nos-hero-lede=""
+                      data-nos-hero-text="lede"
+                      data-nos-lede={ledeKind}
+                      className="nos-hero-lede"
+                    >
+                      {lede}
+                    </p>
+                  ) : null}
+                  {heroFacts ? (
+                    <dl data-hero-facts="" data-fact-count={heroFacts.length} className="hero-facts">
+                      {heroFacts.map((fact) => (
+                        <div key={fact.term} data-hero-fact="">
+                          <dt>{fact.term}</dt>
+                          <dd>
+                            {factLinks?.[fact.term] ? (
+                              <a href={factLinks[fact.term]}>{fact.value}</a>
+                            ) : (
+                              fact.value
+                            )}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  ) : null}
+                  {actions ? <div className="nos-hero-actions">{actions}</div> : null}
+                </div>
               ) : null}
-              {heroFacts ? (
-                <dl data-hero-facts="" data-fact-count={heroFacts.length} className="hero-facts">
-                  {heroFacts.map((fact) => (
-                    <div key={fact.term} data-hero-fact="">
-                      <dt>{fact.term}</dt>
-                      <dd>
-                        {factLinks?.[fact.term] ? (
-                          <a href={factLinks[fact.term]}>{fact.value}</a>
-                        ) : (
-                          fact.value
-                        )}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              ) : null}
-              {actions ? <div className="nos-hero-actions">{actions}</div> : null}
             </>
           )}
         </div>

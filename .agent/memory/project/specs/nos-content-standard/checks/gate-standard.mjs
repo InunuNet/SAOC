@@ -49,19 +49,26 @@ async function heroSharpness(page, route, vp, c, tag) {
   c.check(`${tag} required ${required} <= the cut's native ${crop.width} (not clamped)`, required <= crop.width);
 }
 
-const HR1_RAMP = 'linear-gradient(90deg,rgba(11,10,20,0.92)0%,rgba(11,10,20,0.88)38%,rgba(11,10,20,0.45)56%,rgba(11,10,20,0.12)76%,rgba(11,10,20,0.04)100%)';
-/** HR-1 (NOS Design): at >= 1024 the hero scrim ramp is exactly HR1_RAMP. Implementation-agnostic: whichever hero element or ::before / ::after carries a 90deg rgba(11,10,20) gradient, all of them are this ramp. */
+// HR-1 superseded on 25 Nov 2026 by nos-hero-consistency (Brad): the inner photo hero no longer lays a dark 90deg ramp over the photo.
+// The scrim is the SAOC PageHero ramp (alpha 0 to 0.8 over 34-52%) mirrored and drawn as the photo's mask, so the ground shows through
+// behind the copy and the bloom keeps full strength. Visibility stops: 0.2 at the copy edge, then .3 / .48 / .68 / .84 / .94 / 1.
+const HR1_MASK_ALPHAS = [0.2, 0.3, 0.48, 0.68, 0.84, 0.94];
+/** HR-1 (nos-hero-consistency): at >= 1024 the inner hero carries no dark 90deg rgba(11,10,20) ramp, and its photo's mask holds the eased stops in order. */
 async function heroRampCheck(page, tag, c) {
-  const grads = await page.evaluate(() => {
-    const hero = document.querySelector('section[data-nos-hero]'); if (!hero || hero.getAttribute('data-nos-hero') === 'hub') return [];
-    const out = [];
+  const m = await page.evaluate(() => {
+    const hero = document.querySelector('section[data-nos-hero]'); if (!hero || hero.getAttribute('data-nos-hero') === 'hub') return null;
+    const ramps = [];
     for (const e of [hero, ...hero.querySelectorAll('*')]) for (const ps of [null, '::before', '::after']) {
       const bi = getComputedStyle(e, ps).backgroundImage;
-      if (/linear-gradient\(/.test(bi) && /rgba\(11, ?10, ?20/.test(bi) && /90deg/.test(bi)) out.push({ at: `${e.tagName.toLowerCase()}.${String(e.className).split(' ')[0]}${ps ?? ''}`, bi: bi.replace(/\s+/g, '') });
+      if (/linear-gradient\(/.test(bi) && /rgba\(11, ?10, ?20/.test(bi) && /90deg/.test(bi)) ramps.push(`${e.tagName.toLowerCase()}.${String(e.className).split(' ')[0]}${ps ?? ''}`);
     }
-    return out;
+    const media = hero.querySelector('.nos-hero-media');
+    return { ramps, mask: media ? getComputedStyle(media).maskImage : '' };
   });
-  c.check(`${tag} HR-1 the hero scrim ramp is exactly rgba(11,10,20) 0.92 0% / 0.88 38% / 0.45 56% / 0.12 76% / 0.04 100% at 90deg (${grads.map((g) => g.at).join(', ') || 'no gradient found'})`, grads.length >= 1 && grads.every((g) => g.bi === HR1_RAMP), grads.filter((g) => g.bi !== HR1_RAMP).map((g) => `${g.at}: ${g.bi.slice(0, 160)}`).join(' | '));
+  if (!m) return;
+  const alphas = [...m.mask.matchAll(/rgba\(0, 0, 0, ([\d.]+)\)/g)].map((x) => Number(x[1])).filter((a) => a > 0);
+  c.check(`${tag} HR-1 no dark ramp over the photo (${m.ramps.join(', ') || 'none'}) and the photo mask eases ${HR1_MASK_ALPHAS.join(' / ')} / 1 (${alphas.join(' / ')})`,
+    m.ramps.length === 0 && JSON.stringify(alphas) === JSON.stringify(HR1_MASK_ALPHAS), m.mask.slice(0, 200));
 }
 /** HR-1 contrast: text hidden, p95 luminance of the photo pixels behind each hero text range (crumb, h1, lede, dt, dd) against the text colour; >= 4.5, h1 >= 3, at 1440 and 2056. */
 async function heroTextContrast(page, tag, c) {
@@ -1043,7 +1050,7 @@ async function extraChecks(page, route, vp, c, tag) {
     const h1i = h1e ? { len: h1e.textContent.replace(/\s+/g, ' ').trim().length, long: h1e.classList.contains('is-long'), px: parseFloat(h1s.fontSize), maxW: h1s.maxWidth, boxW: h1e.getBoundingClientRect().width, wrap: h1s.textWrap || h1s.getPropertyValue('text-wrap'), lines: Math.round(h1e.getBoundingClientRect().height / parseFloat(h1s.lineHeight)), ow: h1s.overflowWrap, ...(() => { const rg = document.createRange(); rg.selectNodeContents(h1e); const rects = [...rg.getClientRects()].filter((q) => q.width > 0); const hb = h1e.getBoundingClientRect(); return { textRight: rects.length ? Math.max(...rects.map((q) => q.right)) : 0, boxRight: hb.right - parseFloat(h1s.paddingRight) - parseFloat(h1s.borderRightWidth) }; })() } : null;
     const subItems = [...document.querySelectorAll('.nos-subnav a')].map((a) => ({ t: a.textContent.replace(/\s+/g, ' ').trim(), cur: a.getAttribute('aria-current') }));
     const crumb = document.querySelector('section[data-nos-hero] nav[aria-label="Breadcrumb"]'); const crumbText = crumb ? crumb.textContent.replace(/\s+/g, ' ').trim() : null;
-    return { h1i, subItems, crumbText, nkBad, testBar, vw: innerWidth, innerMin: ic ? parseFloat(ic.minHeight) : null, innerAlign: ic ? ic.alignContent : null, innerPadT: ic ? parseFloat(ic.paddingTop) : null, innerPadB: ic ? parseFloat(ic.paddingBottom) : null, copyPadT: (() => { const e = document.querySelector('.nos-hero-inner .nos-hero-copy'); return e ? parseFloat(getComputedStyle(e).paddingTop) : null; })(), copyPadB: (() => { const e = document.querySelector('.nos-hero-inner .nos-hero-copy'); return e ? parseFloat(getComputedStyle(e).paddingBottom) : null; })(), band: ib && ib.height ? ib.width / ib.height : null, skip, round, split, padTop: fs ? parseFloat(fs.paddingTop) : null, bTop: fs ? parseFloat(fs.borderTopWidth) : null, navLabels, h2s, h4s, h2lh: lh([...document.querySelectorAll('main h2')].find((h) => !h.closest('[data-guest-profile], [data-conference-row]')) ?? null), h3lh: lh(proseH3()),
+    return { h1i, subItems, crumbText, nkBad, testBar, vw: innerWidth, innerMin: ic ? parseFloat(ic.minHeight) : null, innerAlign: ic ? ic.alignContent : null, innerPadT: ic ? parseFloat(ic.paddingTop) : null, innerPadB: ic ? parseFloat(ic.paddingBottom) : null, headPadT: (() => { const e = document.querySelector('.nos-hero-inner .nos-hero-head'); return e ? parseFloat(getComputedStyle(e).paddingTop) : null; })(), headPadB: (() => { const e = document.querySelector('.nos-hero-inner .nos-hero-head'); return e ? parseFloat(getComputedStyle(e).paddingBottom) : null; })(), headMin: (() => { const e = document.querySelector('.nos-hero-inner .nos-hero-head'); return e ? parseFloat(getComputedStyle(e).minHeight) : null; })(), band: ib && ib.height ? ib.width / ib.height : null, skip, round, split, padTop: fs ? parseFloat(fs.paddingTop) : null, bTop: fs ? parseFloat(fs.borderTopWidth) : null, navLabels, h2s, h4s, h2lh: lh([...document.querySelectorAll('main h2')].find((h) => !h.closest('[data-guest-profile], [data-conference-row]')) ?? null), h3lh: lh(proseH3()),
       heroH: hero ? hero.getBoundingClientRect().height : null, legend, railed, factsCount: facts ? facts.querySelectorAll('[data-hero-fact]').length : 0, factsAttr: facts ? facts.getAttribute('data-fact-count') : null, factTerms: facts ? [...facts.querySelectorAll('dt')].map((e) => e.textContent.trim()) : [], factValues: facts ? [...facts.querySelectorAll('dd')].map((e) => e.textContent.trim()) : [], factCount2: facts ? facts.querySelectorAll('[data-hero-fact]').length >= 2 : true, indexRows: [...document.querySelectorAll('nav[data-doc-index] a')].map((a) => { const b = a.getBoundingClientRect(); return { t: b.top, b: b.bottom, l: b.left, r: b.right }; }), factsOk: facts ? [...facts.querySelectorAll('[data-hero-fact]')].every((f) => f.children[0]?.tagName === 'DT' && f.children[1]?.tagName === 'DD') : true };
   }, { eyebrowSel: '[data-nos-hero-eyebrow]' });
   if (x.h1i) {
@@ -1065,13 +1072,16 @@ async function extraChecks(page, route, vp, c, tag) {
   c.check(`${tag} .nk-ticket/.nk-perf/.nk-stamp only inside a purchasable [data-ticket-card] (WS-1)`, x.nkBad === 0, String(x.nkBad));
   c.check(`${tag} the TESTING ONLY bar is absent (it belongs to /tickets/* and the payment step only)`, x.testBar === 0, String(x.testBar));
   {
+    // PG-1 4, superseded on 25 Nov 2026 by nos-hero-consistency (Brad): one hero height per breakpoint, whatever the content.
     const P = STD.hero.pg1;
-    if (vp.width >= 768) {
-      const wantMin = Math.min(P.max, Math.max(P.min, P.vw * vp.width)); const wantPad = Math.min(P.padMax, Math.max(P.padMin, P.padVw * vp.width));
-      c.check(`${tag} .nos-hero-inner min-height ${x.innerMin} ~ ${wantMin.toFixed(0)} (PG-1 4)`, x.innerMin !== null && Math.abs(x.innerMin - wantMin) <= 2);
+    if (vp.width >= 1024) {
+      const wantMin = Math.max(P.desktopFloor, P.desktopVw * vp.width); const wantPad = Math.min(P.padMax, Math.max(P.padMin, P.padVw * vp.width));
+      c.check(`${tag} .nos-hero-inner min-height ${x.innerMin} ~ max(${P.desktopFloor}px, ${P.desktopVw * 100}vw) = ${wantMin.toFixed(0)} (PG-1 4)`, x.innerMin !== null && Math.abs(x.innerMin - wantMin) <= 2);
       c.check(`${tag} .nos-hero-inner align-content start and padding-block ${x.innerPadT}/${x.innerPadB} ~ ${wantPad.toFixed(0)}`, ['start', 'flex-start'].includes(x.innerAlign) && Math.abs(x.innerPadT - wantPad) <= 2 && Math.abs(x.innerPadB - wantPad) <= 2, x.innerAlign);
+    } else if (vp.width >= 768) {
+      c.check(`${tag} 768-1023: the title block (.nos-hero-head) is ${P.tabletBox}px tall at padding-block ${P.tabletPad}px (${x.headMin}; ${x.headPadT}/${x.headPadB})`, x.headMin === P.tabletBox && x.headPadT === P.tabletPad && x.headPadB === P.tabletPad);
     } else {
-      c.check(`${tag} below 768 the photo band is 2:1 (${x.band && x.band.toFixed(2)}) and the copy (.nos-hero-copy) follows at padding-block ${P.mobilePad}px (${x.copyPadT}/${x.copyPadB}; the inner has ${x.innerPadT}/${x.innerPadB})`, x.band !== null && Math.abs(x.band - P.mobileBandAspect) <= 0.06 && x.copyPadT === P.mobilePad && x.copyPadB === P.mobilePad && x.innerPadT === 0 && x.innerPadB === 0);
+      c.check(`${tag} below 768 the photo band is 2:1 (${x.band && x.band.toFixed(2)}) and the title block (.nos-hero-head) follows at padding-block ${P.mobilePad}px (${x.headPadT}/${x.headPadB}; the inner has ${x.innerPadT}/${x.innerPadB})`, x.band !== null && Math.abs(x.band - P.mobileBandAspect) <= 0.06 && x.headPadT === P.mobilePad && x.headPadB === P.mobilePad && x.innerPadT === 0 && x.innerPadB === 0);
     }
   }
   if (vp.width >= 1024 && x.indexRows.length) c.check(`${tag} index rows are >= 44px tall with disjoint boxes (${x.indexRows.length})`, x.indexRows.every((r, i) => r.b - r.t >= 43.5 && (i === 0 || r.t >= x.indexRows[i - 1].b - 0.5)));
@@ -1093,10 +1103,11 @@ async function extraChecks(page, route, vp, c, tag) {
     c.check(`${tag} no fact is filler (to be confirmed), no Cycle or invented-label fact, row only with >= 2 facts (${x.factTerms.join(' | ')})`, x.factCount2 && !x.factTerms.some((t) => /^cycle$/i.test(t)) && !x.factValues.some((v) => /to be confirmed/i.test(v)) && (!route.keyFacts || x.factTerms.every((t) => route.keyFacts.some((k) => k.term === t))), JSON.stringify(x.factValues));
     c.check(`${tag} [data-hero-facts] has data-fact-count == items (${x.factsAttr} vs ${x.factsCount}), dt before dd`, Number(x.factsAttr) === x.factsCount && x.factsOk);
   }
-  if (vp.width >= 1440) { // PG-1 4, inherited from #76
-    const wf = x.factsCount > 0; const rc = route.heroCap?.[vp.width >= 2000 ? '2056' : '1440']; const ltCap = x.h1i && x.h1i.len > 20 ? (vp.width >= 2000 ? STD.hero.longTitleCap.at2056 : STD.hero.longTitleCap.at1440) : Infinity; const cap = rc ?? Math.min(ltCap,  vp.width >= 2000 ? (wf ? STD.hero.heightCap.withFacts2056 : STD.hero.heightCap.at2056) : (wf ? STD.hero.heightCap.withFacts1440 : STD.hero.heightCap.at1440));
-    c.check(`${tag} hero height ${Math.round(x.heroH)} <= ${cap} (PG-1 4${wf ? ', with facts: FACTS-1' : ''}${rc ? ', route cap from the golden' : ''})`, x.heroH !== null && x.heroH <= cap);
+  if (vp.width >= 1024 && x.innerMin !== null) { // PG-1 4: every inner hero is the formula height (nos-hero-consistency)
+    const want = Math.max(STD.hero.pg1.desktopFloor, STD.hero.pg1.desktopVw * vp.width);
+    c.check(`${tag} hero height ${x.heroH?.toFixed(1)} = max(${STD.hero.pg1.desktopFloor}px, ${STD.hero.pg1.desktopVw * 100}vw) = ${want.toFixed(1)} (PG-1 4, one height per breakpoint)`, x.heroH !== null && Math.abs(x.heroH - want) <= 1);
   }
+
 }
 
 const ROUTE_TABLE_META = JSON.parse(readFileSync('.agent/memory/project/specs/nos-content-standard/goldens/route-table.json', 'utf8'));

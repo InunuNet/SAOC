@@ -1234,13 +1234,8 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   overflow-wrap: break-word;
   text-wrap: balance;
 }
-/* A short inner title holds one line from 1024 up (below that the copy column is 58% and wraps). WOSA Conference fills 95% of its column, so in the
-   fallback face (before the webfont lands) it wrapped and the sub-nav jumped when the font arrived. */
-@media (min-width: 1024px) {
-  .nos-theme .nos-hero-inner .nos-hero-title:not(.is-long) {
-    white-space: nowrap !important; /* the loader's p has an inline text-wrap: balance, which resets the wrap mode */
-  }
-}
+/* An inner title may wrap inside the copy column: the hero's height is fixed per breakpoint (Inner hero
+   sizing, below), so a wrap in the fallback face no longer moves the sub-nav. */
 /* "About the show" is exactly the title's 14ch cap: in the fallback face it wrapped to two lines and the
    page jumped 48px up when Fraunces landed, so the About title holds one line at every width. */
 .nos-theme .nos-hero-about .nos-hero-title {
@@ -2940,7 +2935,9 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 }
 
 /* Hero facts (FACTS-1): one row under a hairline from 768, hairline-ruled dt/dd rows below. */
-.nos-theme .nos-hero-copy > * {
+.nos-theme .nos-hero-copy > *,
+.nos-theme .nos-hero-head > *,
+.nos-theme .nos-hero-detail > * {
   min-width: 0;
 }
 .nos-theme .hero-facts {
@@ -3003,37 +3000,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   .nos-theme .hero-facts dd {
     font-size: clamp(1.3rem, 1.1rem + 0.5vw, 1.5rem);
     line-height: 1.15;
-  }
-}
-/* Contact facts share value and label rows; each column sizes to its widest text. */
-@media (min-width: 768px) {
-  .nos-theme .nos-contact-hero .hero-facts[data-fact-count="2"] {
-    grid-template-columns: repeat(2, max-content);
-    grid-template-rows: auto auto;
-    column-gap: 48px;
-    row-gap: 6px;
-  }
-  .nos-theme .nos-contact-hero .hero-facts > div {
-    display: contents;
-  }
-  .nos-theme .nos-contact-hero .hero-facts > div:first-child > * {
-    grid-column: 1;
-  }
-  .nos-theme .nos-contact-hero .hero-facts > div:last-child > * {
-    grid-column: 2;
-  }
-  .nos-theme .nos-contact-hero .hero-facts dd {
-    grid-row: 1;
-    align-self: baseline;
-    white-space: nowrap;
-  }
-  .nos-theme .nos-contact-hero .hero-facts dd a {
-    align-items: baseline;
-  }
-  .nos-theme .nos-contact-hero .hero-facts dt {
-    grid-row: 2;
-    align-self: baseline;
-    white-space: nowrap;
   }
 }
 @media (max-width: 767px) {
@@ -3518,65 +3484,184 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   font-size: 15px;
 }
 
-/* DS-1 (c) .ihero: the photograph's box runs from 38% to the right edge with no radius, its left 22%
-   masked into the black, under one 90deg ramp. The copy overlaps the masked part; from 1024 its column
-   is min(1080px, 62% of the content width). Below 768 the 2:1 band of PG-1 stands. */
-@media (min-width: 1024px) {
-  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-media {
-    /* Brad 18 Nov: never upscale on wide screens. 62% as before, capped at 1150px so a 2200-3000px
-       source keeps >= 2 device px per CSS px; anchored right. */
-    inset: 0 0 0 auto;
-    width: min(62%, 1150px);
-    border-radius: 0;
-    -webkit-mask-image: linear-gradient(90deg, transparent 0, black 22%);
-    mask-image: linear-gradient(90deg, transparent 0, black 22%);
-  }
-  .nos-theme .nos-hero-inner.nos-hero-photo::before {
-    content: '';
-    position: absolute;
-    inset: 0 0 0 auto;
-    width: min(62%, 1150px);
-    z-index: 1;
-    pointer-events: none;
-  }
-}
-@media (min-width: 1024px) {
-  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-copy {
-    width: calc(
-      max(0px, (100cqw - var(--nos-axis-max)) / 2) + var(--nos-axis-pad) +
-        min(1080px, 0.62 * (min(var(--nos-axis-max), 100cqw) - 2 * var(--nos-axis-pad)))
-    );
-    padding-right: 0;
-  }
-  .nos-theme .nos-hero-inner.nos-hero-photo::before {
-    background: linear-gradient(
-      90deg,
-      rgba(11, 10, 20, 0.92) 0%,
-      rgba(11, 10, 20, 0.88) 38%,
-      rgba(11, 10, 20, 0.45) 56%,
-      rgba(11, 10, 20, 0.12) 76%,
-      rgba(11, 10, 20, 0.04) 100%
-    );
-  }
-}
-@media (max-width: 767px) {
-  .nos-theme .nos-hero-inner.nos-hero-photo::before {
-    content: none;
-  }
-  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-media {
-    -webkit-mask-image: none;
-    mask-image: none;
-  }
-}
+/* ---- Inner hero sizing (Brad, 25 Nov 2026: "the same hero image, styling and sizing rules that we
+   have for the SAOC site"). One height per breakpoint on every inner route, whatever its copy:
+     >= 1024  max(420px, 29.3vw), PageHero's interior rule (600px at the 2048 frame, DESKTOP_TALL_HERO_PX
+              floor). The crumbs, h1, lede, facts and actions all sit in it, top-anchored.
+     768-1023 320px (the PG-1 floor): the crumbs and h1 beside the 42% photo panel.
+     < 768    the 2:1 photo band plus a title block that holds a two-line h1.
+   Below 1024 the lede, facts and actions (.nos-hero-detail) follow the hero box on the page ground, so
+   a longer lede or a third fact never changes the hero's height. ---- */
 @media (min-width: 768px) {
   .nos-theme .nos-hero-inner .nk-crumbs a {
     margin-block: -11px;
   }
+}
+/* From 1024 the photograph's box runs from 38% to the right edge (Brad 18 Nov: capped at 1150px so a
+   2200-3000px source is never upscaled). The scrim is PageHero's, mirrored for a left copy column: full
+   strength (0.8) over the copy column, eased to clear over the next 18% of the width, so the bloom side is
+   the bare photograph. The scrim colour is the hero ground (#0b0a14), so it is drawn as the photograph's
+   mask (visibility = 1 - scrim alpha), intersected with the box's own 22% edge fade into the ground. The
+   copy column is 48% of the width (PageHero's column), at least 640px of text so three facts sit on one row. */
+@media (min-width: 1024px) {
   .nos-theme .nos-hero-inner {
-    padding-block: clamp(40px, 3.2vw, 56px);
+    --hero-gap: 12px;
+    --hero-copy-end: max(
+      48cqw,
+      calc(max(0px, (100cqw - var(--nos-axis-max)) / 2) + var(--nos-axis-pad) + 640px)
+    );
+    --scrim-at: calc(var(--hero-copy-end) - 100cqw + min(62cqw, 1150px));
+    min-height: max(420px, 29.3vw);
+    padding-block: clamp(32px, 2.5vw, 48px);
   }
-  .nos-theme .nos-hero-inner .nos-hero-copy {
-    gap: 16px;
+  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-copy {
+    width: var(--hero-copy-end);
+  }
+  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-media {
+    inset: 0 0 0 auto;
+    width: min(62%, 1150px);
+    -webkit-mask-image:
+      linear-gradient(90deg, transparent 0, #000 22%),
+      linear-gradient(
+        90deg,
+        rgb(0 0 0 / 0.2) var(--scrim-at),
+        rgb(0 0 0 / 0.3) calc(var(--scrim-at) + 1.5cqw),
+        rgb(0 0 0 / 0.48) calc(var(--scrim-at) + 4cqw),
+        rgb(0 0 0 / 0.68) calc(var(--scrim-at) + 7cqw),
+        rgb(0 0 0 / 0.84) calc(var(--scrim-at) + 10cqw),
+        rgb(0 0 0 / 0.94) calc(var(--scrim-at) + 14cqw),
+        #000 calc(var(--scrim-at) + 18cqw)
+      );
+    -webkit-mask-composite: source-in;
+    mask-image:
+      linear-gradient(90deg, transparent 0, #000 22%),
+      linear-gradient(
+        90deg,
+        rgb(0 0 0 / 0.2) var(--scrim-at),
+        rgb(0 0 0 / 0.3) calc(var(--scrim-at) + 1.5cqw),
+        rgb(0 0 0 / 0.48) calc(var(--scrim-at) + 4cqw),
+        rgb(0 0 0 / 0.68) calc(var(--scrim-at) + 7cqw),
+        rgb(0 0 0 / 0.84) calc(var(--scrim-at) + 10cqw),
+        rgb(0 0 0 / 0.94) calc(var(--scrim-at) + 14cqw),
+        #000 calc(var(--scrim-at) + 18cqw)
+      );
+    mask-composite: intersect;
+  }
+}
+/* Below 1024 the hero is a grid: the box (photo and .nos-hero-head on the dark ground) in the first
+   row, the detail under it on the page ground. The copy wrapper steps aside (display: contents) so its
+   head and detail are the grid's own items. */
+@media (max-width: 1023px) {
+  .nos-theme .nos-hero-inner {
+    --hero-gap: 16px;
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+    padding-block: 0;
+    background-color: transparent;
+    color: var(--ink);
+  }
+  .nos-theme .nos-hero-inner .nos-hero-copy,
+  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-copy {
+    display: contents;
+  }
+  .nos-theme .nos-hero-inner .nos-hero-media {
+    position: relative;
+    inset: auto;
+    grid-row: 1;
+  }
+  .nos-theme .nos-hero-inner .nos-hero-head {
+    grid-row: 2;
+    padding: 32px var(--nos-axis-pad);
+    background-color: var(--black);
+    color: var(--ivory);
+  }
+  .nos-theme .nos-hero-inner .nos-hero-detail {
+    grid-row: 3;
+    grid-column: 1 / -1;
+    width: 100%;
+    max-width: var(--nos-axis-max);
+    margin-inline: auto;
+    padding: 32px var(--nos-axis-pad) 0;
+    /* The page ground: the light focus ring and status colours again (nos-theme.css). */
+    --ring-focus: var(--ring-focus-on-light);
+    --status-error: var(--status-error-on-light);
+    --status-warning: var(--status-warning-on-light);
+    --status-success: var(--status-success-on-light);
+    --status-muted: var(--status-muted-on-light);
+  }
+  /* A following sub-nav gets the detail's own spacing; other content keeps the 48px first-block rule. */
+  .nos-theme .nos-hero-inner:has(+ .nos-subnav) .nos-hero-detail {
+    padding-bottom: 32px;
+  }
+  .nos-theme .nos-hero-inner .nos-hero-detail .nos-hero-lede {
+    max-width: 60ch;
+    color: var(--ink);
+  }
+  .nos-theme .nos-hero-inner .nos-hero-detail .hero-facts,
+  .nos-theme .nos-hero-inner .nos-hero-detail .hero-facts > div {
+    border-color: var(--rule);
+  }
+  .nos-theme .nos-hero-inner .nos-hero-detail .hero-facts dt {
+    color: var(--muted);
+  }
+  .nos-theme .nos-hero-inner .nos-hero-detail .hero-facts dd {
+    color: var(--ink);
+  }
+  /* An on-dark action is the primary action on the page ground (Button.tsx primary variant). */
+  .nos-theme .nos-hero-inner .nos-hero-detail [data-nos-button].bg-bone {
+    background-color: var(--primary);
+    color: var(--ivory);
+    outline-color: var(--ring-focus-on-light);
+  }
+  .nos-theme .nos-hero-inner .nos-hero-detail [data-nos-button].bg-bone:hover {
+    background-color: var(--primary-800);
+  }
+}
+/* 768-1023: the head takes 58% and the photo panel 42% of one 320px row (NOS Design, 2026-10-24). */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .nos-theme .nos-hero-inner.nos-hero-photo {
+    grid-template-columns: minmax(0, 58fr) minmax(0, 42fr);
+  }
+  .nos-theme .nos-hero-inner .nos-hero-head {
+    grid-row: 1;
+    grid-column: 1;
+    min-height: 320px;
+    padding-block: 40px;
+  }
+  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-head {
+    padding-right: 32px;
+  }
+  .nos-theme .nos-hero-inner .nos-hero-media {
+    grid-column: 2;
+    border-bottom-left-radius: var(--radius-card);
+  }
+  .nos-theme .nos-hero-inner .nos-hero-detail {
+    grid-row: 2;
+    padding-top: 40px;
+  }
+}
+/* Below 768 (G2): the photograph is a full-width 2:1 band, then the title block, which holds the crumbs
+   and a two-line h1 at the FQ-G1 title size whatever the title's length. */
+@media (max-width: 767px) {
+  .nos-theme .nos-hero-inner .nos-hero-media {
+    width: 100%;
+    aspect-ratio: 2 / 1;
+  }
+  .nos-theme .nos-hero-inner .nos-hero-head {
+    min-height: calc(124px + 2 * max(3rem, 1.8rem + 3.2vw));
+  }
+  /* The trail stays one line (TL-2a) on the ticket steps too, so a long product name cannot add a line
+     to the box: the h1 just below it carries the full name, which also stays in the crumb's DOM. */
+  .nos-theme .nos-hero-inner .nk-buy-crumbs {
+    flex-wrap: nowrap;
+  }
+  .nos-theme .nos-hero-inner .nk-buy-crumbs > .nk-crumb:not(:last-child) {
+    flex-shrink: 0;
+  }
+  .nos-theme .nos-hero-inner .nk-buy-crumbs [aria-current='page'] {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 .nos-theme .hero-facts > div:first-child dd {
@@ -3599,7 +3684,8 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     white-space: nowrap;
   }
 }
-@media (min-width: 1280px) {
+/* From 1024 the three facts share one row in the hero's copy column (Inner hero sizing). */
+@media (min-width: 1024px) {
   .nos-theme .hero-facts[data-fact-count="3"] {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }

@@ -3,8 +3,8 @@
 // =============================================================
 // NOS — components/nos-chrome/NosHeader.tsx
 // The National Orchid Show site's own header (nos-site-split F3, NOS Design R1): the supplied
-// full-colour lockup (links the NOS home), a top row of three click-only disclosure panels
-// (Visit, Programme, Vendors), Show sponsors, Past shows (withheld in public until there is
+// full-colour lockup (links the NOS home), a top row of click-only disclosure panels
+// (Visit, Programme; a one-link group such as Vendors is a plain link), Show sponsors, Past shows (withheld in public until there is
 // content, r64) and Contact (SAOC organises the show, so Contact is the SAOC contact), the Tickets
 // call to action, and below 1384px a menu panel that ends with the SAOC credit. Labels
 // and order come from nos-nav.ts, which the SAOC site's old show mega carried verbatim; hrefs are
@@ -62,6 +62,15 @@ const lockupProps = (width: number, sizes: string) =>
   }).props;
 const wideLockup = lockupProps(LOCKUP_BOX_WIDE, `${LOCKUP_BOX_WIDE}px`);
 const narrowLockup = lockupProps(LOCKUP_BOX_NARROW, LOCKUP_SIZES_NARROW);
+
+/**
+ * A group with exactly one link is that link, not a disclosure (Brad, 25 Nov 2026: Vendors had a
+ * drop-down with a single item). The top row and the menu panel both render it as a plain link to
+ * the child's page, labelled with the group's heading.
+ */
+function soleLink(group: NavColumn): NavLeaf | null {
+  return group.links.length === 1 ? group.links[0] : null;
+}
 
 function Chevron() {
   return (
@@ -271,6 +280,23 @@ export function NosHeader({ nav, saocHomeHref, contactHref }: NosHeaderProps) {
           <nav className="nh-nav" data-hd="nav" aria-label="Primary">
             <ul ref={navRef}>
               {groups.map((group) => {
+                const sole = soleLink(group);
+                if (sole) {
+                  return (
+                    <li key={group.id}>
+                      <Link
+                        className="nh-link"
+                        data-hd="item"
+                        href={nosPath(sole.href)}
+                        aria-current={current(sole.href)}
+                      >
+                        <span className="nh-label" data-hd="label">
+                          {group.heading}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                }
                 const open = openGroupId === group.id;
                 return (
                   <li
@@ -386,6 +412,20 @@ export function NosHeader({ nav, saocHomeHref, contactHref }: NosHeaderProps) {
         <div className="nd-inner">
           <ul className="nd-list">
             {groups.map((group) => {
+              const sole = soleLink(group);
+              if (sole) {
+                return (
+                  <li key={group.id}>
+                    <Link
+                      className="nd-item"
+                      href={nosPath(sole.href)}
+                      aria-current={current(sole.href)}
+                    >
+                      {group.heading}
+                    </Link>
+                  </li>
+                );
+              }
               const open = drawerGroupId === group.id;
               return (
                 <li key={group.id}>

@@ -19,5 +19,9 @@ assertions:
       description: About hero uses the handoff eyebrow
       command: grep -q 'eyebrow="Our Heritage"' 'app/(marketing)/about/page.tsx'
     - id: A3
-      description: NOS contact uses a scoped alignment class
-      command: grep -q 'className="nos-contact-hero"' 'app/(nos)/national-show/contact/page.tsx'
+      description: >-
+        NOS contact hero facts use the shared hero facts pattern (superseded 25 Nov 2026 by
+        nos-hero-consistency: the two-fact scoped alignment class retired; Dates, Venue and Email
+        now use the shared three-fact strip)
+      command: >-
+        grep -q 'heroFactsFromShow(showFacts, FACTS_LABELS)' 'app/(nos)/national-show/contact/page.tsx' && grep -q 'value: SHOW_CONTACT_EMAIL' 'app/(nos)/national-show/contact/page.tsx' && ! grep -q 'nos-contact-hero' 'app/(nos)/national-show/nos-structure.css'

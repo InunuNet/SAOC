@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // F12-A16 - R71 inner hero, template-wide: on every NOS route whose hero is the inner kind, at >=1024 (1024, 1280, 1920, 2056) the title is
-// max-width none, font-size clamp(48px,4.4vw,88px), text-wrap balance; the lede max-width is 46ch (the symposium theme-line lede keeps its own
-// R70 30ch); the hero min-height is at least 380px. The International Guests and About h1 are two lines or fewer at 1280.
+// max-width none, font-size clamp(48px,4.4vw,88px), text-wrap balance; the lede fills the copy column, max-width none (the symposium
+// theme-line lede keeps its own R70 30ch); the hero min-height is at least 380px. The R71 46ch lede was superseded on 25 Nov 2026 by
+// nos-hero-consistency (Brad: one hero height per breakpoint; at 46ch the long Vendor application lede grew that hero past the rest). The International Guests and About h1 are two lines or fewer at 1280.
 import { main, openPage, withBrowser, NOS_ROUTES, near, px } from './_lib.mjs';
 
 const WIDTHS = [1024, 1280, 1920, 2056];
@@ -14,22 +15,13 @@ function measure() {
   const cs = (e) => getComputedStyle(e);
   const title = hero.querySelector('h1');
   const lede = hero.querySelector('[data-nos-hero-lede]');
-  const chFn = (el, n) => {
-    const c = cs(el);
-    const d = document.createElement('div');
-    d.style.cssText = `position:absolute;visibility:hidden;white-space:nowrap;width:${n}ch;font-family:${c.fontFamily};font-size:${c.fontSize};font-weight:${c.fontWeight};font-style:${c.fontStyle};`;
-    el.parentElement.appendChild(d);
-    const w = d.getBoundingClientRect().width;
-    d.remove();
-    return w;
-  };
   const rg = document.createRange();
   rg.selectNodeContents(title);
   const lines = new Set([...rg.getClientRects()].map((x) => Math.round(x.top))).size;
   return {
     kind: 'inner',
     title: { maxWidth: cs(title).maxWidth, size: parseFloat(cs(title).fontSize), wrap: cs(title).textWrapStyle || cs(title).textWrap, lines },
-    lede: lede ? { maxWidth: parseFloat(cs(lede).maxWidth), ch46: chFn(lede, 46) } : null,
+    lede: lede ? { maxWidth: cs(lede).maxWidth } : null,
     minH: parseFloat(cs(hero).minHeight), h: hero.getBoundingClientRect().height,
   };
 }
@@ -55,7 +47,7 @@ await main('F12-A16 inner hero', async (r) => {
         if (!near(m.title.size, want, 0.6)) r.fail(`${tag}: h1 ${m.title.size}px, want clamp(48px,4.4vw,88px) = ${want.toFixed(2)}px`);
         if (m.title.wrap !== 'balance') r.fail(`${tag}: h1 text-wrap ${m.title.wrap}, want balance`);
         if (m.minH < 379.5 || m.h < 379.5) r.fail(`${tag}: inner hero min-height ${m.minH}px / height ${m.h.toFixed(0)}px, want at least 380px`);
-        if (m.lede && route !== SYMPOSIUM && !near(m.lede.maxWidth, m.lede.ch46, 1.5)) r.fail(`${tag}: lede max-width ${m.lede.maxWidth}px, want 46ch = ${m.lede.ch46.toFixed(1)}px`);
+        if (m.lede && route !== SYMPOSIUM && m.lede.maxWidth !== 'none') r.fail(`${tag}: lede max-width ${m.lede.maxWidth}, want none (fills the copy column)`);
         if (w === 1280 && MAX_TWO_LINES.includes(route) && m.title.lines > 2) r.fail(`${tag}: h1 wraps to ${m.title.lines} lines, want at most 2`);
       }
       await ctx.close();

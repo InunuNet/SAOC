@@ -13,6 +13,26 @@ Mission `nos-pagehero`, spec `.agent/memory/project/specs/nos-pagehero/` (NOS De
 - `/symposium`: the Presenters `h2` is serif 32px / 300; the TBC pill became a quiet `※` legend line (`data-presenters-legend`), withheld in public mode exactly as the pill was.
 - The `/tickets` fan masthead is unchanged. `/tickets/[slug]` no longer uses the compact buy hero (`nk-hero-compact`): it is the split hero with the S3a crop.
 
+## One height per breakpoint (nos-hero-consistency, 25 Nov 2026)
+
+Brad's ruling replaces the content-driven height and the 46% panel above. Spec and checks:
+`.agent/memory/project/specs/nos-hero-consistency/`.
+
+- `NosHero` (inner) splits its copy into a title block (`.nos-hero-head`: eyebrow, crumbs, h1) and a detail block
+  (`.nos-hero-detail`: lede, facts, actions).
+- From 1024px the hero is `max(420px, 29.3vw)` tall (the SAOC `PageHero` height) with `padding-block:
+  clamp(32px, 2.5vw, 48px)`. The whole copy sits inside it; the lede fills the copy column (`max-width: none`,
+  replacing R71's 46ch) and a three-fact row is one row.
+- From 768px to 1023px the title block and the photo share one 320px row (58% / 42%). Below 768px a 2:1 photo
+  band leads and the title block follows at a fixed height. In both, the detail block sits under the hero on the
+  page ground, in ink with muted labels.
+- The scrim is the SAOC `PageHero` ramp mirrored and drawn as the photo's mask: visibility 0.2 at the copy edge,
+  easing to 1 over 18cqw (0.3 / 0.48 / 0.68 / 0.84 / 0.94 / 1). The old dark 90deg ramp over the photo is gone,
+  so the bloom keeps full strength. Each route keeps its photo; only `--nos-hero-pos` (the crop focus) varies.
+- The Contact hero has the shared facts strip: Dates and Venue from the show facts, and Email (a mailto link).
+- `NosHeader`: a nav group with exactly one link (Vendors today) renders as a plain link to that page, labelled
+  with the group heading, in the top row and the menu panel.
+
 ## Known measurement limits (preview mode only)
 
 The geometry gate measures the first text element after the sub-nav. In preview mode the first block of several pages is a padded placeholder box or marker chip (for example `.nos-surface`, the AI-placeholder notice, `inline-flex` status chips), so the measured gap is 64px plus that box's own padding. The block itself starts at 64px.
