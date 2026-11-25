@@ -2,8 +2,9 @@
 """Static check for Brad's naming ruling of 25 Nov 2026.
 
 The event is always "National Orchid Show", never "National Show", in public copy. Scans copy
-sources under app/, components/, lib/ and content/ (not comments, route paths, or the verbatim
-Drive extracts) and fails on any hit not in the reasoned allowlist.json.
+sources under app/, components/, lib/, content/ and public/ (not comments, route paths, or the
+verbatim Drive extracts) and fails on any hit not in the reasoned allowlist.json. Each file is
+scanned whole with a whitespace-tolerant pattern, so a name split across lines is caught.
 
 Usage: check_naming_theme.py [--root DIR]
 Reads source text only (no network, no build, no server). Exit 0 pass, 1 findings.
@@ -14,9 +15,9 @@ import re
 import sys
 from pathlib import Path
 
-SCAN_DIRS = ("app", "components", "lib", "content")
+SCAN_DIRS = ("app", "components", "lib", "content", "public")
 SKIP_DIRS = ("content/drive-recovered", "content/drive-source", "node_modules", ".next")
-SCAN_SUFFIXES = (".ts", ".tsx", ".mjs", ".json", ".md", ".mdx")
+SCAN_SUFFIXES = (".ts", ".tsx", ".mjs", ".json", ".md", ".mdx", ".txt")
 ALLOWLIST = Path(__file__).resolve().parent / "allowlist.json"
 
 # "National Show" not preceded by "Orchid ": the name, any case, any run of spaces. A path segment
@@ -33,22 +34,37 @@ def source_files(root):
                 continue
             if any(f"/{s}/" in f"/{rel}" for s in SKIP_DIRS):
                 continue
-            yield rel, path.read_text(encoding="utf-8").split("\n")
+            yield rel, path.read_text(encoding="utf-8")
 
 
-def allowed(entries, rel, line):
-    return any(e["file"] == rel and e["contains"].lower() in line.lower() for e in entries)
+def blank_comments(rel, text):
+    """Comment lines are not copy: blank them, keeping every offset and newline in place."""
+    if rel.endswith((".json", ".txt")):
+        return text
+    return "\n".join("" if COMMENT_LINE.match(line) else line for line in text.split("\n"))
+
+
+def collapse(text):
+    return re.sub(r"\s+", " ", text)
+
+
+def allowed(entries, rel, context):
+    """An entry allows a hit only when its exact text sits in the lines the hit spans."""
+    return any(e["file"] == rel and collapse(e["contains"]) in collapse(context) for e in entries)
 
 
 def check_naming(root):
     entries = json.loads(ALLOWLIST.read_text(encoding="utf-8"))["naming"]
     problems = []
-    for rel, lines in source_files(root):
-        for number, line in enumerate(lines, 1):
-            if COMMENT_LINE.match(line) and not rel.endswith(".json"):
-                continue
-            if OLD_NAME.search(line) and not allowed(entries, rel, line):
-                problems.append(f"{rel}:{number}: 'National Show' without 'Orchid': {line.strip()[:110]}")
+    for rel, raw in source_files(root):
+        text = blank_comments(rel, raw)
+        for hit in OLD_NAME.finditer(text):
+            first = text.count("\n", 0, hit.start())
+            last = text.count("\n", 0, hit.end())
+            context = "\n".join(text.split("\n")[first:last + 1])
+            if not allowed(entries, rel, context):
+                problems.append(
+                    f"{rel}:{first + 1}: 'National Show' without 'Orchid': {collapse(context).strip()[:110]}")
     return problems
 
 

@@ -16,6 +16,6 @@ assertions:
   checks:
     - id: A1
       description: >-
-        No "National Show" without "Orchid" in app/, components/, lib/ or content/ copy sources
+        No "National Show" without "Orchid" in app/, components/, lib/, content/ or public/ copy sources
         (comments, route paths and drive paths excluded), bar the reasoned allowlist.
       command: python3 contracts/checks/nos-naming-theme/check_naming_theme.py

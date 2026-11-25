@@ -63,7 +63,7 @@ await main('F12-A14 utility bar', async (r) => {
         const m = await s.page.evaluate(snap, ARG);
         await s.ctx.close();
         const p = m.els?.find(isPill);
-        if (m.error || !p || !/National Show/.test(p.text)) r.fail(`${saocRoute} @${vp.width}: SAOC utility bar changed (${m.error ?? p?.text})`);
+        if (m.error || !p || !/National Orchid Show/.test(p.text)) r.fail(`${saocRoute} @${vp.width}: SAOC utility bar changed (${m.error ?? p?.text})`);
         if (m.headerLinks?.some((l) => l.text === 'Tickets')) r.fail(`${saocRoute} @${vp.width}: header Tickets CTA present on a SAOC page (F13 removes it)`);
       }
 

@@ -63,16 +63,16 @@ async function checkSaoc(browser, width, route) {
   if (!FOOTER_REG.test(footer)) fail(`${tag}: footer lacks the REG#/NPO line`);
 
   if (width >= DESKTOP_NAV_MIN_WIDTH) {
-    await bar.locator('button[aria-haspopup="true"]', { hasText: 'National Show' }).click();
-    const menu = page.locator('[role="menu"][aria-label="National Show"]');
+    await bar.locator('button[aria-haspopup="true"]', { hasText: 'National Orchid Show' }).click();
+    const menu = page.locator('[role="menu"][aria-label="National Orchid Show"]');
     await menu.waitFor({ state: 'visible' });
     if (!(await menu.locator(`a[href="${TICKETS_HREF}"]`).first().isVisible())) {
-      fail(`${tag}: National Show menu has no visible Tickets link`);
+      fail(`${tag}: National Orchid Show menu has no visible Tickets link`);
     }
   } else {
     await bar.getByRole('button', { name: 'Open menu' }).click();
     const dialog = page.getByRole('dialog');
-    await dialog.getByRole('button', { name: /National Show/ }).click();
+    await dialog.getByRole('button', { name: /National Orchid Show/ }).click();
     const link = dialog.locator(`a[href="${TICKETS_HREF}"]`);
     if (!(await link.first().isVisible())) fail(`${tag}: mobile menu has no visible Tickets link`);
   }
