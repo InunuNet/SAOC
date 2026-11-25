@@ -33,6 +33,8 @@ export const PATHS = {
   faq: '/national-show/faq',
   archive: '/national-show/archive',
   contact: '/contact',
+  // The venue block moved here from /contact (Brad, 25 Nov 2026).
+  nosContact: '/national-show/contact',
   tickets: '/tickets',
 };
 

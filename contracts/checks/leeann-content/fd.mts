@@ -189,6 +189,7 @@ if (cmd === 'faq-fixture') {
   if (hrefs.some((h) => h.startsWith('tel:'))) fail('/contact must not link a telephone number (removed 19 Nov 2026)');
   const flat = stripWs(flatBlocks.join(''));
   if (flat.includes(stripWs('073 428 4398')) || flat.includes('0734284398')) fail('/contact must not print the show co-ordinator phone number');
+  if (html.includes('data-placeholder-marker') || /Not confirmed by SAOC/i.test(html)) fail('/contact must not show a "Not confirmed by SAOC" marker (info@saoc.co.za confirmed by Brad, 25 Nov 2026)');
   // Q-D6 default: no committee list. Q-D11 default: no email address is printed.
   for (const name of ['Hendrik Schoeman', 'Barry Deutschmann', 'Bernadette Smith', 'Otto and Nerine']) if (flat.includes(stripWs(name))) fail(`/contact must not list the committee yet ("${name}")`);
   for (const email of ['2027national@gmail.com', 'show@saoc.co.za']) if (flat.includes(stripWs(email))) fail(`/contact must not print ${email} until Q-D11 is answered`);

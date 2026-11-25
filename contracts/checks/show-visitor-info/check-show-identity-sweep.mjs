@@ -243,7 +243,7 @@ await runCheck('check-show-identity-sweep', async (r) => {
         regionExempt: { heading: PAST_EDITIONS_HEADING, tokens: [OLD.city] },
       },
       {
-        path: PATHS.contact,
+        path: PATHS.nosContact,
         expect: [NEW.venue, NEW.city],
         fail: [OLD.venue, OLD.year, OLD.ordinal, OLD.roman],
         allowPhrases: [],
