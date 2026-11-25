@@ -202,11 +202,11 @@ export function MobileMenu({ open, onClose, onSearch, nav, triggerRef }: MobileM
         <div className="mt-8 pt-6 border-t border-rule flex flex-col gap-1">
           <a
             href="mailto:info@saoc.co.za"
-            className="font-mono text-[12px] text-muted hover:text-primary transition-colors duration-150 focus-visible:text-primary outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
+            className="inline-flex min-h-6 items-center font-mono text-[12px] text-muted hover:text-primary transition-colors duration-150 focus-visible:text-primary outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
           >
             info@saoc.co.za
           </a>
-          <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted/55">
+          <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
             Est. 1968
           </span>
         </div>

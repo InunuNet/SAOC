@@ -2,10 +2,10 @@
 // attendee rows. Split out of useTicketCart.ts to keep it under the project's 150-line
 // component-size convention.
 import type { CartAttendee } from '@/lib/cart';
+import { EMAIL_PATTERN, INVALID_EMAIL_MESSAGE } from '@/components/tickets/blurValidation';
 import { attendeeRowKey, type AttendeeFieldErrors } from '@/components/tickets/CartAttendeeFields';
 import type { TicketTypeCardData } from '@/components/tickets/TicketTypeCard';
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function emptyAttendee(): CartAttendee {
   return { attendeeName: '', attendeeEmail: '' };
@@ -25,7 +25,7 @@ export function validateAttendees(
     rows.forEach((row, index) => {
       const rowErrors: { name?: string; email?: string } = {};
       if (row.attendeeName.trim().length === 0) rowErrors.name = 'Please enter the attendee name.';
-      if (!EMAIL_PATTERN.test(row.attendeeEmail)) rowErrors.email = 'Please enter a valid email address.';
+      if (!EMAIL_PATTERN.test(row.attendeeEmail)) rowErrors.email = INVALID_EMAIL_MESSAGE;
       if (rowErrors.name || rowErrors.email) errors[attendeeRowKey(type.slug, index)] = rowErrors;
     });
   }

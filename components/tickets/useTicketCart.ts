@@ -12,6 +12,10 @@ import {
   type CartAttendee,
 } from '@/lib/cart';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
+import {
+  nextBlurErrors,
+  visibleFieldErrors,
+} from '@/components/tickets/blurValidation';
 import { emptyAttendee, keepFlagged, validateAttendees } from '@/components/tickets/cartValidation';
 import {
   attendeeRowKey,
@@ -61,7 +65,10 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
   const [quantity, setQuantityState] = useState(init.quantity);
   const [day, setDay] = useState<string | null>(init.day);
   const [attendees, setAttendees] = useState<CartAttendee[]>(() => resizeRows([], init.quantity));
+  // Submit errors: these feed the form-level summary. Blur errors are inline only (an email left
+  // invalid when the field loses focus) and never reach the summary.
   const [attendeeErrors, setAttendeeErrors] = useState<AttendeeFieldErrors>({});
+  const [blurErrors, setBlurErrors] = useState<AttendeeFieldErrors>({});
   const [status, setStatus] = useState<CheckoutStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   // The checkout reply's HTTP status when it refused the order; null for validation, network and success.
@@ -77,6 +84,7 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
     setAttendees((prev) => resizeRows(prev, clamped));
     // A removed attendee's errors go with it, so a row added back later starts clean.
     setAttendeeErrors((prev) => pruneRowErrors(prev, ticketType.slug, clamped));
+    setBlurErrors((prev) => pruneRowErrors(prev, ticketType.slug, clamped));
   }
 
   function updateAttendeeField(
@@ -92,6 +100,16 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
     if (Object.keys(attendeeErrors).length > 0) {
       setAttendeeErrors(keepFlagged(attendeeErrors, validateCurrent(next)));
     }
+    if (Object.keys(blurErrors).length > 0) {
+      setBlurErrors(keepFlagged(blurErrors, validateCurrent(next)));
+    }
+  }
+
+  // Blur on an attendee email flags a filled-in invalid address at once; blurring an empty field
+  // clears that row's blur error, and "required" stays the submit check's job.
+  function blurAttendeeEmail(_slug: string, index: number) {
+    const key = attendeeRowKey(ticketType.slug, index);
+    setBlurErrors((prev) => nextBlurErrors(prev, attendees, index, key));
   }
 
   function validateCurrent(rows: CartAttendee[]): AttendeeFieldErrors {
@@ -104,6 +122,7 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
   function validate(): boolean {
     const rowErrors = validateCurrent(attendees);
     setAttendeeErrors(rowErrors);
+    setBlurErrors({});
     return Object.keys(rowErrors).length === 0;
   }
 
@@ -180,6 +199,8 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
     day,
     attendees,
     attendeeErrors,
+    // What the fields show: submit errors plus any blur-only email error.
+    fieldErrors: visibleFieldErrors(blurErrors, attendeeErrors),
     status,
     errorMessage,
     errorStatus,
@@ -188,6 +209,7 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
     setQuantity,
     setDay,
     updateAttendeeField,
+    blurAttendeeEmail,
     validate,
     submit,
   };

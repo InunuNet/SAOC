@@ -1460,6 +1460,18 @@
   {
    "contract": "contracts/contract-nos-naming-theme.yaml",
    "id": "A1"
+  },
+  {
+   "contract": "contracts/mobile-qa-2026-11-25.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": "contracts/mobile-qa-2026-11-25.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": "contracts/mobile-qa-2026-11-25.yaml",
+   "id": "A3"
   }
  ]
 }
