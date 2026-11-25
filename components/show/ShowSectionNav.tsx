@@ -80,7 +80,7 @@ const SECTION_LINKS: readonly SectionLink[] = [
     hint: 'Register for the Symposium and WOSA Conference',
   },
   {
-    href: '/national-show/award-entries',
+    href: '/national-show/plant-entry',
     label: 'Plant Entry',
     hint: 'Entry process, fees, classes and judging',
   },

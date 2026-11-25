@@ -1444,6 +1444,18 @@
   {
    "contract": "contracts/contract-vendor-stand-payment-confirm-gate.yaml",
    "id": "A2"
+  },
+  {
+   "contract": "contracts/plant-entry-rename.yaml",
+   "id": "A1"
+  },
+  {
+   "contract": "contracts/plant-entry-rename.yaml",
+   "id": "A2"
+  },
+  {
+   "contract": "contracts/plant-entry-rename.yaml",
+   "id": "A3"
   }
  ]
 }

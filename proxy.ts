@@ -198,7 +198,10 @@ const PERMANENT_REDIRECT = 308; // 308, not 301: the method and body survive the
 // Both public spellings of the retired page go straight to the merged page on the NOS origin, from
 // either host, so no one lands on a 404 and no chain of hops forms.
 const RETIRED_EXHIBITORS_ENTRY_PATHS = new Set<string>(['/exhibitors', '/national-show/exhibitors']);
-const AWARD_ENTRIES_PATH = '/award-entries';
+// The page was then renamed Award Entries -> Plant Entry (Brad, 25 Nov). Old award-entries URLs, and any
+// sub-path under them, 308 to /plant-entry in one hop, query string kept.
+const RETIRED_AWARD_ENTRIES_BASES = ['/award-entries', '/national-show/award-entries'];
+const PLANT_ENTRY_PATH = '/plant-entry';
 // International guests was removed too (Lee-Ann B8): the page is unlinked, its path 308s to the same page.
 const RETIRED_SA_EXHIBITORS_PATHS = new Set<string>([
   '/sa-exhibitors',
@@ -267,6 +270,12 @@ function siteOfRequest(request: NextRequest): Site {
   return siteForHost(request.headers.get('x-forwarded-host') ?? request.headers.get('host'));
 }
 
+function retiredEntryTarget(pathname: string): string | null {
+  if (RETIRED_EXHIBITORS_ENTRY_PATHS.has(pathname)) return PLANT_ENTRY_PATH;
+  const base = RETIRED_AWARD_ENTRIES_BASES.find((candidate) => isUnder(pathname, candidate));
+  return base === undefined ? null : `${PLANT_ENTRY_PATH}${pathname.slice(base.length)}`;
+}
+
 function redirectTo(location: string): Response {
   return new Response(null, { status: PERMANENT_REDIRECT, headers: { Location: location } });
 }
@@ -289,7 +298,8 @@ function routeNosHost(request: NextRequest): Response {
 
   if (RETIRED_SA_EXHIBITORS_PATHS.has(pathname)) return redirectTo(nosUrl(MERGED_VENDORS_PATH));
   if (pathname === RETIRED_CONSTITUTION_PATH) return redirectTo(saocUrl(`${MOI_PATH}${search}`));
-  if (RETIRED_EXHIBITORS_ENTRY_PATHS.has(pathname)) return redirectTo(nosUrl(`${AWARD_ENTRIES_PATH}${search}`));
+  const entryTarget = retiredEntryTarget(pathname);
+  if (entryTarget !== null) return redirectTo(nosUrl(`${entryTarget}${search}`));
   if (SAOC_ONLY_EXACT.has(pathname) || isUnderAny(pathname, SAOC_ONLY_PREFIXES)) {
     return redirectTo(saocUrl(`${pathname}${search}`));
   }
@@ -310,7 +320,8 @@ function routeSaocHost(request: NextRequest): Response {
   const { pathname, search } = request.nextUrl;
   if (RETIRED_SA_EXHIBITORS_PATHS.has(pathname)) return redirectTo(nosUrl(MERGED_VENDORS_PATH));
   if (pathname === RETIRED_CONSTITUTION_PATH) return redirectTo(saocUrl(`${MOI_PATH}${search}`));
-  if (RETIRED_EXHIBITORS_ENTRY_PATHS.has(pathname)) return redirectTo(nosUrl(`${AWARD_ENTRIES_PATH}${search}`));
+  const entryTarget = retiredEntryTarget(pathname);
+  if (entryTarget !== null) return redirectTo(nosUrl(`${entryTarget}${search}`));
   if (isUnderAny(pathname, SHOW_PREFIXES)) return redirectTo(nosUrl(`${pathname}${search}`));
   return NextResponse.next();
 }

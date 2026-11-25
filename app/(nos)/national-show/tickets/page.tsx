@@ -59,7 +59,7 @@ const FOOT_OPTIONS = [
     heading: "I'm exhibiting orchids",
     body: 'See what is involved in exhibiting at the National Orchid Show.',
     cta: 'Apply to exhibit',
-    href: '/vendors/apply',
+    href: '/plant-entry',
   },
   {
     id: 'trade',
