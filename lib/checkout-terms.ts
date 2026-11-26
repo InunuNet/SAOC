@@ -20,8 +20,10 @@ export const CURRENT_TERMS_VERSIONS: TermsVersions = {
   refundPolicyVersion: REFUND_POLICY_LAST_UPDATED,
 };
 
-export const TERMS_NOT_ACCEPTED_ERROR =
-  'You must confirm that you have read and accept the Terms and Conditions and the Refund and Cancellation Policy before paying.';
+/** The Refund policy's title as running text: the master's own title is set in capitals. */
+export const REFUND_POLICY_DISPLAY_TITLE = 'Refund and Cancellation Policy';
+
+export const TERMS_NOT_ACCEPTED_ERROR = `You must confirm that you have read and accept the Terms and Conditions and the ${REFUND_POLICY_DISPLAY_TITLE} before paying.`;
 export const TERMS_VERSION_STALE_ERROR =
   'The Terms and Conditions or the Refund and Cancellation Policy have been updated. Please reload the page, read them and confirm again.';
 
