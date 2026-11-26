@@ -44,6 +44,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { CHECKOUT_TERMS_FIELDS } from '../_shared/checkout-terms-body.mjs';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.join(__dirname, '../../../');
 
@@ -92,6 +94,7 @@ function sentinelEmail(tag) {
 async function postCheckout(origin, authorization, chosenDay) {
   const body = {
     showId: NATIONAL_SHOW_ID,
+    ...CHECKOUT_TERMS_FIELDS,
     lineItems: [
       {
         ticketType: 'day-visitor',

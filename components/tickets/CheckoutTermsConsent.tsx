@@ -36,13 +36,15 @@ export function CheckoutTermsConsent({
   onChange,
   cancellationTerms,
 }: CheckoutTermsConsentProps) {
-  const custom = Boolean(cancellationTerms && cancellationTerms.length > 0);
-  const schedule = cancellationTerms && custom ? cancellationTerms : CANCELLATION_SCHEDULE_LINES;
+  // Blank entries are dropped, so a listing holding only "" or " " falls back to the policy's schedule.
+  const customLines = (cancellationTerms ?? []).filter((line) => line.trim().length > 0);
+  const custom = customLines.length > 0;
+  const schedule = custom ? customLines : CANCELLATION_SCHEDULE_LINES;
   // Only the standard schedule has the tier structure; a listing's own lines stay paragraphs.
   const tierStart = custom ? schedule.length : TIER_START;
   const tierEnd = custom ? schedule.length : TIER_END;
-  const paragraph = (line: string) => (
-    <p key={line} className={SCHEDULE_TEXT_CLASS}>
+  const paragraph = (line: string, index: number) => (
+    <p key={`${index}-${line}`} className={SCHEDULE_TEXT_CLASS}>
       {line}
     </p>
   );
@@ -52,15 +54,15 @@ export function CheckoutTermsConsent({
         className="grid gap-2 border border-rule bg-parchment p-4 text-[13px]"
         data-cancellation-schedule=""
       >
-        {schedule.slice(0, tierStart).map(paragraph)}
+        {schedule.slice(0, tierStart).map((line, index) => paragraph(line, index))}
         {tierEnd > tierStart ? (
           <ul className="m-0 grid max-w-none list-disc gap-1 pl-5">
-            {schedule.slice(tierStart, tierEnd).map((line) => (
-              <li key={line}>{line}</li>
+            {schedule.slice(tierStart, tierEnd).map((line, index) => (
+              <li key={`${index}-${line}`}>{line}</li>
             ))}
           </ul>
         ) : null}
-        {schedule.slice(tierEnd).map(paragraph)}
+        {schedule.slice(tierEnd).map((line, index) => paragraph(line, tierEnd + index))}
       </div>
       <ul className="m-0 grid list-none gap-1 p-0">
         <li>
