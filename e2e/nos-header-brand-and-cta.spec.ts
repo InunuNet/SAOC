@@ -13,7 +13,7 @@ import { expect, test } from '@playwright/test';
 
 import { SHOW_TITLE_EXPANDED } from '../lib/show-title';
 import { NOS_TICKETS, cleanHref } from './utils/nos-nav-hrefs';
-import { nosBase } from './utils/site-urls';
+import { newTabName, nosBase } from './utils/site-urls';
 
 const NOS_ROYAL_PURPLE = 'rgb(33, 26, 87)'; // --nc-royal #211A57
 const NOS_GROUND = 'rgb(251, 250, 240)'; // --nc-ground #FBFAF0
@@ -169,8 +169,11 @@ test.describe('chrome scope — each site wears only its own chrome', () => {
 
     await expect(page.locator('header#nh')).toHaveCount(0);
     await expect(page.getByRole('menu')).toHaveCount(0);
-    const showLink = page.locator('header').getByRole('link', { name: 'National Orchid Show', exact: true });
+    const showLink = page.locator('header').getByRole('link', { name: newTabName('National Orchid Show') });
     await expect(showLink).toHaveCount(1);
+    // Brad 26 Nov: the link to the other site opens in a new tab.
+    await expect(showLink).toHaveAttribute('target', '_blank');
+    await expect(showLink).toHaveAttribute('rel', /noopener/);
     expect(new URL((await showLink.getAttribute('href')) ?? '').hostname.startsWith('nos.')).toBe(true);
   });
 });
