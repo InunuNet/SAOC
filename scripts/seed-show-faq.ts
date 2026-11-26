@@ -197,7 +197,8 @@ const QUESTIONS: readonly FaqSeed[] = [
     section: 'tickets-and-entry',
     question: 'Can I get a refund if I cannot attend?',
     answer: [
-      'Tickets can only be refunded via the OWZO link on the website. Tickets for the Symposium and WOSA Conference are not refundable, but they are transferrable. Please check the T&C’s On your ticket confirmation.',
+      'Conference tickets are named-registrant products and follow the same cancellation schedule above. A conference ticket may be transferred as set out under Transferring your ticket. The full name of the new registrant is required.',
+      'The full policy is at https://nos.saoc.co.za/refunds',
     ],
   },
   {
