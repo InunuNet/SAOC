@@ -2936,6 +2936,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 
 /* Hero facts (FACTS-1): one row under a hairline from 768, hairline-ruled dt/dd rows below. */
 .nos-theme .nos-hero-copy > *,
+.nos-theme .nos-hero-box > *,
 .nos-theme .nos-hero-head > *,
 .nos-theme .nos-hero-detail > * {
   min-width: 0;
@@ -3537,28 +3538,85 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     min-height: clamp(320px, 22vw, 380px);
     padding-block: clamp(48px, 4vw, 72px);
   }
-  /* Locked to Brad's reference (26 Nov 2026: about 268px at a 1288px viewport, 20.8vw): 268px up to 1288,
-     20.8vw to 2308 (300px at 1440, 428px at 2056), then 480px. */
-  .nos-theme .nos-hero-inner.nos-hero-photo {
-    height: clamp(268px, 20.8vw, 480px);
-    min-height: clamp(268px, 20.8vw, 480px);
-    padding-block: clamp(32px, 2.5vw, 48px);
-  }
   .nos-theme .nos-hero-inner .nos-hero-copy,
+  .nos-theme .nos-hero-inner .nos-hero-box,
   .nos-theme .nos-hero-inner .nos-hero-head,
   .nos-theme .nos-hero-inner .nos-hero-detail {
     gap: 12px;
   }
-  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-copy {
-    width: var(--hero-copy-end);
+  /* The photo hero is two grid rows (lead ruling, 27 Nov 2026, extending the below-1024 pattern): the hero
+     box, locked to Brad's reference (26 Nov 2026: about 268px at a 1288px viewport, 20.8vw), holding the
+     crumbs, h1 and lede; then the facts and actions on the page ground under it. The box is 268px up to
+     1288, 20.8vw to 2308 (300px at 1440, 428px at 2056), then 480px. The copy wrapper steps aside so the
+     box and the detail are the grid's own items; the photo and scrim are bounded to the box row. */
+  .nos-theme .nos-hero-inner.nos-hero-photo {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: clamp(268px, 20.8vw, 480px) auto;
+    align-content: stretch;
+    height: auto;
+    min-height: 0;
+    padding-block: 0;
+    background: linear-gradient(var(--black) 0 0) top / 100% clamp(268px, 20.8vw, 480px) no-repeat;
+    color: var(--ink);
   }
-  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-media {
+  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-copy {
+    display: contents;
+  }
+  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-box {
+    position: relative;
+    z-index: 2;
+    grid-row: 1;
+    grid-column: 1;
+    width: var(--hero-copy-end);
+    /* 36px to 1288 (the crumb text 38px under the box top, as in Brad's capture), 2.8vw to 48px. */
+    padding-block: clamp(36px, 2.8vw, 48px);
+    padding-left: calc(max(0px, (100cqw - var(--nos-axis-max)) / 2) + var(--nos-axis-pad));
+    color: var(--ivory);
+  }
+  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-media,
+  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-copy-scrim {
     inset: 0;
+    grid-row: 1 / 2;
+    grid-column: 1 / -1;
+  }
+  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-detail {
+    grid-row: 2;
+    grid-column: 1;
+    width: 100%;
+    max-width: var(--nos-axis-max);
+    margin-inline: auto;
+    padding: 32px var(--nos-axis-pad) 0;
+    --ring-focus: var(--ring-focus-on-light);
+    --status-error: var(--status-error-on-light);
+    --status-warning: var(--status-warning-on-light);
+    --status-success: var(--status-success-on-light);
+    --status-muted: var(--status-muted-on-light);
+  }
+  .nos-theme .nos-hero-inner.nos-hero-photo:has(+ .nos-subnav) .nos-hero-detail {
+    padding-bottom: 32px;
+  }
+  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-detail .hero-facts,
+  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-detail .hero-facts > div {
+    border-color: var(--rule);
+  }
+  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-detail .hero-facts dt {
+    color: var(--muted);
+  }
+  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-detail .hero-facts dd {
+    color: var(--ink);
+  }
+  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-detail [data-nos-button].bg-bone {
+    background-color: var(--primary);
+    color: var(--ivory);
+    outline-color: var(--ring-focus-on-light);
+  }
+  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-detail [data-nos-button].bg-bone:hover {
+    background-color: var(--primary-800);
   }
 }
 /* Below 1024 the hero is a grid: the box (photo and .nos-hero-head on the dark ground) in the first
-   row, the detail under it on the page ground. The copy wrapper steps aside (display: contents) so its
-   head and detail are the grid's own items. */
+   row, the lede and the detail under it on the page ground. The copy and box wrappers step aside
+   (display: contents) so the head, lede and detail are the grid's own items. */
 @media (max-width: 1023px) {
   .nos-theme .nos-hero-inner {
     grid-template-columns: minmax(0, 1fr);
@@ -3568,7 +3626,8 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     color: var(--ink);
   }
   .nos-theme .nos-hero-inner .nos-hero-copy,
-  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-copy {
+  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-copy,
+  .nos-theme .nos-hero-inner .nos-hero-box {
     display: contents;
   }
   .nos-theme .nos-hero-inner .nos-hero-media {
@@ -3582,8 +3641,23 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     background-color: var(--black);
     color: var(--ivory);
   }
-  .nos-theme .nos-hero-inner .nos-hero-detail {
+  /* The lede leaves the hero box (.nos-hero-box steps aside) and leads the detail on the page ground. */
+  .nos-theme .nos-hero-inner .nos-hero-box .nos-hero-lede {
     grid-row: 3;
+    grid-column: 1 / -1;
+    max-width: 60ch;
+    margin-inline: max(var(--nos-axis-pad), calc((100% - var(--nos-axis-max)) / 2 + var(--nos-axis-pad)));
+    padding-top: 32px;
+    color: var(--ink);
+  }
+  .nos-theme .nos-hero-inner .nos-hero-box:has(.nos-hero-lede) + .nos-hero-detail {
+    padding-top: 16px;
+  }
+  .nos-theme .nos-hero-inner:has(+ .nos-subnav):not(:has(.nos-hero-detail)) .nos-hero-box .nos-hero-lede {
+    padding-bottom: 32px;
+  }
+  .nos-theme .nos-hero-inner .nos-hero-detail {
+    grid-row: 4;
     grid-column: 1 / -1;
     width: 100%;
     max-width: var(--nos-axis-max);
@@ -3599,10 +3673,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   /* A following sub-nav gets the detail's own spacing; other content keeps the 48px first-block rule. */
   .nos-theme .nos-hero-inner:has(+ .nos-subnav) .nos-hero-detail {
     padding-bottom: 32px;
-  }
-  .nos-theme .nos-hero-inner .nos-hero-detail .nos-hero-lede {
-    max-width: 60ch;
-    color: var(--ink);
   }
   .nos-theme .nos-hero-inner .nos-hero-detail .hero-facts,
   .nos-theme .nos-hero-inner .nos-hero-detail .hero-facts > div {
@@ -3650,8 +3720,12 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     grid-row: 1 / 2;
     grid-column: 1 / -1;
   }
-  .nos-theme .nos-hero-inner .nos-hero-detail {
+  .nos-theme .nos-hero-inner .nos-hero-box .nos-hero-lede {
     grid-row: 2;
+    padding-top: 40px;
+  }
+  .nos-theme .nos-hero-inner .nos-hero-detail {
+    grid-row: 3;
     padding-top: 40px;
   }
 }
