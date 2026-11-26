@@ -63,5 +63,34 @@ test('scan: cross-site anchor without target/rel fails, with them and a cue pass
 test('scan: PortableText without portableLinkMarks fails; <Link> to an external URL fails', () => {
   assert.equal(checkSource('<PortableText value={v} />', 'x.tsx', new Set()).length, 1);
   assert.equal(checkSource('<Link href="https://example.com">x</Link>', 'x.tsx', new Set()).length, 1);
-  assert.deepEqual(checkSource('<Link href="/societies">x</Link>', 'x.tsx', new Set()), []);
+  assert.deepEqual(checkSource('<Link href="/contact">x</Link>', 'x.tsx', new Set()), []);
+});
+
+// Regression: a literal relative path owned by one site, written as a plain <a> or <Link> in a
+// file that can render on the other site, used to pass (the scan treated every "/x" as internal).
+test('scan: relative path owned by the other site fails without SiteLink (shared file)', () => {
+  const none = new Set();
+  const shared = 'components/zz/Probe.tsx';
+  assert.equal(checkSource('<Link href="/tickets">x</Link>', shared, none).length, 1);
+  assert.equal(checkSource('<a href="/national-show/about">x</a>', shared, none).length, 1);
+  assert.equal(checkSource('<Link href="/societies">x</Link>', shared, none).length, 1);
+  assert.equal(checkSource('<Link href={`/events/${slug}`}>x</Link>', shared, none).length, 1);
+  assert.equal(checkSource('<a href="/tickets?x=1#top">x</a>', shared, none).length, 1);
+});
+
+test("scan: a path owned by the file's own site passes, the other site's fails", () => {
+  const none = new Set();
+  assert.deepEqual(checkSource('<Link href="/tickets">x</Link>', 'app/(nos)/zz/page.tsx', none), []);
+  assert.equal(checkSource('<Link href="/societies">x</Link>', 'app/(nos)/zz/page.tsx', none).length, 1);
+  assert.deepEqual(checkSource('<Link href="/societies">x</Link>', 'components/home/Zz.tsx', none), []);
+  assert.equal(checkSource('<a href="/tickets">x</a>', 'components/home/Zz.tsx', none).length, 1);
+});
+
+test('scan: shared paths and non-navigation hrefs still pass anywhere', () => {
+  const none = new Set();
+  const shared = 'components/zz/Probe.tsx';
+  for (const href of ['/contact', '/terms', '/privacy', '/', '#top', 'mailto:a@b.co', 'tel:+27110000000']) {
+    assert.deepEqual(checkSource(`<a href="${href}">x</a>`, shared, none), [], href);
+  }
+  assert.deepEqual(checkSource('<SiteLink href="/tickets" own="saoc">x</SiteLink>', shared, none), []);
 });

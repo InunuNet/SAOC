@@ -12,12 +12,12 @@
 import Image from 'next/image';
 
 import { ExternalArrow } from '@/components/chrome/ExternalArrow';
-import { Button } from '@/components/nos/Button';
+import { SiteLink } from '@/components/ui/SiteLink';
+import type { Site } from '@/lib/site-hosts';
 import { urlFor } from '@/sanity/lib/image';
 import type { ConfirmationStatus, ShowVenue } from '@/types';
 
 import { ConfirmationBadge } from './ConfirmationBadge';
-import { SiteLink } from '@/components/ui/SiteLink';
 
 export interface VenueCardProps {
   venue?: ShowVenue | null;
@@ -25,8 +25,8 @@ export interface VenueCardProps {
   status?: ConfirmationStatus | string | null;
   pendingLabel?: string | null;
   researchLabel?: string | null;
-  /** `link` (default) is the plain text link /contact uses; `button` is the ghost NOS Button. */
-  mapAction?: 'link' | 'button';
+  /** The site this card is rendered on; the map link is external, so it always opens a new tab. */
+  own: Site;
   /** Appended to the phone and map links when given; omitted, their class strings are unchanged. */
   linkClassName?: string;
 }
@@ -37,7 +37,7 @@ export function VenueCard({
   status,
   pendingLabel,
   researchLabel,
-  mapAction = 'link',
+  own,
   linkClassName,
 }: VenueCardProps) {
   if (!venue?.name) return null;
@@ -92,20 +92,9 @@ export function VenueCard({
         </p>
       ) : null}
 
-      {venue.mapsUrl && mapAction === 'button' ? (
-        <Button
-          as="a"
-          href={venue.mapsUrl}
-          target="_blank"
-          rel="noreferrer noopener"
-          variant="ghost"
-          className="mt-5"
-        >
-          Open in a map ↗
-        </Button>
-      ) : null}
-      {venue.mapsUrl && mapAction === 'link' ? (
-        <SiteLink own="nos"
+      {venue.mapsUrl ? (
+        <SiteLink
+          own={own}
           href={venue.mapsUrl}
           className={`mt-5 inline-flex min-h-[44px] items-center font-sans text-[12px] gap-1 tracking-[0.16em] text-ink underline underline-offset-4 hover:text-accent${linkSuffix}`}
         >

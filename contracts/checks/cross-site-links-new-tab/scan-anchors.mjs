@@ -13,6 +13,8 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { ownerOfHref } from '../../../lib/link-target.ts';
+
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const SCAN_DIRS = ['components', 'app'];
 const SKIP_DIRS = new Set(['admin', 'api', 'node_modules']);
@@ -20,6 +22,14 @@ const CUE_MARKERS = ['NEW_TAB_CUE', '(opens in a new tab)'];
 const SAFE_LITERAL = /^(#|\/(?!\/)|mailto:|tel:|sms:)/i;
 const SAFE_TEMPLATE_OR_EXPR = /^`(#|mailto:|tel:|sms:)/i;
 const ABSOLUTE = /^(https?:)?\/\//i;
+
+// Only the path decides a relative href, so the origins can be any two distinct values.
+const PROBE_ORIGINS = { saoc: 'https://saoc.invalid', nos: 'https://nos.invalid' };
+// Files that render on exactly one site. Every other file may render on either (shared pages,
+// shared components), so a relative path owned by either site must go through SiteLink there.
+const NOS_ONLY_FILES = ['app/(nos)/', 'components/nos/', 'components/nos-chrome/', 'components/tickets/'];
+const SAOC_ONLY_FILES = ['app/(marketing)/', 'components/chrome/', 'components/home/', 'components/site-chrome/',
+  'components/events/', 'components/societies/', 'components/ui/EventRow.tsx'];
 
 export function listSourceFiles(dir = ROOT) {
   const out = [];
@@ -87,6 +97,28 @@ function lineOf(source, index) {
   return source.slice(0, index).split('\n').length;
 }
 
+function siteOfFile(file) {
+  if (NOS_ONLY_FILES.some((prefix) => file.startsWith(prefix))) return 'nos';
+  if (SAOC_ONLY_FILES.some((prefix) => file.startsWith(prefix))) return 'saoc';
+  return null;
+}
+
+/** The static leading path of a literal or template-literal href, or null when it is not a path. */
+function staticPath(href) {
+  const raw = href.kind === 'literal' ? href.value : /^`([^`]*)`$/.exec(href.value)?.[1];
+  if (raw === undefined || !/^\/(?!\/)/.test(raw)) return null;
+  const end = raw.search(/\$\{/);
+  return end === -1 ? raw : raw.slice(0, end);
+}
+
+/** The site that owns a relative href when it differs from the site the file renders on. */
+function foreignOwner(href, file) {
+  const path = staticPath(href);
+  if (path === null) return null;
+  const owner = ownerOfHref(path, PROBE_ORIGINS);
+  return owner === 'saoc' || owner === 'nos' ? (owner === siteOfFile(file) ? null : owner) : null;
+}
+
 function leavesSite(href) {
   if (href.kind === 'literal') return ABSOLUTE.test(href.value);
   return /\b(nosUrl|saocUrl)\(/.test(href.value) || /^['"]https?:\/\//.test(href.value);
@@ -110,7 +142,15 @@ export function checkSource(source, file, allowlist) {
 
   for (const tag of openingTags(source, 'a')) {
     const href = hrefOf(tag.text);
-    if (href === null || isSafeInternal(href) || /\sdownload[\s=>/]/.test(tag.text)) continue;
+    if (href === null || /\sdownload[\s=>/]/.test(tag.text)) continue;
+    const foreign = foreignOwner(href, file);
+    if (foreign !== null) {
+      problems.push(
+        `${file}:${lineOf(source, tag.index)} <a href=${href.value}> is a ${foreign}-site path on a page that may render on the other site: use SiteLink`,
+      );
+      continue;
+    }
+    if (isSafeInternal(href)) continue;
     const key = `${file}::${href.value}`;
     const external = leavesSite(href);
     if (!external && allowlist.has(key)) continue;
@@ -125,8 +165,14 @@ export function checkSource(source, file, allowlist) {
 
   for (const tag of openingTags(source, 'Link')) {
     const href = hrefOf(tag.text);
-    if (href !== null && leavesSite(href)) {
+    if (href === null) continue;
+    if (leavesSite(href)) {
       problems.push(`${file}:${lineOf(source, tag.index)} <Link href=${href.value}> leaves the site: use SiteLink`);
+    } else if (foreignOwner(href, file) !== null) {
+      const owner = foreignOwner(href, file);
+      problems.push(
+        `${file}:${lineOf(source, tag.index)} <Link href=${href.value}> is a ${owner}-site path on a page that may render on the other site: use SiteLink`,
+      );
     }
   }
 
