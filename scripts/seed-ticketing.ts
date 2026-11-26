@@ -233,8 +233,11 @@ async function seedTicketsPage(client: SanityClient): Promise<void> {
     // app/(nos)/tickets/page.tsx). This field is reserved for content specific to
     // admission tickets that /refunds doesn't already cover, e.g. the transfer instructions.
     termsNote:
-      'Admission tickets may be transferred to another attendee by emailing info@saoc.co.za ' +
-      'before the show. Please bring your booking reference to the door.',
+      'As an alternative to cancelling, you may transfer your ticket to another person, free of charge, ' +
+      'up to 7 days before the event. To do so, contact SAOC with your booking reference and the full ' +
+      'name and email address of the new ticket holder. SAOC will cancel the original ticket and its QR ' +
+      'code and issue a new ticket to the new holder. Please do not give the new holder a copy of the ' +
+      'original ticket, because its QR code will no longer work.',
     confirmationPendingHeading: 'Confirming your payment',
     confirmationPendingMessage:
       "We're still waiting for payment confirmation from PayFast. This usually takes a " +

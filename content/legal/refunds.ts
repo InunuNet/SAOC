@@ -5,6 +5,9 @@ import type { TitledLegalDocument } from '@/components/legal/types';
 export const REFUND_POLICY_TITLE = 'SAOC REFUND AND CANCELLATION POLICY';
 export const REFUND_POLICY_LAST_UPDATED = '01/12/2026';
 
+/** The policy link, quoted verbatim from section 7 of the master Terms and the master Refund policy. */
+export const REFUND_POLICY_URL = 'https://nos.saoc.co.za/refunds';
+
 /** The master's own sentences for the cancellation schedule, the administration fee and the transfer rule. */
 export const CANCELLATION_SCHEDULE_LINES: readonly string[] = [
   'The following schedule applies, unless the event listing states a different schedule before you buy. It is based on how much written notice you give before the event start date. For a multi-day event, the start date is the first day of the event:',
@@ -14,6 +17,18 @@ export const CANCELLATION_SCHEDULE_LINES: readonly string[] = [
   'Where you cancel a ticket under the schedule above, SAOC deducts an administration fee of 5% of the ticket price. The fee covers payment gateway and bank charges and the cost of processing your request. SAOC does not charge the fee if it cancels an event, if it cannot provide your place, or if the section on death or hospitalisation applies.',
   'As an alternative to cancelling, you may transfer your ticket to another person, free of charge, up to 7 days before the event. To do so, contact SAOC with your booking reference and the full name and email address of the new ticket holder.',
   'SAOC will cancel the original ticket and its QR code and issue a new ticket to the new holder. Please do not give the new holder a copy of the original ticket, because its QR code will no longer work. A ticket for Sunset Cocktails may be transferred only to a person aged 18 or older.',
+];
+
+/**
+ * The FAQ answer to "Can I get a refund if I cannot attend?" (Sanity showFaq-q15): the master's own
+ * schedule, administration fee and transfer rule, its conference-ticket sentences, and the pointer
+ * sentence from section 7 of the master Terms. Verbatim; used by the seed and the live patch.
+ */
+export const REFUND_FAQ_ANSWER: readonly string[] = [
+  ...CANCELLATION_SCHEDULE_LINES,
+  'Conference tickets are named-registrant products and follow the same cancellation schedule above. A conference ticket may be transferred as set out under Transferring your ticket. The full name of the new registrant is required.',
+  'The policy is available at:',
+  REFUND_POLICY_URL,
 ];
 
 export const REFUND_POLICY: TitledLegalDocument = {
