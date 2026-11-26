@@ -22,6 +22,9 @@
 //     h1                                     exactly one (a loading.tsx fallback passes titleAs="p")
 //     [data-nos-hero-lede]                   the lede / standfirst
 //
+// Inner heroes: [data-nos-hero-box] holds the crumbs, h1 and lede (the locked hero box from 1024 on a
+// photo hero); [data-nos-hero-detail] holds the facts and actions, under the box on the page ground.
+//
 // Directly after an inner hero comes the R27 group sub-nav (NosSubNav), except on the hub
 // and on tickets, which have none.
 // =============================================================
@@ -203,7 +206,7 @@ export async function NosHero({
       ? 'nos-hero-title is-long'
       : 'nos-hero-title';
   const group = NO_SUBNAV_ROUTES.has(route) ? null : subNavGroupFor(route, await getVisibleNav());
-  const hasDetail = Boolean(lede || heroFacts || actions);
+  const hasDetail = Boolean(heroFacts || actions);
   const head = (
     <>
       {eyebrow ? (
@@ -301,21 +304,23 @@ export async function NosHero({
             </>
           ) : (
             <>
-              <div data-nos-hero-head="" className="nos-hero-head">
-                {head}
+              <div data-nos-hero-box="" className="nos-hero-box">
+                <div data-nos-hero-head="" className="nos-hero-head">
+                  {head}
+                </div>
+                {lede ? (
+                  <p
+                    data-nos-hero-lede=""
+                    data-nos-hero-text="lede"
+                    data-nos-lede={ledeKind}
+                    className="nos-hero-lede"
+                  >
+                    {lede}
+                  </p>
+                ) : null}
               </div>
               {hasDetail ? (
                 <div data-nos-hero-detail="" className="nos-hero-detail">
-                  {lede ? (
-                    <p
-                      data-nos-hero-lede=""
-                      data-nos-hero-text="lede"
-                      data-nos-lede={ledeKind}
-                      className="nos-hero-lede"
-                    >
-                      {lede}
-                    </p>
-                  ) : null}
                   {heroFacts ? (
                     <dl data-hero-facts="" data-fact-count={heroFacts.length} className="hero-facts">
                       {heroFacts.map((fact) => (

@@ -44,7 +44,10 @@ if (mode === 'nav') {
   const shared = read(SHARED);
   const pageHero = read(PAGE_HERO);
   // Locked heights (Brad, 26 Nov 2026: "lock the height"): from 1024 the PageHero box as a fixed height, not a floor.
-  if (!/\.nos-hero-inner\.nos-hero-photo \{\s*height:\s*clamp\(268px,\s*20\.8vw,\s*480px\);\s*min-height:\s*clamp\(268px,\s*20\.8vw,\s*480px\)/.test(css)) fail(`${STRUCTURE}: from 1024 the photo hero is locked at clamp(268px, 20.8vw, 480px) (Brad's reference), scoped to .nos-hero-photo`);
+  // Lead ruling, 27 Nov 2026: from 1024 the photo hero is two grid rows, the locked box (crumbs, h1, lede) and the
+  // facts and actions under it on the page ground.
+  if (!/\.nos-hero-inner\.nos-hero-photo \{\s*grid-template-columns:\s*minmax\(0, 1fr\);\s*grid-template-rows:\s*clamp\(268px,\s*20\.8vw,\s*480px\) auto;/.test(css)) fail(`${STRUCTURE}: from 1024 the photo hero's first grid row (the box) is locked at clamp(268px, 20.8vw, 480px) (Brad's reference), scoped to .nos-hero-photo`);
+  if (!/\.nos-hero-inner\.nos-hero-photo \.nos-hero-detail \{\s*grid-row:\s*2;/.test(css)) fail(`${STRUCTURE}: from 1024 the facts and actions sit in the second row, under the box`);
   if (!/\.nos-hero-inner\.nos-hero-photo \.nos-hero-head \{[^}]*height:\s*268px;\s*min-height:\s*268px/.test(css)) fail(`${STRUCTURE}: from 768 to 1023 the photo hero box is locked at 268px`);
   if (!/min-height:\s*calc\(124px \+ 2 \* max\(3rem, 1\.8rem \+ 3\.2vw\)\)/.test(css)) fail(`${STRUCTURE}: below 768 the title block holds the crumbs and a two-line h1`);
   for (const h of ['268px', 'calc(124px + 2 * max(3rem, 1.8rem + 3.2vw))']) {
@@ -58,7 +61,7 @@ if (mode === 'nav') {
   if (/\.nos-hero-inner\.nos-hero-photo::before/.test(css)) fail(`${STRUCTURE}: the old dark ramp over the photo (::before) must be gone`);
   // The SAOC system (Brad, 26 Nov 2026): a full-bleed photo, no mask fading it into the ground, no split panel.
   if (/--scrim-at|mask-image|mask-composite/.test(css.slice(css.indexOf('Inner hero sizing')))) fail(`${STRUCTURE}: the inner hero must not mask the photo into the ground (no mask-image, no --scrim-at)`);
-  if (!/\.nos-hero-inner\.nos-hero-photo \.nos-hero-media \{\s*inset:\s*0;\s*\}/.test(css)) fail(`${STRUCTURE}: from 1024 the photo is full bleed (inset: 0)`);
+  if (!/\.nos-hero-inner\.nos-hero-photo \.nos-hero-media,\s*\.nos-theme \.nos-hero-inner\.nos-hero-photo \.nos-hero-copy-scrim \{\s*inset:\s*0;\s*grid-row:\s*1 \/ 2;/.test(css)) fail(`${STRUCTURE}: from 1024 the photo is full bleed across the box row (inset: 0, grid-row 1 / 2)`);
   if (/grid-template-columns:\s*minmax\(0,\s*58fr\)\s*minmax\(0,\s*42fr\)/.test(css)) fail(`${STRUCTURE}: the 768-1023 58/42 split panel must be gone (the photo is full bleed)`);
   if (!/\.nos-hero-photo \.nos-hero-media,\s*\.nos-theme \.nos-hero-inner \.nos-hero-copy-scrim \{\s*position:\s*absolute;\s*inset:\s*0;\s*grid-row:\s*1 \/ 2;\s*grid-column:\s*1 \/ -1;/.test(css)) fail(`${STRUCTURE}: from 768 to 1023 the photo and the scrim are bounded to the box row (grid-row: 1 / 2)`);
   if (!/\.nos-hero-copy-scrim \{\s*display:\s*block;\s*position:\s*absolute;\s*inset:\s*0;\s*background-image:\s*var\(--scrim-gradient\)/.test(css)) fail(`${STRUCTURE}: from 768 the copy scrim is an overlay painting --scrim-gradient`);

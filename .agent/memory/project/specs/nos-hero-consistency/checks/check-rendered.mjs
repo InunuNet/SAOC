@@ -84,12 +84,16 @@ function measureBox() {
   const r = hero.getBoundingClientRect();
   const head = hero.querySelector('[data-nos-hero-head]');
   const stacked = window.innerWidth < 1024;
-  const box = stacked ? head.getBoundingClientRect().bottom - r.top : r.height;
-  // The copy that must fit inside the box: everything below 1024 is the head; from 1024 the whole copy.
-  const inner = stacked ? [...head.children] : [...hero.querySelectorAll('.nos-hero-copy *')];
+  // From 1024 the box is [data-nos-hero-box] (crumbs, h1, lede; lead ruling 27 Nov 2026: the facts and actions
+  // sit under it on the page ground). Below 1024 it is the head.
+  const frame = stacked ? head : hero.querySelector('[data-nos-hero-box]');
+  const box = frame.getBoundingClientRect().bottom - r.top;
+  const inner = stacked ? [...head.children] : [...frame.querySelectorAll('*')];
   const bottom = Math.max(...inner.map((e) => e.getBoundingClientRect().bottom));
-  const padBottom = stacked ? parseFloat(getComputedStyle(head).paddingBottom) : parseFloat(getComputedStyle(hero).paddingBottom);
-  return { variant: hero.getAttribute('data-nos-hero-variant'), box, overflow: bottom - (r.top + box - padBottom) };
+  const padBottom = parseFloat(getComputedStyle(frame).paddingBottom);
+  const crumbs = hero.querySelector('.nk-crumbs');
+  const crumbTop = crumbs ? crumbs.getBoundingClientRect().top - r.top : null;
+  return { variant: hero.getAttribute('data-nos-hero-variant'), box, crumbTop, overflow: bottom - (r.top + box - padBottom) };
 }
 
 async function heights(browser) {
