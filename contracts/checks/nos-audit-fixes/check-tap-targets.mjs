@@ -76,8 +76,8 @@ for (const rel of ['components/tickets/TicketTypeCard.tsx', 'components/tickets/
   const rel = 'components/show/VenueCard.tsx';
   const src = load(rel);
   if (src) {
-    const links = openingTags(src, 'a').filter((t) => /href=\{venue\.mapsUrl\}/.test(t.text));
-    if (links.length !== 1) failures.push(`${rel}: expected 1 <a href={venue.mapsUrl}>, found ${links.length}`);
+    const links = openingTags(src, 'SiteLink').filter((t) => /href=\{venue\.mapsUrl\}/.test(t.text));
+    if (links.length !== 1) failures.push(`${rel}: expected 1 <SiteLink href={venue.mapsUrl}>, found ${links.length}`);
     for (const a of links) {
       need(`${rel} "Open in a map" link`, a, {
         width: false,
@@ -89,7 +89,7 @@ for (const rel of ['components/tickets/TicketTypeCard.tsx', 'components/tickets/
       if (display.join() !== 'inline-flex') failures.push(`${rel}: the link's display must be exactly inline-flex, got [${display.join(' ')}]`);
       if (!a.tokens.includes('items-center')) failures.push(`${rel}: the link must carry items-center so the text stays centred in the 44px box`);
     }
-    if (!/Open in a map ↗/.test(src)) failures.push(`${rel}: link text "Open in a map ↗" must be unchanged`);
+    if (!/Open in a map\s*<ExternalArrow \/>/.test(src)) failures.push(`${rel}: link text "Open in a map" followed by <ExternalArrow /> must be unchanged`);
   }
 }
 
