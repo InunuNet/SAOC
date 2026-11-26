@@ -30,6 +30,8 @@ import path from 'node:path';
 
 import { createClient, type SanityClient, type Transaction } from '@sanity/client';
 
+import { REFUND_FAQ_ANSWER } from '../content/legal/refunds';
+
 const API_VERSION = '2024-01-01';
 const BACKUP_DIR = '.tmp/sandbox/faq-backup';
 const APPLY_FLAG = '--apply';
@@ -196,9 +198,7 @@ const QUESTIONS: readonly FaqSeed[] = [
     number: 15,
     section: 'tickets-and-entry',
     question: 'Can I get a refund if I cannot attend?',
-    answer: [
-      'Tickets can only be refunded via the OWZO link on the website. Tickets for the Symposium and WOSA Conference are not refundable, but they are transferrable. Please check the T&C’s On your ticket confirmation.',
-    ],
+    answer: [...REFUND_FAQ_ANSWER],
   },
   {
     number: 16,
