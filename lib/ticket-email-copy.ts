@@ -11,9 +11,7 @@
  * `{tokens}` in a string are filled from the order at render time (see lib/ticket-type-email.ts).
  */
 
-import { CANCELLATION_SCHEDULE_LINES } from '@/content/legal/refunds';
-
-const REFUND_POLICY_URL = 'https://nos.saoc.co.za/refunds';
+import { CANCELLATION_SCHEDULE_LINES, REFUND_POLICY_URL } from '@/content/legal/refunds';
 
 export const PENDING_MARKER = '[To be confirmed]';
 
