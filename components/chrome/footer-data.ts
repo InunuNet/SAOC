@@ -6,6 +6,8 @@
 // components/nos-chrome/nos-footer-data.ts (nos-site-split F3, NOS Design R3.7).
 // =============================================================
 
+import { NEW_TAB_CUE } from '@/lib/link-target';
+
 import { NAV } from './nav-config';
 
 export const FOOTER_ORG_NAME = 'South African Orchid Council';
@@ -51,7 +53,7 @@ export const FOOTER_WOSA = {
 };
 
 /** Screen-reader cue for a link that opens in a new tab; the visible mark is the arrow. */
-export const FOOTER_NEW_TAB_CUE = '(opens in a new tab)';
+export const FOOTER_NEW_TAB_CUE = NEW_TAB_CUE;
 
 // The SAOC site's legal row.
 export const FOOTER_LEGAL_LINKS = [

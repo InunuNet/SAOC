@@ -16,6 +16,7 @@ import { urlFor } from '@/sanity/lib/image';
 import { showSponsorsQuery } from '@/sanity/queries';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 import { SaocText } from '@/components/nos/SaocText';
+import { SiteLink } from '@/components/ui/SiteLink';
 
 // NOS Design golden SP-1 (comms.md, 2026-10-25): hero, a 7/5 body with one sticky contact card, a
 // photo strip, then the sponsor wall. Own data scope: showSponsor, never the site-level `sponsor`
@@ -127,9 +128,9 @@ function SponsorTile({ sponsor, large }: { sponsor: WallSponsor; large: boolean 
   );
   const className = `nos-sp-tile${large ? ' nos-sp-tile-large' : ''}`;
   return sponsor.website ? (
-    <a href={sponsor.website} rel="noopener" className={className}>
+    <SiteLink own="nos" href={sponsor.website} className={className}>
       {body}
-    </a>
+    </SiteLink>
   ) : (
     <div className={className}>{body}</div>
   );

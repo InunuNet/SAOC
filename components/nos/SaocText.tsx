@@ -10,6 +10,7 @@ import type { ComponentProps, ReactNode } from 'react';
 
 import { NEW_TAB_CUE, SAOC_MENTION_MARK, linkSaocInBlocks, splitSaocMentions } from '@/lib/saoc-mentions';
 import { saocUrl } from '@/lib/site-hosts';
+import { portableLinkMarks } from '@/components/ui/SiteLink';
 
 function SaocAnchor({ children }: { children: ReactNode }) {
   return (
@@ -44,6 +45,6 @@ export function SaocPortableText({
   components?: PortableTextComponents;
 }) {
   const blocks = Array.isArray(value) ? linkSaocInBlocks(value) : value;
-  const merged: PortableTextComponents = { ...components, marks: { ...components?.marks, ...SAOC_MARKS } };
+  const merged: PortableTextComponents = { ...components, marks: { ...portableLinkMarks('nos'), ...components?.marks, ...SAOC_MARKS } };
   return <PortableText value={blocks} components={merged} />;
 }

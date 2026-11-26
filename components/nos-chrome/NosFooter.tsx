@@ -31,6 +31,7 @@ import { CONTACT_LINK } from '@/components/chrome/nav-config';
 import { ExternalArrow } from '@/components/chrome/ExternalArrow';
 import { MediaKitFooterLink } from '@/components/chrome/MediaKitFooterLink';
 import { NewsletterSignup } from '@/components/newsletter/NewsletterSignup';
+import { SiteLink } from '@/components/ui/SiteLink';
 import { NOS_CONTACT_PATH, nosPath } from '@/lib/nos-paths';
 import { SHOW_TITLE_EXPANDED } from '@/lib/show-title';
 import { saocUrl } from '@/lib/site-hosts';
@@ -101,7 +102,7 @@ export function NosFooter({ showPlaceholders }: NosFooterProps) {
         </div>
 
         <div className="nf-col">
-          {/* The organising body: one link to the SAOC site, a plain anchor, same tab, no arrow. */}
+          {/* The organising body: one link to the SAOC site, a plain anchor that opens in a new tab. */}
           <div className="nf-saoc-credit">
             <SaocLockup
               orientation="vertical"
@@ -171,8 +172,10 @@ export function NosFooter({ showPlaceholders }: NosFooterProps) {
               </Link>
             ))}
             <MediaKitFooterLink href={nosPath(NOS_FOOTER_MEDIA_KIT.href)} label={NOS_FOOTER_MEDIA_KIT.label} />
-            {/* The Memorandum of Incorporation is the Council's: a plain anchor to the SAOC site, same tab. */}
-            <a href={saocUrl('/memorandum-of-incorporation')}>Memorandum of Incorporation</a>
+            {/* The Memorandum of Incorporation is the Council's: an anchor to the SAOC site, in a new tab. */}
+            <SiteLink href={saocUrl('/memorandum-of-incorporation')} own="nos">
+              Memorandum of Incorporation
+            </SiteLink>
           </div>
         </div>
       </div>

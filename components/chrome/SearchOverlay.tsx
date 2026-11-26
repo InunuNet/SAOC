@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { Search } from 'lucide-react';
 import { nosUrl } from '@/lib/site-hosts';
 import { ArrowIcon } from '@/components/ui/ArrowIcon';
+import { SiteLink } from '@/components/ui/SiteLink';
 import { matchPages } from '@/lib/search-pages';
 
 interface SearchOverlayProps {
@@ -161,10 +162,9 @@ export function SearchOverlay({ open, onClose, showPastShows }: SearchOverlayPro
               </div>
               <ul className="flex flex-col gap-1">
                 {SUGGESTIONS.map((s) => {
-                  const SuggestionLink = s.crossSite ? 'a' : Link;
                   return (
                     <li key={s.href}>
-                      <SuggestionLink
+                      <SiteLink own="saoc"
                         href={s.href}
                         onClick={onClose}
                         data-variant="corner"
@@ -174,7 +174,7 @@ export function SearchOverlay({ open, onClose, showPastShows }: SearchOverlayPro
                         <span aria-hidden className="text-muted">
                           <ArrowIcon variant="corner" />
                         </span>
-                      </SuggestionLink>
+                      </SiteLink>
                     </li>
                   );
                 })}
@@ -222,10 +222,9 @@ export function SearchOverlay({ open, onClose, showPastShows }: SearchOverlayPro
           {hasQuery && pageResults.length > 0 && (
             <ul className="flex flex-col gap-1">
               {pageResults.map((page) => {
-                const PageLink = page.crossSite ? 'a' : Link;
                 return (
                   <li key={page.href}>
-                    <PageLink
+                    <SiteLink own="saoc"
                       href={page.href}
                       onClick={onClose}
                       data-variant="corner"
@@ -235,7 +234,7 @@ export function SearchOverlay({ open, onClose, showPastShows }: SearchOverlayPro
                       <span aria-hidden className="text-muted">
                         <ArrowIcon variant="corner" />
                       </span>
-                    </PageLink>
+                    </SiteLink>
                   </li>
                 );
               })}

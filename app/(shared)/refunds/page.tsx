@@ -35,7 +35,7 @@ export default async function RefundsPage() {
         </>
       )}
       <DocumentLayout index={legalIndex(REFUND_POLICY)}>
-        <LegalBody document={REFUND_POLICY} />
+        <LegalBody document={REFUND_POLICY} own={nos ? 'nos' : 'saoc'} />
       </DocumentLayout>
     </>
   );

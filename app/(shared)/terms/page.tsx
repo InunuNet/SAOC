@@ -38,7 +38,7 @@ export default async function TermsPage() {
         </>
       )}
       <DocumentLayout index={legalIndex(WEBSITE_TERMS)}>
-        <LegalBody document={WEBSITE_TERMS} />
+        <LegalBody document={WEBSITE_TERMS} own={nos ? 'nos' : 'saoc'} />
       </DocumentLayout>
     </>
   );

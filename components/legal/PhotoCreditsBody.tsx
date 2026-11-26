@@ -1,4 +1,5 @@
 import { PHOTO_CREDITS, type PhotoCredit } from '@/lib/data/photo-credits';
+import { SiteLink } from '@/components/ui/SiteLink';
 
 function isCommonsCredit(
   credit: PhotoCredit,
@@ -17,13 +18,13 @@ export function PhotoCreditsBody() {
         {commonsCredits.map((credit) => (
           <li key={credit.image}>
             {credit.author},{' '}
-            <a className={linkClass} href={credit.licenceUrl}>
+            <SiteLink own="nos" className={linkClass} href={credit.licenceUrl}>
               {credit.licence}
-            </a>
+            </SiteLink>
             ,{' '}
-            <a className={linkClass} href={credit.sourceUrl}>
+            <SiteLink own="nos" className={linkClass} href={credit.sourceUrl}>
               Wikimedia Commons
-            </a>
+            </SiteLink>
             {credit.changed ? ' · cropped' : null}
           </li>
         ))}

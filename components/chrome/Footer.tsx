@@ -12,6 +12,7 @@
 import { CircleAlert } from 'lucide-react';
 import Link from 'next/link';
 import { NewsletterSignup } from '@/components/newsletter/NewsletterSignup';
+import { SiteLink } from '@/components/ui/SiteLink';
 import { SaocLockup } from './SaocLockup';
 import { ExternalArrow } from './ExternalArrow';
 import { MediaKitFooterLink } from './MediaKitFooterLink';
@@ -76,15 +77,14 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
           </div>
           <ul className={FOOTER_RHYTHM.list}>
             {FOOTER_NAV.map((n) => {
-              const NavLink = n.crossSite ? 'a' : Link;
               return (
                 <li key={n.id}>
-                  <NavLink
+                  <SiteLink own="saoc"
                     href={n.href}
                     className={`${FOOTER_RHYTHM.row} min-w-11 font-sans text-ivory/80 hover:text-ivory transition-colors duration-150 focus-visible:text-ivory focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]`}
                   >
                     {n.label}
-                  </NavLink>
+                  </SiteLink>
                 </li>
               );
             })}

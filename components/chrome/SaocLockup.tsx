@@ -2,6 +2,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import localFont from 'next/font/local';
 
+import { NEW_TAB_CUE, NEW_TAB_REL } from '@/lib/link-target';
+
 // =============================================================
 // SAOC — components/chrome/SaocLockup.tsx
 //
@@ -72,7 +74,7 @@ interface SaocLockupProps {
   priority?: boolean;
   /** 'official-mono' and 'official-colour' read only on vertical + dark (the NOS footer). */
   variant?: 'standard' | 'official-mono' | 'official-colour';
-  /** When set, the root is a plain <a href> (cross-site, same tab) instead of next/link. */
+  /** When set, the root is a plain <a href> to the other site, so it opens in a new tab, instead of next/link. */
   href?: string;
   testId?: string;
 }
@@ -258,6 +260,8 @@ function OfficialMonoLockup({
   return (
     <a
       href={href}
+      target="_blank"
+      rel={NEW_TAB_REL}
       data-testid={testId}
       className={[
         'block w-[206px] max-w-full [container-type:inline-size]',
@@ -287,6 +291,7 @@ function OfficialMonoLockup({
           {TAGLINE}
         </span>
       </span>
+      <span className="sr-only">{NEW_TAB_CUE}</span>
     </a>
   );
 }

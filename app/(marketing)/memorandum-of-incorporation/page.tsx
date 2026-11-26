@@ -22,7 +22,7 @@ export default function MemorandumOfIncorporationPage() {
       />
       <Breadcrumb items={[{ label: 'Memorandum of Incorporation' }]} />
       <DocumentLayout>
-        <LegalBody document={COMPANY_DOCUMENTS} />
+        <LegalBody document={COMPANY_DOCUMENTS} own="saoc" />
       </DocumentLayout>
     </>
   );
