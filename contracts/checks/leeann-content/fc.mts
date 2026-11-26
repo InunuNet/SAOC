@@ -26,8 +26,8 @@ const DOCS: Doc[] = [
   },
   {
     source: 'terms-and-conditions', path: '/terms', hosts: [SAOC_HOST, NOS_HOST], chrome: ['Legal'], h1: 'her-title',
-    // Q-D5 default: the two no.saoc.co.za links are published exactly as she wrote them.
-    links: ['https://no.saoc.co.za/refunds', 'https://no.saoc.co.za/contact'],
+    // Q-D5 default: the two nos.saoc.co.za links are published exactly as she wrote them.
+    links: ['https://nos.saoc.co.za/refunds', 'https://nos.saoc.co.za/contact'],
   },
   { source: 'company-constitution', path: '/constitution', hosts: [SAOC_HOST], chrome: ['Governance', 'Constitution'], h1: 'Constitution', links: [] },
 ];
