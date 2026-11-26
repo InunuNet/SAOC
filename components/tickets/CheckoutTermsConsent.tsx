@@ -32,7 +32,10 @@ export function CheckoutTermsConsent({
     cancellationTerms && cancellationTerms.length > 0 ? cancellationTerms : CANCELLATION_SCHEDULE_LINES;
   return (
     <div className="grid gap-2 font-sans text-[14px] text-ink" data-checkout-terms="">
-      <div className="grid gap-2" data-cancellation-schedule="">
+      <div
+        className="grid gap-2 border border-rule bg-parchment p-4 text-[13px]"
+        data-cancellation-schedule=""
+      >
         {schedule.map((line) => (
           <p key={line} className="m-0">
             {line}
