@@ -16,14 +16,11 @@ import path from 'node:path';
 
 import { createClient } from '@sanity/client';
 
+import { REFUND_FAQ_ANSWER } from '../content/legal/refunds';
+
 const FAQ_ID = 'showFaq-q15';
 const TICKETS_PAGE_ID = 'ticketsPage';
-const FAQ_PARAGRAPHS: readonly string[] = [
-  'Conference tickets are named-registrant products and follow the same cancellation schedule above. ' +
-    'A conference ticket may be transferred as set out under Transferring your ticket. ' +
-    'The full name of the new registrant is required.',
-  'The full policy is at https://nos.saoc.co.za/refunds',
-];
+const FAQ_PARAGRAPHS: readonly string[] = REFUND_FAQ_ANSWER;
 const TERMS_NOTE =
   'As an alternative to cancelling, you may transfer your ticket to another person, free of charge, ' +
   'up to 7 days before the event. To do so, contact SAOC with your booking reference and the full ' +

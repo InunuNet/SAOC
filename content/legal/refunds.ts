@@ -16,6 +16,18 @@ export const CANCELLATION_SCHEDULE_LINES: readonly string[] = [
   'SAOC will cancel the original ticket and its QR code and issue a new ticket to the new holder. Please do not give the new holder a copy of the original ticket, because its QR code will no longer work. A ticket for Sunset Cocktails may be transferred only to a person aged 18 or older.',
 ];
 
+/**
+ * The FAQ answer to "Can I get a refund if I cannot attend?" (Sanity showFaq-q15): the master's own
+ * schedule, administration fee and transfer rule, its conference-ticket sentences, and the pointer
+ * sentence from section 7 of the master Terms. Verbatim; used by the seed and the live patch.
+ */
+export const REFUND_FAQ_ANSWER: readonly string[] = [
+  ...CANCELLATION_SCHEDULE_LINES,
+  'Conference tickets are named-registrant products and follow the same cancellation schedule above. A conference ticket may be transferred as set out under Transferring your ticket. The full name of the new registrant is required.',
+  'The policy is available at:',
+  'https://nos.saoc.co.za/refunds',
+];
+
 export const REFUND_POLICY: TitledLegalDocument = {
   title: REFUND_POLICY_TITLE,
   blocks: [

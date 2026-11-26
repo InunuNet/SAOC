@@ -30,6 +30,8 @@ import path from 'node:path';
 
 import { createClient, type SanityClient, type Transaction } from '@sanity/client';
 
+import { REFUND_FAQ_ANSWER } from '../content/legal/refunds';
+
 const API_VERSION = '2024-01-01';
 const BACKUP_DIR = '.tmp/sandbox/faq-backup';
 const APPLY_FLAG = '--apply';
@@ -196,10 +198,7 @@ const QUESTIONS: readonly FaqSeed[] = [
     number: 15,
     section: 'tickets-and-entry',
     question: 'Can I get a refund if I cannot attend?',
-    answer: [
-      'Conference tickets are named-registrant products and follow the same cancellation schedule above. A conference ticket may be transferred as set out under Transferring your ticket. The full name of the new registrant is required.',
-      'The full policy is at https://nos.saoc.co.za/refunds',
-    ],
+    answer: [...REFUND_FAQ_ANSWER],
   },
   {
     number: 16,
