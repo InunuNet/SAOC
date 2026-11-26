@@ -11,6 +11,10 @@
  * `{tokens}` in a string are filled from the order at render time (see lib/ticket-type-email.ts).
  */
 
+import { CANCELLATION_SCHEDULE_LINES } from '@/content/legal/refunds';
+
+const REFUND_POLICY_URL = 'https://nos.saoc.co.za/refunds';
+
 export const PENDING_MARKER = '[To be confirmed]';
 
 export type TicketEmailKey =
@@ -48,25 +52,36 @@ const VENUE_PARKING: readonly CopyBlock[] = [
   { kind: 'text', lines: ['Parking will be available at the venue. Further parking and access instructions will be provided closer to the event.'] },
 ];
 
+const [
+  SCHEDULE_INTRO,
+  SCHEDULE_FULL_NOTICE,
+  SCHEDULE_PART_NOTICE,
+  SCHEDULE_LATE_NOTICE,
+  ADMIN_FEE,
+  TRANSFER_PROCESS,
+  TRANSFER_QR_AND_AGE,
+] = CANCELLATION_SCHEDULE_LINES;
+
+/** The master transfer rule: free transfer, a new ticket and QR code, no copy of the original. */
+const TRANSFER_LINES: readonly string[] = [TRANSFER_PROCESS, TRANSFER_QR_AND_AGE];
+
 const TICKET_TRANSFERS: readonly CopyBlock[] = [
   { kind: 'heading', text: 'Ticket transfers' },
-  { kind: 'text', lines: ['If you are unable to attend, you may transfer your ticket to another person. Please give the new ticket holder a printed copy of the original ticket, including its QR code. The printed ticket must be presented at the entrance for scanning.'] },
+  { kind: 'text', lines: [...TRANSFER_LINES] },
   { kind: 'text', lines: ['Each QR code is valid for one ticket entitlement only and may not be used by more than one person.'] },
 ];
 
+// The master Refund and Cancellation Policy's own sentences (content/legal/refunds.ts), plus its
+// link. The Terms section 7 sentence "The policy is available at:" introduces the link.
 const REFUND_POLICY: readonly CopyBlock[] = [
   { kind: 'heading', text: 'Cancellation and refund policy' },
-  { kind: 'text', lines: ['Cancellation requests must be submitted in writing to the organisers, quoting your booking reference.'] },
-  { kind: 'text', lines: ['Refunds are calculated on the original ticket price, less the applicable cancellation percentage and a 5% administration fee:'] },
-  { kind: 'list', items: [
-      'More than 60 days before the event: 90% refund, less the 5% administration fee (85% of the original ticket price).',
-      '30–60 days before the event: 75% refund, less the 5% administration fee (70% of the original ticket price).',
-      '14–29 days before the event: 50% refund, less the 5% administration fee (45% of the original ticket price).',
-      'Less than 14 days before the event: Requests will be considered individually. Any approved refund will be subject to the 5% administration fee.',
-  ] },
-  { kind: 'text', lines: ['The administration fee covers transaction and processing costs incurred by the organisers, including payment gateway and bank charges.'] },
-  { kind: 'text', lines: ['If the organisers cancel the event, affected ticket holders will receive a full refund without an administration fee.'] },
-  { kind: 'text', lines: ['Approved refunds will be processed within 14 business days.'] },
+  { kind: 'text', lines: ['To cancel a ticket, send SAOC a written request that quotes your booking reference. You may use email or the contact page on the website. The date on which SAOC receives your request is the date of cancellation.'] },
+  { kind: 'text', lines: [SCHEDULE_INTRO] },
+  { kind: 'list', items: [SCHEDULE_FULL_NOTICE, SCHEDULE_PART_NOTICE, SCHEDULE_LATE_NOTICE] },
+  { kind: 'text', lines: [ADMIN_FEE] },
+  { kind: 'text', lines: ['If SAOC cancels an event, workshop, field trip or other activity outright, SAOC will tell the ticket holders for that activity, using the contact details supplied at checkout. They will receive a full refund of everything they paid for the ticket, including any booking fee, with no administration fee and no other deduction. This applies regardless of how close to the event the cancellation is announced. A ticket holder may choose a credit or an alternative arrangement instead, but SAOC will not require one.'] },
+  { kind: 'text', lines: ['Where a refund is due under this policy, it will be issued back to the original payment method used at checkout, via the payment gateway used to process that purchase. SAOC will pay the refund within 14 business days of the date on which it becomes due. Your bank or card issuer may take longer to show it. SAOC will not deduct gateway fees from a refund. It will deduct the administration fee only where this policy says so. A business day is any day other than a Saturday, Sunday or public holiday in South Africa.'] },
+  { kind: 'text', lines: ['The policy is available at:', REFUND_POLICY_URL] },
 ];
 
 export const TICKET_EMAIL_COPY: Record<TicketEmailKey, TicketEmailCopy> = {
@@ -236,7 +251,7 @@ export const TICKET_EMAIL_COPY: Record<TicketEmailKey, TicketEmailCopy> = {
       },
       { kind: 'heading', text: 'Your ticket and entry' },
       { kind: 'text', lines: ['Please bring your ticket, either printed or displayed on your mobile device, so that the QR code can be scanned on arrival.'] },
-      { kind: 'text', lines: ['If you are unable to attend, you may transfer your ticket to another person. Please provide the new ticket holder with a printed copy of the original ticket, including its QR code. The printed ticket must be presented at the entrance for scanning.'] },
+      { kind: 'text', lines: [...TRANSFER_LINES] },
       { kind: 'text', lines: ['Each QR code is valid for one ticket entitlement only and may not be used by more than one person.'] },
       ...REFUND_POLICY,
       { kind: 'text', lines: ['We look forward to sharing a wonderful evening with you!'] },
@@ -268,7 +283,7 @@ export const TICKET_EMAIL_COPY: Record<TicketEmailKey, TicketEmailCopy> = {
       { kind: 'text', lines: ['Please bring your ticket, either printed or displayed on your mobile device, so that the QR code can be scanned on arrival.'] },
       { kind: 'text', lines: ['Further programme and venue information will be communicated to registered attendees closer to the event.'] },
       { kind: 'heading', text: 'Ticket transfers' },
-      { kind: 'text', lines: ['If you are unable to attend, you may transfer your ticket to another person. Please provide the new attendee with a printed copy of the original ticket, including its QR code. The printed ticket must be presented at registration for scanning.'] },
+      { kind: 'text', lines: [...TRANSFER_LINES] },
       { kind: 'text', lines: ['Each QR code is valid for one ticket entitlement only and may not be used by more than one person.'] },
       ...REFUND_POLICY,
       { kind: 'text', lines: ['We look forward to welcoming you to the symposium!'] },
@@ -301,7 +316,7 @@ export const TICKET_EMAIL_COPY: Record<TicketEmailKey, TicketEmailCopy> = {
       { kind: 'text', lines: ['Please bring your ticket, either printed or displayed on your mobile device, so that the QR code can be scanned on arrival.'] },
       { kind: 'text', lines: ['Further programme and venue information will be communicated to registered attendees closer to the event.'] },
       { kind: 'heading', text: 'Ticket transfers' },
-      { kind: 'text', lines: ['If you are unable to attend, you may transfer your ticket to another person. Please provide the new attendee with a printed copy of the original ticket, including its QR code. The printed ticket must be presented at registration for scanning.'] },
+      { kind: 'text', lines: [...TRANSFER_LINES] },
       { kind: 'text', lines: ['Each QR code is valid for one ticket entitlement only and may not be used by more than one person.'] },
       ...REFUND_POLICY,
       { kind: 'text', lines: ['We look forward to welcoming you to the WOSA Conference!'] },
@@ -341,20 +356,9 @@ export const TICKET_EMAIL_COPY: Record<TicketEmailKey, TicketEmailCopy> = {
       { kind: 'text', lines: ['Please bring your ticket, either printed or displayed on your mobile device, on both days. Your QR code will be validated for each event included in your booking.'] },
       { kind: 'text', lines: ['Further programme and venue information will be communicated to registered attendees closer to the events.'] },
       { kind: 'heading', text: 'Ticket transfers' },
-      { kind: 'text', lines: ['If you are unable to attend, you may transfer your ticket to another person. Please provide the new attendee with a printed copy of the original ticket, including its QR code. The printed ticket must be presented at registration for scanning.'] },
+      { kind: 'text', lines: [...TRANSFER_LINES] },
       { kind: 'text', lines: ['Each QR code is valid for one ticket entitlement only and may not be used by more than one person.'] },
-      { kind: 'heading', text: 'Cancellation and refund policy' },
-      { kind: 'text', lines: ['Cancellation requests must be submitted in writing to the organisers, quoting your booking reference.'] },
-      { kind: 'text', lines: ['Refunds are calculated on the original ticket price, less the applicable cancellation percentage and a 5% administration fee:'] },
-      { kind: 'list', items: [
-          'More than 60 days before the events: 90% refund, less the 5% administration fee (85% of the original ticket price).',
-          '30–60 days before the events: 75% refund, less the 5% administration fee (70% of the original ticket price).',
-          '14–29 days before the events: 50% refund, less the 5% administration fee (45% of the original ticket price).',
-          'Less than 14 days before the events: Requests will be considered individually. Any approved refund will be subject to the 5% administration fee.',
-      ] },
-      { kind: 'text', lines: ['The administration fee covers transaction and processing costs incurred by the organisers, including payment gateway and bank charges.'] },
-      { kind: 'text', lines: ['If the organisers cancel either event, the organisers will communicate the arrangements applicable to the affected ticket entitlement. If both events are cancelled, affected ticket holders will receive a full refund without an administration fee.'] },
-      { kind: 'text', lines: ['Approved refunds will be processed within 14 business days.'] },
+      ...REFUND_POLICY,
       { kind: 'text', lines: ['We look forward to welcoming you to both events!'] },
       { kind: 'text', lines: ['For further information, please visit nos.saoc.co.za or contact info@saoc.co.za.'] },
       { kind: 'text', lines: ['Kind regards,', 'The National Orchid Show – Western Cape 2027 Organising Committee'] },

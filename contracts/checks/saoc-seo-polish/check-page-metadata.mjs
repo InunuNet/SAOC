@@ -10,7 +10,7 @@ const pages = [
   { file: 'app/(marketing)/constitution/page.tsx', path: '/constitution', title: 'Constitution', noIndex: false },
   { file: 'app/(shared)/privacy/page.tsx', path: '/privacy', title: 'Privacy Policy', noIndex: false },
   { file: 'app/(shared)/terms/page.tsx', path: '/terms', title: 'Terms of Use', noIndex: false },
-  { file: 'app/(shared)/refunds/page.tsx', path: '/refunds', title: 'Refund & Cancellation Policy', noIndex: false },
+  { file: 'app/(shared)/refunds/page.tsx', path: '/refunds', title: 'SAOC REFUND AND CANCELLATION POLICY', titleExpr: 'REFUND_POLICY_TITLE', noIndex: false },
   { file: 'app/(marketing)/events/submit/page.tsx', path: '/events/submit', title: 'Submit an Event', noIndex: true, description: 'Your submission will be reviewed by the council before it appears on the site.' },
 ];
 
@@ -23,7 +23,7 @@ for (const p of pages) {
   if (!/export const metadata: Metadata = buildPageMetadata\(/.test(src)) failures.push(`${p.file}: metadata export is not assigned from buildPageMetadata`);
   if (/export const metadata: Metadata = \{/.test(src)) failures.push(`${p.file}: still exports a hand-written metadata literal`);
   if (!call[0].includes(`path: '${p.path}'`)) failures.push(`${p.file}: call does not pass path: '${p.path}'`);
-  if (!call[0].includes(`title: '${p.title}'`)) failures.push(`${p.file}: call does not pass title: '${p.title}' (the page title, without the site name)`);
+  if (!call[0].includes(p.titleExpr ? `title: ${p.titleExpr}` : `title: '${p.title}'`)) failures.push(`${p.file}: call does not pass title: '${p.title}' (the page title, without the site name)`);
   if (/title:\s*'[^']*\|[^']*'/.test(call[0]) || /South African Orchid Council'/.test(call[0].match(/title:[^\n]*/)?.[0] ?? '')) failures.push(`${p.file}: title repeats the site name; the layout template adds it`);
   if (p.description && !call[0].includes(p.description)) failures.push(`${p.file}: description must be the page's own sentence: ${p.description}`);
   const hasNoIndex = /noIndex:\s*true/.test(call[0]);
