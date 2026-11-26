@@ -14,6 +14,7 @@ import {
   CheckoutErrorSummary,
   type CheckoutErrorEntry,
 } from '@/components/tickets/CheckoutErrorSummary';
+import { CheckoutTermsConsent, TERMS_CHECKBOX_ID } from '@/components/tickets/CheckoutTermsConsent';
 import { CheckoutRedirectNotice } from '@/components/tickets/CheckoutRedirectNotice';
 import { RegistrationSection } from '@/components/tickets/RegistrationSection';
 import { summaryEntriesFor } from '@/components/tickets/registrationDraft';
@@ -30,6 +31,7 @@ import { isDayClosed } from '@/components/tickets/keepsake/days';
 import type { KeepsakeDay } from '@/components/tickets/keepsake/types';
 import type { CheckoutLineItemInput } from '@/app/api/tickets/checkout/route';
 import { CART_MAX_LINE_ITEMS } from '@/lib/cart';
+import { TERMS_NOT_ACCEPTED_ERROR } from '@/lib/checkout-terms';
 import { registrationAttendee, type RegistrationPerson } from '@/lib/registration';
 import { TICKET_COPY } from '@/lib/data/ticket-presentation';
 import { formatShowDay, formatShowDayShort } from '@/lib/show-day-format';
@@ -64,6 +66,7 @@ interface TicketPurchaseFormProps {
 
 interface SummaryInput {
   dayInvalid: boolean;
+  termsInvalid: boolean;
   attendees: number;
   quantity: number;
   ticketType: TicketTypeCardData;
@@ -74,7 +77,8 @@ interface SummaryInput {
 
 // Entries in DOM order: the day, then each attendee's name and email errors.
 function summaryEntries(input: SummaryInput): CheckoutErrorEntry[] {
-  const { dayInvalid, attendees, quantity, ticketType, errors, registrationEntries } = input;
+  const { dayInvalid, termsInvalid, attendees, quantity, ticketType, errors, registrationEntries } =
+    input;
   const entries: CheckoutErrorEntry[] = [];
   if (dayInvalid) {
     entries.push({
@@ -83,7 +87,10 @@ function summaryEntries(input: SummaryInput): CheckoutErrorEntry[] {
       target: `#${DAY_GROUP} input:not(:disabled)`,
     });
   }
-  if (registrationEntries) return [...entries, ...registrationEntries];
+  const termsEntry: CheckoutErrorEntry[] = termsInvalid
+    ? [{ key: TERMS_CHECKBOX_ID, message: TERMS_NOT_ACCEPTED_ERROR, target: `#${TERMS_CHECKBOX_ID}` }]
+    : [];
+  if (registrationEntries) return [...entries, ...registrationEntries, ...termsEntry];
   for (let index = 0; index < attendees; index += 1) {
     const rowKey = attendeeRowKey(ticketType.slug, index);
     // With several attendees the row label keeps each entry distinct.
@@ -95,7 +102,7 @@ function summaryEntries(input: SummaryInput): CheckoutErrorEntry[] {
       entries.push({ key: id, message: `${prefix}${message}`, target: `#${id}` });
     }
   }
-  return entries;
+  return [...entries, ...termsEntry];
 }
 
 // focus() alone can leave the summary's last pixel clipped under the viewport edge; centring it keeps
@@ -155,6 +162,9 @@ export function TicketPurchaseForm({
   const [dayRequested, setDayRequested] = useState(false);
   const dayInvalid = dayRequested && cart.day === null;
   const summaryRef = useRef<HTMLDivElement>(null);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [termsRequested, setTermsRequested] = useState(false);
+  const termsInvalid = termsRequested && !termsAccepted;
 
   // A 409 for a chosen day may mean that day sold out between load and submit. The counts are
   // re-read (router.refresh re-runs the page's hub loader); if the day that was submitted is now
@@ -235,7 +245,8 @@ export function TicketPurchaseForm({
     const people = flagged ? registration.validate() : null;
     const attendeesValid = flagged ? people !== null || cart.quantity < MIN_QUANTITY : cart.validate();
     if (dayMissing) setDayRequested(true);
-    if (dayMissing || !attendeesValid) {
+    if (!termsAccepted) setTermsRequested(true);
+    if (dayMissing || !attendeesValid || !termsAccepted) {
       focusFailedSubmit();
       return;
     }
@@ -245,7 +256,10 @@ export function TicketPurchaseForm({
       return;
     }
     if (cart.day !== null) setSubmitted({ day: cart.day, judged: false });
-    void cart.submit(people ? registrationLineItems(ticketType.slug, people) : undefined);
+    void cart.submit(
+      people ? registrationLineItems(ticketType.slug, people) : undefined,
+      termsAccepted
+    );
   }
 
   const submitting = cart.status === 'submitting';
@@ -377,6 +391,7 @@ export function TicketPurchaseForm({
         heading={SUMMARY_HEADING}
         entries={summaryEntries({
           dayInvalid,
+          termsInvalid,
           attendees: cart.attendees.length,
           quantity: cart.quantity,
           ticketType,
@@ -385,6 +400,13 @@ export function TicketPurchaseForm({
         })}
         serverMessage={serverMessage}
         summaryRef={summaryRef}
+      />
+      <CheckoutTermsConsent
+        checked={termsAccepted}
+        invalid={termsInvalid}
+        disabled={submitting}
+        onChange={setTermsAccepted}
+        cancellationTerms={ticketType.cancellationTerms}
       />
       <div data-catalogue-total="" className="nk-checkout-total">
         <p aria-live="polite" aria-atomic="true">

@@ -17,8 +17,8 @@ export interface RegistrationAttendeeFieldsProps {
 }
 
 const HEADING_CLASS = 'font-mono text-[11px] tracking-[0.16em] text-muted';
-const OPTION_LABEL_CLASS = 'flex min-h-11 items-center gap-2 font-sans text-[15px] text-ink';
-const CHECKBOX_CLASS = 'size-6 shrink-0 accent-primary outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] disabled:opacity-60';
+export const OPTION_LABEL_CLASS = 'flex min-h-11 items-center gap-2 font-sans text-[15px] text-ink';
+export const CHECKBOX_CLASS = 'size-6 shrink-0 accent-primary outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] disabled:opacity-60';
 
 function SameAsAbove({ id, covers, checked, disabled, onChange }: { id: string; covers: string; checked: boolean; disabled: boolean; onChange: (checked: boolean) => void }) {
   const coversId = `${id}-covers`;

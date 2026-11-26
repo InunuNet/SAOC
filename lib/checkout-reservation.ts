@@ -256,6 +256,13 @@ export interface BuildMultiReservationDocsInput {
    *  for PayFast or Ozow with the sandbox test-mode flag off. See
    *  contracts/golden/ozow-sandbox-toggle-f1/README.md §3b. */
   expectedGatewayAmount: number | null;
+  /** Terms 5.1 and 7 — what the buyer accepted at checkout and when (server time). Callers that
+   *  carry no acceptance (none in production) get explicit nulls, never undefined. */
+  terms?: {
+    termsAcceptedAt: Timestamp;
+    termsVersion: string;
+    refundPolicyVersion: string;
+  };
 }
 
 export interface MultiReservationDocs {
@@ -297,6 +304,9 @@ export function buildMultiReservationDocs(
     recoveryToken: input.recoveryToken,
     recoveryTokenExpiresAt: input.recoveryTokenExpiresAt,
     expectedGatewayAmount: input.expectedGatewayAmount,
+    termsAcceptedAt: input.terms?.termsAcceptedAt ?? null,
+    termsVersion: input.terms?.termsVersion ?? null,
+    refundPolicyVersion: input.terms?.refundPolicyVersion ?? null,
   };
 
   const positions: (Omit<Ticket, 'id'> & { idempotencyKey: string })[] = input.lineItems.map(
