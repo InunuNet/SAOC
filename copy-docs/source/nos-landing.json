@@ -411,6 +411,18 @@
         },
         {
           "role": "Group card",
+          "style": "body",
+          "text": "Open to orchids bred in South Africa, recognising the achievements of local orchid breeders and the quality, diversity and innovation of South African-bred orchids.",
+          "editable": true,
+          "editedWhere": null,
+          "sameRow": true,
+          "acceptedAddition": {
+            "approvedBy": "Lee-Ann answer 2026-11-25, relayed by Brad",
+            "reason": "descriptions for judging groups 11-13, new in her answer of 25 Nov; not in the legacy doc"
+          }
+        },
+        {
+          "role": "Group card",
           "style": "cardTitle",
           "text": "Group 12: First Flowering",
           "editable": true,
@@ -419,11 +431,35 @@
         },
         {
           "role": "Group card",
+          "style": "body",
+          "text": "Open to orchids flowering for the first time under the current grower’s care, recognising the achievement of bringing a plant to its first bloom.",
+          "editable": true,
+          "editedWhere": null,
+          "sameRow": true,
+          "acceptedAddition": {
+            "approvedBy": "Lee-Ann answer 2026-11-25, relayed by Brad",
+            "reason": "descriptions for judging groups 11-13, new in her answer of 25 Nov; not in the legacy doc"
+          }
+        },
+        {
+          "role": "Group card",
           "style": "cardTitle",
           "text": "Group 13: Most Fragrant",
           "editable": true,
           "editedWhere": null,
           "legacyPara": 49
+        },
+        {
+          "role": "Group card",
+          "style": "body",
+          "text": "Awarded to the orchid displaying the most outstanding and appealing natural fragrance, taking into consideration the quality, intensity and character of its scent.",
+          "editable": true,
+          "editedWhere": null,
+          "sameRow": true,
+          "acceptedAddition": {
+            "approvedBy": "Lee-Ann answer 2026-11-25, relayed by Brad",
+            "reason": "descriptions for judging groups 11-13, new in her answer of 25 Nov; not in the legacy doc"
+          }
         }
       ]
     },

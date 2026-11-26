@@ -32,7 +32,7 @@ export function TicketFieldAlert({ children, spaced = false, id }: TicketFieldAl
 }
 
 const INPUT_CLASS =
-  'h-11 w-full rounded-sm border border-rule bg-ivory px-3.5 py-2.5 font-sans text-[15px] leading-5 text-ink placeholder:text-muted transition-colors focus:border-ink/40 disabled:opacity-60';
+  'h-11 w-full rounded-sm border border-rule bg-ivory px-3.5 py-2.5 font-sans text-[15px] leading-5 text-ink placeholder:text-muted transition-colors focus:border-ink/40 disabled:opacity-60 aria-invalid:border-error';
 const LABEL_CLASS = 'font-sans text-[14px] font-medium text-[var(--ink-700)]';
 
 interface TicketFormFieldProps {
@@ -41,6 +41,7 @@ interface TicketFormFieldProps {
   type: 'text' | 'email' | 'tel' | 'password';
   value: string;
   onChange: (value: string) => void;
+  onBlur?: () => void;
   disabled: boolean;
   error?: string;
   autoComplete?: 'name' | 'email' | 'tel' | 'off' | 'current-password';
@@ -53,6 +54,7 @@ export function TicketFormField({
   type,
   value,
   onChange,
+  onBlur,
   disabled,
   error,
   autoComplete,
@@ -71,6 +73,7 @@ export function TicketFormField({
         maxLength={maxLength}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
         disabled={disabled}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}

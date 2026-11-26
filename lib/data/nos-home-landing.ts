@@ -124,19 +124,22 @@ export const JUDGING_GROUPS: readonly JudgingGroup[] = [
   {
     n: 11,
     name: 'SA Bred',
-    description: null,
+    description:
+      'Open to orchids bred in South Africa, recognising the achievements of local orchid breeders and the quality, diversity and innovation of South African-bred orchids.',
     italics: [],
   },
   {
     n: 12,
     name: 'First Flowering',
-    description: null,
+    description:
+      'Open to orchids flowering for the first time under the current grower’s care, recognising the achievement of bringing a plant to its first bloom.',
     italics: [],
   },
   {
     n: 13,
     name: 'Most Fragrant',
-    description: null,
+    description:
+      'Awarded to the orchid displaying the most outstanding and appealing natural fragrance, taking into consideration the quality, intensity and character of its scent.',
     italics: [],
   },
 ];

@@ -1,7 +1,5 @@
 import type { Metadata } from 'next';
 
-import Link from 'next/link';
-
 import { RouteHero } from '@/components/ui/RouteHero';
 import { Breadcrumb } from '@/components/chrome/Breadcrumb';
 import { ContactForm } from '@/components/contact';
@@ -9,6 +7,7 @@ import { sanityFetch } from '@/sanity/lib/fetch';
 import { contactPageQuery } from '@/sanity/queries';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
+import { nosUrl } from '@/lib/site-hosts';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
@@ -104,12 +103,9 @@ export default async function ContactPage() {
 
             <p className="font-sans text-[16px] leading-[1.55] text-ink/70">
               Visiting the show?{' '}
-              <Link
-                href="/national-show"
-                className="underline underline-offset-2 hover:text-accent"
-              >
+              <a href={nosUrl('/')} className="underline underline-offset-2 hover:text-accent">
                 See the National Orchid Show
-              </Link>{' '}
+              </a>{' '}
               for travel, hours and admission.
             </p>
           </aside>

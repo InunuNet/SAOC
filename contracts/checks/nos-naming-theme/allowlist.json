@@ -1,0 +1,49 @@
+{
+  "naming": [
+    {
+      "file": "app/(marketing)/about/page.tsx",
+      "contains": "national shows, judging programmes",
+      "reason": "Lee-Ann's generic plural on the SAOC About page (shows of any society), not the event name."
+    },
+    {
+      "file": "components/ui/provenance.ts",
+      "contains": "National Shows Hosted",
+      "reason": "A pattern matching the old Joomla stat label, never displayed."
+    },
+    {
+      "file": "content/show-pages/02-about-the-national-show.json",
+      "contains": "the National Show explores the relationship",
+      "reason": "Body text is linked word for word to content/drive-recovered/02-about-the-national-show/about/content.md, an extract of Lee-Ann's About doc. Re-extract once the doc carries R1 (Brad 25 Nov), then remove this entry."
+    },
+    {
+      "file": "content/show-pages/02-about-the-national-show.json",
+      "contains": "The National Show will showcase spectacular displays",
+      "reason": "Linked word for word to the drive-recovered About extract (see above). Remove after re-extraction."
+    },
+    {
+      "file": "content/show-pages/02-about-the-national-show.json",
+      "contains": "reflects the National Show's commitment to connecting",
+      "reason": "Linked word for word to the drive-recovered About extract (see above). Remove after re-extraction."
+    },
+    {
+      "file": "content/show-pages/02-about-the-national-show.json",
+      "contains": "present a National Show of this scale",
+      "reason": "Linked word for word to the drive-recovered About extract (see above). Remove after re-extraction."
+    },
+    {
+      "file": "content/show-pages/02-about-the-national-show.json",
+      "contains": "the 2027 National Show offers an inspiring",
+      "reason": "Linked word for word to the drive-recovered About extract (see above). Remove after re-extraction."
+    },
+    {
+      "file": "content/show-pages/03-what-to-expect.json",
+      "contains": "National Show Symposium",
+      "reason": "Linked word for word to Lee-Ann's What to Expect doc extract. Remove once that doc carries R1."
+    },
+    {
+      "file": "content/show-pages/_name-allowlist.json",
+      "contains": "\"National Show\"",
+      "reason": "The list of event-name spellings the show-page name check tolerates; a matcher, never displayed."
+    }
+  ]
+}

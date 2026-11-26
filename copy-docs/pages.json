@@ -38,5 +38,13 @@
     "driveName": "SAOC Forward   11OCT2026.docx",
     "source": "copy-docs/source/saoc-foreword.json",
     "built": "copy-docs/saoc-foreword.docx"
+  },
+  "nos-about": {
+    "site": "nos",
+    "route": "/national-show/about",
+    "driveFileId": "1nebF2XdJKdIPvS6V7Byp24CM7m3MmR_5",
+    "driveName": "2.1 About - 2027 National Show.docx",
+    "source": "copy-docs/source/nos-about.json",
+    "built": "copy-docs/nos-about.docx"
   }
 }

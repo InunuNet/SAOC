@@ -359,7 +359,7 @@ export const REGISTRATION_LABELS = {
 export const REGISTRATION_SECTION_HEADINGS = {
   personal: 'PERSONAL INFORMATION',
   membership: 'MEMBERSHIP',
-  booking: 'NATIONAL SHOW BOOKING OPTIONS',
+  booking: 'NATIONAL ORCHID SHOW BOOKING OPTIONS',
   judges: 'JUDGES EVENTS',
   dietary: 'DIETARY REQUIREMENTS',
 } as const;

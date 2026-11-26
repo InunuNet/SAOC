@@ -134,8 +134,20 @@ def paragraphs(path: Path) -> list[tuple[str, str, str]]:
 
 
 def check(legacy: Path, built: Path, prefixes: list[str], prefix_uses: int, section_labels: list[str],
-          title_from_drive_name: bool) -> tuple[bool, list[str]]:
+          title_from_drive_name: bool,
+          text_changes: dict[int, list[dict]] | None = None,
+          accepted_additions: list[str] | None = None) -> tuple[bool, list[str]]:
+    """`text_changes` is the page JSON's acceptedTextChanges by legacy paragraph: each exact
+    substitution is applied to the legacy words before they are compared with the built doc's.
+    `accepted_additions` is the exact text of each acceptedAddition paragraph (not in the legacy doc)."""
     lp = paragraphs(legacy)
+    for i, changes in (text_changes or {}).items():
+        if isinstance(i, int) and 0 <= i < len(lp):
+            part, style, text = lp[i]
+            for c in changes:
+                if c.get("from") and c.get("to") is not None and text.count(c["from"]) == 1:
+                    text = text.replace(c["from"], c["to"], 1)
+            lp[i] = (part, style, text)
     bp = paragraphs(built)
     lmain, bmain = (lp[0][0] if lp else ""), (bp[0][0] if bp else "")
     bad = [f"{side}: {x}" for side, path in (("legacy", legacy), ("built", built)) for x in problems(path)]
@@ -171,8 +183,14 @@ def check(legacy: Path, built: Path, prefixes: list[str], prefix_uses: int, sect
                    f"declare one: a prefix matched a line it does not belong to")
     first_h1 = True
     btoks: list[str] = []
+    pending = list(accepted_additions or [])   # each accepted addition covers exactly one built paragraph
+    n_accepted = 0
     for part, style, text in bp:
         if part == bmain and style in ADDED_STYLES:
+            continue
+        if part == bmain and text in pending:
+            pending.remove(text)
+            n_accepted += 1
             continue
         if part == bmain and style == "heading 1" and first_h1:
             first_h1 = False
@@ -203,5 +221,8 @@ def check(legacy: Path, built: Path, prefixes: list[str], prefix_uses: int, sect
     report += [f"  added on built side: {a!r}" for a in added]
     report += [f"  OUTSIDE the body on {side} side: {part} ({'HEADING-styled ' if st.startswith('heading') else ''}"
                f"{st}): {text!r}" for side, part, st, text in outside]
+    report += [f"  accepted addition (not in legacy, approved in the page JSON): {n_accepted} paragraph(s)"] \
+        if n_accepted else []
+    bad += [f"acceptedAddition {t!r} is not a paragraph of the built body" for t in pending]
     report += [f"  CANNOT CARRY {x}" for x in bad]
     return not lost and not added and not outside and not bad, report

@@ -1,12 +1,12 @@
 {
   "pageKey": "01-national-show-landing",
   "specNumber": 1,
-  "title": "The 2027 National Show",
+  "title": "The 2027 National Orchid Show",
   "summary": "The primary gateway to the 2027 South African National Orchid Show, showcasing the event theme and linking to every part of the show.",
   "sections": [
     {
       "sectionKey": "welcome",
-      "heading": "Welcome to the 2027 National Show",
+      "heading": "Welcome to the 2027 National Orchid Show",
       "kind": "prose",
       "provenance": "placeholder-ai",
       "body": [
@@ -19,7 +19,7 @@
             {
               "_type": "span",
               "_key": "welcome-b1-s1",
-              "text": "This page is the main gateway to the 2027 National Show, introducing the event before visitors move on to the rest of the site.",
+              "text": "This page is the main gateway to the 2027 National Orchid Show, introducing the event before visitors move on to the rest of the site.",
               "marks": []
             }
           ]
@@ -92,7 +92,7 @@
             {
               "_type": "span",
               "_key": "getting-here-b1-s1",
-              "text": "The venue for the 2027 National Show is confirmed: Stellenbosch Aerodrome, R44 northbound to Stellenbosch. Full travel, parking and accommodation guidance will follow on the Plan Your Visit page.",
+              "text": "The venue for the 2027 National Orchid Show is confirmed: Stellenbosch Aerodrome, R44 northbound to Stellenbosch. Full travel, parking and accommodation guidance will follow on the Plan Your Visit page.",
               "marks": []
             }
           ]

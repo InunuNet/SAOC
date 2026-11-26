@@ -17,6 +17,7 @@ interface CartAttendeeFieldsProps {
   errors: AttendeeFieldErrors;
   disabled: boolean;
   onAttendeeChange: (slug: string, index: number, field: keyof CartAttendee, value: string) => void;
+  onAttendeeEmailBlur?: (slug: string, index: number) => void;
 }
 
 export function attendeeRowKey(slug: string, index: number): string {
@@ -30,6 +31,7 @@ export function CartAttendeeFields({
   errors,
   disabled,
   onAttendeeChange,
+  onAttendeeEmailBlur,
 }: CartAttendeeFieldsProps) {
   const activeTypes = ticketTypes.filter((t) => (quantities[t.slug] ?? 0) > 0);
   if (activeTypes.length === 0) return null;
@@ -78,6 +80,7 @@ export function CartAttendeeFields({
                     maxLength={CONTACT_FIELD_MAX_LENGTHS.email}
                     value={row.attendeeEmail}
                     onChange={(value) => onAttendeeChange(type.slug, index, 'attendeeEmail', value)}
+                    onBlur={() => onAttendeeEmailBlur?.(type.slug, index)}
                     disabled={disabled}
                     error={rowErrors.email}
                   />
