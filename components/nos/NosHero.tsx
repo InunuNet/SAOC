@@ -36,7 +36,6 @@ import type { ShowFact } from '@/lib/data/show-facts';
 import { type HeroFact, normaliseHeroFacts } from '@/lib/hero-facts';
 import heroSourceWidths from '@/lib/hero-source-widths.json';
 import {
-  desktopCoverSize,
   fixedHeightCoverSize,
   mirroredCopyScrimGradient,
 } from '@/lib/interior-hero';
@@ -54,7 +53,9 @@ const FULL_BLEED_QUALITY = 88;
 // photograph is full bleed at every width from 768px, the copy column sits on the left on the NOS ink (--black,
 // rgb 11 10 20) eased scrim, and the bloom side is the bare photograph. Below 768px the photograph is a 2:1 band
 // above the title block, so no text sits over it. The box heights are in nos-structure.css (Inner hero sizing).
-const INNER_TABLET_BOX_PX = 320;
+// The locked box (Brad, 26 Nov 2026: about 268px at 1288): nos-structure.css `clamp(268px, 20.8vw, 480px)`.
+const INNER_TABLET_BOX_PX = 268;
+const INNER_DESKTOP_BOX = 'clamp(268px, 20.8vw, 480px)';
 const INNER_PHONE_BAND_VW = 50;
 const INNER_SCRIM = mirroredCopyScrimGradient('11 10 20', 'var(--hero-copy-end)');
 
@@ -64,7 +65,7 @@ function innerPhotoSizes(src: string): string {
   return [
     `(max-width: 767px) max(100vw, calc(${INNER_PHONE_BAND_VW}vw * ${aspect}))`,
     `(max-width: 1023px) ${fixedHeightCoverSize(INNER_TABLET_BOX_PX, aspect)}`,
-    desktopCoverSize(aspect),
+    `max(100vw, calc(${INNER_DESKTOP_BOX} * ${aspect}))`,
   ].join(', ');
 }
 

@@ -44,10 +44,10 @@ if (mode === 'nav') {
   const shared = read(SHARED);
   const pageHero = read(PAGE_HERO);
   // Locked heights (Brad, 26 Nov 2026: "lock the height"): from 1024 the PageHero box as a fixed height, not a floor.
-  if (!/\.nos-hero-inner\.nos-hero-photo \{\s*height:\s*max\(420px,\s*29\.3vw\);\s*min-height:\s*max\(420px,\s*29\.3vw\)/.test(css)) fail(`${STRUCTURE}: from 1024 the photo hero is locked at height max(420px, 29.3vw) (PageHero), scoped to .nos-hero-photo`);
-  if (!/\.nos-hero-inner\.nos-hero-photo \.nos-hero-head \{[^}]*height:\s*320px;\s*min-height:\s*320px/.test(css)) fail(`${STRUCTURE}: from 768 to 1023 the photo hero box is locked at 320px`);
+  if (!/\.nos-hero-inner\.nos-hero-photo \{\s*height:\s*clamp\(268px,\s*20\.8vw,\s*480px\);\s*min-height:\s*clamp\(268px,\s*20\.8vw,\s*480px\)/.test(css)) fail(`${STRUCTURE}: from 1024 the photo hero is locked at clamp(268px, 20.8vw, 480px) (Brad's reference), scoped to .nos-hero-photo`);
+  if (!/\.nos-hero-inner\.nos-hero-photo \.nos-hero-head \{[^}]*height:\s*268px;\s*min-height:\s*268px/.test(css)) fail(`${STRUCTURE}: from 768 to 1023 the photo hero box is locked at 268px`);
   if (!/min-height:\s*calc\(124px \+ 2 \* max\(3rem, 1\.8rem \+ 3\.2vw\)\)/.test(css)) fail(`${STRUCTURE}: below 768 the title block holds the crumbs and a two-line h1`);
-  for (const h of ['320px', 'calc(124px + 2 * max(3rem, 1.8rem + 3.2vw))']) {
+  for (const h of ['268px', 'calc(124px + 2 * max(3rem, 1.8rem + 3.2vw))']) {
     const decl = `min-height: ${h};`;
     const selectors = [];
     for (let at = css.indexOf(decl); at >= 0; at = css.indexOf(decl, at + 1)) selectors.push(css.slice(css.lastIndexOf('}', at), at));

@@ -24,15 +24,17 @@ const ROUTES = [
 //                     an equal-height box would be mostly an empty near-black block at 390.
 //   /media-kit        follows the rule through NosHero, but is admin-gated, so this check cannot reach it.
 const EXEMPT = ['/', '/tickets', '/tickets/recover', '/archive', '/media-kit'];
-const WIDTHS = [1440, 1024, 768, 390];
+const WIDTHS = [2056, 1440, 1288, 1024, 768, 390];
 // From 768 the crumbs and h1 sit over the full-bleed photo on the copy scrim (26 Nov 2026); below 768 the title block is on the
 // solid ground under the photo band, so contrast is measured from 768 up (900 stands for the 768-1023 band).
 const CONTRAST_WIDTHS = [2056, 1440, 1024, 900];
 const DESKTOP_MIN = 1024;
 const TABLET_MIN = 768;
-const DESKTOP_FLOOR_PX = 420;
-const DESKTOP_HEIGHT_VW = 29.3;
-const TABLET_HEIGHT_PX = 320;
+// Brad's reference (26 Nov 2026): about 268px at a 1288px viewport; clamp(268px, 20.8vw, 480px).
+const DESKTOP_FLOOR_PX = 268;
+const DESKTOP_HEIGHT_VW = 20.8;
+const DESKTOP_CEILING_PX = 480;
+const TABLET_HEIGHT_PX = 268;
 // Phone: the 2:1 band plus the title block (padding 32 + 32, crumbs 44, gap 16, two h1 lines).
 const PHONE_BLOCK_PX = 124;
 const PHONE_TITLE_FLOOR_PX = 48;
@@ -57,7 +59,7 @@ const fail = (msg) => failures.push(msg);
 for (const route of ROUTES.filter((r) => EXEMPT.includes(r))) fail(`${route} is both exempt and listed for the equal-height rule`);
 
 function expectedHeight(width) {
-  if (width >= DESKTOP_MIN) return Math.max(DESKTOP_FLOOR_PX, (DESKTOP_HEIGHT_VW / 100) * width);
+  if (width >= DESKTOP_MIN) return Math.min(DESKTOP_CEILING_PX, Math.max(DESKTOP_FLOOR_PX, (DESKTOP_HEIGHT_VW / 100) * width));
   if (width >= TABLET_MIN) return TABLET_HEIGHT_PX;
   const title = Math.max(PHONE_TITLE_FLOOR_PX, 1.8 * ROOT_PX + 0.032 * width);
   return width / 2 + PHONE_BLOCK_PX + 2 * title;
