@@ -12,6 +12,7 @@
 
 import type { AccommodationDistanceBand, AccommodationOption } from '@/types';
 import { COLUMN_CLASS, SPAN_CLASS, resolveGridLayout } from '@/lib/grid-columns';
+import { SiteLink } from '@/components/ui/SiteLink';
 
 const BAND_ORDER: AccommodationDistanceBand[] = ['walking', 'nearby', 'city', 'further'];
 
@@ -74,14 +75,12 @@ export function AccommodationList({ options }: AccommodationListProps) {
                     </p>
                   ) : null}
                   {option.url ? (
-                    <a
+                    <SiteLink own="nos"
                       href={option.url}
-                      target="_blank"
-                      rel="noreferrer noopener"
                       className="mt-3 inline-block font-sans text-[13px] text-ink underline underline-offset-2 hover:text-accent"
                     >
                       Visit website ↗
-                    </a>
+                    </SiteLink>
                   ) : null}
                 </li>
               ))}

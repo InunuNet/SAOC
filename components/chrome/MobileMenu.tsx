@@ -14,6 +14,7 @@ import { usePathname } from 'next/navigation';
 
 import { useFocusTrap } from '@/lib/hooks/useFocusTrap';
 import { navAriaCurrent } from '@/lib/nav-current';
+import { SiteLink } from '@/components/ui/SiteLink';
 import { CONTACT_LINK, type NavLinkItem } from './nav-config';
 
 export const MOBILE_MENU_ID = 'mobile-menu';
@@ -154,11 +155,9 @@ export function MobileMenu({ open, onClose, onSearch, nav, triggerRef }: MobileM
                   </li>
                 );
               }
-              // National Show leaves this site for the NOS one: a plain anchor, same tab, no arrow.
-              const NavLink = n.crossSite ? 'a' : Link;
               return (
                 <li key={n.id}>
-                  <NavLink
+                  <SiteLink own="saoc"
                     href={n.href}
                     onClick={onClose}
                     aria-current={navAriaCurrent(pathname, n.href, { crossSite: n.crossSite })}
@@ -170,7 +169,7 @@ export function MobileMenu({ open, onClose, onSearch, nav, triggerRef }: MobileM
                     <span className="group-focus-visible:underline group-focus-visible:decoration-2! group-focus-visible:underline-offset-4 group-aria-[current=page]:underline group-aria-[current=page]:decoration-1 group-aria-[current=page]:underline-offset-4 forced-colors:group-focus-visible:decoration-[color:Highlight]">
                       {n.label}
                     </span>
-                  </NavLink>
+                  </SiteLink>
                 </li>
               );
             })}

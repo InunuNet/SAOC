@@ -5,11 +5,14 @@ import { LegalBreadcrumb } from '@/components/legal/LegalBreadcrumb';
 import { NosHero } from '@/components/nos/NosHero';
 import { DocumentLayout, type DocumentIndexEntry } from '@/components/ui/DocumentLayout';
 import { DraftNotice } from '@/components/ui/DraftNotice';
+import { SiteLink } from '@/components/ui/SiteLink';
 import { RouteHero } from '@/components/ui/RouteHero';
 import { ProvisionalFigure } from '@/components/ui/ProvisionalFigure';
 import { PROVISIONAL_REFUND_POLICY } from '@/lib/provisional-figures';
 import { buildPageMetadata } from '@/lib/seo';
+import { nosPath } from '@/lib/nos-paths';
 import { requestSite } from '@/lib/request-site';
+import { nosUrl } from '@/lib/site-hosts';
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'Refund & Cancellation Policy',
@@ -64,6 +67,9 @@ function daysInWords(days: number): string {
   }
   return word;
 }
+
+// An absolute NOS URL: from the SAOC host it opens in a new tab, and neither host prefetches it.
+const VENDOR_APPLY_PATH = '/national-show/vendors/apply';
 
 export default async function RefundsPage() {
   const nos = (await requestSite()) === 'nos';
@@ -184,9 +190,13 @@ export default async function RefundsPage() {
           <p>
             Vendor stand bookings are a separate product with their own cancellation terms, set
             out in the vendor registration agreement, and are not covered by this policy. See{' '}
-            <Link href="/national-show/vendors/apply" prefetch={false} className="text-ink underline underline-offset-2">
+            <SiteLink
+              href={nosUrl(nosPath(VENDOR_APPLY_PATH))}
+              own={nos ? 'nos' : 'saoc'}
+              className="text-ink underline underline-offset-2"
+            >
               vendor registration
-            </Link>{' '}
+            </SiteLink>{' '}
             for details.
           </p>
 

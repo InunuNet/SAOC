@@ -17,6 +17,7 @@ import { buildPageMetadata } from '@/lib/seo';
 import { withTicketingTestTitle } from '@/lib/ticketing-test-metadata';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 import { saocUrl } from '@/lib/site-hosts';
+import { SiteLink } from '@/components/ui/SiteLink';
 
 /**
  * Public stand-payment page (mission vendor-gated-registration-flow, M3/F29). Token-gated via
@@ -92,9 +93,9 @@ export default async function VendorStandPaymentPage({
         ) : (
           <p className="font-sans text-[15px] text-ink">
             This payment link is no longer valid. Please{' '}
-            <a href={saocUrl('/contact')} className="text-ink underline underline-offset-2">
+            <SiteLink own="nos" href={saocUrl('/contact')} className="text-ink underline underline-offset-2">
               contact SAOC
-            </a>{' '}
+            </SiteLink>{' '}
             if you believe this is an error.
           </p>
         )}

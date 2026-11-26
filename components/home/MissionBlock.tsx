@@ -1,5 +1,6 @@
 import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import { isUnsourced } from '@/components/ui/provenance';
+import { SiteLink } from '@/components/ui/SiteLink';
 
 export interface MissionBlockProps {
   missionText?: string | null;
@@ -39,14 +40,12 @@ export function MissionBlock({ missionText, withhold = false }: MissionBlockProp
               Our remit is orchids <strong>in cultivation</strong> — on the show bench, in the
               greenhouse, and in the community. For indigenous species in the wild, our sibling
               organisation{' '}
-              <a
+              <SiteLink own="saoc"
                 href="https://wildorchids.co.za"
-                target="_blank"
-                rel="noopener noreferrer"
                 className="inline-link"
               >
                 Wild Orchids of Southern Africa
-              </a>{' '}
+              </SiteLink>{' '}
               leads that work.
             </p>
             {!withhold && cmsUnsourced ? <PlaceholderMarker /> : null}

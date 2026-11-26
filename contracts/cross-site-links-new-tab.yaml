@@ -1,0 +1,26 @@
+schema: athanor.contract/v1
+slug: cross-site-links-new-tab
+goal: >-
+  Every link to the other site (SAOC and National Orchid Show) or to an external origin opens in a
+  new tab with target, rel and a hidden cue; same-site links stay in the same tab. One helper
+  (lib/link-target.ts, components/ui/SiteLink.tsx) decides, including portable-text link marks.
+created_at: '2026-11-26'
+autonomy: high
+
+features:
+  - id: F1
+    name: Cross-site and external links open in a new tab.
+    status: pending
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: No plain anchor or next/link leaves the site without target, rel and the cue; PortableText uses portableLinkMarks.
+      command: node --experimental-strip-types --no-warnings contracts/checks/cross-site-links-new-tab/scan-anchors.mjs
+    - id: A2
+      description: link-target classifies production, one-origin preview, relative show paths, mailto, tel and malformed URLs.
+      command: node --experimental-strip-types --no-warnings --test contracts/checks/cross-site-links-new-tab/link-target.test.mjs
+    - id: A3
+      description: proxy.ts still hands show paths from the SAOC host to the NOS origin (shared site-routes).
+      command: node --experimental-strip-types --no-warnings contracts/checks/mobile-qa-2026-11-25/check-redirect.mjs

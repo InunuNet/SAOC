@@ -6,6 +6,7 @@ import { ArrowRight, Pause, Play } from 'lucide-react';
 import type { SanityImageSource } from '@sanity/image-url';
 
 import { HeroPicture } from '@/components/ui/HeroPicture';
+import { SiteLink } from '@/components/ui/SiteLink';
 import { HOME_HERO_SLIDES } from '@/lib/data/home-hero-slides';
 import { heroSourceAspect } from '@/lib/data/saoc-hero-photos';
 import { formatShowDateRange } from '@/lib/show-identity';
@@ -178,14 +179,15 @@ export function Hero({ show, societyCount }: HeroProps) {
               ) : null}
             </div>
             <div className="flex min-w-0 flex-col">
-              <a
+              <SiteLink
                 href={nosUrl('/')}
+                own="saoc"
                 data-hero-cta="secondary"
                 className={`${HERO_CTA_BASE} border-ivory text-ivory hover:bg-ivory/10`}
               >
                 {showCtaLabel}
                 <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" className="shrink-0" />
-              </a>
+              </SiteLink>
               {showDates ? (
                 <div className="flex flex-col">
                   <span aria-hidden="true" className="h-[2px] w-6 bg-accent" />
@@ -194,10 +196,10 @@ export function Hero({ show, societyCount }: HeroProps) {
               ) : null}
             </div>
             <div className="flex min-w-0 flex-col">
-              <a href={nosUrl('/tickets')} data-hero-cta="tickets" className={`${HERO_CTA_BASE} border-ivory text-ivory hover:bg-ivory/10`}>
+              <SiteLink href={nosUrl('/tickets')} own="saoc" data-hero-cta="tickets" className={`${HERO_CTA_BASE} border-ivory text-ivory hover:bg-ivory/10`}>
                 Tickets
                 <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" className="shrink-0" />
-              </a>
+              </SiteLink>
               <div className="flex flex-col">
                 <span aria-hidden="true" className="h-[2px] w-6 bg-accent" />
                 <p className={HERO_CTA_META}>National Orchid Show</p>

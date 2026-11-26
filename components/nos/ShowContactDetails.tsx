@@ -7,6 +7,7 @@
 
 import { SHOW_ADDRESS_LINES, SHOW_CONTACT_EMAIL } from '@/lib/show-contact';
 import type { ShowVenue } from '@/types';
+import { SiteLink } from '@/components/ui/SiteLink';
 
 const HEADING_ADDRESS = 'Address of the show';
 const HEADING_EMAIL = 'Email';
@@ -44,14 +45,12 @@ export function ShowContactDetails({ venue }: { venue?: ShowVenue | null }) {
         {venue?.directionsNote ? <p className={BODY_CLASS}>{venue.directionsNote}</p> : null}
         {venue?.mapsUrl ? (
           <p className={BODY_CLASS}>
-            <a
+            <SiteLink own="nos"
               href={venue.mapsUrl}
-              target="_blank"
-              rel="noreferrer noopener"
               className={MAP_LINK_CLASS}
             >
               {MAP_LINK_LABEL}
-            </a>
+            </SiteLink>
           </p>
         ) : null}
       </section>

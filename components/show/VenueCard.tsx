@@ -17,6 +17,7 @@ import { urlFor } from '@/sanity/lib/image';
 import type { ConfirmationStatus, ShowVenue } from '@/types';
 
 import { ConfirmationBadge } from './ConfirmationBadge';
+import { SiteLink } from '@/components/ui/SiteLink';
 
 export interface VenueCardProps {
   venue?: ShowVenue | null;
@@ -104,15 +105,13 @@ export function VenueCard({
         </Button>
       ) : null}
       {venue.mapsUrl && mapAction === 'link' ? (
-        <a
+        <SiteLink own="nos"
           href={venue.mapsUrl}
-          target="_blank"
-          rel="noreferrer noopener"
           className={`mt-5 inline-flex min-h-[44px] items-center font-sans text-[12px] gap-1 tracking-[0.16em] text-ink underline underline-offset-4 hover:text-accent${linkSuffix}`}
         >
           Open in a map
           <ExternalArrow />
-        </a>
+        </SiteLink>
       ) : null}
     </section>
   );
