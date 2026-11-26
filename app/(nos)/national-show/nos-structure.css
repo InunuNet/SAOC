@@ -3679,6 +3679,30 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     text-overflow: ellipsis;
   }
 }
+/* Variant B (Brad, 26 Nov 2026: "zoom out at least 50%" at the locked height). From 768 the photograph is a
+   panel flush right, 31% of the hero wide, at full box height, with a hard edge: no fade, no mask, no scrim. The
+   copy sits on the solid NOS ink to its left. At 31% the panel shows each 3:2 source whole at 1440 and 2056, so
+   the flowers render at about half (or less) of the 25 Nov magnification. */
+@media (min-width: 768px) {
+  .nos-theme .nos-hero-inner.nos-hero-photo {
+    --hero-copy-end: 69cqw;
+    background-color: var(--black);
+  }
+  .nos-theme .nos-hero-inner .nos-hero-copy-scrim {
+    display: none;
+  }
+  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-media {
+    inset: 0 0 0 auto;
+    width: 31cqw;
+  }
+}
+@media (min-width: 1024px) {
+  .nos-theme .nos-hero-inner.nos-hero-photo {
+    --hero-copy-end: calc(
+      69cqw - max(0px, (100cqw - var(--nos-axis-max)) / 2) - var(--nos-axis-pad) - 48px
+    );
+  }
+}
 .nos-theme .hero-facts > div:first-child dd {
   white-space: nowrap;
 }

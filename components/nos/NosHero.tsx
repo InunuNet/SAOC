@@ -36,7 +36,6 @@ import type { ShowFact } from '@/lib/data/show-facts';
 import { type HeroFact, normaliseHeroFacts } from '@/lib/hero-facts';
 import heroSourceWidths from '@/lib/hero-source-widths.json';
 import {
-  fixedHeightCoverSize,
   mirroredCopyScrimGradient,
 } from '@/lib/interior-hero';
 
@@ -57,15 +56,17 @@ const FULL_BLEED_QUALITY = 88;
 const INNER_TABLET_BOX_PX = 268;
 const INNER_DESKTOP_BOX = 'clamp(268px, 20.8vw, 480px)';
 const INNER_PHONE_BAND_VW = 50;
+// Variant B: from 768 the photograph is a hard-edged panel flush right, 31vw wide (nos-structure.css).
+const INNER_PANEL_VW = 31;
 const INNER_SCRIM = mirroredCopyScrimGradient('11 10 20', 'var(--hero-copy-end)');
 
-/** The `sizes` of the inner photograph: a cover image is as wide as the larger of the box and box height x aspect. */
+/** The `sizes` of the inner photograph: a cover image is as wide as the larger of its box and box height x aspect. */
 function innerPhotoSizes(src: string): string {
   const aspect = heroSourceAspect(src);
   return [
     `(max-width: 767px) max(100vw, calc(${INNER_PHONE_BAND_VW}vw * ${aspect}))`,
-    `(max-width: 1023px) ${fixedHeightCoverSize(INNER_TABLET_BOX_PX, aspect)}`,
-    `max(100vw, calc(${INNER_DESKTOP_BOX} * ${aspect}))`,
+    `(max-width: 1023px) max(${INNER_PANEL_VW}vw, ${INNER_TABLET_BOX_PX * aspect}px)`,
+    `max(${INNER_PANEL_VW}vw, calc(${INNER_DESKTOP_BOX} * ${aspect}))`,
   ].join(', ');
 }
 

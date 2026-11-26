@@ -16,8 +16,9 @@
 // 2:1 cuts of their originals at native resolution (Hendrik Schoeman's 3000x4000 originals, the Commons
 // originals in stock-photos/, and the 3000x2000 home sources for the two phalaenopsis), S3a and D1 mirrored
 // so the bloom sits right of the copy. H4b, PK3 and Y1 are their own originals, used whole.
-// Variant A (Brad, 26 Nov 2026: lock the height near 268px at 1288): the box is about 4.8:1, so it shows the
-// full width and about 42% of each 2:1 file's height; objectPosition puts that band on the bloom.
+// Variant B (Brad, 26 Nov 2026: zoom out at least 50% at the locked height): the files are full-width 3:2 cuts
+// of the originals (the landscape originals whole), shown in a 31vw panel at about their own aspect, so the whole
+// band shows and objectPosition stays centred. H4b, PK3 and Y1 are their own 2:1 originals, used whole.
 // =============================================================
 
 export interface NosHeroPhoto {
@@ -49,14 +50,14 @@ export type NosCropCode =
 export const HERO_CROPS: Readonly<Record<NosCropCode, NosHeroPhoto>> = {
   S3a: { src: '/images/heroes/hero-nos-about-colmanara-hendrik.jpg', objectPosition: '50% 50%' },
   S3b: { src: '/images/heroes/hero-nos-programme-dendrobium-hendrik.jpg', objectPosition: '50% 50%' },
-  S2a: { src: '/images/heroes/hero-nos-conferences-purple-phalaenopsis.jpg', objectPosition: '50% 25%' },
-  S2c: { src: '/images/heroes/hero-nos-workshops-cattleya-apricot-hendrik.jpg', objectPosition: '50% 80%' },
+  S2a: { src: '/images/heroes/hero-nos-conferences-purple-phalaenopsis.jpg', objectPosition: '50% 50%' },
+  S2c: { src: '/images/heroes/hero-nos-workshops-cattleya-apricot-hendrik.jpg', objectPosition: '50% 50%' },
   S1b: { src: '/images/heroes/hero-nos-plan-paphiopedilum-yellow-wide.jpg', objectPosition: '50% 50%' },
-  H4a: { src: '/images/heroes/hero-nos-faq-pink-phalaenopsis.jpg', objectPosition: '50% 40%' },
-  H4b: { src: '/images/nos-hero-H4b.jpg', objectPosition: '50% 70%' },
-  D1: { src: '/images/heroes/hero-nos-symposium-paphiopedilum-rust.jpg', objectPosition: '50% 55%' },
+  H4a: { src: '/images/heroes/hero-nos-faq-pink-phalaenopsis.jpg', objectPosition: '50% 50%' },
+  H4b: { src: '/images/nos-hero-H4b.jpg', objectPosition: '50% 50%' },
+  D1: { src: '/images/heroes/hero-nos-symposium-paphiopedilum-rust.jpg', objectPosition: '50% 50%' },
   PK1: { src: '/images/heroes/hero-nos-expect-zygopetalum-hendrik.jpg', objectPosition: '50% 50%' },
-  PK3: { src: '/images/nos-hero-PK3.jpg', objectPosition: '50% 60%' },
+  PK3: { src: '/images/nos-hero-PK3.jpg', objectPosition: '50% 50%' },
   Y1: { src: '/images/nos-hero-Y1.jpg', objectPosition: '50% 50%' },
 };
 
