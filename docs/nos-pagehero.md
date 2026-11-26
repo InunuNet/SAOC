@@ -23,12 +23,18 @@ Brad's ruling replaces the content-driven height and the 46% panel above. Spec a
 - From 1024px the hero is `max(420px, 29.3vw)` tall (the SAOC `PageHero` height) with `padding-block:
   clamp(32px, 2.5vw, 48px)`. The whole copy sits inside it; the lede fills the copy column (`max-width: none`,
   replacing R71's 46ch) and a three-fact row is one row.
-- From 768px to 1023px the title block and the photo share one 320px row (58% / 42%). Below 768px a 2:1 photo
+- From 768px to 1023px the hero box is one 320px row with the title block over the photo. Below 768px a 2:1 photo
   band leads and the title block follows at a fixed height. In both, the detail block sits under the hero on the
   page ground, in ink with muted labels.
-- The scrim is the SAOC `PageHero` ramp mirrored and drawn as the photo's mask: visibility 0.2 at the copy edge,
-  easing to 1 over 18cqw (0.3 / 0.48 / 0.68 / 0.84 / 0.94 / 1). The old dark 90deg ramp over the photo is gone,
-  so the bloom keeps full strength. Each route keeps its photo; only `--nos-hero-pos` (the crop focus) varies.
+- Superseded on 26 Nov 2026 (Brad: "Where is the same system we use to fix the heroes on SAOC?"): the inner hero
+  is the SAOC interior hero system, mirrored. From 768px the photograph is full bleed through PageHero's
+  `HeroPicture` with aspect-driven `sizes`; nothing masks it. The copy column (left, ending at 48% of the width, or
+  `axis + 570px` where that is wider) sits on an overlay scrim from `lib/interior-hero.ts` in the NOS ink: 0.8 over
+  the copy, then the SAOC home hero's eased tail to clear over 22%, so the bloom side is the bare photograph and no
+  seam or band shows. The box is locked (`height`, not `min-height`). The 768-1023 58/42 split panel is gone.
+- The photographs are full-width 2:1 cuts of their originals at native resolution (S3a and D1 mirrored so the bloom
+  sits right of the copy). A full-bleed box is wider than the old panel, so the flowers render 1.4-1.8x larger than
+  on 25 Nov; a real zoom-out needs larger originals.
 - Scope: photo heroes only. A typographic hero (404, `/tickets/recover`) keeps its content-fit height, and
   `/tickets` keeps its fan masthead, like the hub (lead rulings, 25 Nov 2026).
 - The Contact hero has the shared facts strip: Dates and Venue from the show facts, and Email (a mailto link).

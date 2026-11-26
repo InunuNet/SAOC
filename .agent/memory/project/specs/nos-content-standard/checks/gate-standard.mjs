@@ -30,13 +30,13 @@ async function heroSharpness(page, route, vp, c, tag) {
   if (route.photo) c.check(`${tag} the hero serves the route's signed-off crop ${route.photo}`, decodeURIComponent(idv).includes(`nos-hero-${route.photo}`), idv);
   if (!found) return;
   const geo = await page.evaluate((sel) => { const img = document.querySelector(sel); const hero = document.querySelector('section[data-nos-hero]').getBoundingClientRect(); const b = img.getBoundingClientRect(); const h1 = document.querySelector('h1')?.getBoundingClientRect(); const md = img.closest('[data-nos-hero-media]')?.getBoundingClientRect() ?? b; return { mw: md.width, mright: (md.right - hero.left) / hero.width * 100, left: (b.left - hero.left) / hero.width * 100, right: (b.right - hero.left) / hero.width * 100, w: b.width, heroW: hero.width, top: b.top, h1Bottom: h1 ? h1.bottom : 0 }; }, HERO_IMG);
-  if (vp.width >= 1024) {
+  // Brad, 26 Nov 2026 (the SAOC interior hero system; NH2's split panel and the 25 Nov photo mask are superseded): from 768 the photo is
+  // full bleed, radius 0, with no mask on it or its box; below 768 it is a full-width band that leads.
+  if (vp.width >= 768) {
     const bx = await page.evaluate((sel) => { const img = document.querySelector(sel); const media = img?.closest('[data-nos-hero-media]') ?? img?.parentElement; const radii = [img, media].filter(Boolean).map((e) => ['TopLeft', 'TopRight', 'BottomLeft', 'BottomRight'].map((k) => parseFloat(getComputedStyle(e)[`border${k}Radius`]) || 0)).flat(); const mk = [media, img, media?.parentElement].filter(Boolean).map((e) => `${getComputedStyle(e).maskImage} ${getComputedStyle(e).webkitMaskImage}`).join(' | '); return { maxRadius: Math.max(...radii), mask: mk }; }, HERO_IMG);
-    c.check(`${tag} P1 the .ihero photo box has radius 0 (${bx.maxRadius}) and its left 22% is masked into the black (${bx.mask.slice(0, 90)})`, bx.maxRadius === 0 && /linear-gradient/.test(bx.mask) && /22%/.test(bx.mask));
-  }
-  if (vp.width >= 1024) c.check(`${tag} photo box runs 38%-100% of the hero (measured ${geo.left.toFixed(1)}%-${geo.right.toFixed(1)}%)`, Math.abs(geo.left - STD.hero.photoBox.atOrAbove1024.leftPctOfHero) <= STD.hero.photoBox.atOrAbove1024.tolerancePct && Math.abs(geo.right - 100) <= 1);
-  else if (vp.width < 768) c.check(`${tag} below 768 the photo is a full-width band that leads, the copy follows (PG-1 4; NH2 supersedes the (c) 'under the copy' wording)`, Math.abs(geo.w - geo.heroW) <= 1 && geo.top <= geo.h1Bottom - 1);
-  else c.check(`${tag} 768-1023 the photo is the right-hand panel at 42% of the hero, flush right (NH2; the (c) 'stacked below 1024' wording is superseded) (media ${(geo.mw / geo.heroW * 100).toFixed(1)}%, right ${geo.mright.toFixed(1)}%; the img inside is ${(geo.w / geo.heroW * 100).toFixed(1)}%)`, Math.abs(geo.mw / geo.heroW - 0.42) <= 0.02 && Math.abs(geo.mright - 100) <= 1);
+    c.check(`${tag} the photo box has radius 0 (${bx.maxRadius}) and no mask (${bx.mask.slice(0, 90)})`, bx.maxRadius === 0 && !/gradient/.test(bx.mask));
+    c.check(`${tag} the photo is full bleed: 0%-100% of the hero (media ${(geo.mw / geo.heroW * 100).toFixed(1)}%, measured ${geo.left.toFixed(1)}%-${geo.right.toFixed(1)}%)`, Math.abs(geo.left) <= 0.5 && Math.abs(geo.right - 100) <= 0.5 && Math.abs(geo.mw - geo.heroW) <= 1);
+  } else c.check(`${tag} below 768 the photo is a full-width band that leads, the copy follows (PG-1 4; NH2 supersedes the (c) 'under the copy' wording)`, Math.abs(geo.w - geo.heroW) <= 1 && geo.top <= geo.h1Bottom - 1);
   const r = await page.evaluate(async (sel) => {
     const img = document.querySelector(sel); const b = img.getBoundingClientRect();
     const probe = new Image(); probe.src = img.currentSrc; await probe.decode();
@@ -49,26 +49,30 @@ async function heroSharpness(page, route, vp, c, tag) {
   c.check(`${tag} required ${required} <= the cut's native ${crop.width} (not clamped)`, required <= crop.width);
 }
 
-// HR-1 superseded on 25 Nov 2026 by nos-hero-consistency (Brad): the inner photo hero no longer lays a dark 90deg ramp over the photo.
-// The scrim is the SAOC PageHero ramp (alpha 0 to 0.8 over 34-52%) mirrored and drawn as the photo's mask, so the ground shows through
-// behind the copy and the bloom keeps full strength. Visibility stops: 0.2 at the copy edge, then .3 / .48 / .68 / .84 / .94 / 1.
-const HR1_MASK_ALPHAS = [0.2, 0.3, 0.48, 0.68, 0.84, 0.94];
-/** HR-1 (nos-hero-consistency): at >= 1024 the inner hero carries no dark 90deg rgba(11,10,20) ramp, and its photo's mask holds the eased stops in order. */
+// HR-1, superseded on 26 Nov 2026 (Brad: "Where is the same system we use to fix the heroes on SAOC?"): the inner photo hero is the SAOC
+// interior hero system. One 90deg NOS-ink gradient, on the copy scrim overlay only (lib/interior-hero.ts): PageHero's 0.8 from the left
+// edge to the copy edge, then the home hero's eased tail to clear; nothing else in the hero carries a dark ramp, and the photo has no mask.
+const HR1_SCRIM_ALPHAS = [0.8, 0.8, 0.777, 0.716, 0.627, 0.518, 0.4, 0.282, 0.173, 0.084, 0.023, 0];
+const HR1_ALPHA_TOLERANCE = 0.003;
+/** HR-1: at >= 1024 the inner photo hero's only rgba(11,10,20) 90deg ramp is the copy scrim, with the eased alphas in order. */
 async function heroRampCheck(page, tag, c) {
   const m = await page.evaluate(() => {
     const hero = document.querySelector('section[data-nos-hero]'); if (!hero || hero.getAttribute('data-nos-hero') === 'hub') return null;
+    if (hero.getAttribute('data-nos-hero-variant') !== 'photo') return null;
     const ramps = [];
     for (const e of [hero, ...hero.querySelectorAll('*')]) for (const ps of [null, '::before', '::after']) {
       const bi = getComputedStyle(e, ps).backgroundImage;
-      if (/linear-gradient\(/.test(bi) && /rgba\(11, ?10, ?20/.test(bi) && /90deg/.test(bi)) ramps.push(`${e.tagName.toLowerCase()}.${String(e.className).split(' ')[0]}${ps ?? ''}`);
+      if (/linear-gradient\(/.test(bi) && /rgba\(11, ?10, ?20/.test(bi) && /90deg/.test(bi)) ramps.push({ at: `${e.tagName.toLowerCase()}.${String(e.className).split(' ')[0]}${ps ?? ''}`, scrim: e.getAttribute('data-hero-scrim') === 'copy' && ps === null, bi });
     }
     const media = hero.querySelector('.nos-hero-media');
     return { ramps, mask: media ? getComputedStyle(media).maskImage : '' };
   });
   if (!m) return;
-  const alphas = [...m.mask.matchAll(/rgba\(0, 0, 0, ([\d.]+)\)/g)].map((x) => Number(x[1])).filter((a) => a > 0);
-  c.check(`${tag} HR-1 no dark ramp over the photo (${m.ramps.join(', ') || 'none'}) and the photo mask eases ${HR1_MASK_ALPHAS.join(' / ')} / 1 (${alphas.join(' / ')})`,
-    m.ramps.length === 0 && JSON.stringify(alphas) === JSON.stringify(HR1_MASK_ALPHAS), m.mask.slice(0, 200));
+  const scrim = m.ramps.find((r) => r.scrim);
+  const alphas = scrim ? [...scrim.bi.matchAll(/rgba\(11, ?10, ?20, ?([\d.]+)\)|rgba\(11, ?10, ?20\)/g)].map((x) => (x[1] === undefined ? 1 : Number(x[1]))) : [];
+  c.check(`${tag} HR-1 the only dark ramp is the copy scrim (${m.ramps.map((r) => r.at).join(', ') || 'none'}), alphas ${alphas.join(' / ')}, and the photo has no mask (${m.mask})`,
+    // The computed alpha is quantised to 8 bits (0.777 reads back as 0.776), so each stop is compared within half a step.
+    m.ramps.length === 1 && Boolean(scrim) && alphas.length === HR1_SCRIM_ALPHAS.length && alphas.every((a, i) => Math.abs(a - HR1_SCRIM_ALPHAS[i]) <= HR1_ALPHA_TOLERANCE) && !/gradient/.test(m.mask), scrim?.bi.slice(0, 200));
 }
 /** HR-1 contrast: text hidden, p95 luminance of the photo pixels behind each hero text range (crumb, h1, lede, dt, dd) against the text colour; >= 4.5, h1 >= 3, at 1440 and 2056. */
 async function heroTextContrast(page, tag, c) {

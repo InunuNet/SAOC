@@ -12,6 +12,10 @@
 // group (G3). A route with no crop and no inheritable prefix gets the typographic hero (G6),
 // never a random or repeated crop. The 13-photo Ormerod set in branding/ is NOT rights-cleared
 // (guardrail D5).
+// 26 Nov 2026 (Brad: the SAOC hero system, zoomed out): the files under /images/heroes/ are full-width
+// 2:1 cuts of their originals at native resolution (Hendrik Schoeman's 3000x4000 originals, the Commons
+// originals in stock-photos/, and the 3000x2000 home sources for the two phalaenopsis), S3a and D1 mirrored
+// so the bloom sits right of the copy. H4b, PK3 and Y1 are their own originals, used whole.
 // =============================================================
 
 export interface NosHeroPhoto {

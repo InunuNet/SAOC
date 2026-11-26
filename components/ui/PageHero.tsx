@@ -12,6 +12,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { HeroPicture } from '@/components/ui/HeroPicture';
 import { normaliseHeroFacts, type HeroFact } from '@/lib/hero-facts';
 import { heroSourceAspect } from '@/lib/data/saoc-hero-photos';
+import { copyScrimGradient, desktopCoverSize, fixedHeightCoverSize } from '@/lib/interior-hero';
 
 interface PageHeroProps {
   /** The photograph (a path in public/images). Omit it for the typographic hero. */
@@ -33,27 +34,14 @@ interface PageHeroProps {
 
 // From 1024px the box is 600/2048 of the width tall (29.3vw), so a source wider than the box is height-driven.
 // The copy can make it taller than that between 1024 and about 1400px (the event hero with facts measures
-// 407px at 1024 and 415px at 1280), so the box height is taken as at least DESKTOP_TALL_HERO_PX.
-const DESKTOP_HEIGHT_VW = 29.3;
-const DESKTOP_TALL_HERO_PX = 420;
+// 407px at 1024 and 415px at 1280), so the box height is taken as at least 420px (lib/interior-hero.ts).
 // Below 1024px the hero is content-tall, about this many px on a phone.
 const STACKED_BOX_HEIGHT = 520;
 const STACK_BELOW_QUERY = '(max-width: 1023px)';
-// The copy zone: the scrim is clear through the bloom side (34%), eases in over the stops below (alpha,
-// position in percent) and reaches its full strength by 52%, where the copy column starts (HM-5).
+// The copy zone: the scrim is clear through the bloom side (34%), eases in over the shared stops
+// (lib/hero-scrim.ts) and reaches its full strength by 52%, where the copy column starts (HM-5).
 // Sage only (--primary-800), no wash over the bloom.
-const SCRIM_STOPS: readonly (readonly [number, number])[] = [
-  [0, 34],
-  [0.06, 38],
-  [0.16, 42],
-  [0.32, 45],
-  [0.52, 48],
-  [0.7, 50.5],
-  [0.8, 52],
-];
-const SCRIM_BACKGROUND = `linear-gradient(90deg, transparent 0, ${SCRIM_STOPS.map(
-  ([alpha, at]) => `rgb(34 40 31 / ${alpha}) ${at}%`,
-).join(', ')})`;
+const SCRIM_BACKGROUND = copyScrimGradient('34 40 31');
 
 export function PageHero({
   image,
@@ -72,7 +60,7 @@ export function PageHero({
   const sizes =
     aspect === null
       ? undefined
-      : `${STACK_BELOW_QUERY} max(100vw, ${Math.ceil(STACKED_BOX_HEIGHT * aspect)}px), max(100vw, calc(max(${DESKTOP_HEIGHT_VW}vw, ${DESKTOP_TALL_HERO_PX}px) * ${aspect}))`;
+      : `${STACK_BELOW_QUERY} ${fixedHeightCoverSize(STACKED_BOX_HEIGHT, aspect)}, ${desktopCoverSize(aspect)}`;
 
   return (
     <section

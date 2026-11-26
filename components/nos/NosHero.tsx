@@ -2,9 +2,10 @@
 // NOS — components/nos/NosHero.tsx
 // Server Component. The NOS hero, in two kinds that share one DOM contract:
 //
-//   photo  (NOS Design NH2) the inner split studio panel: copy top-anchored on solid #0B0A14,
-//          one cropped studio photograph in a 46% panel flush right (16px bottom-left radius,
-//          no scrim); below 768px a 2/1 photo band leads and the copy sits under it. The hub
+//   photo  the inner hero is the SAOC interior hero system (Brad, 26 Nov 2026, superseding NOS
+//          Design NH2's split panel): from 768px a full-bleed photograph, copy top-anchored in a
+//          left column on the mirrored PageHero scrim in the NOS ink (lib/interior-hero.ts), the
+//          bloom side bare; below 768px a 2/1 photo band leads and the copy sits under it. The hub
 //          (`titleSize="display"`) keeps its full-bleed photograph under the 6-stop ramp. Only
 //          the rights-cleared production photographs may appear (components/nos/hero-photos.ts);
 //          the 13-photo Ormerod set in branding/ is NOT rights-cleared (guardrail D5). No
@@ -29,9 +30,16 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { CSSProperties, ReactNode } from 'react';
 
+import { HeroPicture } from '@/components/ui/HeroPicture';
+import { heroSourceAspect } from '@/lib/data/saoc-hero-photos';
 import type { ShowFact } from '@/lib/data/show-facts';
 import { type HeroFact, normaliseHeroFacts } from '@/lib/hero-facts';
 import heroSourceWidths from '@/lib/hero-source-widths.json';
+import {
+  desktopCoverSize,
+  fixedHeightCoverSize,
+  mirroredCopyScrimGradient,
+} from '@/lib/interior-hero';
 
 import { heroCropFor, heroPhotoFor } from './hero-photos';
 import { NosSubNav } from './NosSubNav';
@@ -42,10 +50,23 @@ import { subNavGroupFor } from './nos-subnav-groups';
 // up to its native width (lib/image-loader.ts), so it is never stretched on a high-density screen.
 const FULL_BLEED_QUALITY = 88;
 
-// DS-1 (c): the photo box is 62% wide from 1024px (38% to the right edge), 42% from 768px, a full-width band below it.
-// From 768 to 1023 the box is narrower than the 1.9:1 crop is wide at hero height, so object-fit: cover
-// paints the crop at height x aspect (about 1126px at the tallest hero measured there, 563px).
-const INNER_PHOTO_SIZES = '(min-width: 1024px) min(62vw, 1150px), (min-width: 768px) max(62vw, 1200px), 100vw';
+// The inner photo hero is the SAOC interior hero system (lib/interior-hero.ts; Brad, 26 Nov 2026), mirrored: the
+// photograph is full bleed at every width from 768px, the copy column sits on the left on the NOS ink (--black,
+// rgb 11 10 20) eased scrim, and the bloom side is the bare photograph. Below 768px the photograph is a 2:1 band
+// above the title block, so no text sits over it. The box heights are in nos-structure.css (Inner hero sizing).
+const INNER_TABLET_BOX_PX = 320;
+const INNER_PHONE_BAND_VW = 50;
+const INNER_SCRIM = mirroredCopyScrimGradient('11 10 20', 'var(--hero-copy-end)');
+
+/** The `sizes` of the inner photograph: a cover image is as wide as the larger of the box and box height x aspect. */
+function innerPhotoSizes(src: string): string {
+  const aspect = heroSourceAspect(src);
+  return [
+    `(max-width: 767px) max(100vw, calc(${INNER_PHONE_BAND_VW}vw * ${aspect}))`,
+    `(max-width: 1023px) ${fixedHeightCoverSize(INNER_TABLET_BOX_PX, aspect)}`,
+    desktopCoverSize(aspect),
+  ].join(', ');
+}
 
 // HB-3: the hub photo's painted width per band, from the box it fills with object-fit: cover on the
 // 3:2 source. At 767px and below the media is a fixed-height band (height x aspect wide); from
@@ -234,19 +255,36 @@ export async function NosHero({
                 : undefined
             }
           >
-            <Image
-              src={photo.src}
-              alt=""
-              fill
-              priority={priority}
-              fetchPriority={priority ? 'high' : undefined}
-              sizes={isHub ? HUB_PHOTO_SIZES : INNER_PHOTO_SIZES}
-              quality={photo.src in heroSourceWidths ? FULL_BLEED_QUALITY : undefined}
-              className="nos-hero-img"
-            />
+            {isHub ? (
+              <Image
+                src={photo.src}
+                alt=""
+                fill
+                priority={priority}
+                fetchPriority={priority ? 'high' : undefined}
+                sizes={HUB_PHOTO_SIZES}
+                quality={photo.src in heroSourceWidths ? FULL_BLEED_QUALITY : undefined}
+                className="nos-hero-img"
+              />
+            ) : (
+              <HeroPicture
+                src={photo.src}
+                priority={priority}
+                sizes={innerPhotoSizes(photo.src)}
+                className="nos-hero-img"
+              />
+            )}
           </div>
         ) : null}
         {isHub && photo ? <div aria-hidden="true" className="nos-hero-scrim" /> : null}
+        {!isHub && photo ? (
+          <div
+            data-hero-scrim="copy"
+            aria-hidden="true"
+            className="nos-hero-copy-scrim"
+            style={{ '--scrim-gradient': INNER_SCRIM } as CSSProperties}
+          />
+        ) : null}
         <div className="nos-hero-copy">
           {isHub ? (
             <>

@@ -6,7 +6,7 @@
 //
 //   heights   every inner photo route's hero box is the same height at 1440, 1024, 768 and 390, equal to
 //             the breakpoint's formula, and its copy fits inside it.
-//   contrast  at 1024, 1440 and 2056 every hero text run clears WCAG AA (4.5:1, 3:1 for the large h1) against the
+//   contrast  at 900, 1024, 1440 and 2056 every hero text run clears WCAG AA (4.5:1, 3:1 for the large h1) against the
 //             brightest pixel behind it, measured with the text hidden.
 //   nav       a one-link nav group renders as a plain link to that page, in the top row and the menu panel.
 import { chromium } from 'playwright';
@@ -25,8 +25,9 @@ const ROUTES = [
 //   /media-kit        follows the rule through NosHero, but is admin-gated, so this check cannot reach it.
 const EXEMPT = ['/', '/tickets', '/tickets/recover', '/archive', '/media-kit'];
 const WIDTHS = [1440, 1024, 768, 390];
-// Below 1024 the hero text sits on the solid ground, so contrast is measured where it sits over the photo.
-const CONTRAST_WIDTHS = [2056, 1440, 1024];
+// From 768 the crumbs and h1 sit over the full-bleed photo on the copy scrim (26 Nov 2026); below 768 the title block is on the
+// solid ground under the photo band, so contrast is measured from 768 up (900 stands for the 768-1023 band).
+const CONTRAST_WIDTHS = [2056, 1440, 1024, 900];
 const DESKTOP_MIN = 1024;
 const TABLET_MIN = 768;
 const DESKTOP_FLOOR_PX = 420;
