@@ -5,13 +5,23 @@ import { existsSync, readFileSync } from 'node:fs';
 const proxy = readFileSync('proxy.ts', 'utf8');
 const need = [
   "'/award-entries', '/national-show/award-entries'",
-  "const PLANT_ENTRY_PATH = '/plant-entry'",
   'function retiredEntryTarget',
   'pathname.slice(base.length)',
 ];
 const missing = need.filter((s) => !proxy.includes(s));
 if (missing.length > 0) {
   console.error(`FAIL: proxy.ts lacks: ${missing.join(' | ')}`);
+  process.exit(1);
+}
+// The path constant lives in lib/site-routes.ts (shared with the link rule); proxy.ts imports it.
+const routes = readFileSync('lib/site-routes.ts', 'utf8');
+if (!routes.includes("export const PLANT_ENTRY_PATH = '/plant-entry'")) {
+  console.error("FAIL: lib/site-routes.ts lacks: export const PLANT_ENTRY_PATH = '/plant-entry'");
+  process.exit(1);
+}
+const importsRoutes = /import\s*\{[^}]*\bPLANT_ENTRY_PATH\b[^}]*\}\s*from\s*'@\/lib\/site-routes'/.test(proxy);
+if (!importsRoutes || !proxy.includes('PLANT_ENTRY_PATH')) {
+  console.error('FAIL: proxy.ts does not import PLANT_ENTRY_PATH from @/lib/site-routes');
   process.exit(1);
 }
 const uses = proxy.split('retiredEntryTarget(pathname)').length - 1;
