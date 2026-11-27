@@ -67,7 +67,7 @@ export const WORKSHOP_FIELD_TRIP_PRODUCTS: ProvisionalAdmissionProduct[] = [
   {
     slug: 'sunset-cocktails-single',
     name: 'Sunset Cocktails (Single)',
-    description: 'Admission to the Sunset Cocktails evening reception. 18+ event.',
+    description: 'Sunset Cocktails evening reception. 18+ event.',
     price: 250,
     capacity: 100,
     releasedQuantity: null,
@@ -115,7 +115,7 @@ There is no council-confirmed session list to anchor even a single instance agai
 ## The 18+ Restriction: Copy-Only This Pass, Enforcement Deferred
 
 The Sunset Cocktails evening carries an **18+ age restriction**, documented in each cocktail product's `description` field:
-- "Admission to the Sunset Cocktails evening reception. **18+ event.**"
+- "Sunset Cocktails evening reception. **18+ event.**"
 
 **Decision: this pass states the restriction as permanent factual copy, adds no schema field, defers enforcement to F4.** Reasoning: an age restriction is a fixed attribute of the product (like "full-weekend admission" is a fixed attribute of Weekend Pass) — it belongs in `description` under the existing rule that `description` carries permanent factual copy, distinct from the `provisional` flag's pricing/confirmation-status signal.
 
