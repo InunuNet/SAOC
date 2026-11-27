@@ -18,7 +18,7 @@ export default function PhotoCreditsPage() {
       <RouteHero route="/photo-credits" heading="Photo credits" />
       <LegalBreadcrumb label="Photo credits" />
       <DocumentLayout>
-        <PhotoCreditsBody />
+        <PhotoCreditsBody own="saoc" />
       </DocumentLayout>
     </>
   );

@@ -3,6 +3,7 @@ import type { SanityImageSource } from '@sanity/image-url';
 
 import { urlFor } from '@/sanity/lib/image';
 import { ArrowIcon } from '@/components/ui/ArrowIcon';
+import { SiteLink } from '@/components/ui/SiteLink';
 
 export interface SanitySponsor {
   _id: string;
@@ -60,14 +61,12 @@ export function SponsorGrid({ sponsors }: SponsorGridProps) {
                   </p>
                 ) : null}
                 {sponsor.website ? (
-                  <a
+                  <SiteLink own="saoc"
                     href={sponsor.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     className="mt-3 inline-flex min-h-6 items-center font-sans text-[13px] text-ink underline underline-offset-2 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
                   >
                     Visit website<ArrowIcon />
-                  </a>
+                  </SiteLink>
                 ) : null}
               </div>
             ))}

@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 
 import type { DocumentIndexEntry } from '@/components/ui/DocumentLayout';
+import { SiteLink } from '@/components/ui/SiteLink';
+import type { Site } from '@/lib/site-hosts';
 
 import type { LegalBlock, LegalDocument } from './types';
 
@@ -16,7 +18,7 @@ const INLINE = /\*\*([^*]+)\*\*|<((?:https?:\/\/|mailto:)[^>]+)>/g;
 const LINK_CLASS = 'text-ink underline underline-offset-2';
 const PARAGRAPH_CLASS = 'font-sans text-[16px] leading-[1.55] text-ink/85';
 
-function renderInline(text: string): ReactNode[] {
+function renderInline(text: string, own: Site): ReactNode[] {
   const nodes: ReactNode[] = [];
   let cursor = 0;
   for (const match of text.matchAll(INLINE)) {
@@ -30,9 +32,9 @@ function renderInline(text: string): ReactNode[] {
       );
     } else {
       nodes.push(
-        <a key={match.index} href={url} className={LINK_CLASS}>
+        <SiteLink key={match.index} href={url} own={own} className={LINK_CLASS}>
           {url.replace(/^mailto:/, '')}
-        </a>
+        </SiteLink>
       );
     }
     cursor = match.index + match[0].length;
@@ -70,7 +72,7 @@ export function legalIndex(document: LegalDocument): DocumentIndexEntry[] {
   );
 }
 
-function renderBlock(block: LegalBlock, index: number, ids: Map<number, string>): ReactNode {
+function renderBlock(block: LegalBlock, index: number, ids: Map<number, string>, own: Site): ReactNode {
   switch (block.kind) {
     case 'h2':
       return (
@@ -87,7 +89,7 @@ function renderBlock(block: LegalBlock, index: number, ids: Map<number, string>)
     case 'p':
       return (
         <p key={index} className={PARAGRAPH_CLASS}>
-          {renderInline(block.text)}
+          {renderInline(block.text, own)}
         </p>
       );
     case 'lines':
@@ -95,7 +97,7 @@ function renderBlock(block: LegalBlock, index: number, ids: Map<number, string>)
         <div key={index} className="space-y-1">
           {block.lines.map((line) => (
             <p key={line} className={PARAGRAPH_CLASS}>
-              {renderInline(line)}
+              {renderInline(line, own)}
             </p>
           ))}
         </div>
@@ -104,18 +106,19 @@ function renderBlock(block: LegalBlock, index: number, ids: Map<number, string>)
       return (
         <ul key={index} className={`list-disc pl-5 space-y-2 ${PARAGRAPH_CLASS}`}>
           {block.items.map((item) => (
-            <li key={item}>{renderInline(item)}</li>
+            <li key={item}>{renderInline(item, own)}</li>
           ))}
         </ul>
       );
   }
 }
 
-export function LegalBody({ document }: { document: LegalDocument }) {
+/** `own` is the site the page is rendered for, so a link to the other site or off-site opens in a new tab. */
+export function LegalBody({ document, own }: { document: LegalDocument; own: Site }) {
   const ids = headingIds(document);
   return (
     <div className="doc-prose">
-      {document.blocks.map((block, position) => renderBlock(block, position, ids))}
+      {document.blocks.map((block, position) => renderBlock(block, position, ids, own))}
     </div>
   );
 }

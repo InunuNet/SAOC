@@ -41,7 +41,7 @@ export default async function PrivacyPage() {
         </>
       )}
       <DocumentLayout index={legalIndex(PRIVACY_POLICY)}>
-        <LegalBody document={PRIVACY_POLICY} />
+        <LegalBody document={PRIVACY_POLICY} own={nos ? 'nos' : 'saoc'} />
       </DocumentLayout>
     </>
   );

@@ -28,6 +28,15 @@ import type { NextRequest } from 'next/server';
 
 import { isBetaWallConfigured, isPasswordWallOff, isPubliclyLaunched } from '@/lib/beta-public-launch';
 import { NOS_INTERNAL_PREFIX, nosPath } from '@/lib/nos-paths';
+import {
+  MOI_PATH,
+  PLANT_ENTRY_PATH,
+  SAOC_ONLY_EXACT,
+  SAOC_ONLY_PREFIXES,
+  SHOW_PREFIXES,
+  isUnder,
+  isUnderAny,
+} from '@/lib/site-routes';
 import { saocUrl, nosUrl, siteForHost, type Site } from '@/lib/site-hosts';
 
 // Exact-match only — never a prefix/startsWith check. A prefix match would also
@@ -201,7 +210,6 @@ const RETIRED_EXHIBITORS_ENTRY_PATHS = new Set<string>(['/exhibitors', '/nationa
 // The page was then renamed Award Entries -> Plant Entry (Brad, 25 Nov). Old award-entries URLs, and any
 // sub-path under them, 308 to /plant-entry in one hop, query string kept.
 const RETIRED_AWARD_ENTRIES_BASES = ['/award-entries', '/national-show/award-entries'];
-const PLANT_ENTRY_PATH = '/plant-entry';
 // International guests was removed too (Lee-Ann B8): the page is unlinked, its path 308s to the same page.
 const RETIRED_SA_EXHIBITORS_PATHS = new Set<string>([
   '/sa-exhibitors',
@@ -214,7 +222,6 @@ const MERGED_VENDORS_PATH = '/vendors';
 // The Constitution page is now the Memorandum of Incorporation (mission saoc-content-standard, F2).
 // The old path 308s on both hosts, straight to the SAOC origin's new path in one hop.
 const RETIRED_CONSTITUTION_PATH = '/constitution';
-const MOI_PATH = '/memorandum-of-incorporation';
 
 // Host-neutral: served identically on every host, never redirected or rewritten. /admin and
 // /api/admin share one sign-in; /api carries the payment webhooks; /og and /studio are tooling.
@@ -232,9 +239,6 @@ const NEUTRAL_EXACT = new Set<string>([
 // host the show card keeps its internal path instead of being prefix-stripped.
 const NOS_OG_PATH = `${NOS_INTERNAL_PREFIX}/og`;
 
-// SAOC-hosted trees: asked for on the NOS host they redirect to the SAOC origin.
-const SAOC_ONLY_EXACT = new Set<string>(['/members', MOI_PATH, '/judging']);
-const SAOC_ONLY_PREFIXES = ['/societies', '/events'];
 // Host-neutral content rendered by both sites' chrome (app/(shared)).
 const SHARED_EXACT = new Set<string>(['/privacy', '/terms', '/refunds', '/unsubscribe']);
 const SHARED_PREFIXES = ['/newsletter'];
@@ -242,18 +246,6 @@ const SHARED_PREFIXES = ['/newsletter'];
 const NOS_TOP_LEVEL_PREFIXES = ['/vsp', '/tickets'];
 const NOS_TICKETS_ROOT = '/tickets';
 const NOS_TICKETS_BUY_PREFIX = '/tickets/buy';
-// What the SAOC host hands to the NOS origin.
-// /faq and /plant-entry are NOS-only pages that beta used to 404 on; they 308 like /tickets, query kept.
-const SHOW_PREFIXES = [NOS_INTERNAL_PREFIX, '/tickets', '/vsp', '/faq', PLANT_ENTRY_PATH];
-
-function isUnder(pathname: string, base: string): boolean {
-  return pathname === base || pathname.startsWith(`${base}/`);
-}
-
-function isUnderAny(pathname: string, bases: readonly string[]): boolean {
-  return bases.some((base) => isUnder(pathname, base));
-}
-
 function hasFileExtension(pathname: string): boolean {
   const lastSegment = pathname.slice(pathname.lastIndexOf('/') + 1);
   return lastSegment.includes('.');

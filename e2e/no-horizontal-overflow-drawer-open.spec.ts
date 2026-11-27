@@ -9,7 +9,7 @@
 import { expect, test } from '@playwright/test';
 
 import { NOS_GROUPS } from './utils/nos-nav-hrefs';
-import { nosBase } from './utils/site-urls';
+import { newTabName, nosBase } from './utils/site-urls';
 
 const VIEWPORT_HEIGHT = 900;
 
@@ -43,7 +43,7 @@ test.describe('no horizontal overflow -- drawer open', () => {
     await page.getByRole('button', { name: 'Menu', exact: true }).click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByRole('link', { name: 'National Orchid Show', exact: true })).toBeVisible();
+    await expect(dialog.getByRole('link', { name: newTabName('National Orchid Show') })).toBeVisible();
 
     const { scrollWidth, clientWidth } = await measureOverflow(page);
     expect(

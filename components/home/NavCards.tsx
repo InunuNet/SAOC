@@ -1,10 +1,10 @@
 import Image from 'next/image';
-import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 
 import { formatShowShortMonthYear, showLabelWithEdition, showYearOf } from '@/lib/show-identity';
 import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import { nosUrl } from '@/lib/site-hosts';
+import { SiteLink } from '@/components/ui/SiteLink';
 import type { ShowIdentity } from '@/types';
 
 interface NavCardData {
@@ -120,9 +120,9 @@ export function NavCards({ show, withhold = false }: NavCardsProps) {
 
         <div className="grid grid-cols-1 gap-7 min-[640px]:grid-cols-2 min-[1024px]:grid-cols-4">
           {cards.map((card) => {
-            const CardLink = card.crossSite ? 'a' : Link;
             return (
-              <CardLink
+              <SiteLink
+                own="saoc"
                 key={card.href}
                 href={card.href}
                 data-nav-card
@@ -168,7 +168,7 @@ export function NavCards({ show, withhold = false }: NavCardsProps) {
                     </span>
                   </div>
                 </div>
-              </CardLink>
+              </SiteLink>
             );
           })}
         </div>

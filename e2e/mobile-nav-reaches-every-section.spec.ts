@@ -30,7 +30,7 @@ import {
   NOS_TICKETS,
   cleanHref,
 } from './utils/nos-nav-hrefs';
-import { isAbsolute, nosBase } from './utils/site-urls';
+import { isAbsolute, newTabName, nosBase } from './utils/site-urls';
 
 // The credit link carries a screen-reader new-tab cue after the name (Brad, 19 Nov 2026).
 const SAOC_CREDIT_TEXT = /^South African Orchid Council\b/;
@@ -122,9 +122,11 @@ for (const width of [390, 320] as const) {
       }) => {
         await page.goto('/');
         const dialog = await openSaocDrawer(page);
-        const link = dialog.getByRole('link', { name: label, exact: true });
+        const link = dialog.getByRole('link', { name: newTabName(label) });
         await expect(link).toHaveAttribute('href', href);
-        await expect(link).not.toHaveAttribute('target', /.+/);
+        // Brad 26 Nov: a link to the other site opens in a new tab.
+        await expect(link).toHaveAttribute('target', '_blank');
+        await expect(link).toHaveAttribute('rel', /noopener/);
       });
     }
 

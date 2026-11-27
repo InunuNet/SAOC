@@ -7,6 +7,7 @@
 
 import type { SanitySociety } from './SocietyCard';
 import { ArrowIcon } from '@/components/ui/ArrowIcon';
+import { SiteLink } from '@/components/ui/SiteLink';
 
 export interface SocietyAboutProps {
   society: SanitySociety;
@@ -27,34 +28,28 @@ export function SocietyAbout({ society }: SocietyAboutProps) {
       {hasLinks ? (
         <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
           {society.website ? (
-            <a
+            <SiteLink own="saoc"
               href={society.website}
-              target="_blank"
-              rel="noopener noreferrer"
               className="inline-flex min-h-11 items-center text-ink underline underline-offset-2 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
             >
               Visit society website<ArrowIcon />
-            </a>
+            </SiteLink>
           ) : null}
           {society.facebookUrl ? (
-            <a
+            <SiteLink own="saoc"
               href={society.facebookUrl}
-              target="_blank"
-              rel="noopener noreferrer"
               className="inline-flex min-h-11 items-center text-ink underline underline-offset-2 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
             >
               Facebook page<ArrowIcon />
-            </a>
+            </SiteLink>
           ) : null}
           {society.instagramUrl ? (
-            <a
+            <SiteLink own="saoc"
               href={society.instagramUrl}
-              target="_blank"
-              rel="noopener noreferrer"
               className="inline-flex min-h-11 items-center text-ink underline underline-offset-2 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
             >
               Instagram page<ArrowIcon />
-            </a>
+            </SiteLink>
           ) : null}
         </div>
       ) : null}
