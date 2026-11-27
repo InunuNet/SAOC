@@ -233,6 +233,11 @@ export interface Order {
    *  the sandbox test-mode flag was on. See contracts/golden/ozow-sandbox-toggle-f1/README.md
    *  §3b. */
   expectedGatewayAmount?: number | null;
+  /** Terms 5.1 and 7 — when the buyer confirmed the Terms and Refund policy at checkout (server
+   *  time) and which versions (their "Last updated" dates). Absent on orders made before this. */
+  termsAcceptedAt?: Timestamp | null;
+  termsVersion?: string | null;
+  refundPolicyVersion?: string | null;
   /** F31 -- written only by markOrderPaymentPendingByPaymentId when the gateway reports Pending /
    *  PendingInvestigation. Informational: the order stays 'reserved' and only a hash-verified,
    *  confirmed Complete ever makes it paid. */

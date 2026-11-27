@@ -16,6 +16,8 @@ import { mock, test } from 'node:test';
 
 import { NextRequest } from 'next/server';
 
+import { CURRENT_TERMS_VERSIONS } from '../../../lib/checkout-terms.ts';
+
 const realFirestore = await import('firebase-admin/firestore');
 const realSanityClient = await import('../../../sanity/lib/client.ts');
 
@@ -74,6 +76,8 @@ let keyCounter = 0;
 const freshKey = () => `3f2b8c1e-9d4a-4e6b-8a57-${String(++keyCounter).padStart(12, '0')}`;
 
 const validBody = JSON.stringify({
+  termsAccepted: true,
+  ...CURRENT_TERMS_VERSIONS,
   showId: 'nationalShow',
   lineItems: [
     { ticketType: 'general-admission', attendeeName: 'Buyer', attendeeEmail: 'buyer@saoc-check.invalid' },

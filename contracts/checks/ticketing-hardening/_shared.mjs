@@ -39,6 +39,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
 import { SENTINEL_DOMAINS } from '../_shared/sentinel-domains.mjs';
+import { CHECKOUT_TERMS_FIELDS } from '../_shared/checkout-terms-body.mjs';
 
 config({ path: new URL('../../../.env.local', import.meta.url).pathname, quiet: true });
 
@@ -468,6 +469,7 @@ export async function postCheckout({
     body: JSON.stringify({
       showId,
       lineItems: [{ ticketType, attendeeName: name, attendeeEmail: email }],
+      ...CHECKOUT_TERMS_FIELDS,
     }),
   });
   const body = await res.json().catch(() => ({}));

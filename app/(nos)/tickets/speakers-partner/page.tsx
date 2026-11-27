@@ -110,6 +110,7 @@ export default async function SpeakersPartnerPage() {
     provisional: false,
     requiresDaySelection: false,
     requiresRegistration: ticketType.requiresRegistration === true,
+    cancellationTerms: ticketType.cancellationTerms ?? null,
   };
 
   return (

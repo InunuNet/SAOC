@@ -24,6 +24,7 @@ import {
   type CheckoutLineItemInputLike,
   type LineItemPlan,
 } from '@/lib/checkout-reservation';
+import { CURRENT_TERMS_VERSIONS, checkTermsAcceptance } from '@/lib/checkout-terms';
 import { initAdmin } from '@/lib/firebase-admin';
 import {
   applyRegistrations,
@@ -274,6 +275,9 @@ interface SanityNationalShowSales {
 interface CheckoutRequestBody {
   showId: unknown;
   lineItems: unknown;
+  termsAccepted?: unknown;
+  termsVersion?: unknown;
+  refundPolicyVersion?: unknown;
 }
 
 export interface CheckoutLineItemInput {
@@ -421,6 +425,9 @@ interface ReservationInput {
   capacityByType: Record<string, number>;
   poolConfigByType: Record<string, CapacityPoolConfig>;
   idempotencyKey: string;
+  /** The versions the buyer accepted (already verified as current), stamped on the order. */
+  termsVersion: string;
+  refundPolicyVersion: string;
   recoveryTokenSecret: string;
   /** F2 (ozow-payment-provider) — the resolved providerId, threaded onto the order's own
    *  `gateway` field. Never re-derived, never defaulted — see checkout-reservation.ts's
@@ -548,6 +555,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       { error: 'showId, lineItems (1-20 valid line items) are required.' },
       { status: 400 }
     );
+  }
+
+  // Terms 5.1 and 7: acceptance of the current Terms and Refund policy is confirmed before paying.
+  // Refused after the body shape check (a malformed body keeps its own 400) and before any CMS
+  // read, reservation or paymentProvider.initiate().
+  const termsCheck = checkTermsAcceptance(body);
+  if (!termsCheck.ok) {
+    return NextResponse.json({ error: termsCheck.error }, { status: 400 });
   }
 
   // The hidden Speakers Partner ticket is bought only by someone who passed the password prompt
@@ -1057,6 +1072,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       capacityByType,
       poolConfigByType,
       idempotencyKey,
+      termsVersion: CURRENT_TERMS_VERSIONS.termsVersion,
+      refundPolicyVersion: CURRENT_TERMS_VERSIONS.refundPolicyVersion,
       recoveryTokenSecret,
       gateway: providerId,
       expectedGatewayAmount: resolveExpectedGatewayAmount(providerId, ozowSandboxTestModeEnabled),
@@ -1390,6 +1407,11 @@ async function reserveTicket(input: ReservationInput): Promise<ReservationOutcom
         recoveryToken: minted.token,
         recoveryTokenExpiresAt: Timestamp.fromDate(minted.expiresAt),
         now: Timestamp.fromDate(now),
+        terms: {
+          termsAcceptedAt: Timestamp.fromDate(now),
+          termsVersion: input.termsVersion,
+          refundPolicyVersion: input.refundPolicyVersion,
+        },
         gateway: input.gateway,
         expectedGatewayAmount: input.expectedGatewayAmount,
       });

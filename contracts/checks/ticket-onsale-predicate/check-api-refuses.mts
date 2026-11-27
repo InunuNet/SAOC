@@ -16,7 +16,10 @@ for (const key of ['OZOW_SANDBOX_SITE_CODE', 'OZOW_SANDBOX_PRIVATE_KEY', 'OZOW_S
 }
 const { POST } = await import('../../../app/api/tickets/checkout/route.ts');
 const { NATIONAL_SHOW_ID } = await import('../../../lib/tickets-constants.ts');
+const { CURRENT_TERMS_VERSIONS, TERMS_NOT_ACCEPTED_ERROR, TERMS_VERSION_STALE_ERROR } = await import('../../../lib/checkout-terms.ts');
 const failures: string[] = [];
+// The terms gate's two refusals (lib/checkout-terms.ts): a control that gets one never reached the predicate.
+const isTermsRefusal = (error: string) => error === TERMS_NOT_ACCEPTED_ERROR || error === TERMS_VERSION_STALE_ERROR;
 let n = 0;
 
 async function call(slug: string, nodeEnv: string) {
@@ -29,6 +32,8 @@ async function call(slug: string, nodeEnv: string) {
     body: JSON.stringify({
       showId: NATIONAL_SHOW_ID,
       lineItems: [{ ticketType: slug, attendeeName: 'Test Buyer', attendeeEmail: 'buyer@example.com' }],
+      termsAccepted: true,
+      ...CURRENT_TERMS_VERSIONS,
     }),
   });
   const res = await POST(req as never);
@@ -53,12 +58,14 @@ for (const slug of ['qa-fixture-ticket', 'fictional-test-show-general-admission'
 {
   const r = await call('weekend-pass', 'production');
   if (r.status === 400 && /^Unknown ticketType: /.test(r.error)) failures.push('control weekend-pass: refused as unknown, the predicate is over-blocking');
+  if (r.status === 400 && isTermsRefusal(r.error)) failures.push('control weekend-pass: refused at the terms gate, so it never reached the on-sale predicate');
 }
 // CONTROL 2 (e2e suite keeps working): outside production, with payments not live, the QA
 // fixture is NOT refused, so contracts/checks/ticketing-hardening/* and local runs still work.
 {
   const r = await call('qa-fixture-ticket', 'development');
   if (r.status === 400 && /^Unknown ticketType: /.test(r.error)) failures.push('development, qa-fixture-ticket: refused, the non-production QA path is broken');
+  if (r.status === 400 && isTermsRefusal(r.error)) failures.push('development, qa-fixture-ticket: refused at the terms gate, so it never reached the on-sale predicate');
 }
 const unhandled = (globalThis.__unhandledQueries as string[] | undefined) ?? [];
 if (unhandled.length > 0) failures.push(`harness drift, unhandled Sanity queries: ${unhandled.join(' | ')}`);

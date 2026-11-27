@@ -25,6 +25,7 @@ export interface SanityTicketType {
   capacityPool?: string | null;
   headcountPerUnit?: number | null;
   excludedDays?: string[] | null;
+  cancellationTerms?: string[] | null;
 }
 
 // A demo / QA-fixture product is for local QA only: on any production build (which includes the

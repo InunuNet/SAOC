@@ -22,6 +22,9 @@ const NAME_ERROR = 'Please enter the attendee name.';
 const EMAIL_ERROR = 'Please enter a valid email address.';
 const DAY_ERROR = 'Choose a day';
 const SUBMIT = 'Continue to payment';
+const TERMS_FIELD = '#checkout-terms';
+const TERMS_ERROR =
+  'You must confirm that you have read and accept the Terms and Conditions and the Refund and Cancellation Policy before paying.';
 const NAME_FIELD = '#attendee-fixture-ticket-0-name';
 const EMAIL_FIELD = '#attendee-fixture-ticket-0-email';
 const VIEWPORTS = [
@@ -29,10 +32,13 @@ const VIEWPORTS = [
   { label: '390', width: 390, height: 844 },
 ];
 
-async function open(page: Page, query = '') {
+// The terms tick box is required before paying, so every test except the terms one ticks it here
+// and keeps asserting only the attendee and day entries it was written for.
+async function open(page: Page, query = '', acceptTerms = true) {
   await page.goto(`${FIXTURE}${query}`);
   const submit = page.getByRole('button', { name: SUBMIT });
   await expect(submit).toBeEnabled({ timeout: 45_000 }); // disabled until hydrated; first hit compiles the route
+  if (acceptTerms) await page.locator(TERMS_FIELD).check();
   return submit;
 }
 
@@ -202,6 +208,17 @@ for (const vp of VIEWPORTS) {
       ]);
       await links.nth(2).click();
       await expect.poll(() => activeId(page)).toBe('attendee-fixture-ticket-1-name');
+    });
+
+    test('unticked terms add one entry that links to the tick box and clears when ticked', async ({ page }) => {
+      const submit = await open(page, '', false);
+      await submit.click();
+      const links = page.locator(SUMMARY).getByRole('link');
+      await expect(links).toHaveText([NAME_ERROR, EMAIL_ERROR, TERMS_ERROR]);
+      await links.nth(2).click();
+      await expect.poll(() => activeId(page)).toBe('checkout-terms');
+      await page.locator(TERMS_FIELD).check();
+      await expect(links).toHaveText([NAME_ERROR, EMAIL_ERROR]);
     });
 
     test('the summary sits within the first screen after a failed submit', async ({ page }) => {
