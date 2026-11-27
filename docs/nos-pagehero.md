@@ -35,6 +35,12 @@ Brad's ruling replaces the content-driven height and the 46% panel above. Spec a
 - The photographs are full-width 2:1 cuts of their originals at native resolution (S3a and D1 mirrored so the bloom
   sits right of the copy). A full-bleed box is wider than the old panel, so the flowers render 1.4-1.8x larger than
   on 25 Nov; a real zoom-out needs larger originals.
+- Variant A2 (Brad, 26-27 Nov 2026): from 1024px the photo box is locked at `clamp(268px, 20.8vw, 480px)` and holds
+  the crumbs, h1 and lede; the facts and actions sit under it on the page ground. A lede longer than 100
+  characters, or any lede under a title longer than 20 characters, cannot fit that box, so `NosHero` renders it
+  as the first item of the detail block on the ground instead (`ledeLeavesBox`), as every lede is below 1024px.
+  From 768px to 1023px a long title (`.is-long`) keeps the tablet step-down size, so it holds two lines in the
+  268px box.
 - Scope: photo heroes only. A typographic hero (404, `/tickets/recover`) keeps its content-fit height, and
   `/tickets` keeps its fan masthead, like the hub (lead rulings, 25 Nov 2026).
 - The Contact hero has the shared facts strip: Dates and Venue from the show facts, and Email (a mailto link).

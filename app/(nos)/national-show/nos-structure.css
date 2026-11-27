@@ -1234,6 +1234,14 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   overflow-wrap: break-word;
   text-wrap: balance;
 }
+/* 768-1023 the long title keeps the tablet step-down (nos-theme.css, NOS Design 2026-10-24: floor 36px,
+   within two lines); the LT-1 clamp above is larger there (45.6px at 768) and ran three lines past the
+   locked 268px box. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .nos-theme .nos-hero-inner .nos-hero-title.is-long {
+    font-size: clamp(2.25rem, 4.9vw, 3rem);
+  }
+}
 /* An inner title may wrap inside the copy column: the hero's height is fixed per breakpoint (Inner hero
    sizing, below), so a wrap in the fallback face no longer moves the sub-nav. */
 /* "About the show" is exactly the title's 14ch cap: in the fallback face it wrapped to two lines and the
@@ -2940,6 +2948,13 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 .nos-theme .nos-hero-head > *,
 .nos-theme .nos-hero-detail > * {
   min-width: 0;
+}
+/* A lede too long for the locked photo box (NosHero ledeLeavesBox) leads the detail on the page ground at
+   every width, in ink at the standfirst measure, as the below-1024 lede does. */
+.nos-theme .nos-hero-inner .nos-hero-detail > .nos-hero-lede[data-nos-hero-lede] {
+  max-width: 60ch;
+  margin: 0;
+  color: var(--ink);
 }
 .nos-theme .hero-facts {
   display: grid;

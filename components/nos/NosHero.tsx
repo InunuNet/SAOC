@@ -83,6 +83,19 @@ const HUB_PHOTO_SIZES = `(max-width: 767px) max(100vw, ${Math.round(HUB_PHONE_BA
 // LT-1: an inner h1 longer than this gets `.is-long`, a smaller clamp that holds it to one line in the 62% column.
 const LONG_TITLE_CHARS = 20;
 
+// The locked photo box (from 1024) holds the crumbs, a one-line h1 and two lede lines in its 570px text
+// column. A longer lede, or any lede under a long (two-line) title, cannot fit the locked height, so it
+// leaves the box and leads the detail on the page ground, as every lede does below 1024 (27 Nov 2026:
+// /vendors/apply clipped 41-49px, the early-bird and SAOC-symposium tickets 20-34px over).
+const LEDE_IN_BOX_MAX_CHARS = 100;
+
+/** Whether an inner photo hero's lede goes under the locked box, on the page ground, instead of inside it. */
+function ledeLeavesBox(title: ReactNode, lede: ReactNode): boolean {
+  if (typeof lede !== 'string') return false;
+  const longTitle = typeof title === 'string' && title.length > LONG_TITLE_CHARS;
+  return longTitle || lede.length > LEDE_IN_BOX_MAX_CHARS;
+}
+
 const FALLBACK_TITLE_STYLE: CSSProperties = {
   fontFamily: 'var(--serif)',
   fontOpticalSizing: 'none',
@@ -206,7 +219,13 @@ export async function NosHero({
       ? 'nos-hero-title is-long'
       : 'nos-hero-title';
   const group = NO_SUBNAV_ROUTES.has(route) ? null : subNavGroupFor(route, await getVisibleNav());
-  const hasDetail = Boolean(heroFacts || actions);
+  const groundLede = Boolean(photo) && !isHub && ledeLeavesBox(title, lede);
+  const hasDetail = Boolean(heroFacts || actions || groundLede);
+  const ledeEl = lede ? (
+    <p data-nos-hero-lede="" data-nos-hero-text="lede" data-nos-lede={ledeKind} className="nos-hero-lede">
+      {lede}
+    </p>
+  ) : null;
   const head = (
     <>
       {eyebrow ? (
@@ -308,19 +327,11 @@ export async function NosHero({
                 <div data-nos-hero-head="" className="nos-hero-head">
                   {head}
                 </div>
-                {lede ? (
-                  <p
-                    data-nos-hero-lede=""
-                    data-nos-hero-text="lede"
-                    data-nos-lede={ledeKind}
-                    className="nos-hero-lede"
-                  >
-                    {lede}
-                  </p>
-                ) : null}
+                {groundLede ? null : ledeEl}
               </div>
               {hasDetail ? (
                 <div data-nos-hero-detail="" className="nos-hero-detail">
+                  {groundLede ? ledeEl : null}
                   {heroFacts ? (
                     <dl data-hero-facts="" data-fact-count={heroFacts.length} className="hero-facts">
                       {heroFacts.map((fact) => (
