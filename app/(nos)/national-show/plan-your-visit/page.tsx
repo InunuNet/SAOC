@@ -9,6 +9,7 @@ import { PLAN_YOUR_VISIT_GUIDE } from '@/content/plan-your-visit/guide';
 import { loadShowFacts } from '@/lib/data/show-facts';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
+import { SiteLink } from '@/components/ui/SiteLink';
 
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site.
 export const revalidate = 60;
@@ -89,9 +90,9 @@ function renderInline(text: string): ReactNode[] {
       nodes.push(<em key={match.index}>{italic}</em>);
     } else {
       nodes.push(
-        <a key={match.index} href={url} target="_blank" rel="noreferrer">
+        <SiteLink own="nos" key={match.index} href={url}>
           {label}
-        </a>,
+        </SiteLink>,
       );
     }
     cursor = match.index + match[0].length;
@@ -139,10 +140,10 @@ function renderList(items: readonly string[], key: number): ReactNode {
         {links.map((match, position) => (
           <li key={match?.[2]}>
             {position > 0 ? ' ' : null}
-            <a href={match?.[2]} target="_blank" rel="noopener noreferrer">
+            <SiteLink own="nos" href={match?.[2] ?? ''}>
               <span>{match?.[1]}</span>
               <ArrowOut />
-            </a>
+            </SiteLink>
           </li>
         ))}
       </ul>

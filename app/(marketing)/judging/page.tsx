@@ -11,12 +11,16 @@ import { CTASection } from '@/components/ui/CTASection';
 import { ContentGap } from '@/components/ui/ContentGap';
 import { isUnsourced, sourcedBlocks } from '@/components/ui/provenance';
 import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
+import { portableLinkMarks } from '@/components/ui/SiteLink';
 import { AwardsGrid, JudgesDirectory } from '@/components/judging';
 import type { SanityAward, SanityJudge } from '@/components/judging';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { awardsQuery, judgingPageQuery } from '@/sanity/queries';
+
+// A link in the Studio-edited prose that leaves the SAOC site opens in a new tab.
+const PROSE_COMPONENTS = { marks: portableLinkMarks('saoc') };
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
@@ -73,7 +77,7 @@ export default async function JudgingPage() {
   const prose = (blocks: PortableTextBlock[] | null | undefined, fallback: ReactNode) => {
     if (blocks && blocks.length > 0) {
       const shown = withhold ? sourcedBlocks(blocks) : blocks;
-      return shown ? <PortableText value={shown} /> : null;
+      return shown ? <PortableText value={shown} components={PROSE_COMPONENTS} /> : null;
     }
     return withhold ? null : fallback;
   };

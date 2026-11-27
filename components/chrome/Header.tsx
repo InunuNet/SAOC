@@ -20,6 +20,7 @@ import { usePathname } from 'next/navigation';
 import { MobileMenu, MOBILE_MENU_ID } from './MobileMenu';
 import { SearchOverlay } from './SearchOverlay';
 import { navAriaCurrent } from '@/lib/nav-current';
+import { SiteLink } from '@/components/ui/SiteLink';
 import { CONTACT_LINK, NAV } from './nav-config';
 
 // Sponsors and Contact leave the inline nav between 1280 and 1383px (five items fit beside the
@@ -134,11 +135,9 @@ export function Header({ showPastShows = false }: { showPastShows?: boolean }) {
                     </li>
                   );
                 }
-                // National Show leaves this site for the NOS one: a plain anchor, same tab, no arrow.
-                const NavLink = n.crossSite ? 'a' : Link;
                 return (
                   <li key={n.id} className={DEMOTED_IDS.includes(n.id) ? DEMOTED_CLASS : undefined}>
-                    <NavLink
+                    <SiteLink own="saoc"
                       href={n.href}
                       data-hd="item"
                       aria-current={navAriaCurrent(pathname, n.href, { crossSite: n.crossSite })}
@@ -153,7 +152,7 @@ export function Header({ showPastShows = false }: { showPastShows?: boolean }) {
                       >
                         {n.label}
                       </span>
-                    </NavLink>
+                    </SiteLink>
                   </li>
                 );
               })}

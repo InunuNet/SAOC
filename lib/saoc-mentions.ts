@@ -6,7 +6,7 @@
 // =============================================================
 
 export const SAOC_MENTION_MARK = 'saocLink';
-export const NEW_TAB_CUE = '(opens in a new tab)';
+export { NEW_TAB_CUE } from './link-target.ts';
 
 // The capturing group makes String.split keep the matched names at the odd indexes.
 const MENTION_SPLIT = /\b(South African Orchid Council|SAOC)\b/;

@@ -12,6 +12,7 @@ import { aboutPageQuery, boardMembersQuery } from '@/sanity/queries';
 import { boardMembers as staticBoard } from '@/lib/data/board';
 import type { HeroFact } from '@/lib/hero-facts';
 import { buildPageMetadata } from '@/lib/seo';
+import { SiteLink } from '@/components/ui/SiteLink';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
@@ -105,14 +106,12 @@ export default async function AboutPage() {
           <p className="font-sans text-[16px] leading-[1.55] text-ink/80">
             SAOC focuses on orchids in cultivation. For wild orchid identification, habitat, and
             conservation, visit our partner organisation{' '}
-            <a
+            <SiteLink own="saoc"
               href="https://wildorchids.co.za"
-              target="_blank"
-              rel="noopener noreferrer"
               className="inline-link"
             >
               Wild Orchids of Southern Africa (WOSA)
-            </a>
+            </SiteLink>
             .
           </p>
         }

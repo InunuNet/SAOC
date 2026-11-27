@@ -1,0 +1,12 @@
+{
+  "comment": "Plain <a> elements whose href is an expression the scan cannot classify. Each one is a same-site or non-navigating target; anything that may leave the site must use SiteLink instead.",
+  "entries": [
+    { "file": "components/ui/SiteLink.tsx", "href": "href", "reason": "SiteLink itself: the same-tab branch is reached only when opensInNewTab() is false" },
+    { "file": "components/nos/NosHero.tsx", "href": "factLinks[fact.term]", "reason": "factLinks is an optional prop no caller passes today; same-site targets only" },
+    { "file": "components/nos/SectionNav.tsx", "href": "item.href", "reason": "in-page hash anchors" },
+    { "file": "components/show/ShowJumpChips.tsx", "href": "item.href", "reason": "in-page hash anchors" },
+    { "file": "components/societies/SocietyFacts.tsx", "href": "fact.href", "reason": "tel: and mailto: links only" },
+    { "file": "components/tickets/CheckoutErrorSummary.tsx", "href": "entry.target.split(' ')[0]", "reason": "in-page form field anchors" },
+    { "file": "app/(nos)/national-show/sponsors/page.tsx", "href": "SPONSORSHIP_MAILTO", "reason": "a mailto: constant" }
+  ]
+}

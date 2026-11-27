@@ -3,7 +3,9 @@
 import { readFileSync } from 'node:fs';
 
 const proxy = readFileSync('proxy.ts', 'utf8');
-const line = proxy.split('\n').find((l) => l.startsWith('const SHOW_PREFIXES ='));
+// SHOW_PREFIXES lives in lib/site-routes.ts so proxy.ts and the link helper share one list.
+const routes = readFileSync('lib/site-routes.ts', 'utf8');
+const line = routes.split('\n').find((l) => l.startsWith('export const SHOW_PREFIXES'));
 const need = ["'/faq'", 'PLANT_ENTRY_PATH', "'/tickets'"];
 const missing = need.filter((s) => !(line ?? '').includes(s));
 if (missing.length > 0) {

@@ -20,7 +20,7 @@ export default function NosPhotoCreditsPage() {
         crumbLabel="Photo credits"
       />
       <DocumentLayout>
-        <PhotoCreditsBody />
+        <PhotoCreditsBody own="nos" />
       </DocumentLayout>
     </>
   );

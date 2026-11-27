@@ -4,6 +4,7 @@
 // goldens/m4/route-manifest.golden.md §6 and SP2.
 
 import { Card } from '@/components/nos/Card';
+import { SiteLink } from '@/components/ui/SiteLink';
 
 export interface ShowSponsorCardData {
   _id: string;
@@ -26,14 +27,12 @@ export function ShowSponsorCard({ sponsor }: { sponsor: ShowSponsorCardData }) {
         <p className="font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/75">{sponsor.description}</p>
       ) : null}
       {sponsor.website ? (
-        <a
+        <SiteLink own="nos"
           href={sponsor.website}
-          target="_blank"
-          rel="noopener noreferrer"
           className="mt-auto pt-2 font-sans text-[13px] font-medium text-[var(--accent)] underline underline-offset-2"
         >
           Visit website
-        </a>
+        </SiteLink>
       ) : null}
     </Card>
   );

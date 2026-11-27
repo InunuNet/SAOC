@@ -19,6 +19,7 @@ import { NosSection } from '../nos/NosSection';
 import { SectionHeading } from '../nos/SectionHeading';
 import { ConfirmationBadge } from './ConfirmationBadge';
 import { ShowStatusFoot } from './ShowStatusLine';
+import { SiteLink } from '@/components/ui/SiteLink';
 
 export interface VisitDisclosureProps {
   /** The group's accessible name; names what the one chip inside covers. */
@@ -176,16 +177,14 @@ function AttractionBody({ attraction, id }: { attraction: VisitAttraction; id: s
         </p>
       ) : null}
       {attraction.url ? (
-        <a
+        <SiteLink own="nos"
           href={attraction.url}
-          target="_blank"
-          rel="noreferrer noopener"
           id={linkId}
           aria-labelledby={`${linkId} ${id}`}
           className="mt-1 inline-flex min-h-[44px] items-center font-sans text-[13px] underline underline-offset-2 hover:text-accent"
         >
           Visit website ↗
-        </a>
+        </SiteLink>
       ) : null}
     </>
   );

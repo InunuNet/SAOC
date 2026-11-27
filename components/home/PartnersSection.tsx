@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import type { SanityImageSource } from '@sanity/image-url';
 import { ArrowIcon } from '@/components/ui/ArrowIcon';
+import { SiteLink } from '@/components/ui/SiteLink';
 
 export interface SanityPartner {
   _id: string;
@@ -97,17 +98,15 @@ export function PartnersSection({ partners }: PartnersSectionProps) {
             );
 
             return card.website ? (
-              <a
+              <SiteLink own="saoc"
                 key={card._id}
                 href={card.website}
-                target="_blank"
-                rel="noopener noreferrer"
                 data-partner-row
                 data-variant="corner"
                 className={`group ${rowBase} transition-colors duration-150 ease-(--ease) hover:bg-accent/8 focus-visible:bg-accent/8 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]`}
               >
                 {body}
-              </a>
+              </SiteLink>
             ) : (
               <div key={card._id} data-partner-row className={rowBase}>
                 {body}

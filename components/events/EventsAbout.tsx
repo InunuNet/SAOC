@@ -3,6 +3,10 @@ import type { PortableTextBlock } from '@portabletext/react';
 import Link from 'next/link';
 
 import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
+import { portableLinkMarks } from '@/components/ui/SiteLink';
+
+// A link in the Studio-edited intro that leaves the SAOC site opens in a new tab.
+const INTRO_COMPONENTS = { marks: portableLinkMarks('saoc') };
 
 /**
  * COPY GAP (EV-3): the calendar-subscribe button has no approved label, so it does not render.
@@ -26,7 +30,7 @@ export function EventsAbout({ intro, placeholderNote = null }: EventsAboutProps)
     <section data-events-about className="saoc-container pb-10 pt-16">
       {hasIntro ? (
         <div className="mb-8 max-w-[62ch] space-y-4 font-sans text-[16px] leading-[1.6] text-ink/85">
-          <PortableText value={intro ?? []} />
+          <PortableText value={intro ?? []} components={INTRO_COMPONENTS} />
         </div>
       ) : null}
       <div className="flex flex-wrap items-center justify-start gap-x-8 gap-y-4">

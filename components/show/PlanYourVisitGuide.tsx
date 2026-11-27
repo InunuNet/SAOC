@@ -6,6 +6,7 @@
 // =============================================================
 
 import type { ReactNode } from 'react';
+import { SiteLink } from '@/components/ui/SiteLink';
 
 export type PlanGuideBlock =
   | { kind: 'h2' | 'h3' | 'lead' | 'p'; text: string }
@@ -31,9 +32,9 @@ function renderInline(text: string): ReactNode[] {
       nodes.push(<em key={match.index}>{italic}</em>);
     } else {
       nodes.push(
-        <a key={match.index} href={url} target="_blank" rel="noopener noreferrer" className={LINK_CLASS}>
+        <SiteLink own="nos" key={match.index} href={url} className={LINK_CLASS}>
           {label}
-        </a>
+        </SiteLink>
       );
     }
     cursor = match.index + match[0].length;

@@ -1,4 +1,6 @@
 import { PHOTO_CREDITS, type PhotoCredit } from '@/lib/data/photo-credits';
+import { SiteLink } from '@/components/ui/SiteLink';
+import type { Site } from '@/lib/site-hosts';
 
 function isCommonsCredit(
   credit: PhotoCredit,
@@ -6,7 +8,7 @@ function isCommonsCredit(
   return credit.licence !== null && credit.licenceUrl !== null && credit.sourceUrl !== null;
 }
 
-export function PhotoCreditsBody() {
+export function PhotoCreditsBody({ own }: { own: Site }) {
   const commonsCredits = PHOTO_CREDITS.filter(isCommonsCredit);
   const hasHendrikCredits = PHOTO_CREDITS.some((credit) => credit.author === 'Hendrik Schoeman');
   const linkClass = 'text-ink underline underline-offset-2';
@@ -17,13 +19,13 @@ export function PhotoCreditsBody() {
         {commonsCredits.map((credit) => (
           <li key={credit.image}>
             {credit.author},{' '}
-            <a className={linkClass} href={credit.licenceUrl}>
+            <SiteLink own={own} className={linkClass} href={credit.licenceUrl}>
               {credit.licence}
-            </a>
+            </SiteLink>
             ,{' '}
-            <a className={linkClass} href={credit.sourceUrl}>
+            <SiteLink own={own} className={linkClass} href={credit.sourceUrl}>
               Wikimedia Commons
-            </a>
+            </SiteLink>
             {credit.changed ? ' · cropped' : null}
           </li>
         ))}

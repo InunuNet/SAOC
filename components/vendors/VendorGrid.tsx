@@ -3,6 +3,7 @@ import type { SanityImageSource } from '@sanity/image-url';
 
 import { urlFor } from '@/sanity/lib/image';
 import { ArrowIcon } from '@/components/ui/ArrowIcon';
+import { SiteLink } from '@/components/ui/SiteLink';
 
 export interface SanityVendorSocialLink {
   platform: string | null;
@@ -93,28 +94,24 @@ export function VendorGrid({ nurseries }: VendorGridProps) {
             </ul>
           ) : null}
           {nursery.website ? (
-            <a
+            <SiteLink own="nos"
               href={nursery.website}
-              target="_blank"
-              rel="noopener noreferrer"
               className="mt-auto pt-3 inline-block font-sans text-[13px] text-ink underline underline-offset-2 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
             >
               Visit website<ArrowIcon />
-            </a>
+            </SiteLink>
           ) : null}
           {nursery.socialMedia && nursery.socialMedia.length > 0 ? (
             <div className="mt-2 flex flex-wrap gap-3">
               {nursery.socialMedia.map((social, index) =>
                 social.url ? (
-                  <a
+                  <SiteLink own="nos"
                     key={`${social.url}-${index}`}
                     href={social.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     className="font-sans text-[13px] text-ink underline underline-offset-2 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
                   >
                     {social.platform ?? 'Social'}
-                  </a>
+                  </SiteLink>
                 ) : null,
               )}
             </div>

@@ -3,6 +3,7 @@
 // nursery-directory grids.
 
 import { Card } from '@/components/nos/Card';
+import { SiteLink } from '@/components/ui/SiteLink';
 
 export interface NurseryCardData {
   _id: string;
@@ -34,14 +35,12 @@ export function NurseryCard({ nursery }: { nursery: NurseryCardData }) {
         </p>
       ) : null}
       {nursery.website ? (
-        <a
+        <SiteLink own="nos"
           href={nursery.website}
-          target="_blank"
-          rel="noopener noreferrer"
           className="mt-auto pt-2 font-sans text-[13px] font-medium text-[var(--accent)] underline underline-offset-2"
         >
           Visit website
-        </a>
+        </SiteLink>
       ) : null}
     </Card>
   );
