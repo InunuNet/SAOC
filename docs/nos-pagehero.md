@@ -36,11 +36,9 @@ Brad's ruling replaces the content-driven height and the 46% panel above. Spec a
   sits right of the copy). A full-bleed box is wider than the old panel, so the flowers render 1.4-1.8x larger than
   on 25 Nov; a real zoom-out needs larger originals.
 - Variant A2 (Brad, 26-27 Nov 2026): from 1024px the photo box is locked at `clamp(268px, 20.8vw, 480px)` and holds
-  the crumbs, h1 and lede; the facts and actions sit under it on the page ground. A lede longer than 100
-  characters, or any lede under a title longer than 20 characters, cannot fit that box, so `NosHero` renders it
-  as the first item of the detail block on the ground instead (`ledeLeavesBox`), as every lede is below 1024px.
-  From 768px to 1023px a long title (`.is-long`) keeps the tablet step-down size, so it holds two lines in the
-  268px box.
+  the crumbs, h1 and lede (every hero keeps its subtext inside the hero); the facts and actions sit under it on
+  the page ground. From 768px to 1023px a long title (`.is-long`) keeps the tablet step-down size, so it holds
+  two lines in the 268px box.
 - Slow pan on the home pages only (Brad, 27 Nov 2026). The NOS hub hero runs the SAOC home hero's drift as it
   is: `.home-hero-drift` in `app/globals.css`, a linear 4% zoom about `--hero-pos` over 8.4s (the 7s carousel
   interval plus 1400ms). It holds at its end and is off under `prefers-reduced-motion`. The origin is the

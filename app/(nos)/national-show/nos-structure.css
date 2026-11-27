@@ -2948,15 +2948,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 .nos-theme .nos-hero-head > *,
 .nos-theme .nos-hero-detail > * {
   min-width: 0;
-}
-/* A lede too long for the locked photo box (NosHero ledeLeavesBox) leads the detail on the page ground at
-   every width, in ink at the standfirst measure, as the below-1024 lede does. */
-.nos-theme .nos-hero-inner .nos-hero-detail > .nos-hero-lede[data-nos-hero-lede] {
-  max-width: 60ch;
-  margin: 0;
-  color: var(--ink);
-}
-.nos-theme .hero-facts {
+}.nos-theme .hero-facts {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 0;
