@@ -129,6 +129,14 @@ export const PHOTO_CREDITS: readonly PhotoCredit[] = [
     changed: true,
   },
   {
+    image: "/images/heroes/hero-nos-wosa-habenaria-hendrik.jpg",
+    author: "Hendrik Schoeman",
+    licence: null,
+    licenceUrl: null,
+    sourceUrl: null,
+    changed: true,
+  },
+  {
     image: "/images/stubs/stub-vip-cattleya-magenta.jpg",
     author: "Hendrik Schoeman",
     licence: null,

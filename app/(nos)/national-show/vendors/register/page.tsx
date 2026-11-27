@@ -74,7 +74,7 @@ export default async function VendorRegisterPage({ searchParams }: VendorRegiste
       <NosHero
         route="/national-show/vendors/register"
         title="Vendor registration"
-        lede="Register your business as a vendor at the 2027 National Orchid Show."
+        lede="Register your business as a vendor."
         priority
       />
 

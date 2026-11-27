@@ -39,6 +39,16 @@ Brad's ruling replaces the content-driven height and the 46% panel above. Spec a
   the crumbs, h1 and lede (every hero keeps its subtext inside the hero); the facts and actions sit under it on
   the page ground. From 768px to 1023px a long title (`.is-long`) keeps the tablet step-down size, so it holds
   two lines in the 268px box.
+- Uniform height, copy trimmed to fit (Brad, 27 Nov 2026). The box never grows. Where a title plus subtext ran
+  past it, the subtext was trimmed (the four vendor pages and the Speakers Partner gate here; four ticket
+  descriptions in Sanity), and the NOS `/refunds` hero carries the short title "Refund and cancellation
+  policy" while its body opens with the document's full title. A two-line ticket title over a one-line subtext
+  may end up to 2px into the bottom padding at 1280-1288 (`check-rendered.mjs heights`). Below 1024 the subtext
+  stays under the photograph.
+- Photo test (Brad, 27 Nov 2026): every inner photo is sharp, with a flower (not a single petal or a leaf) on the
+  right and darker on the left behind the copy, and none repeats within a menu group
+  (`components/nos/hero-photos.ts`). S1b, S2c, H4b, PK3 and Y1 failed it and are retired; HB1 (Hendrik's
+  Habenaria, mirrored, cut on a flower) and PH1 (`orchid-pink.jpg` whole, at `50% 36%`) joined.
 - Slow pan on the home pages only (Brad, 27 Nov 2026). The NOS hub hero runs the SAOC home hero's drift as it
   is: `.home-hero-drift` in `app/globals.css`, a linear 4% zoom about `--hero-pos` over 8.4s (the 7s carousel
   interval plus 1400ms). It holds at its end and is off under `prefers-reduced-motion`. The origin is the

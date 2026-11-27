@@ -69,9 +69,8 @@ const ORIGINAL_SIZES: Readonly<Record<string, readonly [number, number]>> = {
   '/images/heroes/hero-nos-faq-pink-phalaenopsis.jpg': [3000, 1500],
   '/images/heroes/hero-nos-plan-paphiopedilum-yellow-wide.jpg': [3872, 1936],
   '/images/heroes/hero-nos-symposium-paphiopedilum-rust.jpg': [5184, 2592],
-  '/images/nos-hero-H4b.jpg': [2200, 1158],
-  '/images/nos-hero-PK3.jpg': [2600, 1300],
-  '/images/nos-hero-Y1.jpg': [2600, 1300],
+  '/images/heroes/hero-nos-wosa-habenaria-hendrik.jpg': [3000, 1500],
+  '/images/orchid-pink.jpg': [3456, 5184],
 };
 const ASPECT_PRECISION = 1000;
 

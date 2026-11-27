@@ -18,6 +18,10 @@
 // so the bloom sits right of the copy. H4b, PK3 and Y1 are their own originals, used whole.
 // Variant A (Brad, 26 Nov 2026: lock the height near 268px at 1288): the box is about 4.8:1, so it shows the
 // full width and about 42% of each 2:1 file's height; objectPosition puts that band on the bloom.
+// Photo test (Brad, 27 Nov 2026, on the About comparisons): a sharp photograph with a flower, not a single
+// petal or a leaf, on the right and darker on the left behind the copy. S1b, S2c, H4b, PK3 and Y1 failed it
+// (H4b, PK3 and Y1 also upscaled) and are retired here; HB1 (Hendrik's Habenaria, mirrored, cut on a flower)
+// and PH1 (the design pack's pink Phalaenopsis, used whole) joined.
 // =============================================================
 
 export interface NosHeroPhoto {
@@ -33,56 +37,49 @@ export const HERO_PHOTOS: Readonly<Record<string, NosHeroPhoto>> = {
   '/national-show': { src: '/images/heroes/hero-nos-hub-cattleya-white.jpg', objectPosition: '50% 50%' },
 };
 
-export type NosCropCode =
-  | 'S3a'
-  | 'S3b'
-  | 'S2a'
-  | 'S2c'
-  | 'S1b'
-  | 'H4a'
-  | 'H4b'
-  | 'D1'
-  | 'PK1'
-  | 'PK3'
-  | 'Y1';
+export type NosCropCode = 'S3a' | 'S3b' | 'S2a' | 'H4a' | 'D1' | 'PK1' | 'HB1' | 'PH1';
 
 export const HERO_CROPS: Readonly<Record<NosCropCode, NosHeroPhoto>> = {
   S3a: { src: '/images/heroes/hero-nos-about-colmanara-hendrik.jpg', objectPosition: '50% 50%' },
   S3b: { src: '/images/heroes/hero-nos-programme-dendrobium-hendrik.jpg', objectPosition: '50% 50%' },
   S2a: { src: '/images/heroes/hero-nos-conferences-purple-phalaenopsis.jpg', objectPosition: '50% 25%' },
-  S2c: { src: '/images/heroes/hero-nos-workshops-cattleya-apricot-hendrik.jpg', objectPosition: '50% 80%' },
-  S1b: { src: '/images/heroes/hero-nos-plan-paphiopedilum-yellow-wide.jpg', objectPosition: '50% 50%' },
   H4a: { src: '/images/heroes/hero-nos-faq-pink-phalaenopsis.jpg', objectPosition: '50% 40%' },
-  H4b: { src: '/images/nos-hero-H4b.jpg', objectPosition: '50% 70%' },
   D1: { src: '/images/heroes/hero-nos-symposium-paphiopedilum-rust.jpg', objectPosition: '50% 55%' },
   PK1: { src: '/images/heroes/hero-nos-expect-zygopetalum-hendrik.jpg', objectPosition: '50% 50%' },
-  PK3: { src: '/images/nos-hero-PK3.jpg', objectPosition: '50% 60%' },
-  Y1: { src: '/images/nos-hero-Y1.jpg', objectPosition: '50% 50%' },
+  // Cut centred at 48% of the original's height, so a whole flower sits at the band's centre-right.
+  HB1: { src: '/images/heroes/hero-nos-wosa-habenaria-hendrik.jpg', objectPosition: '50% 50%' },
+  // The 3456x5184 original whole: 36% puts the band on the top bloom's column and lip, right of the copy.
+  PH1: { src: '/images/orchid-pink.jpg', objectPosition: '50% 36%' },
 };
 
 export const ROUTE_CROPS: Readonly<Record<string, NosCropCode>> = {
+  // Visit
   '/national-show/about': 'S3a',
   '/national-show/what-to-expect': 'PK1',
-  '/national-show/plan-your-visit': 'S1b',
+  '/national-show/plan-your-visit': 'S2a',
   '/national-show/faq': 'H4a',
-  '/national-show/photo-credits': 'H4b',
+  // Programme
   '/national-show/programme': 'S3b',
-  '/national-show/workshops': 'S2c',
+  '/national-show/workshops': 'PH1',
   '/national-show/symposium': 'D1',
-  '/national-show/wosa-conference': 'PK3',
+  '/national-show/wosa-conference': 'HB1',
   '/national-show/conferences': 'S2a',
-  '/national-show/sa-exhibitors': 'PK1',
-  '/national-show/international-guests': 'Y1',
-  '/national-show/plant-entry': 'D1',
-  '/national-show/vendors': 'S1b',
-  '/national-show/sponsors': 'PK3',
-  '/national-show/archive': 'S3a',
-  '/national-show/contact': 'H4a',
-  '/national-show/media-kit': 'S2c',
+  '/national-show/plant-entry': 'PK1',
+  // Vendors
+  '/national-show/vendors': 'HB1',
+  // The show
   '/tickets': 'S3a',
+  '/national-show/sponsors': 'PH1',
+  '/national-show/archive': 'D1',
+  // Outside the menu groups
+  '/national-show/contact': 'H4a',
+  '/national-show/photo-credits': 'S3b',
+  '/national-show/sa-exhibitors': 'PK1',
+  '/national-show/international-guests': 'H4a',
+  '/national-show/media-kit': 'D1',
   '/privacy': 'S3b',
   '/terms': 'S2a',
-  '/refunds': 'Y1',
+  '/refunds': 'PH1',
   '/newsletter/unsubscribe': 'S2a',
 };
 

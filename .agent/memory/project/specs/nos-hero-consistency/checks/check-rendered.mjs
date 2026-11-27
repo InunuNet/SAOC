@@ -42,6 +42,10 @@ const PHONE_BLOCK_PX = 124;
 const PHONE_TITLE_FLOOR_PX = 48;
 const ROOT_PX = 16;
 const TOLERANCE_PX = 1;
+// How far the last line may run into the box's bottom padding (never past the box). Brad approved the subtext
+// trims on 27 Nov 2026 knowing that a two-line ticket title over a one-line subtext ends 2px into the 36px
+// padding at 1280-1288 (scratch subtext-trims.md): the subtext is already one line, so no trim removes it.
+const PADDING_RUN_IN_PX = 2;
 const AA_TEXT = 4.5;
 const AA_LARGE = 3;
 
@@ -112,7 +116,7 @@ async function heights(browser) {
       if (!m) { fail(`${tag}: no inner hero`); continue; }
       if (m.variant !== 'photo') { fail(`${tag}: hero variant ${m.variant}, want photo`); continue; }
       if (Math.abs(m.box - want) > TOLERANCE_PX) fail(`${tag}: hero box ${m.box.toFixed(1)}px, want ${want.toFixed(1)}px`);
-      if (m.overflow > TOLERANCE_PX) fail(`${tag}: copy runs ${m.overflow.toFixed(1)}px past the box's padding`);
+      if (m.overflow > PADDING_RUN_IN_PX) fail(`${tag}: copy runs ${m.overflow.toFixed(1)}px past the box's padding`);
     }
   }
 }

@@ -44,6 +44,7 @@ for (const name of [
   'hero-nos-faq-pink-phalaenopsis.jpg',
   'hero-nos-expect-zygopetalum-hendrik.jpg',
   'hero-nos-symposium-paphiopedilum-rust.jpg',
+  'hero-nos-wosa-habenaria-hendrik.jpg',
   'hero-saoc-judging-colmanara-hendrik.jpg',
   'hero-saoc-events-habenaria-hendrik.jpg',
   'hero-saoc-sponsors-cattleya-white-wide.jpg',
