@@ -3,7 +3,7 @@ slug: nos-hero-consistency
 goal: One locked NOS inner hero height per breakpoint on the SAOC interior hero system (full-bleed photo, eased copy scrim), a Contact facts strip, and one-link nav groups as plain links.
 created_at: '2026-11-25'
 autonomy: high
-# Rendered checks (A4-A6) need a NOS server you started yourself; they never build or start one:
+# Rendered checks (A4-A7) need a NOS server you started yourself; they never build or start one:
 #   NOS_BASE=http://nos.localhost:<port> node .agent/memory/project/specs/nos-hero-consistency/checks/check-rendered.mjs <mode>
 # Without NOS_BASE they exit 2 (infrastructure), never pass.
 features:
@@ -34,3 +34,6 @@ assertions:
     - id: A6
       description: Vendors is a plain link on desktop and in the menu panel (aria-current on its pages); no sub-nav on one-link groups
       command: node .agent/memory/project/specs/nos-hero-consistency/checks/check-rendered.mjs nav
+    - id: A7
+      description: Slow pan on the home pages only - the NOS hub hero runs the SAOC home drift (off under reduced motion); no NOS inner hero or SAOC PageHero animates
+      command: node .agent/memory/project/specs/nos-hero-consistency/checks/check-rendered.mjs motion

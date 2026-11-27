@@ -41,6 +41,12 @@ Brad's ruling replaces the content-driven height and the 46% panel above. Spec a
   as the first item of the detail block on the ground instead (`ledeLeavesBox`), as every lede is below 1024px.
   From 768px to 1023px a long title (`.is-long`) keeps the tablet step-down size, so it holds two lines in the
   268px box.
+- Slow pan on the home pages only (Brad, 27 Nov 2026). The NOS hub hero runs the SAOC home hero's drift as it
+  is: `.home-hero-drift` in `app/globals.css`, a linear 4% zoom about `--hero-pos` over 8.4s (the 7s carousel
+  interval plus 1400ms). It holds at its end and is off under `prefers-reduced-motion`. The origin is the
+  Cattleya bloom (`55% 50%`), so the bloom stays put and the masked copy side stays dark. The hub media box
+  clips the zoom. NOS inner heroes and SAOC `PageHero`s never animate: `check-rendered.mjs motion` (A7) asserts
+  both at 1440 and 390.
 - Scope: photo heroes only. A typographic hero (404, `/tickets/recover`) keeps its content-fit height, and
   `/tickets` keeps its fan masthead, like the hub (lead rulings, 25 Nov 2026).
 - The Contact hero has the shared facts strip: Dates and Venue from the show facts, and Email (a mailto link).

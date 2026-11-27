@@ -558,6 +558,8 @@
 .nos-theme .nos-hero-hub .nos-hero-media {
   inset: 0 0 0 22%;
   z-index: -2;
+  /* The slow pan (.home-hero-drift, NosHero) scales the photo 4%: the media box clips it. */
+  overflow: hidden;
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 16%);
   mask-image: linear-gradient(90deg, transparent 0, #000 16%);
 }

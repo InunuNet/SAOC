@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 // nos-hero-consistency (Brad, 25 Nov 2026): rendered checks against a NOS server you started yourself.
 // This script never builds or starts a server (sweep-safety rule 1). Point it at one:
-//   NOS_BASE=http://nos.localhost:<port> node check-rendered.mjs <heights|contrast|nav>
+//   NOS_BASE=http://nos.localhost:<port> node check-rendered.mjs <heights|contrast|nav|motion>
 // Exit 0 pass, 1 finding, 2 infrastructure (no NOS_BASE, unreachable server, unknown mode).
 //
 //   heights   every inner photo route's hero box is the same height at 1440, 1024, 768 and 390, equal to
 //             the breakpoint's formula, and its copy fits inside it.
 //   contrast  at 900, 1024, 1440 and 2056 every hero text run clears WCAG AA (4.5:1, 3:1 for the large h1) against the
 //             brightest pixel behind it, measured with the text hidden.
+//   motion    at 1440 and 390 the NOS hub hero runs the SAOC home drift (none under reduced motion); no NOS
+//             inner hero and no SAOC PageHero (SAOC_BASE, default NOS_BASE without "nos.") animates anything.
 //   nav       a one-link nav group renders as a plain link to that page, in the top row and the menu panel.
 import { chromium } from 'playwright';
 
@@ -49,10 +51,12 @@ if (!base) {
   console.error('INFRA: set NOS_BASE to a running NOS origin, e.g. http://nos.localhost:3041');
   process.exit(2);
 }
-if (!['heights', 'contrast', 'nav'].includes(mode)) {
-  console.error(`INFRA: unknown mode '${mode}' (heights | contrast | nav)`);
+if (!['heights', 'contrast', 'nav', 'motion'].includes(mode)) {
+  console.error(`INFRA: unknown mode '${mode}' (heights | contrast | nav | motion)`);
   process.exit(2);
 }
+// motion also reads the SAOC origin (PageHero); by default NOS_BASE with the nos. subdomain dropped.
+const saocBase = process.env.SAOC_BASE ?? base.replace('//nos.', '//');
 
 const failures = [];
 const fail = (msg) => failures.push(msg);
@@ -212,9 +216,56 @@ async function nav(browser) {
   }
 }
 
+// Brad, 27 Nov 2026: "Slow pan on the home pages only". The NOS hub hero runs the SAOC home drift
+// (home-hero-drift) and drops it under reduced motion; no NOS inner hero and no SAOC inner hero (PageHero)
+// animates anything.
+const MOTION_WIDTHS = [1440, 390];
+const SAOC_PAGE_HERO_ROUTES = ['/about', '/societies', '/judging', '/events', '/sponsors', '/contact'];
+const HUB_DRIFT = 'home-hero-drift';
+
+async function animationsIn(browser, origin, route, width, selector, reducedMotion) {
+  const page = await browser.newPage({ viewport: { width, height: 900 }, reducedMotion });
+  let res;
+  try {
+    res = await page.goto(`${origin}${route}`, { waitUntil: 'networkidle' });
+  } catch (error) {
+    console.error(`INFRA: ${origin}${route} @${width}: ${error.constructor.name} ${error.message}`);
+    process.exit(2);
+  }
+  const names = await page.evaluate((sel) => {
+    const root = document.querySelector(sel);
+    if (!root) return null;
+    return [root, ...root.querySelectorAll('*')]
+      .map((e) => getComputedStyle(e).animationName)
+      .filter((n) => n && n !== 'none');
+  }, selector);
+  await page.close();
+  return { status: res?.status() ?? 0, names };
+}
+
+async function motion(browser) {
+  for (const width of MOTION_WIDTHS) {
+    const hub = await animationsIn(browser, base, '/', width, '[data-nos-hero="hub"]', 'no-preference');
+    if (hub.status !== 200 || hub.names === null) fail(`NOS hub @${width}: HTTP ${hub.status}, hero ${hub.names ? 'found' : 'missing'}`);
+    else if (!hub.names.includes(HUB_DRIFT)) fail(`NOS hub @${width}: no ${HUB_DRIFT} (animations: ${hub.names.join(', ') || 'none'})`);
+    const still = await animationsIn(browser, base, '/', width, '[data-nos-hero="hub"]', 'reduce');
+    if (still.names?.length) fail(`NOS hub @${width} with reduced motion: still animates ${still.names.join(', ')}`);
+    for (const route of ROUTES) {
+      const m = await animationsIn(browser, base, route, width, '[data-nos-hero="inner"]', 'no-preference');
+      if (m.status !== 200 || m.names === null) fail(`NOS ${route} @${width}: HTTP ${m.status}, inner hero ${m.names ? 'found' : 'missing'}`);
+      else if (m.names.length) fail(`NOS ${route} @${width}: inner hero animates ${m.names.join(', ')}`);
+    }
+    for (const route of SAOC_PAGE_HERO_ROUTES) {
+      const m = await animationsIn(browser, saocBase, route, width, '[data-page-hero]', 'no-preference');
+      if (m.status !== 200 || m.names === null) fail(`SAOC ${route} @${width}: HTTP ${m.status}, PageHero ${m.names ? 'found' : 'missing'}`);
+      else if (m.names.length) fail(`SAOC ${route} @${width}: PageHero animates ${m.names.join(', ')}`);
+    }
+  }
+}
+
 const browser = await chromium.launch();
 try {
-  await { heights, contrast, nav }[mode](browser);
+  await { heights, contrast, nav, motion }[mode](browser);
 } finally {
   await browser.close();
 }

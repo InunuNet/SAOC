@@ -80,6 +80,15 @@ const HUB_DESKTOP_MAX_HEIGHT_PX = 820;
 const HUB_SOURCE_ASPECT = 1.5;
 const HUB_PHOTO_SIZES = `(max-width: 767px) max(100vw, ${Math.round(HUB_PHONE_BAND_HEIGHT_PX * HUB_SOURCE_ASPECT)}px), (min-width: 1024px) max(100vw, ${Math.round(HUB_DESKTOP_MAX_HEIGHT_PX * HUB_SOURCE_ASPECT)}px), 100vw`;
 
+// The hub's slow pan (Brad, 27 Nov 2026: "Slow pan on the home pages only") is the SAOC home hero's drift,
+// reused as is: globals.css `.home-hero-drift`, a linear 4% zoom about `--hero-pos` over the carousel interval
+// plus 1400ms, held at its end, and off under prefers-reduced-motion. The interval is the SAOC home carousel's
+// (components/home/Hero.tsx CAROUSEL_INTERVAL_MS; a client module, so its export cannot be read here). The
+// origin is the Cattleya bloom, so the bloom stays put while the edges move out and the masked copy side stays
+// dark. Inner heroes never drift (check-motion.mjs).
+const HUB_DRIFT_INTERVAL_MS = 7000;
+const HUB_DRIFT_ORIGIN = '55% 50%';
+
 // LT-1: an inner h1 longer than this gets `.is-long`, a smaller clamp that holds it to one line in the 62% column.
 const LONG_TITLE_CHARS = 20;
 
@@ -279,16 +288,27 @@ export async function NosHero({
             }
           >
             {isHub ? (
-              <Image
-                src={photo.src}
-                alt=""
-                fill
-                priority={priority}
-                fetchPriority={priority ? 'high' : undefined}
-                sizes={HUB_PHOTO_SIZES}
-                quality={photo.src in heroSourceWidths ? FULL_BLEED_QUALITY : undefined}
-                className="nos-hero-img"
-              />
+              <div
+                data-nos-hero-drift=""
+                className="home-hero-drift absolute inset-0"
+                style={
+                  {
+                    '--hero-interval': `${HUB_DRIFT_INTERVAL_MS}ms`,
+                    '--hero-pos': HUB_DRIFT_ORIGIN,
+                  } as CSSProperties
+                }
+              >
+                <Image
+                  src={photo.src}
+                  alt=""
+                  fill
+                  priority={priority}
+                  fetchPriority={priority ? 'high' : undefined}
+                  sizes={HUB_PHOTO_SIZES}
+                  quality={photo.src in heroSourceWidths ? FULL_BLEED_QUALITY : undefined}
+                  className="nos-hero-img"
+                />
+              </div>
             ) : (
               <HeroPicture
                 src={photo.src}
