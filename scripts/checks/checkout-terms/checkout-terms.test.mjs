@@ -1,7 +1,7 @@
 // Terms acceptance at checkout (Terms 5.1 and 7): the route refuses a missing, false or stale
 // acceptance with 400 before any Sanity read, reservation or gateway call, and the reservation
 // builder stamps the accepted versions on the order without undefined own-properties.
-//   npx tsx --test --experimental-test-module-mocks scripts/checks/regressions/checkout-terms.test.mjs
+//   npx tsx --test --experimental-test-module-mocks scripts/checks/checkout-terms/checkout-terms.test.mjs
 import assert from 'node:assert/strict';
 import { mock, test } from 'node:test';
 

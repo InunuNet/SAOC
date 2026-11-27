@@ -82,6 +82,10 @@ jobs:
       - name: Secret bundle loader tests
         run: pnpm exec tsx --test lib/secrets.test.ts lib/newsletter-handler-export.test.ts lib/admin-capability-gate.test.ts lib/client-ip.test.ts
 
+      # These import .ts/.tsx and mock modules, so they need tsx; plain node cannot load them.
+      - name: Checkout terms consent tests
+        run: pnpm exec tsx --test --experimental-test-module-mocks scripts/checks/checkout-terms/*.test.mjs
+
       - name: Cache-header probe selftest
         run: node scripts/checks/cache-headers-probe.mjs --selftest
 
