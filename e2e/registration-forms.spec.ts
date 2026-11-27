@@ -43,6 +43,7 @@ const ATTENDING = 'SAOC Symposium Normal Ticket';
 async function open(page: Page, query = '') {
   await page.goto(`${FIXTURE}${query}`);
   await expect(page.getByRole('button', { name: SUBMIT })).toBeEnabled({ timeout: 45_000 });
+  await page.locator('#checkout-terms').check(); // the terms tick box is required before paying
 }
 
 /** Captures the checkout POST body and answers with a 500 so nothing proceeds to a gateway. */
