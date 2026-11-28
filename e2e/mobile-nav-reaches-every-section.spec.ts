@@ -3,8 +3,8 @@
 // Mission menu-system-layout4 M2/F3, rewritten for the two-site split (mission nos-site-split F3).
 //
 // The SAOC site's drawer is a flat list of SAOC sections plus one absolute link to the National
-// Orchid Show site; the show's own menu panel (NOS host, NOS Design R1.4) holds the three
-// disclosure groups, Show sponsors, Past shows and Contact. Mobile is not a lesser-tested surface:
+// Orchid Show site; the show's own menu panel (NOS host, NOS Design R1.4) holds the disclosure
+// groups, a one-link group as a plain link (Vendors, Brad 25 Nov 2026), Show sponsors, Past shows and Contact. Mobile is not a lesser-tested surface:
 // this opens each menu at 390px and 320px and click-navigates through every destination, each with
 // its own real Playwright navigation assertion (waitForURL + toHaveURL) — never a text-presence
 // check, which would pass even for a hidden, unreachable element. A link that leaves the site (the
@@ -27,6 +27,7 @@ import {
   NOS_GROUPS,
   NOS_PAST_SHOWS_PATH,
   NOS_PLAIN_LEAVES,
+  NOS_SOLE_LINK_GROUPS,
   NOS_TICKETS,
   cleanHref,
 } from './utils/nos-nav-hrefs';
@@ -154,6 +155,20 @@ for (const width of [390, 320] as const) {
           await expect(page).toHaveURL(urlPattern(path));
         });
       }
+    }
+
+    // A one-link group is a plain link labelled with the group heading, never a disclosure (Brad, 25 Nov 2026).
+    for (const { heading, leaf } of NOS_SOLE_LINK_GROUPS) {
+      const path = cleanHref(leaf);
+      test(`NOS menu "${heading}" is a plain link that reaches "${leaf.label}"`, async ({ page, baseURL }) => {
+        const panel = await openNosPanel(page, baseURL!);
+        await expect(panel.getByRole('button', { name: heading, exact: true })).toHaveCount(0);
+        const destination = panel.getByRole('link', { name: heading, exact: true });
+        await expect(destination).toBeVisible();
+        await destination.click();
+        await page.waitForURL(urlPattern(path));
+        await expect(page).toHaveURL(urlPattern(path));
+      });
     }
 
     for (const leaf of NOS_PLAIN_LEAVES) {

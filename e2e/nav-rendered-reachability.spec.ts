@@ -20,7 +20,12 @@ import type { Locator, Page } from '@playwright/test';
 
 import { CONTACT_LINK, NAV } from '@/components/chrome/nav-config';
 import { collectHrefs } from './utils/collect-nav-hrefs';
-import { NOS_GROUPS, NOS_REQUIRED_HEADER_HREFS } from './utils/nos-nav-hrefs';
+import {
+  NOS_GROUPS,
+  NOS_REQUIRED_HEADER_HREFS,
+  NOS_SOLE_LINK_GROUPS,
+  cleanHref,
+} from './utils/nos-nav-hrefs';
 import { nosBase } from './utils/site-urls';
 
 // The credit link carries a screen-reader new-tab cue after the name (Brad, 19 Nov 2026).
@@ -136,6 +141,15 @@ test.describe('NOS nav hrefs are reachable from the rendered NOS header', () => 
     expect(NOS_REQUIRED_HEADER_HREFS.length).toBeGreaterThan(0);
   });
 
+  // A one-link group is a plain anchor labelled with the group heading, never a disclosure button
+  // (Brad, 25 Nov 2026); its href is still in NOS_REQUIRED_HEADER_HREFS.
+  async function assertSoleLinkGroups(scope: Locator): Promise<void> {
+    for (const { heading, leaf } of NOS_SOLE_LINK_GROUPS) {
+      await expect(scope.getByRole('button', { name: heading, exact: true })).toHaveCount(0);
+      await expect(scope.getByRole('link', { name: heading, exact: true })).toHaveAttribute('href', cleanHref(leaf));
+    }
+  }
+
   // Each group's links live in a disclosure panel that only exists as visible once its trigger is
   // clicked, so the panels are opened one by one and the rendered anchors collected from each state.
   test('desktop: every NOS nav href is a real anchor inside the header, each group opened', async ({
@@ -147,6 +161,7 @@ test.describe('NOS nav hrefs are reachable from the rendered NOS header', () => 
 
     const header = page.locator('header#nh');
     const rendered = new Set<string>(await renderedAnchorHrefs(header));
+    await assertSoleLinkGroups(header.locator('[data-hd="nav"]'));
 
     for (const group of NOS_GROUPS) {
       const trigger = header.getByRole('button', { name: group.heading, exact: true });
@@ -176,6 +191,7 @@ test.describe('NOS nav hrefs are reachable from the rendered NOS header', () => 
     await expect(panel).toBeVisible();
 
     const rendered = new Set<string>(await renderedAnchorHrefs(panel));
+    await assertSoleLinkGroups(panel);
     for (const group of NOS_GROUPS) {
       const trigger = panel.getByRole('button', { name: group.heading, exact: true });
       await expect(trigger).toHaveAttribute('aria-expanded', 'false');
