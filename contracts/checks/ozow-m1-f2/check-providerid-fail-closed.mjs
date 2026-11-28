@@ -34,6 +34,7 @@ delete process.env.FIREBASE_ADMIN_PRIVATE_KEY;
 
 const { POST } = await import('../../../app/api/tickets/checkout/route.ts');
 const { NATIONAL_SHOW_ID } = await import('../../../lib/tickets-constants.ts');
+const { CURRENT_TERMS_VERSIONS } = await import('../../../lib/checkout-terms.ts');
 
 const failures = [];
 const ok = (name, cond, detail = '') => {
@@ -51,7 +52,13 @@ function nextIdempotencyKey() {
 }
 
 async function callCheckout(bodyOverrides) {
-  const body = { showId: NATIONAL_SHOW_ID, lineItems: VALID_LINE_ITEMS, ...bodyOverrides };
+  const body = {
+    showId: NATIONAL_SHOW_ID,
+    lineItems: VALID_LINE_ITEMS,
+    termsAccepted: true,
+    ...CURRENT_TERMS_VERSIONS,
+    ...bodyOverrides,
+  };
   const request = new Request('http://localhost/api/tickets/checkout', {
     method: 'POST',
     headers: {

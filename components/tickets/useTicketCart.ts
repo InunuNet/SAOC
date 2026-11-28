@@ -11,6 +11,7 @@ import {
   CART_MAX_LINE_ITEMS,
   type CartAttendee,
 } from '@/lib/cart';
+import { CURRENT_TERMS_VERSIONS } from '@/lib/checkout-terms';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 import {
   nextBlurErrors,
@@ -128,7 +129,10 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
 
   // `registrationLineItems`: a flagged ticket type posts its registered people instead of the
   // attendee rows, which it does not show.
-  async function submit(registrationLineItems?: CheckoutLineItemInput[]) {
+  async function submit(
+    registrationLineItems: CheckoutLineItemInput[] | undefined,
+    termsAccepted: boolean
+  ) {
     if (status === 'submitting' || quantity < MIN_QUANTITY) return;
     // A new attempt clears the last refusal's status, even if client validation stops it below.
     setErrorStatus(null);
@@ -164,7 +168,12 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
       const res = await fetch('/api/tickets/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
-        body: JSON.stringify({ showId: NATIONAL_SHOW_ID, lineItems }),
+        body: JSON.stringify({
+          showId: NATIONAL_SHOW_ID,
+          lineItems,
+          termsAccepted,
+          ...CURRENT_TERMS_VERSIONS,
+        }),
       });
 
       const data = (await res.json().catch(() => ({}))) as {

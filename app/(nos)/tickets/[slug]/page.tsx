@@ -150,6 +150,7 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
     provisional: ticketType.provisional === true,
     requiresDaySelection: ticketType.requiresDaySelection === true,
     requiresRegistration: ticketType.requiresRegistration === true,
+    cancellationTerms: ticketType.cancellationTerms ?? null,
   };
 
   const quantity = parseQuantity(query.quantity);

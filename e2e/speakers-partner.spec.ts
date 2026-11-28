@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 
 import { expect, test } from '@playwright/test';
 
+import { CURRENT_TERMS_VERSIONS } from '@/lib/checkout-terms';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 import { hasSpeakersPartnerAccess, mintSpeakersPartnerSession } from '@/lib/speakers-partner';
 
@@ -26,7 +27,7 @@ function checkoutOptions(lineItems: unknown[], cookie?: string) {
       'idempotency-key': randomUUID(),
       ...(cookie ? { cookie } : {}),
     },
-    data: { showId: NATIONAL_SHOW_ID, lineItems },
+    data: { showId: NATIONAL_SHOW_ID, lineItems, termsAccepted: true, ...CURRENT_TERMS_VERSIONS },
   };
 }
 

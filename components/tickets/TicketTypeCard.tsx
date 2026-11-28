@@ -34,6 +34,10 @@ export interface TicketTypeCardData {
    *  tickets: the buy screen shows the registration form instead of the quantity stepper and
    *  attendee rows. Required (not optional), same posture as the flags above. */
   requiresRegistration: boolean;
+  /** Only when this listing's cancellation terms differ from the Refund and Cancellation
+   *  Policy: replaces the standard schedule above the pay button. Absent or empty means the
+   *  standard one. */
+  cancellationTerms?: string[] | null;
 }
 
 interface TicketTypeCardProps {

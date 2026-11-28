@@ -209,6 +209,7 @@ export const ticketTypeBySlugQuery = defineQuery(`
     capacityPool,
     headcountPerUnit,
     excludedDays,
+    cancellationTerms,
     "isWorkshopSession": count(*[_type == "workshopSession" && ticketType._ref == ^._id]) > 0
   }
 `);

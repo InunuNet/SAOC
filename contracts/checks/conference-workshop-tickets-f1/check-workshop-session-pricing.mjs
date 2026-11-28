@@ -66,7 +66,7 @@ const EXPECTED_WORKSHOP_FIELD_TRIP_PRODUCTS = [
     slug: 'sunset-cocktails-single',
     name: 'Sunset Cocktails (Single)',
     category: 'workshop-field-trip',
-    description: 'Admission to the Sunset Cocktails evening reception. 18+ event.',
+    description: 'Sunset Cocktails evening reception. 18+ event.',
     price: 800,
     capacity: 100,
     releasedQuantity: null,

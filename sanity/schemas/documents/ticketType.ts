@@ -211,5 +211,15 @@ export const ticketType = defineType({
         'ISO 8601 dates (e.g. "2027-09-23") this ticket type does NOT sell for. Leave unset ' +
         'for no exclusion. Additive to requiresDaySelection, not a replacement for it.',
     }),
+    defineField({
+      name: 'cancellationTerms',
+      title: 'Cancellation Terms',
+      type: 'array',
+      of: [{ type: 'string' }],
+      description:
+        "Only if this event's cancellation terms differ from the Refund and Cancellation " +
+        'Policy. Shown before purchase. One line per entry. Leave empty to show the standard ' +
+        'schedule.',
+    }),
   ],
 });
