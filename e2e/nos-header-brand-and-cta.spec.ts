@@ -123,10 +123,13 @@ test.describe('NOS header — lockup and Tickets call to action', () => {
     await page.goto(`${nosBase(baseURL!)}/`);
 
     const header = page.locator('header#nh');
-    for (const group of ['Visit', 'Programme', 'Vendors']) {
+    for (const group of ['Visit', 'Programme']) {
       await header.getByRole('button', { name: group, exact: true }).click();
       await expect(header.getByRole('heading')).toHaveCount(0);
     }
+    // A one-link group is a plain link to its page, not a disclosure (Brad, 25 Nov 2026).
+    await expect(header.getByRole('button', { name: 'Vendors', exact: true })).toHaveCount(0);
+    await expect(header.getByRole('link', { name: 'Vendors', exact: true })).toHaveAttribute('href', '/vendors');
     for (const name of ['Day Visitor', 'Weekend Pass', 'Buy tickets']) {
       await expect(header.getByRole('link', { name })).toHaveCount(0);
     }

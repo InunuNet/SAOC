@@ -2,9 +2,10 @@
 // NOS — components/nos/NosHero.tsx
 // Server Component. The NOS hero, in two kinds that share one DOM contract:
 //
-//   photo  (NOS Design NH2) the inner split studio panel: copy top-anchored on solid #0B0A14,
-//          one cropped studio photograph in a 46% panel flush right (16px bottom-left radius,
-//          no scrim); below 768px a 2/1 photo band leads and the copy sits under it. The hub
+//   photo  the inner hero is the SAOC interior hero system (Brad, 26 Nov 2026, superseding NOS
+//          Design NH2's split panel): from 768px a full-bleed photograph, copy top-anchored in a
+//          left column on the mirrored PageHero scrim in the NOS ink (lib/interior-hero.ts), the
+//          bloom side bare; below 768px a 2/1 photo band leads and the copy sits under it. The hub
 //          (`titleSize="display"`) keeps its full-bleed photograph under the 6-stop ramp. Only
 //          the rights-cleared production photographs may appear (components/nos/hero-photos.ts);
 //          the 13-photo Ormerod set in branding/ is NOT rights-cleared (guardrail D5). No
@@ -21,6 +22,9 @@
 //     h1                                     exactly one (a loading.tsx fallback passes titleAs="p")
 //     [data-nos-hero-lede]                   the lede / standfirst
 //
+// Inner heroes: [data-nos-hero-box] holds the crumbs, h1 and lede (the locked hero box from 1024 on a
+// photo hero); [data-nos-hero-detail] holds the facts and actions, under the box on the page ground.
+//
 // Directly after an inner hero comes the R27 group sub-nav (NosSubNav), except on the hub
 // and on tickets, which have none.
 // =============================================================
@@ -29,9 +33,15 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { CSSProperties, ReactNode } from 'react';
 
+import { HeroPicture } from '@/components/ui/HeroPicture';
+import { heroSourceAspect } from '@/lib/data/saoc-hero-photos';
 import type { ShowFact } from '@/lib/data/show-facts';
 import { type HeroFact, normaliseHeroFacts } from '@/lib/hero-facts';
 import heroSourceWidths from '@/lib/hero-source-widths.json';
+import {
+  fixedHeightCoverSize,
+  mirroredCopyScrimGradient,
+} from '@/lib/interior-hero';
 
 import { heroCropFor, heroPhotoFor } from './hero-photos';
 import { NosSubNav } from './NosSubNav';
@@ -42,10 +52,25 @@ import { subNavGroupFor } from './nos-subnav-groups';
 // up to its native width (lib/image-loader.ts), so it is never stretched on a high-density screen.
 const FULL_BLEED_QUALITY = 88;
 
-// DS-1 (c): the photo box is 62% wide from 1024px (38% to the right edge), 42% from 768px, a full-width band below it.
-// From 768 to 1023 the box is narrower than the 1.9:1 crop is wide at hero height, so object-fit: cover
-// paints the crop at height x aspect (about 1126px at the tallest hero measured there, 563px).
-const INNER_PHOTO_SIZES = '(min-width: 1024px) min(62vw, 1150px), (min-width: 768px) max(62vw, 1200px), 100vw';
+// The inner photo hero is the SAOC interior hero system (lib/interior-hero.ts; Brad, 26 Nov 2026), mirrored: the
+// photograph is full bleed at every width from 768px, the copy column sits on the left on the NOS ink (--black,
+// rgb 11 10 20) eased scrim, and the bloom side is the bare photograph. Below 768px the photograph is a 2:1 band
+// above the title block, so no text sits over it. The box heights are in nos-structure.css (Inner hero sizing).
+// The locked box (Brad, 26 Nov 2026: about 268px at 1288): nos-structure.css `clamp(268px, 20.8vw, 480px)`.
+const INNER_TABLET_BOX_PX = 268;
+const INNER_DESKTOP_BOX = 'clamp(268px, 20.8vw, 480px)';
+const INNER_PHONE_BAND_VW = 50;
+const INNER_SCRIM = mirroredCopyScrimGradient('11 10 20', 'var(--hero-copy-end)');
+
+/** The `sizes` of the inner photograph: a cover image is as wide as the larger of the box and box height x aspect. */
+function innerPhotoSizes(src: string): string {
+  const aspect = heroSourceAspect(src);
+  return [
+    `(max-width: 767px) max(100vw, calc(${INNER_PHONE_BAND_VW}vw * ${aspect}))`,
+    `(max-width: 1023px) ${fixedHeightCoverSize(INNER_TABLET_BOX_PX, aspect)}`,
+    `max(100vw, calc(${INNER_DESKTOP_BOX} * ${aspect}))`,
+  ].join(', ');
+}
 
 // HB-3: the hub photo's painted width per band, from the box it fills with object-fit: cover on the
 // 3:2 source. At 767px and below the media is a fixed-height band (height x aspect wide); from
@@ -54,6 +79,15 @@ const HUB_PHONE_BAND_HEIGHT_PX = 300;
 const HUB_DESKTOP_MAX_HEIGHT_PX = 820;
 const HUB_SOURCE_ASPECT = 1.5;
 const HUB_PHOTO_SIZES = `(max-width: 767px) max(100vw, ${Math.round(HUB_PHONE_BAND_HEIGHT_PX * HUB_SOURCE_ASPECT)}px), (min-width: 1024px) max(100vw, ${Math.round(HUB_DESKTOP_MAX_HEIGHT_PX * HUB_SOURCE_ASPECT)}px), 100vw`;
+
+// The hub's slow pan (Brad, 27 Nov 2026: "Slow pan on the home pages only") is the SAOC home hero's drift,
+// reused as is: globals.css `.home-hero-drift`, a linear 4% zoom about `--hero-pos` over the carousel interval
+// plus 1400ms, held at its end, and off under prefers-reduced-motion. The interval is the SAOC home carousel's
+// (components/home/Hero.tsx CAROUSEL_INTERVAL_MS; a client module, so its export cannot be read here). The
+// origin is the Cattleya bloom, so the bloom stays put while the edges move out and the masked copy side stays
+// dark. Inner heroes never drift (check-rendered.mjs motion, A7).
+const HUB_DRIFT_INTERVAL_MS = 7000;
+const HUB_DRIFT_ORIGIN = '55% 50%';
 
 // LT-1: an inner h1 longer than this gets `.is-long`, a smaller clamp that holds it to one line in the 62% column.
 const LONG_TITLE_CHARS = 20;
@@ -181,6 +215,37 @@ export async function NosHero({
       ? 'nos-hero-title is-long'
       : 'nos-hero-title';
   const group = NO_SUBNAV_ROUTES.has(route) ? null : subNavGroupFor(route, await getVisibleNav());
+  const hasDetail = Boolean(heroFacts || actions);
+  const head = (
+    <>
+      {eyebrow ? (
+        <p data-nos-hero-eyebrow="" className="nos-hero-eyebrow">
+          {eyebrow}
+        </p>
+      ) : null}
+      {crumbs ??
+        (crumbLabel ? (
+          <nav className="nk-crumbs" aria-label="Breadcrumb">
+            <Link href="/">National Orchid Show</Link>
+            <span className="nk-crumb">
+              <span className="nk-sep" aria-hidden="true">
+                <span className="sr-only">–</span>
+              </span>
+              <span aria-current="page">{crumbLabel}</span>
+            </span>
+          </nav>
+        ) : null)}
+      {titleAs === 'p' ? (
+        // Restates the heading rule in nos-theme.css (`.nos-theme :is(h1...)`), which a p misses,
+        // so the fallback is identical to the h1 it stands in for on the first frame.
+        <p className={titleClass} style={FALLBACK_TITLE_STYLE}>
+          {title}
+        </p>
+      ) : (
+        <h1 className={titleClass}>{title}</h1>
+      )}
+    </>
+  );
 
   return (
     <>
@@ -203,84 +268,98 @@ export async function NosHero({
                 : undefined
             }
           >
-            <Image
-              src={photo.src}
-              alt=""
-              fill
-              priority={priority}
-              fetchPriority={priority ? 'high' : undefined}
-              sizes={isHub ? HUB_PHOTO_SIZES : INNER_PHOTO_SIZES}
-              quality={photo.src in heroSourceWidths ? FULL_BLEED_QUALITY : undefined}
-              className="nos-hero-img"
-            />
+            {isHub ? (
+              <div
+                data-nos-hero-drift=""
+                className="home-hero-drift absolute inset-0"
+                style={
+                  {
+                    '--hero-interval': `${HUB_DRIFT_INTERVAL_MS}ms`,
+                    '--hero-pos': HUB_DRIFT_ORIGIN,
+                  } as CSSProperties
+                }
+              >
+                <Image
+                  src={photo.src}
+                  alt=""
+                  fill
+                  priority={priority}
+                  fetchPriority={priority ? 'high' : undefined}
+                  sizes={HUB_PHOTO_SIZES}
+                  quality={photo.src in heroSourceWidths ? FULL_BLEED_QUALITY : undefined}
+                  className="nos-hero-img"
+                />
+              </div>
+            ) : (
+              <HeroPicture
+                src={photo.src}
+                priority={priority}
+                sizes={innerPhotoSizes(photo.src)}
+                className="nos-hero-img"
+              />
+            )}
           </div>
         ) : null}
         {isHub && photo ? <div aria-hidden="true" className="nos-hero-scrim" /> : null}
+        {!isHub && photo ? (
+          <div
+            data-hero-scrim="copy"
+            aria-hidden="true"
+            className="nos-hero-copy-scrim"
+            style={{ '--scrim-gradient': INNER_SCRIM } as CSSProperties}
+          />
+        ) : null}
         <div className="nos-hero-copy">
-          {eyebrow ? (
-            <p data-nos-hero-eyebrow="" className="nos-hero-eyebrow">
-              {eyebrow}
-            </p>
-          ) : null}
-          {crumbs ??
-            (crumbLabel ? (
-              <nav className="nk-crumbs" aria-label="Breadcrumb">
-                <Link href="/">National Orchid Show</Link>
-                <span className="nk-crumb">
-                  <span className="nk-sep" aria-hidden="true">
-                    <span className="sr-only">–</span>
-                  </span>
-                  <span aria-current="page">{crumbLabel}</span>
-                </span>
-              </nav>
-            ) : null)}
-          {titleAs === 'p' ? (
-            // Restates the heading rule in nos-theme.css (`.nos-theme :is(h1...)`), which a p misses,
-            // so the fallback is identical to the h1 it stands in for on the first frame.
-            <p className={titleClass} style={FALLBACK_TITLE_STYLE}>
-              {title}
-            </p>
-          ) : (
-            <h1 className={titleClass}>{title}</h1>
-          )}
           {isHub ? (
-            <div className="nos-hero-body">
-              {lede ? (
-                <p data-nos-hero-lede="" data-nos-hero-text="lede" className="nos-hero-lede">
-                  {lede}
-                </p>
-              ) : null}
-              {actions}
-            </div>
+            <>
+              {head}
+              <div className="nos-hero-body">
+                {lede ? (
+                  <p data-nos-hero-lede="" data-nos-hero-text="lede" className="nos-hero-lede">
+                    {lede}
+                  </p>
+                ) : null}
+                {actions}
+              </div>
+            </>
           ) : (
             <>
-              {lede ? (
-                <p
-                  data-nos-hero-lede=""
-                  data-nos-hero-text="lede"
-                  data-nos-lede={ledeKind}
-                  className="nos-hero-lede"
-                >
-                  {lede}
-                </p>
+              <div data-nos-hero-box="" className="nos-hero-box">
+                <div data-nos-hero-head="" className="nos-hero-head">
+                  {head}
+                </div>
+                {lede ? (
+                  <p
+                    data-nos-hero-lede=""
+                    data-nos-hero-text="lede"
+                    data-nos-lede={ledeKind}
+                    className="nos-hero-lede"
+                  >
+                    {lede}
+                  </p>
+                ) : null}
+              </div>
+              {hasDetail ? (
+                <div data-nos-hero-detail="" className="nos-hero-detail">
+                  {heroFacts ? (
+                    <dl data-hero-facts="" data-fact-count={heroFacts.length} className="hero-facts">
+                      {heroFacts.map((fact) => (
+                        <div key={fact.term} data-hero-fact="">
+                          <dt>{fact.term}</dt>
+                          <dd>
+                            {factLinks?.[fact.term] ? (
+                              <a href={factLinks[fact.term]}>{fact.value}</a>
+                            ) : (
+                              fact.value
+                            )}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  ) : null}
+                  {actions ? <div className="nos-hero-actions">{actions}</div> : null}
+                </div>
               ) : null}
-              {heroFacts ? (
-                <dl data-hero-facts="" data-fact-count={heroFacts.length} className="hero-facts">
-                  {heroFacts.map((fact) => (
-                    <div key={fact.term} data-hero-fact="">
-                      <dt>{fact.term}</dt>
-                      <dd>
-                        {factLinks?.[fact.term] ? (
-                          <a href={factLinks[fact.term]}>{fact.value}</a>
-                        ) : (
-                          fact.value
-                        )}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              ) : null}
-              {actions ? <div className="nos-hero-actions">{actions}</div> : null}
             </>
           )}
         </div>

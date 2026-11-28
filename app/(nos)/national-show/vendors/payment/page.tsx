@@ -76,7 +76,7 @@ export default async function VendorStandPaymentPage({
       <NosHero
         route="/national-show/vendors/payment"
         title="Vendor stand payment"
-        lede="Select your stand size and complete payment for the 2027 National Orchid Show."
+        lede="Select your stand size and complete payment."
         priority
       />
 

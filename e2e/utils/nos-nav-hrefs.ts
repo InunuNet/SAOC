@@ -2,7 +2,7 @@
 // SAOC — e2e/utils/nos-nav-hrefs.ts
 // Mission nos-site-split F3 — what the National Orchid Show header (components/nos-chrome/
 // NosHeader.tsx, NOS Design R1.2) must render, derived from NOS_NAV so a spec can never drift from
-// the nav data: three disclosure groups (Visit, Programme, Vendors), then the plain links
+// the nav data: the disclosure groups (Visit, Programme), a one-link group as a plain link (Vendors), then the plain links
 // Show sponsors and Past shows, Contact (a SAOC URL), and the Tickets call to action. Hrefs are the
 // public clean paths (nosPath), which is what the NOS host renders.
 // =============================================================
@@ -23,8 +23,17 @@ const leaf = (id: string): NavLeaf => {
   return found;
 };
 
-/** The three disclosure groups, in header order. */
-export const NOS_GROUPS: readonly NavColumn[] = mega.columns;
+/** Every nav group, in header order. */
+const ALL_GROUPS: readonly NavColumn[] = mega.columns;
+/** The disclosure groups (two or more links), in header order: each has a button and a panel. */
+export const NOS_GROUPS: readonly NavColumn[] = ALL_GROUPS.filter((g) => g.links.length > 1);
+/**
+ * The one-link groups (Vendors): NosHeader's soleLink renders each as a plain link, labelled with the
+ * group heading, to its only child's page (Brad, 25 Nov 2026), in the top row and the menu panel.
+ */
+export const NOS_SOLE_LINK_GROUPS: readonly { heading: string; leaf: NavLeaf }[] = ALL_GROUPS.filter(
+  (g) => g.links.length === 1,
+).map((g) => ({ heading: g.heading, leaf: g.links[0] }));
 /** The Tickets call to action. */
 export const NOS_TICKETS = leaf('tickets');
 /** The plain top-row links after the groups. */
@@ -39,7 +48,7 @@ export const cleanHref = (l: NavLeaf): string => nosPath(l.href);
 export const NOS_REQUIRED_HEADER_HREFS: readonly string[] = Array.from(
   new Set([
     '/',
-    ...NOS_GROUPS.flatMap((g) => g.links.map(cleanHref)),
+    ...ALL_GROUPS.flatMap((g) => g.links.map(cleanHref)),
     cleanHref(NOS_TICKETS),
     cleanHref(leaf('show-sponsors')),
   ]),

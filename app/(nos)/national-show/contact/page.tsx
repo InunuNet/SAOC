@@ -3,13 +3,15 @@ import type { Metadata } from 'next';
 import { CONTACT_LINK } from '@/components/chrome/nav-config';
 import { ContactForm } from '@/components/contact/ContactForm';
 import { NosContactAside } from '@/components/contact/NosContactAside';
-import { NosHero } from '@/components/nos/NosHero';
+import { heroFactsFromShow, NosHero } from '@/components/nos/NosHero';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
 import { SaocText } from '@/components/nos/SaocText';
 import { ShowContactDetails } from '@/components/nos/ShowContactDetails';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowVenueQuery } from '@/sanity/queries';
+import { loadShowFacts } from '@/lib/data/show-facts';
 import { buildPageMetadata } from '@/lib/seo';
+import { SHOW_CONTACT_EMAIL } from '@/lib/show-contact';
 import { SHOW_TITLE } from '@/lib/show-title';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 import type { ShowVenue } from '@/types';
@@ -39,6 +41,12 @@ const COMMITTEE: readonly { name: string; role: string }[] = [
   { name: 'Cara Holmes', role: 'Venue Layout' },
 ];
 
+// The hero facts (Brad, 25 Nov 2026: something informationally important under Contact, like the
+// other show heroes): the shared Dates and Venue facts, then the show's email address (ShowContactDetails'
+// "Email" label and address, lib/show-contact.ts) in the place the other heroes give the host.
+const FACTS_LABELS = ['Dates', 'Venue'] as const;
+const FACT_EMAIL = 'Email';
+
 // Same bound as the SAOC pages: Sanity edits reach the page within the 60s CDN window.
 export const revalidate = 60;
 
@@ -49,17 +57,24 @@ interface ShowVenueData {
 export default async function NosContactPage() {
   // The venue lines read nationalShow.venue, the same object the shared VenueCard prints, moved
   // here from the SAOC /contact page (Brad, 25 Nov 2026) so they cannot drift from other surfaces.
-  const show = await sanityFetch<ShowVenueData>({
-    query: nationalShowVenueQuery,
-    tags: ['nationalShow', 'sanity'],
-  });
+  const [show, showFacts] = await Promise.all([
+    sanityFetch<ShowVenueData>({
+      query: nationalShowVenueQuery,
+      tags: ['nationalShow', 'sanity'],
+    }),
+    loadShowFacts(),
+  ]);
   return (
     <>
       <NosHero
         route="/national-show/contact"
-        className="nos-contact-hero"
         title={CONTACT_LINK.label}
         crumbLabel={CONTACT_LINK.label}
+        facts={[
+          ...heroFactsFromShow(showFacts, FACTS_LABELS),
+          { term: FACT_EMAIL, value: SHOW_CONTACT_EMAIL },
+        ]}
+        factLinks={{ [FACT_EMAIL]: `mailto:${SHOW_CONTACT_EMAIL}` }}
         priority
       />
       <div className="nos-ct-body saoc-container" data-doc-layout="" data-nos-contact="page">

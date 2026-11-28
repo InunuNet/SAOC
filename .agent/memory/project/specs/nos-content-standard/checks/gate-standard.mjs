@@ -30,13 +30,13 @@ async function heroSharpness(page, route, vp, c, tag) {
   if (route.photo) c.check(`${tag} the hero serves the route's signed-off crop ${route.photo}`, decodeURIComponent(idv).includes(`nos-hero-${route.photo}`), idv);
   if (!found) return;
   const geo = await page.evaluate((sel) => { const img = document.querySelector(sel); const hero = document.querySelector('section[data-nos-hero]').getBoundingClientRect(); const b = img.getBoundingClientRect(); const h1 = document.querySelector('h1')?.getBoundingClientRect(); const md = img.closest('[data-nos-hero-media]')?.getBoundingClientRect() ?? b; return { mw: md.width, mright: (md.right - hero.left) / hero.width * 100, left: (b.left - hero.left) / hero.width * 100, right: (b.right - hero.left) / hero.width * 100, w: b.width, heroW: hero.width, top: b.top, h1Bottom: h1 ? h1.bottom : 0 }; }, HERO_IMG);
-  if (vp.width >= 1024) {
+  // Brad, 26 Nov 2026 (the SAOC interior hero system; NH2's split panel and the 25 Nov photo mask are superseded): from 768 the photo is
+  // full bleed, radius 0, with no mask on it or its box; below 768 it is a full-width band that leads.
+  if (vp.width >= 768) {
     const bx = await page.evaluate((sel) => { const img = document.querySelector(sel); const media = img?.closest('[data-nos-hero-media]') ?? img?.parentElement; const radii = [img, media].filter(Boolean).map((e) => ['TopLeft', 'TopRight', 'BottomLeft', 'BottomRight'].map((k) => parseFloat(getComputedStyle(e)[`border${k}Radius`]) || 0)).flat(); const mk = [media, img, media?.parentElement].filter(Boolean).map((e) => `${getComputedStyle(e).maskImage} ${getComputedStyle(e).webkitMaskImage}`).join(' | '); return { maxRadius: Math.max(...radii), mask: mk }; }, HERO_IMG);
-    c.check(`${tag} P1 the .ihero photo box has radius 0 (${bx.maxRadius}) and its left 22% is masked into the black (${bx.mask.slice(0, 90)})`, bx.maxRadius === 0 && /linear-gradient/.test(bx.mask) && /22%/.test(bx.mask));
-  }
-  if (vp.width >= 1024) c.check(`${tag} photo box runs 38%-100% of the hero (measured ${geo.left.toFixed(1)}%-${geo.right.toFixed(1)}%)`, Math.abs(geo.left - STD.hero.photoBox.atOrAbove1024.leftPctOfHero) <= STD.hero.photoBox.atOrAbove1024.tolerancePct && Math.abs(geo.right - 100) <= 1);
-  else if (vp.width < 768) c.check(`${tag} below 768 the photo is a full-width band that leads, the copy follows (PG-1 4; NH2 supersedes the (c) 'under the copy' wording)`, Math.abs(geo.w - geo.heroW) <= 1 && geo.top <= geo.h1Bottom - 1);
-  else c.check(`${tag} 768-1023 the photo is the right-hand panel at 42% of the hero, flush right (NH2; the (c) 'stacked below 1024' wording is superseded) (media ${(geo.mw / geo.heroW * 100).toFixed(1)}%, right ${geo.mright.toFixed(1)}%; the img inside is ${(geo.w / geo.heroW * 100).toFixed(1)}%)`, Math.abs(geo.mw / geo.heroW - 0.42) <= 0.02 && Math.abs(geo.mright - 100) <= 1);
+    c.check(`${tag} the photo box has radius 0 (${bx.maxRadius}) and no mask (${bx.mask.slice(0, 90)})`, bx.maxRadius === 0 && !/gradient/.test(bx.mask));
+    c.check(`${tag} the photo is full bleed: 0%-100% of the hero (media ${(geo.mw / geo.heroW * 100).toFixed(1)}%, measured ${geo.left.toFixed(1)}%-${geo.right.toFixed(1)}%)`, Math.abs(geo.left) <= 0.5 && Math.abs(geo.right - 100) <= 0.5 && Math.abs(geo.mw - geo.heroW) <= 1);
+  } else c.check(`${tag} below 768 the photo is a full-width band that leads, the copy follows (PG-1 4; NH2 supersedes the (c) 'under the copy' wording)`, Math.abs(geo.w - geo.heroW) <= 1 && geo.top <= geo.h1Bottom - 1);
   const r = await page.evaluate(async (sel) => {
     const img = document.querySelector(sel); const b = img.getBoundingClientRect();
     const probe = new Image(); probe.src = img.currentSrc; await probe.decode();
@@ -49,19 +49,30 @@ async function heroSharpness(page, route, vp, c, tag) {
   c.check(`${tag} required ${required} <= the cut's native ${crop.width} (not clamped)`, required <= crop.width);
 }
 
-const HR1_RAMP = 'linear-gradient(90deg,rgba(11,10,20,0.92)0%,rgba(11,10,20,0.88)38%,rgba(11,10,20,0.45)56%,rgba(11,10,20,0.12)76%,rgba(11,10,20,0.04)100%)';
-/** HR-1 (NOS Design): at >= 1024 the hero scrim ramp is exactly HR1_RAMP. Implementation-agnostic: whichever hero element or ::before / ::after carries a 90deg rgba(11,10,20) gradient, all of them are this ramp. */
+// HR-1, superseded on 26 Nov 2026 (Brad: "Where is the same system we use to fix the heroes on SAOC?"): the inner photo hero is the SAOC
+// interior hero system. One 90deg NOS-ink gradient, on the copy scrim overlay only (lib/interior-hero.ts): PageHero's 0.8 from the left
+// edge to the copy edge, then the home hero's eased tail to clear; nothing else in the hero carries a dark ramp, and the photo has no mask.
+const HR1_SCRIM_ALPHAS = [0.8, 0.8, 0.777, 0.716, 0.627, 0.518, 0.4, 0.282, 0.173, 0.084, 0.023, 0];
+const HR1_ALPHA_TOLERANCE = 0.003;
+/** HR-1: at >= 1024 the inner photo hero's only rgba(11,10,20) 90deg ramp is the copy scrim, with the eased alphas in order. */
 async function heroRampCheck(page, tag, c) {
-  const grads = await page.evaluate(() => {
-    const hero = document.querySelector('section[data-nos-hero]'); if (!hero || hero.getAttribute('data-nos-hero') === 'hub') return [];
-    const out = [];
+  const m = await page.evaluate(() => {
+    const hero = document.querySelector('section[data-nos-hero]'); if (!hero || hero.getAttribute('data-nos-hero') === 'hub') return null;
+    if (hero.getAttribute('data-nos-hero-variant') !== 'photo') return null;
+    const ramps = [];
     for (const e of [hero, ...hero.querySelectorAll('*')]) for (const ps of [null, '::before', '::after']) {
       const bi = getComputedStyle(e, ps).backgroundImage;
-      if (/linear-gradient\(/.test(bi) && /rgba\(11, ?10, ?20/.test(bi) && /90deg/.test(bi)) out.push({ at: `${e.tagName.toLowerCase()}.${String(e.className).split(' ')[0]}${ps ?? ''}`, bi: bi.replace(/\s+/g, '') });
+      if (/linear-gradient\(/.test(bi) && /rgba\(11, ?10, ?20/.test(bi) && /90deg/.test(bi)) ramps.push({ at: `${e.tagName.toLowerCase()}.${String(e.className).split(' ')[0]}${ps ?? ''}`, scrim: e.getAttribute('data-hero-scrim') === 'copy' && ps === null, bi });
     }
-    return out;
+    const media = hero.querySelector('.nos-hero-media');
+    return { ramps, mask: media ? getComputedStyle(media).maskImage : '' };
   });
-  c.check(`${tag} HR-1 the hero scrim ramp is exactly rgba(11,10,20) 0.92 0% / 0.88 38% / 0.45 56% / 0.12 76% / 0.04 100% at 90deg (${grads.map((g) => g.at).join(', ') || 'no gradient found'})`, grads.length >= 1 && grads.every((g) => g.bi === HR1_RAMP), grads.filter((g) => g.bi !== HR1_RAMP).map((g) => `${g.at}: ${g.bi.slice(0, 160)}`).join(' | '));
+  if (!m) return;
+  const scrim = m.ramps.find((r) => r.scrim);
+  const alphas = scrim ? [...scrim.bi.matchAll(/rgba\(11, ?10, ?20, ?([\d.]+)\)|rgba\(11, ?10, ?20\)/g)].map((x) => (x[1] === undefined ? 1 : Number(x[1]))) : [];
+  c.check(`${tag} HR-1 the only dark ramp is the copy scrim (${m.ramps.map((r) => r.at).join(', ') || 'none'}), alphas ${alphas.join(' / ')}, and the photo has no mask (${m.mask})`,
+    // The computed alpha is quantised to 8 bits (0.777 reads back as 0.776), so each stop is compared within half a step.
+    m.ramps.length === 1 && Boolean(scrim) && alphas.length === HR1_SCRIM_ALPHAS.length && alphas.every((a, i) => Math.abs(a - HR1_SCRIM_ALPHAS[i]) <= HR1_ALPHA_TOLERANCE) && !/gradient/.test(m.mask), scrim?.bi.slice(0, 200));
 }
 /** HR-1 contrast: text hidden, p95 luminance of the photo pixels behind each hero text range (crumb, h1, lede, dt, dd) against the text colour; >= 4.5, h1 >= 3, at 1440 and 2056. */
 async function heroTextContrast(page, tag, c) {
@@ -1043,7 +1054,7 @@ async function extraChecks(page, route, vp, c, tag) {
     const h1i = h1e ? { len: h1e.textContent.replace(/\s+/g, ' ').trim().length, long: h1e.classList.contains('is-long'), px: parseFloat(h1s.fontSize), maxW: h1s.maxWidth, boxW: h1e.getBoundingClientRect().width, wrap: h1s.textWrap || h1s.getPropertyValue('text-wrap'), lines: Math.round(h1e.getBoundingClientRect().height / parseFloat(h1s.lineHeight)), ow: h1s.overflowWrap, ...(() => { const rg = document.createRange(); rg.selectNodeContents(h1e); const rects = [...rg.getClientRects()].filter((q) => q.width > 0); const hb = h1e.getBoundingClientRect(); return { textRight: rects.length ? Math.max(...rects.map((q) => q.right)) : 0, boxRight: hb.right - parseFloat(h1s.paddingRight) - parseFloat(h1s.borderRightWidth) }; })() } : null;
     const subItems = [...document.querySelectorAll('.nos-subnav a')].map((a) => ({ t: a.textContent.replace(/\s+/g, ' ').trim(), cur: a.getAttribute('aria-current') }));
     const crumb = document.querySelector('section[data-nos-hero] nav[aria-label="Breadcrumb"]'); const crumbText = crumb ? crumb.textContent.replace(/\s+/g, ' ').trim() : null;
-    return { h1i, subItems, crumbText, nkBad, testBar, vw: innerWidth, innerMin: ic ? parseFloat(ic.minHeight) : null, innerAlign: ic ? ic.alignContent : null, innerPadT: ic ? parseFloat(ic.paddingTop) : null, innerPadB: ic ? parseFloat(ic.paddingBottom) : null, copyPadT: (() => { const e = document.querySelector('.nos-hero-inner .nos-hero-copy'); return e ? parseFloat(getComputedStyle(e).paddingTop) : null; })(), copyPadB: (() => { const e = document.querySelector('.nos-hero-inner .nos-hero-copy'); return e ? parseFloat(getComputedStyle(e).paddingBottom) : null; })(), band: ib && ib.height ? ib.width / ib.height : null, skip, round, split, padTop: fs ? parseFloat(fs.paddingTop) : null, bTop: fs ? parseFloat(fs.borderTopWidth) : null, navLabels, h2s, h4s, h2lh: lh([...document.querySelectorAll('main h2')].find((h) => !h.closest('[data-guest-profile], [data-conference-row]')) ?? null), h3lh: lh(proseH3()),
+    return { h1i, subItems, crumbText, nkBad, testBar, vw: innerWidth, innerPhoto: inner ? inner.classList.contains('nos-hero-photo') : false, innerMin: ic ? parseFloat(ic.minHeight) : null, innerAlign: ic ? ic.alignContent : null, innerPadT: ic ? parseFloat(ic.paddingTop) : null, innerPadB: ic ? parseFloat(ic.paddingBottom) : null, headPadT: (() => { const e = document.querySelector('.nos-hero-inner .nos-hero-head'); return e ? parseFloat(getComputedStyle(e).paddingTop) : null; })(), headPadB: (() => { const e = document.querySelector('.nos-hero-inner .nos-hero-head'); return e ? parseFloat(getComputedStyle(e).paddingBottom) : null; })(), headMin: (() => { const e = document.querySelector('.nos-hero-inner .nos-hero-head'); return e ? parseFloat(getComputedStyle(e).minHeight) : null; })(), band: ib && ib.height ? ib.width / ib.height : null, skip, round, split, padTop: fs ? parseFloat(fs.paddingTop) : null, bTop: fs ? parseFloat(fs.borderTopWidth) : null, navLabels, h2s, h4s, h2lh: lh([...document.querySelectorAll('main h2')].find((h) => !h.closest('[data-guest-profile], [data-conference-row]')) ?? null), h3lh: lh(proseH3()),
       heroH: hero ? hero.getBoundingClientRect().height : null, legend, railed, factsCount: facts ? facts.querySelectorAll('[data-hero-fact]').length : 0, factsAttr: facts ? facts.getAttribute('data-fact-count') : null, factTerms: facts ? [...facts.querySelectorAll('dt')].map((e) => e.textContent.trim()) : [], factValues: facts ? [...facts.querySelectorAll('dd')].map((e) => e.textContent.trim()) : [], factCount2: facts ? facts.querySelectorAll('[data-hero-fact]').length >= 2 : true, indexRows: [...document.querySelectorAll('nav[data-doc-index] a')].map((a) => { const b = a.getBoundingClientRect(); return { t: b.top, b: b.bottom, l: b.left, r: b.right }; }), factsOk: facts ? [...facts.querySelectorAll('[data-hero-fact]')].every((f) => f.children[0]?.tagName === 'DT' && f.children[1]?.tagName === 'DD') : true };
   }, { eyebrowSel: '[data-nos-hero-eyebrow]' });
   if (x.h1i) {
@@ -1065,13 +1076,17 @@ async function extraChecks(page, route, vp, c, tag) {
   c.check(`${tag} .nk-ticket/.nk-perf/.nk-stamp only inside a purchasable [data-ticket-card] (WS-1)`, x.nkBad === 0, String(x.nkBad));
   c.check(`${tag} the TESTING ONLY bar is absent (it belongs to /tickets/* and the payment step only)`, x.testBar === 0, String(x.testBar));
   {
+    // PG-1 4, superseded on 25 Nov 2026 by nos-hero-consistency (Brad): one hero height per breakpoint, whatever the content.
+    // Scope (lead ruling, 25 Nov 2026): photo heroes. A typographic hero keeps its content-fit height.
     const P = STD.hero.pg1;
-    if (vp.width >= 768) {
-      const wantMin = Math.min(P.max, Math.max(P.min, P.vw * vp.width)); const wantPad = Math.min(P.padMax, Math.max(P.padMin, P.padVw * vp.width));
-      c.check(`${tag} .nos-hero-inner min-height ${x.innerMin} ~ ${wantMin.toFixed(0)} (PG-1 4)`, x.innerMin !== null && Math.abs(x.innerMin - wantMin) <= 2);
+    if (!x.innerPhoto) { /* typographic hero: content-fit, not gated here */ } else if (vp.width >= 1024) {
+      const wantMin = Math.max(P.desktopFloor, P.desktopVw * vp.width); const wantPad = Math.min(P.padMax, Math.max(P.padMin, P.padVw * vp.width));
+      c.check(`${tag} .nos-hero-inner min-height ${x.innerMin} ~ max(${P.desktopFloor}px, ${P.desktopVw * 100}vw) = ${wantMin.toFixed(0)} (PG-1 4)`, x.innerMin !== null && Math.abs(x.innerMin - wantMin) <= 2);
       c.check(`${tag} .nos-hero-inner align-content start and padding-block ${x.innerPadT}/${x.innerPadB} ~ ${wantPad.toFixed(0)}`, ['start', 'flex-start'].includes(x.innerAlign) && Math.abs(x.innerPadT - wantPad) <= 2 && Math.abs(x.innerPadB - wantPad) <= 2, x.innerAlign);
+    } else if (vp.width >= 768) {
+      c.check(`${tag} 768-1023: the title block (.nos-hero-head) is ${P.tabletBox}px tall at padding-block ${P.tabletPad}px (${x.headMin}; ${x.headPadT}/${x.headPadB})`, x.headMin === P.tabletBox && x.headPadT === P.tabletPad && x.headPadB === P.tabletPad);
     } else {
-      c.check(`${tag} below 768 the photo band is 2:1 (${x.band && x.band.toFixed(2)}) and the copy (.nos-hero-copy) follows at padding-block ${P.mobilePad}px (${x.copyPadT}/${x.copyPadB}; the inner has ${x.innerPadT}/${x.innerPadB})`, x.band !== null && Math.abs(x.band - P.mobileBandAspect) <= 0.06 && x.copyPadT === P.mobilePad && x.copyPadB === P.mobilePad && x.innerPadT === 0 && x.innerPadB === 0);
+      c.check(`${tag} below 768 the photo band is 2:1 (${x.band && x.band.toFixed(2)}) and the title block (.nos-hero-head) follows at padding-block ${P.mobilePad}px (${x.headPadT}/${x.headPadB}; the inner has ${x.innerPadT}/${x.innerPadB})`, x.band !== null && Math.abs(x.band - P.mobileBandAspect) <= 0.06 && x.headPadT === P.mobilePad && x.headPadB === P.mobilePad && x.innerPadT === 0 && x.innerPadB === 0);
     }
   }
   if (vp.width >= 1024 && x.indexRows.length) c.check(`${tag} index rows are >= 44px tall with disjoint boxes (${x.indexRows.length})`, x.indexRows.every((r, i) => r.b - r.t >= 43.5 && (i === 0 || r.t >= x.indexRows[i - 1].b - 0.5)));
@@ -1093,10 +1108,11 @@ async function extraChecks(page, route, vp, c, tag) {
     c.check(`${tag} no fact is filler (to be confirmed), no Cycle or invented-label fact, row only with >= 2 facts (${x.factTerms.join(' | ')})`, x.factCount2 && !x.factTerms.some((t) => /^cycle$/i.test(t)) && !x.factValues.some((v) => /to be confirmed/i.test(v)) && (!route.keyFacts || x.factTerms.every((t) => route.keyFacts.some((k) => k.term === t))), JSON.stringify(x.factValues));
     c.check(`${tag} [data-hero-facts] has data-fact-count == items (${x.factsAttr} vs ${x.factsCount}), dt before dd`, Number(x.factsAttr) === x.factsCount && x.factsOk);
   }
-  if (vp.width >= 1440) { // PG-1 4, inherited from #76
-    const wf = x.factsCount > 0; const rc = route.heroCap?.[vp.width >= 2000 ? '2056' : '1440']; const ltCap = x.h1i && x.h1i.len > 20 ? (vp.width >= 2000 ? STD.hero.longTitleCap.at2056 : STD.hero.longTitleCap.at1440) : Infinity; const cap = rc ?? Math.min(ltCap,  vp.width >= 2000 ? (wf ? STD.hero.heightCap.withFacts2056 : STD.hero.heightCap.at2056) : (wf ? STD.hero.heightCap.withFacts1440 : STD.hero.heightCap.at1440));
-    c.check(`${tag} hero height ${Math.round(x.heroH)} <= ${cap} (PG-1 4${wf ? ', with facts: FACTS-1' : ''}${rc ? ', route cap from the golden' : ''})`, x.heroH !== null && x.heroH <= cap);
+  if (vp.width >= 1024 && x.innerMin !== null && x.innerPhoto) { // PG-1 4: every inner hero is the formula height (nos-hero-consistency)
+    const want = Math.max(STD.hero.pg1.desktopFloor, STD.hero.pg1.desktopVw * vp.width);
+    c.check(`${tag} hero height ${x.heroH?.toFixed(1)} = max(${STD.hero.pg1.desktopFloor}px, ${STD.hero.pg1.desktopVw * 100}vw) = ${want.toFixed(1)} (PG-1 4, one height per breakpoint)`, x.heroH !== null && Math.abs(x.heroH - want) <= 1);
   }
+
 }
 
 const ROUTE_TABLE_META = JSON.parse(readFileSync('.agent/memory/project/specs/nos-content-standard/goldens/route-table.json', 'utf8'));

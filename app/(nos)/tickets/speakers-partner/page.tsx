@@ -30,7 +30,7 @@ import { sanityFetch } from '@/sanity/lib/fetch';
 export const dynamic = 'force-dynamic';
 
 const PAGE_TITLE = 'Speakers Partner Ticket';
-const GATE_LEDE = 'Enter the password the committee emailed you to buy this ticket.';
+const GATE_LEDE = 'Enter the password the committee emailed you.';
 const UNAVAILABLE_MESSAGE = 'This ticket is not available right now.';
 
 export const metadata: Metadata = {

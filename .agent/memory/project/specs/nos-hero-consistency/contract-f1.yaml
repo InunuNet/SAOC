@@ -1,0 +1,39 @@
+schema: athanor.contract/v1
+slug: nos-hero-consistency
+goal: One locked NOS inner hero height per breakpoint on the SAOC interior hero system (full-bleed photo, eased copy scrim), a Contact facts strip, and one-link nav groups as plain links.
+created_at: '2026-11-25'
+autonomy: high
+# Rendered checks (A4-A7) need a NOS server you started yourself; they never build or start one:
+#   NOS_BASE=http://nos.localhost:<port> node .agent/memory/project/specs/nos-hero-consistency/checks/check-rendered.mjs <mode>
+# Without NOS_BASE they exit 2 (infrastructure), never pass.
+features:
+  - id: F1
+    name: NOS inner hero consistency and single-link nav groups
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-hero-consistency/goldens/hero-spec.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: A one-link nav group renders as a plain link in the top row and the menu panel (source)
+      command: node .agent/memory/project/specs/nos-hero-consistency/checks/check-static.mjs nav
+    - id: A2
+      description: Inner hero is the SAOC interior hero system (locked heights, full-bleed HeroPicture, no mask or split panel, shared scrim mirrored in the NOS ink) (source)
+      command: node .agent/memory/project/specs/nos-hero-consistency/checks/check-static.mjs css
+    - id: A3
+      description: Contact hero facts are Dates, Venue and Email through the shared facts strip
+      command: >-
+        grep -q 'heroFactsFromShow(showFacts, FACTS_LABELS)' 'app/(nos)/national-show/contact/page.tsx' && grep -q 'value: SHOW_CONTACT_EMAIL' 'app/(nos)/national-show/contact/page.tsx'
+    - id: A4
+      description: Every inner photo route's hero box is the formula height at 1440, 1024, 768 and 390, with its copy inside
+      command: node .agent/memory/project/specs/nos-hero-consistency/checks/check-rendered.mjs heights
+    - id: A5
+      description: Hero text over the photo clears WCAG AA against the brightest pixel behind it at 900, 1024, 1440 and 2056
+      command: node .agent/memory/project/specs/nos-hero-consistency/checks/check-rendered.mjs contrast
+    - id: A6
+      description: Vendors is a plain link on desktop and in the menu panel (aria-current on its pages); no sub-nav on one-link groups
+      command: node .agent/memory/project/specs/nos-hero-consistency/checks/check-rendered.mjs nav
+    - id: A7
+      description: Slow pan on the home pages only - the NOS hub hero runs the SAOC home drift (off under reduced motion); no NOS inner hero or SAOC PageHero animates
+      command: node .agent/memory/project/specs/nos-hero-consistency/checks/check-rendered.mjs motion

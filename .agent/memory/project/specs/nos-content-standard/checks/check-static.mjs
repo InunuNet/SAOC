@@ -278,7 +278,12 @@ check('StatusMarker.tsx untouched', git(['diff', '--name-only', 'origin/main', '
 // added CSS: the craft-floor bans and the token rule
 const added = git(['diff', '-U0', 'origin/main', '--', 'app/(nos)/national-show/nos-structure.css', 'app/(nos)/national-show/nos-theme.css']).split('\n').filter((l) => l.startsWith('+') && !l.startsWith('+++')).map((l) => l.slice(1));
 const SANCTIONED_VARS = ['--doc-aside-top', '--doc-index-top', '--doc-scroll-margin']; // the three .nos-theme values SAOC's shared CSS reads
-const badVar = added.find((l) => { const m = l.match(/^\s*(--[a-z0-9-]+)\s*:/); return m && !SANCTIONED_VARS.includes(m[1]); });
+// nos-hero-consistency (25-26 Nov 2026): one geometry helper scoped to .nos-hero-inner (the copy edge; a length, no colour), and the
+// existing on-light re-point (`--x: var(--x-on-light)`, as nos-theme.css already does for --ring-focus) on the below-1024 hero detail
+// that sits on the page ground. Neither adds a design token.
+const HERO_GEOMETRY_VARS = ['--hero-copy-end'];
+const onLightRepoint = (l) => /^\s*(--[a-z-]+)\s*:\s*var\(\1-on-light\)\s*;/.test(l);
+const badVar = added.find((l) => { const m = l.match(/^\s*(--[a-z0-9-]+)\s*:/); return m && !SANCTIONED_VARS.includes(m[1]) && !HERO_GEOMETRY_VARS.includes(m[1]) && !onLightRepoint(l); });
 check('added CSS declares no custom property beyond --doc-aside-top, --doc-index-top and --doc-scroll-margin', !badVar, badVar);
 check('added CSS has no raw hex', !added.some((l) => /#[0-9a-fA-F]{3,8}\b/.test(l)), added.find((l) => /#[0-9a-fA-F]{3,8}\b/.test(l)));
 check('added CSS adds no @font-face or literal font-family', !added.some((l) => /@font-face|font-family\s*:\s*(?![\s]|var\()/.test(l)));
@@ -296,12 +301,18 @@ check('added CSS has no dashed 2px rail', !added.some((l) => /border[a-z-]*\s*:\
   check('RB-1: that definition is 10px', defs.length === 1 && /--radius-button\s*:\s*10px\s*;/.test(defs[0].l), defs.map((d) => d.l.trim()).join(' | '));
   check('RB-1: components/nos/Button.tsx cites R17 / 10px, not R2 2px', !/R2[^\n]*2px|2px[^\n]*R2/.test(read('components/nos/Button.tsx')));
 }
-// HR-1 (same message): on every DS-1 hero at >= 1024 the scrim ramp is exactly the value below; no plate, no crop change. The computed value is gated in gate-standard.
+// HR-1, superseded on 25 Nov 2026 by nos-hero-consistency and again on 26 Nov 2026 (Brad: "Where is the same system we use to fix the
+// heroes on SAOC?"): the inner photo hero is the SAOC interior hero system. The photo is full bleed with no mask; the copy column sits on
+// an overlay scrim from lib/interior-hero.ts (PageHero's 0.8 over the copy, the home hero's eased tail to clear), in the NOS ink, drawn
+// by NosHero. No NOS CSS lays the old dark ramp or masks the inner photo into the ground. The computed scrim is gated in gate-standard.
 {
   const norm = (t) => t.replace(/\s+/g, '');
-  const RAMP = norm('linear-gradient(90deg, rgba(11, 10, 20, 0.92) 0%, rgba(11, 10, 20, 0.88) 38%, rgba(11, 10, 20, 0.45) 56%, rgba(11, 10, 20, 0.12) 76%, rgba(11, 10, 20, 0.04) 100%)');
+  const OLD_RAMP = norm('rgba(11, 10, 20, 0.92) 0%, rgba(11, 10, 20, 0.88) 38%, rgba(11, 10, 20, 0.45) 56%');
   const css = ['app/(nos)', 'components/nos'].flatMap((d) => (existsSync(d) ? readdirSync(d, { recursive: true }).filter((f) => String(f).endsWith('.css')).map((f) => read(`${d}/${f}`)) : [])).map(norm).join('\n');
-  check('HR-1: the NOS hero CSS carries the exact HR-1 ramp', css.includes(RAMP));
+  check('HR-1: no NOS hero CSS lays the old dark 0.92/0.88/0.45 ramp over the photo', !css.includes(OLD_RAMP));
+  check('HR-1: no NOS CSS masks the inner hero photo into the ground (the 25 Nov --scrim-at mask is gone)', !css.includes('--scrim-at'));
+  const hero = read('components/nos/NosHero.tsx');
+  check('HR-1: the inner hero scrim is the shared interior-hero scrim, mirrored, in the NOS ink (11 10 20)', /mirroredCopyScrimGradient\('11 10 20', 'var\(--hero-copy-end\)'\)/.test(hero) && /data-hero-scrim="copy"/.test(hero));
   const HUB = norm('rgba(11, 10, 20, 0.92) 0%, rgba(11, 10, 20, 0.86) calc(min(640px, 50%) + 48px), rgba(11, 10, 20, 0.42) 66%, rgba(11, 10, 20, 0.18) 82%, rgba(11, 10, 20, 0.06) 100%');
   check('HR-1 scope (Rev 44, NOS Design b8c55ad): the NOS hub .nos-hero-scrim keeps its own stops (.92 0%, .86 calc(min(640px,50%)+48px), .42 66%, .18 82%, .06 100%); the DS-1 ramp applies to content heroes only', css.includes(HUB));
 }

@@ -13,6 +13,54 @@ Mission `nos-pagehero`, spec `.agent/memory/project/specs/nos-pagehero/` (NOS De
 - `/symposium`: the Presenters `h2` is serif 32px / 300; the TBC pill became a quiet `※` legend line (`data-presenters-legend`), withheld in public mode exactly as the pill was.
 - The `/tickets` fan masthead is unchanged. `/tickets/[slug]` no longer uses the compact buy hero (`nk-hero-compact`): it is the split hero with the S3a crop.
 
+## One height per breakpoint (nos-hero-consistency, 25 Nov 2026)
+
+Brad's ruling replaces the content-driven height and the 46% panel above. Spec and checks:
+`.agent/memory/project/specs/nos-hero-consistency/`.
+
+- `NosHero` (inner) splits its copy into a title block (`.nos-hero-head`: eyebrow, crumbs, h1) and a detail block
+  (`.nos-hero-detail`: lede, facts, actions).
+- From 1024px the hero is `max(420px, 29.3vw)` tall (the SAOC `PageHero` height) with `padding-block:
+  clamp(32px, 2.5vw, 48px)`. The whole copy sits inside it; the lede fills the copy column (`max-width: none`,
+  replacing R71's 46ch) and a three-fact row is one row.
+- From 768px to 1023px the hero box is one 320px row with the title block over the photo. Below 768px a 2:1 photo
+  band leads and the title block follows at a fixed height. In both, the detail block sits under the hero on the
+  page ground, in ink with muted labels.
+- Superseded on 26 Nov 2026 (Brad: "Where is the same system we use to fix the heroes on SAOC?"): the inner hero
+  is the SAOC interior hero system, mirrored. From 768px the photograph is full bleed through PageHero's
+  `HeroPicture` with aspect-driven `sizes`; nothing masks it. The copy column (left, ending at 48% of the width, or
+  `axis + 570px` where that is wider) sits on an overlay scrim from `lib/interior-hero.ts` in the NOS ink: 0.8 over
+  the copy, then the SAOC home hero's eased tail to clear over 22%, so the bloom side is the bare photograph and no
+  seam or band shows. The box is locked (`height`, not `min-height`). The 768-1023 58/42 split panel is gone.
+- The photographs are full-width 2:1 cuts of their originals at native resolution (S3a and D1 mirrored so the bloom
+  sits right of the copy). A full-bleed box is wider than the old panel, so the flowers render 1.4-1.8x larger than
+  on 25 Nov; a real zoom-out needs larger originals.
+- Variant A2 (Brad, 26-27 Nov 2026): from 1024px the photo box is locked at `clamp(268px, 20.8vw, 480px)` and holds
+  the crumbs, h1 and lede (every hero keeps its subtext inside the hero); the facts and actions sit under it on
+  the page ground. From 768px to 1023px a long title (`.is-long`) keeps the tablet step-down size, so it holds
+  two lines in the 268px box.
+- Uniform height, copy trimmed to fit (Brad, 27 Nov 2026). The box never grows. Where a title plus subtext ran
+  past it, the subtext was trimmed (the four vendor pages and the Speakers Partner gate here; four ticket
+  descriptions in Sanity), and the NOS `/refunds` hero carries the short title "Refund and cancellation
+  policy" while its body opens with the document's full title. A two-line ticket title over a one-line subtext
+  may end up to 2px into the bottom padding at 1280-1288 (`check-rendered.mjs heights`). Below 1024 the subtext
+  stays under the photograph.
+- Photo test (Brad, 27 Nov 2026): every inner photo is sharp, with a flower (not a single petal or a leaf) on the
+  right and darker on the left behind the copy, and none repeats within a menu group
+  (`components/nos/hero-photos.ts`). S1b, S2c, H4b, PK3 and Y1 failed it and are retired; HB1 (Hendrik's
+  Habenaria, mirrored, cut on a flower) and PH1 (`orchid-pink.jpg` whole, at `50% 36%`) joined.
+- Slow pan on the home pages only (Brad, 27 Nov 2026). The NOS hub hero runs the SAOC home hero's drift as it
+  is: `.home-hero-drift` in `app/globals.css`, a linear 4% zoom about `--hero-pos` over 8.4s (the 7s carousel
+  interval plus 1400ms). It holds at its end and is off under `prefers-reduced-motion`. The origin is the
+  Cattleya bloom (`55% 50%`), so the bloom stays put and the masked copy side stays dark. The hub media box
+  clips the zoom. NOS inner heroes and SAOC `PageHero`s never animate: `check-rendered.mjs motion` (A7) asserts
+  both at 1440 and 390.
+- Scope: photo heroes only. A typographic hero (404, `/tickets/recover`) keeps its content-fit height, and
+  `/tickets` keeps its fan masthead, like the hub (lead rulings, 25 Nov 2026).
+- The Contact hero has the shared facts strip: Dates and Venue from the show facts, and Email (a mailto link).
+- `NosHeader`: a nav group with exactly one link (Vendors today) renders as a plain link to that page, labelled
+  with the group heading, in the top row and the menu panel.
+
 ## Known measurement limits (preview mode only)
 
 The geometry gate measures the first text element after the sub-nav. In preview mode the first block of several pages is a padded placeholder box or marker chip (for example `.nos-surface`, the AI-placeholder notice, `inline-flex` status chips), so the measured gap is 64px plus that box's own padding. The block itself starts at 64px.

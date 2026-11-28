@@ -32,7 +32,7 @@ export default async function VendorApplyPage() {
         title="Vendor application"
         crumbLabel="Vendor application"
         facts={heroFactsFromShow(facts, FACTS_LABELS)}
-        lede="Apply to exhibit as a vendor at the 2027 National Orchid Show. Once the committee reviews and approves your application, we'll email you a link to complete your full registration and agreement."
+        lede="Apply to exhibit as a vendor at the 2027 National Orchid Show."
         priority
       />
 

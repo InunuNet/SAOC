@@ -558,6 +558,8 @@
 .nos-theme .nos-hero-hub .nos-hero-media {
   inset: 0 0 0 22%;
   z-index: -2;
+  /* The slow pan (.home-hero-drift, NosHero) scales the photo 4%: the media box clips it. */
+  overflow: hidden;
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 16%);
   mask-image: linear-gradient(90deg, transparent 0, #000 16%);
 }
@@ -662,18 +664,13 @@
   }
 }
 
-/* ---- Inner hero (NOS Design NH2, PR-B inputs G1-G2, 2026-10-24): the split studio panel.
-   From 768px the copy sits on solid black at the left, top-anchored (never centred, so a lede the
-   loader does not have cannot move the h1) and a photograph fills a 46% panel flush right at
-   full hero height (hard edge, 16px bottom-left radius only, no scrim). The hero fits the h1 plus
-   a compact copy block at clamp(320px, 22vw, 380px) (PG-1); a longer lede or facts grow it downward
-   only. Below 768px a 2:1 photo band leads and the copy follows on black at 32px padding-block
-   (see the 767px block). ---- */
+/* ---- Inner hero (NOS Design NH2, PR-B inputs G1-G2, 2026-10-24): copy top-anchored (never
+   centred, so a lede the loader does not have cannot move the h1). Its height, photo box and scrim
+   are one rule per breakpoint, the same on every route (Brad, 25 Nov 2026: the SAOC PageHero
+   rule): see "Inner hero sizing" in nos-structure.css. ---- */
 .nos-theme .nos-hero-inner {
   display: grid;
   align-content: start;
-  min-height: clamp(320px, 22vw, 380px);
-  padding-block: clamp(48px, 4vw, 72px);
 }
 /* R70 symposium: the hero lede is the theme line (NosHero ledeKind="theme"), not a standfirst. */
 .nos-theme .nos-hero-inner .nos-hero-lede[data-nos-lede='theme'] {
@@ -687,27 +684,29 @@
   font-variation-settings: 'opsz' 28;
 }
 .nos-theme .nos-hero-inner .nos-hero-media {
-  inset: 0 0 0 auto;
-  width: 46%;
   overflow: hidden;
-  border-bottom-left-radius: var(--radius-card);
 }
 .nos-theme .nos-hero-inner .nos-hero-img {
-  object-position: 50% 50%;
+  object-position: var(--nos-hero-pos, 50% 50%);
 }
 .nos-theme .nos-hero-inner .nos-hero-copy {
   z-index: 2;
-  display: grid;
-  gap: 22px;
   padding-block: 0;
 }
-/* The copy column ends 32px short of the panel: its left edge stays on the shared axis, its right
-   padding clears the 46% panel. */
+.nos-theme .nos-hero-inner .nos-hero-copy,
+.nos-theme .nos-hero-inner .nos-hero-box,
+.nos-theme .nos-hero-inner .nos-hero-head,
+.nos-theme .nos-hero-inner .nos-hero-detail {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+/* The photo hero's copy column keeps its left edge on the shared axis. */
 .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-copy {
   max-width: none;
   margin-inline: 0;
   padding-left: calc(max(0px, (100cqw - var(--nos-axis-max)) / 2) + var(--nos-axis-pad));
-  padding-right: calc(46cqw + 32px);
+  padding-right: 0;
 }
 .nos-theme .nos-hero-inner .nos-hero-eyebrow {
   margin: 0;
@@ -757,43 +756,13 @@
     gap: 32px;
   }
 }
-/* Below 768px (G2): the photo is a full-width 2:1 band at the top of the hero, the copy follows
-   on black at padding-top 48px, no panel radius. */
-/* 768-1023px (NOS Design, 2026-10-24): the copy column takes 58% and the panel 42%; the h1 balances its
-   lines with no ch cap and steps down (floor 36px) so it stays within two lines. */
+/* 768-1023px (NOS Design, 2026-10-24): the h1 balances its lines with no ch cap and steps down
+   (floor 36px) so it stays within two lines. */
 @media (min-width: 768px) and (max-width: 1023px) {
-  .nos-theme .nos-hero-inner .nos-hero-media {
-    width: 42%;
-  }
-  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-copy {
-    width: 58%;
-    padding-right: 32px;
-  }
   .nos-theme .nos-hero-inner .nos-hero-title {
     max-width: none;
     text-wrap: balance;
     font-size: clamp(2.25rem, 4.9vw, 3rem);
-  }
-}
-@media (max-width: 767px) {
-  /* PG-1: no height floor below 768. The hero is the band plus the copy, whose padding-block is 32px. */
-  .nos-theme .nos-hero-inner {
-    min-height: 0;
-    padding-block: 0;
-  }
-  .nos-theme .nos-hero-inner .nos-hero-media {
-    position: relative;
-    inset: auto;
-    width: 100%;
-    aspect-ratio: 2 / 1;
-    border-radius: 0;
-  }
-  .nos-theme .nos-hero-inner .nos-hero-copy,
-  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-copy {
-    max-width: var(--nos-axis-max);
-    margin-inline: auto;
-    padding-inline: var(--nos-axis-pad);
-    padding-block: 32px;
   }
 }
 @media (max-width: 700px) {
@@ -867,8 +836,9 @@
     font-size: clamp(48px, 4.4vw, 88px);
     text-wrap: balance;
   }
+  /* The lede fills the copy column (about 64 characters a line), which the inner hero sizing caps. */
   .nos-theme .nos-hero-inner .nos-hero-lede {
-    max-width: 46ch;
+    max-width: none;
   }
 }
 
